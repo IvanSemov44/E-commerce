@@ -113,210 +113,34 @@ public class AuthController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPost("refresh-token")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<TokenResponseDto>>> RefreshToken([FromBody] RefreshTokenRequest request)
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> RefreshToken([FromBody] RefreshTokenRequest request)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(request.Token))
             {
-                return BadRequest(ApiResponse<TokenResponseDto>.Error("Token is required"));
+                return BadRequest(ApiResponse<AuthResponseDto>.Error("Token is required"));
             }
 
-            var newToken = await _authService.RefreshTokenAsync(request.Token);
+            var result = await _authService.RefreshTokenAsync(request.Token);
 
-            if (string.IsNullOrEmpty(newToken))
+            if (!result.Success)
             {
-                return BadRequest(ApiResponse<TokenResponseDto>.Error("Invalid or expired token"));
+                return BadRequest(ApiResponse<AuthResponseDto>.Error("Invalid or expired token"));
             }
 
-            return Ok(ApiResponse<TokenResponseDto>.Ok(new TokenResponseDto { Token = newToken }, "Token refreshed successfully"));
+            return Ok(ApiResponse<AuthResponseDto>.Ok(result, "Token refreshed successfully"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error refreshing token");
-            return StatusCode(500, ApiResponse<TokenResponseDto>.Error("An error occurred while refreshing token"));
+            return StatusCode(500, ApiResponse<AuthResponseDto>.Error("An error occurred while refreshing token"));
         }
     }
 
-    /// <summary>
-    /// Verifies an email address using the provided verification token.
-    /// </summary>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="token">The email verification token.</param>
-    /// <returns>Verification result.</returns>
-    /// <response code="200">Email verified successfully.</response>
-    /// <response code="400">Invalid verification token.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpPost("verify-email")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromQuery] Guid userId, [FromQuery] string token)
-    {
-        try
-        {
-            if (userId == Guid.Empty || string.IsNullOrWhiteSpace(token))
-            {
-                return BadRequest(ApiResponse<object>.Error("User ID and token are required"));
-            }
-
-            var result = await _authService.VerifyEmailAsync(userId, token);
-
-            if (!result)
-            {
-                return BadRequest(ApiResponse<object>.Error("Invalid or expired verification token"));
-            }
-
-            return Ok(ApiResponse<object>.Ok(null, "Email verified successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error verifying email");
-            return StatusCode(500, ApiResponse<object>.Error("An error occurred during email verification"));
-        }
-    }
-
-    /// <summary>
-    /// Requests a password reset token.
-    /// </summary>
-    /// <param name="request">The password reset request containing the email.</param>
-    /// <returns>Password reset token.</returns>
-    /// <response code="200">Password reset token generated.</response>
-    /// <response code="400">Invalid email.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpPost("forgot-password")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<ForgotPasswordResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ForgotPasswordResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<ForgotPasswordResponseDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<ForgotPasswordResponseDto>>> ForgotPassword([FromBody] ForgotPasswordRequest request)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(request.Email))
-            {
-                return BadRequest(ApiResponse<ForgotPasswordResponseDto>.Error("Email is required"));
-            }
-
-            var token = await _authService.GeneratePasswordResetTokenAsync(request.Email);
-
-            if (string.IsNullOrEmpty(token))
-            {
-                // Don't reveal if email exists for security reasons
-                return Ok(ApiResponse<ForgotPasswordResponseDto>.Ok(
-                    new ForgotPasswordResponseDto { Message = "If the email exists, a reset token has been sent" },
-                    "Password reset token generated if email exists"));
-            }
-
-            return Ok(ApiResponse<ForgotPasswordResponseDto>.Ok(
-                new ForgotPasswordResponseDto { Token = token },
-                "Password reset token generated successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating password reset token");
-            return StatusCode(500, ApiResponse<ForgotPasswordResponseDto>.Error("An error occurred while generating reset token"));
-        }
-    }
-
-    /// <summary>
-    /// Resets the user's password using a reset token.
-    /// </summary>
-    /// <param name="request">The reset password request with email, token, and new password.</param>
-    /// <returns>Password reset result.</returns>
-    /// <response code="200">Password reset successfully.</response>
-    /// <response code="400">Invalid token or password requirements not met.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpPost("reset-password")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordRequest request)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
-            {
-                return BadRequest(ApiResponse<object>.Error("Email, token, and new password are required"));
-            }
-
-            if (request.NewPassword.Length < 8)
-            {
-                return BadRequest(ApiResponse<object>.Error("Password must be at least 8 characters long"));
-            }
-
-            var result = await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword);
-
-            if (!result)
-            {
-                return BadRequest(ApiResponse<object>.Error("Invalid or expired reset token"));
-            }
-
-            return Ok(ApiResponse<object>.Ok(null, "Password reset successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error resetting password");
-            return StatusCode(500, ApiResponse<object>.Error("An error occurred while resetting password"));
-        }
-    }
-
-    /// <summary>
-    /// Changes the user's password after verifying the old password.
-    /// </summary>
-    /// <param name="request">The change password request with old and new passwords.</param>
-    /// <returns>Password change result.</returns>
-    /// <response code="200">Password changed successfully.</response>
-    /// <response code="400">Invalid current password or password requirements not met.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpPost("change-password")]
-    [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<object>>> ChangePassword([FromBody] ChangePasswordRequest request)
-    {
-        try
-        {
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(ApiResponse<object>.Error("User is not authenticated"));
-            }
-
-            if (string.IsNullOrWhiteSpace(request.OldPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
-            {
-                return BadRequest(ApiResponse<object>.Error("Old and new passwords are required"));
-            }
-
-            if (request.NewPassword.Length < 8)
-            {
-                return BadRequest(ApiResponse<object>.Error("Password must be at least 8 characters long"));
-            }
-
-            var result = await _authService.ChangePasswordAsync(Guid.Parse(userId), request.OldPassword, request.NewPassword);
-
-            if (!result)
-            {
-                return BadRequest(ApiResponse<object>.Error("Invalid current password"));
-            }
-
-            _logger.LogInformation("Password changed for user: {UserId}", userId);
-            return Ok(ApiResponse<object>.Ok(null, "Password changed successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error changing password");
-            return StatusCode(500, ApiResponse<object>.Error("An error occurred while changing password"));
-        }
-    }
 }
 
 #region DTOs

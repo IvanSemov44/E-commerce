@@ -35,11 +35,11 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetAllProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         try
         {
-            var result = await _productService.GetAllProductsAsync(page, pageSize);
+            var result = await _productService.GetProductsAsync(page, pageSize);
             return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
         }
         catch (Exception ex)
@@ -52,26 +52,25 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Retrieves featured products.
     /// </summary>
-    /// <param name="page">The page number (default: 1).</param>
-    /// <param name="pageSize">The number of items per page (default: 20).</param>
+    /// <param name="count">The number of featured products to retrieve (default: 10).</param>
     /// <returns>A list of featured products.</returns>
     /// <response code="200">Featured products retrieved successfully.</response>
     /// <response code="500">Internal server error.</response>
     [HttpGet("featured")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetFeaturedProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetFeaturedProducts([FromQuery] int count = 10)
     {
         try
         {
-            var result = await _productService.GetFeaturedProductsAsync(page, pageSize);
-            return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
+            var result = await _productService.GetFeaturedProductsAsync(count);
+            return Ok(ApiResponse<List<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving featured products");
-            return StatusCode(500, ApiResponse<PaginatedResult<ProductDto>>.Error("An error occurred while retrieving featured products"));
+            return StatusCode(500, ApiResponse<List<ProductDto>>.Error("An error occurred while retrieving featured products"));
         }
     }
 
@@ -139,94 +138,6 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Searches for products by name or description.
-    /// </summary>
-    /// <param name="query">The search query.</param>
-    /// <param name="page">The page number (default: 1).</param>
-    /// <param name="pageSize">The number of items per page (default: 20).</param>
-    /// <returns>A paginated list of matching products.</returns>
-    /// <response code="200">Products found successfully.</response>
-    /// <response code="400">Invalid search query.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpGet("search")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> SearchProducts([FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return BadRequest(ApiResponse<PaginatedResult<ProductDto>>.Error("Search query is required"));
-            }
-
-            var result = await _productService.SearchProductsAsync(query, page, pageSize);
-            return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products found successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error searching products with query: {Query}", query);
-            return StatusCode(500, ApiResponse<PaginatedResult<ProductDto>>.Error("An error occurred while searching products"));
-        }
-    }
-
-    /// <summary>
-    /// Retrieves products by category.
-    /// </summary>
-    /// <param name="categoryId">The category ID.</param>
-    /// <param name="page">The page number (default: 1).</param>
-    /// <param name="pageSize">The number of items per page (default: 20).</param>
-    /// <returns>A paginated list of products in the category.</returns>
-    /// <response code="200">Products retrieved successfully.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpGet("category/{categoryId}")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProductsByCategory([FromRoute] Guid categoryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        try
-        {
-            var result = await _productService.GetProductsByCategoryAsync(categoryId, page, pageSize);
-            return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving products for category: {CategoryId}", categoryId);
-            return StatusCode(500, ApiResponse<PaginatedResult<ProductDto>>.Error("An error occurred while retrieving products"));
-        }
-    }
-
-    /// <summary>
-    /// Filters products by price range.
-    /// </summary>
-    /// <param name="minPrice">The minimum price.</param>
-    /// <param name="maxPrice">The maximum price.</param>
-    /// <param name="page">The page number (default: 1).</param>
-    /// <param name="pageSize">The number of items per page (default: 20).</param>
-    /// <returns>A paginated list of products within the price range.</returns>
-    /// <response code="200">Products retrieved successfully.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpGet("price-range")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProductsByPriceRange([FromQuery] decimal minPrice, [FromQuery] decimal maxPrice, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        try
-        {
-            var result = await _productService.GetProductsByPriceRangeAsync(minPrice, maxPrice, page, pageSize);
-            return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving products by price range: {MinPrice}-{MaxPrice}", minPrice, maxPrice);
-            return StatusCode(500, ApiResponse<PaginatedResult<ProductDto>>.Error("An error occurred while retrieving products"));
-        }
-    }
 
     /// <summary>
     /// Creates a new product (admin only).
@@ -289,43 +200,43 @@ public class ProductsController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<ProductDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto)
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto)
     {
         try
         {
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<ProductDto>.Error("Validation failed", errors));
+                return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
             }
 
             var product = await _productService.UpdateProductAsync(id, updateProductDto);
             if (product == null)
             {
-                return NotFound(ApiResponse<ProductDto>.Error("Product not found"));
+                return NotFound(ApiResponse<ProductDetailDto>.Error("Product not found"));
             }
 
             _logger.LogInformation("Product updated: {ProductId}", id);
-            return Ok(ApiResponse<ProductDto>.Ok(product, "Product updated successfully"));
+            return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product updated successfully"));
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ApiResponse<ProductDto>.Error(ex.Message));
+            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ApiResponse<ProductDto>.Error(ex.Message));
+            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating product: {ProductId}", id);
-            return StatusCode(500, ApiResponse<ProductDto>.Error("An error occurred while updating the product"));
+            return StatusCode(500, ApiResponse<ProductDetailDto>.Error("An error occurred while updating the product"));
         }
     }
 
@@ -366,31 +277,4 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Retrieves products with low stock (admin only).
-    /// </summary>
-    /// <returns>A list of low stock products.</returns>
-    /// <response code="200">Low stock products retrieved successfully.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="403">User does not have permission.</response>
-    /// <response code="500">Internal server error.</response>
-    [HttpGet("admin/low-stock")]
-    [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetLowStockProducts()
-    {
-        try
-        {
-            var products = await _productService.GetLowStockProductsAsync();
-            return Ok(ApiResponse<List<ProductDto>>.Ok(products, "Low stock products retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving low stock products");
-            return StatusCode(500, ApiResponse<List<ProductDto>>.Error("An error occurred while retrieving low stock products"));
-        }
-    }
 }
