@@ -1,0 +1,8 @@
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\ECommerce.API.csproj.AssemblyReference.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\rpswa.dswa.cache.json
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\ECommerce.API.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\ECommerce.API.AssemblyInfoInputs.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\ECommerce.API.AssemblyInfo.cs
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\ECommerce.API.csproj.CoreCompileInputs.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\ECommerce.API.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\obj\Debug\net10.0\ECommerce.API.MvcApplicationPartsAssemblyInfo.cache

@@ -1,0 +1,12 @@
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.csproj.AssemblyReference.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.AssemblyInfoInputs.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.AssemblyInfo.cs
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.csproj.CoreCompileInputs.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\bin\Debug\net10.0\ECommerce.Core.deps.json
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\bin\Debug\net10.0\ECommerce.Core.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\bin\Debug\net10.0\ECommerce.Core.pdb
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\refint\ECommerce.Core.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.pdb
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ref\ECommerce.Core.dll

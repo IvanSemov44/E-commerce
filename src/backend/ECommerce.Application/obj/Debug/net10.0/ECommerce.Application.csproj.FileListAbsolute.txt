@@ -1,0 +1,15 @@
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.csproj.AssemblyReference.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.AssemblyInfoInputs.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.AssemblyInfo.cs
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.csproj.CoreCompileInputs.cache
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Application.deps.json
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Application.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Application.pdb
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Core.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Core.pdb
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerc.670E0CBE.Up2Date
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\refint\ECommerce.Application.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.pdb
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ref\ECommerce.Application.dll
