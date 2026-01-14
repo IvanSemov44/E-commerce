@@ -136,4 +136,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Health check endpoint for Docker
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+    .WithName("Health")
+    .WithOpenApi()
+    .AllowAnonymous();
+
 app.Run();

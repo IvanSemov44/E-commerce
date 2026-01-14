@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ecommerce_db
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourPassword123!"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourPassword123!", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s
+
+  # Backend API
+  api:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    container_name: ecommerce_api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=ECommerceDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
+      Jwt__SecretKey: "your-super-secret-key-min-32-characters-long-must-be-used"
+      Jwt__Issuer: "ecommerce-api"
+      Jwt__Audience: "ecommerce-client"
+      Jwt__ExpireMinutes: "60"
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:5000"
+    ports:
+      - "5000:5000"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Storefront
+  frontend:
+    build:
+      context: ./src/frontend/storefront
+      dockerfile: Dockerfile
+    container_name: ecommerce_frontend
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: "http://localhost:5000/api"
+    ports:
+      - "5173:5173"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5173/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  sqlserver_data:
+    driver: local
+
+networks:
+  ecommerce-network:
+    driver: bridge
