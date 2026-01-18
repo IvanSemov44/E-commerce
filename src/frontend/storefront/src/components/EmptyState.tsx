@@ -11,7 +11,7 @@ interface EmptyStateProps {
 
 export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <Card variant="bordered" padding="lg" className="text-center">
+    <Card variant="bordered" padding="lg">
       {icon && (
         <div className={styles.iconContainer}>
           {icon}

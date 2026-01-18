@@ -30,8 +30,8 @@ export default function Cart() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+    <div>
+      <div>
         <PageHeader title="Shopping Cart" />
 
         {cartItems.length === 0 ? (
@@ -54,14 +54,14 @@ export default function Cart() {
             }
           />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div>
             {/* Cart Items */}
-            <div className="lg:col-span-2">
+            <div>
               <Card variant="elevated" padding="lg">
-                <h2 className="text-2xl font-bold mb-6 text-slate-900">
+                <h2>
                   Items ({cartItems.length} {cartItems.length === 1 ? 'product' : 'products'})
                 </h2>
-                <div className="space-y-4">
+                <div>
                   {cartItems.map((item) => (
                     <CartItem
                       key={item.id}
@@ -75,41 +75,41 @@ export default function Cart() {
             </div>
 
             {/* Order Summary */}
-            <div className="h-fit sticky top-4">
+            <div>
               <Card variant="elevated" padding="lg">
-                <h2 className="text-2xl font-bold mb-6 text-slate-900">Order Summary</h2>
-                <div className="space-y-3 mb-6 pb-6 border-b border-slate-200">
-                  <div className="flex justify-between text-slate-600">
+                <h2>Order Summary</h2>
+                <div>
+                  <div>
                     <span>Subtotal:</span>
-                    <span className="font-semibold text-slate-900">${subtotal.toFixed(2)}</span>
+                    <span>${subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-600">
+                  <div>
                     <span>Shipping:</span>
-                    <span className="font-semibold text-slate-900">
+                    <span>
                       {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
                     </span>
                   </div>
                   {subtotal > 50 && subtotal < 100 && (
-                    <div className="text-sm text-emerald-600 font-medium">
+                    <div>
                       Add ${(100 - subtotal).toFixed(2)} more for free shipping!
                     </div>
                   )}
-                  <div className="flex justify-between text-slate-600">
+                  <div>
                     <span>Tax (8%):</span>
-                    <span className="font-semibold text-slate-900">${tax.toFixed(2)}</span>
+                    <span>${tax.toFixed(2)}</span>
                   </div>
                 </div>
-                <div className="flex justify-between text-lg font-bold mb-6 text-slate-900">
+                <div>
                   <span>Total:</span>
-                  <span className="text-emerald-600">${total.toFixed(2)}</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
-                <Link to="/checkout" className="block mb-3">
-                  <Button size="lg" className="w-full">
+                <Link to="/checkout">
+                  <Button size="lg">
                     Proceed to Checkout
                   </Button>
                 </Link>
-                <Link to="/products" className="block">
-                  <Button variant="secondary" size="lg" className="w-full">
+                <Link to="/products">
+                  <Button variant="secondary" size="lg">
                     Continue Shopping
                   </Button>
                 </Link>
