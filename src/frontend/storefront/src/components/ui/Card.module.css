@@ -1,0 +1,43 @@
+/* Base Card Styles */
+.card {
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+/* Variant Styles */
+.cardDefault {
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.cardBordered {
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.cardElevated {
+  background-color: #ffffff;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.cardGhost {
+  background-color: transparent;
+}
+
+/* Padding Variants */
+.paddingNone {
+  /* no padding */
+}
+
+.paddingSmall {
+  padding: 1rem;
+}
+
+.paddingMedium {
+  padding: 1.5rem;
+}
+
+.paddingLarge {
+  padding: 2rem;
+}

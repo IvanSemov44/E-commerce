@@ -1,0 +1,109 @@
+/* Cart Page Styles */
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 0;
+}
+
+.content {
+  max-width: 1536px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr 1fr 0.8fr;
+  }
+}
+
+.cartItems {
+  grid-column: 1;
+}
+
+@media (min-width: 1024px) {
+  .cartItems {
+    grid-column: 1 / 3;
+  }
+}
+
+.itemsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary {
+  height: fit-content;
+  position: sticky;
+  top: 16px;
+}
+
+.summaryTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+.summaryLines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.summaryLine {
+  display: flex;
+  justify-content: space-between;
+  color: #475569;
+}
+
+.summaryValue {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.freeShippingHint {
+  font-size: 0.875rem;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.totalLine {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+.totalAmount {
+  color: #16a34a;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionButton {
+  width: 100%;
+}

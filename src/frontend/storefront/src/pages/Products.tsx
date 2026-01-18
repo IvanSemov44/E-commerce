@@ -1,62 +1,74 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useGetProductsQuery } from '../store/api/productApi';
+import Button from '../components/ui/Button';
+import ProductCard from '../components/ProductCard';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import ErrorAlert from '../components/ErrorAlert';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import styles from './Products.module.css';
 
 export default function Products() {
   const [page, setPage] = useState(1);
-  const { data: result, isLoading } = useGetProductsQuery({ page, pageSize: 20 });
+  const { data: result, isLoading, error } = useGetProductsQuery({ page, pageSize: 20 });
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">All Products</h1>
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <PageHeader title="All Products" />
 
-        {isLoading ? (
-          <div className="text-center">Loading products...</div>
-        ) : (
+        {error ? (
+          <ErrorAlert message="Failed to load products. Please try again later." />
+        ) : isLoading ? (
+          <div className={styles.grid}>
+            <LoadingSkeleton count={8} type="card" />
+          </div>
+        ) : result && result.items.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {result?.items.map((product) => (
-                <Link key={product.id} to={`/products/${product.slug}`} className="bg-white rounded-lg shadow hover:shadow-lg transition">
-                  <div className="aspect-square bg-gray-200 rounded-t-lg flex items-center justify-center">
-                    <img
-                      src={product.images[0]?.url}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300' }}
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg mb-2">{product.name}</h3>
-                    <p className="text-gray-600 mb-4">${product.price.toFixed(2)}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-yellow-500">★ {product.averageRating}</span>
-                      <span className="text-gray-500 text-sm">({product.reviewCount})</span>
-                    </div>
-                  </div>
-                </Link>
+            <div className={styles.grid}>
+              {result.items.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  slug={product.slug}
+                  price={product.price}
+                  compareAtPrice={product.compareAtPrice}
+                  imageUrl={product.images[0]?.url}
+                  rating={Math.round(product.averageRating)}
+                  reviewCount={product.reviewCount}
+                />
               ))}
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center gap-2">
-              <button
+            <div className={styles.pagination}>
+              <Button
+                variant="secondary"
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 border rounded disabled:opacity-50"
               >
                 Previous
-              </button>
-              <span className="px-4 py-2">Page {page}</span>
-              <button
+              </Button>
+              <span className={styles.pageNumber}>Page {page}</span>
+              <Button
+                variant="secondary"
                 onClick={() => setPage(page + 1)}
                 disabled={!result || result.items.length < 20}
-                className="px-4 py-2 border rounded disabled:opacity-50"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </>
+        ) : (
+          <EmptyState
+            icon={
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+            }
+            title="No products available"
+          />
         )}
       </div>
     </div>

@@ -1,0 +1,23 @@
+/* EmptyState Styles */
+.iconContainer {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 16px;
+  color: #cbd5e1;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.description {
+  color: #475569;
+  margin-bottom: 24px;
+}
+
+.actionContainer {
+  margin-top: 24px;
+}

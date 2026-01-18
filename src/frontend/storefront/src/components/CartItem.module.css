@@ -1,0 +1,109 @@
+/* CartItem Styles */
+.container {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.imageLink {
+  text-decoration: none;
+}
+
+.image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.details {
+  flex: 1;
+}
+
+.nameLink {
+  font-weight: 700;
+  text-decoration: none;
+  color: #0f172a;
+  transition: color 0.2s ease;
+}
+
+.nameLink:hover {
+  color: #16a34a;
+}
+
+.price {
+  color: #475569;
+  margin-top: 4px;
+}
+
+.strikethrough {
+  margin-left: 8px;
+  text-decoration: line-through;
+  font-size: 0.875rem;
+}
+
+.quantityContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.button {
+  padding: 8px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: 700;
+}
+
+.button:hover:not(:disabled) {
+  background-color: #f1f5f9;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantityDisplay {
+  width: 48px;
+  text-align: center;
+}
+
+.maxStockWarning {
+  font-size: 0.75rem;
+  color: #f87171;
+  margin-left: 8px;
+}
+
+.readOnlyQuantity {
+  color: #475569;
+  margin-top: 4px;
+}
+
+.rightSection {
+  text-align: right;
+}
+
+.subtotal {
+  font-weight: 700;
+}
+
+.removeButton {
+  color: #f87171;
+  font-size: 0.875rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: text-decoration 0.2s ease;
+  margin-top: 8px;
+}
+
+.removeButton:hover {
+  text-decoration: underline;
+}

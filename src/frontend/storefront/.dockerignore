@@ -5,8 +5,3 @@ dist/
 .gitignore
 .env.local
 .DS_Store
-src/
-public/
-index.html
-vite.config.ts
-tsconfig*.json

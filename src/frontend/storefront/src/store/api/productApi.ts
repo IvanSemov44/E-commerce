@@ -67,9 +67,11 @@ export const productApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_URL,
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
       }
       return headers;
     },
@@ -78,15 +80,19 @@ export const productApi = createApi({
     getProducts: builder.query<PaginatedResult<Product>, { page?: number; pageSize?: number }>({
       query: ({ page = 1, pageSize = 20 }) =>
         `/products?page=${page}&pageSize=${pageSize}`,
+      transformResponse: (response: ApiResponse<PaginatedResult<Product>>) => response.data || { items: [], totalCount: 0, page: 1, pageSize: 20 },
     }),
     getProductBySlug: builder.query<ProductDetail, string>({
       query: (slug) => `/products/slug/${slug}`,
+      transformResponse: (response: ApiResponse<ProductDetail>) => response.data || {} as ProductDetail,
     }),
     getProductById: builder.query<ProductDetail, string>({
       query: (id) => `/products/${id}`,
+      transformResponse: (response: ApiResponse<ProductDetail>) => response.data || {} as ProductDetail,
     }),
     getFeaturedProducts: builder.query<Product[], number>({
       query: (count = 10) => `/products/featured?count=${count}`,
+      transformResponse: (response: ApiResponse<Product[]>) => response.data || [],
     }),
   }),
 });

@@ -1,26 +1,24 @@
-version: '3.8'
-
 services:
-  # SQL Server Database
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
     container_name: ecommerce_db
     environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "YourPassword123!"
-      MSSQL_PID: Developer
+      POSTGRES_USER: ecommerce
+      POSTGRES_PASSWORD: YourPassword123!
+      POSTGRES_DB: ECommerceDb
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sqlserver_data:/var/opt/mssql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - ecommerce-network
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourPassword123!", "-Q", "SELECT 1"]
+      test: ["CMD-SHELL", "pg_isready -U ecommerce -d ECommerceDb"]
       interval: 10s
       timeout: 3s
       retries: 10
-      start_period: 40s
+      start_period: 20s
 
   # Backend API
   api:
@@ -29,10 +27,10 @@ services:
       dockerfile: Dockerfile
     container_name: ecommerce_api
     depends_on:
-      sqlserver:
+      postgres:
         condition: service_healthy
     environment:
-      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=ECommerceDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=ECommerceDb;Username=ecommerce;Password=YourPassword123!"
       Jwt__SecretKey: "your-super-secret-key-min-32-characters-long-must-be-used"
       Jwt__Issuer: "ecommerce-api"
       Jwt__Audience: "ecommerce-client"
@@ -59,7 +57,7 @@ services:
     depends_on:
       - api
     environment:
-      VITE_API_URL: "http://localhost:5000/api"
+      VITE_API_URL: "http://api:5000/api"
     ports:
       - "5173:5173"
     networks:
@@ -72,7 +70,7 @@ services:
       start_period: 10s
 
 volumes:
-  sqlserver_data:
+  postgres_data:
     driver: local
 
 networks:

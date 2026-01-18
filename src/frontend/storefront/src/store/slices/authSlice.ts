@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
 
 export interface AuthUser {
   id: string;
@@ -20,7 +21,7 @@ export interface AuthState {
 const initialState: AuthState = {
   isAuthenticated: false,
   user: null,
-  token: localStorage.getItem('authToken'),
+  token: typeof window !== 'undefined' ? localStorage.getItem('authToken') : null,
   loading: false,
   error: null,
 };
@@ -38,7 +39,9 @@ export const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.loading = false;
-      localStorage.setItem('authToken', action.payload.token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('authToken', action.payload.token);
+      }
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -49,7 +52,9 @@ export const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.error = null;
-      localStorage.removeItem('authToken');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+      }
     },
     clearError: (state) => {
       state.error = null;

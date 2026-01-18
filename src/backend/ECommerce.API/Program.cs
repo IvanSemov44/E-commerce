@@ -28,10 +28,10 @@ var configuration = builder.Configuration;
 
 // Database configuration
 var connectionString = configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=.;Database=ECommerceDb;Trusted_Connection=true;TrustServerCertificate=true;";
+    ?? "Host=localhost;Database=ECommerceDb;Username=ecommerce;Password=YourPassword123!";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString)
+    options.UseNpgsql(connectionString)
 );
 
 // JWT Authentication configuration
@@ -108,10 +108,15 @@ using (var scope = app.Services.CreateScope())
             Log.Information("Applying pending migrations...");
             context.Database.Migrate();
         }
+
+        // Seed sample data
+        Log.Information("Seeding database with sample data...");
+        await DatabaseSeeder.SeedAsync(context);
+        Log.Information("Database seeding completed.");
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while applying migrations");
+        Log.Error(ex, "An error occurred while applying migrations or seeding database");
     }
 }
 

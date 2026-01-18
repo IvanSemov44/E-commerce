@@ -1,107 +1,253 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { selectCartItems, selectCartSubtotal, clearCart } from '../store/slices/cartSlice';
+
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Card from '../components/ui/Card';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import styles from './Checkout.module.css';
+import CartItem from '@/components/CartItem';
 
 export default function Checkout() {
-  const [step, setStep] = useState(1);
+  const dispatch = useAppDispatch();
+  const cartItems = useAppSelector(selectCartItems);
+  const subtotal = useAppSelector(selectCartSubtotal);
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [orderComplete, setOrderComplete] = useState(false);
+  const [orderNumber, setOrderNumber] = useState('');
 
-        {/* Progress Steps */}
-        <div className="flex justify-between mb-12">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                s <= step ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-              }`}>
-                {s}
-              </div>
-              <span className="mt-2 text-sm">
-                {s === 1 ? 'Shipping' : s === 2 ? 'Payment' : 'Review'}
-              </span>
-            </div>
-          ))}
+  // Calculate totals
+  const shipping = subtotal > 100 ? 0 : 10;
+  const tax = subtotal * 0.08;
+  const total = subtotal + shipping + tax;
+
+  // Form state
+  const [formData, setFormData] = useState({
+    email: '',
+    cardNumber: '',
+    cardName: '',
+    expiry: '',
+    cvv: '',
+  });
+
+  // Redirect if cart is empty
+  if (cartItems.length === 0 && !orderComplete) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.successContent}>
+          <EmptyState
+            title="Your cart is empty"
+            description="Add items to your cart before checking out."
+            action={
+              <Link to="/products">
+                <Button size="lg">Browse Products</Button>
+              </Link>
+            }
+          />
         </div>
+      </div>
+    );
+  }
 
-        {/* Step Content */}
-        <div className="bg-white rounded-lg shadow p-8">
-          {step === 1 && (
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Shipping Address</h2>
-              <form className="space-y-4" onSubmit={() => setStep(2)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" placeholder="First Name" className="border p-2 rounded" />
-                  <input type="text" placeholder="Last Name" className="border p-2 rounded" />
-                  <input type="email" placeholder="Email" className="border p-2 rounded md:col-span-2" />
-                  <input type="text" placeholder="Street Address" className="border p-2 rounded md:col-span-2" />
-                  <input type="text" placeholder="City" className="border p-2 rounded" />
-                  <input type="text" placeholder="State/Province" className="border p-2 rounded" />
-                  <input type="text" placeholder="Postal Code" className="border p-2 rounded" />
-                  <input type="text" placeholder="Country" className="border p-2 rounded" />
-                  <input type="tel" placeholder="Phone" className="border p-2 rounded md:col-span-2" />
-                </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700">
-                  Continue to Payment
-                </button>
-              </form>
-            </div>
-          )}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-          {step === 2 && (
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Payment Method</h2>
-              <form className="space-y-4" onSubmit={() => setStep(3)}>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input type="radio" name="payment" defaultChecked className="mr-2" />
-                    Credit Card
-                  </label>
-                  <label className="flex items-center">
-                    <input type="radio" name="payment" className="mr-2" />
-                    PayPal
-                  </label>
-                </div>
-                <input type="text" placeholder="Card Number" className="border p-2 rounded w-full" />
-                <div className="grid grid-cols-2 gap-4">
-                  <input type="text" placeholder="MM/YY" className="border p-2 rounded" />
-                  <input type="text" placeholder="CVC" className="border p-2 rounded" />
-                </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700">
-                  Review Order
-                </button>
-              </form>
-            </div>
-          )}
+    // Basic validation
+    if (
+      !formData.email ||
+      !formData.cardNumber ||
+      !formData.cardName ||
+      !formData.expiry ||
+      !formData.cvv
+    ) {
+      alert('Please fill in all fields');
+      return;
+    }
 
-          {step === 3 && (
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Order Review</h2>
-              <p className="text-gray-600 mb-6">Please review your order before placing it</p>
-              <button className="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700">
-                Place Order
-              </button>
-            </div>
-          )}
+    // Mock payment processing
+    setIsProcessing(true);
 
-          {/* Navigation */}
-          <div className="flex justify-between mt-6">
-            <button
-              onClick={() => setStep(Math.max(1, step - 1))}
-              disabled={step === 1}
-              className="px-6 py-2 border rounded disabled:opacity-50"
-            >
-              Back
-            </button>
-            {step > 1 && (
-              <button
-                onClick={() => setStep(Math.min(3, step + 1))}
-                disabled={step === 3}
-                className="px-6 py-2 border rounded disabled:opacity-50"
+    // Simulate API call
+    setTimeout(() => {
+      // Generate order number
+      const orderNum =
+        'ORD-' +
+        Date.now().toString(36).toUpperCase() +
+        Math.random().toString(36).slice(2, 7).toUpperCase();
+      setOrderNumber(orderNum);
+      setOrderComplete(true);
+      setIsProcessing(false);
+
+      // Clear cart
+      dispatch(clearCart());
+    }, 2000);
+  };
+
+  // Success screen
+  if (orderComplete) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.successContent}>
+          <Card variant="elevated" padding="lg">
+            <div className={styles.successIcon}>
+              <svg
+                className={styles.successIconSvg}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                Next
-              </button>
-            )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h1 className={styles.successTitle}>Order Placed Successfully!</h1>
+            <p className={styles.successMessage}>Thank you for your purchase.</p>
+            <p className={styles.successOrderNumber}>Order Number: {orderNumber}</p>
+            <p className={styles.successEmail}>A confirmation email has been sent to {formData.email}</p>
+            <div className={styles.successActions}>
+              <Link to="/products" className={styles.successActionLink}>
+                <Button size="lg">Continue Shopping</Button>
+              </Link>
+              <Link to="/" className={styles.successActionLink}>
+                <Button variant="secondary" size="lg">
+                  Return Home
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Checkout form
+  return (
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <PageHeader title="Checkout" />
+
+        <div className={styles.grid}>
+          {/* Payment Form */}
+          <div>
+            <Card variant="elevated" padding="lg">
+              <h2 className={styles.formTitle}>Payment Information</h2>
+
+              <form onSubmit={handleSubmit} className={styles.form}>
+                <Input
+                  label="Email Address"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="your@email.com"
+                  required
+                />
+
+                <div>
+                  <Input
+                    label="Card Number"
+                    type="text"
+                    value={formData.cardNumber}
+                    onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
+                    placeholder="1234 5678 9012 3456"
+                    maxLength={19}
+                    required
+                  />
+                  <p className={styles.inputHint}>
+                    Use any test card number (e.g., 4242 4242 4242 4242)
+                  </p>
+                </div>
+
+                <Input
+                  label="Cardholder Name"
+                  type="text"
+                  value={formData.cardName}
+                  onChange={(e) => setFormData({ ...formData, cardName: e.target.value })}
+                  placeholder="John Doe"
+                  required
+                />
+
+                <div className={styles.formGroup}>
+                  <Input
+                    label="Expiry Date"
+                    type="text"
+                    value={formData.expiry}
+                    onChange={(e) => setFormData({ ...formData, expiry: e.target.value })}
+                    placeholder="MM/YY"
+                    maxLength={5}
+                    required
+                  />
+                  <Input
+                    label="CVV"
+                    type="text"
+                    value={formData.cvv}
+                    onChange={(e) => setFormData({ ...formData, cvv: e.target.value })}
+                    placeholder="123"
+                    maxLength={4}
+                    required
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isProcessing}
+                  size="lg"
+                  className={styles.actionButton}
+                  isLoading={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : `Pay $${total.toFixed(2)}`}
+                </Button>
+              </form>
+            </Card>
+          </div>
+
+          {/* Order Summary */}
+          <div className={styles.summary}>
+            <Card variant="elevated" padding="lg">
+              <h2 className={styles.summaryTitle}>Order Summary</h2>
+
+              {/* Items */}
+              <div className={styles.itemsList}>
+                {cartItems.map((item) => (
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    onUpdateQuantity={() => {}}
+                    onRemove={() => {}}
+                    readOnly={true}
+                  />
+                ))}
+              </div>
+
+              {/* Totals */}
+              <div className={styles.totalsSection}>
+                <div className={styles.totalLine}>
+                  <span>Subtotal:</span>
+                  <span className={styles.totalValue}>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className={styles.totalLine}>
+                  <span>Shipping:</span>
+                  <span className={styles.totalValue}>
+                    {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+                  </span>
+                </div>
+                <div className={styles.totalLine}>
+                  <span>Tax:</span>
+                  <span className={styles.totalValue}>${tax.toFixed(2)}</span>
+                </div>
+              </div>
+              <div className={styles.grandTotal}>
+                <span>Total:</span>
+                <span className={styles.grandTotalAmount}>${total.toFixed(2)}</span>
+              </div>
+            </Card>
           </div>
         </div>
       </div>

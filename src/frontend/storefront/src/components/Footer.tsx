@@ -1,54 +1,55 @@
 import { Link } from 'react-router-dom';
+import styles from './Footer.module.css';
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-800 text-gray-300 mt-16">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className={styles.footer}>
+      <div className={styles.container}>
+        <div className={styles.grid}>
           {/* Company */}
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4">Company</h3>
-            <ul className="space-y-2">
-              <li><Link to="/" className="hover:text-white">About Us</Link></li>
-              <li><Link to="/" className="hover:text-white">Careers</Link></li>
-              <li><Link to="/" className="hover:text-white">Press</Link></li>
-              <li><Link to="/" className="hover:text-white">Blog</Link></li>
+          <div className={styles.section}>
+            <h3>Company</h3>
+            <ul className={styles.links}>
+              <li><Link to="/">About Us</Link></li>
+              <li><Link to="/">Careers</Link></li>
+              <li><Link to="/">Press</Link></li>
+              <li><Link to="/">Blog</Link></li>
             </ul>
           </div>
 
           {/* Support */}
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li><Link to="/" className="hover:text-white">Help Center</Link></li>
-              <li><Link to="/" className="hover:text-white">Contact Us</Link></li>
-              <li><Link to="/" className="hover:text-white">Track Order</Link></li>
-              <li><Link to="/" className="hover:text-white">Returns</Link></li>
+          <div className={styles.section}>
+            <h3>Support</h3>
+            <ul className={styles.links}>
+              <li><Link to="/">Help Center</Link></li>
+              <li><Link to="/">Contact Us</Link></li>
+              <li><Link to="/">Track Order</Link></li>
+              <li><Link to="/">Returns</Link></li>
             </ul>
           </div>
 
           {/* Legal */}
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4">Legal</h3>
-            <ul className="space-y-2">
-              <li><Link to="/" className="hover:text-white">Privacy Policy</Link></li>
-              <li><Link to="/" className="hover:text-white">Terms of Service</Link></li>
-              <li><Link to="/" className="hover:text-white">Cookies</Link></li>
-              <li><Link to="/" className="hover:text-white">Security</Link></li>
+          <div className={styles.section}>
+            <h3>Legal</h3>
+            <ul className={styles.links}>
+              <li><Link to="/">Privacy Policy</Link></li>
+              <li><Link to="/">Terms of Service</Link></li>
+              <li><Link to="/">Cookies</Link></li>
+              <li><Link to="/">Security</Link></li>
             </ul>
           </div>
 
           {/* Newsletter */}
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4">Newsletter</h3>
-            <p className="text-sm mb-4">Subscribe to get special offers and updates</p>
-            <form className="flex" onSubmit={(e) => e.preventDefault()}>
+          <div className={styles.newsletter}>
+            <h3>Newsletter</h3>
+            <p className={styles.newsletterText}>Subscribe to get special offers and updates</p>
+            <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
               <input
                 type="email"
                 placeholder="Your email"
-                className="flex-grow px-3 py-2 rounded-l text-black"
+                className={styles.emailInput}
               />
-              <button className="bg-blue-600 px-4 py-2 rounded-r hover:bg-blue-700">
+              <button className={styles.subscribeButton}>
                 Subscribe
               </button>
             </form>
@@ -56,12 +57,12 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-gray-700 pt-8 flex justify-between items-center">
+        <div className={styles.bottom}>
           <p>&copy; 2026 E-Commerce. All rights reserved.</p>
-          <div className="flex gap-4">
-            <a href="#" className="hover:text-white">Facebook</a>
-            <a href="#" className="hover:text-white">Twitter</a>
-            <a href="#" className="hover:text-white">Instagram</a>
+          <div className={styles.socialLinks}>
+            <a href="#">Facebook</a>
+            <a href="#">Twitter</a>
+            <a href="#">Instagram</a>
           </div>
         </div>
       </div>

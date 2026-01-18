@@ -1,0 +1,172 @@
+/* Checkout Page Styles */
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 0;
+}
+
+.content {
+  max-width: 1536px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.successContent {
+  max-width: 896px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.formSection {
+  grid-column: 1;
+}
+
+.formTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.formGroupFull {
+  grid-column: 1 / -1;
+}
+
+.inputHint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.summary {
+  height: fit-content;
+  position: sticky;
+  top: 16px;
+}
+
+.summaryTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+.itemsList {
+  max-height: 256px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.totalsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.totalLine {
+  display: flex;
+  justify-content: space-between;
+  color: #475569;
+}
+
+.totalValue {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.grandTotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 24px;
+}
+
+.grandTotalAmount {
+  color: #16a34a;
+}
+
+.successIcon {
+  width: 80px;
+  height: 80px;
+  background-color: #16a34a;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.successIconSvg {
+  width: 48px;
+  height: 48px;
+  color: #ffffff;
+}
+
+.successTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #16a34a;
+  text-align: center;
+}
+
+.successMessage {
+  color: #475569;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.successOrderNumber {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #0f172a;
+  text-align: center;
+}
+
+.successEmail {
+  color: #475569;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.successActions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.successActionLink {
+  text-decoration: none;
+}

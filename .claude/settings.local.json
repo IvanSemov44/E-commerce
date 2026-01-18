@@ -12,7 +12,14 @@
       "Bash(npm create:*)",
       "Bash(npm install:*)",
       "Bash(dotnet ef migrations:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

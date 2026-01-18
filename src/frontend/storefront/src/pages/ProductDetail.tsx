@@ -1,96 +1,221 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useGetProductBySlugQuery } from '../store/api/productApi';
+import { DEFAULT_PRODUCT_IMAGE } from '../utils/constants';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { addItem, selectCartItemById } from '../store/slices/cartSlice';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import ErrorAlert from '../components/ErrorAlert';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import EmptyState from '../components/EmptyState';
+import styles from './ProductDetail.module.css';
 
 export default function ProductDetail() {
   const { slug = '' } = useParams();
-  const { data: product, isLoading } = useGetProductBySlugQuery(slug);
+  const { data: product, isLoading, error } = useGetProductBySlugQuery(slug);
 
-  if (isLoading) return <div className="text-center py-8">Loading...</div>;
-  if (!product) return <div className="text-center py-8">Product not found</div>;
+  const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const dispatch = useAppDispatch();
+  const cartItem = useAppSelector((state) => {
+    if (!product?.id) return undefined;
+    return selectCartItemById(product.id)(state);
+  });
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <LoadingSkeleton count={1} type="image" />
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <ErrorAlert message="Failed to load product. Please try again." />
+        </div>
+      </div>
+    );
+  }
+  if (!product) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <EmptyState title="Product not found" description="The product you're looking for doesn't exist." />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <Card variant="default" padding="lg">
+          <div className={styles.grid}>
             {/* Images */}
-            <div>
-              <div className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center mb-4">
+            <div className={styles.imageSection}>
+              <div className={styles.mainImage}>
                 <img
                   src={product.images[0]?.url}
                   alt={product.name}
-                  className="w-full h-full object-cover rounded-lg"
-                  onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/500' }}
+                  onError={(e) => { e.currentTarget.src = DEFAULT_PRODUCT_IMAGE }}
                 />
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {product.images.slice(1).map((img) => (
-                  <img
-                    key={img.id}
-                    src={img.url}
-                    alt={img.altText || 'Product'}
-                    className="w-full h-20 object-cover rounded cursor-pointer"
-                    onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100' }}
-                  />
-                ))}
-              </div>
+              {product.images.length > 1 && (
+                <div className={styles.thumbnailGrid}>
+                  {product.images.slice(1).map((img) => (
+                    <img
+                      key={img.id}
+                      src={img.url}
+                      alt={img.altText || 'Product'}
+                      className={styles.thumbnail}
+                      onError={(e) => { e.currentTarget.src = DEFAULT_PRODUCT_IMAGE }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Details */}
-            <div>
-              <h1 className="text-4xl font-bold mb-2">{product.name}</h1>
-              <div className="flex items-center mb-4">
-                <span className="text-yellow-500 text-xl">★ {product.averageRating}</span>
-                <span className="text-gray-600 ml-2">({product.reviewCount} reviews)</span>
+            <div className={styles.details}>
+              <h1>{product.name}</h1>
+
+              <div className={styles.rating}>
+                <div className={styles.ratingContainer}>
+                  <span className={styles.ratingIcon}>★</span>
+                  <span className={styles.ratingValue}>{product.averageRating}</span>
+                </div>
+                <span className={styles.ratingCount}>({product.reviewCount} reviews)</span>
               </div>
 
-              <div className="mb-6">
-                <span className="text-3xl font-bold text-blue-600">${product.price.toFixed(2)}</span>
-                {product.compareAtPrice && (
-                  <span className="text-lg text-gray-500 line-through ml-4">${product.compareAtPrice.toFixed(2)}</span>
+              <div className={styles.priceSection}>
+                <div className={styles.priceContainer}>
+                  <span className={styles.pricePrimary}>${product.price.toFixed(2)}</span>
+                  {product.compareAtPrice && (
+                    <span className={styles.priceCompare}>${product.compareAtPrice.toFixed(2)}</span>
+                  )}
+                </div>
+              </div>
+
+              <p className={styles.description}>{product.description}</p>
+
+              <div className={styles.stockSection}>
+                <p className={`${styles.stockLabel} ${product.stockQuantity > 0 ? styles.inStock : styles.outOfStock}`}>
+                  {product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock'}
+                </p>
+                {product.stockQuantity > 0 && product.stockQuantity <= product.lowStockThreshold && (
+                  <p className={styles.lowStockWarning}>⚠ Only {product.stockQuantity} left!</p>
                 )}
               </div>
 
-              <p className="text-gray-700 mb-6">{product.description}</p>
-
-              <div className="mb-6">
-                <p className="text-sm text-gray-600">Stock: {product.stockQuantity} available</p>
-                {product.stockQuantity <= product.lowStockThreshold && (
-                  <p className="text-red-500 text-sm">Only {product.stockQuantity} left!</p>
-                )}
+              <div className={styles.quantitySection}>
+                <label className={styles.quantityLabel}>Quantity:</label>
+                <div className={styles.quantityControls}>
+                  <div className={styles.quantityButtonGroup}>
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className={styles.quantityButton}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        setQuantity(Math.min(product.stockQuantity, Math.max(1, val)));
+                      }}
+                      className={styles.quantityInput}
+                      min="1"
+                      max={product.stockQuantity}
+                    />
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                      disabled={quantity >= product.stockQuantity}
+                      className={styles.quantityButton}
+                    >
+                      +
+                    </button>
+                  </div>
+                  {cartItem && (
+                    <span className={styles.cartHint}>
+                      ({cartItem.quantity} in cart)
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 mb-4">
-                Add to Cart
-              </button>
-              <button className="w-full border-2 border-gray-300 py-3 rounded-lg font-bold hover:border-gray-400">
-                Add to Wishlist
-              </button>
+              <div className={styles.actions}>
+                <Button
+                  onClick={() => {
+                    const currentInCart = cartItem?.quantity || 0;
+                    const totalQuantity = currentInCart + quantity;
+
+                    if (totalQuantity > product.stockQuantity) {
+                      alert(`Only ${product.stockQuantity} items available. You already have ${currentInCart} in cart.`);
+                      return;
+                    }
+
+                    dispatch(
+                      addItem({
+                        id: product.id,
+                        name: product.name,
+                        slug: product.slug,
+                        price: product.price,
+                        quantity,
+                        maxStock: product.stockQuantity,
+                        image: product.images[0]?.url || DEFAULT_PRODUCT_IMAGE,
+                        compareAtPrice: product.compareAtPrice,
+                      })
+                    );
+
+                    setAddedToCart(true);
+                    setTimeout(() => setAddedToCart(false), 2000);
+                    setQuantity(1);
+                  }}
+                  disabled={product.stockQuantity === 0 || addedToCart}
+                  size="lg"
+                >
+                  {product.stockQuantity === 0 ? 'Out of Stock' : addedToCart ? '✓ Added to Cart!' : 'Add to Cart'}
+                </Button>
+                <Button variant="secondary" size="lg">
+                  Add to Wishlist
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Reviews */}
-          <div className="mt-12 pt-8 border-t">
-            <h2 className="text-2xl font-bold mb-6">Reviews</h2>
+          <div className={styles.reviewsSection}>
+            <h2 className={styles.reviewsTitle}>Customer Reviews</h2>
             {product.reviews.length === 0 ? (
-              <p className="text-gray-600">No reviews yet</p>
+              <div className={styles.noReviewsMessage}>
+                <p className={styles.noReviewsText}>No reviews yet. Be the first to review this product!</p>
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className={styles.reviewsList}>
                 {product.reviews.map((review) => (
-                  <div key={review.id} className="border-b pb-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-bold">{review.userName}</span>
-                      <span className="text-yellow-500">★ {review.rating}</span>
+                  <div key={review.id} className={styles.review}>
+                    <div className={styles.reviewHeader}>
+                      <span className={styles.reviewAuthor}>{review.userName}</span>
+                      <div className={styles.reviewRating}>
+                        <span className={styles.reviewRatingIcon}>★</span>
+                        <span className={styles.reviewRatingValue}>{review.rating}</span>
+                      </div>
                     </div>
-                    {review.title && <h4 className="font-semibold mb-1">{review.title}</h4>}
-                    <p className="text-gray-700 mb-2">{review.comment}</p>
-                    <span className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</span>
+                    {review.title && <h4 className={styles.reviewTitle}>{review.title}</h4>}
+                    <p className={styles.reviewComment}>{review.comment}</p>
+                    <span className={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
