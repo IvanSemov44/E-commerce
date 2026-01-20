@@ -4,6 +4,7 @@ using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Cart;
+using ECommerce.Application.DTOs;
 
 namespace ECommerce.Application;
 
@@ -21,19 +22,38 @@ public class MappingProfile : Profile
         // Product mappings
         CreateMap<Product, ProductDto>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
+            .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src =>
+                src.Reviews.Any() ? src.Reviews.Average(r => (decimal)r.Rating) : 0))
+            .ForMember(dest => dest.ReviewCount, opt => opt.MapFrom(src => src.Reviews.Count))
             .ReverseMap();
 
         CreateMap<Product, ProductDetailDto>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
             .ForMember(dest => dest.Reviews, opt => opt.MapFrom(src => src.Reviews))
+            .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src =>
+                src.Reviews.Any() ? src.Reviews.Average(r => (decimal)r.Rating) : 0))
+            .ForMember(dest => dest.ReviewCount, opt => opt.MapFrom(src => src.Reviews.Count))
             .ReverseMap();
 
         CreateMap<CreateProductDto, Product>();
         CreateMap<UpdateProductDto, Product>();
 
-        // Category mappings
-        CreateMap<Category, CategoryDto>()
+        // Category mappings (from Products folder)
+        CreateMap<Category, DTOs.Products.CategoryDto>()
             .ReverseMap();
+
+        // Category mappings (from new DTOs folder)
+        CreateMap<Category, DTOs.CategoryDto>()
+            .ForMember(dest => dest.ProductCount, opt => opt.Ignore());
+
+        CreateMap<Category, CategoryDetailDto>()
+            .ForMember(dest => dest.ProductCount, opt => opt.Ignore())
+            .ForMember(dest => dest.Parent, opt => opt.MapFrom(src => src.Parent))
+            .ForMember(dest => dest.Children, opt => opt.MapFrom(src => src.Children));
+
+        CreateMap<CreateCategoryDto, Category>();
+        CreateMap<UpdateCategoryDto, Category>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // ProductImage mappings
         CreateMap<ProductImage, ProductImageDto>()

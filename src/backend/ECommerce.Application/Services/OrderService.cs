@@ -1,0 +1,322 @@
+using AutoMapper;
+using ECommerce.Application.DTOs.Orders;
+using ECommerce.Application.DTOs.Common;
+using ECommerce.Core.Entities;
+using ECommerce.Core.Enums;
+using ECommerce.Core.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
+
+namespace ECommerce.Application.Services;
+
+/// <summary>
+/// Service for managing orders.
+/// </summary>
+public class OrderService : IOrderService
+{
+    private readonly IOrderRepository _orderRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IProductRepository _productRepository;
+    private readonly IMapper _mapper;
+    private readonly ILogger<OrderService> _logger;
+
+    public OrderService(
+        IOrderRepository orderRepository,
+        IUserRepository userRepository,
+        IProductRepository productRepository,
+        IMapper mapper,
+        ILogger<OrderService> logger)
+    {
+        _orderRepository = orderRepository;
+        _userRepository = userRepository;
+        _productRepository = productRepository;
+        _mapper = mapper;
+        _logger = logger;
+    }
+
+    public async Task<OrderDetailDto> CreateOrderAsync(Guid userId, CreateOrderDto dto)
+    {
+        _logger.LogInformation("Creating order for user {UserId}", userId);
+
+        try
+        {
+            // Verify user exists
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new ArgumentException($"User {userId} not found");
+            }
+
+            // Create order entity
+            var order = new Order
+            {
+                OrderNumber = GenerateOrderNumber(),
+                UserId = userId,
+                Status = OrderStatus.Pending,
+                PaymentStatus = PaymentStatus.Pending,
+                PaymentMethod = dto.PaymentMethod,
+                Currency = "USD"
+            };
+
+            // Map shipping address
+            if (dto.ShippingAddress != null)
+            {
+                var shippingAddress = new Address
+                {
+                    UserId = userId,
+                    Type = "Shipping",
+                    FirstName = dto.ShippingAddress.FirstName,
+                    LastName = dto.ShippingAddress.LastName,
+                    Company = dto.ShippingAddress.Company,
+                    StreetLine1 = dto.ShippingAddress.StreetLine1,
+                    StreetLine2 = dto.ShippingAddress.StreetLine2,
+                    City = dto.ShippingAddress.City,
+                    State = dto.ShippingAddress.State,
+                    PostalCode = dto.ShippingAddress.PostalCode,
+                    Country = NormalizeCountryCode(dto.ShippingAddress.Country),
+                    Phone = dto.ShippingAddress.Phone,
+                    IsDefault = false
+                };
+                order.ShippingAddress = shippingAddress;
+            }
+
+            // Map billing address (or use shipping if not provided)
+            if (dto.BillingAddress != null)
+            {
+                var billingAddress = new Address
+                {
+                    UserId = userId,
+                    Type = "Billing",
+                    FirstName = dto.BillingAddress.FirstName,
+                    LastName = dto.BillingAddress.LastName,
+                    Company = dto.BillingAddress.Company,
+                    StreetLine1 = dto.BillingAddress.StreetLine1,
+                    StreetLine2 = dto.BillingAddress.StreetLine2,
+                    City = dto.BillingAddress.City,
+                    State = dto.BillingAddress.State,
+                    PostalCode = dto.BillingAddress.PostalCode,
+                    Country = NormalizeCountryCode(dto.BillingAddress.Country),
+                    Phone = dto.BillingAddress.Phone,
+                    IsDefault = false
+                };
+                order.BillingAddress = billingAddress;
+            }
+            else if (dto.ShippingAddress != null)
+            {
+                // Use shipping address as billing address if not provided
+                var billingAddress = new Address
+                {
+                    UserId = userId,
+                    Type = "Billing",
+                    FirstName = dto.ShippingAddress.FirstName,
+                    LastName = dto.ShippingAddress.LastName,
+                    Company = dto.ShippingAddress.Company,
+                    StreetLine1 = dto.ShippingAddress.StreetLine1,
+                    StreetLine2 = dto.ShippingAddress.StreetLine2,
+                    City = dto.ShippingAddress.City,
+                    State = dto.ShippingAddress.State,
+                    PostalCode = dto.ShippingAddress.PostalCode,
+                    Country = NormalizeCountryCode(dto.ShippingAddress.Country),
+                    Phone = dto.ShippingAddress.Phone,
+                    IsDefault = false
+                };
+                order.BillingAddress = billingAddress;
+            }
+
+            // Calculate totals (simplified - in real app would come from cart)
+            // For now, just set defaults
+            order.Subtotal = 0;
+            order.DiscountAmount = 0;
+            order.ShippingAmount = 10.00m; // Default shipping
+            order.TaxAmount = 0;
+            order.TotalAmount = order.ShippingAmount;
+
+            await _orderRepository.AddAsync(order);
+            await _orderRepository.SaveChangesAsync();
+
+            _logger.LogInformation("Order created successfully: {OrderNumber}", order.OrderNumber);
+
+            return _mapper.Map<OrderDetailDto>(order);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating order for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<OrderDetailDto?> GetOrderByIdAsync(Guid id)
+    {
+        _logger.LogInformation("Retrieving order {OrderId}", id);
+
+        var order = await _orderRepository.GetWithItemsAsync(id);
+        return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
+    }
+
+    public async Task<OrderDetailDto?> GetOrderByNumberAsync(string orderNumber)
+    {
+        _logger.LogInformation("Retrieving order {OrderNumber}", orderNumber);
+
+        var order = await _orderRepository.GetByOrderNumberAsync(orderNumber);
+        return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
+    }
+
+    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, int page = 1, int pageSize = 10)
+    {
+        _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, page);
+
+        var totalCount = await _orderRepository.GetUserOrdersCountAsync(userId);
+        var orders = await _orderRepository.GetUserOrdersAsync(userId, (page - 1) * pageSize, pageSize);
+        var dtos = orders.Select(o => _mapper.Map<OrderDto>(o)).ToList();
+
+        return new PaginatedResult<OrderDto>
+        {
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<OrderDetailDto> UpdateOrderStatusAsync(Guid id, string status)
+    {
+        _logger.LogInformation("Updating order {OrderId} status to {Status}", id, status);
+
+        var order = await _orderRepository.GetByIdAsync(id);
+        if (order == null)
+        {
+            throw new ArgumentException($"Order {id} not found");
+        }
+
+        // Validate status
+        if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var orderStatus))
+        {
+            throw new ArgumentException($"Invalid order status: {status}");
+        }
+
+        order.Status = orderStatus;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        // Update timestamps based on status
+        if (orderStatus == OrderStatus.Shipped)
+        {
+            order.ShippedAt = DateTime.UtcNow;
+        }
+        else if (orderStatus == OrderStatus.Delivered)
+        {
+            order.DeliveredAt = DateTime.UtcNow;
+        }
+        else if (orderStatus == OrderStatus.Cancelled)
+        {
+            order.CancelledAt = DateTime.UtcNow;
+        }
+
+        await _orderRepository.UpdateAsync(order);
+        await _orderRepository.SaveChangesAsync();
+
+        _logger.LogInformation("Order {OrderId} status updated to {Status}", id, status);
+
+        return _mapper.Map<OrderDetailDto>(order);
+    }
+
+    public async Task<bool> CancelOrderAsync(Guid id)
+    {
+        _logger.LogInformation("Cancelling order {OrderId}", id);
+
+        var order = await _orderRepository.GetByIdAsync(id);
+        if (order == null)
+        {
+            return false;
+        }
+
+        // Can't cancel if already shipped or delivered
+        if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
+        {
+            throw new InvalidOperationException($"Cannot cancel order with status {order.Status}");
+        }
+
+        order.Status = OrderStatus.Cancelled;
+        order.CancelledAt = DateTime.UtcNow;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        await _orderRepository.UpdateAsync(order);
+        await _orderRepository.SaveChangesAsync();
+
+        _logger.LogInformation("Order {OrderId} cancelled successfully", id);
+
+        return true;
+    }
+
+    public async Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(int page = 1, int pageSize = 20)
+    {
+        _logger.LogInformation("Retrieving all orders, page {Page}", page);
+
+        var allOrders = await _orderRepository.GetAllAsync();
+        var totalCount = allOrders.Count();
+
+        var orders = allOrders
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        var dtos = orders.Select(o => _mapper.Map<OrderDto>(o)).ToList();
+
+        return new PaginatedResult<OrderDto>
+        {
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    /// <summary>
+    /// Generate a unique order number.
+    /// </summary>
+    private string GenerateOrderNumber()
+    {
+        // Format: ORD-YYYYMMDD-XXXXXX (e.g., ORD-20250120-A1B2C3)
+        var date = DateTime.UtcNow.ToString("yyyyMMdd");
+        var random = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
+        return $"ORD-{date}-{random}";
+    }
+
+    /// <summary>
+    /// Normalize country name to 2-letter ISO country code.
+    /// </summary>
+    private string NormalizeCountryCode(string country)
+    {
+        if (string.IsNullOrEmpty(country))
+            return "US";
+
+        // If already 2 characters, assume it's a code
+        if (country.Length == 2)
+            return country.ToUpper();
+
+        // Common country name to code mappings
+        var countryMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "United States", "US" },
+            { "USA", "US" },
+            { "Canada", "CA" },
+            { "United Kingdom", "UK" },
+            { "UK", "UK" },
+            { "Mexico", "MX" },
+            { "Germany", "DE" },
+            { "France", "FR" },
+            { "Italy", "IT" },
+            { "Spain", "ES" },
+            { "Japan", "JP" },
+            { "China", "CN" },
+            { "India", "IN" },
+            { "Australia", "AU" },
+            { "Brazil", "BR" }
+        };
+
+        if (countryMap.TryGetValue(country, out var code))
+            return code;
+
+        // Default: take first 2 characters
+        return country.Substring(0, Math.Min(2, country.Length)).ToUpper();
+    }
+}

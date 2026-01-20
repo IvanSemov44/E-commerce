@@ -63,7 +63,15 @@ public class ProductService : IProductService
 
     public async Task<ProductDetailDto> CreateProductAsync(CreateProductDto dto)
     {
+        // Validate slug uniqueness
+        if (!await _productRepository.IsSlugUniqueAsync(dto.Slug))
+        {
+            throw new ArgumentException($"Product with slug '{dto.Slug}' already exists");
+        }
+
         var product = _mapper.Map<Product>(dto);
+        product.IsActive = true;
+
         await _productRepository.AddAsync(product);
         await _productRepository.SaveChangesAsync();
         return _mapper.Map<ProductDetailDto>(product);
@@ -73,9 +81,20 @@ public class ProductService : IProductService
     {
         var product = await _productRepository.GetByIdAsync(id);
         if (product == null)
-            throw new Exception("Product not found");
+            throw new ArgumentException($"Product with ID {id} not found");
+
+        // Validate slug uniqueness if changed
+        if (!string.IsNullOrEmpty(dto.Slug) && dto.Slug != product.Slug)
+        {
+            if (!await _productRepository.IsSlugUniqueAsync(dto.Slug, id))
+            {
+                throw new ArgumentException($"Product with slug '{dto.Slug}' already exists");
+            }
+        }
 
         _mapper.Map(dto, product);
+        product.UpdatedAt = DateTime.UtcNow;
+
         await _productRepository.UpdateAsync(product);
         await _productRepository.SaveChangesAsync();
         return _mapper.Map<ProductDetailDto>(product);

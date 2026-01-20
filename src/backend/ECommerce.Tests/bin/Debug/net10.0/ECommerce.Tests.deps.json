@@ -1747,6 +1747,7 @@
       },
       "ECommerce.Infrastructure/1.0.0": {
         "dependencies": {
+          "BCrypt.Net-Next": "4.0.3",
           "CloudinaryDotNet": "1.27.9",
           "ECommerce.Core": "1.0.0",
           "Microsoft.EntityFrameworkCore": "10.0.2",

@@ -1,0 +1,34 @@
+using ECommerce.Application.DTOs.Payments;
+
+namespace ECommerce.Application.Services;
+
+/// <summary>
+/// Service for handling payment processing (mocked for Stripe/PayPal).
+/// </summary>
+public interface IPaymentService
+{
+    /// <summary>
+    /// Process a payment for an order.
+    /// </summary>
+    Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto);
+
+    /// <summary>
+    /// Verify payment status from payment provider.
+    /// </summary>
+    Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid orderId);
+
+    /// <summary>
+    /// Refund a payment.
+    /// </summary>
+    Task<RefundResponseDto> RefundPaymentAsync(RefundPaymentDto dto);
+
+    /// <summary>
+    /// Check if a payment intent exists and its status.
+    /// </summary>
+    Task<PaymentDetailsDto?> GetPaymentIntentAsync(string paymentIntentId);
+
+    /// <summary>
+    /// Validate payment method is supported.
+    /// </summary>
+    Task<bool> IsPaymentMethodSupportedAsync(string paymentMethod);
+}

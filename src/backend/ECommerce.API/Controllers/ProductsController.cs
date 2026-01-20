@@ -156,33 +156,34 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<ProductDto>>> CreateProduct([FromBody] CreateProductDto createProductDto)
+    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto)
     {
         try
         {
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<ProductDto>.Error("Validation failed", errors));
+                return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
             }
 
             var product = await _productService.CreateProductAsync(createProductDto);
             _logger.LogInformation("Product created: {ProductId}", product.Id);
 
-            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, ApiResponse<ProductDto>.Ok(product, "Product created successfully"));
+            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, ApiResponse<ProductDetailDto>.Ok(product, "Product created successfully"));
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ApiResponse<ProductDto>.Error(ex.Message));
+            _logger.LogWarning("Product creation validation failed: {Message}", ex.Message);
+            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ApiResponse<ProductDto>.Error(ex.Message));
+            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating product");
-            return StatusCode(500, ApiResponse<ProductDto>.Error("An error occurred while creating the product"));
+            return StatusCode(500, ApiResponse<ProductDetailDto>.Error("An error occurred while creating the product"));
         }
     }
 
@@ -217,16 +218,13 @@ public class ProductsController : ControllerBase
             }
 
             var product = await _productService.UpdateProductAsync(id, updateProductDto);
-            if (product == null)
-            {
-                return NotFound(ApiResponse<ProductDetailDto>.Error("Product not found"));
-            }
 
             _logger.LogInformation("Product updated: {ProductId}", id);
             return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product updated successfully"));
         }
         catch (ArgumentException ex)
         {
+            _logger.LogWarning("Product update validation failed: {Message}", ex.Message);
             return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
         }
         catch (InvalidOperationException ex)
