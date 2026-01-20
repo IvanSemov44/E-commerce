@@ -3,6 +3,7 @@ using ECommerce.Application.Services;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Data;
+using ECommerce.Infrastructure.Data.Seeders;
 using ECommerce.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -88,6 +89,12 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+// Register seeders
+builder.Services.AddScoped<IUserSeeder, UserSeeder>();
+builder.Services.AddScoped<ICategorySeeder, CategorySeeder>();
+builder.Services.AddScoped<IProductSeeder, ProductSeeder>();
+builder.Services.AddScoped<DatabaseSeeder>();
+
 // Add logging
 builder.Services.AddLogging();
 
@@ -115,7 +122,8 @@ using (var scope = app.Services.CreateScope())
 
         // Seed sample data
         Log.Information("Seeding database with sample data...");
-        await DatabaseSeeder.SeedAsync(context);
+        var seeder = services.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedAsync(context);
         Log.Information("Database seeding completed.");
     }
     catch (Exception ex)
