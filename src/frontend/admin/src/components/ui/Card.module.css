@@ -1,0 +1,44 @@
+.card {
+  border-radius: 0.75rem;
+  background-color: white;
+}
+
+.cardDefault {
+  border: 1px solid #e2e8f0;
+}
+
+.cardElevated {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.cardOutlined {
+  border: 2px solid #cbd5e1;
+}
+
+.cardHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cardContent {
+  padding: 1.5rem;
+}
+
+.cardFooter {
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}

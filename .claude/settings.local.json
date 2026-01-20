@@ -20,7 +20,12 @@
       "Bash(curl:*)",
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run dev)",
+      "Bash(python3:*)",
+      "Bash(taskkill:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)"
     ]
   }
 }
