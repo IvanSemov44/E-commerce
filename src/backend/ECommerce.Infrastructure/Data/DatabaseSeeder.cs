@@ -1,5 +1,7 @@
 using ECommerce.Core.Entities;
+using ECommerce.Core.Enums;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace ECommerce.Infrastructure.Data;
 
@@ -13,6 +15,26 @@ public class DatabaseSeeder
             if (await context.Products.AnyAsync())
             {
                 return; // Database already seeded
+            }
+
+            // Create admin user if not exists
+            if (!await context.Users.AnyAsync())
+            {
+                var adminUser = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "admin@example.com",
+                    FirstName = "Admin",
+                    LastName = "User",
+                    Phone = "+1-555-0001",
+                    Role = UserRole.Admin,
+                    IsEmailVerified = true,
+                    PasswordHash = HashPassword("Admin123"),
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await context.Users.AddAsync(adminUser);
+                await context.SaveChangesAsync();
             }
 
             // Create categories
@@ -232,5 +254,10 @@ public class DatabaseSeeder
         {
             Console.WriteLine($"Error seeding database: {ex.Message}");
         }
+    }
+
+    private static string HashPassword(string password)
+    {
+        return BCrypt.Net.BCrypt.HashPassword(password);
     }
 }
