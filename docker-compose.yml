@@ -48,12 +48,33 @@ services:
       retries: 3
       start_period: 40s
 
+  # Frontend Admin
+  admin:
+    build:
+      context: ./src/frontend
+      dockerfile: admin/Dockerfile
+    container_name: ecommerce_admin
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: "http://api:5000/api"
+    ports:
+      - "5177:5177"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5177/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # Frontend Storefront
-  frontend:
+  storefront:
     build:
       context: ./src/frontend/storefront
       dockerfile: Dockerfile
-    container_name: ecommerce_frontend
+    container_name: ecommerce_storefront
     depends_on:
       - api
     environment:

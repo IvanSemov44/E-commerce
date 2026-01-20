@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../store/api/authApi';
 import { useAppDispatch } from '../store/hooks';
-import { loginSuccess } from '../store/slices/authSlice';
+import { loginSuccess, type AdminUser } from '../store/slices/authSlice';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -28,7 +28,7 @@ export default function Login() {
     try {
       const response = await login({ email, password }).unwrap();
       if (response.success && response.user && response.token) {
-        dispatch(loginSuccess({ user: response.user, token: response.token }));
+        dispatch(loginSuccess({ user: response.user as AdminUser, token: response.token }));
         navigate('/');
       } else {
         setError(response.message || 'Login failed');

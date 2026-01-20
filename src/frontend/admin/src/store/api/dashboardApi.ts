@@ -29,7 +29,6 @@ export const dashboardApi = createApi({
           ordersTrend: [],
           revenueTrend: [],
         },
-      pollingInterval: 30000, // Poll every 30 seconds
     }),
   }),
 });
