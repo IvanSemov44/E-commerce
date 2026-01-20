@@ -17,6 +17,7 @@ export default function ProductDetail() {
 
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const dispatch = useAppDispatch();
   const cartItem = useAppSelector((state) => {
     if (!product?.id) return undefined;
@@ -60,21 +61,27 @@ export default function ProductDetail() {
             <div className={styles.imageSection}>
               <div className={styles.mainImage}>
                 <img
-                  src={product.images[0]?.url}
+                  src={product.images[selectedImageIndex]?.url}
                   alt={product.name}
                   onError={(e) => { e.currentTarget.src = DEFAULT_PRODUCT_IMAGE }}
                 />
               </div>
               {product.images.length > 1 && (
                 <div className={styles.thumbnailGrid}>
-                  {product.images.slice(1).map((img) => (
-                    <img
+                  {product.images.map((img, index) => (
+                    <button
                       key={img.id}
-                      src={img.url}
-                      alt={img.altText || 'Product'}
-                      className={styles.thumbnail}
-                      onError={(e) => { e.currentTarget.src = DEFAULT_PRODUCT_IMAGE }}
-                    />
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`${styles.thumbnail} ${selectedImageIndex === index ? styles.thumbnailActive : ''}`}
+                      aria-label={`View product image ${index + 1}`}
+                      type="button"
+                    >
+                      <img
+                        src={img.url}
+                        alt={img.altText || `Product image ${index + 1}`}
+                        onError={(e) => { e.currentTarget.src = DEFAULT_PRODUCT_IMAGE }}
+                      />
+                    </button>
                   ))}
                 </div>
               )}
