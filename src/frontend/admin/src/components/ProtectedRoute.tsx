@@ -10,7 +10,12 @@ export default function ProtectedRoute({
   children,
   requiredRole,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user, initialized } = useAppSelector((state) => state.auth);
+
+  // Wait for auth state to be initialized from localStorage
+  if (!initialized) {
+    return <div>Loading...</div>;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

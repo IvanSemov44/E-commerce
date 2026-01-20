@@ -16,6 +16,7 @@ export interface AuthState {
   token: string | null;
   loading: boolean;
   error: string | null;
+  initialized: boolean;
 }
 
 const getInitialState = (): AuthState => {
@@ -31,14 +32,18 @@ const getInitialState = (): AuthState => {
           token,
           loading: false,
           error: null,
+          initialized: true,
         };
       } catch {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
         return {
           isAuthenticated: false,
           user: null,
           token: null,
           loading: false,
           error: null,
+          initialized: true,
         };
       }
     }
@@ -49,6 +54,7 @@ const getInitialState = (): AuthState => {
     token: null,
     loading: false,
     error: null,
+    initialized: true,
   };
 };
 
@@ -67,6 +73,8 @@ export const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.loading = false;
+      state.error = null;
+      state.initialized = true;
       if (typeof window !== 'undefined') {
         localStorage.setItem('authToken', action.payload.token);
         localStorage.setItem('authUser', JSON.stringify(action.payload.user));
@@ -81,6 +89,7 @@ export const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.error = null;
+      state.initialized = true;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
@@ -92,6 +101,7 @@ export const authSlice = createSlice({
     setUser: (state, action: PayloadAction<AdminUser>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
+      state.initialized = true;
     },
   },
 });

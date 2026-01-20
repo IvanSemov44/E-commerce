@@ -108,6 +108,11 @@ export interface AuthResponse {
   message: string;
   user?: User;
   token?: string;
+  data?: {
+    user?: User;
+    token?: string;
+  };
+  errors?: string[] | null;
 }
 
 // Order Types

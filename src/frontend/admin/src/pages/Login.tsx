@@ -27,8 +27,13 @@ export default function Login() {
 
     try {
       const response = await login({ email, password }).unwrap();
-      if (response.success && response.user && response.token) {
-        dispatch(loginSuccess({ user: response.user as AdminUser, token: response.token }));
+
+      // Handle both response structures for compatibility
+      const user = response.user || response.data?.user;
+      const token = response.token || response.data?.token;
+
+      if (response.success && user && token) {
+        dispatch(loginSuccess({ user: user as AdminUser, token }));
         navigate('/');
       } else {
         setError(response.message || 'Login failed');
