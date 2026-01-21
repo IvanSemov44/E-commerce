@@ -4,6 +4,8 @@ using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Cart;
+using ECommerce.Application.DTOs.Reviews;
+using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs;
 
 namespace ECommerce.Application;
@@ -61,7 +63,17 @@ public class MappingProfile : Profile
 
         // Review mappings
         CreateMap<Review, ReviewDto>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src =>
+                src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : "Anonymous"))
             .ReverseMap();
+
+        CreateMap<Review, ReviewDetailDto>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src =>
+                src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : "Anonymous"));
+
+        CreateMap<CreateReviewDto, Review>();
+        CreateMap<UpdateReviewDto, Review>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // Order mappings
         CreateMap<Order, OrderDto>()
@@ -82,6 +94,10 @@ public class MappingProfile : Profile
 
         // Address mappings
         CreateMap<Address, AddressDto>()
+            .ReverseMap();
+
+        // Wishlist mappings
+        CreateMap<Wishlist, WishlistDto>()
             .ReverseMap();
     }
 }
