@@ -6,6 +6,7 @@ using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Wishlist;
+using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.DTOs;
 
 namespace ECommerce.Application;
@@ -20,6 +21,18 @@ public class MappingProfile : Profile
         // User mappings
         CreateMap<User, UserDto>()
             .ReverseMap();
+
+        // User Profile mappings
+        CreateMap<User, UserProfileDto>()
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+
+        CreateMap<UpdateProfileDto, User>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Email, opt => opt.Ignore())
+            .ForMember(dest => dest.Role, opt => opt.Ignore())
+            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // Product mappings
         CreateMap<Product, ProductDto>()
