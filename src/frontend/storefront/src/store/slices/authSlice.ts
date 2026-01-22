@@ -19,10 +19,19 @@ export interface AuthState {
   error: string | null;
 }
 
+const getInitialToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('authToken');
+  }
+  return null;
+};
+
+const initialToken = getInitialToken();
+
 const initialState: AuthState = {
-  isAuthenticated: false,
+  isAuthenticated: !!initialToken,
   user: null,
-  token: typeof window !== 'undefined' ? localStorage.getItem('authToken') : null,
+  token: initialToken,
   loading: false,
   error: null,
 };
@@ -65,8 +74,11 @@ export const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
+    setUser: (state, action: PayloadAction<AuthUser>) => {
+      state.user = action.payload;
+    },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, clearError, updateUser } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, clearError, updateUser, setUser } = authSlice.actions;
 export const authReducer = authSlice.reducer;

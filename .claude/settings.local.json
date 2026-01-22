@@ -26,7 +26,8 @@
       "Bash(taskkill:*)",
       "Bash(pkill:*)",
       "Bash(lsof:*)",
-      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzNjVlMTBmMS04NjhkLTRhYWEtYjg0YS0yNDhlYmFjNDlhMjUiLCJlbWFpbCI6InRlc3R1c2VyQGV4YW1wbGUuY29tIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJDdXN0b21lciIsImV4cCI6MTc2OTAwMDE5MywiaXNzIjoiZWNvbW1lcmNlLWFwaSIsImF1ZCI6ImVjb21tZXJjZS1jbGllbnQifQ.QZhypsV5jmoNy2_TrnCYm4LRPxcOCOqqN1VzIXU9KNY\")"
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzNjVlMTBmMS04NjhkLTRhYWEtYjg0YS0yNDhlYmFjNDlhMjUiLCJlbWFpbCI6InRlc3R1c2VyQGV4YW1wbGUuY29tIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJDdXN0b21lciIsImV4cCI6MTc2OTAwMDE5MywiaXNzIjoiZWNvbW1lcmNlLWFwaSIsImF1ZCI6ImVjb21tZXJjZS1jbGllbnQifQ.QZhypsV5jmoNy2_TrnCYm4LRPxcOCOqqN1VzIXU9KNY\")",
+      "Bash(ls:*)"
     ]
   }
 }

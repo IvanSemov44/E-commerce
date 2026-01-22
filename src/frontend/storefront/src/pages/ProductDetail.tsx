@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useGetProductBySlugQuery } from '../store/api/productApi';
+import { useGetProductReviewsQuery } from '../store/api/reviewsApi';
+import { useAddToWishlistMutation, useRemoveFromWishlistMutation, useCheckInWishlistQuery } from '../store/api/wishlistApi';
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/constants';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addItem, selectCartItemById } from '../store/slices/cartSlice';
@@ -9,11 +11,25 @@ import Card from '../components/ui/Card';
 import ErrorAlert from '../components/ErrorAlert';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import EmptyState from '../components/EmptyState';
+import ReviewForm from '../components/ReviewForm';
+import ReviewList from '../components/ReviewList';
 import styles from './ProductDetail.module.css';
 
 export default function ProductDetail() {
   const { slug = '' } = useParams();
   const { data: product, isLoading, error } = useGetProductBySlugQuery(slug);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  const { data: reviews, isLoading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useGetProductReviewsQuery(product?.id || '', {
+    skip: !product?.id,
+  });
+
+  const { data: isInWishlist, refetch: refetchWishlist } = useCheckInWishlistQuery(product?.id || '', {
+    skip: !product?.id || !isAuthenticated,
+  });
+
+  const [addToWishlist, { isLoading: addingToWishlist }] = useAddToWishlistMutation();
+  const [removeFromWishlist, { isLoading: removingFromWishlist }] = useRemoveFromWishlistMutation();
 
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -23,6 +39,21 @@ export default function ProductDetail() {
     if (!product?.id) return undefined;
     return selectCartItemById(product.id)(state);
   });
+
+  const handleWishlistToggle = async () => {
+    if (!product?.id) return;
+
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(product.id).unwrap();
+      } else {
+        await addToWishlist(product.id).unwrap();
+      }
+      refetchWishlist();
+    } catch {
+      // Error handled by mutation state
+    }
+  };
 
   if (isLoading) {
     return (
@@ -189,9 +220,16 @@ export default function ProductDetail() {
                 >
                   {product.stockQuantity === 0 ? 'Out of Stock' : addedToCart ? '✓ Added to Cart!' : 'Add to Cart'}
                 </Button>
-                <Button variant="secondary" size="lg">
-                  Add to Wishlist
-                </Button>
+                {isAuthenticated && (
+                  <Button
+                    variant={isInWishlist ? 'primary' : 'secondary'}
+                    size="lg"
+                    onClick={handleWishlistToggle}
+                    disabled={addingToWishlist || removingFromWishlist}
+                  >
+                    {isInWishlist ? '♥ In Wishlist' : '♡ Add to Wishlist'}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -199,28 +237,19 @@ export default function ProductDetail() {
           {/* Reviews */}
           <div className={styles.reviewsSection}>
             <h2 className={styles.reviewsTitle}>Customer Reviews</h2>
-            {product.reviews.length === 0 ? (
-              <div className={styles.noReviewsMessage}>
-                <p className={styles.noReviewsText}>No reviews yet. Be the first to review this product!</p>
-              </div>
-            ) : (
-              <div className={styles.reviewsList}>
-                {product.reviews.map((review) => (
-                  <div key={review.id} className={styles.review}>
-                    <div className={styles.reviewHeader}>
-                      <span className={styles.reviewAuthor}>{review.userName}</span>
-                      <div className={styles.reviewRating}>
-                        <span className={styles.reviewRatingIcon}>★</span>
-                        <span className={styles.reviewRatingValue}>{review.rating}</span>
-                      </div>
-                    </div>
-                    {review.title && <h4 className={styles.reviewTitle}>{review.title}</h4>}
-                    <p className={styles.reviewComment}>{review.comment}</p>
-                    <span className={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</span>
-                  </div>
-                ))}
+
+            {isAuthenticated && (
+              <div style={{ marginBottom: '2rem' }}>
+                <ReviewForm productId={product.id} onSuccess={() => refetchReviews()} />
               </div>
             )}
+
+            <ReviewList
+              reviews={reviews || []}
+              isLoading={reviewsLoading}
+              error={reviewsError}
+              onReviewDeleted={() => refetchReviews()}
+            />
           </div>
         </Card>
       </div>

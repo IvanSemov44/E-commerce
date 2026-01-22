@@ -14,19 +14,33 @@ export interface RegisterRequest {
   lastName: string;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: string;
+  avatarUrl?: string;
+}
+
 export interface AuthResponse {
   success: boolean;
   message: string;
-  user?: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-    role: string;
-    avatarUrl?: string;
-  };
+  user?: AuthUser;
   token?: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  errors?: string[];
+}
+
+interface AuthData {
+  user: AuthUser;
+  token: string;
 }
 
 export const authApi = createApi({
@@ -50,6 +64,12 @@ export const authApi = createApi({
         method: 'POST',
         body: credentials,
       }),
+      transformResponse: (response: ApiResponse<AuthData>) => ({
+        success: response.success,
+        message: response.message,
+        user: response.data?.user,
+        token: response.data?.token,
+      }),
     }),
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (credentials) => ({
@@ -57,12 +77,24 @@ export const authApi = createApi({
         method: 'POST',
         body: credentials,
       }),
+      transformResponse: (response: ApiResponse<AuthData>) => ({
+        success: response.success,
+        message: response.message,
+        user: response.data?.user,
+        token: response.data?.token,
+      }),
     }),
     refreshToken: builder.mutation<AuthResponse, string>({
       query: (token) => ({
         url: '/auth/refresh-token',
         method: 'POST',
         body: { token },
+      }),
+      transformResponse: (response: ApiResponse<AuthData>) => ({
+        success: response.success,
+        message: response.message,
+        user: response.data?.user,
+        token: response.data?.token,
       }),
     }),
   }),

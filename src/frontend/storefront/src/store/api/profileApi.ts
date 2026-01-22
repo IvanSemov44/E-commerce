@@ -9,6 +9,7 @@ export interface UserProfile {
   lastName: string;
   phone?: string;
   avatarUrl?: string;
+  role?: string;
 }
 
 export interface UpdateProfileRequest {
