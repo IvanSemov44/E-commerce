@@ -38,10 +38,10 @@ export default function Checkout() {
     lastName: '',
     email: '',
     phone: '',
-    street: '',
+    streetLine1: '',
     city: '',
     state: '',
-    zipCode: '',
+    postalCode: '',
     country: '',
   });
 
@@ -74,10 +74,10 @@ export default function Checkout() {
       !formData.lastName ||
       !formData.email ||
       !formData.phone ||
-      !formData.street ||
+      !formData.streetLine1 ||
       !formData.city ||
       !formData.state ||
-      !formData.zipCode ||
+      !formData.postalCode ||
       !formData.country
     ) {
       setError('Please fill in all fields');
@@ -95,12 +95,11 @@ export default function Checkout() {
         shippingAddress: {
           firstName: formData.firstName,
           lastName: formData.lastName,
-          email: formData.email,
           phone: formData.phone,
-          street: formData.street,
+          streetLine1: formData.streetLine1,
           city: formData.city,
           state: formData.state,
-          zipCode: formData.zipCode,
+          postalCode: formData.postalCode,
           country: formData.country,
         },
         paymentMethod: 'card',
@@ -217,8 +216,8 @@ export default function Checkout() {
                 <Input
                   label="Street Address"
                   type="text"
-                  value={formData.street}
-                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                  value={formData.streetLine1}
+                  onChange={(e) => setFormData({ ...formData, streetLine1: e.target.value })}
                   placeholder="123 Main St"
                   required
                 />
@@ -246,8 +245,8 @@ export default function Checkout() {
                   <Input
                     label="Zip Code"
                     type="text"
-                    value={formData.zipCode}
-                    onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                    value={formData.postalCode}
+                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
                     placeholder="10001"
                     required
                   />

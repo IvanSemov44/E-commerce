@@ -122,13 +122,37 @@ public class OrderService : IOrderService
                 order.BillingAddress = billingAddress;
             }
 
-            // Calculate totals (simplified - in real app would come from cart)
-            // For now, just set defaults
-            order.Subtotal = 0;
-            order.DiscountAmount = 0;
-            order.ShippingAmount = 10.00m; // Default shipping
-            order.TaxAmount = 0;
-            order.TotalAmount = order.ShippingAmount;
+            // Process order items
+            var subtotal = 0m;
+            var items = new List<OrderItem>();
+
+            if (dto.Items != null && dto.Items.Any())
+            {
+                foreach (var itemDto in dto.Items)
+                {
+                    var itemTotal = itemDto.Price * itemDto.Quantity;
+                    subtotal += itemTotal;
+
+                    var orderItem = new OrderItem
+                    {
+                        ProductName = itemDto.ProductName,
+                        ProductImageUrl = itemDto.ImageUrl,
+                        Quantity = itemDto.Quantity,
+                        UnitPrice = itemDto.Price,
+                        TotalPrice = itemTotal
+                    };
+
+                    items.Add(orderItem);
+                }
+            }
+
+            // Calculate totals
+            order.Subtotal = subtotal;
+            order.DiscountAmount = 0; // TODO: Apply promo code if provided
+            order.ShippingAmount = subtotal > 100 ? 0 : 10.00m;
+            order.TaxAmount = subtotal * 0.08m;
+            order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
+            order.Items = items;
 
             await _orderRepository.AddAsync(order);
             await _orderRepository.SaveChangesAsync();

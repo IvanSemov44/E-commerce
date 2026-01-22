@@ -38,10 +38,20 @@ public class OrderItemDto
 
 public class CreateOrderDto
 {
+    public List<CreateOrderItemDto> Items { get; set; } = new();
     public AddressDto ShippingAddress { get; set; } = null!;
     public AddressDto? BillingAddress { get; set; }
     public string? PaymentMethod { get; set; }
     public string? PromoCode { get; set; }
+}
+
+public class CreateOrderItemDto
+{
+    public string ProductId { get; set; } = null!;
+    public string ProductName { get; set; } = null!;
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
+    public string? ImageUrl { get; set; }
 }
 
 public class AddressDto

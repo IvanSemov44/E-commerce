@@ -7,8 +7,25 @@ import EmptyState from '../components/EmptyState';
 import ErrorAlert from '../components/ErrorAlert';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 
+interface OrderForDisplay {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  items: Array<{ productName: string }>;
+}
+
 export default function OrderHistory() {
-  const { data: orders, isLoading, error } = useGetOrdersQuery();
+  const { data: ordersData, isLoading, error } = useGetOrdersQuery();
+  const orders: OrderForDisplay[] = (ordersData || []).map((order: any) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    totalAmount: order.totals?.total || order.totalAmount,
+    createdAt: order.createdAt,
+    items: order.items || [],
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -119,7 +136,7 @@ export default function OrderHistory() {
                         color: '#1976d2',
                       }}
                     >
-                      ${order.totals.total.toFixed(2)}
+                      ${order.totalAmount.toFixed(2)}
                     </p>
                   </div>
 

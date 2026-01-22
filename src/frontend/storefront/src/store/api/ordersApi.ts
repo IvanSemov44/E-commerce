@@ -15,21 +15,20 @@ export interface CreateOrderRequest {
   shippingAddress: {
     firstName: string;
     lastName: string;
-    email: string;
     phone: string;
-    street: string;
+    streetLine1: string;
     city: string;
     state: string;
-    zipCode: string;
+    postalCode: string;
     country: string;
   };
   billingAddress?: {
     firstName: string;
     lastName: string;
-    street: string;
+    streetLine1: string;
     city: string;
     state: string;
-    zipCode: string;
+    postalCode: string;
     country: string;
   };
   paymentMethod: string;
@@ -94,6 +93,23 @@ export interface ApiResponse<T> {
   errors?: string[];
 }
 
+export interface PaginatedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface OrderListItem {
+  id: string;
+  orderNumber: string;
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  paymentStatus: string;
+  totalAmount: number;
+  createdAt: string;
+  items: OrderItem[];
+}
+
 export const ordersApi = createApi({
   reducerPath: 'ordersApi',
   baseQuery: fetchBaseQuery({
@@ -120,9 +136,11 @@ export const ordersApi = createApi({
         response.data || {} as OrderResponse,
       invalidatesTags: ['Order'],
     }),
-    getOrders: builder.query<Order[], void>({
+    getOrders: builder.query<any[], void>({
       query: () => '/orders/my-orders',
-      transformResponse: (response: ApiResponse<Order[]>) => response.data || [],
+      transformResponse: (response: ApiResponse<PaginatedResult<OrderListItem>>) => {
+        return response.data?.items || [];
+      },
       providesTags: ['Order'],
     }),
     getOrderById: builder.query<Order, string>({
