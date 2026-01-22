@@ -77,10 +77,20 @@ export const productApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getProducts: builder.query<PaginatedResult<Product>, { page?: number; pageSize?: number }>({
-      query: ({ page = 1, pageSize = 20 }) =>
-        `/products?page=${page}&pageSize=${pageSize}`,
-      transformResponse: (response: ApiResponse<PaginatedResult<Product>>) => response.data || { items: [], totalCount: 0, page: 1, pageSize: 20 },
+    getProducts: builder.query<
+      PaginatedResult<Product>,
+      { page?: number; pageSize?: number; categoryId?: string; search?: string }
+    >({
+      query: ({ page = 1, pageSize = 20, categoryId, search }) => {
+        const params = new URLSearchParams();
+        params.set('page', page.toString());
+        params.set('pageSize', pageSize.toString());
+        if (categoryId) params.set('categoryId', categoryId);
+        if (search) params.set('search', search);
+        return `/products?${params}`;
+      },
+      transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>
+        response.data || { items: [], totalCount: 0, page: 1, pageSize: 20 },
     }),
     getProductBySlug: builder.query<ProductDetail, string>({
       query: (slug) => `/products/slug/${slug}`,

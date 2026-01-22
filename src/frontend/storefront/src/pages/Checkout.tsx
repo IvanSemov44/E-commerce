@@ -2,23 +2,30 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { selectCartItems, selectCartSubtotal, clearCart } from '../store/slices/cartSlice';
+import { useCreateOrderMutation } from '../store/api/ordersApi';
+import { useClearCartMutation } from '../store/api/cartApi';
+import type { CreateOrderRequest } from '../store/api/ordersApi';
 
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
+import ErrorAlert from '../components/ErrorAlert';
 import styles from './Checkout.module.css';
-import CartItem from '@/components/CartItem';
+import CartItem from '../components/CartItem';
 
 export default function Checkout() {
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [createOrder] = useCreateOrderMutation();
+  const [clearCartApi] = useClearCartMutation();
+
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // Calculate totals
   const shipping = subtotal > 100 ? 0 : 10;
@@ -27,11 +34,15 @@ export default function Checkout() {
 
   // Form state
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
-    cardNumber: '',
-    cardName: '',
-    expiry: '',
-    cvv: '',
+    phone: '',
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
   });
 
   // Redirect if cart is empty
@@ -55,36 +66,59 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    // Basic validation
+    // Validation
     if (
+      !formData.firstName ||
+      !formData.lastName ||
       !formData.email ||
-      !formData.cardNumber ||
-      !formData.cardName ||
-      !formData.expiry ||
-      !formData.cvv
+      !formData.phone ||
+      !formData.street ||
+      !formData.city ||
+      !formData.state ||
+      !formData.zipCode ||
+      !formData.country
     ) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
 
-    // Mock payment processing
-    setIsProcessing(true);
+    try {
+      const orderData: CreateOrderRequest = {
+        items: cartItems.map((item) => ({
+          productId: item.id,
+          productName: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          street: formData.street,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+        },
+        paymentMethod: 'card',
+      };
 
-    // Simulate API call
-    setTimeout(() => {
-      // Generate order number
-      const orderNum =
-        'ORD-' +
-        Date.now().toString(36).toUpperCase() +
-        Math.random().toString(36).slice(2, 7).toUpperCase();
-      setOrderNumber(orderNum);
-      setOrderComplete(true);
-      setIsProcessing(false);
+      const result = await createOrder(orderData).unwrap();
 
-      // Clear cart
+      // Clear cart from backend
+      await clearCartApi().unwrap();
+
+      // Clear local cart
       dispatch(clearCart());
-    }, 2000);
+
+      setOrderNumber(result.orderNumber);
+      setOrderComplete(true);
+    } catch (err: any) {
+      setError(err.data?.message || 'Failed to create order. Please try again.');
+    }
   };
 
   // Success screen
@@ -111,7 +145,7 @@ export default function Checkout() {
             <h1 className={styles.successTitle}>Order Placed Successfully!</h1>
             <p className={styles.successMessage}>Thank you for your purchase.</p>
             <p className={styles.successOrderNumber}>Order Number: {orderNumber}</p>
-            <p className={styles.successEmail}>A confirmation email has been sent to {formData.email}</p>
+            <p className={styles.successEmail}>A confirmation email has been sent to {formData.email || 'your email'}</p>
             <div className={styles.successActions}>
               <Link to="/products" className={styles.successActionLink}>
                 <Button size="lg">Continue Shopping</Button>
@@ -135,12 +169,33 @@ export default function Checkout() {
         <PageHeader title="Checkout" />
 
         <div className={styles.grid}>
-          {/* Payment Form */}
+          {/* Shipping Form */}
           <div>
             <Card variant="elevated" padding="lg">
-              <h2 className={styles.formTitle}>Payment Information</h2>
+              <h2 className={styles.formTitle}>Shipping Information</h2>
+
+              {error && <ErrorAlert message={error} />}
 
               <form onSubmit={handleSubmit} className={styles.form}>
+                <div className={styles.formGroup}>
+                  <Input
+                    label="First Name"
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    placeholder="John"
+                    required
+                  />
+                  <Input
+                    label="Last Name"
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    placeholder="Doe"
+                    required
+                  />
+                </div>
+
                 <Input
                   label="Email Address"
                   type="email"
@@ -150,59 +205,68 @@ export default function Checkout() {
                   required
                 />
 
-                <div>
-                  <Input
-                    label="Card Number"
-                    type="text"
-                    value={formData.cardNumber}
-                    onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    required
-                  />
-                  <p className={styles.inputHint}>
-                    Use any test card number (e.g., 4242 4242 4242 4242)
-                  </p>
-                </div>
+                <Input
+                  label="Phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+1 (555) 123-4567"
+                  required
+                />
 
                 <Input
-                  label="Cardholder Name"
+                  label="Street Address"
                   type="text"
-                  value={formData.cardName}
-                  onChange={(e) => setFormData({ ...formData, cardName: e.target.value })}
-                  placeholder="John Doe"
+                  value={formData.street}
+                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                  placeholder="123 Main St"
                   required
                 />
 
                 <div className={styles.formGroup}>
                   <Input
-                    label="Expiry Date"
+                    label="City"
                     type="text"
-                    value={formData.expiry}
-                    onChange={(e) => setFormData({ ...formData, expiry: e.target.value })}
-                    placeholder="MM/YY"
-                    maxLength={5}
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="New York"
                     required
                   />
                   <Input
-                    label="CVV"
+                    label="State"
                     type="text"
-                    value={formData.cvv}
-                    onChange={(e) => setFormData({ ...formData, cvv: e.target.value })}
-                    placeholder="123"
-                    maxLength={4}
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    placeholder="NY"
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <Input
+                    label="Zip Code"
+                    type="text"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                    placeholder="10001"
+                    required
+                  />
+                  <Input
+                    label="Country"
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    placeholder="United States"
                     required
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  disabled={isProcessing}
                   size="lg"
                   className={styles.actionButton}
-                  isLoading={isProcessing}
                 >
-                  {isProcessing ? 'Processing...' : `Pay $${total.toFixed(2)}`}
+                  Place Order
                 </Button>
               </form>
             </Card>

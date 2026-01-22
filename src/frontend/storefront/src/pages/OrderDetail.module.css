@@ -1,0 +1,166 @@
+/* Order Detail Page Styles */
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 0;
+}
+
+.content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.backButton {
+  margin-bottom: 32px;
+}
+
+.orderHeader {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.headerField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.headerLabel {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.headerValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.orderNumber {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.itemsList {
+  display: grid;
+  gap: 16px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.itemRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.itemImage {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.itemName {
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.itemQuantity {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 4px 0 0 0;
+}
+
+.itemPrice {
+  text-align: right;
+}
+
+.priceLabel {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0;
+}
+
+.priceValue {
+  font-weight: 600;
+  margin: 4px 0 0 0;
+}
+
+.totalsSection {
+  display: grid;
+  gap: 16px;
+}
+
+.totalLine {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+}
+
+.totalLabel {
+  color: #0f172a;
+}
+
+.totalAmount {
+  font-weight: 600;
+  text-align: right;
+}
+
+.grandTotal {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+  color: #1976d2;
+}
+
+.address {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.addressLine {
+  margin: 0;
+  color: #0f172a;
+}
+
+.addressContact {
+  margin: 16px 0 0 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .itemRow {
+    grid-template-columns: auto 1fr;
+  }
+
+  .itemRow > :nth-child(3),
+  .itemRow > :nth-child(4) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 16px;
+  }
+}

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGetProductsQuery } from '../store/api/productApi';
 import Button from '../components/ui/Button';
 import ProductCard from '../components/ProductCard';
+import CategoryFilter from '../components/CategoryFilter';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import ErrorAlert from '../components/ErrorAlert';
@@ -10,22 +11,73 @@ import styles from './Products.module.css';
 
 export default function Products() {
   const [page, setPage] = useState(1);
-  const { data: result, isLoading, error } = useGetProductsQuery({ page, pageSize: 20 });
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search input (500ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategoryId, debouncedSearch]);
+
+  const { data: result, isLoading, error } = useGetProductsQuery({
+    page,
+    pageSize: 20,
+    categoryId: selectedCategoryId,
+    search: debouncedSearch,
+  });
 
   return (
     <div className={styles.container}>
-      <div className={styles.content}>
-        <PageHeader title="All Products" />
+      <PageHeader title="All Products" />
 
-        {error ? (
-          <ErrorAlert message="Failed to load products. Please try again later." />
-        ) : isLoading ? (
-          <div className={styles.grid}>
-            <LoadingSkeleton count={8} type="card" />
+      <div style={{ display: 'flex', gap: '2rem', maxWidth: '1400px', margin: '0 auto', padding: '0 1rem' }}>
+        {/* Sidebar */}
+        <div style={{ width: '280px', flexShrink: 0 }}>
+          <CategoryFilter
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={setSelectedCategoryId}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className={styles.content} style={{ flex: 1, minWidth: 0 }}>
+          {/* Search Bar */}
+          <div style={{ marginBottom: '2rem' }}>
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                fontSize: '1rem',
+                border: '1px solid #e0e0e0',
+                borderRadius: '0.5rem',
+                boxSizing: 'border-box',
+              }}
+            />
           </div>
-        ) : result && result.items.length > 0 ? (
-          <>
+
+          {error ? (
+            <ErrorAlert message="Failed to load products. Please try again later." />
+          ) : isLoading ? (
             <div className={styles.grid}>
+              <LoadingSkeleton count={8} type="card" />
+            </div>
+          ) : result && result.items.length > 0 ? (
+            <>
+              <div className={styles.grid}>
               {result.items.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -70,6 +122,7 @@ export default function Products() {
             title="No products available"
           />
         )}
+        </div>
       </div>
     </div>
   );

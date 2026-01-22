@@ -60,6 +60,11 @@ export default function Header() {
             <Link to="/products" className={styles.navLink}>
               Products
             </Link>
+            {isAuthenticated && (
+              <Link to="/orders" className={styles.navLink}>
+                Orders
+              </Link>
+            )}
           </div>
 
           {/* Desktop Right Items */}
@@ -103,6 +108,17 @@ export default function Header() {
                       <p className={styles.dropdownHeaderEmail}>{user?.email}</p>
                     </div>
                     <div className={styles.dropdownContent}>
+                      <Link
+                        to="/profile"
+                        onClick={() => setUserMenuOpen(false)}
+                        className={styles.dropdownItem}
+                        style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
+                      >
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: '18px', height: '18px' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        My Profile
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className={styles.dropdownItem}
@@ -169,6 +185,22 @@ export default function Header() {
               </div>
             </Link>
 
+            {/* Mobile Orders */}
+            {isAuthenticated && (
+              <Link
+                to="/orders"
+                onClick={() => setMobileMenuOpen(false)}
+                className={styles.mobileNavLink}
+              >
+                <div className={styles.mobileNavContent}>
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Orders
+                </div>
+              </Link>
+            )}
+
             {/* Mobile Cart */}
             <Link
               to="/cart"
@@ -201,6 +233,18 @@ export default function Header() {
                   <p className={styles.mobileUserName}>{user?.firstName}</p>
                   <p className={styles.mobileUserEmail}>{user?.email}</p>
                 </div>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={styles.mobileNavLink}
+                >
+                  <div className={styles.mobileNavContent}>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    My Profile
+                  </div>
+                </Link>
                 <button
                   onClick={handleMobileLogout}
                   className={styles.mobileLogoutButton}

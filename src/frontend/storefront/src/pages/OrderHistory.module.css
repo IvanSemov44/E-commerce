@@ -1,0 +1,71 @@
+/* Order History Page Styles */
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 0;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.ordersGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.orderCard {
+  transition: box-shadow 0.2s ease;
+}
+
+.orderCard:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.orderHeader {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: center;
+}
+
+.orderField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orderLabel {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.orderValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.statusValue {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.totalValue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.itemCount {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.actionColumn {
+  text-align: right;
+}

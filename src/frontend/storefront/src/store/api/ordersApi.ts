@@ -49,6 +49,44 @@ export interface OrderResponse {
   };
 }
 
+export interface Order {
+  id: string;
+  orderNumber: string;
+  userId: string;
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  items: OrderItem[];
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  billingAddress?: {
+    firstName: string;
+    lastName: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  paymentMethod: string;
+  totals: {
+    subtotal: number;
+    discount?: number;
+    shipping: number;
+    tax: number;
+    total: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -70,23 +108,35 @@ export const ordersApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ['Order'],
   endpoints: (builder) => ({
     createOrder: builder.mutation<OrderResponse, CreateOrderRequest>({
       query: (orderData) => ({
-        url: '/checkout',
+        url: '/orders',
         method: 'POST',
         body: orderData,
       }),
       transformResponse: (response: ApiResponse<OrderResponse>) =>
         response.data || {} as OrderResponse,
+      invalidatesTags: ['Order'],
     }),
-    getOrders: builder.query<any[], void>({
-      query: () => '/orders',
-      transformResponse: (response: ApiResponse<any[]>) => response.data || [],
+    getOrders: builder.query<Order[], void>({
+      query: () => '/orders/my-orders',
+      transformResponse: (response: ApiResponse<Order[]>) => response.data || [],
+      providesTags: ['Order'],
     }),
-    getOrderById: builder.query<any, string>({
+    getOrderById: builder.query<Order, string>({
       query: (id) => `/orders/${id}`,
-      transformResponse: (response: ApiResponse<any>) => response.data || {},
+      transformResponse: (response: ApiResponse<Order>) => response.data || {} as Order,
+      providesTags: ['Order'],
+    }),
+    cancelOrder: builder.mutation<Order, string>({
+      query: (orderId) => ({
+        url: `/orders/${orderId}/cancel`,
+        method: 'POST',
+      }),
+      transformResponse: (response: ApiResponse<Order>) => response.data || {} as Order,
+      invalidatesTags: ['Order'],
     }),
   }),
 });
@@ -95,4 +145,5 @@ export const {
   useCreateOrderMutation,
   useGetOrdersQuery,
   useGetOrderByIdQuery,
+  useCancelOrderMutation,
 } = ordersApi;

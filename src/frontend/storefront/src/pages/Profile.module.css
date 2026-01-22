@@ -1,0 +1,172 @@
+/* Profile Page Styles */
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 0;
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.formSection {
+  display: grid;
+  gap: 24px;
+}
+
+.formTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+.formGroup {
+  display: grid;
+  gap: 16px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.inputGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.input {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.input:disabled {
+  background-color: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.successMessage {
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: #e8f5e9;
+  border: 1px solid #4caf50;
+  border-radius: 6px;
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.errorMessage {
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: #ffebee;
+  border: 1px solid #f44336;
+  border-radius: 6px;
+  color: #c62828;
+  font-weight: 500;
+}
+
+.avatarPreview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+}
+
+.avatarImage {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #1976d2;
+}
+
+.buttonGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.readOnlyNote {
+  font-size: 0.875rem;
+  color: #666;
+  font-style: italic;
+}
+
+.accountDetails {
+  display: grid;
+  gap: 16px;
+}
+
+.detailLine {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  font-size: 0.95rem;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 16px;
+}
+
+.detailLine:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.detailValue {
+  color: #475569;
+}
+
+.statusActive {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px 0;
+  }
+
+  .content {
+    padding: 0 12px;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .buttonGroup {
+    grid-template-columns: 1fr;
+  }
+
+  .detailLine {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
