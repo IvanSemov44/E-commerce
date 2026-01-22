@@ -169,9 +169,9 @@ export default function OrderDetail() {
                         : 'none',
                   }}
                 >
-                  {item.imageUrl && (
+                  {item.productImageUrl && (
                     <img
-                      src={item.imageUrl}
+                      src={item.productImageUrl}
                       alt={item.productName}
                       style={{
                         width: '60px',
@@ -207,7 +207,7 @@ export default function OrderDetail() {
                       Price
                     </p>
                     <p style={{ margin: '0.25rem 0 0 0', fontWeight: 600 }}>
-                      ${item.price.toFixed(2)}
+                      ${item.unitPrice?.toFixed(2) || '0.00'}
                     </p>
                   </div>
 
@@ -223,7 +223,7 @@ export default function OrderDetail() {
                         color: '#1976d2',
                       }}
                     >
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ${item.totalPrice?.toFixed(2) || '0.00'}
                     </p>
                   </div>
                 </div>
@@ -246,10 +246,10 @@ export default function OrderDetail() {
                     }}
                   >
                     <span>Subtotal:</span>
-                    <span>${order.totals.subtotal.toFixed(2)}</span>
+                    <span>${order.subtotal?.toFixed(2) || '0.00'}</span>
                   </div>
 
-                  {order.totals.discount && order.totals.discount > 0 && (
+                  {order.discountAmount && order.discountAmount > 0 && (
                     <div
                       style={{
                         display: 'grid',
@@ -259,7 +259,7 @@ export default function OrderDetail() {
                       }}
                     >
                       <span>Discount:</span>
-                      <span>-${order.totals.discount.toFixed(2)}</span>
+                      <span>-${order.discountAmount.toFixed(2)}</span>
                     </div>
                   )}
 
@@ -271,7 +271,7 @@ export default function OrderDetail() {
                     }}
                   >
                     <span>Shipping:</span>
-                    <span>${order.totals.shipping.toFixed(2)}</span>
+                    <span>${order.shippingAmount?.toFixed(2) || '0.00'}</span>
                   </div>
 
                   <div
@@ -282,7 +282,7 @@ export default function OrderDetail() {
                     }}
                   >
                     <span>Tax:</span>
-                    <span>${order.totals.tax.toFixed(2)}</span>
+                    <span>${order.taxAmount?.toFixed(2) || '0.00'}</span>
                   </div>
 
                   <div
@@ -298,7 +298,7 @@ export default function OrderDetail() {
                     }}
                   >
                     <span>Total:</span>
-                    <span>${order.totals.total.toFixed(2)}</span>
+                    <span>${order.totalAmount?.toFixed(2) || '0.00'}</span>
                   </div>
                 </div>
               </div>
@@ -311,23 +311,20 @@ export default function OrderDetail() {
 
             <div style={{ color: '#333' }}>
               <p style={{ margin: 0 }}>
-                {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+                {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}
               </p>
               <p style={{ margin: '0.25rem 0 0 0' }}>
-                {order.shippingAddress.street}
+                {order.shippingAddress?.streetLine1}
               </p>
               <p style={{ margin: '0.25rem 0 0 0' }}>
-                {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
-                {order.shippingAddress.zipCode}
+                {order.shippingAddress?.city}, {order.shippingAddress?.state}{' '}
+                {order.shippingAddress?.postalCode}
               </p>
               <p style={{ margin: '0.25rem 0 0 0' }}>
-                {order.shippingAddress.country}
-              </p>
-              <p style={{ margin: '0.5rem 0 0 0', color: '#666' }}>
-                Email: {order.shippingAddress.email}
+                {order.shippingAddress?.country}
               </p>
               <p style={{ margin: '0.25rem 0 0 0', color: '#666' }}>
-                Phone: {order.shippingAddress.phone}
+                Phone: {order.shippingAddress?.phone}
               </p>
             </div>
           </Card>

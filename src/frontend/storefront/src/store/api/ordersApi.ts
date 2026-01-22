@@ -3,6 +3,16 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface OrderItem {
+  id?: string;
+  productName: string;
+  productSku?: string;
+  productImageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface CreateOrderItemRequest {
   productId: string;
   productName: string;
   price: number;
@@ -11,7 +21,7 @@ export interface OrderItem {
 }
 
 export interface CreateOrderRequest {
-  items: OrderItem[];
+  items: CreateOrderItemRequest[];
   shippingAddress: {
     firstName: string;
     lastName: string;
@@ -48,42 +58,40 @@ export interface OrderResponse {
   };
 }
 
+export interface AddressDto {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  company?: string;
+  streetLine1: string;
+  streetLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
-  userId: string;
+  userId?: string;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  paymentStatus?: string;
   items: OrderItem[];
-  shippingAddress: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-  billingAddress?: {
-    firstName: string;
-    lastName: string;
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-  paymentMethod: string;
-  totals: {
-    subtotal: number;
-    discount?: number;
-    shipping: number;
-    tax: number;
-    total: number;
-  };
+  shippingAddress?: AddressDto;
+  billingAddress?: AddressDto;
+  paymentMethod?: string;
+  subtotal: number;
+  discountAmount: number;
+  shippingAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  notes?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
 }
 
 export interface ApiResponse<T> {
