@@ -1,40 +1,113 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { selectCartItems, selectCartSubtotal, updateQuantity, removeItem } from '../store/slices/cartSlice';
+import { selectCartItems, updateQuantity, removeItem } from '../store/slices/cartSlice';
+import { useGetCartQuery, useUpdateCartItemMutation, useRemoveFromCartMutation } from '../store/api/cartApi';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import CartItem from '@/components/CartItem';
 
+interface DisplayCartItem {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  quantity: number;
+  maxStock: number;
+  image: string;
+  compareAtPrice?: number;
+  cartItemId?: string; // Backend cart item ID for updates
+}
+
 export default function Cart() {
   const dispatch = useAppDispatch();
-  const cartItems = useAppSelector(selectCartItems);
-  const subtotal = useAppSelector(selectCartSubtotal);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const localCartItems = useAppSelector(selectCartItems);
+  const [displayItems, setDisplayItems] = useState<DisplayCartItem[]>(localCartItems);
 
-  // Calculate additional charges
-  const shipping = subtotal > 100 ? 0 : subtotal > 0 ? 10 : 0;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  // Backend cart for authenticated users
+  const { data: backendCart, isLoading: cartLoading } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  const [updateCartItem] = useUpdateCartItemMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
 
-  const handleUpdateQuantity = (id: string, quantity: number) => {
+  // Sync displayed items based on auth state
+  useEffect(() => {
+    if (isAuthenticated && backendCart?.items) {
+      // Convert backend cart items to display format
+      const convertedItems: DisplayCartItem[] = backendCart.items.map((item) => ({
+        id: item.productId,
+        name: item.productName,
+        slug: '', // Backend doesn't provide slug
+        price: item.price,
+        quantity: item.quantity,
+        maxStock: 999, // Backend doesn't provide stock
+        image: item.imageUrl || '',
+        cartItemId: item.cartItemId, // Store for backend updates
+      }));
+      setDisplayItems(convertedItems);
+    } else {
+      setDisplayItems(localCartItems);
+    }
+  }, [isAuthenticated, backendCart, localCartItems]);
+
+  // Calculate cart totals
+  const cartSubtotal = displayItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shipping = cartSubtotal > 100 ? 0 : cartSubtotal > 0 ? 10 : 0;
+  const tax = cartSubtotal * 0.08;
+  const total = cartSubtotal + shipping + tax;
+
+  const handleUpdateQuantity = async (id: string, quantity: number) => {
     if (quantity <= 0) {
-      dispatch(removeItem(id));
+      handleRemove(id);
+      return;
+    }
+
+    if (isAuthenticated) {
+      const item = displayItems.find((i) => i.id === id);
+      if (item?.cartItemId) {
+        try {
+          await updateCartItem({
+            cartItemId: item.cartItemId,
+            quantity,
+          }).unwrap();
+        } catch (error) {
+          console.error('Failed to update cart item:', error);
+          alert('Failed to update item quantity');
+        }
+      }
     } else {
       dispatch(updateQuantity({ id, quantity }));
     }
   };
 
-  const handleRemove = (id: string) => {
-    dispatch(removeItem(id));
+  const handleRemove = async (id: string) => {
+    if (isAuthenticated) {
+      const item = displayItems.find((i) => i.id === id);
+      if (item?.cartItemId) {
+        try {
+          await removeFromCart(item.cartItemId).unwrap();
+        } catch (error) {
+          console.error('Failed to remove cart item:', error);
+          alert('Failed to remove item');
+        }
+      }
+    } else {
+      dispatch(removeItem(id));
+    }
   };
+
+  const isLoading = isAuthenticated && cartLoading;
 
   return (
     <div>
       <div>
         <PageHeader title="Shopping Cart" />
 
-        {cartItems.length === 0 ? (
+        {displayItems.length === 0 && !isLoading ? (
           <EmptyState
             icon={
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,10 +132,10 @@ export default function Cart() {
             <div>
               <Card variant="elevated" padding="lg">
                 <h2>
-                  Items ({cartItems.length} {cartItems.length === 1 ? 'product' : 'products'})
+                  Items ({displayItems.length} {displayItems.length === 1 ? 'product' : 'products'})
                 </h2>
                 <div>
-                  {cartItems.map((item) => (
+                  {displayItems.map((item) => (
                     <CartItem
                       key={item.id}
                       item={item}
@@ -81,7 +154,7 @@ export default function Cart() {
                 <div>
                   <div>
                     <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>${cartSubtotal.toFixed(2)}</span>
                   </div>
                   <div>
                     <span>Shipping:</span>
@@ -89,9 +162,9 @@ export default function Cart() {
                       {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
                     </span>
                   </div>
-                  {subtotal > 50 && subtotal < 100 && (
+                  {cartSubtotal > 50 && cartSubtotal < 100 && (
                     <div>
-                      Add ${(100 - subtotal).toFixed(2)} more for free shipping!
+                      Add ${(100 - cartSubtotal).toFixed(2)} more for free shipping!
                     </div>
                   )}
                   <div>

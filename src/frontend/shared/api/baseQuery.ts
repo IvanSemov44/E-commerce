@@ -1,5 +1,6 @@
-import { fetchBaseQuery, FetchBaseQueryError, BaseQueryFn, FetchArgs } from '@reduxjs/toolkit/query/react';
-import { BaseQueryApi } from '@reduxjs/toolkit/query';
+import { fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import type { FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
+import type { BaseQueryApi } from '@reduxjs/toolkit/query';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 

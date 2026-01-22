@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useGetProductBySlugQuery } from '../store/api/productApi';
 import { useGetProductReviewsQuery } from '../store/api/reviewsApi';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation, useCheckInWishlistQuery } from '../store/api/wishlistApi';
+import { useAddToCartMutation } from '../store/api/cartApi';
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/constants';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addItem, selectCartItemById } from '../store/slices/cartSlice';
@@ -30,6 +31,7 @@ export default function ProductDetail() {
 
   const [addToWishlist, { isLoading: addingToWishlist }] = useAddToWishlistMutation();
   const [removeFromWishlist, { isLoading: removingFromWishlist }] = useRemoveFromWishlistMutation();
+  const [addToCartBackend, { isLoading: addingToCartBackend }] = useAddToCartMutation();
 
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -189,7 +191,7 @@ export default function ProductDetail() {
 
               <div className={styles.actions}>
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     const currentInCart = cartItem?.quantity || 0;
                     const totalQuantity = currentInCart + quantity;
 
@@ -198,24 +200,38 @@ export default function ProductDetail() {
                       return;
                     }
 
-                    dispatch(
-                      addItem({
-                        id: product.id,
-                        name: product.name,
-                        slug: product.slug,
-                        price: product.price,
-                        quantity,
-                        maxStock: product.stockQuantity,
-                        image: product.images[0]?.url || DEFAULT_PRODUCT_IMAGE,
-                        compareAtPrice: product.compareAtPrice,
-                      })
-                    );
+                    try {
+                      // Add to local cart
+                      dispatch(
+                        addItem({
+                          id: product.id,
+                          name: product.name,
+                          slug: product.slug,
+                          price: product.price,
+                          quantity,
+                          maxStock: product.stockQuantity,
+                          image: product.images[0]?.url || DEFAULT_PRODUCT_IMAGE,
+                          compareAtPrice: product.compareAtPrice,
+                        })
+                      );
 
-                    setAddedToCart(true);
-                    setTimeout(() => setAddedToCart(false), 2000);
-                    setQuantity(1);
+                      // Sync to backend if authenticated
+                      if (isAuthenticated) {
+                        await addToCartBackend({
+                          productId: product.id,
+                          quantity,
+                        }).unwrap();
+                      }
+
+                      setAddedToCart(true);
+                      setTimeout(() => setAddedToCart(false), 2000);
+                      setQuantity(1);
+                    } catch (error) {
+                      console.error('Failed to add to cart:', error);
+                      alert('Failed to add item to cart. Please try again.');
+                    }
                   }}
-                  disabled={product.stockQuantity === 0 || addedToCart}
+                  disabled={product.stockQuantity === 0 || addedToCart || addingToCartBackend}
                   size="lg"
                 >
                   {product.stockQuantity === 0 ? 'Out of Stock' : addedToCart ? '✓ Added to Cart!' : 'Add to Cart'}

@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { setUser } from './store/slices/authSlice';
 import { useGetProfileQuery } from './store/api/profileApi';
+import { useGetCartQuery, useAddToCartMutation } from './store/api/cartApi';
+import { selectCartItems } from './store/slices/cartSlice';
 
 // Pages
 import Home from './pages/Home';
@@ -25,9 +27,17 @@ import ProtectedRoute from './components/ProtectedRoute';
 function AppContent() {
   const dispatch = useAppDispatch();
   const { isAuthenticated, user, token } = useAppSelector((state) => state.auth);
+  const localCartItems = useAppSelector(selectCartItems);
   const { data: profileData } = useGetProfileQuery(undefined, {
     skip: !isAuthenticated || !!user || !token,
   });
+
+  // Fetch backend cart for authenticated users
+  const { data: backendCart, isLoading: cartLoading, refetch: refetchCart } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated || !token,
+  });
+
+  const [addToCart] = useAddToCartMutation();
 
   // When profile data is fetched, update auth state
   useEffect(() => {
@@ -35,6 +45,36 @@ function AppContent() {
       dispatch(setUser({ ...profileData, role: profileData.role || 'customer' }));
     }
   }, [profileData, user, dispatch]);
+
+  // Sync cart when user logs in: merge local cart with backend cart
+  useEffect(() => {
+    if (!isAuthenticated || !token || !backendCart || cartLoading) return;
+
+    const syncCart = async () => {
+      try {
+        // Get items from local cart that aren't in backend cart
+        const backendProductIds = new Set(backendCart.items.map((item) => item.productId));
+        const itemsToSync = localCartItems.filter((item) => !backendProductIds.has(item.id));
+
+        // Sync each local item to backend
+        for (const item of itemsToSync) {
+          await addToCart({
+            productId: item.id,
+            quantity: item.quantity,
+          }).unwrap();
+        }
+
+        // Refetch cart to get latest state
+        if (itemsToSync.length > 0) {
+          refetchCart();
+        }
+      } catch (error) {
+        console.error('Failed to sync cart:', error);
+      }
+    };
+
+    syncCart();
+  }, [isAuthenticated, token, backendCart, cartLoading, localCartItems, addToCart, refetchCart]);
 
   return (
     <div>
