@@ -18,6 +18,11 @@ const menuItems = [
     path: '/orders',
   },
   {
+    icon: '⭐',
+    label: 'Reviews',
+    path: '/reviews',
+  },
+  {
     icon: '👥',
     label: 'Customers',
     path: '/customers',

@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
+import Reviews from './pages/Reviews';
 import Customers from './pages/Customers';
 import Settings from './pages/Settings';
 
@@ -37,6 +38,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/products" element={<Products />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/reviews" element={<Reviews />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/settings" element={<Settings />} />
           </Route>

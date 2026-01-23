@@ -1,13 +1,66 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { useGetDashboardStatsQuery } from '../store/api/dashboardApi';
 import styles from './Dashboard.module.css';
 
 export default function Dashboard() {
-  // Mock data
+  const { data: dashboardStats, isLoading, error } = useGetDashboardStatsQuery(undefined, {
+    pollingInterval: 30000, // Auto-refresh every 30 seconds
+  });
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.title}>Dashboard</h1>
+        <div className={styles.statsGrid}>
+          {[1, 2, 3, 4].map((idx) => (
+            <Card key={idx} variant="elevated">
+              <CardContent className={styles.statContent}>
+                <div style={{ height: '100px', background: '#f0f0f0', borderRadius: '8px' }} />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.title}>Dashboard</h1>
+        <Card variant="elevated">
+          <CardContent>
+            <p style={{ color: '#ef4444', textAlign: 'center' }}>
+              Failed to load dashboard statistics. Please try again.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Transform API data to stats array
   const stats = [
-    { label: 'Total Orders', value: '1,234', change: '+12.5%', icon: '🛒' },
-    { label: 'Total Revenue', value: '$12,345', change: '+8.2%', icon: '💰' },
-    { label: 'Total Customers', value: '456', change: '+5.3%', icon: '👥' },
-    { label: 'Total Products', value: '89', change: '+2.1%', icon: '📦' },
+    {
+      label: 'Total Orders',
+      value: dashboardStats!.totalOrders.toLocaleString(),
+      icon: '🛒',
+    },
+    {
+      label: 'Total Revenue',
+      value: `$${dashboardStats!.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      icon: '💰',
+    },
+    {
+      label: 'Total Customers',
+      value: dashboardStats!.totalCustomers.toLocaleString(),
+      icon: '👥',
+    },
+    {
+      label: 'Total Products',
+      value: dashboardStats!.totalProducts.toLocaleString(),
+      icon: '📦',
+    },
   ];
 
   return (
@@ -23,7 +76,6 @@ export default function Dashboard() {
               <div className={styles.statText}>
                 <p className={styles.statLabel}>{stat.label}</p>
                 <p className={styles.statValue}>{stat.value}</p>
-                <p className={styles.statChange}>{stat.change}</p>
               </div>
             </CardContent>
           </Card>
@@ -34,19 +86,59 @@ export default function Dashboard() {
       <div className={styles.chartsGrid}>
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
+            <CardTitle>Orders Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={styles.placeholder}>Orders chart will be displayed here</p>
+            {dashboardStats!.ordersTrend && dashboardStats!.ordersTrend.length > 0 ? (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {dashboardStats!.ordersTrend.slice(0, 7).map((trend) => (
+                  <li
+                    key={trend.date}
+                    style={{
+                      padding: '0.5rem 0',
+                      borderBottom: '1px solid #e2e8f0',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    <span style={{ color: '#64748b' }}>
+                      {new Date(trend.date).toLocaleDateString()}
+                    </span>
+                    : <strong>{trend.count}</strong> orders
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ color: '#94a3b8' }}>No trend data available</p>
+            )}
           </CardContent>
         </Card>
 
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Revenue</CardTitle>
+            <CardTitle>Revenue Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={styles.placeholder}>Revenue chart will be displayed here</p>
+            {dashboardStats!.revenueTrend && dashboardStats!.revenueTrend.length > 0 ? (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {dashboardStats!.revenueTrend.slice(0, 7).map((trend) => (
+                  <li
+                    key={trend.date}
+                    style={{
+                      padding: '0.5rem 0',
+                      borderBottom: '1px solid #e2e8f0',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    <span style={{ color: '#64748b' }}>
+                      {new Date(trend.date).toLocaleDateString()}
+                    </span>
+                    : <strong>${trend.amount.toFixed(2)}</strong>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ color: '#94a3b8' }}>No trend data available</p>
+            )}
           </CardContent>
         </Card>
       </div>

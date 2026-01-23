@@ -1,0 +1,49 @@
+.container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filterSelect,
+.statusSelect {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.filterSelect:focus,
+.statusSelect:focus {
+  outline: none;
+  border-color: #0ea5e9;
+}
+
+.filterSelect {
+  min-width: 150px;
+}
+
+.statusSelect {
+  min-width: 120px;
+  font-size: 0.75rem;
+}

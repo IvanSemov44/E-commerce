@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useGetProductsQuery } from '../store/api/productApi';
 import Button from '../components/ui/Button';
 import ProductCard from '../components/ProductCard';
@@ -10,10 +11,20 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import styles from './Products.module.css';
 
 export default function Products() {
-  const [page, setPage] = useState(1);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize state from URL params on mount (lazy initialization)
+  const [page, setPage] = useState(() => {
+    const pageParam = searchParams.get('page');
+    return pageParam ? parseInt(pageParam, 10) : 1;
+  });
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(
+    () => searchParams.get('categoryId') || undefined
+  );
+
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') || '');
 
   // Debounce search input (500ms)
   useEffect(() => {
@@ -28,6 +39,17 @@ export default function Products() {
   useEffect(() => {
     setPage(1);
   }, [selectedCategoryId, debouncedSearch]);
+
+  // Sync URL when filters change (after debounce completes)
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
+    if (page > 1) params.set('page', page.toString());
+
+    setSearchParams(params, { replace: true }); // Use replace to avoid history pollution
+  }, [debouncedSearch, selectedCategoryId, page, setSearchParams]);
 
   const { data: result, isLoading, error } = useGetProductsQuery({
     page,
