@@ -74,4 +74,46 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .AnyAsync(p => p.Slug == slug && (excludeId == null || p.Id != excludeId));
         return !exists;
     }
+
+    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetProductsWithFiltersAsync(
+        int skip,
+        int take,
+        Guid? categoryId = null,
+        string? searchQuery = null)
+    {
+        // Start with base query - only active products
+        var query = DbSet
+            .Where(p => p.IsActive)
+            .Include(p => p.Category)
+            .Include(p => p.Images)
+            .AsQueryable();
+
+        // Apply category filter if provided
+        if (categoryId.HasValue && categoryId.Value != Guid.Empty)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        // Apply search filter if provided
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var searchTerm = searchQuery.ToLower();
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(searchTerm) ||
+                (p.Description != null && p.Description.ToLower().Contains(searchTerm)) ||
+                (p.Sku != null && p.Sku.ToLower().Contains(searchTerm)));
+        }
+
+        // Get total count AFTER filters applied
+        var totalCount = await query.CountAsync();
+
+        // Apply pagination and ordering
+        var items = await query
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
 }

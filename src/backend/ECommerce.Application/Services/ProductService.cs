@@ -8,12 +8,10 @@ namespace ECommerce.Application.Services;
 
 public interface IProductService
 {
-    Task<PaginatedResult<ProductDto>> GetProductsAsync(int page = 1, int pageSize = 20);
+    Task<PaginatedResult<ProductDto>> GetProductsAsync(int page = 1, int pageSize = 20, Guid? categoryId = null, string? searchQuery = null);
     Task<ProductDetailDto?> GetProductBySlugAsync(string slug);
     Task<ProductDetailDto?> GetProductByIdAsync(Guid id);
     Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10);
-    Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20);
-    Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = 20);
     Task<ProductDetailDto> CreateProductAsync(CreateProductDto dto);
     Task<ProductDetailDto> UpdateProductAsync(Guid id, UpdateProductDto dto);
     Task<bool> DeleteProductAsync(Guid id);
@@ -30,11 +28,10 @@ public class ProductService : IProductService
         _mapper = mapper;
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetProductsAsync(int page = 1, int pageSize = 20)
+    public async Task<PaginatedResult<ProductDto>> GetProductsAsync(int page = 1, int pageSize = 8, Guid? categoryId = null, string? searchQuery = null)
     {
-        var totalCount = await _productRepository.GetActiveProductsCountAsync();
         var skip = (page - 1) * pageSize;
-        var products = await _productRepository.GetActiveProductsAsync(skip, pageSize);
+        var (products, totalCount) = await _productRepository.GetProductsWithFiltersAsync(skip, pageSize, categoryId, searchQuery);
 
         return new PaginatedResult<ProductDto>
         {

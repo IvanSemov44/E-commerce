@@ -41,30 +41,13 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            PaginatedResult<ProductDto> result;
-
-            // Apply filters based on provided parameters
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                // If search query is provided, search takes precedence
-                result = await _productService.SearchProductsAsync(search, page, pageSize);
-            }
-            else if (categoryId.HasValue && categoryId.Value != Guid.Empty)
-            {
-                // If category ID is provided, filter by category
-                result = await _productService.GetProductsByCategoryAsync(categoryId.Value, page, pageSize);
-            }
-            else
-            {
-                // No filters, return all products
-                result = await _productService.GetProductsAsync(page, pageSize);
-            }
-
+            // Pass all parameters to service - it handles filtering efficiently
+            var result = await _productService.GetProductsAsync(page, pageSize, categoryId, search);
             return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving all products");
+            _logger.LogError(ex, "Error retrieving products");
             return StatusCode(500, ApiResponse<PaginatedResult<ProductDto>>.Error("An error occurred while retrieving products"));
         }
     }

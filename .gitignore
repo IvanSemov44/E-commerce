@@ -42,6 +42,8 @@ coverage/
 # Build outputs
 out/
 logs/
+*.log
+backend.log
 
 # OS files
 .DS_Store
