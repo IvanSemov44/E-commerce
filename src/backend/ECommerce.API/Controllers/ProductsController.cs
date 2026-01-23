@@ -60,7 +60,7 @@ public class ProductsController : ControllerBase
                 result = await _productService.GetProductsAsync(page, pageSize);
             }
 
-            return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
+            return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, $"Products retrieved successfully. Search={search ?? "null"}, Category={categoryId?.ToString() ?? "null"}"));
         }
         catch (Exception ex)
         {
