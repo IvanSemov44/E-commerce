@@ -24,10 +24,12 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves a paginated list of all products.
+    /// Retrieves a paginated list of products with optional filtering by category and search query.
     /// </summary>
     /// <param name="page">The page number (default: 1).</param>
     /// <param name="pageSize">The number of items per page (default: 20, max: 100).</param>
+    /// <param name="categoryId">Optional category ID to filter products by category.</param>
+    /// <param name="search">Optional search query to find products by name, description, or SKU.</param>
     /// <returns>A paginated list of products.</returns>
     /// <response code="200">Products retrieved successfully.</response>
     /// <response code="500">Internal server error.</response>
@@ -35,11 +37,29 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] Guid? categoryId = null, [FromQuery] string? search = null)
     {
         try
         {
-            var result = await _productService.GetProductsAsync(page, pageSize);
+            PaginatedResult<ProductDto> result;
+
+            // Apply filters based on provided parameters
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                // If search query is provided, search takes precedence
+                result = await _productService.SearchProductsAsync(search, page, pageSize);
+            }
+            else if (categoryId.HasValue && categoryId.Value != Guid.Empty)
+            {
+                // If category ID is provided, filter by category
+                result = await _productService.GetProductsByCategoryAsync(categoryId.Value, page, pageSize);
+            }
+            else
+            {
+                // No filters, return all products
+                result = await _productService.GetProductsAsync(page, pageSize);
+            }
+
             return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
         }
         catch (Exception ex)

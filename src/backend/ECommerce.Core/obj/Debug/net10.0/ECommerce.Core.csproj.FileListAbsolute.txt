@@ -10,3 +10,4 @@ C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10
 C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\refint\ECommerce.Core.dll
 C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.pdb
 C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ref\ECommerce.Core.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\obj\Debug\net10.0\ECommerce.Core.sourcelink.json

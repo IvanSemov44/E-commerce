@@ -28,7 +28,8 @@
       "Bash(lsof:*)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzNjVlMTBmMS04NjhkLTRhYWEtYjg0YS0yNDhlYmFjNDlhMjUiLCJlbWFpbCI6InRlc3R1c2VyQGV4YW1wbGUuY29tIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJDdXN0b21lciIsImV4cCI6MTc2OTAwMDE5MywiaXNzIjoiZWNvbW1lcmNlLWFwaSIsImF1ZCI6ImVjb21tZXJjZS1jbGllbnQifQ.QZhypsV5jmoNy2_TrnCYm4LRPxcOCOqqN1VzIXU9KNY\")",
       "Bash(ls:*)",
-      "Bash(git -C \"c:\\\\Users\\\\ivans\\\\Desktop\\\\Dev\\\\E-commerce\" log --oneline -10)"
+      "Bash(git -C \"c:\\\\Users\\\\ivans\\\\Desktop\\\\Dev\\\\E-commerce\" log --oneline -10)",
+      "Bash(del \"c:\\\\Users\\\\ivans\\\\Desktop\\\\Dev\\\\E-commerce\\\\src\\\\frontend\\\\shared\\\\api\\\\baseQuery.ts\")"
     ]
   }
 }

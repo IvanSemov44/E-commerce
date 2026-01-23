@@ -13,3 +13,4 @@ C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debu
 C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\refint\ECommerce.Application.dll
 C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.pdb
 C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ref\ECommerce.Application.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\obj\Debug\net10.0\ECommerce.Application.sourcelink.json

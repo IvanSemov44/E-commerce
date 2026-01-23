@@ -12,6 +12,8 @@ public interface IProductService
     Task<ProductDetailDto?> GetProductBySlugAsync(string slug);
     Task<ProductDetailDto?> GetProductByIdAsync(Guid id);
     Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10);
+    Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20);
+    Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = 20);
     Task<ProductDetailDto> CreateProductAsync(CreateProductDto dto);
     Task<ProductDetailDto> UpdateProductAsync(Guid id, UpdateProductDto dto);
     Task<bool> DeleteProductAsync(Guid id);
