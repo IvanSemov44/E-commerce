@@ -116,20 +116,9 @@ export interface AuthResponse {
 }
 
 // Order Types
-export enum OrderStatus {
-  Pending = 'pending',
-  Processing = 'processing',
-  Shipped = 'shipped',
-  Delivered = 'delivered',
-  Cancelled = 'cancelled',
-}
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
-export enum PaymentStatus {
-  Pending = 'pending',
-  Paid = 'paid',
-  Failed = 'failed',
-  Refunded = 'refunded',
-}
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface OrderItem {
   id: string;
@@ -143,20 +132,20 @@ export interface OrderItem {
 export interface Order {
   id: string;
   orderNumber: string;
-  userId: string;
+  userId?: string;
   items: OrderItem[];
   status: OrderStatus;
   paymentStatus: PaymentStatus;
-  total: number;
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  discount?: number;
+  totalAmount: number;
+  subtotal?: number;
+  taxAmount?: number;
+  shippingAmount?: number;
+  discountAmount?: number;
   shippingAddress?: Address;
   billingAddress?: Address;
-  paymentMethod: string;
+  paymentMethod?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface Address {

@@ -55,7 +55,7 @@ export default function Orders() {
     },
     {
       header: 'Total',
-      accessor: (order: Order) => `$${order.total.toFixed(2)}`,
+      accessor: (order: Order) => `$${order.totalAmount.toFixed(2)}`,
       width: '10%',
     },
     {
