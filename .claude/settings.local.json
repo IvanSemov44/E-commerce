@@ -35,7 +35,14 @@
       "Bash(timeout:*)",
       "Bash(powershell -Command:*)",
       "Bash(tasklist:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(dotnet run:*)",
+      "Bash(Start-Process \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\")",
+      "Bash(python -m json.tool:*)",
+      "Bash(ConvertFrom-Json)",
+      "Bash(Select-Object -ExpandProperty data)",
+      "Bash(Select-Object totalCount, @{Name='ProductNames')",
+      "Bash(Expression={$_items.name}})"
     ]
   }
 }
