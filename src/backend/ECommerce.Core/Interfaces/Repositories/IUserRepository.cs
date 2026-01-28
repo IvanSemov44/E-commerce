@@ -9,4 +9,5 @@ public interface IUserRepository : IRepository<User>
     Task<bool> EmailExistsAsync(string email);
     Task<User?> GetByGoogleIdAsync(string googleId);
     Task<User?> GetByFacebookIdAsync(string facebookId);
+    Task<int> GetCustomersCountAsync();
 }

@@ -1,4 +1,5 @@
 using ECommerce.Core.Entities;
+using ECommerce.Core.Enums;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -50,5 +51,41 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Include(o => o.BillingAddress)
             .Include(o => o.User)
             .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    public async Task<int> GetTotalOrdersCountAsync()
+    {
+        return await DbSet.CountAsync();
+    }
+
+    public async Task<decimal> GetTotalRevenueAsync()
+    {
+        return await DbSet
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid)
+            .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
+    }
+
+    public async Task<Dictionary<DateTime, int>> GetOrdersTrendAsync(int days)
+    {
+        var startDate = DateTime.UtcNow.AddDays(-days).Date;
+        var orders = await DbSet
+            .Where(o => o.CreatedAt >= startDate)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        return orders.ToDictionary(x => x.Date, x => x.Count);
+    }
+
+    public async Task<Dictionary<DateTime, decimal>> GetRevenueTrendAsync(int days)
+    {
+        var startDate = DateTime.UtcNow.AddDays(-days).Date;
+        var revenue = await DbSet
+            .Where(o => o.CreatedAt >= startDate && o.PaymentStatus == PaymentStatus.Paid)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Amount = g.Sum(o => o.TotalAmount) })
+            .ToListAsync();
+
+        return revenue.ToDictionary(x => x.Date, x => x.Amount);
     }
 }
