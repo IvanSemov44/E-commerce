@@ -42,7 +42,9 @@
       "Bash(ConvertFrom-Json)",
       "Bash(Select-Object -ExpandProperty data)",
       "Bash(Select-Object totalCount, @{Name='ProductNames')",
-      "Bash(Expression={$_items.name}})"
+      "Bash(Expression={$_items.name}})",
+      "Bash(Select-String -Pattern \"cart\" -Context 2)",
+      "Bash(npm run dev --help:*)"
     ]
   }
 }

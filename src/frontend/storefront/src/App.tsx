@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from './store/hooks';
 import { setUser } from './store/slices/authSlice';
 import { useGetProfileQuery } from './store/api/profileApi';
 import { useGetCartQuery, useAddToCartMutation } from './store/api/cartApi';
-import { selectCartItems } from './store/slices/cartSlice';
+import { selectCartItems, removeItem } from './store/slices/cartSlice';
 
 // Pages
 import Home from './pages/Home';
@@ -51,30 +51,46 @@ function AppContent() {
     if (!isAuthenticated || !token || !backendCart || cartLoading) return;
 
     const syncCart = async () => {
-      try {
-        // Get items from local cart that aren't in backend cart
-        const backendProductIds = new Set(backendCart.items.map((item) => item.productId));
-        const itemsToSync = localCartItems.filter((item) => !backendProductIds.has(item.id));
+      // Get items from local cart that aren't in backend cart
+      const backendProductIds = new Set(backendCart.items.map((item) => item.productId));
+      const itemsToSync = localCartItems.filter((item) => !backendProductIds.has(item.id));
 
-        // Sync each local item to backend
-        for (const item of itemsToSync) {
+      if (itemsToSync.length === 0) return;
+
+      let syncedCount = 0;
+      let failedItems: string[] = [];
+
+      // Sync each local item to backend individually
+      for (const item of itemsToSync) {
+        try {
           await addToCart({
             productId: item.id,
             quantity: item.quantity,
           }).unwrap();
+          syncedCount++;
+        } catch (error: any) {
+          // Product not found or other error - remove from local cart
+          console.warn(`Failed to sync item ${item.name} (${item.id}):`, error?.data?.message || error);
+          dispatch(removeItem(item.id));
+          failedItems.push(item.name);
         }
+      }
 
-        // Refetch cart to get latest state
-        if (itemsToSync.length > 0) {
-          refetchCart();
-        }
-      } catch (error) {
-        console.error('Failed to sync cart:', error);
+      // Refetch cart to get latest state if any items were synced
+      if (syncedCount > 0) {
+        refetchCart();
+      }
+
+      // Notify user if items were removed
+      if (failedItems.length > 0) {
+        console.info(
+          `Removed ${failedItems.length} unavailable item(s) from cart: ${failedItems.join(', ')}`
+        );
       }
     };
 
     syncCart();
-  }, [isAuthenticated, token, backendCart, cartLoading, localCartItems, addToCart, refetchCart]);
+  }, [isAuthenticated, token, backendCart, cartLoading, localCartItems, addToCart, refetchCart, dispatch]);
 
   return (
     <div>
