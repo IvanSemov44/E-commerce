@@ -79,13 +79,19 @@ public class ProductRepository : Repository<Product>, IProductRepository
         int skip,
         int take,
         Guid? categoryId = null,
-        string? searchQuery = null)
+        string? searchQuery = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        decimal? minRating = null,
+        bool? isFeatured = null,
+        string? sortBy = null)
     {
         // Start with base query - only active products
         var query = DbSet
             .Where(p => p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .AsQueryable();
 
         // Apply category filter if provided
@@ -104,12 +110,49 @@ public class ProductRepository : Repository<Product>, IProductRepository
                 (p.Sku != null && p.Sku.ToLower().Contains(searchTerm)));
         }
 
+        // Apply price range filters
+        if (minPrice.HasValue)
+        {
+            query = query.Where(p => p.Price >= minPrice.Value);
+        }
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(p => p.Price <= maxPrice.Value);
+        }
+
+        // Apply rating filter (only approved reviews)
+        if (minRating.HasValue)
+        {
+            query = query.Where(p =>
+                p.Reviews.Any(r => r.IsApproved) &&
+                p.Reviews.Where(r => r.IsApproved).Average(r => r.Rating) >= (double)minRating.Value);
+        }
+
+        // Apply featured filter
+        if (isFeatured.HasValue)
+        {
+            query = query.Where(p => p.IsFeatured == isFeatured.Value);
+        }
+
         // Get total count AFTER filters applied
         var totalCount = await query.CountAsync();
 
-        // Apply pagination and ordering
+        // Apply sorting
+        query = sortBy?.ToLower() switch
+        {
+            "name" => query.OrderBy(p => p.Name),
+            "price-asc" => query.OrderBy(p => p.Price),
+            "price-desc" => query.OrderByDescending(p => p.Price),
+            "rating" => query.OrderByDescending(p =>
+                p.Reviews.Any(r => r.IsApproved)
+                    ? p.Reviews.Where(r => r.IsApproved).Average(r => r.Rating)
+                    : 0),
+            "newest" => query.OrderByDescending(p => p.CreatedAt),
+            _ => query.OrderByDescending(p => p.CreatedAt) // Default: newest first
+        };
+
+        // Apply pagination
         var items = await query
-            .OrderByDescending(p => p.CreatedAt)
             .Skip(skip)
             .Take(take)
             .ToListAsync();

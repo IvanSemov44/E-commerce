@@ -79,14 +79,29 @@ export const productApi = createApi({
   endpoints: (builder) => ({
     getProducts: builder.query<
       PaginatedResult<Product>,
-      { page?: number; pageSize?: number; categoryId?: string; search?: string }
+      {
+        page?: number;
+        pageSize?: number;
+        categoryId?: string;
+        search?: string;
+        minPrice?: number;
+        maxPrice?: number;
+        minRating?: number;
+        isFeatured?: boolean;
+        sortBy?: string;
+      }
     >({
-      query: ({ page = 1, pageSize = 20, categoryId, search }) => {
+      query: ({ page = 1, pageSize = 20, categoryId, search, minPrice, maxPrice, minRating, isFeatured, sortBy }) => {
         const params = new URLSearchParams();
         params.set('page', page.toString());
         params.set('pageSize', pageSize.toString());
         if (categoryId) params.set('categoryId', categoryId);
         if (search) params.set('search', search);
+        if (minPrice !== undefined) params.set('minPrice', minPrice.toString());
+        if (maxPrice !== undefined) params.set('maxPrice', maxPrice.toString());
+        if (minRating !== undefined) params.set('minRating', minRating.toString());
+        if (isFeatured !== undefined) params.set('isFeatured', isFeatured.toString());
+        if (sortBy) params.set('sortBy', sortBy);
         return `/products?${params}`;
       },
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>

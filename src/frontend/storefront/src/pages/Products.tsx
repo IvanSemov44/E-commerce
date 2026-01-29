@@ -26,6 +26,25 @@ export default function Products() {
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') || '');
 
+  // New filter states
+  const [minPrice, setMinPrice] = useState<number | undefined>(() => {
+    const val = searchParams.get('minPrice');
+    return val ? parseFloat(val) : undefined;
+  });
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(() => {
+    const val = searchParams.get('maxPrice');
+    return val ? parseFloat(val) : undefined;
+  });
+  const [minRating, setMinRating] = useState<number | undefined>(() => {
+    const val = searchParams.get('minRating');
+    return val ? parseFloat(val) : undefined;
+  });
+  const [sortBy, setSortBy] = useState<string>(() => searchParams.get('sortBy') || 'newest');
+  const [isFeatured, setIsFeatured] = useState<boolean | undefined>(() => {
+    const val = searchParams.get('isFeatured');
+    return val === 'true' ? true : undefined;
+  });
+
   // Debounce search input (500ms)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -38,7 +57,7 @@ export default function Products() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [selectedCategoryId, debouncedSearch]);
+  }, [selectedCategoryId, debouncedSearch, minPrice, maxPrice, minRating, sortBy, isFeatured]);
 
   // Sync URL when filters change (after debounce completes)
   useEffect(() => {
@@ -46,23 +65,38 @@ export default function Products() {
 
     if (debouncedSearch) params.set('search', debouncedSearch);
     if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
+    if (minPrice !== undefined) params.set('minPrice', minPrice.toString());
+    if (maxPrice !== undefined) params.set('maxPrice', maxPrice.toString());
+    if (minRating !== undefined) params.set('minRating', minRating.toString());
+    if (sortBy !== 'newest') params.set('sortBy', sortBy);
+    if (isFeatured) params.set('isFeatured', 'true');
     if (page > 1) params.set('page', page.toString());
 
     setSearchParams(params, { replace: true }); // Use replace to avoid history pollution
-  }, [debouncedSearch, selectedCategoryId, page, setSearchParams]);
+  }, [debouncedSearch, selectedCategoryId, minPrice, maxPrice, minRating, sortBy, isFeatured, page, setSearchParams]);
 
   const { data: result, isLoading, error } = useGetProductsQuery({
     page,
     pageSize: 12,
     categoryId: selectedCategoryId,
     search: debouncedSearch,
+    minPrice,
+    maxPrice,
+    minRating,
+    sortBy,
+    isFeatured,
   });
 
-  const hasActiveFilters = selectedCategoryId || debouncedSearch;
+  const hasActiveFilters = selectedCategoryId || debouncedSearch || minPrice !== undefined || maxPrice !== undefined || minRating !== undefined || isFeatured;
 
   const handleClearFilters = () => {
     setSelectedCategoryId(undefined);
     setSearchInput('');
+    setMinPrice(undefined);
+    setMaxPrice(undefined);
+    setMinRating(undefined);
+    setSortBy('newest');
+    setIsFeatured(undefined);
     setPage(1);
   };
 
@@ -77,27 +111,112 @@ export default function Products() {
             selectedCategoryId={selectedCategoryId}
             onSelectCategory={setSelectedCategoryId}
           />
+
+          {/* Price Filter */}
+          <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Price Range</h3>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <input
+                type="number"
+                placeholder="Min"
+                value={minPrice || ''}
+                onChange={(e) => setMinPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
+                style={{
+                  width: '50%',
+                  padding: '0.5rem',
+                  fontSize: '0.875rem',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '0.375rem',
+                }}
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={maxPrice || ''}
+                onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
+                style={{
+                  width: '50%',
+                  padding: '0.5rem',
+                  fontSize: '0.875rem',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '0.375rem',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Rating Filter */}
+          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Minimum Rating</h3>
+            <select
+              value={minRating || ''}
+              onChange={(e) => setMinRating(e.target.value ? parseFloat(e.target.value) : undefined)}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                fontSize: '0.875rem',
+                border: '1px solid #e0e0e0',
+                borderRadius: '0.375rem',
+                backgroundColor: 'white',
+              }}
+            >
+              <option value="">All Ratings</option>
+              <option value="4">4+ Stars</option>
+              <option value="4.5">4.5+ Stars</option>
+              <option value="5">5 Stars</option>
+            </select>
+          </div>
+
+          {/* Featured Filter */}
+          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={isFeatured || false}
+                onChange={(e) => setIsFeatured(e.target.checked ? true : undefined)}
+                style={{ cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '0.9rem' }}>Featured Products Only</span>
+            </label>
+          </div>
         </div>
 
         {/* Main Content */}
         <div className={styles.content} style={{ flex: 1, minWidth: 0 }}>
-          {/* Search and Filter Bar */}
+          {/* Search and Sort Bar */}
           <div style={{ marginBottom: '2rem' }}>
-            <div style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 style={{
-                  width: '100%',
+                  flex: 1,
                   padding: '0.75rem',
                   fontSize: '1rem',
                   border: '1px solid #e0e0e0',
                   borderRadius: '0.5rem',
-                  boxSizing: 'border-box',
                 }}
               />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{
+                  padding: '0.75rem',
+                  fontSize: '1rem',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '0.5rem',
+                  backgroundColor: 'white',
+                  minWidth: '180px',
+                }}
+              >
+                <option value="newest">Newest First</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating">Highest Rated</option>
+              </select>
             </div>
 
             {/* Active Filters Display */}
@@ -135,6 +254,57 @@ export default function Products() {
                     }}
                   >
                     Category Selected
+                  </div>
+                )}
+                {(minPrice !== undefined || maxPrice !== undefined) && (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      backgroundColor: '#e8f5e9',
+                      border: '1px solid #388e3c',
+                      borderRadius: '1rem',
+                      fontSize: '0.875rem',
+                      color: '#388e3c',
+                    }}
+                  >
+                    Price: ${minPrice || 0} - ${maxPrice || '∞'}
+                  </div>
+                )}
+                {minRating !== undefined && (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      backgroundColor: '#fff3e0',
+                      border: '1px solid #f57c00',
+                      borderRadius: '1rem',
+                      fontSize: '0.875rem',
+                      color: '#f57c00',
+                    }}
+                  >
+                    {minRating}+ Stars
+                  </div>
+                )}
+                {isFeatured && (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      backgroundColor: '#fce4ec',
+                      border: '1px solid #c2185b',
+                      borderRadius: '1rem',
+                      fontSize: '0.875rem',
+                      color: '#c2185b',
+                    }}
+                  >
+                    Featured Only
                   </div>
                 )}
                 <Button

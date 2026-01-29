@@ -24,12 +24,17 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves a paginated list of products with optional filtering by category and search query.
+    /// Retrieves a paginated list of products with optional filtering and sorting.
     /// </summary>
     /// <param name="page">The page number (default: 1).</param>
     /// <param name="pageSize">The number of items per page (default: 20, max: 100).</param>
     /// <param name="categoryId">Optional category ID to filter products by category.</param>
     /// <param name="search">Optional search query to find products by name, description, or SKU.</param>
+    /// <param name="minPrice">Optional minimum price filter.</param>
+    /// <param name="maxPrice">Optional maximum price filter.</param>
+    /// <param name="minRating">Optional minimum average rating filter.</param>
+    /// <param name="isFeatured">Optional filter for featured products only.</param>
+    /// <param name="sortBy">Optional sort order: name, price-asc, price-desc, rating, newest (default: newest).</param>
     /// <returns>A paginated list of products.</returns>
     /// <response code="200">Products retrieved successfully.</response>
     /// <response code="500">Internal server error.</response>
@@ -37,12 +42,22 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] Guid? categoryId = null, [FromQuery] string? search = null)
+    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? categoryId = null,
+        [FromQuery] string? search = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] decimal? minRating = null,
+        [FromQuery] bool? isFeatured = null,
+        [FromQuery] string? sortBy = null)
     {
         try
         {
             // Pass all parameters to service - it handles filtering efficiently
-            var result = await _productService.GetProductsAsync(page, pageSize, categoryId, search);
+            var result = await _productService.GetProductsAsync(
+                page, pageSize, categoryId, search, minPrice, maxPrice, minRating, isFeatured, sortBy);
             return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
         }
         catch (Exception ex)
