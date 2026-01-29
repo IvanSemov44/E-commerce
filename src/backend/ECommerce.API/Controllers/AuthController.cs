@@ -141,6 +141,117 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Verifies a user's email address using the verification token.
+    /// </summary>
+    /// <param name="request">The email verification request containing userId and token.</param>
+    /// <returns>Verification result.</returns>
+    /// <response code="200">Email verified successfully.</response>
+    /// <response code="400">Invalid or expired verification token.</response>
+    /// <response code="500">Internal server error.</response>
+    [HttpPost("verify-email")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<object>.Error("Invalid request"));
+            }
+
+            var result = await _authService.VerifyEmailAsync(request.UserId, request.Token);
+
+            if (!result)
+            {
+                return BadRequest(ApiResponse<object>.Error("Invalid or expired verification token"));
+            }
+
+            _logger.LogInformation("Email verified successfully for user {UserId}", request.UserId);
+            return Ok(ApiResponse<object>.Ok(null, "Email verified successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying email");
+            return StatusCode(500, ApiResponse<object>.Error("An error occurred while verifying email"));
+        }
+    }
+
+    /// <summary>
+    /// Sends a password reset email to the user.
+    /// </summary>
+    /// <param name="request">The forgot password request containing the user's email.</param>
+    /// <returns>Success message if email exists (security: always return success).</returns>
+    /// <response code="200">Password reset email sent (or user not found, but we don't reveal that).</response>
+    /// <response code="500">Internal server error.</response>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest(ApiResponse<object>.Error("Email is required"));
+            }
+
+            var token = await _authService.GeneratePasswordResetTokenAsync(request.Email);
+
+            // Always return success for security reasons (don't reveal if email exists)
+            _logger.LogInformation("Password reset requested for {Email}", request.Email);
+            return Ok(ApiResponse<object>.Ok(null, "If an account with that email exists, a password reset link has been sent"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing forgot password request");
+            return StatusCode(500, ApiResponse<object>.Error("An error occurred while processing your request"));
+        }
+    }
+
+    /// <summary>
+    /// Resets the user's password using a valid reset token.
+    /// </summary>
+    /// <param name="request">The reset password request containing email, token, and new password.</param>
+    /// <returns>Password reset result.</returns>
+    /// <response code="200">Password reset successfully.</response>
+    /// <response code="400">Invalid or expired reset token.</response>
+    /// <response code="500">Internal server error.</response>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<object>.Error("Invalid request"));
+            }
+
+            var result = await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword);
+
+            if (!result)
+            {
+                return BadRequest(ApiResponse<object>.Error("Invalid or expired reset token"));
+            }
+
+            _logger.LogInformation("Password reset successfully for {Email}", request.Email);
+            return Ok(ApiResponse<object>.Ok(null, "Password reset successfully. You can now login with your new password"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting password");
+            return StatusCode(500, ApiResponse<object>.Error("An error occurred while resetting password"));
+        }
+    }
+
 }
 
 #region DTOs
@@ -177,6 +288,12 @@ public class ChangePasswordRequest
 {
     public string OldPassword { get; set; } = null!;
     public string NewPassword { get; set; } = null!;
+}
+
+public class VerifyEmailRequest
+{
+    public Guid UserId { get; set; }
+    public string Token { get; set; } = null!;
 }
 
 #endregion

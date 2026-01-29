@@ -17,6 +17,7 @@ public class OrderService : IOrderService
     private readonly IUserRepository _userRepository;
     private readonly IProductRepository _productRepository;
     private readonly IPromoCodeService _promoCodeService;
+    private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
 
@@ -25,6 +26,7 @@ public class OrderService : IOrderService
         IUserRepository userRepository,
         IProductRepository productRepository,
         IPromoCodeService promoCodeService,
+        IEmailService emailService,
         IMapper mapper,
         ILogger<OrderService> logger)
     {
@@ -32,6 +34,7 @@ public class OrderService : IOrderService
         _userRepository = userRepository;
         _productRepository = productRepository;
         _promoCodeService = promoCodeService;
+        _emailService = emailService;
         _mapper = mapper;
         _logger = logger;
     }
@@ -185,6 +188,18 @@ public class OrderService : IOrderService
             if (order.PromoCodeId.HasValue)
             {
                 await _promoCodeService.IncrementUsedCountAsync(order.PromoCodeId.Value);
+            }
+
+            // Send order confirmation email
+            try
+            {
+                await _emailService.SendOrderConfirmationEmailAsync(user.Email, order);
+                _logger.LogInformation("Order confirmation email sent to {Email}", user.Email);
+            }
+            catch (Exception emailEx)
+            {
+                _logger.LogError(emailEx, "Failed to send order confirmation email for order {OrderNumber}", order.OrderNumber);
+                // Don't throw - order was created successfully
             }
 
             _logger.LogInformation("Order created successfully: {OrderNumber}", order.OrderNumber);

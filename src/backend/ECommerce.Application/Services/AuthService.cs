@@ -16,6 +16,9 @@ public interface IAuthService
     Task<AuthResponseDto> LoginAsync(LoginDto dto);
     Task<AuthResponseDto> RefreshTokenAsync(string token);
     Task<bool> ValidateTokenAsync(string token);
+    Task<bool> VerifyEmailAsync(Guid userId, string token);
+    Task<string?> GeneratePasswordResetTokenAsync(string email);
+    Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
     string GenerateJwtToken(UserDto user);
     string HashPassword(string password);
     bool VerifyPassword(string password, string hash);
@@ -25,11 +28,13 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration)
+    public AuthService(IUserRepository userRepository, IConfiguration configuration, IEmailService emailService)
     {
         _userRepository = userRepository;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -51,11 +56,26 @@ public class AuthService : IAuthService
             LastName = dto.LastName,
             PasswordHash = HashPassword(dto.Password),
             Role = UserRole.Customer,
-            IsEmailVerified = true // For MVP, auto-verify
+            IsEmailVerified = true, // For MVP, auto-verify
+            EmailVerificationToken = Guid.NewGuid().ToString()
         };
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
+
+        // Send welcome email (fire and forget - don't block registration)
+        var verificationLink = $"{_configuration["AppUrl"]}/verify-email?userId={user.Id}&token={user.EmailVerificationToken}";
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _emailService.SendWelcomeEmailAsync(user.Email, user.FirstName, verificationLink);
+            }
+            catch
+            {
+                // Silently fail - email failure should not affect registration
+            }
+        });
 
         var userDto = MapToUserDto(user);
         var token = GenerateJwtToken(userDto);
@@ -197,6 +217,21 @@ public class AuthService : IAuthService
         user.PasswordResetExpires = DateTime.UtcNow.AddHours(1);
         await _userRepository.UpdateAsync(user);
         await _userRepository.SaveChangesAsync();
+
+        // Send password reset email (fire and forget)
+        var resetLink = $"{_configuration["AppUrl"]}/reset-password?email={email}&token={user.PasswordResetToken}";
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(user.Email, user.FirstName, resetLink);
+            }
+            catch
+            {
+                // Silently fail - email failure should not affect token generation
+            }
+        });
+
         return user.PasswordResetToken;
     }
 

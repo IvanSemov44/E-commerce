@@ -48,7 +48,8 @@
       "Bash(python:*)",
       "Bash(node:*)",
       "Bash(npx pdf-parse:*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "Bash(jq:*)"
     ]
   }
 }
