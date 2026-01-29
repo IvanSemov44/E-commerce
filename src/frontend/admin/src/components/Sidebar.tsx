@@ -33,6 +33,11 @@ const menuItems = [
     path: '/promo-codes',
   },
   {
+    icon: '📊',
+    label: 'Inventory',
+    path: '/inventory',
+  },
+  {
     icon: '⚙️',
     label: 'Settings',
     path: '/settings',

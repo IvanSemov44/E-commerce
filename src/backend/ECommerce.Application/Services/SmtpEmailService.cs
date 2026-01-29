@@ -318,21 +318,22 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(email, subject, htmlContent);
     }
 
-    public async Task SendLowStockAlertAsync(string email, Product product)
+    public async Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null)
     {
-        var subject = $"Low Stock Alert - {product.Name}";
+        var subject = $"Low Stock Alert - {productName}";
         var htmlContent = $@"
             <html>
             <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                 <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
                     <h2 style='color: #dc2626;'>Low Stock Alert</h2>
+                    <p>Hi {firstName},</p>
                     <p>The following product is running low on stock:</p>
 
                     <div style='background-color: #fef2f2; padding: 15px; border-radius: 5px; border-left: 4px solid #dc2626; margin: 20px 0;'>
-                        <p style='margin: 5px 0;'><strong>Product:</strong> {product.Name}</p>
-                        <p style='margin: 5px 0;'><strong>SKU:</strong> {product.Sku}</p>
-                        <p style='margin: 5px 0;'><strong>Current Stock:</strong> {product.StockQuantity}</p>
-                        <p style='margin: 5px 0;'><strong>Threshold:</strong> {product.LowStockThreshold}</p>
+                        <p style='margin: 5px 0;'><strong>Product:</strong> {productName}</p>
+                        {(!string.IsNullOrWhiteSpace(sku) ? $"<p style='margin: 5px 0;'><strong>SKU:</strong> {sku}</p>" : "")}
+                        <p style='margin: 5px 0;'><strong>Current Stock:</strong> {currentStock}</p>
+                        <p style='margin: 5px 0;'><strong>Threshold:</strong> {threshold}</p>
                     </div>
 
                     <p>Please restock this product soon to avoid stockouts.</p>

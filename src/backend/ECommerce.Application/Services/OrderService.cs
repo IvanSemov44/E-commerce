@@ -17,6 +17,7 @@ public class OrderService : IOrderService
     private readonly IUserRepository _userRepository;
     private readonly IProductRepository _productRepository;
     private readonly IPromoCodeService _promoCodeService;
+    private readonly IInventoryService _inventoryService;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
@@ -26,6 +27,7 @@ public class OrderService : IOrderService
         IUserRepository userRepository,
         IProductRepository productRepository,
         IPromoCodeService promoCodeService,
+        IInventoryService inventoryService,
         IEmailService emailService,
         IMapper mapper,
         ILogger<OrderService> logger)
@@ -34,6 +36,7 @@ public class OrderService : IOrderService
         _userRepository = userRepository;
         _productRepository = productRepository;
         _promoCodeService = promoCodeService;
+        _inventoryService = inventoryService;
         _emailService = emailService;
         _mapper = mapper;
         _logger = logger;
@@ -128,19 +131,26 @@ public class OrderService : IOrderService
                 order.BillingAddress = billingAddress;
             }
 
-            // Process order items
+            // Process order items and validate stock
             var subtotal = 0m;
             var items = new List<OrderItem>();
+            var stockCheckItems = new List<ECommerce.Application.DTOs.Inventory.StockCheckItem>();
 
             if (dto.Items != null && dto.Items.Any())
             {
                 foreach (var itemDto in dto.Items)
                 {
+                    if (!Guid.TryParse(itemDto.ProductId, out var productId))
+                    {
+                        throw new ArgumentException($"Invalid product ID: {itemDto.ProductId}");
+                    }
+
                     var itemTotal = itemDto.Price * itemDto.Quantity;
                     subtotal += itemTotal;
 
                     var orderItem = new OrderItem
                     {
+                        ProductId = productId,
                         ProductName = itemDto.ProductName,
                         ProductImageUrl = itemDto.ImageUrl,
                         Quantity = itemDto.Quantity,
@@ -149,6 +159,24 @@ public class OrderService : IOrderService
                     };
 
                     items.Add(orderItem);
+
+                    // Add to stock check list
+                    stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItem
+                    {
+                        ProductId = productId,
+                        Quantity = itemDto.Quantity
+                    });
+                }
+            }
+
+            // Validate stock availability before creating order
+            if (stockCheckItems.Any())
+            {
+                var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
+                if (!stockCheck.IsAvailable)
+                {
+                    var issueMessages = string.Join("; ", stockCheck.Issues.Select(i => i.Message));
+                    throw new InvalidOperationException($"Insufficient stock: {issueMessages}");
                 }
             }
 
@@ -183,6 +211,32 @@ public class OrderService : IOrderService
 
             await _orderRepository.AddAsync(order);
             await _orderRepository.SaveChangesAsync();
+
+            // Reduce stock for each product
+            foreach (var item in items)
+            {
+                if (item.ProductId.HasValue)
+                {
+                    try
+                    {
+                        await _inventoryService.ReduceStockAsync(
+                            item.ProductId.Value,
+                            item.Quantity,
+                            "sale",
+                            order.Id,
+                            userId
+                        );
+                        _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units for order {OrderNumber}",
+                            item.ProductId.Value, item.Quantity, order.OrderNumber);
+                    }
+                    catch (Exception stockEx)
+                    {
+                        _logger.LogError(stockEx, "Failed to reduce stock for product {ProductId} in order {OrderNumber}",
+                            item.ProductId.Value, order.OrderNumber);
+                        // Continue - order was created, we'll handle stock manually if needed
+                    }
+                }
+            }
 
             // Increment promo code usage after successful order creation
             if (order.PromoCodeId.HasValue)

@@ -97,6 +97,7 @@ builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // Register email service based on configuration
 var emailProvider = configuration["EmailProvider"] ?? "SendGrid";

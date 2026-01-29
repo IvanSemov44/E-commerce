@@ -45,7 +45,7 @@ public interface IEmailService
     /// <summary>
     /// Send low stock alert to admin.
     /// </summary>
-    Task SendLowStockAlertAsync(string email, Product product);
+    Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null);
 
     /// <summary>
     /// Send marketing/newsletter email.

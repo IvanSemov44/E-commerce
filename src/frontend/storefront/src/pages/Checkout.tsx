@@ -152,6 +152,36 @@ export default function Checkout() {
     }
 
     try {
+      // Check stock availability before placing order
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const stockCheckResponse = await fetch(`${API_URL}/inventory/check-availability`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: cartItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const stockCheckResult = await stockCheckResponse.json();
+
+      if (!stockCheckResult.success) {
+        setError('Failed to verify stock availability. Please try again.');
+        return;
+      }
+
+      if (!stockCheckResult.data.isAvailable) {
+        const issueMessages = stockCheckResult.data.issues
+          .map((issue: any) => `${issue.productName}: ${issue.message}`)
+          .join(', ');
+        setError(`Some items are no longer available: ${issueMessages}`);
+        return;
+      }
+
       const orderData: CreateOrderRequest = {
         items: cartItems.map((item) => ({
           productId: item.id,
@@ -184,7 +214,7 @@ export default function Checkout() {
       setOrderNumber(result.orderNumber);
       setOrderComplete(true);
     } catch (err: any) {
-      setError(err.data?.message || 'Failed to create order. Please try again.');
+      setError(err.data?.message || err.message || 'Failed to create order. Please try again.');
     }
   };
 
