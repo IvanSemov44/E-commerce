@@ -14,6 +14,7 @@ import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Reviews from './pages/Reviews';
 import Customers from './pages/Customers';
+import PromoCodes from './pages/PromoCodes';
 import Settings from './pages/Settings';
 
 // Store
@@ -40,6 +41,7 @@ function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/customers" element={<Customers />} />
+            <Route path="/promo-codes" element={<PromoCodes />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
 

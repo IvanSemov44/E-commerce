@@ -27,10 +27,20 @@ export default function Checkout() {
   const [orderNumber, setOrderNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Calculate totals
+  // Promo code state
+  const [promoCode, setPromoCode] = useState('');
+  const [promoCodeValidation, setPromoCodeValidation] = useState<{
+    isValid: boolean;
+    discountAmount: number;
+    message?: string;
+  } | null>(null);
+  const [validatingPromoCode, setValidatingPromoCode] = useState(false);
+
+  // Calculate totals with discount
+  const discount = promoCodeValidation?.isValid ? promoCodeValidation.discountAmount : 0;
   const shipping = subtotal > 100 ? 0 : 10;
   const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  const total = subtotal - discount + shipping + tax;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -44,6 +54,63 @@ export default function Checkout() {
     postalCode: '',
     country: '',
   });
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoCodeValidation({
+        isValid: false,
+        discountAmount: 0,
+        message: 'Please enter a promo code',
+      });
+      return;
+    }
+
+    setValidatingPromoCode(true);
+    setPromoCodeValidation(null);
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/promo-codes/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: promoCode,
+          orderAmount: subtotal,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setPromoCodeValidation({
+          isValid: result.data.isValid,
+          discountAmount: result.data.discountAmount,
+          message: result.data.message,
+        });
+      } else {
+        setPromoCodeValidation({
+          isValid: false,
+          discountAmount: 0,
+          message: 'Invalid promo code',
+        });
+      }
+    } catch (err) {
+      setPromoCodeValidation({
+        isValid: false,
+        discountAmount: 0,
+        message: 'Failed to validate promo code',
+      });
+    } finally {
+      setValidatingPromoCode(false);
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    setPromoCode('');
+    setPromoCodeValidation(null);
+  };
 
   // Redirect if cart is empty
   if (cartItems.length === 0 && !orderComplete) {
@@ -103,6 +170,7 @@ export default function Checkout() {
           country: formData.country,
         },
         paymentMethod: 'card',
+        promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
       };
 
       const result = await createOrder(orderData).unwrap();
@@ -289,12 +357,59 @@ export default function Checkout() {
                 ))}
               </div>
 
+              {/* Promo Code */}
+              <div className={styles.promoSection}>
+                {!promoCodeValidation?.isValid ? (
+                  <div className={styles.promoInput}>
+                    <Input
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      onClick={handleApplyPromoCode}
+                      disabled={validatingPromoCode || !promoCode.trim()}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      {validatingPromoCode ? 'Validating...' : 'Apply'}
+                    </Button>
+                  </div>
+                ) : null}
+
+                {promoCodeValidation && (
+                  <div
+                    className={`${styles.promoMessage} ${
+                      promoCodeValidation.isValid ? styles.promoSuccess : styles.promoError
+                    }`}
+                  >
+                    {promoCodeValidation.message}
+                    {promoCodeValidation.isValid && (
+                      <button
+                        onClick={handleRemovePromoCode}
+                        className={styles.promoRemove}
+                        type="button"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Totals */}
               <div className={styles.totalsSection}>
                 <div className={styles.totalLine}>
                   <span>Subtotal:</span>
                   <span className={styles.totalValue}>${subtotal.toFixed(2)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className={styles.totalLine} style={{ color: '#16a34a' }}>
+                    <span>Discount ({promoCode}):</span>
+                    <span className={styles.totalValue}>-${discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className={styles.totalLine}>
                   <span>Shipping:</span>
                   <span className={styles.totalValue}>

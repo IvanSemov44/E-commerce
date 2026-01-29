@@ -184,3 +184,59 @@ export interface DashboardStats {
   ordersTrend: Array<{ date: string; count: number }>;
   revenueTrend: Array<{ date: string; amount: number }>;
 }
+
+// PromoCode Types
+export interface PromoCode {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderAmount?: number;
+  maxUses?: number;
+  usedCount: number;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface PromoCodeDetail extends PromoCode {
+  maxDiscountAmount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePromoCodeRequest {
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  maxUses?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive: boolean;
+}
+
+export interface UpdatePromoCodeRequest {
+  code?: string;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  maxUses?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+}
+
+export interface ValidatePromoCodeRequest {
+  code: string;
+  orderAmount: number;
+}
+
+export interface ValidatePromoCodeResponse {
+  isValid: boolean;
+  message?: string;
+  discountAmount: number;
+  promoCode?: PromoCode;
+}

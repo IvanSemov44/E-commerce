@@ -16,6 +16,7 @@ public class OrderService : IOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IProductRepository _productRepository;
+    private readonly IPromoCodeService _promoCodeService;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
 
@@ -23,12 +24,14 @@ public class OrderService : IOrderService
         IOrderRepository orderRepository,
         IUserRepository userRepository,
         IProductRepository productRepository,
+        IPromoCodeService promoCodeService,
         IMapper mapper,
         ILogger<OrderService> logger)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
         _productRepository = productRepository;
+        _promoCodeService = promoCodeService;
         _mapper = mapper;
         _logger = logger;
     }
@@ -148,7 +151,28 @@ public class OrderService : IOrderService
 
             // Calculate totals
             order.Subtotal = subtotal;
-            order.DiscountAmount = 0; // TODO: Apply promo code if provided
+
+            // Apply promo code if provided
+            if (!string.IsNullOrWhiteSpace(dto.PromoCode))
+            {
+                var promoValidation = await _promoCodeService.ValidatePromoCodeAsync(dto.PromoCode, subtotal);
+                if (promoValidation.IsValid && promoValidation.PromoCode != null)
+                {
+                    order.DiscountAmount = promoValidation.DiscountAmount;
+                    order.PromoCodeId = promoValidation.PromoCode.Id;
+                    _logger.LogInformation("Promo code {Code} applied to order with discount ${Amount}",
+                        dto.PromoCode, order.DiscountAmount);
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid promo code: {promoValidation.Message}");
+                }
+            }
+            else
+            {
+                order.DiscountAmount = 0;
+            }
+
             order.ShippingAmount = subtotal > 100 ? 0 : 10.00m;
             order.TaxAmount = subtotal * 0.08m;
             order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
@@ -156,6 +180,12 @@ public class OrderService : IOrderService
 
             await _orderRepository.AddAsync(order);
             await _orderRepository.SaveChangesAsync();
+
+            // Increment promo code usage after successful order creation
+            if (order.PromoCodeId.HasValue)
+            {
+                await _promoCodeService.IncrementUsedCountAsync(order.PromoCodeId.Value);
+            }
 
             _logger.LogInformation("Order created successfully: {OrderNumber}", order.OrderNumber);
 

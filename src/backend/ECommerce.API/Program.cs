@@ -96,6 +96,7 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
 
 // Register seeders
 builder.Services.AddScoped<IUserSeeder, UserSeeder>();

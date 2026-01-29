@@ -47,7 +47,8 @@
       "Bash(npm run dev --help:*)",
       "Bash(python:*)",
       "Bash(node:*)",
-      "Bash(npx pdf-parse:*)"
+      "Bash(npx pdf-parse:*)",
+      "Bash(printf:*)"
     ]
   }
 }

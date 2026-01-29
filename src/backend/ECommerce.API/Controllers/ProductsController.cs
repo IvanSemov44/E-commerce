@@ -269,7 +269,7 @@ public class ProductsController : ControllerBase
             }
 
             _logger.LogInformation("Product deleted: {ProductId}", id);
-            return Ok(ApiResponse<object>.Ok(null, "Product deleted successfully"));
+            return Ok(ApiResponse<object?>.Ok(null, "Product deleted successfully"));
         }
         catch (Exception ex)
         {

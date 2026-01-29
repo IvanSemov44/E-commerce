@@ -7,6 +7,7 @@ using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Users;
+using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.DTOs;
 
 namespace ECommerce.Application;
@@ -112,5 +113,12 @@ public class MappingProfile : Profile
         // Wishlist mappings
         CreateMap<Wishlist, WishlistDto>()
             .ReverseMap();
+
+        // PromoCode mappings
+        CreateMap<PromoCode, PromoCodeDto>();
+        CreateMap<PromoCode, PromoCodeDetailDto>();
+        CreateMap<CreatePromoCodeDto, PromoCode>();
+        CreateMap<UpdatePromoCodeDto, PromoCode>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
     }
 }

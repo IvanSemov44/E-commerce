@@ -28,6 +28,11 @@ const menuItems = [
     path: '/customers',
   },
   {
+    icon: '🎟️',
+    label: 'Promo Codes',
+    path: '/promo-codes',
+  },
+  {
     icon: '⚙️',
     label: 'Settings',
     path: '/settings',
