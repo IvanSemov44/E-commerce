@@ -35,6 +35,7 @@ export default function ProductDetail() {
 
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [cartError, setCartError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const dispatch = useAppDispatch();
   const cartItem = useAppSelector((state) => {
@@ -189,14 +190,23 @@ export default function ProductDetail() {
                 </div>
               </div>
 
+              {cartError && (
+                <div style={{ marginBottom: '16px' }}>
+                  <ErrorAlert message={cartError} onDismiss={() => setCartError(null)} />
+                </div>
+              )}
+
               <div className={styles.actions}>
                 <Button
                   onClick={async () => {
+                    setCartError(null);
                     const currentInCart = cartItem?.quantity || 0;
                     const totalQuantity = currentInCart + quantity;
 
                     if (totalQuantity > product.stockQuantity) {
-                      alert(`Only ${product.stockQuantity} items available. You already have ${currentInCart} in cart.`);
+                      setCartError(
+                        `Only ${product.stockQuantity} items available. You already have ${currentInCart} in cart.`
+                      );
                       return;
                     }
 
@@ -226,9 +236,11 @@ export default function ProductDetail() {
                       setAddedToCart(true);
                       setTimeout(() => setAddedToCart(false), 2000);
                       setQuantity(1);
-                    } catch (error) {
+                    } catch (error: any) {
                       console.error('Failed to add to cart:', error);
-                      alert('Failed to add item to cart. Please try again.');
+                      // Parse backend error message
+                      const errorMessage = error?.data?.message || error?.message || 'Failed to add item to cart. Please try again.';
+                      setCartError(errorMessage);
                     }
                   }}
                   disabled={product.stockQuantity === 0 || addedToCart || addingToCartBackend}
