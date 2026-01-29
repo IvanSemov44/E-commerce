@@ -97,7 +97,19 @@ builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
-builder.Services.AddScoped<IEmailService, SendGridEmailService>();
+
+// Register email service based on configuration
+var emailProvider = configuration["EmailProvider"] ?? "SendGrid";
+if (emailProvider.Equals("Smtp", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+    Log.Information("Using SMTP email provider");
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, SendGridEmailService>();
+    Log.Information("Using SendGrid email provider");
+}
 
 // Register seeders
 builder.Services.AddScoped<IUserSeeder, UserSeeder>();

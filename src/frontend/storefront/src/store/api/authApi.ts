@@ -14,6 +14,16 @@ export interface RegisterRequest {
   lastName: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -97,7 +107,35 @@ export const authApi = createApi({
         token: response.data?.token,
       }),
     }),
+    forgotPassword: builder.mutation<{ success: boolean; message: string }, ForgotPasswordRequest>({
+      query: (data) => ({
+        url: '/auth/forgot-password',
+        method: 'POST',
+        body: data,
+      }),
+      transformResponse: (response: ApiResponse<null>) => ({
+        success: response.success,
+        message: response.message,
+      }),
+    }),
+    resetPassword: builder.mutation<{ success: boolean; message: string }, ResetPasswordRequest>({
+      query: (data) => ({
+        url: '/auth/reset-password',
+        method: 'POST',
+        body: data,
+      }),
+      transformResponse: (response: ApiResponse<null>) => ({
+        success: response.success,
+        message: response.message,
+      }),
+    }),
   }),
 });
 
-export const { useRegisterMutation, useLoginMutation, useRefreshTokenMutation } = authApi;
+export const {
+  useRegisterMutation,
+  useLoginMutation,
+  useRefreshTokenMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+} = authApi;
