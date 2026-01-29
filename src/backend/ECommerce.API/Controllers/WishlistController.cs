@@ -1,6 +1,7 @@
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Services;
+using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

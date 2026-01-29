@@ -1,6 +1,7 @@
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Services;
+using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace ECommerce.API.Controllers;
 
 /// <summary>
 /// Controller for product management and retrieval operations.
+/// Clean controller with no try-catch blocks - global exception handler manages all errors.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -41,7 +43,7 @@ public class ProductsController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -53,18 +55,9 @@ public class ProductsController : ControllerBase
         [FromQuery] bool? isFeatured = null,
         [FromQuery] string? sortBy = null)
     {
-        try
-        {
-            // Pass all parameters to service - it handles filtering efficiently
-            var result = await _productService.GetProductsAsync(
-                page, pageSize, categoryId, search, minPrice, maxPrice, minRating, isFeatured, sortBy);
-            return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving products");
-            return StatusCode(500, ApiResponse<PaginatedResult<ProductDto>>.Error("An error occurred while retrieving products"));
-        }
+        var result = await _productService.GetProductsAsync(
+            page, pageSize, categoryId, search, minPrice, maxPrice, minRating, isFeatured, sortBy);
+        return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
     }
 
     /// <summary>
@@ -77,19 +70,11 @@ public class ProductsController : ControllerBase
     [HttpGet("featured")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetFeaturedProducts([FromQuery] int count = 10)
     {
-        try
-        {
-            var result = await _productService.GetFeaturedProductsAsync(count);
-            return Ok(ApiResponse<List<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving featured products");
-            return StatusCode(500, ApiResponse<List<ProductDto>>.Error("An error occurred while retrieving featured products"));
-        }
+        var result = await _productService.GetFeaturedProductsAsync(count);
+        return Ok(ApiResponse<List<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
     }
 
     /// <summary>
@@ -103,25 +88,12 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductById([FromRoute] Guid id)
     {
-        try
-        {
-            var product = await _productService.GetProductByIdAsync(id);
-            if (product == null)
-            {
-                return NotFound(ApiResponse<ProductDetailDto>.Error("Product not found"));
-            }
-
-            return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving product: {ProductId}", id);
-            return StatusCode(500, ApiResponse<ProductDetailDto>.Error("An error occurred while retrieving the product"));
-        }
+        var product = await _productService.GetProductByIdAsync(id);
+        return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
     }
 
     /// <summary>
@@ -135,25 +107,12 @@ public class ProductsController : ControllerBase
     [HttpGet("slug/{slug}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductBySlug([FromRoute] string slug)
     {
-        try
-        {
-            var product = await _productService.GetProductBySlugAsync(slug);
-            if (product == null)
-            {
-                return NotFound(ApiResponse<ProductDetailDto>.Error("Product not found"));
-            }
-
-            return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving product by slug: {Slug}", slug);
-            return StatusCode(500, ApiResponse<ProductDetailDto>.Error("An error occurred while retrieving the product"));
-        }
+        var product = await _productService.GetProductBySlugAsync(slug);
+        return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
     }
 
 
@@ -166,6 +125,7 @@ public class ProductsController : ControllerBase
     /// <response code="400">Invalid product data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to create products.</response>
+    /// <response code="409">Product with the same slug already exists.</response>
     /// <response code="500">Internal server error.</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
@@ -173,36 +133,21 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
-            }
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
+        }
 
-            var product = await _productService.CreateProductAsync(createProductDto);
-            _logger.LogInformation("Product created: {ProductId}", product.Id);
+        var product = await _productService.CreateProductAsync(createProductDto);
+        _logger.LogInformation("Product created: {ProductId}", product.Id);
 
-            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, ApiResponse<ProductDetailDto>.Ok(product, "Product created successfully"));
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning("Product creation validation failed: {Message}", ex.Message);
-            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating product");
-            return StatusCode(500, ApiResponse<ProductDetailDto>.Error("An error occurred while creating the product"));
-        }
+        return CreatedAtAction(nameof(GetProductById), new { id = product.Id },
+            ApiResponse<ProductDetailDto>.Ok(product, "Product created successfully"));
     }
 
     /// <summary>
@@ -216,6 +161,7 @@ public class ProductsController : ControllerBase
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to update products.</response>
     /// <response code="404">Product not found.</response>
+    /// <response code="409">Product with the same slug already exists.</response>
     /// <response code="500">Internal server error.</response>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
@@ -223,37 +169,21 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
-            }
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
+        }
 
-            var product = await _productService.UpdateProductAsync(id, updateProductDto);
+        var product = await _productService.UpdateProductAsync(id, updateProductDto);
+        _logger.LogInformation("Product updated: {ProductId}", id);
 
-            _logger.LogInformation("Product updated: {ProductId}", id);
-            return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product updated successfully"));
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning("Product update validation failed: {Message}", ex.Message);
-            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<ProductDetailDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating product: {ProductId}", id);
-            return StatusCode(500, ApiResponse<ProductDetailDto>.Error("An error occurred while updating the product"));
-        }
+        return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product updated successfully"));
     }
 
     /// <summary>
@@ -271,26 +201,13 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteProduct([FromRoute] Guid id)
     {
-        try
-        {
-            var success = await _productService.DeleteProductAsync(id);
-            if (!success)
-            {
-                return NotFound(ApiResponse<object>.Error("Product not found"));
-            }
+        await _productService.DeleteProductAsync(id);
+        _logger.LogInformation("Product deleted: {ProductId}", id);
 
-            _logger.LogInformation("Product deleted: {ProductId}", id);
-            return Ok(ApiResponse<object?>.Ok(null, "Product deleted successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting product: {ProductId}", id);
-            return StatusCode(500, ApiResponse<object>.Error("An error occurred while deleting the product"));
-        }
+        return Ok(ApiResponse<object?>.Ok(null, "Product deleted successfully"));
     }
-
 }

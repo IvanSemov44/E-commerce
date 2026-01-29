@@ -1,8 +1,11 @@
-using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
+using ECommerce.Application.DTOs.Reviews;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
+/// <summary>
+/// Service interface for managing product reviews.
+/// </summary>
 public interface IReviewService
 {
     Task<IEnumerable<ReviewDto>> GetProductReviewsAsync(Guid productId);

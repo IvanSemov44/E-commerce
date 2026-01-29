@@ -1,10 +1,10 @@
-using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs.Orders;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
 /// <summary>
-/// Service for managing orders.
+/// Service interface for managing orders.
 /// </summary>
 public interface IOrderService
 {

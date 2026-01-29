@@ -1,6 +1,6 @@
 using ECommerce.Application.DTOs.Users;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
 /// <summary>
 /// Service interface for user profile operations.

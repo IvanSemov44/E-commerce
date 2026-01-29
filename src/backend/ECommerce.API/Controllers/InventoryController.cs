@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.Services;
+using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

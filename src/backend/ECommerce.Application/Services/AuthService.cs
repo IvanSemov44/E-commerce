@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ECommerce.Application.DTOs.Auth;
+using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Interfaces.Repositories;
@@ -9,20 +10,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ECommerce.Application.Services;
-
-public interface IAuthService
-{
-    Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
-    Task<AuthResponseDto> LoginAsync(LoginDto dto);
-    Task<AuthResponseDto> RefreshTokenAsync(string token);
-    Task<bool> ValidateTokenAsync(string token);
-    Task<bool> VerifyEmailAsync(Guid userId, string token);
-    Task<string?> GeneratePasswordResetTokenAsync(string email);
-    Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
-    string GenerateJwtToken(UserDto user);
-    string HashPassword(string password);
-    bool VerifyPassword(string password, string hash);
-}
 
 public class AuthService : IAuthService
 {

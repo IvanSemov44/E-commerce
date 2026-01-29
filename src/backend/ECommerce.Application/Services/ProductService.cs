@@ -1,30 +1,12 @@
 using AutoMapper;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
+using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
+using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 
 namespace ECommerce.Application.Services;
-
-public interface IProductService
-{
-    Task<PaginatedResult<ProductDto>> GetProductsAsync(
-        int page = 1,
-        int pageSize = 20,
-        Guid? categoryId = null,
-        string? searchQuery = null,
-        decimal? minPrice = null,
-        decimal? maxPrice = null,
-        decimal? minRating = null,
-        bool? isFeatured = null,
-        string? sortBy = null);
-    Task<ProductDetailDto?> GetProductBySlugAsync(string slug);
-    Task<ProductDetailDto?> GetProductByIdAsync(Guid id);
-    Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10);
-    Task<ProductDetailDto> CreateProductAsync(CreateProductDto dto);
-    Task<ProductDetailDto> UpdateProductAsync(Guid id, UpdateProductDto dto);
-    Task<bool> DeleteProductAsync(Guid id);
-}
 
 public class ProductService : IProductService
 {
@@ -61,16 +43,22 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<ProductDetailDto?> GetProductBySlugAsync(string slug)
+    public async Task<ProductDetailDto> GetProductBySlugAsync(string slug)
     {
         var product = await _productRepository.GetBySlugAsync(slug);
-        return product == null ? null : _mapper.Map<ProductDetailDto>(product);
+        if (product == null)
+            throw new ProductNotFoundException(slug);
+
+        return _mapper.Map<ProductDetailDto>(product);
     }
 
-    public async Task<ProductDetailDto?> GetProductByIdAsync(Guid id)
+    public async Task<ProductDetailDto> GetProductByIdAsync(Guid id)
     {
         var product = await _productRepository.GetByIdAsync(id);
-        return product == null ? null : _mapper.Map<ProductDetailDto>(product);
+        if (product == null)
+            throw new ProductNotFoundException(id);
+
+        return _mapper.Map<ProductDetailDto>(product);
     }
 
     public async Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10)
@@ -84,7 +72,7 @@ public class ProductService : IProductService
         // Validate slug uniqueness
         if (!await _productRepository.IsSlugUniqueAsync(dto.Slug))
         {
-            throw new ArgumentException($"Product with slug '{dto.Slug}' already exists");
+            throw new DuplicateProductSlugException(dto.Slug);
         }
 
         var product = _mapper.Map<Product>(dto);
@@ -99,14 +87,14 @@ public class ProductService : IProductService
     {
         var product = await _productRepository.GetByIdAsync(id);
         if (product == null)
-            throw new ArgumentException($"Product with ID {id} not found");
+            throw new ProductNotFoundException(id);
 
         // Validate slug uniqueness if changed
         if (!string.IsNullOrEmpty(dto.Slug) && dto.Slug != product.Slug)
         {
             if (!await _productRepository.IsSlugUniqueAsync(dto.Slug, id))
             {
-                throw new ArgumentException($"Product with slug '{dto.Slug}' already exists");
+                throw new DuplicateProductSlugException(dto.Slug);
             }
         }
 
@@ -217,14 +205,13 @@ public class ProductService : IProductService
         return lowStockProducts.Select(p => _mapper.Map<ProductDto>(p)).ToList();
     }
 
-    public async Task<bool> DeleteProductAsync(Guid id)
+    public async Task DeleteProductAsync(Guid id)
     {
         var product = await _productRepository.GetByIdAsync(id);
         if (product == null)
-            return false;
+            throw new ProductNotFoundException(id);
 
         await _productRepository.DeleteAsync(product);
         await _productRepository.SaveChangesAsync();
-        return true;
     }
 }

@@ -1,7 +1,10 @@
 using ECommerce.Application.DTOs.Inventory;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
+/// <summary>
+/// Service interface for inventory and stock management.
+/// </summary>
 public interface IInventoryService
 {
     // Stock Management

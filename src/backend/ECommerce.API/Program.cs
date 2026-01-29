@@ -1,4 +1,6 @@
+using ECommerce.API.Extensions;
 using ECommerce.Application;
+using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure;
@@ -10,8 +12,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
-using IAuthService = ECommerce.Application.Services.IAuthService;
-using IProductService = ECommerce.Application.Services.IProductService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -154,6 +154,10 @@ using (var scope = app.Services.CreateScope())
         Log.Error(ex, "An error occurred while applying migrations or seeding database");
     }
 }
+
+// Configure global exception handler middleware
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+app.ConfigureExceptionHandler(logger);
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

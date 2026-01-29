@@ -1,9 +1,9 @@
 using ECommerce.Application.DTOs.Payments;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
 /// <summary>
-/// Service for handling payment processing (mocked for Stripe/PayPal).
+/// Service interface for handling payment processing (mocked for Stripe/PayPal).
 /// </summary>
 public interface IPaymentService
 {

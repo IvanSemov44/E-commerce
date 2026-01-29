@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Payments;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Services;
+using ECommerce.Application.Interfaces;
 
 namespace ECommerce.API.Controllers;
 

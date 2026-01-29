@@ -1,3 +1,4 @@
+using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Core.Entities;

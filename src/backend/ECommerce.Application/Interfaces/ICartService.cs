@@ -1,7 +1,10 @@
 using ECommerce.Application.DTOs.Cart;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
+/// <summary>
+/// Service interface for managing shopping cart operations.
+/// </summary>
 public interface ICartService
 {
     Task<CartDto> GetOrCreateCartAsync(Guid? userId, string? sessionId);

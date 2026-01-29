@@ -4,6 +4,7 @@ using System.Security.Claims;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Services;
+using ECommerce.Application.Interfaces;
 
 namespace ECommerce.API.Controllers;
 

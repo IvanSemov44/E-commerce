@@ -1,7 +1,10 @@
 using ECommerce.Application.DTOs.Wishlist;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
+/// <summary>
+/// Service interface for managing user wishlists.
+/// </summary>
 public interface IWishlistService
 {
     Task<WishlistDto> GetUserWishlistAsync(Guid userId);

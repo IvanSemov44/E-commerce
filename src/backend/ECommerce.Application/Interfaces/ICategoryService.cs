@@ -1,7 +1,10 @@
 using ECommerce.Application.DTOs;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
+/// <summary>
+/// Service interface for category management operations.
+/// </summary>
 public interface ICategoryService
 {
     Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync();

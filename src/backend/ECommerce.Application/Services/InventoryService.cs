@@ -1,3 +1,4 @@
+using ECommerce.Application.Interfaces;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;

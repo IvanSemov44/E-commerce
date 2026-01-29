@@ -1,9 +1,9 @@
 using ECommerce.Core.Entities;
 
-namespace ECommerce.Application.Services;
+namespace ECommerce.Application.Interfaces;
 
 /// <summary>
-/// Service for sending emails through SendGrid.
+/// Service interface for sending emails through email providers (SendGrid/SMTP).
 /// </summary>
 public interface IEmailService
 {

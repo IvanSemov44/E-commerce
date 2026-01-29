@@ -2,6 +2,7 @@ using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Services;
+using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

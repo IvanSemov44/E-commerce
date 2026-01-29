@@ -1,3 +1,4 @@
+using ECommerce.Application.Interfaces;
 using System.Net;
 using System.Net.Mail;
 using ECommerce.Core.Entities;

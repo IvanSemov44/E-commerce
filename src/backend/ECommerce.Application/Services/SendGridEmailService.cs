@@ -1,3 +1,4 @@
+using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
