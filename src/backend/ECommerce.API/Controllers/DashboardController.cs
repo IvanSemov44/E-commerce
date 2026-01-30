@@ -1,6 +1,5 @@
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Dashboard;
-using ECommerce.Application.Services;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,30 +24,14 @@ public class DashboardController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Retrieves dashboard statistics including orders, revenue, customers, and products.
-    /// </summary>
-    /// <returns>Dashboard statistics.</returns>
-    /// <response code="200">Dashboard statistics retrieved successfully.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="403">User does not have permission to view dashboard statistics.</response>
-    /// <response code="500">Internal server error.</response>
     [HttpGet("stats")]
     [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<DashboardStatsDto>>> GetStats()
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetStats()
     {
-        try
-        {
-            var stats = await _dashboardService.GetDashboardStatsAsync();
-            return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "Dashboard statistics retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving dashboard statistics");
-            return StatusCode(500, ApiResponse<DashboardStatsDto>.Error("An error occurred while retrieving dashboard statistics"));
-        }
+        _logger.LogInformation("Retrieving dashboard statistics");
+        var stats = await _dashboardService.GetDashboardStatsAsync();
+        return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "Dashboard statistics retrieved successfully"));
     }
 }

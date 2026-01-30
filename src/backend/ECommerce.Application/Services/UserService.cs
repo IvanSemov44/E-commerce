@@ -2,6 +2,7 @@ using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Services;
@@ -25,16 +26,13 @@ public class UserService : IUserService
         _logger = logger;
     }
 
-    public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId)
+    public async Task<UserProfileDto> GetUserProfileAsync(Guid userId)
     {
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
-        {
-            _logger.LogWarning("User {UserId} not found", userId);
-            return null;
-        }
+            throw new UserNotFoundException(userId);
 
         return _mapper.Map<UserProfileDto>(user);
     }
@@ -45,12 +43,8 @@ public class UserService : IUserService
 
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
-        {
-            _logger.LogWarning("User {UserId} not found for profile update", userId);
-            throw new ArgumentException($"User {userId} not found");
-        }
+            throw new UserNotFoundException(userId);
 
-        // Update only allowed fields
         user.FirstName = dto.FirstName;
         user.LastName = dto.LastName;
         user.Phone = dto.Phone;

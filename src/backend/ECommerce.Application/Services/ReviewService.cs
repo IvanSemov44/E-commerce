@@ -4,6 +4,7 @@ using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Exceptions;
 
 namespace ECommerce.Application.Services;
 
@@ -30,7 +31,7 @@ public class ReviewService : IReviewService
     {
         var product = await _productRepository.GetByIdAsync(productId);
         if (product == null)
-            throw new InvalidOperationException($"Product {productId} not found");
+            throw new ProductNotFoundException(productId);
 
         var reviews = await _reviewRepository.GetByProductIdAsync(productId, onlyApproved: true);
         return _mapper.Map<IEnumerable<ReviewDto>>(reviews);
@@ -40,7 +41,7 @@ public class ReviewService : IReviewService
     {
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
-            throw new InvalidOperationException($"User {userId} not found");
+            throw new UserNotFoundException(userId);
 
         var reviews = await _reviewRepository.GetByUserIdAsync(userId);
         return _mapper.Map<IEnumerable<ReviewDetailDto>>(reviews);
@@ -48,32 +49,31 @@ public class ReviewService : IReviewService
 
     public async Task<ReviewDetailDto> GetReviewByIdAsync(Guid reviewId)
     {
-        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId)
-            ?? throw new InvalidOperationException($"Review {reviewId} not found");
+        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId);
+        if (review == null)
+            throw new ReviewNotFoundException(reviewId);
 
         return _mapper.Map<ReviewDetailDto>(review);
     }
 
     public async Task<ReviewDetailDto> CreateReviewAsync(Guid userId, CreateReviewDto dto)
     {
-        // Validate rating
         if (dto.Rating < 1 || dto.Rating > 5)
-            throw new ArgumentException("Rating must be between 1 and 5");
+            throw new InvalidRatingException();
 
         if (string.IsNullOrWhiteSpace(dto.Comment))
-            throw new ArgumentException("Comment cannot be empty");
+            throw new EmptyReviewCommentException();
 
-        // Verify product exists
-        var product = await _productRepository.GetByIdAsync(dto.ProductId)
-            ?? throw new InvalidOperationException($"Product {dto.ProductId} not found");
+        var product = await _productRepository.GetByIdAsync(dto.ProductId);
+        if (product == null)
+            throw new ProductNotFoundException(dto.ProductId);
 
-        // Verify user exists
-        var user = await _userRepository.GetByIdAsync(userId)
-            ?? throw new InvalidOperationException($"User {userId} not found");
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            throw new UserNotFoundException(userId);
 
-        // Check if user already reviewed this product
         if (await _reviewRepository.UserHasReviewedAsync(userId, dto.ProductId))
-            throw new InvalidOperationException("You have already reviewed this product");
+            throw new DuplicateReviewException();
 
         var review = new Review
         {
@@ -82,8 +82,8 @@ public class ReviewService : IReviewService
             Title = dto.Title,
             Comment = dto.Comment,
             Rating = dto.Rating,
-            IsVerified = false, // Set to false initially, can be set to true after purchase verification
-            IsApproved = false  // Require approval before display
+            IsVerified = false,
+            IsApproved = false
         };
 
         await _reviewRepository.AddAsync(review);
@@ -94,16 +94,15 @@ public class ReviewService : IReviewService
 
     public async Task<ReviewDetailDto> UpdateReviewAsync(Guid userId, Guid reviewId, UpdateReviewDto dto)
     {
-        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId)
-            ?? throw new InvalidOperationException($"Review {reviewId} not found");
+        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId);
+        if (review == null)
+            throw new ReviewNotFoundException(reviewId);
 
-        // Ensure user owns the review
         if (review.UserId != userId)
             throw new UnauthorizedAccessException("You can only update your own reviews");
 
-        // Only allow updates within 24 hours of creation
         if (DateTime.UtcNow - review.CreatedAt > TimeSpan.FromHours(24))
-            throw new InvalidOperationException("Reviews can only be updated within 24 hours of creation");
+            throw new ReviewUpdateTimeExpiredException();
 
         if (!string.IsNullOrWhiteSpace(dto.Title))
             review.Title = dto.Title;
@@ -114,7 +113,7 @@ public class ReviewService : IReviewService
         if (dto.Rating.HasValue)
         {
             if (dto.Rating < 1 || dto.Rating > 5)
-                throw new ArgumentException("Rating must be between 1 and 5");
+                throw new InvalidRatingException();
             review.Rating = dto.Rating.Value;
         }
 
@@ -126,26 +125,24 @@ public class ReviewService : IReviewService
         return _mapper.Map<ReviewDetailDto>(review);
     }
 
-    public async Task<bool> DeleteReviewAsync(Guid userId, Guid reviewId)
+    public async Task DeleteReviewAsync(Guid userId, Guid reviewId)
     {
         var review = await _reviewRepository.GetByIdAsync(reviewId);
         if (review == null)
-            return false;
+            throw new ReviewNotFoundException(reviewId);
 
-        // Ensure user owns the review
         if (review.UserId != userId)
             throw new UnauthorizedAccessException("You can only delete your own reviews");
 
         await _reviewRepository.DeleteAsync(review);
         await _reviewRepository.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<ReviewDetailDto> ApproveReviewAsync(Guid reviewId)
     {
-        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId)
-            ?? throw new InvalidOperationException($"Review {reviewId} not found");
+        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId);
+        if (review == null)
+            throw new ReviewNotFoundException(reviewId);
 
         review.IsApproved = true;
         review.UpdatedAt = DateTime.UtcNow;
@@ -158,8 +155,9 @@ public class ReviewService : IReviewService
 
     public async Task<ReviewDetailDto> RejectReviewAsync(Guid reviewId)
     {
-        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId)
-            ?? throw new InvalidOperationException($"Review {reviewId} not found");
+        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId);
+        if (review == null)
+            throw new ReviewNotFoundException(reviewId);
 
         await _reviewRepository.DeleteAsync(review);
         await _reviewRepository.SaveChangesAsync();

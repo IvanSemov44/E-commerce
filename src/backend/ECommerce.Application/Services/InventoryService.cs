@@ -2,6 +2,7 @@ using ECommerce.Application.Interfaces;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
+using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +13,7 @@ public class InventoryService : IInventoryService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
     private readonly ILogger<InventoryService> _logger;
-    private readonly HashSet<Guid> _lowStockAlertsSent = new(); // Track sent alerts to avoid spam
+    private readonly HashSet<Guid> _lowStockAlertsSent = new();
 
     public InventoryService(
         IUnitOfWork unitOfWork,
@@ -24,170 +25,118 @@ public class InventoryService : IInventoryService
         _logger = logger;
     }
 
-    public async Task<bool> ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null)
+    public async Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be positive", nameof(quantity));
+            throw new InvalidQuantityException("Quantity must be positive");
 
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-        try
+        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        if (product == null)
+            throw new ProductNotFoundException(productId);
+
+        if (product.StockQuantity < quantity)
+            throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
+
+        var previousStock = product.StockQuantity;
+        product.StockQuantity -= quantity;
+
+        await _unitOfWork.Products.UpdateAsync(product);
+
+        var log = new InventoryLog
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(productId);
-            if (product == null)
-            {
-                _logger.LogWarning("Cannot reduce stock: Product {ProductId} not found", productId);
-                return false;
-            }
+            ProductId = productId,
+            QuantityChange = -quantity,
+            Reason = reason,
+            ReferenceId = referenceId,
+            Notes = $"Stock reduced from {previousStock} to {product.StockQuantity}",
+            CreatedByUserId = userId
+        };
 
-            if (product.StockQuantity < quantity)
-            {
-                _logger.LogWarning("Insufficient stock for product {ProductId}. Available: {Available}, Requested: {Requested}",
-                    productId, product.StockQuantity, quantity);
-                throw new InvalidOperationException($"Insufficient stock. Available: {product.StockQuantity}, Requested: {quantity}");
-            }
+        await _unitOfWork.InventoryLogs.AddAsync(log);
+        await _unitOfWork.SaveChangesAsync();
+        await transaction.CommitAsync();
 
-            var previousStock = product.StockQuantity;
-            product.StockQuantity -= quantity;
+        _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units. New stock: {NewStock}",
+            productId, quantity, product.StockQuantity);
 
-            await _unitOfWork.Products.UpdateAsync(product);
-
-            // Create inventory log
-            var log = new InventoryLog
-            {
-                ProductId = productId,
-                QuantityChange = -quantity,
-                Reason = reason,
-                ReferenceId = referenceId,
-                Notes = $"Stock reduced from {previousStock} to {product.StockQuantity}",
-                CreatedByUserId = userId
-            };
-
-            await _unitOfWork.InventoryLogs.AddAsync(log);
-            await _unitOfWork.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units. New stock: {NewStock}",
-                productId, quantity, product.StockQuantity);
-
-            // Check if low stock alert should be sent
-            await CheckAndSendLowStockAlertsAsync(productId);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error reducing stock for product {ProductId}", productId);
-            await transaction.RollbackAsync();
-            throw;
-        }
+        await CheckAndSendLowStockAlertsAsync(productId);
     }
 
-    public async Task<bool> IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null)
+    public async Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be positive", nameof(quantity));
+            throw new InvalidQuantityException("Quantity must be positive");
 
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-        try
+        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        if (product == null)
+            throw new ProductNotFoundException(productId);
+
+        var previousStock = product.StockQuantity;
+        product.StockQuantity += quantity;
+
+        await _unitOfWork.Products.UpdateAsync(product);
+
+        var log = new InventoryLog
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(productId);
-            if (product == null)
-            {
-                _logger.LogWarning("Cannot increase stock: Product {ProductId} not found", productId);
-                return false;
-            }
+            ProductId = productId,
+            QuantityChange = quantity,
+            Reason = reason,
+            ReferenceId = referenceId,
+            Notes = $"Stock increased from {previousStock} to {product.StockQuantity}",
+            CreatedByUserId = userId
+        };
 
-            var previousStock = product.StockQuantity;
-            product.StockQuantity += quantity;
+        await _unitOfWork.InventoryLogs.AddAsync(log);
+        await _unitOfWork.SaveChangesAsync();
+        await transaction.CommitAsync();
 
-            await _unitOfWork.Products.UpdateAsync(product);
+        _logger.LogInformation("Stock increased for product {ProductId}: {Quantity} units. New stock: {NewStock}",
+            productId, quantity, product.StockQuantity);
 
-            // Create inventory log
-            var log = new InventoryLog
-            {
-                ProductId = productId,
-                QuantityChange = quantity,
-                Reason = reason,
-                ReferenceId = referenceId,
-                Notes = $"Stock increased from {previousStock} to {product.StockQuantity}",
-                CreatedByUserId = userId
-            };
-
-            await _unitOfWork.InventoryLogs.AddAsync(log);
-            await _unitOfWork.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Stock increased for product {ProductId}: {Quantity} units. New stock: {NewStock}",
-                productId, quantity, product.StockQuantity);
-
-            // Remove from low stock alerts if stock is now healthy
-            if (product.StockQuantity > product.LowStockThreshold)
-            {
-                _lowStockAlertsSent.Remove(productId);
-            }
-
-            return true;
-        }
-        catch (Exception ex)
+        if (product.StockQuantity > product.LowStockThreshold)
         {
-            _logger.LogError(ex, "Error increasing stock for product {ProductId}", productId);
-            await transaction.RollbackAsync();
-            throw;
+            _lowStockAlertsSent.Remove(productId);
         }
     }
 
-    public async Task<bool> AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null)
+    public async Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null)
     {
         if (newQuantity < 0)
-            throw new ArgumentException("Quantity cannot be negative", nameof(newQuantity));
+            throw new InvalidQuantityException("Quantity cannot be negative");
 
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-        try
+        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        if (product == null)
+            throw new ProductNotFoundException(productId);
+
+        var previousStock = product.StockQuantity;
+        var quantityChange = newQuantity - previousStock;
+
+        product.StockQuantity = newQuantity;
+        await _unitOfWork.Products.UpdateAsync(product);
+
+        var log = new InventoryLog
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(productId);
-            if (product == null)
-            {
-                _logger.LogWarning("Cannot adjust stock: Product {ProductId} not found", productId);
-                return false;
-            }
+            ProductId = productId,
+            QuantityChange = quantityChange,
+            Reason = reason,
+            Notes = notes ?? $"Stock adjusted from {previousStock} to {newQuantity}",
+            CreatedByUserId = userId
+        };
 
-            var previousStock = product.StockQuantity;
-            var quantityChange = newQuantity - previousStock;
+        await _unitOfWork.InventoryLogs.AddAsync(log);
+        await _unitOfWork.SaveChangesAsync();
+        await transaction.CommitAsync();
 
-            product.StockQuantity = newQuantity;
-            await _unitOfWork.Products.UpdateAsync(product);
+        _logger.LogInformation("Stock adjusted for product {ProductId}: {PreviousStock} -> {NewStock}",
+            productId, previousStock, newQuantity);
 
-            // Create inventory log
-            var log = new InventoryLog
-            {
-                ProductId = productId,
-                QuantityChange = quantityChange,
-                Reason = reason,
-                Notes = notes ?? $"Stock adjusted from {previousStock} to {newQuantity}",
-                CreatedByUserId = userId
-            };
-
-            await _unitOfWork.InventoryLogs.AddAsync(log);
-            await _unitOfWork.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Stock adjusted for product {ProductId}: {PreviousStock} -> {NewStock}",
-                productId, previousStock, newQuantity);
-
-            // Check low stock alerts
-            await CheckAndSendLowStockAlertsAsync(productId);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adjusting stock for product {ProductId}", productId);
-            await transaction.RollbackAsync();
-            throw;
-        }
+        await CheckAndSendLowStockAlertsAsync(productId);
     }
 
     public async Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItem> items)
@@ -241,7 +190,6 @@ public class InventoryService : IInventoryService
         var allProducts = await _unitOfWork.Products.GetAllAsync();
         var query = allProducts.AsQueryable();
 
-        // Apply search filter
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.ToLower();
@@ -249,16 +197,13 @@ public class InventoryService : IInventoryService
                                    (p.Sku != null && p.Sku.ToLower().Contains(searchLower)));
         }
 
-        // Apply low stock filter
         if (lowStockOnly == true)
         {
             query = query.Where(p => p.StockQuantity <= p.LowStockThreshold);
         }
 
-        // Order by stock quantity (lowest first)
         query = query.OrderBy(p => p.StockQuantity).ThenBy(p => p.Name);
 
-        // Apply pagination
         var products = query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -310,7 +255,6 @@ public class InventoryService : IInventoryService
         var product = await _unitOfWork.Products.GetByIdAsync(productId);
         var productName = product?.Name ?? "Unknown Product";
 
-        // Get user names for logs
         var userIds = logs.Where(l => l.CreatedByUserId.HasValue).Select(l => l.CreatedByUserId!.Value).Distinct();
         var users = new Dictionary<Guid, string>();
 
@@ -323,7 +267,6 @@ public class InventoryService : IInventoryService
             }
         }
 
-        // Calculate stock after each change (working backwards from current stock)
         var currentStock = product?.StockQuantity ?? 0;
         var result = new List<InventoryLogDto>();
 
@@ -345,7 +288,6 @@ public class InventoryService : IInventoryService
                     : null
             });
 
-            // Work backwards to get stock before this change
             currentStock -= log.QuantityChange;
         }
 
@@ -359,10 +301,8 @@ public class InventoryService : IInventoryService
             var product = await _unitOfWork.Products.GetByIdAsync(productId);
             if (product == null) return;
 
-            // Only send alert if stock is at or below threshold and we haven't sent one yet
             if (product.StockQuantity <= product.LowStockThreshold && !_lowStockAlertsSent.Contains(productId))
             {
-                // Get admin users
                 var admins = (await _unitOfWork.Users.GetAllAsync())
                     .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.SuperAdmin)
                     .ToList();

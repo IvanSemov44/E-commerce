@@ -1,6 +1,5 @@
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.Services;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,196 +25,73 @@ public class WishlistController : ControllerBase
         _logger = logger;
     }
 
-    private Guid GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim?.Value == null)
-            throw new UnauthorizedAccessException("User not authenticated");
-        return Guid.Parse(userIdClaim.Value);
-    }
-
-    /// <summary>
-    /// Gets the authenticated user's wishlist.
-    /// </summary>
-    /// <returns>The user's wishlist.</returns>
-    /// <response code="200">Wishlist retrieved successfully.</response>
-    /// <response code="401">User not authenticated.</response>
-    /// <response code="500">Internal server error.</response>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<WishlistDto>>> GetWishlist()
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWishlist()
     {
-        try
-        {
-            var userId = GetUserId();
-            var wishlist = await _wishlistService.GetUserWishlistAsync(userId);
-            return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist retrieved successfully"));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access");
-            return Unauthorized(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Error: {Message}", ex.Message);
-            return BadRequest(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving wishlist");
-            return StatusCode(500, ApiResponse<WishlistDto>.Error("An error occurred while retrieving the wishlist"));
-        }
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Retrieving wishlist for user {UserId}", userId);
+
+        var wishlist = await _wishlistService.GetUserWishlistAsync(userId);
+        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist retrieved successfully"));
     }
 
-    /// <summary>
-    /// Adds a product to the user's wishlist.
-    /// </summary>
-    /// <param name="dto">The product to add.</param>
-    /// <returns>The updated wishlist.</returns>
-    /// <response code="200">Product added to wishlist successfully.</response>
-    /// <response code="400">Invalid request or product already in wishlist.</response>
-    /// <response code="401">User not authenticated.</response>
-    /// <response code="500">Internal server error.</response>
     [HttpPost("add")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<WishlistDto>>> AddToWishlist([FromBody] AddToWishlistDto dto)
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AddToWishlist([FromBody] AddToWishlistDto dto)
     {
-        try
-        {
-            if (dto.ProductId == Guid.Empty)
-                return BadRequest(ApiResponse<WishlistDto>.Error("Invalid product ID"));
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", dto.ProductId, userId);
 
-            var userId = GetUserId();
-            var wishlist = await _wishlistService.AddToWishlistAsync(userId, dto.ProductId);
-            return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product added to wishlist successfully"));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access");
-            return Unauthorized(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Error adding to wishlist: {Message}", ex.Message);
-            return BadRequest(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adding product to wishlist");
-            return StatusCode(500, ApiResponse<WishlistDto>.Error("An error occurred while adding the product to the wishlist"));
-        }
+        var wishlist = await _wishlistService.AddToWishlistAsync(userId, dto.ProductId);
+        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product added to wishlist successfully"));
     }
 
-    /// <summary>
-    /// Removes a product from the user's wishlist.
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <returns>The updated wishlist.</returns>
-    /// <response code="200">Product removed from wishlist successfully.</response>
-    /// <response code="400">Product not in wishlist.</response>
-    /// <response code="401">User not authenticated.</response>
-    /// <response code="500">Internal server error.</response>
     [HttpDelete("remove/{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<WishlistDto>>> RemoveFromWishlist(Guid productId)
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveFromWishlist(Guid productId)
     {
-        try
-        {
-            var userId = GetUserId();
-            var wishlist = await _wishlistService.RemoveFromWishlistAsync(userId, productId);
-            return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product removed from wishlist successfully"));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access");
-            return Unauthorized(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Error removing from wishlist: {Message}", ex.Message);
-            return BadRequest(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error removing product from wishlist");
-            return StatusCode(500, ApiResponse<WishlistDto>.Error("An error occurred while removing the product from the wishlist"));
-        }
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", productId, userId);
+
+        var wishlist = await _wishlistService.RemoveFromWishlistAsync(userId, productId);
+        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product removed from wishlist successfully"));
     }
 
-    /// <summary>
-    /// Checks if a product is in the user's wishlist.
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <returns>True if product is in wishlist, false otherwise.</returns>
-    /// <response code="200">Check completed successfully.</response>
-    /// <response code="401">User not authenticated.</response>
-    /// <response code="500">Internal server error.</response>
     [HttpGet("contains/{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<bool>>> IsProductInWishlist(Guid productId)
+    public async Task<IActionResult> IsProductInWishlist(Guid productId)
     {
-        try
-        {
-            var userId = GetUserId();
-            var isInWishlist = await _wishlistService.IsProductInWishlistAsync(userId, productId);
-            return Ok(ApiResponse<bool>.Ok(isInWishlist, "Check completed successfully"));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access");
-            return Unauthorized(ApiResponse<bool>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking wishlist");
-            return StatusCode(500, ApiResponse<bool>.Error("An error occurred while checking the wishlist"));
-        }
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Checking if product {ProductId} is in wishlist for user {UserId}", productId, userId);
+
+        var isInWishlist = await _wishlistService.IsProductInWishlistAsync(userId, productId);
+        return Ok(ApiResponse<bool>.Ok(isInWishlist, "Check completed successfully"));
     }
 
-    /// <summary>
-    /// Clears all items from the user's wishlist.
-    /// </summary>
-    /// <returns>The cleared wishlist.</returns>
-    /// <response code="200">Wishlist cleared successfully.</response>
-    /// <response code="401">User not authenticated.</response>
-    /// <response code="500">Internal server error.</response>
     [HttpPost("clear")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<WishlistDto>>> ClearWishlist()
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ClearWishlist()
     {
-        try
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Clearing wishlist for user {UserId}", userId);
+
+        var wishlist = await _wishlistService.ClearWishlistAsync(userId);
+        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist cleared successfully"));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        if (userIdClaim?.Value == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            var userId = GetUserId();
-            var wishlist = await _wishlistService.ClearWishlistAsync(userId);
-            return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist cleared successfully"));
+            throw new UnauthorizedAccessException("User ID not found in token");
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access");
-            return Unauthorized(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Error clearing wishlist: {Message}", ex.Message);
-            return BadRequest(ApiResponse<WishlistDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error clearing wishlist");
-            return StatusCode(500, ApiResponse<WishlistDto>.Error("An error occurred while clearing the wishlist"));
-        }
+        return userId;
     }
 }

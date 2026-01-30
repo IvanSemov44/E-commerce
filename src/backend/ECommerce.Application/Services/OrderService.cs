@@ -4,6 +4,7 @@ using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
+using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -53,7 +54,7 @@ public class OrderService : IOrderService
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                throw new ArgumentException($"User {userId} not found");
+                throw new UserNotFoundException(userId);
             }
 
             // Create order entity
@@ -143,7 +144,7 @@ public class OrderService : IOrderService
                 {
                     if (!Guid.TryParse(itemDto.ProductId, out var productId))
                     {
-                        throw new ArgumentException($"Invalid product ID: {itemDto.ProductId}");
+                        throw new ProductNotFoundException(itemDto.ProductId);
                     }
 
                     var itemTotal = itemDto.Price * itemDto.Quantity;
@@ -177,7 +178,7 @@ public class OrderService : IOrderService
                 if (!stockCheck.IsAvailable)
                 {
                     var issueMessages = string.Join("; ", stockCheck.Issues.Select(i => i.Message));
-                    throw new InvalidOperationException($"Insufficient stock: {issueMessages}");
+                    throw new InsufficientStockException($"Insufficient stock: {issueMessages}");
                 }
             }
 
@@ -197,7 +198,7 @@ public class OrderService : IOrderService
                 }
                 else
                 {
-                    throw new ArgumentException($"Invalid promo code: {promoValidation.Message}");
+                    throw new InvalidPromoCodeException(dto.PromoCode);
                 }
             }
             else
@@ -308,13 +309,13 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetByIdAsync(id);
         if (order == null)
         {
-            throw new ArgumentException($"Order {id} not found");
+            throw new OrderNotFoundException(id);
         }
 
         // Validate status
         if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var orderStatus))
         {
-            throw new ArgumentException($"Invalid order status: {status}");
+            throw new InvalidOrderStatusException(status);
         }
 
         order.Status = orderStatus;
@@ -355,7 +356,7 @@ public class OrderService : IOrderService
         // Can't cancel if already shipped or delivered
         if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
         {
-            throw new InvalidOperationException($"Cannot cancel order with status {order.Status}");
+            throw new InvalidOrderStatusException($"Cannot cancel order with status {order.Status}");
         }
 
         order.Status = OrderStatus.Cancelled;

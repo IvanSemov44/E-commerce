@@ -8,9 +8,9 @@ namespace ECommerce.Application.Interfaces;
 public interface IInventoryService
 {
     // Stock Management
-    Task<bool> ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null);
-    Task<bool> IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null);
-    Task<bool> AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null);
+    Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null);
+    Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null);
+    Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null);
 
     // Stock Validation
     Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItem> items);

@@ -11,8 +11,8 @@ public interface IUserService
     /// Retrieves a user's profile by user ID.
     /// </summary>
     /// <param name="userId">The user ID.</param>
-    /// <returns>User profile DTO or null if not found.</returns>
-    Task<UserProfileDto?> GetUserProfileAsync(Guid userId);
+    /// <returns>User profile DTO.</returns>
+    Task<UserProfileDto> GetUserProfileAsync(Guid userId);
 
     /// <summary>
     /// Updates a user's profile information.

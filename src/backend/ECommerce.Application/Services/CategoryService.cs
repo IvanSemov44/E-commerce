@@ -2,6 +2,7 @@ using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs;
 using ECommerce.Core.Entities;
+using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 
 namespace ECommerce.Application.Services;
@@ -37,20 +38,22 @@ public class CategoryService : ICategoryService
         return dtos;
     }
 
-    public async Task<CategoryDetailDto?> GetCategoryByIdAsync(Guid id)
+    public async Task<CategoryDetailDto> GetCategoryByIdAsync(Guid id)
     {
         var category = await _categoryRepository.GetByIdAsync(id);
-        if (category == null) return null;
+        if (category == null)
+            throw new CategoryNotFoundException(id);
 
         var dto = _mapper.Map<CategoryDetailDto>(category);
         dto.ProductCount = await _categoryRepository.GetProductCountAsync(id);
         return dto;
     }
 
-    public async Task<CategoryDetailDto?> GetCategoryBySlugAsync(string slug)
+    public async Task<CategoryDetailDto> GetCategoryBySlugAsync(string slug)
     {
         var category = await _categoryRepository.GetBySlugAsync(slug);
-        if (category == null) return null;
+        if (category == null)
+            throw new CategoryNotFoundException($"Category with slug '{slug}' not found");
 
         var dto = _mapper.Map<CategoryDetailDto>(category);
         dto.ProductCount = await _categoryRepository.GetProductCountAsync(category.Id);
@@ -62,7 +65,7 @@ public class CategoryService : ICategoryService
         // Validate slug uniqueness
         if (!await _categoryRepository.IsSlugUniqueAsync(dto.Slug))
         {
-            throw new ArgumentException($"Category with slug '{dto.Slug}' already exists");
+            throw new DuplicateCategorySlugException(dto.Slug);
         }
 
         var category = _mapper.Map<Category>(dto);
@@ -79,7 +82,7 @@ public class CategoryService : ICategoryService
         var category = await _categoryRepository.GetByIdAsync(id);
         if (category == null)
         {
-            throw new ArgumentException($"Category with ID {id} not found");
+            throw new CategoryNotFoundException(id);
         }
 
         // Validate slug uniqueness if changed
@@ -87,7 +90,7 @@ public class CategoryService : ICategoryService
         {
             if (!await _categoryRepository.IsSlugUniqueAsync(dto.Slug, id))
             {
-                throw new ArgumentException($"Category with slug '{dto.Slug}' already exists");
+                throw new DuplicateCategorySlugException(dto.Slug);
             }
         }
 
@@ -100,21 +103,20 @@ public class CategoryService : ICategoryService
         return _mapper.Map<CategoryDetailDto>(category);
     }
 
-    public async Task<bool> DeleteCategoryAsync(Guid id)
+    public async Task DeleteCategoryAsync(Guid id)
     {
         var category = await _categoryRepository.GetByIdAsync(id);
-        if (category == null) return false;
+        if (category == null)
+            throw new CategoryNotFoundException(id);
 
         // Check if category has products
         var productCount = await _categoryRepository.GetProductCountAsync(id);
         if (productCount > 0)
         {
-            throw new InvalidOperationException("Cannot delete category with existing products");
+            throw new CategoryHasProductsException(id);
         }
 
         await _categoryRepository.DeleteAsync(category);
         await _categoryRepository.SaveChangesAsync();
-
-        return true;
     }
 }

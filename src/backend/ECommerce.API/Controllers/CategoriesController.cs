@@ -1,8 +1,6 @@
 using ECommerce.Application.DTOs;
 using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.Services;
 using ECommerce.Application.Interfaces;
-using ECommerce.Core.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,150 +22,75 @@ public class CategoriesController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllCategories()
     {
-        try
-        {
-            var categories = await _categoryService.GetAllCategoriesAsync();
-            return Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(categories, "Categories retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving categories");
-            return StatusCode(500, ApiResponse<IEnumerable<CategoryDto>>.Error("An error occurred while retrieving categories"));
-        }
+        var categories = await _categoryService.GetAllCategoriesAsync();
+        return Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(categories, "Categories retrieved successfully"));
     }
 
     [HttpGet("top-level")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTopLevelCategories()
     {
-        try
-        {
-            var categories = await _categoryService.GetTopLevelCategoriesAsync();
-            return Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(categories, "Top-level categories retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving top-level categories");
-            return StatusCode(500, ApiResponse<IEnumerable<CategoryDto>>.Error("An error occurred"));
-        }
+        var categories = await _categoryService.GetTopLevelCategoriesAsync();
+        return Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(categories, "Top-level categories retrieved successfully"));
     }
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryById(Guid id)
     {
-        try
-        {
-            var category = await _categoryService.GetCategoryByIdAsync(id);
-            if (category == null)
-            {
-                return NotFound(ApiResponse<CategoryDetailDto>.Error("Category not found"));
-            }
-            return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving category {Id}", id);
-            return StatusCode(500, ApiResponse<CategoryDetailDto>.Error("An error occurred"));
-        }
+        var category = await _categoryService.GetCategoryByIdAsync(id);
+        return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category retrieved successfully"));
     }
 
     [HttpGet("slug/{slug}")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryBySlug(string slug)
     {
-        try
-        {
-            var category = await _categoryService.GetCategoryBySlugAsync(slug);
-            if (category == null)
-            {
-                return NotFound(ApiResponse<CategoryDetailDto>.Error("Category not found"));
-            }
-            return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving category with slug {Slug}", slug);
-            return StatusCode(500, ApiResponse<CategoryDetailDto>.Error("An error occurred"));
-        }
+        var category = await _categoryService.GetCategoryBySlugAsync(slug);
+        return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category retrieved successfully"));
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto)
     {
-        try
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<CategoryDetailDto>.Error("Validation failed", errors));
-            }
-
-            var category = await _categoryService.CreateCategoryAsync(dto);
-            return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id },
-                ApiResponse<CategoryDetailDto>.Ok(category, "Category created successfully"));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ApiResponse<CategoryDetailDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating category");
-            return StatusCode(500, ApiResponse<CategoryDetailDto>.Error("An error occurred"));
-        }
+        var category = await _categoryService.CreateCategoryAsync(dto);
+        _logger.LogInformation("Category created: {CategoryId}", category.Id);
+        return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id },
+            ApiResponse<CategoryDetailDto>.Ok(category, "Category created successfully"));
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryDto dto)
     {
-        try
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<CategoryDetailDto>.Error("Validation failed", errors));
-            }
-
-            var category = await _categoryService.UpdateCategoryAsync(id, dto);
-            return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category updated successfully"));
-        }
-        catch (ArgumentException ex)
-        {
-            return NotFound(ApiResponse<CategoryDetailDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating category {Id}", id);
-            return StatusCode(500, ApiResponse<CategoryDetailDto>.Error("An error occurred"));
-        }
+        var category = await _categoryService.UpdateCategoryAsync(id, dto);
+        _logger.LogInformation("Category updated: {CategoryId}", id);
+        return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category updated successfully"));
     }
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteCategory(Guid id)
     {
-        try
-        {
-            var result = await _categoryService.DeleteCategoryAsync(id);
-            if (!result)
-            {
-                return NotFound(ApiResponse<bool>.Error("Category not found"));
-            }
-            return Ok(ApiResponse<bool>.Ok(true, "Category deleted successfully"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<bool>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting category {Id}", id);
-            return StatusCode(500, ApiResponse<bool>.Error("An error occurred"));
-        }
+        await _categoryService.DeleteCategoryAsync(id);
+        _logger.LogInformation("Category deleted: {CategoryId}", id);
+        return Ok(ApiResponse<object>.Ok(new object(), "Category deleted successfully"));
     }
 }

@@ -1,6 +1,7 @@
 using ECommerce.Application.Interfaces;
 using ECommerce.Application.DTOs.Payments;
 using ECommerce.Core.Enums;
+using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -26,143 +27,103 @@ public class PaymentService : IPaymentService
     {
         _logger.LogInformation("Processing payment for order {OrderId} via {PaymentMethod}", dto.OrderId, dto.PaymentMethod);
 
-        try
+        // Validate order exists
+        var order = await _orderRepository.GetByIdAsync(dto.OrderId);
+        if (order == null)
         {
-            // Validate order exists
-            var order = await _orderRepository.GetByIdAsync(dto.OrderId);
-            if (order == null)
-            {
-                _logger.LogWarning("Order {OrderId} not found for payment processing", dto.OrderId);
-                return new PaymentResponseDto
-                {
-                    Success = false,
-                    Message = "Order not found",
-                    Status = "failed",
-                    Amount = dto.Amount,
-                    PaymentMethod = dto.PaymentMethod,
-                    ProcessedAt = DateTime.UtcNow
-                };
-            }
-
-            // Validate payment method
-            if (!await IsPaymentMethodSupportedAsync(dto.PaymentMethod))
-            {
-                _logger.LogWarning("Unsupported payment method: {PaymentMethod}", dto.PaymentMethod);
-                return new PaymentResponseDto
-                {
-                    Success = false,
-                    Message = $"Payment method '{dto.PaymentMethod}' is not supported",
-                    Status = "failed",
-                    Amount = dto.Amount,
-                    PaymentMethod = dto.PaymentMethod,
-                    ProcessedAt = DateTime.UtcNow
-                };
-            }
-
-            // Validate amount matches order total
-            if (dto.Amount != order.TotalAmount)
-            {
-                _logger.LogWarning("Payment amount {Amount} does not match order total {OrderTotal}", dto.Amount, order.TotalAmount);
-                return new PaymentResponseDto
-                {
-                    Success = false,
-                    Message = $"Payment amount does not match order total. Expected: {order.TotalAmount}, Got: {dto.Amount}",
-                    Status = "failed",
-                    Amount = dto.Amount,
-                    PaymentMethod = dto.PaymentMethod,
-                    ProcessedAt = DateTime.UtcNow
-                };
-            }
-
-            // Mock payment processing
-            var paymentIntentId = GenerateMockPaymentIntentId(dto.PaymentMethod);
-            var transactionId = Guid.NewGuid().ToString("N").Substring(0, 20).ToUpper();
-
-            // Simulate occasional payment failures (5% failure rate for demo)
-            bool paymentSucceeds = !ShouldSimulatePaymentFailure();
-
-            if (paymentSucceeds)
-            {
-                // Update order with payment information
-                order.PaymentStatus = PaymentStatus.Paid;
-                order.PaymentMethod = dto.PaymentMethod;
-                order.PaymentIntentId = paymentIntentId;
-                order.Status = OrderStatus.Confirmed;
-
-                await _orderRepository.UpdateAsync(order);
-                await _orderRepository.SaveChangesAsync();
-
-                // Store payment details in mock store
-                var paymentDetails = new PaymentDetailsDto
-                {
-                    OrderId = dto.OrderId,
-                    PaymentIntentId = paymentIntentId,
-                    Status = "completed",
-                    PaymentMethod = dto.PaymentMethod,
-                    Amount = dto.Amount,
-                    Currency = order.Currency,
-                    CreatedAt = DateTime.UtcNow,
-                    ProcessedAt = DateTime.UtcNow
-                };
-                MockPaymentStore[paymentIntentId] = paymentDetails;
-
-                _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}", dto.OrderId, paymentIntentId);
-
-                return new PaymentResponseDto
-                {
-                    Success = true,
-                    PaymentIntentId = paymentIntentId,
-                    TransactionId = transactionId,
-                    Message = "Payment processed successfully",
-                    Status = "completed",
-                    Amount = dto.Amount,
-                    PaymentMethod = dto.PaymentMethod,
-                    ProcessedAt = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, string>
-                    {
-                        { "OrderNumber", order.OrderNumber },
-                        { "Provider", GetPaymentProviderName(dto.PaymentMethod) }
-                    }
-                };
-            }
-            else
-            {
-                // Mark payment as failed
-                order.PaymentStatus = PaymentStatus.Failed;
-                order.PaymentIntentId = paymentIntentId;
-
-                await _orderRepository.UpdateAsync(order);
-                await _orderRepository.SaveChangesAsync();
-
-                _logger.LogWarning("Payment failed for order {OrderId}. Simulated failure.", dto.OrderId);
-
-                return new PaymentResponseDto
-                {
-                    Success = false,
-                    PaymentIntentId = paymentIntentId,
-                    Message = "Payment declined. Please check your payment details and try again.",
-                    Status = "failed",
-                    Amount = dto.Amount,
-                    PaymentMethod = dto.PaymentMethod,
-                    ProcessedAt = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, string>
-                    {
-                        { "OrderNumber", order.OrderNumber }
-                    }
-                };
-            }
+            _logger.LogWarning("Order {OrderId} not found for payment processing", dto.OrderId);
+            throw new OrderNotFoundException(dto.OrderId);
         }
-        catch (Exception ex)
+
+        // Validate payment method
+        if (!await IsPaymentMethodSupportedAsync(dto.PaymentMethod))
         {
-            _logger.LogError(ex, "Error processing payment for order {OrderId}", dto.OrderId);
+            _logger.LogWarning("Unsupported payment method: {PaymentMethod}", dto.PaymentMethod);
+            throw new UnsupportedPaymentMethodException(dto.PaymentMethod);
+        }
+
+        // Validate amount matches order total
+        if (dto.Amount != order.TotalAmount)
+        {
+            _logger.LogWarning("Payment amount {Amount} does not match order total {OrderTotal}", dto.Amount, order.TotalAmount);
+            throw new PaymentAmountMismatchException(order.TotalAmount, dto.Amount);
+        }
+
+        // Mock payment processing
+        var paymentIntentId = GenerateMockPaymentIntentId(dto.PaymentMethod);
+        var transactionId = Guid.NewGuid().ToString("N").Substring(0, 20).ToUpper();
+
+        // Simulate occasional payment failures (5% failure rate for demo)
+        bool paymentSucceeds = !ShouldSimulatePaymentFailure();
+
+        if (paymentSucceeds)
+        {
+            // Update order with payment information
+            order.PaymentStatus = PaymentStatus.Paid;
+            order.PaymentMethod = dto.PaymentMethod;
+            order.PaymentIntentId = paymentIntentId;
+            order.Status = OrderStatus.Confirmed;
+
+            await _orderRepository.UpdateAsync(order);
+            await _orderRepository.SaveChangesAsync();
+
+            // Store payment details in mock store
+            var paymentDetails = new PaymentDetailsDto
+            {
+                OrderId = dto.OrderId,
+                PaymentIntentId = paymentIntentId,
+                Status = "completed",
+                PaymentMethod = dto.PaymentMethod,
+                Amount = dto.Amount,
+                Currency = order.Currency,
+                CreatedAt = DateTime.UtcNow,
+                ProcessedAt = DateTime.UtcNow
+            };
+            MockPaymentStore[paymentIntentId] = paymentDetails;
+
+            _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}", dto.OrderId, paymentIntentId);
+
+            return new PaymentResponseDto
+            {
+                Success = true,
+                PaymentIntentId = paymentIntentId,
+                TransactionId = transactionId,
+                Message = "Payment processed successfully",
+                Status = "completed",
+                Amount = dto.Amount,
+                PaymentMethod = dto.PaymentMethod,
+                ProcessedAt = DateTime.UtcNow,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "OrderNumber", order.OrderNumber },
+                    { "Provider", GetPaymentProviderName(dto.PaymentMethod) }
+                }
+            };
+        }
+        else
+        {
+            // Mark payment as failed
+            order.PaymentStatus = PaymentStatus.Failed;
+            order.PaymentIntentId = paymentIntentId;
+
+            await _orderRepository.UpdateAsync(order);
+            await _orderRepository.SaveChangesAsync();
+
+            _logger.LogWarning("Payment failed for order {OrderId}. Simulated failure.", dto.OrderId);
+
             return new PaymentResponseDto
             {
                 Success = false,
-                Message = "An error occurred while processing your payment",
+                PaymentIntentId = paymentIntentId,
+                Message = "Payment declined. Please check your payment details and try again.",
                 Status = "failed",
                 Amount = dto.Amount,
                 PaymentMethod = dto.PaymentMethod,
-                ProcessedAt = DateTime.UtcNow
+                ProcessedAt = DateTime.UtcNow,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "OrderNumber", order.OrderNumber }
+                }
             };
         }
     }
@@ -174,12 +135,12 @@ public class PaymentService : IPaymentService
         var order = await _orderRepository.GetByIdAsync(orderId);
         if (order == null)
         {
-            throw new ArgumentException($"Order {orderId} not found");
+            throw new OrderNotFoundException(orderId);
         }
 
         if (string.IsNullOrEmpty(order.PaymentIntentId))
         {
-            throw new InvalidOperationException($"No payment intent found for order {orderId}");
+            throw new NoPaymentFoundException(orderId);
         }
 
         // Check mock store first
@@ -206,66 +167,37 @@ public class PaymentService : IPaymentService
     {
         _logger.LogInformation("Processing refund for order {OrderId}", dto.OrderId);
 
-        try
+        var order = await _orderRepository.GetByIdAsync(dto.OrderId);
+        if (order == null)
         {
-            var order = await _orderRepository.GetByIdAsync(dto.OrderId);
-            if (order == null)
-            {
-                return new RefundResponseDto
-                {
-                    Success = false,
-                    Message = "Order not found",
-                    Status = "failed",
-                    Amount = dto.Amount ?? 0,
-                    ProcessedAt = DateTime.UtcNow
-                };
-            }
-
-            if (order.PaymentStatus != PaymentStatus.Paid)
-            {
-                return new RefundResponseDto
-                {
-                    Success = false,
-                    Message = $"Cannot refund order with payment status: {order.PaymentStatus}",
-                    Status = "failed",
-                    Amount = dto.Amount ?? 0,
-                    ProcessedAt = DateTime.UtcNow
-                };
-            }
-
-            var refundAmount = dto.Amount ?? order.TotalAmount;
-
-            // Mock refund processing
-            var refundId = Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper();
-
-            order.PaymentStatus = PaymentStatus.Refunded;
-            await _orderRepository.UpdateAsync(order);
-            await _orderRepository.SaveChangesAsync();
-
-            _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}", dto.OrderId, refundId);
-
-            return new RefundResponseDto
-            {
-                Success = true,
-                RefundId = refundId,
-                Amount = refundAmount,
-                Status = "completed",
-                Message = "Refund processed successfully",
-                ProcessedAt = DateTime.UtcNow
-            };
+            throw new OrderNotFoundException(dto.OrderId);
         }
-        catch (Exception ex)
+
+        if (order.PaymentStatus != PaymentStatus.Paid)
         {
-            _logger.LogError(ex, "Error processing refund for order {OrderId}", dto.OrderId);
-            return new RefundResponseDto
-            {
-                Success = false,
-                Message = "An error occurred while processing the refund",
-                Status = "failed",
-                Amount = dto.Amount ?? 0,
-                ProcessedAt = DateTime.UtcNow
-            };
+            throw new InvalidRefundException(order.PaymentStatus.ToString());
         }
+
+        var refundAmount = dto.Amount ?? order.TotalAmount;
+
+        // Mock refund processing
+        var refundId = Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper();
+
+        order.PaymentStatus = PaymentStatus.Refunded;
+        await _orderRepository.UpdateAsync(order);
+        await _orderRepository.SaveChangesAsync();
+
+        _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}", dto.OrderId, refundId);
+
+        return new RefundResponseDto
+        {
+            Success = true,
+            RefundId = refundId,
+            Amount = refundAmount,
+            Status = "completed",
+            Message = "Refund processed successfully",
+            ProcessedAt = DateTime.UtcNow
+        };
     }
 
     public async Task<PaymentDetailsDto?> GetPaymentIntentAsync(string paymentIntentId)

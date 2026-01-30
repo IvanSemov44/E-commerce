@@ -5,6 +5,7 @@ using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
+using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -29,11 +30,7 @@ public class AuthService : IAuthService
         // Check if email already exists
         if (await _userRepository.EmailExistsAsync(dto.Email))
         {
-            return new AuthResponseDto
-            {
-                Success = false,
-                Message = "Email already registered"
-            };
+            throw new DuplicateEmailException(dto.Email);
         }
 
         var user = new User
@@ -81,11 +78,7 @@ public class AuthService : IAuthService
         var user = await _userRepository.GetByEmailAsync(dto.Email);
         if (user == null || !VerifyPassword(dto.Password, user.PasswordHash!))
         {
-            return new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid email or password"
-            };
+            throw new InvalidCredentialsException();
         }
 
         var userDto = MapToUserDto(user);
@@ -103,13 +96,9 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> RefreshTokenAsync(string token)
     {
         // For MVP, simplified refresh token logic
-        if (!ValidateTokenAsync(token).Result)
+        if (!await ValidateTokenAsync(token))
         {
-            return new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid or expired token"
-            };
+            throw new InvalidTokenException();
         }
 
         return new AuthResponseDto
@@ -177,27 +166,34 @@ public class AuthService : IAuthService
         return BCrypt.Net.BCrypt.Verify(password, hash);
     }
 
-    public async Task<bool> VerifyEmailAsync(Guid userId, string token)
+    public async Task VerifyEmailAsync(Guid userId, string token)
     {
         var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null || user.EmailVerificationToken != token)
+        if (user == null)
         {
-            return false;
+            throw new UserNotFoundException(userId);
+        }
+
+        if (user.EmailVerificationToken != token)
+        {
+            throw new InvalidTokenException("Invalid or expired verification token");
         }
 
         user.IsEmailVerified = true;
         user.EmailVerificationToken = null;
         await _userRepository.UpdateAsync(user);
         await _userRepository.SaveChangesAsync();
-        return true;
     }
 
-    public async Task<string?> GeneratePasswordResetTokenAsync(string email)
+    public async Task<string> GeneratePasswordResetTokenAsync(string email)
     {
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
         {
-            return null;
+            // For security reasons, we don't throw an exception here
+            // Instead, we return a dummy token that won't work
+            // This prevents email enumeration attacks
+            return Guid.NewGuid().ToString();
         }
 
         user.PasswordResetToken = Guid.NewGuid().ToString();
@@ -222,12 +218,17 @@ public class AuthService : IAuthService
         return user.PasswordResetToken;
     }
 
-    public async Task<bool> ResetPasswordAsync(string email, string token, string newPassword)
+    public async Task ResetPasswordAsync(string email, string token, string newPassword)
     {
         var user = await _userRepository.GetByEmailAsync(email);
-        if (user == null || user.PasswordResetToken != token || user.PasswordResetExpires < DateTime.UtcNow)
+        if (user == null)
         {
-            return false;
+            throw new UserNotFoundException($"User with email {email} not found");
+        }
+
+        if (user.PasswordResetToken != token || user.PasswordResetExpires < DateTime.UtcNow)
+        {
+            throw new InvalidTokenException("Invalid or expired reset token");
         }
 
         user.PasswordHash = HashPassword(newPassword);
@@ -235,21 +236,24 @@ public class AuthService : IAuthService
         user.PasswordResetExpires = null;
         await _userRepository.UpdateAsync(user);
         await _userRepository.SaveChangesAsync();
-        return true;
     }
 
-    public async Task<bool> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword)
+    public async Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword)
     {
         var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null || !VerifyPassword(oldPassword, user.PasswordHash!))
+        if (user == null)
         {
-            return false;
+            throw new UserNotFoundException(userId);
+        }
+
+        if (!VerifyPassword(oldPassword, user.PasswordHash!))
+        {
+            throw new InvalidCredentialsException();
         }
 
         user.PasswordHash = HashPassword(newPassword);
         await _userRepository.UpdateAsync(user);
         await _userRepository.SaveChangesAsync();
-        return true;
     }
 
     private UserDto MapToUserDto(User user)
