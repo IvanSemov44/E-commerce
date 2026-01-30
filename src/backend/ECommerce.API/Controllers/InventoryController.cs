@@ -1,13 +1,17 @@
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
-using ECommerce.Application.Services;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;
 
+/// <summary>
+/// Controller for inventory and stock management operations.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 [Authorize(Roles = "Admin,SuperAdmin")]
 public class InventoryController : ControllerBase
 {
@@ -26,212 +30,118 @@ public class InventoryController : ControllerBase
     /// Get all inventory with pagination and filters.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<object>> GetAllInventory(
+    [ProducesResponseType(typeof(ApiResponse<List<InventoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetAllInventory(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         [FromQuery] string? search = null,
         [FromQuery] bool? lowStockOnly = null)
     {
-        try
-        {
-            var inventory = await _inventoryService.GetAllInventoryAsync(page, pageSize, search, lowStockOnly);
-            return Ok(new
-            {
-                success = true,
-                data = inventory,
-                page,
-                pageSize,
-                message = "Inventory retrieved successfully"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving inventory");
-            return StatusCode(500, new
-            {
-                success = false,
-                message = "Failed to retrieve inventory",
-                errors = new[] { ex.Message }
-            });
-        }
+        _logger.LogInformation("Retrieving inventory (page: {Page}, pageSize: {PageSize}, search: {Search}, lowStockOnly: {LowStockOnly})",
+            page, pageSize, search, lowStockOnly);
+
+        var inventory = await _inventoryService.GetAllInventoryAsync(page, pageSize, search, lowStockOnly);
+        return Ok(ApiResponse<List<InventoryDto>>.Ok(inventory, "Inventory retrieved successfully"));
     }
 
     /// <summary>
     /// Get products with low stock.
     /// </summary>
     [HttpGet("low-stock")]
-    public async Task<ActionResult<object>> GetLowStockProducts()
+    [ProducesResponseType(typeof(ApiResponse<List<LowStockAlert>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetLowStockProducts()
     {
-        try
-        {
-            var lowStockProducts = await _inventoryService.GetLowStockProductsAsync();
-            return Ok(new
-            {
-                success = true,
-                data = lowStockProducts,
-                count = lowStockProducts.Count,
-                message = "Low stock products retrieved successfully"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving low stock products");
-            return StatusCode(500, new
-            {
-                success = false,
-                message = "Failed to retrieve low stock products",
-                errors = new[] { ex.Message }
-            });
-        }
+        _logger.LogInformation("Retrieving low stock products");
+
+        var lowStockProducts = await _inventoryService.GetLowStockProductsAsync();
+        return Ok(ApiResponse<List<LowStockAlert>>.Ok(lowStockProducts, "Low stock products retrieved successfully"));
     }
 
     /// <summary>
     /// Get inventory history for a specific product.
     /// </summary>
     [HttpGet("{productId}/history")]
-    public async Task<ActionResult<object>> GetInventoryHistory(
+    [ProducesResponseType(typeof(ApiResponse<List<InventoryLogDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetInventoryHistory(
         Guid productId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
-        try
-        {
-            var history = await _inventoryService.GetInventoryHistoryAsync(productId, page, pageSize);
-            return Ok(new
-            {
-                success = true,
-                data = history,
-                page,
-                pageSize,
-                message = "Inventory history retrieved successfully"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving inventory history for product {ProductId}", productId);
-            return StatusCode(500, new
-            {
-                success = false,
-                message = "Failed to retrieve inventory history",
-                errors = new[] { ex.Message }
-            });
-        }
+        _logger.LogInformation("Retrieving inventory history for product {ProductId} (page: {Page}, pageSize: {PageSize})",
+            productId, page, pageSize);
+
+        var history = await _inventoryService.GetInventoryHistoryAsync(productId, page, pageSize);
+        return Ok(ApiResponse<List<InventoryLogDto>>.Ok(history, "Inventory history retrieved successfully"));
     }
 
     /// <summary>
     /// Adjust stock quantity for a product.
     /// </summary>
     [HttpPost("{productId}/adjust")]
-    public async Task<ActionResult<object>> AdjustStock(Guid productId, [FromBody] AdjustStockRequest request)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AdjustStock(Guid productId, [FromBody] AdjustStockRequest request)
     {
-        try
-        {
-            if (request.Quantity < 0)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Quantity cannot be negative",
-                    errors = new[] { "Invalid quantity value" }
-                });
-            }
+        var userId = GetCurrentUserId();
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var userGuid = userId != null ? Guid.Parse(userId) : (Guid?)null;
+        _logger.LogInformation("Adjusting stock for product {ProductId} to {Quantity} (User: {UserId})",
+            productId, request.Quantity, userId);
 
-            var result = await _inventoryService.AdjustStockAsync(
-                productId,
-                request.Quantity,
-                request.Reason,
-                request.Notes,
-                userGuid
-            );
+        await _inventoryService.AdjustStockAsync(
+            productId,
+            request.Quantity,
+            request.Reason,
+            request.Notes,
+            userId
+        );
 
-            if (!result)
-            {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Product not found",
-                    errors = new[] { $"Product with ID {productId} not found" }
-                });
-            }
-
-            return Ok(new
-            {
-                success = true,
-                message = "Stock adjusted successfully",
-                data = new { productId, newQuantity = request.Quantity }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adjusting stock for product {ProductId}", productId);
-            return StatusCode(500, new
-            {
-                success = false,
-                message = "Failed to adjust stock",
-                errors = new[] { ex.Message }
-            });
-        }
+        return Ok(ApiResponse<object>.Ok(
+            new { productId, newQuantity = request.Quantity },
+            "Stock adjusted successfully"));
     }
 
     /// <summary>
     /// Increase stock (restock) for a product.
     /// </summary>
     [HttpPost("{productId}/restock")]
-    public async Task<ActionResult<object>> RestockProduct(Guid productId, [FromBody] AdjustStockRequest request)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RestockProduct(Guid productId, [FromBody] AdjustStockRequest request)
     {
-        try
-        {
-            if (request.Quantity <= 0)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Quantity must be positive",
-                    errors = new[] { "Invalid quantity value" }
-                });
-            }
+        var userId = GetCurrentUserId();
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var userGuid = userId != null ? Guid.Parse(userId) : (Guid?)null;
+        _logger.LogInformation("Restocking product {ProductId} with {Quantity} units (User: {UserId})",
+            productId, request.Quantity, userId);
 
-            var result = await _inventoryService.IncreaseStockAsync(
-                productId,
-                request.Quantity,
-                request.Reason ?? "restock",
-                null,
-                userGuid
-            );
+        await _inventoryService.IncreaseStockAsync(
+            productId,
+            request.Quantity,
+            request.Reason ?? "restock",
+            null,
+            userId
+        );
 
-            if (!result)
-            {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Product not found",
-                    errors = new[] { $"Product with ID {productId} not found" }
-                });
-            }
-
-            return Ok(new
-            {
-                success = true,
-                message = $"Stock increased by {request.Quantity} units",
-                data = new { productId, quantityAdded = request.Quantity }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error restocking product {ProductId}", productId);
-            return StatusCode(500, new
-            {
-                success = false,
-                message = "Failed to restock product",
-                errors = new[] { ex.Message }
-            });
-        }
+        return Ok(ApiResponse<object>.Ok(
+            new { productId, quantityAdded = request.Quantity },
+            $"Stock increased by {request.Quantity} units"));
     }
 
     /// <summary>
@@ -239,27 +149,21 @@ public class InventoryController : ControllerBase
     /// </summary>
     [HttpPost("check-availability")]
     [AllowAnonymous]
-    public async Task<ActionResult<object>> CheckStockAvailability([FromBody] StockCheckRequest request)
+    [ProducesResponseType(typeof(ApiResponse<StockCheckResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CheckStockAvailability([FromBody] StockCheckRequest request)
     {
-        try
-        {
-            var result = await _inventoryService.CheckStockAvailabilityAsync(request.Items);
-            return Ok(new
-            {
-                success = true,
-                data = result,
-                message = result.IsAvailable ? "All items are available" : "Some items have stock issues"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking stock availability");
-            return StatusCode(500, new
-            {
-                success = false,
-                message = "Failed to check stock availability",
-                errors = new[] { ex.Message }
-            });
-        }
+        _logger.LogInformation("Checking stock availability for {ItemCount} items", request.Items.Count);
+
+        var result = await _inventoryService.CheckStockAvailabilityAsync(request.Items);
+        var message = result.IsAvailable ? "All items are available" : "Some items have stock issues";
+
+        return Ok(ApiResponse<StockCheckResponse>.Ok(result, message));
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst("sub") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        return userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId) ? userId : null;
     }
 }

@@ -13,7 +13,7 @@ public interface IPromoCodeService
     Task<PromoCodeDetailDto?> GetByCodeAsync(string code);
     Task<PromoCodeDetailDto> CreateAsync(CreatePromoCodeDto dto);
     Task<PromoCodeDetailDto> UpdateAsync(Guid id, UpdatePromoCodeDto dto);
-    Task<bool> DeactivateAsync(Guid id);
+    Task DeactivateAsync(Guid id);
     Task<ValidatePromoCodeDto> ValidatePromoCodeAsync(string code, decimal orderAmount);
     Task IncrementUsedCountAsync(Guid promoCodeId);
 }

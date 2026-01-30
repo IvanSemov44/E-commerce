@@ -137,12 +137,6 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto)
     {
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
-        }
-
         var product = await _productService.CreateProductAsync(createProductDto);
         _logger.LogInformation("Product created: {ProductId}", product.Id);
 
@@ -174,12 +168,6 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto)
     {
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            return BadRequest(ApiResponse<ProductDetailDto>.Error("Validation failed", errors));
-        }
-
         var product = await _productService.UpdateProductAsync(id, updateProductDto);
         _logger.LogInformation("Product updated: {ProductId}", id);
 

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Payments;
 using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.Services;
 using ECommerce.Application.Interfaces;
 
 namespace ECommerce.API.Controllers;
@@ -32,50 +31,33 @@ public class PaymentsController : ControllerBase
     /// <response code="200">Payment processed successfully or failed with details.</response>
     /// <response code="400">Invalid payment request.</response>
     /// <response code="401">Unauthorized - authentication required.</response>
+    /// <response code="404">Order not found.</response>
     /// <response code="500">Internal server error.</response>
     [HttpPost("process")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentDto dto)
     {
-        try
+        _logger.LogInformation("Payment processing initiated for order {OrderId} via {PaymentMethod}",
+            dto.OrderId, dto.PaymentMethod);
+
+        var result = await _paymentService.ProcessPaymentAsync(dto);
+
+        if (result.Success)
         {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<PaymentResponseDto>.Error("Validation failed", errors));
-            }
-
-            _logger.LogInformation("Payment processing initiated for order {OrderId} via {PaymentMethod}",
-                dto.OrderId, dto.PaymentMethod);
-
-            var result = await _paymentService.ProcessPaymentAsync(dto);
-
-            if (result.Success)
-            {
-                _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}",
-                    dto.OrderId, result.PaymentIntentId);
-                return Ok(ApiResponse<PaymentResponseDto>.Ok(result, "Payment processed successfully"));
-            }
-            else
-            {
-                _logger.LogWarning("Payment failed for order {OrderId}. Reason: {Message}",
-                    dto.OrderId, result.Message);
-                return Ok(ApiResponse<PaymentResponseDto>.Ok(result, "Payment processing failed"));
-            }
+            _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}",
+                dto.OrderId, result.PaymentIntentId);
+            return Ok(ApiResponse<PaymentResponseDto>.Ok(result, "Payment processed successfully"));
         }
-        catch (ArgumentException ex)
+        else
         {
-            _logger.LogWarning("Payment validation error: {Message}", ex.Message);
-            return BadRequest(ApiResponse<PaymentResponseDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing payment for order {OrderId}", dto.OrderId);
-            return StatusCode(500, ApiResponse<PaymentResponseDto>.Error("An error occurred while processing the payment"));
+            _logger.LogWarning("Payment failed for order {OrderId}. Reason: {Message}",
+                dto.OrderId, result.Message);
+            return Ok(ApiResponse<PaymentResponseDto>.Ok(result, "Payment processing failed"));
         }
     }
 
@@ -91,33 +73,15 @@ public class PaymentsController : ControllerBase
     [HttpGet("{orderId:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PaymentDetailsDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<PaymentDetailsDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<PaymentDetailsDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<PaymentDetailsDto>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPaymentDetails(Guid orderId)
     {
-        try
-        {
-            _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
+        _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
-            var paymentDetails = await _paymentService.GetPaymentDetailsAsync(orderId);
-            return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment details retrieved successfully"));
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning("Payment details not found: {Message}", ex.Message);
-            return NotFound(ApiResponse<PaymentDetailsDto>.Error(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning("Invalid operation: {Message}", ex.Message);
-            return BadRequest(ApiResponse<PaymentDetailsDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving payment details for order {OrderId}", orderId);
-            return StatusCode(500, ApiResponse<PaymentDetailsDto>.Error("An error occurred while retrieving payment details"));
-        }
+        var paymentDetails = await _paymentService.GetPaymentDetailsAsync(orderId);
+        return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment details retrieved successfully"));
     }
 
     /// <summary>
@@ -135,49 +99,30 @@ public class PaymentsController : ControllerBase
     [HttpPost("{orderId:guid}/refund")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<RefundResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<RefundResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<RefundResponseDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<RefundResponseDto>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<RefundResponseDto>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse<RefundResponseDto>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RefundPayment(Guid orderId, [FromBody] RefundPaymentDto dto)
     {
-        try
+        dto.OrderId = orderId;
+
+        _logger.LogInformation("Refund initiated for order {OrderId}", orderId);
+
+        var result = await _paymentService.RefundPaymentAsync(dto);
+
+        if (result.Success)
         {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<RefundResponseDto>.Error("Validation failed", errors));
-            }
-
-            dto.OrderId = orderId;
-
-            _logger.LogInformation("Refund initiated for order {OrderId}", orderId);
-
-            var result = await _paymentService.RefundPaymentAsync(dto);
-
-            if (result.Success)
-            {
-                _logger.LogInformation("Refund successful for order {OrderId}. RefundId: {RefundId}",
-                    orderId, result.RefundId);
-                return Ok(ApiResponse<RefundResponseDto>.Ok(result, "Refund processed successfully"));
-            }
-            else
-            {
-                _logger.LogWarning("Refund failed for order {OrderId}. Reason: {Message}",
-                    orderId, result.Message);
-                return Ok(ApiResponse<RefundResponseDto>.Ok(result, "Refund processing failed"));
-            }
+            _logger.LogInformation("Refund successful for order {OrderId}. RefundId: {RefundId}",
+                orderId, result.RefundId);
+            return Ok(ApiResponse<RefundResponseDto>.Ok(result, "Refund processed successfully"));
         }
-        catch (ArgumentException ex)
+        else
         {
-            _logger.LogWarning("Refund validation error: {Message}", ex.Message);
-            return BadRequest(ApiResponse<RefundResponseDto>.Error(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing refund for order {OrderId}", orderId);
-            return StatusCode(500, ApiResponse<RefundResponseDto>.Error("An error occurred while processing the refund"));
+            _logger.LogWarning("Refund failed for order {OrderId}. Reason: {Message}",
+                orderId, result.Message);
+            return Ok(ApiResponse<RefundResponseDto>.Ok(result, "Refund processing failed"));
         }
     }
 
@@ -193,30 +138,22 @@ public class PaymentsController : ControllerBase
     [HttpGet("intent/{paymentIntentId}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PaymentDetailsDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPaymentIntent(string paymentIntentId)
     {
-        try
+        _logger.LogInformation("Retrieving payment intent {PaymentIntentId}", paymentIntentId);
+
+        var paymentDetails = await _paymentService.GetPaymentIntentAsync(paymentIntentId);
+
+        if (paymentDetails == null)
         {
-            _logger.LogInformation("Retrieving payment intent {PaymentIntentId}", paymentIntentId);
-
-            var paymentDetails = await _paymentService.GetPaymentIntentAsync(paymentIntentId);
-
-            if (paymentDetails == null)
-            {
-                _logger.LogWarning("Payment intent {PaymentIntentId} not found", paymentIntentId);
-                return NotFound(ApiResponse<string>.Error("Payment intent not found"));
-            }
-
-            return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment intent retrieved successfully"));
+            _logger.LogWarning("Payment intent {PaymentIntentId} not found", paymentIntentId);
+            return NotFound(ApiResponse<string>.Error("Payment intent not found"));
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving payment intent {PaymentIntentId}", paymentIntentId);
-            return StatusCode(500, ApiResponse<string>.Error("An error occurred while retrieving payment intent"));
-        }
+
+        return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment intent retrieved successfully"));
     }
 
     /// <summary>
@@ -228,28 +165,20 @@ public class PaymentsController : ControllerBase
     [HttpGet("methods")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public IActionResult GetSupportedPaymentMethods()
     {
-        try
+        var methods = new List<string>
         {
-            var methods = new List<string>
-            {
-                "stripe",
-                "paypal",
-                "credit_card",
-                "debit_card",
-                "apple_pay",
-                "google_pay"
-            };
+            "stripe",
+            "paypal",
+            "credit_card",
+            "debit_card",
+            "apple_pay",
+            "google_pay"
+        };
 
-            return Ok(ApiResponse<List<string>>.Ok(methods, "Supported payment methods retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving supported payment methods");
-            return StatusCode(500, ApiResponse<string>.Error("An error occurred while retrieving payment methods"));
-        }
+        return Ok(ApiResponse<List<string>>.Ok(methods, "Supported payment methods retrieved successfully"));
     }
 
     /// <summary>

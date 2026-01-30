@@ -175,7 +175,7 @@ public class PaymentService : IPaymentService
 
         if (order.PaymentStatus != PaymentStatus.Paid)
         {
-            throw new InvalidRefundException(order.PaymentStatus.ToString());
+            throw new InvalidRefundException($"Cannot refund order with payment status: {order.PaymentStatus}");
         }
 
         var refundAmount = dto.Amount ?? order.TotalAmount;

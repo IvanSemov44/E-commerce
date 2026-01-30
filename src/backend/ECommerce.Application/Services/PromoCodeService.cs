@@ -3,6 +3,7 @@ using AutoMapper;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Core.Entities;
+using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -94,7 +95,7 @@ public class PromoCodeService : IPromoCodeService
 
         if (existingCode)
         {
-            throw new ArgumentException($"Promo code '{dto.Code}' already exists");
+            throw new PromoCodeAlreadyExistsException(dto.Code);
         }
 
         var promoCode = _mapper.Map<PromoCode>(dto);
@@ -114,7 +115,7 @@ public class PromoCodeService : IPromoCodeService
         var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id);
         if (promoCode == null)
         {
-            throw new KeyNotFoundException($"Promo code with ID {id} not found");
+            throw new PromoCodeNotFoundException(id);
         }
 
         // UpdateAsync only provided fields
@@ -128,7 +129,7 @@ public class PromoCodeService : IPromoCodeService
 
             if (existingCode)
             {
-                throw new ArgumentException($"Promo code '{dto.Code}' already exists");
+                throw new PromoCodeAlreadyExistsException(dto.Code);
             }
 
             promoCode.Code = normalizedCode;
@@ -154,12 +155,12 @@ public class PromoCodeService : IPromoCodeService
         return _mapper.Map<PromoCodeDetailDto>(promoCode);
     }
 
-    public async Task<bool> DeactivateAsync(Guid id)
+    public async Task DeactivateAsync(Guid id)
     {
         var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id);
         if (promoCode == null)
         {
-            return false;
+            throw new PromoCodeNotFoundException(id);
         }
 
         promoCode.IsActive = false;
@@ -167,8 +168,6 @@ public class PromoCodeService : IPromoCodeService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Promo code deactivated: {Code}", promoCode.Code);
-
-        return true;
     }
 
     public async Task<ValidatePromoCodeDto> ValidatePromoCodeAsync(string code, decimal orderAmount)
@@ -277,13 +276,13 @@ public class PromoCodeService : IPromoCodeService
             var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(promoCodeId);
             if (promoCode == null)
             {
-                throw new KeyNotFoundException($"Promo code with ID {promoCodeId} not found");
+                throw new PromoCodeNotFoundException(promoCodeId);
             }
 
             // Re-check max uses to prevent race condition
             if (promoCode.MaxUses.HasValue && promoCode.UsedCount >= promoCode.MaxUses.Value)
             {
-                throw new InvalidOperationException("Promo code usage limit reached");
+                throw new PromoCodeUsageLimitReachedException(promoCode.Code);
             }
 
             promoCode.UsedCount++;
@@ -327,31 +326,31 @@ public class PromoCodeService : IPromoCodeService
         // Validate discount type
         if (discountType.ToLower() != "percentage" && discountType.ToLower() != "fixed")
         {
-            throw new ArgumentException("Discount type must be 'percentage' or 'fixed'");
+            throw new InvalidPromoCodeConfigurationException("Discount type must be 'percentage' or 'fixed'");
         }
 
         // Validate discount value
         if (discountValue <= 0)
         {
-            throw new ArgumentException("Discount value must be greater than 0");
+            throw new InvalidPromoCodeConfigurationException("Discount value must be greater than 0");
         }
 
         // Validate percentage discount
         if (discountType.ToLower() == "percentage" && discountValue > 100)
         {
-            throw new ArgumentException("Percentage discount must be between 0 and 100");
+            throw new InvalidPromoCodeConfigurationException("Percentage discount must be between 0 and 100");
         }
 
         // Validate date range
         if (startDate.HasValue && endDate.HasValue && startDate.Value >= endDate.Value)
         {
-            throw new ArgumentException("Start date must be before end date");
+            throw new InvalidPromoCodeConfigurationException("Start date must be before end date");
         }
 
         // Validate min order amount
         if (minOrderAmount.HasValue && minOrderAmount.Value < 0)
         {
-            throw new ArgumentException("Minimum order amount cannot be negative");
+            throw new InvalidPromoCodeConfigurationException("Minimum order amount cannot be negative");
         }
     }
 }
