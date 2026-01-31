@@ -30,11 +30,10 @@ public class WishlistServiceTests
         _mockMapper = MockHelpers.CreateMockMapper();
 
         _mockUnitOfWork.Setup(u => u.Wishlists).Returns(_mockWishlistRepository.Object);
+        _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
+        _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
 
         _service = new WishlistService(
-            _mockWishlistRepository.Object,
-            _mockProductRepository.Object,
-            _mockUserRepository.Object,
             _mockUnitOfWork.Object,
             _mockMapper.Object);
     }
@@ -128,7 +127,7 @@ public class WishlistServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         var entries = new List<Wishlist> { entry };
         _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(() => entries.ToList());
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
             _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>()))
                 .Callback<Wishlist>(w => entries.RemoveAll(x => x.Id == w.Id))
                 .Returns(Task.CompletedTask);
@@ -150,7 +149,7 @@ public class WishlistServiceTests
         // Arrange
         var user = TestDataFactory.CreateUser();
         var productId = Guid.NewGuid();
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(new List<Wishlist>());
 
         // Act
@@ -188,7 +187,7 @@ public class WishlistServiceTests
             TestDataFactory.CreateWishlistItem(user.Id, p2.Id)
         };
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(entries);
         _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>())).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);

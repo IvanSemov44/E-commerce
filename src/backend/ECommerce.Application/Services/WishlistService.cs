@@ -9,33 +9,24 @@ namespace ECommerce.Application.Services;
 
 public class WishlistService : IWishlistService
 {
-    private readonly IWishlistRepository _wishlistRepository;
-    private readonly IProductRepository _productRepository;
-    private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public WishlistService(
-        IWishlistRepository wishlistRepository,
-        IProductRepository productRepository,
-        IUserRepository userRepository,
         IUnitOfWork unitOfWork,
         IMapper mapper)
     {
-        _wishlistRepository = wishlistRepository;
-        _productRepository = productRepository;
-        _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public async Task<WishlistDto> GetUserWishlistAsync(Guid userId)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
         if (user == null)
             throw new UserNotFoundException(userId);
 
-        var wishlistEntries = await _wishlistRepository.GetAllAsync();
+        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false);
         var userWishlistEntries = wishlistEntries
             .Where(w => w.UserId == userId)
             .ToList();
@@ -45,15 +36,13 @@ public class WishlistService : IWishlistService
 
     public async Task<WishlistDto> AddToWishlistAsync(Guid userId, Guid productId)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
         if (user == null)
             throw new UserNotFoundException(userId);
-
-        var product = await _productRepository.GetByIdAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false);
         if (product == null)
             throw new ProductNotFoundException(productId);
-
-        if (await _wishlistRepository.IsProductInWishlistAsync(userId, productId))
+        if (await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId))
             throw new DuplicateWishlistItemException();
 
         var wishlistEntry = new Wishlist
@@ -63,7 +52,7 @@ public class WishlistService : IWishlistService
             ProductId = productId
         };
 
-        await _wishlistRepository.AddAsync(wishlistEntry);
+        await _unitOfWork.Wishlists.AddAsync(wishlistEntry);
         await _unitOfWork.SaveChangesAsync();
 
         return await GetUserWishlistAsync(userId);
@@ -71,16 +60,14 @@ public class WishlistService : IWishlistService
 
     public async Task<WishlistDto> RemoveFromWishlistAsync(Guid userId, Guid productId)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
         if (user == null)
             throw new UserNotFoundException(userId);
-
-        var wishlistEntries = await _wishlistRepository.GetAllAsync();
+        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false);
         var entryToRemove = wishlistEntries.FirstOrDefault(w => w.UserId == userId && w.ProductId == productId);
         if (entryToRemove == null)
             throw new WishlistItemNotFoundException();
-
-        await _wishlistRepository.DeleteAsync(entryToRemove);
+        await _unitOfWork.Wishlists.DeleteAsync(entryToRemove);
         await _unitOfWork.SaveChangesAsync();
 
         return await GetUserWishlistAsync(userId);
@@ -88,23 +75,22 @@ public class WishlistService : IWishlistService
 
     public async Task<bool> IsProductInWishlistAsync(Guid userId, Guid productId)
     {
-        return await _wishlistRepository.IsProductInWishlistAsync(userId, productId);
+        return await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId);
     }
 
     public async Task<WishlistDto> ClearWishlistAsync(Guid userId)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
         if (user == null)
             throw new UserNotFoundException(userId);
-
-        var wishlistEntries = await _wishlistRepository.GetAllAsync();
+        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false);
         var userWishlistEntries = wishlistEntries
             .Where(w => w.UserId == userId)
             .ToList();
 
         foreach (var entry in userWishlistEntries)
         {
-            await _wishlistRepository.DeleteAsync(entry);
+            await _unitOfWork.Wishlists.DeleteAsync(entry);
         }
         if (userWishlistEntries.Count > 0)
         {
@@ -120,7 +106,7 @@ public class WishlistService : IWishlistService
 
         foreach (var entry in wishlistEntries)
         {
-            var product = await _productRepository.GetByIdAsync(entry.ProductId);
+            var product = await _unitOfWork.Products.GetByIdAsync(entry.ProductId, trackChanges: false);
             if (product == null) continue;
 
             var wishlistItemDto = new WishlistItemDto
