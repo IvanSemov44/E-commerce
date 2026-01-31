@@ -1,5 +1,6 @@
 using ECommerce.Application.Interfaces;
 using ECommerce.Application.DTOs.Inventory;
+using AutoMapper;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
@@ -13,16 +14,19 @@ public class InventoryService : IInventoryService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
     private readonly ILogger<InventoryService> _logger;
+    private readonly IMapper _mapper;
     private readonly HashSet<Guid> _lowStockAlertsSent = new();
 
     public InventoryService(
         IUnitOfWork unitOfWork,
         IEmailService emailService,
-        ILogger<InventoryService> logger)
+        ILogger<InventoryService> logger,
+        IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _emailService = emailService;
         _logger = logger;
+        _mapper = mapper;
     }
 
     public async Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null)
@@ -209,16 +213,7 @@ public class InventoryService : IInventoryService
             .Take(pageSize)
             .ToList();
 
-        return products.Select(p => new InventoryDto
-        {
-            ProductId = p.Id,
-            ProductName = p.Name,
-            Sku = p.Sku,
-            StockQuantity = p.StockQuantity,
-            LowStockThreshold = p.LowStockThreshold,
-            ImageUrl = p.Images.FirstOrDefault()?.Url,
-            Price = p.Price
-        }).ToList();
+        return products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
     }
 
     public async Task<List<LowStockAlert>> GetLowStockProductsAsync()
@@ -228,14 +223,7 @@ public class InventoryService : IInventoryService
         var lowStockProducts = products
             .Where(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive)
             .OrderBy(p => p.StockQuantity)
-            .Select(p => new LowStockAlert
-            {
-                ProductId = p.Id,
-                ProductName = p.Name,
-                Sku = p.Sku,
-                CurrentStock = p.StockQuantity,
-                LowStockThreshold = p.LowStockThreshold
-            })
+            .Select(p => _mapper.Map<LowStockAlert>(p))
             .ToList();
 
         return lowStockProducts;
@@ -272,21 +260,14 @@ public class InventoryService : IInventoryService
 
         foreach (var log in logs)
         {
-            result.Add(new InventoryLogDto
-            {
-                Id = log.Id,
-                ProductId = log.ProductId,
-                ProductName = productName,
-                QuantityChange = log.QuantityChange,
-                StockAfterChange = currentStock,
-                Reason = log.Reason,
-                ReferenceId = log.ReferenceId,
-                Notes = log.Notes,
-                CreatedAt = log.CreatedAt,
-                CreatedByUserName = log.CreatedByUserId.HasValue && users.ContainsKey(log.CreatedByUserId.Value)
-                    ? users[log.CreatedByUserId.Value]
-                    : null
-            });
+            var dto = _mapper.Map<InventoryLogDto>(log);
+            dto.ProductName = productName;
+            dto.StockAfterChange = currentStock;
+            dto.CreatedByUserName = log.CreatedByUserId.HasValue && users.ContainsKey(log.CreatedByUserId.Value)
+                ? users[log.CreatedByUserId.Value]
+                : null;
+
+            result.Add(dto);
 
             currentStock -= log.QuantityChange;
         }

@@ -4,6 +4,7 @@ using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Cart;
+using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Users;
@@ -120,5 +121,34 @@ public class MappingProfile : Profile
         CreateMap<CreatePromoCodeDto, PromoCode>();
         CreateMap<UpdatePromoCodeDto, PromoCode>()
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Inventory mappings
+        CreateMap<Product, InventoryDto>()
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Sku))
+            .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.StockQuantity))
+            .ForMember(dest => dest.LowStockThreshold, opt => opt.MapFrom(src => src.LowStockThreshold))
+            .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Images.FirstOrDefault() != null ? src.Images.FirstOrDefault()!.Url : null))
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));
+
+        CreateMap<Product, LowStockAlert>()
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Sku))
+            .ForMember(dest => dest.CurrentStock, opt => opt.MapFrom(src => src.StockQuantity))
+            .ForMember(dest => dest.LowStockThreshold, opt => opt.MapFrom(src => src.LowStockThreshold));
+
+        CreateMap<InventoryLog, InventoryLogDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
+            .ForMember(dest => dest.QuantityChange, opt => opt.MapFrom(src => src.QuantityChange))
+            .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.Reason))
+            .ForMember(dest => dest.ReferenceId, opt => opt.MapFrom(src => src.ReferenceId))
+            .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+            .ForMember(dest => dest.CreatedByUserName, opt => opt.Ignore())
+            .ForMember(dest => dest.ProductName, opt => opt.Ignore())
+            .ForMember(dest => dest.StockAfterChange, opt => opt.Ignore());
     }
 }

@@ -2,6 +2,7 @@ using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
+using AutoMapper;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
@@ -18,6 +19,7 @@ public class AuthServiceTests
     private Mock<IUserRepository> _mockUserRepository = null!;
     private Mock<IConfiguration> _mockConfiguration = null!;
     private Mock<IEmailService> _mockEmailService = null!;
+    private Mock<IMapper> _mockMapper = null!;
     private AuthService _service = null!;
 
     [TestInitialize]
@@ -34,7 +36,20 @@ public class AuthServiceTests
         _mockConfiguration.Setup(c => c["Jwt:ExpireMinutes"]).Returns("60");
         _mockConfiguration.Setup(c => c["AppUrl"]).Returns("https://test.com");
 
-        _service = new AuthService(_mockUserRepository.Object, _mockConfiguration.Object, _mockEmailService.Object);
+        _mockMapper = new Mock<IMapper>();
+        _mockMapper.Setup(m => m.Map<UserDto>(It.IsAny<User>()))
+            .Returns((User u) => new UserDto
+            {
+                Id = u.Id,
+                Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                Phone = u.Phone,
+                Role = u.Role.ToString(),
+                AvatarUrl = u.AvatarUrl
+            });
+
+        _service = new AuthService(_mockUserRepository.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockMapper.Object);
     }
 
     #region RegisterAsync Tests
