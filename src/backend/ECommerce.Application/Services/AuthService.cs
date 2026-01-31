@@ -15,25 +15,23 @@ namespace ECommerce.Application.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration, IEmailService emailService, IUnitOfWork unitOfWork, IMapper mapper)
+    public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, IEmailService emailService, IMapper mapper)
     {
-        _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
         _configuration = configuration;
         _emailService = emailService;
-        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
         // Check if email already exists
-        if (await _userRepository.EmailExistsAsync(dto.Email))
+        if (await _unitOfWork.Users.EmailExistsAsync(dto.Email))
         {
             throw new DuplicateEmailException(dto.Email);
         }
@@ -49,7 +47,7 @@ public class AuthService : IAuthService
             EmailVerificationToken = Guid.NewGuid().ToString()
         };
 
-        await _userRepository.AddAsync(user);
+        await _unitOfWork.Users.AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
 
         // Send welcome email (fire and forget - don't block registration)
@@ -80,7 +78,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
-        var user = await _userRepository.GetByEmailAsync(dto.Email);
+        var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email);
         if (user == null || !VerifyPassword(dto.Password, user.PasswordHash!))
         {
             throw new InvalidCredentialsException();
@@ -173,7 +171,7 @@ public class AuthService : IAuthService
 
     public async Task VerifyEmailAsync(Guid userId, string token)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null)
         {
             throw new UserNotFoundException(userId);
@@ -186,13 +184,13 @@ public class AuthService : IAuthService
 
         user.IsEmailVerified = true;
         user.EmailVerificationToken = null;
-        await _userRepository.UpdateAsync(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task<string> GeneratePasswordResetTokenAsync(string email)
     {
-        var user = await _userRepository.GetByEmailAsync(email);
+        var user = await _unitOfWork.Users.GetByEmailAsync(email);
         if (user == null)
         {
             // For security reasons, we don't throw an exception here
@@ -203,7 +201,7 @@ public class AuthService : IAuthService
 
         user.PasswordResetToken = Guid.NewGuid().ToString();
         user.PasswordResetExpires = DateTime.UtcNow.AddHours(1);
-        await _userRepository.UpdateAsync(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync();
 
         // Send password reset email (fire and forget)
@@ -225,7 +223,7 @@ public class AuthService : IAuthService
 
     public async Task ResetPasswordAsync(string email, string token, string newPassword)
     {
-        var user = await _userRepository.GetByEmailAsync(email);
+        var user = await _unitOfWork.Users.GetByEmailAsync(email);
         if (user == null)
         {
             throw new UserNotFoundException($"User with email {email} not found");
@@ -245,7 +243,7 @@ public class AuthService : IAuthService
 
     public async Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null)
         {
             throw new UserNotFoundException(userId);

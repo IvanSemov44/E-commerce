@@ -12,18 +12,15 @@ namespace ECommerce.Application.Services;
 /// </summary>
 public class UserService : IUserService
 {
-    private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<UserService> _logger;
     private readonly IUnitOfWork _unitOfWork;
 
     public UserService(
-        IUserRepository userRepository,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ILogger<UserService> logger)
     {
-        _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
@@ -33,7 +30,7 @@ public class UserService : IUserService
     {
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null)
             throw new UserNotFoundException(userId);
 
@@ -44,7 +41,7 @@ public class UserService : IUserService
     {
         _logger.LogInformation("Updating profile for user {UserId}", userId);
 
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null)
             throw new UserNotFoundException(userId);
 
@@ -54,7 +51,7 @@ public class UserService : IUserService
         user.AvatarUrl = dto.AvatarUrl;
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _userRepository.UpdateAsync(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Profile updated successfully for user {UserId}", userId);
