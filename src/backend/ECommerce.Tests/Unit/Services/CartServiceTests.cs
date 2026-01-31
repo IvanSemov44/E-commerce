@@ -28,12 +28,13 @@ public class CartServiceTests
         _mockMapper = MockHelpers.CreateMockMapper();
         _mockUnitOfWork = MockHelpers.CreateMockUnitOfWork();
 
+        _mockUnitOfWork.Setup(u => u.Carts).Returns(_mockCartRepository.Object);
+        _mockUnitOfWork.Setup(u => u.CartItems).Returns(_mockCartItemRepository.Object);
+        _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
+
         _service = new CartService(
-            _mockCartRepository.Object,
-            _mockCartItemRepository.Object,
-            _mockProductRepository.Object,
-            _mockMapper.Object,
-            _mockUnitOfWork.Object);
+            _mockUnitOfWork.Object,
+            _mockMapper.Object);
     }
 
     #region GetOrCreateCartAsync Tests

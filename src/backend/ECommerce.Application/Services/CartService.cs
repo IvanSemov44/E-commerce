@@ -9,24 +9,15 @@ namespace ECommerce.Application.Services;
 
 public class CartService : ICartService
 {
-    private readonly ICartRepository _cartRepository;
-    private readonly IRepository<CartItem> _cartItemRepository;
-    private readonly IProductRepository _productRepository;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
     public CartService(
-        ICartRepository cartRepository,
-        IRepository<CartItem> cartItemRepository,
-        IProductRepository productRepository,
-        IMapper mapper,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
-        _cartRepository = cartRepository;
-        _cartItemRepository = cartItemRepository;
-        _productRepository = productRepository;
-        _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     private async Task<Cart> GetOrCreateCartEntityAsync(Guid? userId, string? sessionId)
@@ -35,11 +26,11 @@ public class CartService : ICartService
 
         if (userId.HasValue)
         {
-            cart = await _cartRepository.GetByUserIdAsync(userId.Value);
+            cart = await _unitOfWork.Carts.GetByUserIdAsync(userId.Value);
         }
         else if (!string.IsNullOrEmpty(sessionId))
         {
-            cart = await _cartRepository.GetBySessionIdAsync(sessionId);
+            cart = await _unitOfWork.Carts.GetBySessionIdAsync(sessionId);
         }
 
         if (cart == null)
@@ -51,7 +42,7 @@ public class CartService : ICartService
                 Items = new List<CartItem>()
             };
 
-            await _cartRepository.AddAsync(cart);
+            await _unitOfWork.Carts.AddAsync(cart);
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -66,7 +57,7 @@ public class CartService : ICartService
 
     public async Task<CartDto> GetCartAsync(Guid userId)
     {
-        var cart = await _cartRepository.GetByUserIdAsync(userId);
+        var cart = await _unitOfWork.Carts.GetByUserIdAsync(userId);
         if (cart == null)
             throw new CartNotFoundException($"Cart not found for user {userId}");
 
@@ -78,7 +69,7 @@ public class CartService : ICartService
         if (quantity <= 0)
             throw new InvalidQuantityException("Quantity must be greater than 0");
 
-        var product = await _productRepository.GetByIdAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false);
         if (product == null)
             throw new ProductNotFoundException(productId);
 
@@ -107,12 +98,12 @@ public class CartService : ICartService
                 ProductId = productId,
                 Quantity = quantity
             };
-            await _cartItemRepository.AddAsync(cartItem);
+            await _unitOfWork.CartItems.AddAsync(cartItem);
             await _unitOfWork.SaveChangesAsync();
         }
 
         // Reload cart to get fresh data
-        cart = await _cartRepository.GetCartWithItemsAsync(cart.Id);
+        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id);
         if (cart == null)
             throw new CartNotFoundException(cart.Id);
 
@@ -129,7 +120,7 @@ public class CartService : ICartService
         if (cartItem == null)
             throw new CartItemNotFoundException(cartItemId);
 
-        var product = await _productRepository.GetByIdAsync(cartItem.ProductId);
+        var product = await _unitOfWork.Products.GetByIdAsync(cartItem.ProductId, trackChanges: false);
         if (product == null)
             throw new ProductNotFoundException(cartItem.ProductId);
 
@@ -156,11 +147,11 @@ public class CartService : ICartService
         if (cartItem == null)
             throw new CartItemNotFoundException(cartItemId);
 
-        await _cartItemRepository.DeleteAsync(cartItem);
+        await _unitOfWork.CartItems.DeleteAsync(cartItem);
         await _unitOfWork.SaveChangesAsync();
 
         // Reload cart to get fresh data
-        cart = await _cartRepository.GetCartWithItemsAsync(cart.Id);
+        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id);
         if (cart == null)
             throw new CartNotFoundException(cart.Id);
 
@@ -173,12 +164,12 @@ public class CartService : ICartService
 
         foreach (var item in cart.Items.ToList())
         {
-            await _cartItemRepository.DeleteAsync(item);
+            await _unitOfWork.CartItems.DeleteAsync(item);
         }
         await _unitOfWork.SaveChangesAsync();
 
         // Reload cart to get fresh data
-        cart = await _cartRepository.GetCartWithItemsAsync(cart.Id);
+        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id);
         if (cart == null)
             throw new CartNotFoundException(cart.Id);
 
@@ -187,7 +178,7 @@ public class CartService : ICartService
 
     public async Task<CartDto> GetCartByIdAsync(Guid cartId)
     {
-        var cart = await _cartRepository.GetCartWithItemsAsync(cartId);
+        var cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId);
         if (cart == null)
             throw new CartNotFoundException(cartId);
 
@@ -196,13 +187,13 @@ public class CartService : ICartService
 
     public async Task ValidateCartAsync(Guid cartId)
     {
-        var cart = await _cartRepository.GetCartWithItemsAsync(cartId);
+        var cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId);
         if (cart == null)
             throw new CartNotFoundException(cartId);
 
         foreach (var item in cart.Items)
         {
-            var product = await _productRepository.GetByIdAsync(item.ProductId);
+            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, trackChanges: false);
             if (product == null)
                 throw new ProductNotFoundException(item.ProductId);
 
@@ -220,7 +211,7 @@ public class CartService : ICartService
 
         foreach (var item in cart.Items)
         {
-            var product = await _productRepository.GetByIdAsync(item.ProductId);
+            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, trackChanges: false);
             if (product == null) continue;
 
             var cartItemDto = new CartItemDto
