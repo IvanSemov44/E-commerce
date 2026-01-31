@@ -11,27 +11,30 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
     }
 
-    public async Task<Product?> GetBySlugAsync(string slug)
+    public async Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(p => p.Category)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
             .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive);
     }
 
-    public async Task<IEnumerable<Product>> GetByCategoryAsync(Guid categoryId)
+    public async Task<IEnumerable<Product>> GetByCategoryAsync(Guid categoryId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(p => p.CategoryId == categoryId && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Product>> GetFeaturedAsync(int count)
+    public async Task<IEnumerable<Product>> GetFeaturedAsync(int count, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(p => p.IsFeatured && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)
@@ -40,9 +43,10 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Product>> GetActiveProductsAsync(int skip, int take)
+    public async Task<IEnumerable<Product>> GetActiveProductsAsync(int skip, int take, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(p => p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)
@@ -64,7 +68,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
         {
             product.StockQuantity = quantity;
             product.UpdatedAt = DateTime.UtcNow;
-            await SaveChangesAsync();
+            // Don't call SaveChangesAsync - let UnitOfWork handle it
         }
     }
 
@@ -84,10 +88,12 @@ public class ProductRepository : Repository<Product>, IProductRepository
         decimal? maxPrice = null,
         decimal? minRating = null,
         bool? isFeatured = null,
-        string? sortBy = null)
+        string? sortBy = null,
+        bool trackChanges = false)
     {
         // Start with base query - only active products
-        var query = DbSet
+        var baseQuery = trackChanges ? DbSet : DbSet.AsNoTracking();
+        var query = baseQuery
             .Where(p => p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)

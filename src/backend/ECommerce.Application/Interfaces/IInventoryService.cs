@@ -13,12 +13,12 @@ public interface IInventoryService
     Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null);
 
     // Stock Validation
-    Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItem> items);
+    Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items);
     Task<bool> IsStockAvailableAsync(Guid productId, int quantity);
 
     // Inventory Queries
     Task<List<InventoryDto>> GetAllInventoryAsync(int page = 1, int pageSize = 50, string? search = null, bool? lowStockOnly = null);
-    Task<List<LowStockAlert>> GetLowStockProductsAsync();
+    Task<List<LowStockAlertDto>> GetLowStockProductsAsync();
     Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50);
 
     // Low Stock Alerts

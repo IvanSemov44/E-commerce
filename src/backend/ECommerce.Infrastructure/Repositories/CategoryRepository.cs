@@ -11,27 +11,30 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     {
     }
 
-    public async Task<Category?> GetBySlugAsync(string slug)
+    public async Task<Category?> GetBySlugAsync(string slug, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(c => c.Parent)
             .Include(c => c.Children)
             .Include(c => c.Products)
             .FirstOrDefaultAsync(c => c.Slug == slug && c.IsActive);
     }
 
-    public async Task<IEnumerable<Category>> GetTopLevelCategoriesAsync()
+    public async Task<IEnumerable<Category>> GetTopLevelCategoriesAsync(bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(c => c.ParentId == null && c.IsActive)
             .Include(c => c.Children)
             .OrderBy(c => c.Name)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Category>> GetCategoryWithChildrenAsync(Guid id)
+    public async Task<IEnumerable<Category>> GetCategoryWithChildrenAsync(Guid id, bool trackChanges = false)
     {
-        var category = await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        var category = await query
             .Include(c => c.Children)
             .FirstOrDefaultAsync(c => c.Id == id);
         return category?.Children ?? new List<Category>();

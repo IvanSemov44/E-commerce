@@ -11,10 +11,10 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
     {
     }
 
-    public async Task<IEnumerable<Review>> GetByProductIdAsync(Guid productId, bool onlyApproved = true)
+    public async Task<IEnumerable<Review>> GetByProductIdAsync(Guid productId, bool onlyApproved = true, bool trackChanges = false)
     {
-        var query = DbSet
-            .Where(r => r.ProductId == productId);
+        var baseQuery = trackChanges ? DbSet : DbSet.AsNoTracking();
+        var query = baseQuery.Where(r => r.ProductId == productId);
 
         if (onlyApproved)
         {
@@ -27,18 +27,20 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId)
+    public async Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(r => r.UserId == userId)
             .Include(r => r.Product)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
     }
 
-    public async Task<Review?> GetByIdWithDetailsAsync(Guid id)
+    public async Task<Review?> GetByIdWithDetailsAsync(Guid id, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(r => r.User)
             .Include(r => r.Product)
             .FirstOrDefaultAsync(r => r.Id == id);
@@ -67,9 +69,10 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
         return await DbSet.AnyAsync(r => r.UserId == userId && r.ProductId == productId);
     }
 
-    public async Task<IEnumerable<Review>> GetPendingApprovalAsync()
+    public async Task<IEnumerable<Review>> GetPendingApprovalAsync(bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(r => !r.IsApproved)
             .Include(r => r.User)
             .Include(r => r.Product)

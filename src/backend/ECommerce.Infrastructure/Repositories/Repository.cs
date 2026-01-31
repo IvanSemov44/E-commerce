@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using ECommerce.Core.Common;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure.Data;
@@ -16,36 +17,96 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         DbSet = context.Set<T>();
     }
 
-    public virtual async Task<T?> GetByIdAsync(Guid id)
+    #region Read Operations
+
+    public virtual async Task<T?> GetByIdAsync(Guid id, bool trackChanges = true)
     {
-        return await DbSet.FirstOrDefaultAsync(x => x.Id == id);
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query.FirstOrDefaultAsync(x => x.Id == id);
     }
 
-    public virtual async Task<IEnumerable<T>> GetAllAsync()
+    public virtual async Task<IEnumerable<T>> GetAllAsync(bool trackChanges = true)
     {
-        return await DbSet.ToListAsync();
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query.ToListAsync();
     }
 
-    public virtual async Task<T> AddAsync(T entity)
+    public virtual IQueryable<T> FindAll(bool trackChanges = false)
+    {
+        return trackChanges ? DbSet : DbSet.AsNoTracking();
+    }
+
+    public virtual IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false)
+    {
+        return trackChanges
+            ? DbSet.Where(expression)
+            : DbSet.Where(expression).AsNoTracking();
+    }
+
+    #endregion
+
+    #region Write Operations
+
+    public virtual void Add(T entity)
+    {
+        DbSet.Add(entity);
+    }
+
+    public virtual async Task AddAsync(T entity)
     {
         await DbSet.AddAsync(entity);
-        return entity;
     }
 
-    public virtual async Task UpdateAsync(T entity)
+    public virtual void AddRange(IEnumerable<T> entities)
+    {
+        DbSet.AddRange(entities);
+    }
+
+    public virtual void Update(T entity)
     {
         DbSet.Update(entity);
-        await Task.CompletedTask;
     }
 
-    public virtual async Task DeleteAsync(T entity)
+    public virtual Task UpdateAsync(T entity)
+    {
+        Update(entity);
+        return Task.CompletedTask;
+    }
+
+    public virtual void Delete(T entity)
     {
         DbSet.Remove(entity);
-        await Task.CompletedTask;
     }
 
-    public virtual async Task<int> SaveChangesAsync()
+    public virtual Task DeleteAsync(T entity)
     {
-        return await Context.SaveChangesAsync();
+        Delete(entity);
+        return Task.CompletedTask;
     }
+
+    public virtual void DeleteRange(IEnumerable<T> entities)
+    {
+        DbSet.RemoveRange(entities);
+    }
+
+    #endregion
+
+    #region Utility
+
+    public virtual async Task<bool> ExistsAsync(Guid id)
+    {
+        return await DbSet.AnyAsync(x => x.Id == id);
+    }
+
+    public virtual async Task<int> CountAsync()
+    {
+        return await DbSet.CountAsync();
+    }
+
+    public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate)
+    {
+        return await DbSet.CountAsync(predicate);
+    }
+
+    #endregion
 }

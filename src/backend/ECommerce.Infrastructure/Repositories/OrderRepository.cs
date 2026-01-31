@@ -12,9 +12,10 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     {
     }
 
-    public async Task<Order?> GetByOrderNumberAsync(string orderNumber)
+    public async Task<Order?> GetByOrderNumberAsync(string orderNumber, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(o => o.User)
             .Include(o => o.ShippingAddress)
             .Include(o => o.BillingAddress)
@@ -24,9 +25,10 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
     }
 
-    public async Task<IEnumerable<Order>> GetUserOrdersAsync(Guid userId, int skip, int take)
+    public async Task<IEnumerable<Order>> GetUserOrdersAsync(Guid userId, int skip, int take, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(o => o.UserId == userId)
             .Include(o => o.Items)
                 .ThenInclude(oi => oi.Product)
@@ -42,9 +44,10 @@ public class OrderRepository : Repository<Order>, IOrderRepository
         return await DbSet.CountAsync(o => o.UserId == userId);
     }
 
-    public async Task<Order?> GetWithItemsAsync(Guid orderId)
+    public async Task<Order?> GetWithItemsAsync(Guid orderId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(o => o.Items)
                 .ThenInclude(oi => oi.Product)
             .Include(o => o.ShippingAddress)

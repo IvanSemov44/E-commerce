@@ -11,25 +11,28 @@ public class CartRepository : Repository<Cart>, ICartRepository
     {
     }
 
-    public async Task<Cart?> GetByUserIdAsync(Guid userId)
+    public async Task<Cart?> GetByUserIdAsync(Guid userId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
             .FirstOrDefaultAsync(c => c.UserId == userId);
     }
 
-    public async Task<Cart?> GetBySessionIdAsync(string sessionId)
+    public async Task<Cart?> GetBySessionIdAsync(string sessionId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
             .FirstOrDefaultAsync(c => c.SessionId == sessionId);
     }
 
-    public async Task<Cart?> GetCartWithItemsAsync(Guid cartId)
+    public async Task<Cart?> GetCartWithItemsAsync(Guid cartId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
             .FirstOrDefaultAsync(c => c.Id == cartId);

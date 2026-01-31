@@ -11,16 +11,18 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
     {
     }
 
-    public async Task<Wishlist?> GetByUserIdAsync(Guid userId)
+    public async Task<Wishlist?> GetByUserIdAsync(Guid userId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(w => w.UserId == userId)
             .FirstOrDefaultAsync();
     }
 
-    public async Task<Wishlist?> GetByUserIdWithItemsAsync(Guid userId)
+    public async Task<Wishlist?> GetByUserIdWithItemsAsync(Guid userId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Where(w => w.UserId == userId)
             .Include(w => w.Product)
             .FirstOrDefaultAsync();
@@ -36,12 +38,5 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
         return await DbSet
             .Where(w => w.UserId == userId)
             .CountAsync();
-    }
-
-    public async Task<Wishlist?> GetOrCreateForUserAsync(Guid userId)
-    {
-        // For junction table model, we don't create an empty wishlist
-        // We only create entries when products are added
-        return null;
     }
 }

@@ -1,13 +1,29 @@
+using System.Linq.Expressions;
 using ECommerce.Core.Common;
 
 namespace ECommerce.Core.Interfaces.Repositories;
 
 public interface IRepository<T> where T : BaseEntity
 {
-    Task<T?> GetByIdAsync(Guid id);
-    Task<IEnumerable<T>> GetAllAsync();
-    Task<T> AddAsync(T entity);
+    // Read operations with optional change tracking
+    Task<T?> GetByIdAsync(Guid id, bool trackChanges = true);
+    Task<IEnumerable<T>> GetAllAsync(bool trackChanges = true);
+    IQueryable<T> FindAll(bool trackChanges = false);
+    IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false);
+
+    // Write operations (no SaveChanges - UnitOfWork handles that)
+    void Add(T entity);
+    Task AddAsync(T entity);
+    void AddRange(IEnumerable<T> entities);
+    // Async variants for common write operations (convenience for services/tests)
     Task UpdateAsync(T entity);
     Task DeleteAsync(T entity);
-    Task<int> SaveChangesAsync();
+    void Update(T entity);
+    void Delete(T entity);
+    void DeleteRange(IEnumerable<T> entities);
+
+    // Utility
+    Task<bool> ExistsAsync(Guid id);
+    Task<int> CountAsync();
+    Task<int> CountAsync(Expression<Func<T, bool>> predicate);
 }

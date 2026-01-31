@@ -12,14 +12,16 @@ public class UserRepository : Repository<User>, IUserRepository
     {
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public async Task<User?> GetByEmailAsync(string email, bool trackChanges = false)
     {
-        return await DbSet.FirstOrDefaultAsync(u => u.Email == email);
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query.FirstOrDefaultAsync(u => u.Email == email);
     }
 
-    public async Task<User?> GetWithAddressesAsync(Guid userId)
+    public async Task<User?> GetWithAddressesAsync(Guid userId, bool trackChanges = false)
     {
-        return await DbSet
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
             .Include(u => u.Addresses)
             .FirstOrDefaultAsync(u => u.Id == userId);
     }
@@ -29,14 +31,16 @@ public class UserRepository : Repository<User>, IUserRepository
         return await DbSet.AnyAsync(u => u.Email == email);
     }
 
-    public async Task<User?> GetByGoogleIdAsync(string googleId)
+    public async Task<User?> GetByGoogleIdAsync(string googleId, bool trackChanges = false)
     {
-        return await DbSet.FirstOrDefaultAsync(u => u.GoogleId == googleId);
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query.FirstOrDefaultAsync(u => u.GoogleId == googleId);
     }
 
-    public async Task<User?> GetByFacebookIdAsync(string facebookId)
+    public async Task<User?> GetByFacebookIdAsync(string facebookId, bool trackChanges = false)
     {
-        return await DbSet.FirstOrDefaultAsync(u => u.FacebookId == facebookId);
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query.FirstOrDefaultAsync(u => u.FacebookId == facebookId);
     }
 
     public async Task<int> GetCustomersCountAsync()
