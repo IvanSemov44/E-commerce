@@ -1151,8 +1151,7 @@ When creating, moving, renaming, or modifying DTOs:
 | Single complex DTO | `{DtoName}.cs` (e.g., `ProductDto.cs`) |
 | Validators | `{DtoName}Validator.cs` |
 | Request parameters | `{Feature}Parameters.cs` |
-| Commands (CQRS) | `{Action}{Entity}Command.cs` |
-| Queries (CQRS) | `Get{Entity}Query.cs` |
+| (omit CQRS files) | Use feature-specific names (e.g., `CreateProductDto`, `GetProductParameters`) |
 
 ### Import Statements
 
@@ -1167,9 +1166,6 @@ using ECommerce.Application.Validators.Auth;
 
 // AutoMapper
 using AutoMapper;
-
-// MediatR (if using CQRS)
-using MediatR;
 ```
 
 ### Extension Methods for Clean Code

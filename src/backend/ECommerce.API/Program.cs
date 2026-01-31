@@ -11,6 +11,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using ECommerce.Application.Validators.Cart;
+using ECommerce.API.ActionFilters;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +75,10 @@ builder.Services.AddCors(options =>
 // Add AutoMapper
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
+// Add FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
+
 // Register Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -112,6 +120,8 @@ builder.Services.AddLogging();
 
 // Add controllers
 builder.Services.AddControllers();
+// Register action filters
+builder.Services.AddScoped<ValidationFilterAttribute>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddOpenApi();
