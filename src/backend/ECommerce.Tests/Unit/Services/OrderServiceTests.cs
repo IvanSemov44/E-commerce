@@ -91,11 +91,11 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = true,
-                Issues = new List<StockIssue>()
+                Issues = new List<StockIssueDto>()
             });
 
         _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>()))
@@ -174,11 +174,11 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = true,
-                Issues = new List<StockIssue>()
+                Issues = new List<StockIssueDto>()
             });
 
         _mockPromoCodeService.Setup(s => s.ValidatePromoCodeAsync("SAVE20", It.IsAny<decimal>()))
@@ -250,11 +250,11 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = true,
-                Issues = new List<StockIssue>()
+                Issues = new List<StockIssueDto>()
             });
 
         _mockPromoCodeService.Setup(s => s.ValidatePromoCodeAsync("INVALID", It.IsAny<decimal>()))
@@ -306,13 +306,13 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = false,
-                Issues = new List<StockIssue>
+                Issues = new List<StockIssueDto>
                 {
-                    new StockIssue { Message = "Insufficient stock for Test Product" }
+                    new StockIssueDto { Message = "Insufficient stock for Test Product" }
                 }
             });
 

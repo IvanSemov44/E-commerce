@@ -130,7 +130,7 @@ public class OrderService : IOrderService
             // Process order items and validate stock
             var subtotal = 0m;
             var items = new List<OrderItem>();
-            var stockCheckItems = new List<ECommerce.Application.DTOs.Inventory.StockCheckItem>();
+            var stockCheckItems = new List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>();
 
             if (dto.Items != null && dto.Items.Any())
             {
@@ -157,7 +157,7 @@ public class OrderService : IOrderService
                     items.Add(orderItem);
 
                     // Add to stock check list
-                    stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItem
+                    stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItemDto
                     {
                         ProductId = productId,
                         Quantity = itemDto.Quantity

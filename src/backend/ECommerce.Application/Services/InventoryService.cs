@@ -143,7 +143,7 @@ public class InventoryService : IInventoryService
         await CheckAndSendLowStockAlertsAsync(productId);
     }
 
-    public async Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItem> items)
+    public async Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items)
     {
         var response = new StockCheckResponse { IsAvailable = true };
 
@@ -153,7 +153,7 @@ public class InventoryService : IInventoryService
             if (product == null)
             {
                 response.IsAvailable = false;
-                response.Issues.Add(new StockIssue
+                response.Issues.Add(new StockIssueDto
                 {
                     ProductId = item.ProductId,
                     ProductName = "Unknown Product",
@@ -167,7 +167,7 @@ public class InventoryService : IInventoryService
             if (product.StockQuantity < item.Quantity)
             {
                 response.IsAvailable = false;
-                response.Issues.Add(new StockIssue
+                response.Issues.Add(new StockIssueDto
                 {
                     ProductId = item.ProductId,
                     ProductName = product.Name,
@@ -216,14 +216,14 @@ public class InventoryService : IInventoryService
         return products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
     }
 
-    public async Task<List<LowStockAlert>> GetLowStockProductsAsync()
+    public async Task<List<LowStockAlertDto>> GetLowStockProductsAsync()
     {
         var products = await _unitOfWork.Products.GetAllAsync();
 
         var lowStockProducts = products
             .Where(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive)
             .OrderBy(p => p.StockQuantity)
-            .Select(p => _mapper.Map<LowStockAlert>(p))
+            .Select(p => _mapper.Map<LowStockAlertDto>(p))
             .ToList();
 
         return lowStockProducts;
