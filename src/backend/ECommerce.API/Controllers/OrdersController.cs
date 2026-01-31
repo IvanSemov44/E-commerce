@@ -116,7 +116,3 @@ public class OrdersController : ControllerBase
     }
 }
 
-public class UpdateOrderStatusDto
-{
-    public string Status { get; set; } = null!;
-}

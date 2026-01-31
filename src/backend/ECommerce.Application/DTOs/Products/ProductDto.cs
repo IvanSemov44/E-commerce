@@ -11,7 +11,7 @@ public class ProductDto
     public int StockQuantity { get; set; }
     public bool IsFeatured { get; set; }
     public List<ProductImageDto> Images { get; set; } = new();
-    public CategoryDto? Category { get; set; }
+    public ProductCategoryDto? Category { get; set; }
     public decimal AverageRating { get; set; }
     public int ReviewCount { get; set; }
 }
@@ -22,7 +22,7 @@ public class ProductDetailDto : ProductDto
     public string? Sku { get; set; }
     public int LowStockThreshold { get; set; }
     public bool IsActive { get; set; }
-    public List<ReviewDto> Reviews { get; set; } = new();
+    public List<ProductReviewDto> Reviews { get; set; } = new();
 }
 
 public class ProductImageDto
@@ -33,7 +33,11 @@ public class ProductImageDto
     public bool IsPrimary { get; set; }
 }
 
-public class CategoryDto
+/// <summary>
+/// Simplified category DTO for embedding in product responses.
+/// For full category details, use DTOs.CategoryDto.
+/// </summary>
+public class ProductCategoryDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
@@ -41,7 +45,11 @@ public class CategoryDto
     public string? ImageUrl { get; set; }
 }
 
-public class ReviewDto
+/// <summary>
+/// Simplified review DTO for embedding in product detail responses.
+/// For full review operations, use DTOs.Reviews.ReviewDetailDto.
+/// </summary>
+public class ProductReviewDto
 {
     public Guid Id { get; set; }
     public string? Title { get; set; }

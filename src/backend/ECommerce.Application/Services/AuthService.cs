@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ECommerce.Application.DTOs.Auth;
+using AutoMapper;
 using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
@@ -17,12 +18,14 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly IMapper _mapper;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration, IEmailService emailService)
+    public AuthService(IUserRepository userRepository, IConfiguration configuration, IEmailService emailService, IMapper mapper)
     {
         _userRepository = userRepository;
         _configuration = configuration;
         _emailService = emailService;
+        _mapper = mapper;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -61,7 +64,7 @@ public class AuthService : IAuthService
             }
         });
 
-        var userDto = MapToUserDto(user);
+        var userDto = _mapper.Map<UserDto>(user);
         var token = GenerateJwtToken(userDto);
 
         return new AuthResponseDto
@@ -81,7 +84,7 @@ public class AuthService : IAuthService
             throw new InvalidCredentialsException();
         }
 
-        var userDto = MapToUserDto(user);
+        var userDto = _mapper.Map<UserDto>(user);
         var token = GenerateJwtToken(userDto);
 
         return new AuthResponseDto
@@ -256,17 +259,5 @@ public class AuthService : IAuthService
         await _userRepository.SaveChangesAsync();
     }
 
-    private UserDto MapToUserDto(User user)
-    {
-        return new UserDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Phone = user.Phone,
-            Role = user.Role.ToString(),
-            AvatarUrl = user.AvatarUrl
-        };
-    }
+    
 }

@@ -68,3 +68,11 @@ public class AddressDto
     public string Country { get; set; } = null!;
     public string? Phone { get; set; }
 }
+
+/// <summary>
+/// Request DTO for updating order status.
+/// </summary>
+public class UpdateOrderStatusDto
+{
+    public string Status { get; set; } = null!;
+}

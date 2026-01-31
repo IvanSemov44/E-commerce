@@ -55,7 +55,7 @@ public class MappingProfile : Profile
         CreateMap<UpdateProductDto, Product>();
 
         // Category mappings (from Products folder)
-        CreateMap<Category, DTOs.Products.CategoryDto>()
+        CreateMap<Category, ProductCategoryDto>()
             .ReverseMap();
 
         // Category mappings (from new DTOs folder)
@@ -75,8 +75,8 @@ public class MappingProfile : Profile
         CreateMap<ProductImage, ProductImageDto>()
             .ReverseMap();
 
-        // Review mappings
-        CreateMap<Review, ReviewDto>()
+        // Review mappings (product-embedded simplified DTOs)
+        CreateMap<Review, ProductReviewDto>()
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src =>
                 src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : "Anonymous"))
             .ReverseMap();
