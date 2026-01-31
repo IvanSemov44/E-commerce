@@ -15,20 +15,14 @@ namespace ECommerce.Application.Services;
 /// </summary>
 public class OrderService : IOrderService
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly IProductRepository _productRepository;
     private readonly IPromoCodeService _promoCodeService;
-        private readonly IInventoryService _inventoryService;
-        private readonly IEmailService _emailService;
+    private readonly IInventoryService _inventoryService;
+    private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
     private readonly IUnitOfWork _unitOfWork;
 
     public OrderService(
-        IOrderRepository orderRepository,
-        IUserRepository userRepository,
-        IProductRepository productRepository,
         IPromoCodeService promoCodeService,
         IInventoryService inventoryService,
         IEmailService emailService,
@@ -36,12 +30,9 @@ public class OrderService : IOrderService
         IMapper mapper,
         ILogger<OrderService> logger)
     {
-        _orderRepository = orderRepository;
-        _userRepository = userRepository;
-        _productRepository = productRepository;
         _promoCodeService = promoCodeService;
-            _inventoryService = inventoryService;
-            _emailService = emailService;
+        _inventoryService = inventoryService;
+        _emailService = emailService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
@@ -54,7 +45,7 @@ public class OrderService : IOrderService
         try
         {
             // Verify user exists
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
             if (user == null)
             {
                 throw new UserNotFoundException(userId);
@@ -214,7 +205,7 @@ public class OrderService : IOrderService
             order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
             order.Items = items;
 
-            await _orderRepository.AddAsync(order);
+            await _unitOfWork.Orders.AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
 
             // Reduce stock for each product
@@ -276,7 +267,7 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
 
-        var order = await _orderRepository.GetWithItemsAsync(id);
+            var order = await _unitOfWork.Orders.GetWithItemsAsync(id);
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
@@ -284,7 +275,7 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Retrieving order {OrderNumber}", orderNumber);
 
-        var order = await _orderRepository.GetByOrderNumberAsync(orderNumber);
+            var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber);
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
@@ -292,8 +283,8 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, page);
 
-        var totalCount = await _orderRepository.GetUserOrdersCountAsync(userId);
-        var orders = await _orderRepository.GetUserOrdersAsync(userId, (page - 1) * pageSize, pageSize);
+        var totalCount = await _unitOfWork.Orders.GetUserOrdersCountAsync(userId);
+        var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId, (page - 1) * pageSize, pageSize);
         var dtos = orders.Select(o => _mapper.Map<OrderDto>(o)).ToList();
 
         return new PaginatedResult<OrderDto>
@@ -309,7 +300,7 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Updating order {OrderId} status to {Status}", id, status);
 
-        var order = await _orderRepository.GetByIdAsync(id);
+        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true);
         if (order == null)
         {
             throw new OrderNotFoundException(id);
@@ -338,7 +329,7 @@ public class OrderService : IOrderService
             order.CancelledAt = DateTime.UtcNow;
         }
 
-        await _orderRepository.UpdateAsync(order);
+        await _unitOfWork.Orders.UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Order {OrderId} status updated to {Status}", id, status);
@@ -350,7 +341,7 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
 
-        var order = await _orderRepository.GetByIdAsync(id);
+        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true);
         if (order == null)
         {
             return false;
@@ -366,7 +357,7 @@ public class OrderService : IOrderService
         order.CancelledAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _orderRepository.UpdateAsync(order);
+        await _unitOfWork.Orders.UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Order {OrderId} cancelled successfully", id);
@@ -378,7 +369,7 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Retrieving all orders, page {Page}", page);
 
-        var allOrders = await _orderRepository.GetAllAsync();
+        var allOrders = await _unitOfWork.Orders.GetAllAsync(trackChanges: false);
         var totalCount = allOrders.Count();
 
         var orders = allOrders

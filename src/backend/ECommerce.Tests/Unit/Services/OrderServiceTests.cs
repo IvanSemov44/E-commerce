@@ -42,11 +42,10 @@ public class OrderServiceTests
         _mockUnitOfWork = new Mock<IUnitOfWork>();
 
         _mockUnitOfWork.Setup(u => u.Orders).Returns(_mockOrderRepository.Object);
+        _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
+        _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
 
         _service = new OrderService(
-            _mockOrderRepository.Object,
-            _mockUserRepository.Object,
-            _mockProductRepository.Object,
             _mockPromoCodeService.Object,
             _mockInventoryService.Object,
             _mockEmailService.Object,
@@ -89,7 +88,7 @@ public class OrderServiceTests
             }
         };
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
@@ -128,7 +127,7 @@ public class OrderServiceTests
             Items = new List<CreateOrderItemDto>()
         };
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -172,7 +171,7 @@ public class OrderServiceTests
             }
         };
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
@@ -248,7 +247,7 @@ public class OrderServiceTests
             }
         };
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
@@ -304,7 +303,7 @@ public class OrderServiceTests
             }
         };
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
