@@ -1,3 +1,1 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-[assembly: Parallelize(Workers = 1, Scope = ExecutionScope.MethodLevel)]
+// Assembly-level test configuration moved to MSTestSettings.cs
