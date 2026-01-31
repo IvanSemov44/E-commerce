@@ -11,64 +11,56 @@ namespace ECommerce.Application.Services;
 /// Mocked payment service for Stripe/PayPal integration.
 /// In production, this would call actual payment provider APIs.
 /// </summary>
-    private readonly IUnitOfWork _unitOfWork;
+public class PaymentService : IPaymentService
 {
-    private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<PaymentService> _logger;
+    private static readonly Dictionary<string, PaymentDetailsDto> MockPaymentStore = new();
+
     public PaymentService(IUnitOfWork unitOfWork, ILogger<PaymentService> logger)
     {
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     public async Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto)
     {
-        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
+        _logger.LogInformation("Processing payment for order {OrderId} via {PaymentMethod}", dto.OrderId, dto.PaymentMethod);
 
-        // Validate order exists
-        var order = await _orderRepository.GetByIdAsync(dto.OrderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
         if (order == null)
         {
             _logger.LogWarning("Order {OrderId} not found for payment processing", dto.OrderId);
             throw new OrderNotFoundException(dto.OrderId);
         }
 
-        // Validate payment method
         if (!await IsPaymentMethodSupportedAsync(dto.PaymentMethod))
         {
             _logger.LogWarning("Unsupported payment method: {PaymentMethod}", dto.PaymentMethod);
             throw new UnsupportedPaymentMethodException(dto.PaymentMethod);
         }
 
-        // Validate amount matches order total
         if (dto.Amount != order.TotalAmount)
         {
             _logger.LogWarning("Payment amount {Amount} does not match order total {OrderTotal}", dto.Amount, order.TotalAmount);
             throw new PaymentAmountMismatchException(order.TotalAmount, dto.Amount);
         }
 
-        // Mock payment processing
         var paymentIntentId = GenerateMockPaymentIntentId(dto.PaymentMethod);
         var transactionId = Guid.NewGuid().ToString("N").Substring(0, 20).ToUpper();
 
-        // Simulate occasional payment failures (5% failure rate for demo)
         bool paymentSucceeds = !ShouldSimulatePaymentFailure();
 
         if (paymentSucceeds)
         {
-            // Update order with payment information
             order.PaymentStatus = PaymentStatus.Paid;
             order.PaymentMethod = dto.PaymentMethod;
-            await _unitOfWork.Orders.UpdateAsync(order);
+            order.PaymentIntentId = paymentIntentId;
             order.Status = OrderStatus.Confirmed;
 
-            await _orderRepository.UpdateAsync(order);
+            await _unitOfWork.Orders.UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
 
-            // Store payment details in mock store
             var paymentDetails = new PaymentDetailsDto
             {
                 OrderId = dto.OrderId,
@@ -80,6 +72,7 @@ namespace ECommerce.Application.Services;
                 CreatedAt = DateTime.UtcNow,
                 ProcessedAt = DateTime.UtcNow
             };
+
             MockPaymentStore[paymentIntentId] = paymentDetails;
 
             _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}", dto.OrderId, paymentIntentId);
@@ -103,11 +96,10 @@ namespace ECommerce.Application.Services;
         }
         else
         {
-            // Mark payment as failed
-            await _unitOfWork.Orders.UpdateAsync(order);
+            order.PaymentStatus = PaymentStatus.Failed;
             order.PaymentIntentId = paymentIntentId;
 
-            await _orderRepository.UpdateAsync(order);
+            await _unitOfWork.Orders.UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
 
             _logger.LogWarning("Payment failed for order {OrderId}. Simulated failure.", dto.OrderId);
@@ -130,10 +122,10 @@ namespace ECommerce.Application.Services;
     }
 
     public async Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid orderId)
-        var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
+    {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
-        var order = await _orderRepository.GetByIdAsync(orderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
         if (order == null)
         {
             throw new OrderNotFoundException(orderId);
@@ -144,13 +136,11 @@ namespace ECommerce.Application.Services;
             throw new NoPaymentFoundException(orderId);
         }
 
-        // Check mock store first
         if (MockPaymentStore.TryGetValue(order.PaymentIntentId, out var paymentDetails))
         {
             return paymentDetails;
         }
 
-        // Return order's payment status
         return new PaymentDetailsDto
         {
             OrderId = orderId,
@@ -165,10 +155,10 @@ namespace ECommerce.Application.Services;
     }
 
     public async Task<RefundResponseDto> RefundPaymentAsync(RefundPaymentDto dto)
-        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
+    {
         _logger.LogInformation("Processing refund for order {OrderId}", dto.OrderId);
 
-        var order = await _orderRepository.GetByIdAsync(dto.OrderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
         if (order == null)
         {
             throw new OrderNotFoundException(dto.OrderId);
@@ -181,11 +171,10 @@ namespace ECommerce.Application.Services;
 
         var refundAmount = dto.Amount ?? order.TotalAmount;
 
-        // Mock refund processing
-        await _unitOfWork.Orders.UpdateAsync(order);
+        var refundId = Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper();
 
         order.PaymentStatus = PaymentStatus.Refunded;
-        await _orderRepository.UpdateAsync(order);
+        await _unitOfWork.Orders.UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}", dto.OrderId, refundId);
@@ -210,7 +199,6 @@ namespace ECommerce.Application.Services;
             return paymentDetails;
         }
 
-        // Payment intent not found in mock store
         return null;
     }
 
@@ -220,9 +208,6 @@ namespace ECommerce.Application.Services;
         return supportedMethods.Contains(paymentMethod.ToLower());
     }
 
-    /// <summary>
-    /// Generate a mock payment intent ID based on payment method.
-    /// </summary>
     private string GenerateMockPaymentIntentId(string paymentMethod)
     {
         var prefix = paymentMethod.ToLower() switch
@@ -237,9 +222,6 @@ namespace ECommerce.Application.Services;
         return prefix + Guid.NewGuid().ToString("N").Substring(0, 20);
     }
 
-    /// <summary>
-    /// Get human-readable payment provider name.
-    /// </summary>
     private string GetPaymentProviderName(string paymentMethod)
     {
         return paymentMethod.ToLower() switch
@@ -254,13 +236,9 @@ namespace ECommerce.Application.Services;
         };
     }
 
-    /// <summary>
-    /// Simulate occasional payment failures (5% failure rate).
-    /// </summary>
     private bool ShouldSimulatePaymentFailure()
     {
-        // Use a simple random check for demo purposes
         var random = new Random();
-        return random.Next(0, 100) < 5; // 5% failure rate
+        return random.Next(0, 100) < 5;
     }
 }

@@ -237,7 +237,7 @@ public class AuthService : IAuthService
         user.PasswordHash = HashPassword(newPassword);
         user.PasswordResetToken = null;
         user.PasswordResetExpires = null;
-        await _userRepository.UpdateAsync(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync();
     }
 
@@ -255,7 +255,7 @@ public class AuthService : IAuthService
         }
 
         user.PasswordHash = HashPassword(newPassword);
-        await _userRepository.UpdateAsync(user);
+        await _unitOfWork.Users.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync();
     }
 

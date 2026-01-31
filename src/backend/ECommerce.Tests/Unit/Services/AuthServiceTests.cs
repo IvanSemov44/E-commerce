@@ -53,7 +53,7 @@ public class AuthServiceTests
 
         _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
 
-        _service = new AuthService(_mockUserRepository.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockUnitOfWork.Object, _mockMapper.Object);
+        _service = new AuthService(_mockUnitOfWork.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockMapper.Object);
     }
 
     #region RegisterAsync Tests
