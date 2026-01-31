@@ -46,7 +46,7 @@ public class PromoCodeServiceTests
             TestDataFactory.CreatePromoCode("SAVE20"),
             TestDataFactory.CreatePromoCode("SAVE30")
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(promoCodes);
 
         // Setup mapper to map list
@@ -81,7 +81,7 @@ public class PromoCodeServiceTests
             TestDataFactory.CreatePromoCode("SUMMER20"),
             TestDataFactory.CreatePromoCode("WINTER30")
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(promoCodes);
 
         _mockMapper.Setup(m => m.Map<List<PromoCodeDto>>(It.IsAny<IEnumerable<PromoCode>>()))
@@ -109,7 +109,7 @@ public class PromoCodeServiceTests
             TestDataFactory.CreatePromoCode("ACTIVE2", isActive: true),
             TestDataFactory.CreatePromoCode("INACTIVE", isActive: false)
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(promoCodes);
 
         _mockMapper.Setup(m => m.Map<List<PromoCodeDto>>(It.IsAny<IEnumerable<PromoCode>>()))
@@ -137,7 +137,7 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var promoCode = TestDataFactory.CreatePromoCode("TEST10");
-        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(promoCode.Id))
+        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(promoCode.Id, It.IsAny<bool>()))
             .ReturnsAsync(promoCode);
 
         _mockMapper.Setup(m => m.Map<PromoCodeDetailDto>(It.IsAny<PromoCode>()))
@@ -162,7 +162,7 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(id))
+        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>()))
             .ReturnsAsync((PromoCode?)null);
 
         // Act
@@ -229,7 +229,7 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var existing = TestDataFactory.CreatePromoCode("DUPLICATE");
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(new List<PromoCode> { existing });
 
         var dto = new CreatePromoCodeDto
@@ -256,7 +256,7 @@ public class PromoCodeServiceTests
             DiscountType = "percentage",
             DiscountValue = 150 // Invalid: > 100
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(new List<PromoCode>());
 
         // Act
@@ -280,7 +280,7 @@ public class PromoCodeServiceTests
             discountValue: 20,
             isActive: true);
 
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(new List<PromoCode> { promoCode });
 
         _mockMapper.Setup(m => m.Map<PromoCodeDto>(It.IsAny<PromoCode>()))
@@ -306,7 +306,7 @@ public class PromoCodeServiceTests
     public async Task ValidatePromoCodeAsync_NonExistentCode_ReturnsInvalid()
     {
         // Arrange
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(new List<PromoCode>());
 
         // Act
@@ -323,7 +323,7 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var promoCode = TestDataFactory.CreatePromoCode("INACTIVE", isActive: false);
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(new List<PromoCode> { promoCode });
 
         // Act
@@ -343,7 +343,7 @@ public class PromoCodeServiceTests
             isActive: true,
             endDate: DateTime.UtcNow.AddDays(-1));
 
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
+        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(new List<PromoCode> { promoCode });
 
         // Act
@@ -387,7 +387,7 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var promoCode = TestDataFactory.CreatePromoCode("INCREMENT", usedCount: 5);
-        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(promoCode.Id))
+        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(promoCode.Id, It.IsAny<bool>()))
             .ReturnsAsync(promoCode);
 
         // Act
@@ -404,7 +404,7 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var promoCode = TestDataFactory.CreatePromoCode("MAXED", maxUses: 10, usedCount: 10);
-        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(promoCode.Id))
+        _mockPromoCodeRepository.Setup(r => r.GetByIdAsync(promoCode.Id, It.IsAny<bool>()))
             .ReturnsAsync(promoCode);
 
         // Act

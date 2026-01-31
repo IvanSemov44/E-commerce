@@ -50,7 +50,7 @@ public class ReviewServiceTests
             TestDataFactory.CreateReview(Guid.NewGuid(), product.Id)
         };
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
         _mockReviewRepository.Setup(r => r.GetByProductIdAsync(product.Id, true)).ReturnsAsync(reviews);
         _mockMapper.Setup(m => m.Map<IEnumerable<ReviewDto>>(It.IsAny<IEnumerable<Review>>()))
             .Returns((IEnumerable<Review> src) => src.Select(r => new ReviewDto { Id = r.Id, Rating = r.Rating }).ToList());
@@ -68,7 +68,7 @@ public class ReviewServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockProductRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Product?)null);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
         Func<Task> act = async () => await _service.GetProductReviewsAsync(id);
@@ -116,7 +116,7 @@ public class ReviewServiceTests
         var product = TestDataFactory.CreateProduct();
         var dto = new CreateReviewDto { ProductId = product.Id, Rating = 5, Comment = "Great", Title = "Nice" };
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
         _mockReviewRepository.Setup(r => r.UserHasReviewedAsync(user.Id, product.Id)).ReturnsAsync(false);
         _mockReviewRepository.Setup(r => r.AddAsync(It.IsAny<Review>()))
@@ -144,7 +144,7 @@ public class ReviewServiceTests
         var product = TestDataFactory.CreateProduct();
         var dto = new CreateReviewDto { ProductId = product.Id, Rating = 4, Comment = "ok" };
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
         _mockReviewRepository.Setup(r => r.UserHasReviewedAsync(user.Id, product.Id)).ReturnsAsync(true);
 

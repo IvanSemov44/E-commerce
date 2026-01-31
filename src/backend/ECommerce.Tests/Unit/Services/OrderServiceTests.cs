@@ -413,7 +413,7 @@ public class OrderServiceTests
         var order = TestDataFactory.CreateOrder(Guid.NewGuid());
         var newStatus = "Processing";
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<bool>()))
             .ReturnsAsync(order);
 
         _mockOrderRepository.Setup(r => r.UpdateAsync(It.IsAny<Order>()))
@@ -439,7 +439,7 @@ public class OrderServiceTests
         // Arrange
         var orderId = Guid.NewGuid();
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId, It.IsAny<bool>()))
             .ReturnsAsync((Order?)null);
 
         // Act
@@ -455,7 +455,7 @@ public class OrderServiceTests
         // Arrange
         var order = TestDataFactory.CreateOrder(Guid.NewGuid());
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<bool>()))
             .ReturnsAsync(order);
 
         // Act
@@ -471,7 +471,7 @@ public class OrderServiceTests
         // Arrange
         var order = TestDataFactory.CreateOrder(Guid.NewGuid());
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<bool>()))
             .ReturnsAsync(order);
 
         _mockOrderRepository.Setup(r => r.UpdateAsync(It.IsAny<Order>()))
@@ -501,7 +501,7 @@ public class OrderServiceTests
         // Arrange
         var order = TestDataFactory.CreateOrder(Guid.NewGuid(), status: OrderStatus.Pending);
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<bool>()))
             .ReturnsAsync(order);
 
         _mockOrderRepository.Setup(r => r.UpdateAsync(It.IsAny<Order>()))
@@ -525,7 +525,7 @@ public class OrderServiceTests
         // Arrange
         var orderId = Guid.NewGuid();
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId, It.IsAny<bool>()))
             .ReturnsAsync((Order?)null);
 
         // Act
@@ -541,7 +541,7 @@ public class OrderServiceTests
         // Arrange
         var order = TestDataFactory.CreateOrder(Guid.NewGuid(), status: OrderStatus.Shipped);
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<bool>()))
             .ReturnsAsync(order);
 
         // Act
@@ -557,7 +557,7 @@ public class OrderServiceTests
         // Arrange
         var order = TestDataFactory.CreateOrder(Guid.NewGuid(), status: OrderStatus.Delivered);
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(order.Id, It.IsAny<bool>()))
             .ReturnsAsync(order);
 
         // Act
@@ -620,7 +620,7 @@ public class OrderServiceTests
             TestDataFactory.CreateOrder(Guid.NewGuid())
         };
 
-        _mockOrderRepository.Setup(r => r.GetAllAsync())
+        _mockOrderRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
             .ReturnsAsync(orders);
 
         _mockMapper.Setup(m => m.Map<OrderDto>(It.IsAny<Order>()))

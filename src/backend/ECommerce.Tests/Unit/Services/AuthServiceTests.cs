@@ -362,7 +362,7 @@ public class AuthServiceTests
         user.EmailVerificationToken = token;
         user.IsEmailVerified = false;
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
@@ -387,7 +387,7 @@ public class AuthServiceTests
         var user = TestDataFactory.CreateUser();
         user.EmailVerificationToken = "correct-token";
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         // Act
@@ -403,7 +403,7 @@ public class AuthServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -556,7 +556,7 @@ public class AuthServiceTests
         user.PasswordHash = _service.HashPassword(oldPassword);
         var oldHash = user.PasswordHash;
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
@@ -583,7 +583,7 @@ public class AuthServiceTests
         var user = TestDataFactory.CreateUser();
         user.PasswordHash = _service.HashPassword(correctPassword);
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
         // Act
@@ -599,7 +599,7 @@ public class AuthServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync((User?)null);
 
         // Act

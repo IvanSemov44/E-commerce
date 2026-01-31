@@ -39,7 +39,7 @@ public class CategoryServiceTests
             TestDataFactory.CreateCategory("Cat2")
         };
 
-        _mockCategoryRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(categories);
+        _mockCategoryRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(categories);
         _mockMapper.Setup(m => m.Map<IEnumerable<CategoryDto>>(It.IsAny<IEnumerable<Category>>()))
             .Returns((IEnumerable<Category> src) => src.Select(c => new CategoryDto { Id = c.Id, Name = c.Name }).ToList());
 
@@ -56,7 +56,7 @@ public class CategoryServiceTests
     {
         // Arrange
         var category = TestDataFactory.CreateCategory("MyCat");
-        _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id)).ReturnsAsync(category);
+        _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id, It.IsAny<bool>())).ReturnsAsync(category);
         _mockCategoryRepository.Setup(r => r.GetProductCountAsync(category.Id)).ReturnsAsync(5);
         _mockMapper.Setup(m => m.Map<CategoryDetailDto>(It.IsAny<Category>()))
             .Returns((Category c) => new CategoryDetailDto { Id = c.Id, Name = c.Name });
@@ -75,7 +75,7 @@ public class CategoryServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockCategoryRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Category?)null);
+        _mockCategoryRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Category?)null);
 
         // Act
         Func<Task> act = async () => await _service.GetCategoryByIdAsync(id);
@@ -162,14 +162,14 @@ public class CategoryServiceTests
         var existing = TestDataFactory.CreateCategory("OldCat", slug: "old-cat");
         var dto = new UpdateCategoryDto { Name = "Updated", Slug = "updated-cat" };
 
-        _mockCategoryRepository.Setup(r => r.GetByIdAsync(existing.Id)).ReturnsAsync(existing);
+        _mockCategoryRepository.Setup(r => r.GetByIdAsync(existing.Id, It.IsAny<bool>())).ReturnsAsync(existing);
         _mockCategoryRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, existing.Id)).ReturnsAsync(true);
         _mockMapper.Setup(m => m.Map(dto, existing)).Callback(() =>
         {
             existing.Name = dto.Name!;
             existing.Slug = dto.Slug!;
         });
-        _mockCategoryRepository.Setup(r => r.UpdateAsync(existing)).Returns(Task.CompletedTask);
+        _mockCategoryRepository.Setup(r => r.Update(existing));
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<CategoryDetailDto>(It.IsAny<Category>())).Returns((Category c) => new CategoryDetailDto { Id = c.Id, Name = c.Name, Slug = c.Slug });
 
@@ -179,7 +179,7 @@ public class CategoryServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Name.Should().Be("Updated");
-        _mockCategoryRepository.Verify(r => r.UpdateAsync(It.IsAny<Category>()), Times.Once);
+        _mockCategoryRepository.Verify(r => r.Update(It.IsAny<Category>()), Times.Once);
     }
 
     [TestMethod]
@@ -188,7 +188,7 @@ public class CategoryServiceTests
         // Arrange
         var id = Guid.NewGuid();
         var dto = new UpdateCategoryDto { Name = "Nope" };
-        _mockCategoryRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Category?)null);
+        _mockCategoryRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Category?)null);
 
         // Act
         Func<Task> act = async () => await _service.UpdateCategoryAsync(id, dto);
@@ -202,16 +202,16 @@ public class CategoryServiceTests
     {
         // Arrange
         var category = TestDataFactory.CreateCategory();
-        _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id)).ReturnsAsync(category);
+        _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id, It.IsAny<bool>())).ReturnsAsync(category);
         _mockCategoryRepository.Setup(r => r.GetProductCountAsync(category.Id)).ReturnsAsync(0);
-        _mockCategoryRepository.Setup(r => r.DeleteAsync(category)).Returns(Task.CompletedTask);
+        _mockCategoryRepository.Setup(r => r.Delete(category));
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.DeleteCategoryAsync(category.Id);
 
         // Assert
-        _mockCategoryRepository.Verify(r => r.DeleteAsync(It.IsAny<Category>()), Times.Once);
+        _mockCategoryRepository.Verify(r => r.Delete(It.IsAny<Category>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
@@ -220,7 +220,7 @@ public class CategoryServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockCategoryRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Category?)null);
+        _mockCategoryRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Category?)null);
 
         // Act
         Func<Task> act = async () => await _service.DeleteCategoryAsync(id);
@@ -234,7 +234,7 @@ public class CategoryServiceTests
     {
         // Arrange
         var category = TestDataFactory.CreateCategory();
-        _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id)).ReturnsAsync(category);
+        _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id, It.IsAny<bool>())).ReturnsAsync(category);
         _mockCategoryRepository.Setup(r => r.GetProductCountAsync(category.Id)).ReturnsAsync(3);
 
         // Act

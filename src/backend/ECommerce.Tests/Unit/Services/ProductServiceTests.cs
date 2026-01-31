@@ -141,7 +141,7 @@ public class ProductServiceTests
         var existing = TestDataFactory.CreateProduct(name: "Old", slug: "old-slug");
         var dto = new UpdateProductDto { Name = "Updated", Slug = "updated-slug", Price = 20 };
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(existing.Id)).ReturnsAsync(existing);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(existing.Id, It.IsAny<bool>())).ReturnsAsync(existing);
         _mockProductRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, existing.Id)).ReturnsAsync(true);
         _mockMapper.Setup(m => m.Map(dto, existing)).Callback(() =>
         {
@@ -169,7 +169,7 @@ public class ProductServiceTests
         // Arrange
         var id = Guid.NewGuid();
         var dto = new UpdateProductDto { Name = "Nope" };
-        _mockProductRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Product?)null);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
         Func<Task> act = async () => await _service.UpdateProductAsync(id, dto);
@@ -183,7 +183,7 @@ public class ProductServiceTests
     {
         // Arrange
         var product = TestDataFactory.CreateProduct();
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
         _mockProductRepository.Setup(r => r.DeleteAsync(product)).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
@@ -200,7 +200,7 @@ public class ProductServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockProductRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Product?)null);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
         Func<Task> act = async () => await _service.DeleteProductAsync(id);
@@ -214,7 +214,7 @@ public class ProductServiceTests
     {
         // Arrange
         var product = TestDataFactory.CreateProduct(name: "ById Prod");
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
 
         _mockMapper.Setup(m => m.Map<ProductDetailDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDetailDto { Id = p.Id, Name = p.Name, Slug = p.Slug });
@@ -232,7 +232,7 @@ public class ProductServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        _mockProductRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Product?)null);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
         Func<Task> act = async () => await _service.GetProductByIdAsync(id);
@@ -273,7 +273,7 @@ public class ProductServiceTests
             TestDataFactory.CreateProduct(name: "Gamma")
         };
 
-        _mockProductRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(all);
+        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(all);
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name });
 
@@ -321,7 +321,7 @@ public class ProductServiceTests
             TestDataFactory.CreateProduct(name: "Expensive", price: 200)
         };
 
-        _mockProductRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(all);
+        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(all);
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name, Price = p.Price });
 
@@ -345,7 +345,7 @@ public class ProductServiceTests
         p2.LowStockThreshold = 5;
 
         var all = new List<Product> { p1, p2 };
-        _mockProductRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(all);
+        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(all);
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name, Price = p.Price });
 
@@ -364,7 +364,7 @@ public class ProductServiceTests
         var existing = TestDataFactory.CreateProduct(name: "Old", slug: "old-slug");
         var dto = new UpdateProductDto { Name = "Updated", Slug = "taken-slug" };
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(existing.Id)).ReturnsAsync(existing);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(existing.Id, It.IsAny<bool>())).ReturnsAsync(existing);
         _mockProductRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, existing.Id)).ReturnsAsync(false);
 
         // Act
