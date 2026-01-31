@@ -6,31 +6,24 @@ namespace ECommerce.Application.Services;
 
 public class DashboardService : IDashboardService
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly IProductRepository _productRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public DashboardService(
-        IOrderRepository orderRepository,
-        IUserRepository userRepository,
-        IProductRepository productRepository)
+    public DashboardService(IUnitOfWork unitOfWork)
     {
-        _orderRepository = orderRepository;
-        _userRepository = userRepository;
-        _productRepository = productRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<DashboardStatsDto> GetDashboardStatsAsync()
     {
         // Get total counts
-        var totalOrders = await _orderRepository.GetTotalOrdersCountAsync();
-        var totalRevenue = await _orderRepository.GetTotalRevenueAsync();
-        var totalCustomers = await _userRepository.GetCustomersCountAsync();
-        var totalProducts = await _productRepository.GetActiveProductsCountAsync();
+        var totalOrders = await _unitOfWork.Orders.GetTotalOrdersCountAsync();
+        var totalRevenue = await _unitOfWork.Orders.GetTotalRevenueAsync();
+        var totalCustomers = await _unitOfWork.Users.GetCustomersCountAsync();
+        var totalProducts = await _unitOfWork.Products.GetActiveProductsCountAsync();
 
         // Get trends for last 30 days
-        var ordersTrendDict = await _orderRepository.GetOrdersTrendAsync(30);
-        var revenueTrendDict = await _orderRepository.GetRevenueTrendAsync(30);
+        var ordersTrendDict = await _unitOfWork.Orders.GetOrdersTrendAsync(30);
+        var revenueTrendDict = await _unitOfWork.Orders.GetRevenueTrendAsync(30);
 
         // Convert to DTOs
         var ordersTrend = ordersTrendDict

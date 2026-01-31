@@ -11,23 +11,22 @@ namespace ECommerce.Application.Services;
 /// Mocked payment service for Stripe/PayPal integration.
 /// In production, this would call actual payment provider APIs.
 /// </summary>
-public class PaymentService : IPaymentService
+    private readonly IUnitOfWork _unitOfWork;
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<PaymentService> _logger;
-    private static readonly Dictionary<string, PaymentDetailsDto> MockPaymentStore = new();
-
-    public PaymentService(IOrderRepository orderRepository, IUnitOfWork unitOfWork, ILogger<PaymentService> logger)
+    public PaymentService(IUnitOfWork unitOfWork, ILogger<PaymentService> logger)
     {
-        _orderRepository = orderRepository;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     public async Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto)
     {
-        _logger.LogInformation("Processing payment for order {OrderId} via {PaymentMethod}", dto.OrderId, dto.PaymentMethod);
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
 
         // Validate order exists
         var order = await _orderRepository.GetByIdAsync(dto.OrderId);
@@ -63,7 +62,7 @@ public class PaymentService : IPaymentService
             // Update order with payment information
             order.PaymentStatus = PaymentStatus.Paid;
             order.PaymentMethod = dto.PaymentMethod;
-            order.PaymentIntentId = paymentIntentId;
+            await _unitOfWork.Orders.UpdateAsync(order);
             order.Status = OrderStatus.Confirmed;
 
             await _orderRepository.UpdateAsync(order);
@@ -105,7 +104,7 @@ public class PaymentService : IPaymentService
         else
         {
             // Mark payment as failed
-            order.PaymentStatus = PaymentStatus.Failed;
+            await _unitOfWork.Orders.UpdateAsync(order);
             order.PaymentIntentId = paymentIntentId;
 
             await _orderRepository.UpdateAsync(order);
@@ -131,7 +130,7 @@ public class PaymentService : IPaymentService
     }
 
     public async Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid orderId)
-    {
+        var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
         var order = await _orderRepository.GetByIdAsync(orderId);
@@ -166,7 +165,7 @@ public class PaymentService : IPaymentService
     }
 
     public async Task<RefundResponseDto> RefundPaymentAsync(RefundPaymentDto dto)
-    {
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
         _logger.LogInformation("Processing refund for order {OrderId}", dto.OrderId);
 
         var order = await _orderRepository.GetByIdAsync(dto.OrderId);
@@ -183,7 +182,7 @@ public class PaymentService : IPaymentService
         var refundAmount = dto.Amount ?? order.TotalAmount;
 
         // Mock refund processing
-        var refundId = Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper();
+        await _unitOfWork.Orders.UpdateAsync(order);
 
         order.PaymentStatus = PaymentStatus.Refunded;
         await _orderRepository.UpdateAsync(order);

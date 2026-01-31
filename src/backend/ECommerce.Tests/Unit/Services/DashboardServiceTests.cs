@@ -20,6 +20,11 @@ namespace ECommerce.Tests.Unit.Services
             var orderRepo = new Mock<IOrderRepository>();
             var userRepo = new Mock<IUserRepository>();
             var productRepo = new Mock<IProductRepository>();
+            var mockUnitOfWork = new Mock<IUnitOfWork>();
+
+            mockUnitOfWork.Setup(u => u.Orders).Returns(orderRepo.Object);
+            mockUnitOfWork.Setup(u => u.Users).Returns(userRepo.Object);
+            mockUnitOfWork.Setup(u => u.Products).Returns(productRepo.Object);
 
             orderRepo.Setup(r => r.GetTotalOrdersCountAsync()).ReturnsAsync(42);
             orderRepo.Setup(r => r.GetTotalRevenueAsync()).ReturnsAsync(1234.56m);
@@ -44,7 +49,7 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetOrdersTrendAsync(30)).ReturnsAsync(ordersTrend);
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(revenueTrend);
 
-            var service = new DashboardService(orderRepo.Object, userRepo.Object, productRepo.Object);
+            var service = new DashboardService(mockUnitOfWork.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();
@@ -81,7 +86,12 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetOrdersTrendAsync(30)).ReturnsAsync(new Dictionary<DateTime, int>());
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(new Dictionary<DateTime, decimal>());
 
-            var service = new DashboardService(orderRepo.Object, userRepo.Object, productRepo.Object);
+            var mockUnitOfWork = new Mock<IUnitOfWork>();
+            mockUnitOfWork.Setup(u => u.Orders).Returns(orderRepo.Object);
+            mockUnitOfWork.Setup(u => u.Users).Returns(userRepo.Object);
+            mockUnitOfWork.Setup(u => u.Products).Returns(productRepo.Object);
+
+            var service = new DashboardService(mockUnitOfWork.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();
