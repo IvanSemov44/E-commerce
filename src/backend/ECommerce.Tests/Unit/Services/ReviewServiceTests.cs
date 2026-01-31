@@ -30,11 +30,10 @@ public class ReviewServiceTests
         _mockMapper = MockHelpers.CreateMockMapper();
 
         _mockUnitOfWork.Setup(u => u.Reviews).Returns(_mockReviewRepository.Object);
+        _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
+        _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
 
         _service = new ReviewService(
-            _mockReviewRepository.Object,
-            _mockProductRepository.Object,
-            _mockUserRepository.Object,
             _mockUnitOfWork.Object,
             _mockMapper.Object);
     }
@@ -117,7 +116,7 @@ public class ReviewServiceTests
         var dto = new CreateReviewDto { ProductId = product.Id, Rating = 5, Comment = "Great", Title = "Nice" };
 
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         _mockReviewRepository.Setup(r => r.UserHasReviewedAsync(user.Id, product.Id)).ReturnsAsync(false);
         _mockReviewRepository.Setup(r => r.AddAsync(It.IsAny<Review>()))
             .Callback<Review>(r => { if (r.Id == Guid.Empty) r.Id = Guid.NewGuid(); })
@@ -145,7 +144,7 @@ public class ReviewServiceTests
         var dto = new CreateReviewDto { ProductId = product.Id, Rating = 4, Comment = "ok" };
 
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
-        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         _mockReviewRepository.Setup(r => r.UserHasReviewedAsync(user.Id, product.Id)).ReturnsAsync(true);
 
         // Act
@@ -247,7 +246,7 @@ public class ReviewServiceTests
         var user = TestDataFactory.CreateUser();
         var review = TestDataFactory.CreateReview(user.Id, Guid.NewGuid());
 
-        _mockReviewRepository.Setup(r => r.GetByIdAsync(review.Id)).ReturnsAsync(review);
+        _mockReviewRepository.Setup(r => r.GetByIdAsync(review.Id, It.IsAny<bool>())).ReturnsAsync(review);
         _mockReviewRepository.Setup(r => r.DeleteAsync(review)).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
@@ -267,7 +266,7 @@ public class ReviewServiceTests
         var other = TestDataFactory.CreateUser();
         var review = TestDataFactory.CreateReview(owner.Id, Guid.NewGuid());
 
-        _mockReviewRepository.Setup(r => r.GetByIdAsync(review.Id)).ReturnsAsync(review);
+        _mockReviewRepository.Setup(r => r.GetByIdAsync(review.Id, It.IsAny<bool>())).ReturnsAsync(review);
 
         // Act
         Func<Task> act = async () => await _service.DeleteReviewAsync(other.Id, review.Id);
