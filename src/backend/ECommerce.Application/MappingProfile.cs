@@ -132,7 +132,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Images.FirstOrDefault() != null ? src.Images.FirstOrDefault()!.Url : null))
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));
 
-        CreateMap<Product, LowStockAlertDto>()
+        CreateMap<Product, LowStockAlert>()
             .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Sku))

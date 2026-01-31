@@ -25,6 +25,7 @@ public class OrderServiceTests
     private Mock<IEmailService> _mockEmailService = null!;
     private Mock<IMapper> _mockMapper = null!;
     private Mock<ILogger<OrderService>> _mockLogger = null!;
+    private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private OrderService _service = null!;
 
     [TestInitialize]
@@ -38,6 +39,9 @@ public class OrderServiceTests
         _mockEmailService = new Mock<IEmailService>();
         _mockMapper = MockHelpers.CreateMockMapper();
         _mockLogger = MockHelpers.CreateMockLogger<OrderService>();
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
+
+        _mockUnitOfWork.Setup(u => u.Orders).Returns(_mockOrderRepository.Object);
 
         _service = new OrderService(
             _mockOrderRepository.Object,
@@ -46,6 +50,7 @@ public class OrderServiceTests
             _mockPromoCodeService.Object,
             _mockInventoryService.Object,
             _mockEmailService.Object,
+            _mockUnitOfWork.Object,
             _mockMapper.Object,
             _mockLogger.Object);
     }
@@ -87,22 +92,18 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = true,
-                Issues = new List<StockIssueDto>()
+                Issues = new List<StockIssue>()
             });
 
         _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>()))
-            .ReturnsAsync((Order order) =>
-            {
-                order.Id = Guid.NewGuid();
-                return order;
-            });
+            .Callback<Order>(order => { if (order.Id == Guid.Empty) order.Id = Guid.NewGuid(); })
+            .Returns(Task.CompletedTask);
 
-        _mockOrderRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
             .Returns(new OrderDetailDto { Id = Guid.NewGuid() });
@@ -113,7 +114,7 @@ public class OrderServiceTests
         // Assert
         result.Should().NotBeNull();
         _mockOrderRepository.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Once);
-        _mockOrderRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -174,11 +175,11 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = true,
-                Issues = new List<StockIssueDto>()
+                Issues = new List<StockIssue>()
             });
 
         _mockPromoCodeService.Setup(s => s.ValidatePromoCodeAsync("SAVE20", It.IsAny<decimal>()))
@@ -192,15 +193,14 @@ public class OrderServiceTests
         Order capturedOrder = null!;
 
         _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>()))
-            .Callback<Order>(o => capturedOrder = o)
-            .ReturnsAsync((Order order) =>
+            .Callback<Order>(o =>
             {
-                order.Id = Guid.NewGuid();
-                return order;
-            });
+                if (o.Id == Guid.Empty) o.Id = Guid.NewGuid();
+                capturedOrder = o;
+            })
+            .Returns(Task.CompletedTask);
 
-        _mockOrderRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
             .Returns(new OrderDetailDto { Id = Guid.NewGuid() });
@@ -251,11 +251,11 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = true,
-                Issues = new List<StockIssueDto>()
+                Issues = new List<StockIssue>()
             });
 
         _mockPromoCodeService.Setup(s => s.ValidatePromoCodeAsync("INVALID", It.IsAny<decimal>()))
@@ -307,13 +307,13 @@ public class OrderServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId))
             .ReturnsAsync(user);
 
-        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItem>>()))
             .ReturnsAsync(new StockCheckResponse
             {
                 IsAvailable = false,
-                Issues = new List<StockIssueDto>
+                Issues = new List<StockIssue>
                 {
-                    new StockIssueDto { Message = "Insufficient stock for Test Product" }
+                    new StockIssue { Message = "Insufficient stock for Test Product" }
                 }
             });
 
@@ -419,8 +419,7 @@ public class OrderServiceTests
         _mockOrderRepository.Setup(r => r.UpdateAsync(It.IsAny<Order>()))
             .Returns(Task.CompletedTask);
 
-        _mockOrderRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
             .Returns(new OrderDetailDto { Id = order.Id });
@@ -431,7 +430,7 @@ public class OrderServiceTests
         // Assert
         order.Status.Should().Be(OrderStatus.Processing);
         _mockOrderRepository.Verify(r => r.UpdateAsync(It.IsAny<Order>()), Times.Once);
-        _mockOrderRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -478,8 +477,7 @@ public class OrderServiceTests
         _mockOrderRepository.Setup(r => r.UpdateAsync(It.IsAny<Order>()))
             .Returns(Task.CompletedTask);
 
-        _mockOrderRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
             .Returns(new OrderDetailDto { Id = order.Id });
@@ -509,8 +507,7 @@ public class OrderServiceTests
         _mockOrderRepository.Setup(r => r.UpdateAsync(It.IsAny<Order>()))
             .Returns(Task.CompletedTask);
 
-        _mockOrderRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         var result = await _service.CancelOrderAsync(order.Id);

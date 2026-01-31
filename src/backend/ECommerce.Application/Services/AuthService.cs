@@ -19,12 +19,14 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration, IEmailService emailService, IMapper mapper)
+    public AuthService(IUserRepository userRepository, IConfiguration configuration, IEmailService emailService, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _userRepository = userRepository;
         _configuration = configuration;
         _emailService = emailService;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -48,7 +50,7 @@ public class AuthService : IAuthService
         };
 
         await _userRepository.AddAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         // Send welcome email (fire and forget - don't block registration)
         var verificationLink = $"{_configuration["AppUrl"]}/verify-email?userId={user.Id}&token={user.EmailVerificationToken}";
@@ -185,7 +187,7 @@ public class AuthService : IAuthService
         user.IsEmailVerified = true;
         user.EmailVerificationToken = null;
         await _userRepository.UpdateAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task<string> GeneratePasswordResetTokenAsync(string email)
@@ -202,7 +204,7 @@ public class AuthService : IAuthService
         user.PasswordResetToken = Guid.NewGuid().ToString();
         user.PasswordResetExpires = DateTime.UtcNow.AddHours(1);
         await _userRepository.UpdateAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         // Send password reset email (fire and forget)
         var resetLink = $"{_configuration["AppUrl"]}/reset-password?email={email}&token={user.PasswordResetToken}";
@@ -238,7 +240,7 @@ public class AuthService : IAuthService
         user.PasswordResetToken = null;
         user.PasswordResetExpires = null;
         await _userRepository.UpdateAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword)
@@ -256,7 +258,7 @@ public class AuthService : IAuthService
 
         user.PasswordHash = HashPassword(newPassword);
         await _userRepository.UpdateAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 
     

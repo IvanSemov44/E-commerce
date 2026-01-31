@@ -20,6 +20,7 @@ public class AuthServiceTests
     private Mock<IConfiguration> _mockConfiguration = null!;
     private Mock<IEmailService> _mockEmailService = null!;
     private Mock<IMapper> _mockMapper = null!;
+    private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private AuthService _service = null!;
 
     [TestInitialize]
@@ -28,6 +29,7 @@ public class AuthServiceTests
         _mockUserRepository = new Mock<IUserRepository>();
         _mockConfiguration = new Mock<IConfiguration>();
         _mockEmailService = new Mock<IEmailService>();
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
 
         // Setup JWT configuration
         _mockConfiguration.Setup(c => c["Jwt:SecretKey"]).Returns("this-is-a-very-secure-secret-key-for-testing-at-least-32-characters");
@@ -49,7 +51,9 @@ public class AuthServiceTests
                 AvatarUrl = u.AvatarUrl
             });
 
-        _service = new AuthService(_mockUserRepository.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockMapper.Object);
+        _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
+
+        _service = new AuthService(_mockUserRepository.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockUnitOfWork.Object, _mockMapper.Object);
     }
 
     #region RegisterAsync Tests
@@ -70,14 +74,10 @@ public class AuthServiceTests
             .ReturnsAsync(false);
 
         _mockUserRepository.Setup(r => r.AddAsync(It.IsAny<User>()))
-            .ReturnsAsync((User user) =>
-            {
-                user.Id = Guid.NewGuid();
-                return user;
-            });
+            .Callback<User>(user => { if (user.Id == Guid.Empty) user.Id = Guid.NewGuid(); })
+            .Returns(Task.CompletedTask);
 
-        _mockUserRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         var result = await _service.RegisterAsync(dto);
@@ -94,7 +94,7 @@ public class AuthServiceTests
         result.Token.Should().NotBeNullOrEmpty();
 
         _mockUserRepository.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Once);
-        _mockUserRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -138,15 +138,14 @@ public class AuthServiceTests
             .ReturnsAsync(false);
 
         _mockUserRepository.Setup(r => r.AddAsync(It.IsAny<User>()))
-            .Callback<User>(u => capturedUser = u)
-            .ReturnsAsync((User user) =>
+            .Callback<User>(u =>
             {
-                user.Id = Guid.NewGuid();
-                return user;
-            });
+                if (u.Id == Guid.Empty) u.Id = Guid.NewGuid();
+                capturedUser = u;
+            })
+            .Returns(Task.CompletedTask);
 
-        _mockUserRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.RegisterAsync(dto);
@@ -369,8 +368,7 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
             .Returns(Task.CompletedTask);
 
-        _mockUserRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.VerifyEmailAsync(user.Id, token);
@@ -379,7 +377,7 @@ public class AuthServiceTests
         user.IsEmailVerified.Should().BeTrue();
         user.EmailVerificationToken.Should().BeNull();
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Once);
-        _mockUserRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -431,8 +429,7 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
             .Returns(Task.CompletedTask);
 
-        _mockUserRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         var token = await _service.GeneratePasswordResetTokenAsync(user.Email);
@@ -461,7 +458,7 @@ public class AuthServiceTests
         token.Should().NotBeNullOrEmpty();
         // Should NOT update or save anything for security (prevents email enumeration)
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
-        _mockUserRepository.Verify(r => r.SaveChangesAsync(), Times.Never);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
     }
 
     [TestMethod]
@@ -480,8 +477,7 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
             .Returns(Task.CompletedTask);
 
-        _mockUserRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.ResetPasswordAsync(user.Email, token, "NewSecurePassword123!");
@@ -566,8 +562,7 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
             .Returns(Task.CompletedTask);
 
-        _mockUserRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.ChangePasswordAsync(user.Id, oldPassword, newPassword);

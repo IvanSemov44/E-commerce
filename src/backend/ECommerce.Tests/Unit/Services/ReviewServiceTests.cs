@@ -16,6 +16,7 @@ public class ReviewServiceTests
     private Mock<IReviewRepository> _mockReviewRepository = null!;
     private Mock<IProductRepository> _mockProductRepository = null!;
     private Mock<IUserRepository> _mockUserRepository = null!;
+    private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IMapper> _mockMapper = null!;
     private ReviewService _service = null!;
 
@@ -25,12 +26,16 @@ public class ReviewServiceTests
         _mockReviewRepository = new Mock<IReviewRepository>();
         _mockProductRepository = new Mock<IProductRepository>();
         _mockUserRepository = new Mock<IUserRepository>();
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockMapper = MockHelpers.CreateMockMapper();
+
+        _mockUnitOfWork.Setup(u => u.Reviews).Returns(_mockReviewRepository.Object);
 
         _service = new ReviewService(
             _mockReviewRepository.Object,
             _mockProductRepository.Object,
             _mockUserRepository.Object,
+            _mockUnitOfWork.Object,
             _mockMapper.Object);
     }
 
@@ -114,8 +119,10 @@ public class ReviewServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
         _mockReviewRepository.Setup(r => r.UserHasReviewedAsync(user.Id, product.Id)).ReturnsAsync(false);
-        _mockReviewRepository.Setup(r => r.AddAsync(It.IsAny<Review>())).ReturnsAsync((Review r) => r);
-        _mockReviewRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockReviewRepository.Setup(r => r.AddAsync(It.IsAny<Review>()))
+            .Callback<Review>(r => { if (r.Id == Guid.Empty) r.Id = Guid.NewGuid(); })
+            .Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<ReviewDetailDto>(It.IsAny<Review>()))
             .Returns((Review r) => new ReviewDetailDto { Id = r.Id, Rating = r.Rating, Comment = r.Comment });
 
@@ -126,7 +133,7 @@ public class ReviewServiceTests
         result.Should().NotBeNull();
         result.Rating.Should().Be(5);
         _mockReviewRepository.Verify(r => r.AddAsync(It.IsAny<Review>()), Times.Once);
-        _mockReviewRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -187,7 +194,7 @@ public class ReviewServiceTests
 
         _mockReviewRepository.Setup(r => r.GetByIdWithDetailsAsync(review.Id)).ReturnsAsync(review);
         _mockReviewRepository.Setup(r => r.UpdateAsync(It.IsAny<Review>())).Returns(Task.CompletedTask);
-        _mockReviewRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<ReviewDetailDto>(It.IsAny<Review>())).Returns((Review r) => new ReviewDetailDto { Id = r.Id, Rating = r.Rating, Comment = r.Comment });
 
         // Act
@@ -242,14 +249,14 @@ public class ReviewServiceTests
 
         _mockReviewRepository.Setup(r => r.GetByIdAsync(review.Id)).ReturnsAsync(review);
         _mockReviewRepository.Setup(r => r.DeleteAsync(review)).Returns(Task.CompletedTask);
-        _mockReviewRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.DeleteReviewAsync(user.Id, review.Id);
 
         // Assert
         _mockReviewRepository.Verify(r => r.DeleteAsync(It.IsAny<Review>()), Times.Once);
-        _mockReviewRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]

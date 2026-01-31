@@ -13,17 +13,20 @@ public class ReviewService : IReviewService
     private readonly IReviewRepository _reviewRepository;
     private readonly IProductRepository _productRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public ReviewService(
         IReviewRepository reviewRepository,
         IProductRepository productRepository,
         IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _reviewRepository = reviewRepository;
         _productRepository = productRepository;
         _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -87,7 +90,7 @@ public class ReviewService : IReviewService
         };
 
         await _reviewRepository.AddAsync(review);
-        await _reviewRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<ReviewDetailDto>(review);
     }
@@ -120,7 +123,7 @@ public class ReviewService : IReviewService
         review.UpdatedAt = DateTime.UtcNow;
 
         await _reviewRepository.UpdateAsync(review);
-        await _reviewRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<ReviewDetailDto>(review);
     }
@@ -135,7 +138,7 @@ public class ReviewService : IReviewService
             throw new UnauthorizedAccessException("You can only delete your own reviews");
 
         await _reviewRepository.DeleteAsync(review);
-        await _reviewRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task<ReviewDetailDto> ApproveReviewAsync(Guid reviewId)
@@ -148,7 +151,7 @@ public class ReviewService : IReviewService
         review.UpdatedAt = DateTime.UtcNow;
 
         await _reviewRepository.UpdateAsync(review);
-        await _reviewRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<ReviewDetailDto>(review);
     }
@@ -160,7 +163,7 @@ public class ReviewService : IReviewService
             throw new ReviewNotFoundException(reviewId);
 
         await _reviewRepository.DeleteAsync(review);
-        await _reviewRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<ReviewDetailDto>(review);
     }

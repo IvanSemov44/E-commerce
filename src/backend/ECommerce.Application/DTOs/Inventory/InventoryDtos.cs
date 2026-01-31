@@ -36,10 +36,10 @@ public class AdjustStockRequest
 
 public class StockCheckRequest
 {
-    public List<StockCheckItemDto> Items { get; set; } = new();
+    public List<StockCheckItem> Items { get; set; } = new();
 }
 
-public class StockCheckItemDto
+public class StockCheckItem
 {
     public Guid ProductId { get; set; }
     public int Quantity { get; set; }
@@ -48,10 +48,10 @@ public class StockCheckItemDto
 public class StockCheckResponse
 {
     public bool IsAvailable { get; set; }
-    public List<StockIssueDto> Issues { get; set; } = new();
+    public List<StockIssue> Issues { get; set; } = new();
 }
 
-public class StockIssueDto
+public class StockIssue
 {
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = null!;
@@ -60,7 +60,7 @@ public class StockIssueDto
     public string Message { get; set; } = null!;
 }
 
-public class LowStockAlertDto
+public class LowStockAlert
 {
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = null!;

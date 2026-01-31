@@ -12,17 +12,20 @@ public class WishlistService : IWishlistService
     private readonly IWishlistRepository _wishlistRepository;
     private readonly IProductRepository _productRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public WishlistService(
         IWishlistRepository wishlistRepository,
         IProductRepository productRepository,
         IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _wishlistRepository = wishlistRepository;
         _productRepository = productRepository;
         _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -61,7 +64,7 @@ public class WishlistService : IWishlistService
         };
 
         await _wishlistRepository.AddAsync(wishlistEntry);
-        await _wishlistRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return await GetUserWishlistAsync(userId);
     }
@@ -78,7 +81,7 @@ public class WishlistService : IWishlistService
             throw new WishlistItemNotFoundException();
 
         await _wishlistRepository.DeleteAsync(entryToRemove);
-        await _wishlistRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return await GetUserWishlistAsync(userId);
     }
@@ -105,7 +108,7 @@ public class WishlistService : IWishlistService
         }
         if (userWishlistEntries.Count > 0)
         {
-            await _wishlistRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return new WishlistDto { Id = userId, Items = new List<WishlistItemDto>(), ItemCount = 0 };

@@ -13,6 +13,7 @@ namespace ECommerce.Tests.Unit.Services;
 public class ProductServiceTests
 {
     private Mock<IProductRepository> _mockProductRepository = null!;
+    private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IMapper> _mockMapper = null!;
     private ProductService _service = null!;
 
@@ -20,9 +21,12 @@ public class ProductServiceTests
     public void Setup()
     {
         _mockProductRepository = new Mock<IProductRepository>();
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockMapper = MockHelpers.CreateMockMapper();
 
-        _service = new ProductService(_mockProductRepository.Object, _mockMapper.Object);
+        _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
+
+        _service = new ProductService(_mockUnitOfWork.Object, _mockMapper.Object);
     }
 
     [TestMethod]
@@ -96,9 +100,10 @@ public class ProductServiceTests
             .Returns((CreateProductDto d) => new Product { Id = Guid.NewGuid(), Name = d.Name, Slug = d.Slug, Price = d.Price });
 
         _mockProductRepository.Setup(r => r.AddAsync(It.IsAny<Product>()))
-            .ReturnsAsync((Product p) => p);
+            .Callback<Product>(p => { if (p.Id == Guid.Empty) p.Id = Guid.NewGuid(); })
+            .Returns(Task.CompletedTask);
 
-        _mockProductRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<ProductDetailDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDetailDto { Id = p.Id, Name = p.Name, Slug = p.Slug });
@@ -110,7 +115,7 @@ public class ProductServiceTests
         result.Should().NotBeNull();
         result.Slug.Should().Be(dto.Slug);
         _mockProductRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Once);
-        _mockProductRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -146,7 +151,7 @@ public class ProductServiceTests
         });
 
         _mockProductRepository.Setup(r => r.UpdateAsync(existing)).Returns(Task.CompletedTask);
-        _mockProductRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<ProductDetailDto>(It.IsAny<Product>())).Returns((Product p) => new ProductDetailDto { Id = p.Id, Name = p.Name, Slug = p.Slug });
 
         // Act
@@ -180,14 +185,14 @@ public class ProductServiceTests
         var product = TestDataFactory.CreateProduct();
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id)).ReturnsAsync(product);
         _mockProductRepository.Setup(r => r.DeleteAsync(product)).Returns(Task.CompletedTask);
-        _mockProductRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.DeleteProductAsync(product.Id);
 
         // Assert
         _mockProductRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>()), Times.Once);
-        _mockProductRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]

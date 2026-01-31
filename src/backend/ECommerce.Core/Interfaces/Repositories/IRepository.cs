@@ -15,7 +15,6 @@ public interface IRepository<T> where T : BaseEntity
     void Add(T entity);
     Task AddAsync(T entity);
     void AddRange(IEnumerable<T> entities);
-    // Async variants for common write operations (convenience for services/tests)
     Task UpdateAsync(T entity);
     Task DeleteAsync(T entity);
     void Update(T entity);

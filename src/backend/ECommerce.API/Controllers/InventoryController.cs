@@ -51,7 +51,7 @@ public class InventoryController : ControllerBase
     /// Get products with low stock.
     /// </summary>
     [HttpGet("low-stock")]
-    [ProducesResponseType(typeof(ApiResponse<List<LowStockAlertDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<LowStockAlert>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
@@ -60,7 +60,7 @@ public class InventoryController : ControllerBase
         _logger.LogInformation("Retrieving low stock products");
 
         var lowStockProducts = await _inventoryService.GetLowStockProductsAsync();
-        return Ok(ApiResponse<List<LowStockAlertDto>>.Ok(lowStockProducts, "Low stock products retrieved successfully"));
+        return Ok(ApiResponse<List<LowStockAlert>>.Ok(lowStockProducts, "Low stock products retrieved successfully"));
     }
 
     /// <summary>

@@ -48,14 +48,10 @@ public class CartServiceTests
             .ReturnsAsync((Cart?)null);
 
         _mockCartRepository.Setup(r => r.AddAsync(It.IsAny<Cart>()))
-            .ReturnsAsync((Cart cart) =>
-            {
-                cart.Id = Guid.NewGuid();
-                return cart;
-            });
+            .Callback<Cart>(cart => { if (cart.Id == Guid.Empty) cart.Id = Guid.NewGuid(); })
+            .Returns(Task.CompletedTask);
 
-        _mockCartRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         var result = await _service.GetOrCreateCartAsync(userId, null);
@@ -76,14 +72,10 @@ public class CartServiceTests
             .ReturnsAsync((Cart?)null);
 
         _mockCartRepository.Setup(r => r.AddAsync(It.IsAny<Cart>()))
-            .ReturnsAsync((Cart cart) =>
-            {
-                cart.Id = Guid.NewGuid();
-                return cart;
-            });
+            .Callback<Cart>(cart => { if (cart.Id == Guid.Empty) cart.Id = Guid.NewGuid(); })
+            .Returns(Task.CompletedTask);
 
-        _mockCartRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         var result = await _service.GetOrCreateCartAsync(null, sessionId);
@@ -285,15 +277,14 @@ public class CartServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
             .ReturnsAsync(product);
 
-        _mockCartRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         var result = await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 5);
 
         // Assert
         cartItem.Quantity.Should().Be(5);
-        _mockCartRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -312,15 +303,14 @@ public class CartServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
             .ReturnsAsync(product);
 
-        _mockCartRepository.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         var result = await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 0);
 
         // Assert
         cart.Items.Should().NotContain(cartItem);
-        _mockCartRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]

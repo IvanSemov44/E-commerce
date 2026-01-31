@@ -41,23 +41,23 @@ public static class MockHelpers
         items ??= new List<T>();
         var mock = new Mock<IRepository<T>>();
 
-        // GetAllAsync
-        mock.Setup(r => r.GetAllAsync())
-            .ReturnsAsync(() => items.ToList());
+        // GetAllAsync (matches signature with optional trackChanges)
+        mock.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
+            .ReturnsAsync((bool _)=> items.ToList());
 
-        // GetByIdAsync
-        mock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync((Guid id) => items.FirstOrDefault(i => i.Id == id));
+        // GetByIdAsync (matches signature with optional trackChanges)
+        mock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>()))
+            .ReturnsAsync((Guid id, bool _) => items.FirstOrDefault(i => i.Id == id));
 
-        // AddAsync - returns the entity
+        // AddAsync - assign id and add to backing list, return completed task
         mock.Setup(r => r.AddAsync(It.IsAny<T>()))
-            .ReturnsAsync((T item) =>
+            .Callback<T>((T item) =>
             {
                 if (item.Id == Guid.Empty)
                     item.Id = Guid.NewGuid();
                 items.Add(item);
-                return item;
-            });
+            })
+            .Returns(Task.CompletedTask);
 
         // UpdateAsync
         mock.Setup(r => r.UpdateAsync(It.IsAny<T>()))

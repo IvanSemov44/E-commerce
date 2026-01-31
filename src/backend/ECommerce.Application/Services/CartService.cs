@@ -52,7 +52,7 @@ public class CartService : ICartService
             };
 
             await _cartRepository.AddAsync(cart);
-            await _cartRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return cart;
@@ -145,7 +145,7 @@ public class CartService : ICartService
             cartItem.Quantity = quantity;
         }
 
-        await _cartRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return await MapCartToDtoAsync(cart);
     }
 

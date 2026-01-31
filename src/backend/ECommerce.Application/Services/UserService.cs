@@ -15,13 +15,16 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<UserService> _logger;
+    private readonly IUnitOfWork _unitOfWork;
 
     public UserService(
         IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
         IMapper mapper,
         ILogger<UserService> logger)
     {
         _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
     }
@@ -52,7 +55,7 @@ public class UserService : IUserService
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepository.UpdateAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Profile updated successfully for user {UserId}", userId);
 

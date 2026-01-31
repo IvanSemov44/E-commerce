@@ -13,6 +13,7 @@ namespace ECommerce.Tests.Unit.Services;
 public class CategoryServiceTests
 {
     private Mock<ICategoryRepository> _mockCategoryRepository = null!;
+    private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IMapper> _mockMapper = null!;
     private CategoryService _service = null!;
 
@@ -20,9 +21,12 @@ public class CategoryServiceTests
     public void Setup()
     {
         _mockCategoryRepository = new Mock<ICategoryRepository>();
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockMapper = MockHelpers.CreateMockMapper();
 
-        _service = new CategoryService(_mockCategoryRepository.Object, _mockMapper.Object);
+        _mockUnitOfWork.Setup(u => u.Categories).Returns(_mockCategoryRepository.Object);
+
+        _service = new CategoryService(_mockUnitOfWork.Object, _mockMapper.Object);
     }
 
     [TestMethod]
@@ -120,8 +124,10 @@ public class CategoryServiceTests
         _mockCategoryRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug)).ReturnsAsync(true);
         _mockMapper.Setup(m => m.Map<Category>(It.IsAny<CreateCategoryDto>()))
             .Returns((CreateCategoryDto d) => new Category { Id = Guid.NewGuid(), Name = d.Name, Slug = d.Slug });
-        _mockCategoryRepository.Setup(r => r.AddAsync(It.IsAny<Category>())).ReturnsAsync((Category c) => c);
-        _mockCategoryRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockCategoryRepository.Setup(r => r.AddAsync(It.IsAny<Category>()))
+            .Callback<Category>(c => { if (c.Id == Guid.Empty) c.Id = Guid.NewGuid(); })
+            .Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<CategoryDetailDto>(It.IsAny<Category>()))
             .Returns((Category c) => new CategoryDetailDto { Id = c.Id, Name = c.Name, Slug = c.Slug });
 
@@ -132,7 +138,7 @@ public class CategoryServiceTests
         result.Should().NotBeNull();
         result.Slug.Should().Be(dto.Slug);
         _mockCategoryRepository.Verify(r => r.AddAsync(It.IsAny<Category>()), Times.Once);
-        _mockCategoryRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
@@ -164,7 +170,7 @@ public class CategoryServiceTests
             existing.Slug = dto.Slug!;
         });
         _mockCategoryRepository.Setup(r => r.UpdateAsync(existing)).Returns(Task.CompletedTask);
-        _mockCategoryRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<CategoryDetailDto>(It.IsAny<Category>())).Returns((Category c) => new CategoryDetailDto { Id = c.Id, Name = c.Name, Slug = c.Slug });
 
         // Act
@@ -199,14 +205,14 @@ public class CategoryServiceTests
         _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id)).ReturnsAsync(category);
         _mockCategoryRepository.Setup(r => r.GetProductCountAsync(category.Id)).ReturnsAsync(0);
         _mockCategoryRepository.Setup(r => r.DeleteAsync(category)).Returns(Task.CompletedTask);
-        _mockCategoryRepository.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // Act
         await _service.DeleteCategoryAsync(category.Id);
 
         // Assert
         _mockCategoryRepository.Verify(r => r.DeleteAsync(It.IsAny<Category>()), Times.Once);
-        _mockCategoryRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]

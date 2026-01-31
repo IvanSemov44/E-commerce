@@ -14,12 +14,14 @@ namespace ECommerce.Application.Services;
 public class PaymentService : IPaymentService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PaymentService> _logger;
     private static readonly Dictionary<string, PaymentDetailsDto> MockPaymentStore = new();
 
-    public PaymentService(IOrderRepository orderRepository, ILogger<PaymentService> logger)
+    public PaymentService(IOrderRepository orderRepository, IUnitOfWork unitOfWork, ILogger<PaymentService> logger)
     {
         _orderRepository = orderRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -65,7 +67,7 @@ public class PaymentService : IPaymentService
             order.Status = OrderStatus.Confirmed;
 
             await _orderRepository.UpdateAsync(order);
-            await _orderRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             // Store payment details in mock store
             var paymentDetails = new PaymentDetailsDto
@@ -107,7 +109,7 @@ public class PaymentService : IPaymentService
             order.PaymentIntentId = paymentIntentId;
 
             await _orderRepository.UpdateAsync(order);
-            await _orderRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogWarning("Payment failed for order {OrderId}. Simulated failure.", dto.OrderId);
 
@@ -185,7 +187,7 @@ public class PaymentService : IPaymentService
 
         order.PaymentStatus = PaymentStatus.Refunded;
         await _orderRepository.UpdateAsync(order);
-        await _orderRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}", dto.OrderId, refundId);
 

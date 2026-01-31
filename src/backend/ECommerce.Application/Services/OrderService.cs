@@ -19,10 +19,11 @@ public class OrderService : IOrderService
     private readonly IUserRepository _userRepository;
     private readonly IProductRepository _productRepository;
     private readonly IPromoCodeService _promoCodeService;
-    private readonly IInventoryService _inventoryService;
-    private readonly IEmailService _emailService;
+        private readonly IInventoryService _inventoryService;
+        private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
+    private readonly IUnitOfWork _unitOfWork;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -31,6 +32,7 @@ public class OrderService : IOrderService
         IPromoCodeService promoCodeService,
         IInventoryService inventoryService,
         IEmailService emailService,
+        IUnitOfWork unitOfWork,
         IMapper mapper,
         ILogger<OrderService> logger)
     {
@@ -38,8 +40,9 @@ public class OrderService : IOrderService
         _userRepository = userRepository;
         _productRepository = productRepository;
         _promoCodeService = promoCodeService;
-        _inventoryService = inventoryService;
-        _emailService = emailService;
+            _inventoryService = inventoryService;
+            _emailService = emailService;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
     }
@@ -136,7 +139,7 @@ public class OrderService : IOrderService
             // Process order items and validate stock
             var subtotal = 0m;
             var items = new List<OrderItem>();
-            var stockCheckItems = new List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>();
+            var stockCheckItems = new List<ECommerce.Application.DTOs.Inventory.StockCheckItem>();
 
             if (dto.Items != null && dto.Items.Any())
             {
@@ -163,7 +166,7 @@ public class OrderService : IOrderService
                     items.Add(orderItem);
 
                     // Add to stock check list
-                    stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItemDto
+                    stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItem
                     {
                         ProductId = productId,
                         Quantity = itemDto.Quantity
@@ -212,7 +215,7 @@ public class OrderService : IOrderService
             order.Items = items;
 
             await _orderRepository.AddAsync(order);
-            await _orderRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             // Reduce stock for each product
             foreach (var item in items)
@@ -336,7 +339,7 @@ public class OrderService : IOrderService
         }
 
         await _orderRepository.UpdateAsync(order);
-        await _orderRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Order {OrderId} status updated to {Status}", id, status);
 
@@ -364,7 +367,7 @@ public class OrderService : IOrderService
         order.UpdatedAt = DateTime.UtcNow;
 
         await _orderRepository.UpdateAsync(order);
-        await _orderRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Order {OrderId} cancelled successfully", id);
 

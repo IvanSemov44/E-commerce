@@ -10,12 +10,12 @@ namespace ECommerce.Application.Services;
 
 public class ProductService : IProductService
 {
-    private readonly IProductRepository _productRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public ProductService(IProductRepository productRepository, IMapper mapper)
+    public ProductService(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _productRepository = productRepository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -31,7 +31,7 @@ public class ProductService : IProductService
         string? sortBy = null)
     {
         var skip = (page - 1) * pageSize;
-        var (products, totalCount) = await _productRepository.GetProductsWithFiltersAsync(
+        var (products, totalCount) = await _unitOfWork.Products.GetProductsWithFiltersAsync(
             skip, pageSize, categoryId, searchQuery, minPrice, maxPrice, minRating, isFeatured, sortBy);
 
         return new PaginatedResult<ProductDto>
@@ -45,7 +45,7 @@ public class ProductService : IProductService
 
     public async Task<ProductDetailDto> GetProductBySlugAsync(string slug)
     {
-        var product = await _productRepository.GetBySlugAsync(slug);
+        var product = await _unitOfWork.Products.GetBySlugAsync(slug);
         if (product == null)
             throw new ProductNotFoundException(slug);
 
@@ -54,7 +54,7 @@ public class ProductService : IProductService
 
     public async Task<ProductDetailDto> GetProductByIdAsync(Guid id)
     {
-        var product = await _productRepository.GetByIdAsync(id);
+        var product = await _unitOfWork.Products.GetByIdAsync(id);
         if (product == null)
             throw new ProductNotFoundException(id);
 
@@ -63,46 +63,42 @@ public class ProductService : IProductService
 
     public async Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10)
     {
-        var products = await _productRepository.GetFeaturedAsync(count);
+        var products = await _unitOfWork.Products.GetFeaturedAsync(count);
         return products.Select(p => _mapper.Map<ProductDto>(p)).ToList();
     }
 
     public async Task<ProductDetailDto> CreateProductAsync(CreateProductDto dto)
     {
-        // Validate slug uniqueness
-        if (!await _productRepository.IsSlugUniqueAsync(dto.Slug))
-        {
+        if (!await _unitOfWork.Products.IsSlugUniqueAsync(dto.Slug))
             throw new DuplicateProductSlugException(dto.Slug);
-        }
 
         var product = _mapper.Map<Product>(dto);
         product.IsActive = true;
 
-        await _productRepository.AddAsync(product);
-        await _productRepository.SaveChangesAsync();
+        await _unitOfWork.Products.AddAsync(product);
+        await _unitOfWork.SaveChangesAsync();
+
         return _mapper.Map<ProductDetailDto>(product);
     }
 
     public async Task<ProductDetailDto> UpdateProductAsync(Guid id, UpdateProductDto dto)
     {
-        var product = await _productRepository.GetByIdAsync(id);
+        var product = await _unitOfWork.Products.GetByIdAsync(id);
         if (product == null)
             throw new ProductNotFoundException(id);
 
-        // Validate slug uniqueness if changed
         if (!string.IsNullOrEmpty(dto.Slug) && dto.Slug != product.Slug)
         {
-            if (!await _productRepository.IsSlugUniqueAsync(dto.Slug, id))
-            {
+            if (!await _unitOfWork.Products.IsSlugUniqueAsync(dto.Slug, id))
                 throw new DuplicateProductSlugException(dto.Slug);
-            }
         }
 
         _mapper.Map(dto, product);
         product.UpdatedAt = DateTime.UtcNow;
 
-        await _productRepository.UpdateAsync(product);
-        await _productRepository.SaveChangesAsync();
+        await _unitOfWork.Products.UpdateAsync(product);
+        await _unitOfWork.SaveChangesAsync();
+
         return _mapper.Map<ProductDetailDto>(product);
     }
 
@@ -113,9 +109,9 @@ public class ProductService : IProductService
 
     public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20)
     {
-        var totalCount = await _productRepository.GetActiveProductsCountAsync();
+        var totalCount = await _unitOfWork.Products.GetActiveProductsCountAsync();
         var skip = (page - 1) * pageSize;
-        var products = await _productRepository.GetFeaturedAsync(pageSize);
+        var products = await _unitOfWork.Products.GetFeaturedAsync(pageSize);
 
         return new PaginatedResult<ProductDto>
         {
@@ -129,7 +125,7 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20)
     {
         var skip = (page - 1) * pageSize;
-        var allProducts = await _productRepository.GetAllAsync();
+        var allProducts = await _unitOfWork.Products.GetAllAsync();
         var searchResults = allProducts
             .Where(p => p.IsActive && (p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                                         p.Description != null && p.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
@@ -154,7 +150,7 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = 20)
     {
         var skip = (page - 1) * pageSize;
-        var products = await _productRepository.GetByCategoryAsync(categoryId);
+        var products = await _unitOfWork.Products.GetByCategoryAsync(categoryId);
         var totalCount = products.Count();
 
         var paginatedProducts = products
@@ -174,7 +170,7 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> GetProductsByPriceRangeAsync(decimal minPrice, decimal maxPrice, int page = 1, int pageSize = 20)
     {
         var skip = (page - 1) * pageSize;
-        var allProducts = await _productRepository.GetAllAsync();
+        var allProducts = await _unitOfWork.Products.GetAllAsync();
         var filteredProducts = allProducts
             .Where(p => p.IsActive && p.Price >= minPrice && p.Price <= maxPrice)
             .ToList();
@@ -194,10 +190,9 @@ public class ProductService : IProductService
         };
     }
 
-
     public async Task<List<ProductDto>> GetLowStockProductsAsync()
     {
-        var allProducts = await _productRepository.GetAllAsync();
+        var allProducts = await _unitOfWork.Products.GetAllAsync();
         var lowStockProducts = allProducts
             .Where(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive)
             .ToList();
@@ -207,11 +202,11 @@ public class ProductService : IProductService
 
     public async Task DeleteProductAsync(Guid id)
     {
-        var product = await _productRepository.GetByIdAsync(id);
+        var product = await _unitOfWork.Products.GetByIdAsync(id);
         if (product == null)
             throw new ProductNotFoundException(id);
 
-        await _productRepository.DeleteAsync(product);
-        await _productRepository.SaveChangesAsync();
+        await _unitOfWork.Products.DeleteAsync(product);
+        await _unitOfWork.SaveChangesAsync();
     }
 }
