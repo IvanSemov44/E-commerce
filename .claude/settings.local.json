@@ -50,7 +50,9 @@
       "Bash(npx pdf-parse:*)",
       "Bash(printf:*)",
       "Bash(jq:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet restore:*)"
     ]
   }
 }

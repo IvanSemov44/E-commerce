@@ -1,0 +1,604 @@
+using AutoMapper;
+using ECommerce.Application.DTOs.Cart;
+using ECommerce.Application.Services;
+using ECommerce.Core.Entities;
+using ECommerce.Core.Exceptions;
+using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Tests.Helpers;
+using Moq;
+
+namespace ECommerce.Tests.Unit.Services;
+
+[TestClass]
+public class CartServiceTests
+{
+    private Mock<ICartRepository> _mockCartRepository = null!;
+    private Mock<IRepository<CartItem>> _mockCartItemRepository = null!;
+    private Mock<IProductRepository> _mockProductRepository = null!;
+    private Mock<IMapper> _mockMapper = null!;
+    private Mock<IUnitOfWork> _mockUnitOfWork = null!;
+    private CartService _service = null!;
+
+    [TestInitialize]
+    public void Setup()
+    {
+        _mockCartRepository = new Mock<ICartRepository>();
+        _mockCartItemRepository = MockHelpers.CreateMockRepository<CartItem>();
+        _mockProductRepository = new Mock<IProductRepository>();
+        _mockMapper = MockHelpers.CreateMockMapper();
+        _mockUnitOfWork = MockHelpers.CreateMockUnitOfWork();
+
+        _service = new CartService(
+            _mockCartRepository.Object,
+            _mockCartItemRepository.Object,
+            _mockProductRepository.Object,
+            _mockMapper.Object,
+            _mockUnitOfWork.Object);
+    }
+
+    #region GetOrCreateCartAsync Tests
+
+    [TestMethod]
+    public async Task GetOrCreateCartAsync_NewUserCart_CreatesCart()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync((Cart?)null);
+
+        _mockCartRepository.Setup(r => r.AddAsync(It.IsAny<Cart>()))
+            .ReturnsAsync((Cart cart) =>
+            {
+                cart.Id = Guid.NewGuid();
+                return cart;
+            });
+
+        _mockCartRepository.Setup(r => r.SaveChangesAsync())
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _service.GetOrCreateCartAsync(userId, null);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().NotBeEmpty();
+        _mockCartRepository.Verify(r => r.AddAsync(It.Is<Cart>(c => c.UserId == userId)), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task GetOrCreateCartAsync_NewSessionCart_CreatesCart()
+    {
+        // Arrange
+        var sessionId = "session-123";
+
+        _mockCartRepository.Setup(r => r.GetBySessionIdAsync(sessionId))
+            .ReturnsAsync((Cart?)null);
+
+        _mockCartRepository.Setup(r => r.AddAsync(It.IsAny<Cart>()))
+            .ReturnsAsync((Cart cart) =>
+            {
+                cart.Id = Guid.NewGuid();
+                return cart;
+            });
+
+        _mockCartRepository.Setup(r => r.SaveChangesAsync())
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _service.GetOrCreateCartAsync(null, sessionId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().NotBeEmpty();
+        _mockCartRepository.Verify(r => r.AddAsync(It.Is<Cart>(c => c.SessionId == sessionId)), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task GetOrCreateCartAsync_ExistingCart_ReturnsCart()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var cart = TestDataFactory.CreateCart(userId: userId);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        // Act
+        var result = await _service.GetOrCreateCartAsync(userId, null);
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockCartRepository.Verify(r => r.AddAsync(It.IsAny<Cart>()), Times.Never);
+    }
+
+    #endregion
+
+    #region GetCartAsync Tests
+
+    [TestMethod]
+    public async Task GetCartAsync_ExistingCart_ReturnsCart()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var cart = TestDataFactory.CreateCart(userId: userId);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        // Act
+        var result = await _service.GetCartAsync(userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(cart.Id);
+    }
+
+    [TestMethod]
+    public async Task GetCartAsync_CartNotFound_ThrowsCartNotFoundException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync((Cart?)null);
+
+        // Act
+        Func<Task> act = async () => await _service.GetCartAsync(userId);
+
+        // Assert
+        await act.Should().ThrowAsync<CartNotFoundException>();
+    }
+
+    #endregion
+
+    #region AddToCartAsync Tests
+
+    [TestMethod]
+    public async Task AddToCartAsync_NewItem_AddsToCart()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = TestDataFactory.CreateProduct(stock: 10, price: 100);
+        var cart = TestDataFactory.CreateCart(userId: userId);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        // Act
+        var result = await _service.AddToCartAsync(userId, null, product.Id, 2);
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockCartItemRepository.Verify(r => r.AddAsync(It.Is<CartItem>(
+            ci => ci.ProductId == product.Id && ci.Quantity == 2)), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task AddToCartAsync_ExistingItem_IncrementsQuantity()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = TestDataFactory.CreateProduct(stock: 10, price: 100);
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var existingCartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 2);
+        cart.Items.Add(existingCartItem);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        // Act
+        var result = await _service.AddToCartAsync(userId, null, product.Id, 3);
+
+        // Assert
+        existingCartItem.Quantity.Should().Be(5); // 2 + 3
+        _mockCartItemRepository.Verify(r => r.AddAsync(It.IsAny<CartItem>()), Times.Never);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task AddToCartAsync_InsufficientStock_ThrowsInsufficientStockException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = TestDataFactory.CreateProduct(stock: 5, price: 100);
+        var cart = TestDataFactory.CreateCart(userId: userId);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        // Act
+        Func<Task> act = async () => await _service.AddToCartAsync(userId, null, product.Id, 10);
+
+        // Assert
+        await act.Should().ThrowAsync<InsufficientStockException>();
+    }
+
+    [TestMethod]
+    public async Task AddToCartAsync_InvalidQuantity_ThrowsInvalidQuantityException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+
+        // Act
+        Func<Task> act = async () => await _service.AddToCartAsync(userId, null, productId, 0);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidQuantityException>();
+    }
+
+    [TestMethod]
+    public async Task AddToCartAsync_ProductNotFound_ThrowsProductNotFoundException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var cart = TestDataFactory.CreateCart(userId: userId);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync((Product?)null);
+
+        // Act
+        Func<Task> act = async () => await _service.AddToCartAsync(userId, null, productId, 1);
+
+        // Assert
+        await act.Should().ThrowAsync<ProductNotFoundException>();
+    }
+
+    #endregion
+
+    #region UpdateCartItemAsync Tests
+
+    [TestMethod]
+    public async Task UpdateCartItemAsync_ValidQuantity_UpdatesItem()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = TestDataFactory.CreateProduct(stock: 10, price: 100);
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 2);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        _mockCartRepository.Setup(r => r.SaveChangesAsync())
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 5);
+
+        // Assert
+        cartItem.Quantity.Should().Be(5);
+        _mockCartRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task UpdateCartItemAsync_QuantityZero_RemovesItem()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = TestDataFactory.CreateProduct(stock: 10, price: 100);
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 2);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        _mockCartRepository.Setup(r => r.SaveChangesAsync())
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 0);
+
+        // Assert
+        cart.Items.Should().NotContain(cartItem);
+        _mockCartRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task UpdateCartItemAsync_InsufficientStock_ThrowsInsufficientStockException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = TestDataFactory.CreateProduct(stock: 5, price: 100);
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 2);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        // Act
+        Func<Task> act = async () => await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 10);
+
+        // Assert
+        await act.Should().ThrowAsync<InsufficientStockException>();
+    }
+
+    [TestMethod]
+    public async Task UpdateCartItemAsync_NegativeQuantity_ThrowsInvalidQuantityException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var cartItemId = Guid.NewGuid();
+
+        // Act
+        Func<Task> act = async () => await _service.UpdateCartItemAsync(userId, null, cartItemId, -1);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidQuantityException>();
+    }
+
+    [TestMethod]
+    public async Task UpdateCartItemAsync_ItemNotFound_ThrowsCartItemNotFoundException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var nonExistentItemId = Guid.NewGuid();
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        // Act
+        Func<Task> act = async () => await _service.UpdateCartItemAsync(userId, null, nonExistentItemId, 5);
+
+        // Assert
+        await act.Should().ThrowAsync<CartItemNotFoundException>();
+    }
+
+    #endregion
+
+    #region RemoveFromCartAsync Tests
+
+    [TestMethod]
+    public async Task RemoveFromCartAsync_ExistingItem_RemovesItem()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = TestDataFactory.CreateProduct();
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 2);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        // Act
+        var result = await _service.RemoveFromCartAsync(userId, null, cartItem.Id);
+
+        // Assert
+        _mockCartItemRepository.Verify(r => r.DeleteAsync(cartItem), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task RemoveFromCartAsync_ItemNotFound_ThrowsCartItemNotFoundException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var nonExistentItemId = Guid.NewGuid();
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        // Act
+        Func<Task> act = async () => await _service.RemoveFromCartAsync(userId, null, nonExistentItemId);
+
+        // Assert
+        await act.Should().ThrowAsync<CartItemNotFoundException>();
+    }
+
+    #endregion
+
+    #region ClearCartAsync Tests
+
+    [TestMethod]
+    public async Task ClearCartAsync_WithItems_ClearsAllItems()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var cart = TestDataFactory.CreateCart(userId: userId);
+        var product1 = TestDataFactory.CreateProduct();
+        var product2 = TestDataFactory.CreateProduct();
+        var cartItem1 = TestDataFactory.CreateCartItem(cart.Id, product1.Id, quantity: 2);
+        var cartItem2 = TestDataFactory.CreateCartItem(cart.Id, product2.Id, quantity: 3);
+        cart.Items.Add(cartItem1);
+        cart.Items.Add(cartItem2);
+
+        _mockCartRepository.Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        // Act
+        var result = await _service.ClearCartAsync(userId, null);
+
+        // Assert
+        _mockCartItemRepository.Verify(r => r.DeleteAsync(It.IsAny<CartItem>()), Times.Exactly(2));
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    #endregion
+
+    #region GetCartByIdAsync Tests
+
+    [TestMethod]
+    public async Task GetCartByIdAsync_ExistingCart_ReturnsCart()
+    {
+        // Arrange
+        var cart = TestDataFactory.CreateCart();
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        // Act
+        var result = await _service.GetCartByIdAsync(cart.Id);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(cart.Id);
+    }
+
+    [TestMethod]
+    public async Task GetCartByIdAsync_CartNotFound_ThrowsCartNotFoundException()
+    {
+        // Arrange
+        var cartId = Guid.NewGuid();
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cartId))
+            .ReturnsAsync((Cart?)null);
+
+        // Act
+        Func<Task> act = async () => await _service.GetCartByIdAsync(cartId);
+
+        // Assert
+        await act.Should().ThrowAsync<CartNotFoundException>();
+    }
+
+    #endregion
+
+    #region ValidateCartAsync Tests
+
+    [TestMethod]
+    public async Task ValidateCartAsync_ValidCart_CompletesSuccessfully()
+    {
+        // Arrange
+        var cart = TestDataFactory.CreateCart();
+        var product = TestDataFactory.CreateProduct(stock: 10, isActive: true);
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 5);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        // Act
+        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+    }
+
+    [TestMethod]
+    public async Task ValidateCartAsync_CartNotFound_ThrowsCartNotFoundException()
+    {
+        // Arrange
+        var cartId = Guid.NewGuid();
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cartId))
+            .ReturnsAsync((Cart?)null);
+
+        // Act
+        Func<Task> act = async () => await _service.ValidateCartAsync(cartId);
+
+        // Assert
+        await act.Should().ThrowAsync<CartNotFoundException>();
+    }
+
+    [TestMethod]
+    public async Task ValidateCartAsync_ProductNotFound_ThrowsProductNotFoundException()
+    {
+        // Arrange
+        var cart = TestDataFactory.CreateCart();
+        var productId = Guid.NewGuid();
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, productId, quantity: 5);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync((Product?)null);
+
+        // Act
+        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+
+        // Assert
+        await act.Should().ThrowAsync<ProductNotFoundException>();
+    }
+
+    [TestMethod]
+    public async Task ValidateCartAsync_InsufficientStock_ThrowsInsufficientStockException()
+    {
+        // Arrange
+        var cart = TestDataFactory.CreateCart();
+        var product = TestDataFactory.CreateProduct(stock: 3, isActive: true);
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 5);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        // Act
+        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+
+        // Assert
+        await act.Should().ThrowAsync<InsufficientStockException>();
+    }
+
+    [TestMethod]
+    public async Task ValidateCartAsync_InactiveProduct_ThrowsProductNotAvailableException()
+    {
+        // Arrange
+        var cart = TestDataFactory.CreateCart();
+        var product = TestDataFactory.CreateProduct(stock: 10, isActive: false);
+        var cartItem = TestDataFactory.CreateCartItem(cart.Id, product.Id, quantity: 5);
+        cart.Items.Add(cartItem);
+
+        _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
+            .ReturnsAsync(cart);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id))
+            .ReturnsAsync(product);
+
+        // Act
+        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+
+        // Assert
+        await act.Should().ThrowAsync<ProductNotAvailableException>();
+    }
+
+    #endregion
+}
