@@ -1,0 +1,8 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ECommerce.Core -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\bin\Debug\net10.0\ECommerce.Core.dll
+  ECommerce.Infrastructure -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Infrastructure\bin\Debug\net10.0\ECommerce.Infrastructure.dll
+  ECommerce.Application -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Application.dll
+  ECommerce.API -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\bin\Debug\net10.0\ECommerce.API.dll
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\TestWebApplicationFactory.cs(24,151): warning CS0618: 'ISystemClock' is obsolete: 'Use TimeProvider instead.' [C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\ECommerce.Tests.csproj]
+C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\InventoryServiceTests.cs(20,18): error CS0246: The type or namespace name 'IInventoryLogRepository' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\ECommerce.Tests.csproj]

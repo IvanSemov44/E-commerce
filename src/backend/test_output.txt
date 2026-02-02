@@ -1,0 +1,338 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ECommerce.Core -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\bin\Debug\net10.0\ECommerce.Core.dll
+  ECommerce.Infrastructure -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Infrastructure\bin\Debug\net10.0\ECommerce.Infrastructure.dll
+  ECommerce.Application -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Application.dll
+  ECommerce.API -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\bin\Debug\net10.0\ECommerce.API.dll
+  ECommerce.Tests -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\bin\Debug\net10.0\ECommerce.Tests.dll
+Test run for C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\bin\Debug\net10.0\ECommerce.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed SendWelcomeEmailAsync_InvalidEmail_HandlesSilently [283 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_InvalidEmail_HandlesSilently threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_InvalidEmail_HandlesSilently() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 95
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendEmailVerificationAsync_ValidInput_SendsSuccessfully [271 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendEmailVerificationAsync_ValidInput_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendEmailVerificationAsync_ValidInput_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 123
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendPasswordResetEmailAsync_ValidInput_SendsSuccessfully [269 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendPasswordResetEmailAsync_ValidInput_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendPasswordResetEmailAsync_ValidInput_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 149
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendOrderDeliveredEmailAsync_ValidOrder_SendsSuccessfully [139 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderDeliveredEmailAsync_ValidOrder_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderDeliveredEmailAsync_ValidOrder_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 321
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendOrderShippedEmailAsync_ValidOrder_SendsSuccessfully [183 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderShippedEmailAsync_ValidOrder_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderShippedEmailAsync_ValidOrder_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 274
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendAbandonedCartEmailAsync_EmptyCart_SendsSuccessfully [26 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendAbandonedCartEmailAsync_EmptyCart_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendAbandonedCartEmailAsync_EmptyCart_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 378
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendOrderConfirmationEmailAsync_OrderWithItems_IncludesItemDetails [189 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderConfirmationEmailAsync_OrderWithItems_IncludesItemDetails threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderConfirmationEmailAsync_OrderWithItems_IncludesItemDetails() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 223
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendOrderConfirmationEmailAsync_ValidOrder_SendsSuccessfully [194 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderConfirmationEmailAsync_ValidOrder_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderConfirmationEmailAsync_ValidOrder_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 197
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendOrderConfirmationEmailAsync_OrderWithDiscount_IncludesDiscountAmount [184 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderConfirmationEmailAsync_OrderWithDiscount_IncludesDiscountAmount threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderConfirmationEmailAsync_OrderWithDiscount_IncludesDiscountAmount() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 248
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendPasswordResetEmailAsync_WithSpecialCharactersInName_SendsSuccessfully [200 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendPasswordResetEmailAsync_WithSpecialCharactersInName_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendPasswordResetEmailAsync_WithSpecialCharactersInName_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 171
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendWelcomeEmailAsync_IncludesVerificationLink [285 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_IncludesVerificationLink threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_IncludesVerificationLink() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 74
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendAbandonedCartEmailAsync_ValidCart_SendsSuccessfully [66 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendAbandonedCartEmailAsync_ValidCart_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendAbandonedCartEmailAsync_ValidCart_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 353
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendWelcomeEmailAsync_ValidInput_SendsSuccessfully [285 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_ValidInput_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_ValidInput_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 50
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendOrderShippedEmailAsync_IncludesTrackingNumber [179 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderShippedEmailAsync_IncludesTrackingNumber threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendOrderShippedEmailAsync_IncludesTrackingNumber() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 296
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendWelcomeEmailAsync_SendGridFails_LogsError [6 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_SendGridFails_LogsError threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendWelcomeEmailAsync_SendGridFails_LogsError() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 480
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendLowStockAlertAsync_ValidInput_SendsSuccessfully [6 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendLowStockAlertAsync_ValidInput_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendLowStockAlertAsync_ValidInput_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 405
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendLowStockAlertAsync_WithSku_IncludesSkuInformation [6 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendLowStockAlertAsync_WithSku_IncludesSkuInformation threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendLowStockAlertAsync_WithSku_IncludesSkuInformation() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 429
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Failed SendMarketingEmailAsync_ValidInput_SendsSuccessfully [6 ms]
+  Error Message:
+   Test method ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendMarketingEmailAsync_ValidInput_SendsSuccessfully threw exception:
+System.NotSupportedException: Unsupported expression: r => r.IsSuccessStatusCode
+Non-overridable members (here: Response.get_IsSuccessStatusCode) may not be used in setup / verification expressions.
+  Stack Trace:
+     at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 99
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 87
+   at Moq.ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 326
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 149
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 645
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 500
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 452
+   at ECommerce.Tests.Unit.Services.SendGridEmailServiceTests.SendMarketingEmailAsync_ValidInput_SendsSuccessfully() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\SendGridEmailServiceTests.cs:line 455
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+
+Failed!  - Failed:    18, Passed:   260, Skipped:     0, Total:   278, Duration: 3 s - ECommerce.Tests.dll (net10.0)
