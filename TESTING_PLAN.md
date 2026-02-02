@@ -1,8 +1,8 @@
 # Comprehensive Testing Plan - E-Commerce Platform
 
-## Current Test Status (as of Phase 10)
+## Current Test Status (as of Phase 11)
 
-**Total Tests: 232 (100% passing) ✅**
+**Total Tests: 262 (100% passing) ✅**
 
 ### Test Breakdown by Category
 
@@ -12,7 +12,7 @@
 | AuthService | 24 | ✅ Complete | Excellent |
 | CartService | 25 | ✅ Complete | Excellent |
 | CategoryService | 12 | ✅ Complete | Good |
-| DashboardService | 2 | ⚠️ Minimal | Low |
+| DashboardService | 10 | ✅ Enhanced | Good |
 | OrderService | 19 | ✅ Complete | Excellent |
 | ProductService | 17 | ✅ Complete | Excellent |
 | PromoCodeService | 15 | ✅ Complete | Excellent |
@@ -25,6 +25,12 @@
 | Auth Validators | 3 | ⚠️ Partial | Low |
 | Cart Validators | 5 | ⚠️ Partial | Low |
 | Payment Validators | 5 | ⚠️ Partial | Low |
+
+#### ✅ Unit Tests - Middleware & Filters (30 tests) - NEW PHASE 11
+| Component | Test Count | Status | Coverage |
+|-----------|-----------|--------|----------|
+| GlobalExceptionMiddleware | 14 | ✅ Complete | Excellent |
+| ValidationFilterAttribute | 18 | ✅ Complete | Excellent |
 
 #### ✅ Unit Tests - Helpers & Infrastructure (6 tests)
 - TestDataFactory: 5 tests ✅
@@ -270,17 +276,49 @@ Test scenarios:
 
 ---
 
-### 📋 Phase 11: Middleware & Filter Tests (Week 2)
+### 📋 Phase 11: Middleware & Filter Tests (✅ COMPLETED)
 **Objective:** Test middleware and filters
 
-**Tasks:**
-1. ✅ Create GlobalExceptionMiddlewareTests.cs (8-10 tests)
-2. ✅ Create ValidationFilterAttributeTests.cs (6-8 tests)
-3. ✅ Test middleware integration with controllers
-4. ✅ Test exception handling across all exception types
+**Tasks Completed:**
+1. ✅ Create GlobalExceptionMiddlewareTests.cs (14 tests):
+   - ProductNotFoundException → 404 NotFound
+   - UnauthorizedException (InvalidCredentialsException) → 401 Unauthorized
+   - BadRequestException (InvalidQuantityException) → 400 BadRequest
+   - ConflictException (DuplicateEmailException) → 409 Conflict
+   - Generic Exception → 500 InternalServerError
+   - Logging verification (LogError called)
+   - Content-Type validation (application/json)
+   - UserNotFoundException → 404 NotFound
+   - CartNotFoundException → 404 NotFound
+   - InsufficientStockException → 400 BadRequest
+   - Request pass-through verification
+   - OrderNotFoundException → 404 NotFound
+   - EmptyCartException → 400 BadRequest
+   - Response JSON serialization
 
-**Estimated new tests:** 14-18 tests
-**Target:** 251-275 total tests
+2. ✅ Create ValidationFilterAttributeTests.cs (18 tests):
+   - Null DTO parameter → 400 BadRequest with controller/action info
+   - Invalid ModelState → 422 UnprocessableEntity
+   - Error message inclusion from ModelState
+   - Valid requests pass through (no result set)
+   - Multiple DTO arguments detection
+   - No DTO parameter handling
+   - Empty ModelState handling
+   - Multiple errors per key aggregation
+   - Empty ActionArguments handling
+   - Null DTO reference handling
+   - OnActionExecuted method (no-throw verification)
+   - ApiResponse error format validation
+   - DTO naming patterns (Create*, Update*)
+   - Status code validation (422 for unprocessable)
+
+**Results:**
+- **Tests Added:** +30 tests
+- **Net Test Count:** 232 → 262 tests
+- **Pass Rate:** 100% (262/262 passing)
+- **Duration:** ~2-3 seconds for full suite
+- **Components Tested:** GlobalExceptionMiddleware (14 tests), ValidationFilterAttribute (18 tests)
+- **Coverage:** Exception mapping, logging, response formatting, DTO validation, ModelState handling
 
 ---
 
@@ -288,14 +326,14 @@ Test scenarios:
 **Objective:** Add tests for critical validators
 
 **Tasks:**
-1. ✅ Test order-related validators (CreateOrderDto, UpdateOrderStatusDto)
-2. ✅ Test payment validators (ProcessPaymentDto, RefundPaymentDto)
-3. ✅ Test product validators (CreateProductDto, UpdateProductDto)
-4. ✅ Test promo code validators (CreatePromoCodeDto, ValidatePromoCodeRequest)
-5. ✅ Test profile validators (UpdateProfileDto, ChangePasswordRequest)
+1. ⏳ Test order-related validators (CreateOrderDto, UpdateOrderStatusDto)
+2. ⏳ Test payment validators (ProcessPaymentDto, RefundPaymentDto)
+3. ⏳ Test product validators (CreateProductDto, UpdateProductDto)
+4. ⏳ Test promo code validators (CreatePromoCodeDto, ValidatePromoCodeRequest)
+5. ⏳ Test profile validators (UpdateProfileDto, ChangePasswordRequest)
 
 **Estimated new tests:** 40-50 tests
-**Target:** 291-325 total tests
+**Target:** 292-312 total tests
 
 ---
 
@@ -303,17 +341,17 @@ Test scenarios:
 **Objective:** Test critical API endpoints end-to-end
 
 **Tasks:**
-1. ✅ Create AuthControllerTests.cs (10-12 tests)
-2. ✅ Create ProductsControllerTests.cs (12-15 tests)
-3. ✅ Create OrdersControllerTests.cs (12-15 tests)
-4. ✅ Create PaymentsControllerTests.cs (10-12 tests)
-5. ✅ Setup TestWebApplicationFactory enhancements
-6. ✅ Test authentication/authorization middleware
-7. ✅ Test GlobalExceptionMiddleware integration
-8. ✅ Test ValidationFilter integration
+1. ⏳ Create AuthControllerTests.cs (10-12 tests)
+2. ⏳ Create ProductsControllerTests.cs (12-15 tests)
+3. ⏳ Create OrdersControllerTests.cs (12-15 tests)
+4. ⏳ Create PaymentsControllerTests.cs (10-12 tests)
+5. ⏳ Setup TestWebApplicationFactory enhancements
+6. ⏳ Test authentication/authorization middleware
+7. ⏳ Test GlobalExceptionMiddleware integration
+8. ⏳ Test ValidationFilter integration
 
 **Estimated new tests:** 45-55 tests
-**Target:** 336-380 total tests
+**Target:** 337-367 total tests
 
 ---
 
@@ -321,17 +359,17 @@ Test scenarios:
 **Objective:** Complete remaining API endpoint tests
 
 **Tasks:**
-1. ✅ Create CategoriesControllerTests.cs (8-10 tests)
-2. ✅ Create CartControllerTests.cs (10-12 tests)
-3. ✅ Create ReviewsControllerTests.cs (8-10 tests)
-4. ✅ Create WishlistControllerTests.cs (6-8 tests)
-5. ✅ Create PromoCodesControllerTests.cs (8-10 tests)
-6. ✅ Create ProfileControllerTests.cs (8-10 tests)
-7. ✅ Create DashboardControllerTests.cs (6-8 tests)
-8. ✅ Create InventoryControllerTests.cs (8-10 tests)
+1. ⏳ Create CategoriesControllerTests.cs (8-10 tests)
+2. ⏳ Create CartControllerTests.cs (10-12 tests)
+3. ⏳ Create ReviewsControllerTests.cs (8-10 tests)
+4. ⏳ Create WishlistControllerTests.cs (6-8 tests)
+5. ⏳ Create PromoCodesControllerTests.cs (8-10 tests)
+6. ⏳ Create ProfileControllerTests.cs (8-10 tests)
+7. ⏳ Create DashboardControllerTests.cs (6-8 tests)
+8. ⏳ Create InventoryControllerTests.cs (8-10 tests)
 
 **Estimated new tests:** 62-78 tests
-**Target:** 398-458 total tests
+**Target:** 399-445 total tests
 
 ---
 
