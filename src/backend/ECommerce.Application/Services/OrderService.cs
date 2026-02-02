@@ -62,68 +62,34 @@ public class OrderService : IOrderService
                 Currency = "USD"
             };
 
-            // Map shipping address
+            // Map shipping and billing addresses via AutoMapper (service still sets user/type)
             if (dto.ShippingAddress != null)
             {
-                var shippingAddress = new Address
-                {
-                    UserId = userId,
-                    Type = "Shipping",
-                    FirstName = dto.ShippingAddress.FirstName,
-                    LastName = dto.ShippingAddress.LastName,
-                    Company = dto.ShippingAddress.Company,
-                    StreetLine1 = dto.ShippingAddress.StreetLine1,
-                    StreetLine2 = dto.ShippingAddress.StreetLine2,
-                    City = dto.ShippingAddress.City,
-                    State = dto.ShippingAddress.State,
-                    PostalCode = dto.ShippingAddress.PostalCode,
-                    Country = NormalizeCountryCode(dto.ShippingAddress.Country),
-                    Phone = dto.ShippingAddress.Phone,
-                    IsDefault = false
-                };
+                var shippingAddress = _mapper.Map<Address>(dto.ShippingAddress);
+                shippingAddress.UserId = userId;
+                shippingAddress.Type = "Shipping";
+                shippingAddress.IsDefault = false;
+                // Normalize country code
+                shippingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
                 order.ShippingAddress = shippingAddress;
             }
 
-            // Map billing address (or use shipping if not provided)
             if (dto.BillingAddress != null)
             {
-                var billingAddress = new Address
-                {
-                    UserId = userId,
-                    Type = "Billing",
-                    FirstName = dto.BillingAddress.FirstName,
-                    LastName = dto.BillingAddress.LastName,
-                    Company = dto.BillingAddress.Company,
-                    StreetLine1 = dto.BillingAddress.StreetLine1,
-                    StreetLine2 = dto.BillingAddress.StreetLine2,
-                    City = dto.BillingAddress.City,
-                    State = dto.BillingAddress.State,
-                    PostalCode = dto.BillingAddress.PostalCode,
-                    Country = NormalizeCountryCode(dto.BillingAddress.Country),
-                    Phone = dto.BillingAddress.Phone,
-                    IsDefault = false
-                };
+                var billingAddress = _mapper.Map<Address>(dto.BillingAddress);
+                billingAddress.UserId = userId;
+                billingAddress.Type = "Billing";
+                billingAddress.IsDefault = false;
+                billingAddress.Country = NormalizeCountryCode(dto.BillingAddress.Country);
                 order.BillingAddress = billingAddress;
             }
             else if (dto.ShippingAddress != null)
             {
-                // Use shipping address as billing address if not provided
-                var billingAddress = new Address
-                {
-                    UserId = userId,
-                    Type = "Billing",
-                    FirstName = dto.ShippingAddress.FirstName,
-                    LastName = dto.ShippingAddress.LastName,
-                    Company = dto.ShippingAddress.Company,
-                    StreetLine1 = dto.ShippingAddress.StreetLine1,
-                    StreetLine2 = dto.ShippingAddress.StreetLine2,
-                    City = dto.ShippingAddress.City,
-                    State = dto.ShippingAddress.State,
-                    PostalCode = dto.ShippingAddress.PostalCode,
-                    Country = NormalizeCountryCode(dto.ShippingAddress.Country),
-                    Phone = dto.ShippingAddress.Phone,
-                    IsDefault = false
-                };
+                var billingAddress = _mapper.Map<Address>(dto.ShippingAddress);
+                billingAddress.UserId = userId;
+                billingAddress.Type = "Billing";
+                billingAddress.IsDefault = false;
+                billingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
                 order.BillingAddress = billingAddress;
             }
 
@@ -141,20 +107,15 @@ public class OrderService : IOrderService
                         throw new ProductNotFoundException(itemDto.ProductId);
                     }
 
-                    var itemTotal = itemDto.Price * itemDto.Quantity;
-                    subtotal += itemTotal;
-
-                    var orderItem = new OrderItem
-                    {
-                        ProductId = productId,
-                        ProductName = itemDto.ProductName,
-                        ProductImageUrl = itemDto.ImageUrl,
-                        Quantity = itemDto.Quantity,
-                        UnitPrice = itemDto.Price,
-                        TotalPrice = itemTotal
-                    };
+                    // Map via AutoMapper and then set parsed ProductId
+                    var orderItem = _mapper.Map<OrderItem>(itemDto);
+                    orderItem.ProductId = productId;
+                    orderItem.Quantity = itemDto.Quantity;
 
                     items.Add(orderItem);
+
+                    var itemTotal = orderItem.UnitPrice * orderItem.Quantity;
+                    subtotal += itemTotal;
 
                     // Add to stock check list
                     stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItemDto

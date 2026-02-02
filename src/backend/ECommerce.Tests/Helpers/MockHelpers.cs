@@ -166,6 +166,52 @@ public static class MockHelpers
             };
         });
 
+        // Provide mapping for CreateOrderItemDto -> OrderItem used by OrderService tests
+        mock.Setup(m => m.Map<ECommerce.Core.Entities.OrderItem>(It.IsAny<object>())).Returns((object src) =>
+        {
+            if (src == null) return null!;
+            var dto = src as ECommerce.Application.DTOs.Orders.CreateOrderItemDto;
+            if (dto == null) return null!;
+
+            return new ECommerce.Core.Entities.OrderItem
+            {
+                Id = Guid.Empty,
+                ProductId = null,
+                ProductName = dto.ProductName,
+                ProductSku = null,
+                ProductImageUrl = dto.ImageUrl,
+                Quantity = dto.Quantity,
+                UnitPrice = dto.Price,
+                TotalPrice = dto.Price * dto.Quantity
+            };
+        });
+
+        // Provide mapping for AddressDto -> Address used by OrderService tests
+        mock.Setup(m => m.Map<ECommerce.Core.Entities.Address>(It.IsAny<object>())).Returns((object src) =>
+        {
+            if (src == null) return null!;
+            var dto = src as ECommerce.Application.DTOs.Orders.AddressDto;
+            if (dto == null) return null!;
+
+            return new ECommerce.Core.Entities.Address
+            {
+                Id = Guid.Empty,
+                UserId = Guid.Empty,
+                Type = string.Empty,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Company = dto.Company,
+                StreetLine1 = dto.StreetLine1,
+                StreetLine2 = dto.StreetLine2,
+                City = dto.City,
+                State = dto.State,
+                PostalCode = dto.PostalCode,
+                Country = dto.Country,
+                Phone = dto.Phone,
+                IsDefault = false
+            };
+        });
+
         // Note: No broad fallback mapping is configured so specific setups above
         // will be used. Tests that require other mappings should explicitly
         // configure the mock in their setup.

@@ -173,5 +173,32 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CreatedByUserName, opt => opt.Ignore())
             .ForMember(dest => dest.ProductName, opt => opt.Ignore())
             .ForMember(dest => dest.StockAfterChange, opt => opt.Ignore());
+
+        // Address mapping (DTO -> Entity)
+        CreateMap<ECommerce.Application.DTOs.Orders.AddressDto, Address>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.Type, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDefault, opt => opt.Ignore())
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Order item mapping (CreateOrderItemDto -> OrderItem)
+        CreateMap<ECommerce.Application.DTOs.Orders.CreateOrderItemDto, OrderItem>()
+            .ForMember(dest => dest.ProductId, opt => opt.Ignore()) // parsed separately in service
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.ProductName))
+            .ForMember(dest => dest.ProductImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
+            .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.Price))
+            .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Price * src.Quantity))
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+        // CreateOrderDto -> Order (basic mapping for top-level fields)
+        CreateMap<ECommerce.Application.DTOs.Orders.CreateOrderDto, Order>()
+            .ForMember(dest => dest.Items, opt => opt.Ignore())
+            .ForMember(dest => dest.ShippingAddress, opt => opt.Ignore())
+            .ForMember(dest => dest.BillingAddress, opt => opt.Ignore())
+            .ForMember(dest => dest.OrderNumber, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.PromoCodeId, opt => opt.Ignore())
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
     }
 }
