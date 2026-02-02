@@ -6,6 +6,7 @@ using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -29,14 +30,14 @@ public class InventoryService : IInventoryService
         _mapper = mapper;
     }
 
-    public async Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null)
+    public async Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
             throw new InvalidQuantityException("Quantity must be positive");
 
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
         if (product == null)
             throw new ProductNotFoundException(productId);
 
@@ -46,7 +47,7 @@ public class InventoryService : IInventoryService
         var previousStock = product.StockQuantity;
         product.StockQuantity -= quantity;
 
-        await _unitOfWork.Products.UpdateAsync(product);
+        await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
 
         var log = new InventoryLog
         {
@@ -58,31 +59,31 @@ public class InventoryService : IInventoryService
             CreatedByUserId = userId
         };
 
-        await _unitOfWork.InventoryLogs.AddAsync(log);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
         await transaction.CommitAsync();
 
         _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units. New stock: {NewStock}",
             productId, quantity, product.StockQuantity);
 
-        await CheckAndSendLowStockAlertsAsync(productId);
+        await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
     }
 
-    public async Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null)
+    public async Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
             throw new InvalidQuantityException("Quantity must be positive");
 
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
         if (product == null)
             throw new ProductNotFoundException(productId);
 
         var previousStock = product.StockQuantity;
         product.StockQuantity += quantity;
 
-        await _unitOfWork.Products.UpdateAsync(product);
+        await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
 
         var log = new InventoryLog
         {
@@ -94,8 +95,8 @@ public class InventoryService : IInventoryService
             CreatedByUserId = userId
         };
 
-        await _unitOfWork.InventoryLogs.AddAsync(log);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
         await transaction.CommitAsync();
 
         _logger.LogInformation("Stock increased for product {ProductId}: {Quantity} units. New stock: {NewStock}",
@@ -107,14 +108,14 @@ public class InventoryService : IInventoryService
         }
     }
 
-    public async Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null)
+    public async Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         if (newQuantity < 0)
             throw new InvalidQuantityException("Quantity cannot be negative");
 
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
         if (product == null)
             throw new ProductNotFoundException(productId);
 
@@ -122,7 +123,7 @@ public class InventoryService : IInventoryService
         var quantityChange = newQuantity - previousStock;
 
         product.StockQuantity = newQuantity;
-        await _unitOfWork.Products.UpdateAsync(product);
+        await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
 
         var log = new InventoryLog
         {
@@ -133,23 +134,23 @@ public class InventoryService : IInventoryService
             CreatedByUserId = userId
         };
 
-        await _unitOfWork.InventoryLogs.AddAsync(log);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
         await transaction.CommitAsync();
 
         _logger.LogInformation("Stock adjusted for product {ProductId}: {PreviousStock} -> {NewStock}",
             productId, previousStock, newQuantity);
 
-        await CheckAndSendLowStockAlertsAsync(productId);
+        await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
     }
 
-    public async Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items)
+    public async Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items, CancellationToken cancellationToken = default)
     {
         var response = new StockCheckResponse { IsAvailable = true };
 
         foreach (var item in items)
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId);
+            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, cancellationToken: cancellationToken);
             if (product == null)
             {
                 response.IsAvailable = false;
@@ -183,15 +184,15 @@ public class InventoryService : IInventoryService
         return response;
     }
 
-    public async Task<bool> IsStockAvailableAsync(Guid productId, int quantity)
+    public async Task<bool> IsStockAvailableAsync(Guid productId, int quantity, CancellationToken cancellationToken = default)
     {
-        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
         return product != null && product.StockQuantity >= quantity;
     }
 
-    public async Task<List<InventoryDto>> GetAllInventoryAsync(int page = 1, int pageSize = 50, string? search = null, bool? lowStockOnly = null)
+    public async Task<List<InventoryDto>> GetAllInventoryAsync(int page = 1, int pageSize = 50, string? search = null, bool? lowStockOnly = null, CancellationToken cancellationToken = default)
     {
-        var allProducts = await _unitOfWork.Products.GetAllAsync();
+        var allProducts = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
         var query = allProducts.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -216,9 +217,9 @@ public class InventoryService : IInventoryService
         return products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
     }
 
-    public async Task<List<LowStockAlertDto>> GetLowStockProductsAsync()
+    public async Task<List<LowStockAlertDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
     {
-        var products = await _unitOfWork.Products.GetAllAsync();
+        var products = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
 
         var lowStockProducts = products
             .Where(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive)
@@ -229,9 +230,9 @@ public class InventoryService : IInventoryService
         return lowStockProducts;
     }
 
-    public async Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50)
+    public async Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
-        var logsQuery = (await _unitOfWork.InventoryLogs.GetAllAsync())
+        var logsQuery = (await _unitOfWork.InventoryLogs.GetAllAsync(cancellationToken: cancellationToken))
             .Where(log => log.ProductId == productId)
             .OrderByDescending(log => log.CreatedAt);
 
@@ -240,7 +241,7 @@ public class InventoryService : IInventoryService
             .Take(pageSize)
             .ToList();
 
-        var product = await _unitOfWork.Products.GetByIdAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
         var productName = product?.Name ?? "Unknown Product";
 
         var userIds = logs.Where(l => l.CreatedByUserId.HasValue).Select(l => l.CreatedByUserId!.Value).Distinct();
@@ -248,7 +249,7 @@ public class InventoryService : IInventoryService
 
         foreach (var userId in userIds)
         {
-            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
             if (user != null)
             {
                 users[userId] = $"{user.FirstName} {user.LastName}";
@@ -275,16 +276,16 @@ public class InventoryService : IInventoryService
         return result;
     }
 
-    public async Task CheckAndSendLowStockAlertsAsync(Guid productId)
+    public async Task CheckAndSendLowStockAlertsAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         try
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(productId);
+            var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
             if (product == null) return;
 
             if (product.StockQuantity <= product.LowStockThreshold && !_lowStockAlertsSent.Contains(productId))
             {
-                var admins = (await _unitOfWork.Users.GetAllAsync())
+                var admins = (await _unitOfWork.Users.GetAllAsync(cancellationToken: cancellationToken))
                     .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.SuperAdmin)
                     .ToList();
 
@@ -296,7 +297,8 @@ public class InventoryService : IInventoryService
                         product.Name,
                         product.StockQuantity,
                         product.LowStockThreshold,
-                        product.Sku
+                        product.Sku,
+                        cancellationToken
                     );
                 }
 

@@ -1,3 +1,4 @@
+using System.Threading;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure.Data;
@@ -5,33 +6,37 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Repositories;
 
+/// <summary>
+/// Product repository implementation for product data access operations.
+/// Implements IProductRepository with full CancellationToken support.
+/// </summary>
 public class ProductRepository : Repository<Product>, IProductRepository
 {
     public ProductRepository(AppDbContext context) : base(context)
     {
     }
 
-    public async Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false)
+    public async Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         return await query
             .Include(p => p.Category)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
-            .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive);
+            .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive, cancellationToken);
     }
 
-    public async Task<IEnumerable<Product>> GetByCategoryAsync(Guid categoryId, bool trackChanges = false)
+    public async Task<IEnumerable<Product>> GetByCategoryAsync(Guid categoryId, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         return await query
             .Where(p => p.CategoryId == categoryId && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Product>> GetFeaturedAsync(int count, bool trackChanges = false)
+    public async Task<IEnumerable<Product>> GetFeaturedAsync(int count, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         return await query
@@ -40,10 +45,10 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .Include(p => p.Images)
             .OrderByDescending(p => p.CreatedAt)
             .Take(count)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Product>> GetActiveProductsAsync(int skip, int take, bool trackChanges = false)
+    public async Task<IEnumerable<Product>> GetActiveProductsAsync(int skip, int take, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         return await query
@@ -53,17 +58,17 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .OrderByDescending(p => p.CreatedAt)
             .Skip(skip)
             .Take(take)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetActiveProductsCountAsync()
+    public async Task<int> GetActiveProductsCountAsync(CancellationToken cancellationToken = default)
     {
-        return await DbSet.CountAsync(p => p.IsActive);
+        return await DbSet.CountAsync(p => p.IsActive, cancellationToken);
     }
 
-    public async Task UpdateStockAsync(Guid productId, int quantity)
+    public async Task UpdateStockAsync(Guid productId, int quantity, CancellationToken cancellationToken = default)
     {
-        var product = await DbSet.FirstOrDefaultAsync(p => p.Id == productId);
+        var product = await DbSet.FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
         if (product != null)
         {
             product.StockQuantity = quantity;
@@ -72,10 +77,10 @@ public class ProductRepository : Repository<Product>, IProductRepository
         }
     }
 
-    public async Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null)
+    public async Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null, CancellationToken cancellationToken = default)
     {
         var exists = await DbSet
-            .AnyAsync(p => p.Slug == slug && (excludeId == null || p.Id != excludeId));
+            .AnyAsync(p => p.Slug == slug && (excludeId == null || p.Id != excludeId), cancellationToken);
         return !exists;
     }
 
@@ -89,7 +94,8 @@ public class ProductRepository : Repository<Product>, IProductRepository
         decimal? minRating = null,
         bool? isFeatured = null,
         string? sortBy = null,
-        bool trackChanges = false)
+        bool trackChanges = false,
+        CancellationToken cancellationToken = default)
     {
         // Start with base query - only active products
         var baseQuery = trackChanges ? DbSet : DbSet.AsNoTracking();
@@ -141,7 +147,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
         }
 
         // Get total count AFTER filters applied
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         // Apply sorting
         query = sortBy?.ToLower() switch
@@ -161,7 +167,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
         var items = await query
             .Skip(skip)
             .Take(take)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (items, totalCount);
     }

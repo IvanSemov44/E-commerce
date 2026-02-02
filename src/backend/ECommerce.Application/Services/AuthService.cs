@@ -10,6 +10,7 @@ using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -28,10 +29,10 @@ public class AuthService : IAuthService
         _mapper = mapper;
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
+    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
     {
         // Check if email already exists
-        if (await _unitOfWork.Users.EmailExistsAsync(dto.Email))
+        if (await _unitOfWork.Users.EmailExistsAsync(dto.Email, cancellationToken: cancellationToken))
         {
             throw new DuplicateEmailException(dto.Email);
         }
@@ -47,8 +48,8 @@ public class AuthService : IAuthService
             EmailVerificationToken = Guid.NewGuid().ToString()
         };
 
-        await _unitOfWork.Users.AddAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Users.AddAsync(user, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         // Send welcome email (fire and forget - don't block registration)
         var verificationLink = $"{_configuration["AppUrl"]}/verify-email?userId={user.Id}&token={user.EmailVerificationToken}";
@@ -76,9 +77,9 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
+    public async Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email);
+        var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email, cancellationToken: cancellationToken);
         if (user == null || !VerifyPassword(dto.Password, user.PasswordHash!))
         {
             throw new InvalidCredentialsException();
@@ -96,10 +97,10 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<AuthResponseDto> RefreshTokenAsync(string token)
+    public async Task<AuthResponseDto> RefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         // For MVP, simplified refresh token logic
-        if (!await ValidateTokenAsync(token))
+        if (!await ValidateTokenAsync(token, cancellationToken))
         {
             throw new InvalidTokenException();
         }
@@ -112,7 +113,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<bool> ValidateTokenAsync(string token)
+    public async Task<bool> ValidateTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -169,9 +170,9 @@ public class AuthService : IAuthService
         return BCrypt.Net.BCrypt.Verify(password, hash);
     }
 
-    public async Task VerifyEmailAsync(Guid userId, string token)
+    public async Task VerifyEmailAsync(Guid userId, string token, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
         {
             throw new UserNotFoundException(userId);
@@ -184,13 +185,13 @@ public class AuthService : IAuthService
 
         user.IsEmailVerified = true;
         user.EmailVerificationToken = null;
-        await _unitOfWork.Users.UpdateAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
     }
 
-    public async Task<string> GeneratePasswordResetTokenAsync(string email)
+    public async Task<string> GeneratePasswordResetTokenAsync(string email, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByEmailAsync(email);
+        var user = await _unitOfWork.Users.GetByEmailAsync(email, cancellationToken: cancellationToken);
         if (user == null)
         {
             // For security reasons, we don't throw an exception here
@@ -201,8 +202,8 @@ public class AuthService : IAuthService
 
         user.PasswordResetToken = Guid.NewGuid().ToString();
         user.PasswordResetExpires = DateTime.UtcNow.AddHours(1);
-        await _unitOfWork.Users.UpdateAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         // Send password reset email (fire and forget)
         var resetLink = $"{_configuration["AppUrl"]}/reset-password?email={email}&token={user.PasswordResetToken}";
@@ -221,9 +222,9 @@ public class AuthService : IAuthService
         return user.PasswordResetToken;
     }
 
-    public async Task ResetPasswordAsync(string email, string token, string newPassword)
+    public async Task ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByEmailAsync(email);
+        var user = await _unitOfWork.Users.GetByEmailAsync(email, cancellationToken: cancellationToken);
         if (user == null)
         {
             throw new UserNotFoundException($"User with email {email} not found");
@@ -237,13 +238,13 @@ public class AuthService : IAuthService
         user.PasswordHash = HashPassword(newPassword);
         user.PasswordResetToken = null;
         user.PasswordResetExpires = null;
-        await _unitOfWork.Users.UpdateAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
     }
 
-    public async Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword)
+    public async Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
         {
             throw new UserNotFoundException(userId);
@@ -255,8 +256,8 @@ public class AuthService : IAuthService
         }
 
         user.PasswordHash = HashPassword(newPassword);
-        await _unitOfWork.Users.UpdateAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
     }
 
     

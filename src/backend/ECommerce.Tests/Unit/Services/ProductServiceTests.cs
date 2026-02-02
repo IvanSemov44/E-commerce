@@ -256,7 +256,7 @@ public class ProductServiceTests
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name });
 
         // Act
-        var result = await _service.GetFeaturedProductsAsync(2);
+        var result = await _service.GetFeaturedProductsAsync(2, CancellationToken.None);
 
         // Assert
         result.Should().HaveCount(2);

@@ -2,6 +2,7 @@ using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Dashboard;
 using ECommerce.Core.Interfaces.Repositories;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -16,17 +17,17 @@ public class DashboardService : IDashboardService
         _mapper = mapper;
     }
 
-    public async Task<DashboardStatsDto> GetDashboardStatsAsync()
+    public async Task<DashboardStatsDto> GetDashboardStatsAsync(CancellationToken cancellationToken = default)
     {
         // Get total counts
-        var totalOrders = await _unitOfWork.Orders.GetTotalOrdersCountAsync();
-        var totalRevenue = await _unitOfWork.Orders.GetTotalRevenueAsync();
-        var totalCustomers = await _unitOfWork.Users.GetCustomersCountAsync();
-        var totalProducts = await _unitOfWork.Products.GetActiveProductsCountAsync();
+        var totalOrders = await _unitOfWork.Orders.GetTotalOrdersCountAsync(cancellationToken: cancellationToken);
+        var totalRevenue = await _unitOfWork.Orders.GetTotalRevenueAsync(cancellationToken: cancellationToken);
+        var totalCustomers = await _unitOfWork.Users.GetCustomersCountAsync(cancellationToken: cancellationToken);
+        var totalProducts = await _unitOfWork.Products.GetActiveProductsCountAsync(cancellationToken: cancellationToken);
 
         // Get trends for last 30 days
-        var ordersTrendDict = await _unitOfWork.Orders.GetOrdersTrendAsync(30);
-        var revenueTrendDict = await _unitOfWork.Orders.GetRevenueTrendAsync(30);
+        var ordersTrendDict = await _unitOfWork.Orders.GetOrdersTrendAsync(30, cancellationToken: cancellationToken);
+        var revenueTrendDict = await _unitOfWork.Orders.GetRevenueTrendAsync(30, cancellationToken: cancellationToken);
 
         // Convert to DTOs
         var ordersTrend = ordersTrendDict

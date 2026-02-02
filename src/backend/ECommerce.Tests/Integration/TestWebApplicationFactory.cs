@@ -97,14 +97,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     private class NoOpEmailService : IEmailService
     {
-        public Task SendWelcomeEmailAsync(string email, string firstName, string verificationLink) => Task.CompletedTask;
-        public Task SendEmailVerificationAsync(string email, string firstName, string verificationLink) => Task.CompletedTask;
-        public Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink) => Task.CompletedTask;
-        public Task SendOrderConfirmationEmailAsync(string email, Order order) => Task.CompletedTask;
-        public Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber) => Task.CompletedTask;
-        public Task SendOrderDeliveredEmailAsync(string email, Order order) => Task.CompletedTask;
-        public Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart) => Task.CompletedTask;
-        public Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null) => Task.CompletedTask;
-        public Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent) => Task.CompletedTask;
+        public Task SendWelcomeEmailAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendEmailVerificationAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderConfirmationEmailAsync(string email, Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderDeliveredEmailAsync(string email, Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

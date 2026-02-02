@@ -7,5 +7,5 @@ namespace ECommerce.Application.Interfaces;
 /// </summary>
 public interface IDashboardService
 {
-    Task<DashboardStatsDto> GetDashboardStatsAsync();
+    Task<DashboardStatsDto> GetDashboardStatsAsync(CancellationToken cancellationToken = default);
 }

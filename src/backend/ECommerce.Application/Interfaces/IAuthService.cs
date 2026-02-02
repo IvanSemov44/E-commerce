@@ -7,14 +7,14 @@ namespace ECommerce.Application.Interfaces;
 /// </summary>
 public interface IAuthService
 {
-    Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
-    Task<AuthResponseDto> LoginAsync(LoginDto dto);
-    Task<AuthResponseDto> RefreshTokenAsync(string token);
-    Task<bool> ValidateTokenAsync(string token);
-    Task VerifyEmailAsync(Guid userId, string token);
-    Task<string> GeneratePasswordResetTokenAsync(string email);
-    Task ResetPasswordAsync(string email, string token, string newPassword);
-    Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword);
+    Task<AuthResponseDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default);
+    Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default);
+    Task<AuthResponseDto> RefreshTokenAsync(string token, CancellationToken cancellationToken = default);
+    Task<bool> ValidateTokenAsync(string token, CancellationToken cancellationToken = default);
+    Task VerifyEmailAsync(Guid userId, string token, CancellationToken cancellationToken = default);
+    Task<string> GeneratePasswordResetTokenAsync(string email, CancellationToken cancellationToken = default);
+    Task ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken = default);
+    Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default);
     string GenerateJwtToken(UserDto user);
     string HashPassword(string password);
     bool VerifyPassword(string password, string hash);

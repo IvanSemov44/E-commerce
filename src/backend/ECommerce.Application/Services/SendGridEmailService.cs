@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SendGrid;
 using SendGrid.Helpers.Mail;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -37,7 +38,7 @@ public class SendGridEmailService : IEmailService
         _fromName = configuration["SendGrid:FromName"] ?? "E-Commerce Platform";
     }
 
-    public async Task SendWelcomeEmailAsync(string email, string firstName, string verificationLink)
+    public async Task SendWelcomeEmailAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default)
     {
         var subject = $"Welcome to {_fromName}!";
         var htmlContent = $@"
@@ -65,10 +66,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendEmailVerificationAsync(string email, string firstName, string verificationLink)
+    public async Task SendEmailVerificationAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default)
     {
         var subject = "Verify Your Email Address";
         var htmlContent = $@"
@@ -92,10 +93,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink)
+    public async Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink, CancellationToken cancellationToken = default)
     {
         var subject = "Reset Your Password";
         var htmlContent = $@"
@@ -123,10 +124,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendOrderConfirmationEmailAsync(string email, Order order)
+    public async Task SendOrderConfirmationEmailAsync(string email, Order order, CancellationToken cancellationToken = default)
     {
         var subject = $"Order Confirmation - #{order.OrderNumber}";
 
@@ -193,10 +194,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber)
+    public async Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber, CancellationToken cancellationToken = default)
     {
         var subject = $"Your Order Has Shipped - #{order.OrderNumber}";
         var htmlContent = $@"
@@ -225,10 +226,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendOrderDeliveredEmailAsync(string email, Order order)
+    public async Task SendOrderDeliveredEmailAsync(string email, Order order, CancellationToken cancellationToken = default)
     {
         var subject = $"Your Order Has Been Delivered - #{order.OrderNumber}";
         var htmlContent = $@"
@@ -258,10 +259,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart)
+    public async Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart, CancellationToken cancellationToken = default)
     {
         var subject = "You Left Something Behind...";
 
@@ -302,10 +303,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null)
+    public async Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null, CancellationToken cancellationToken = default)
     {
         var subject = $"Low Stock Alert - {productName}";
         var htmlContent = $@"
@@ -328,10 +329,10 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent)
+    public async Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent, CancellationToken cancellationToken = default)
     {
         var wrappedContent = $@"
             <html>
@@ -348,13 +349,13 @@ public class SendGridEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, wrappedContent);
+        await SendEmailAsync(email, subject, wrappedContent, cancellationToken);
     }
 
     /// <summary>
     /// Internal method to send email via SendGrid.
     /// </summary>
-    private async Task SendEmailAsync(string toEmail, string subject, string htmlContent)
+    private async Task SendEmailAsync(string toEmail, string subject, string htmlContent, CancellationToken cancellationToken = default)
     {
         try
         {

@@ -4,6 +4,7 @@ using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -23,11 +24,11 @@ public class PaymentService : IPaymentService
         _logger = logger;
     }
 
-    public async Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto)
+    public async Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Processing payment for order {OrderId} via {PaymentMethod}", dto.OrderId, dto.PaymentMethod);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId, cancellationToken: cancellationToken);
         if (order == null)
         {
             _logger.LogWarning("Order {OrderId} not found for payment processing", dto.OrderId);
@@ -58,8 +59,8 @@ public class PaymentService : IPaymentService
             order.PaymentIntentId = paymentIntentId;
             order.Status = OrderStatus.Confirmed;
 
-            await _unitOfWork.Orders.UpdateAsync(order);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
             var paymentDetails = new PaymentDetailsDto
             {
@@ -99,8 +100,8 @@ public class PaymentService : IPaymentService
             order.PaymentStatus = PaymentStatus.Failed;
             order.PaymentIntentId = paymentIntentId;
 
-            await _unitOfWork.Orders.UpdateAsync(order);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
             _logger.LogWarning("Payment failed for order {OrderId}. Simulated failure.", dto.OrderId);
 
@@ -121,11 +122,11 @@ public class PaymentService : IPaymentService
         }
     }
 
-    public async Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid orderId)
+    public async Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, cancellationToken: cancellationToken);
         if (order == null)
         {
             throw new OrderNotFoundException(orderId);
@@ -154,11 +155,11 @@ public class PaymentService : IPaymentService
         };
     }
 
-    public async Task<RefundResponseDto> RefundPaymentAsync(RefundPaymentDto dto)
+    public async Task<RefundResponseDto> RefundPaymentAsync(RefundPaymentDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Processing refund for order {OrderId}", dto.OrderId);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId, cancellationToken: cancellationToken);
         if (order == null)
         {
             throw new OrderNotFoundException(dto.OrderId);
@@ -174,8 +175,8 @@ public class PaymentService : IPaymentService
         var refundId = Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper();
 
         order.PaymentStatus = PaymentStatus.Refunded;
-        await _unitOfWork.Orders.UpdateAsync(order);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}", dto.OrderId, refundId);
 
@@ -190,7 +191,7 @@ public class PaymentService : IPaymentService
         };
     }
 
-    public async Task<PaymentDetailsDto?> GetPaymentIntentAsync(string paymentIntentId)
+    public async Task<PaymentDetailsDto?> GetPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving payment intent {PaymentIntentId}", paymentIntentId);
 
@@ -202,7 +203,7 @@ public class PaymentService : IPaymentService
         return null;
     }
 
-    public async Task<bool> IsPaymentMethodSupportedAsync(string paymentMethod)
+    public async Task<bool> IsPaymentMethodSupportedAsync(string paymentMethod, CancellationToken cancellationToken = default)
     {
         var supportedMethods = new[] { "stripe", "paypal", "credit_card", "debit_card", "apple_pay", "google_pay" };
         return supportedMethods.Contains(paymentMethod.ToLower());

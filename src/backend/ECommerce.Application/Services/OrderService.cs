@@ -7,6 +7,7 @@ using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -38,14 +39,14 @@ public class OrderService : IOrderService
         _logger = logger;
     }
 
-    public async Task<OrderDetailDto> CreateOrderAsync(Guid userId, CreateOrderDto dto)
+    public async Task<OrderDetailDto> CreateOrderAsync(Guid userId, CreateOrderDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Creating order for user {UserId}", userId);
 
         try
         {
             // Verify user exists
-            var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
+            var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
             if (user == null)
             {
                 throw new UserNotFoundException(userId);
@@ -166,8 +167,8 @@ public class OrderService : IOrderService
             order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
             order.Items = items;
 
-            await _unitOfWork.Orders.AddAsync(order);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.Orders.AddAsync(order, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
             // Reduce stock for each product
             foreach (var item in items)
@@ -224,28 +225,28 @@ public class OrderService : IOrderService
         }
     }
 
-    public async Task<OrderDetailDto?> GetOrderByIdAsync(Guid id)
+    public async Task<OrderDetailDto?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
 
-        var order = await _unitOfWork.Orders.GetWithItemsAsync(id);
+        var order = await _unitOfWork.Orders.GetWithItemsAsync(id, cancellationToken: cancellationToken);
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
-    public async Task<OrderDetailDto?> GetOrderByNumberAsync(string orderNumber)
+    public async Task<OrderDetailDto?> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving order {OrderNumber}", orderNumber);
 
-        var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber);
+        var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber, cancellationToken: cancellationToken);
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
-    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, int page = 1, int pageSize = 10)
+    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, page);
 
-        var totalCount = await _unitOfWork.Orders.GetUserOrdersCountAsync(userId);
-        var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId, (page - 1) * pageSize, pageSize);
+        var totalCount = await _unitOfWork.Orders.GetUserOrdersCountAsync(userId, cancellationToken: cancellationToken);
+        var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId, (page - 1) * pageSize, pageSize, cancellationToken: cancellationToken);
         var dtos = orders.Select(o => _mapper.Map<OrderDto>(o)).ToList();
 
         return new PaginatedResult<OrderDto>
@@ -257,11 +258,11 @@ public class OrderService : IOrderService
         };
     }
 
-    public async Task<OrderDetailDto> UpdateOrderStatusAsync(Guid id, string status)
+    public async Task<OrderDetailDto> UpdateOrderStatusAsync(Guid id, string status, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating order {OrderId} status to {Status}", id, status);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true);
+        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (order == null)
         {
             throw new OrderNotFoundException(id);
@@ -290,19 +291,19 @@ public class OrderService : IOrderService
             order.CancelledAt = DateTime.UtcNow;
         }
 
-        await _unitOfWork.Orders.UpdateAsync(order);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         _logger.LogInformation("Order {OrderId} status updated to {Status}", id, status);
 
         return _mapper.Map<OrderDetailDto>(order);
     }
 
-    public async Task<bool> CancelOrderAsync(Guid id)
+    public async Task<bool> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true);
+        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (order == null)
         {
             return false;
@@ -318,19 +319,19 @@ public class OrderService : IOrderService
         order.CancelledAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.Orders.UpdateAsync(order);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         _logger.LogInformation("Order {OrderId} cancelled successfully", id);
 
         return true;
     }
 
-    public async Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(int page = 1, int pageSize = 20)
+    public async Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving all orders, page {Page}", page);
 
-        var allOrders = await _unitOfWork.Orders.GetAllAsync(trackChanges: false);
+        var allOrders = await _unitOfWork.Orders.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
         var totalCount = allOrders.Count();
 
         var orders = allOrders

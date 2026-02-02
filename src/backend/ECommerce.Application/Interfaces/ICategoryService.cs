@@ -7,11 +7,11 @@ namespace ECommerce.Application.Interfaces;
 /// </summary>
 public interface ICategoryService
 {
-    Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync();
-    Task<IEnumerable<CategoryDto>> GetTopLevelCategoriesAsync();
-    Task<CategoryDetailDto> GetCategoryByIdAsync(Guid id);
-    Task<CategoryDetailDto> GetCategoryBySlugAsync(string slug);
-    Task<CategoryDetailDto> CreateCategoryAsync(CreateCategoryDto dto);
-    Task<CategoryDetailDto> UpdateCategoryAsync(Guid id, UpdateCategoryDto dto);
-    Task DeleteCategoryAsync(Guid id);
+    Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<CategoryDto>> GetTopLevelCategoriesAsync(CancellationToken cancellationToken = default);
+    Task<CategoryDetailDto> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<CategoryDetailDto> GetCategoryBySlugAsync(string slug, CancellationToken cancellationToken = default);
+    Task<CategoryDetailDto> CreateCategoryAsync(CreateCategoryDto dto, CancellationToken cancellationToken = default);
+    Task<CategoryDetailDto> UpdateCategoryAsync(Guid id, UpdateCategoryDto dto, CancellationToken cancellationToken = default);
+    Task DeleteCategoryAsync(Guid id, CancellationToken cancellationToken = default);
 }

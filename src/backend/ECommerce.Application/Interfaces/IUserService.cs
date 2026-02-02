@@ -11,14 +11,16 @@ public interface IUserService
     /// Retrieves a user's profile by user ID.
     /// </summary>
     /// <param name="userId">The user ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>User profile DTO.</returns>
-    Task<UserProfileDto> GetUserProfileAsync(Guid userId);
+    Task<UserProfileDto> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates a user's profile information.
     /// </summary>
     /// <param name="userId">The user ID.</param>
     /// <param name="dto">Updated profile information.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated user profile DTO.</returns>
-    Task<UserProfileDto> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto);
+    Task<UserProfileDto> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken cancellationToken = default);
 }

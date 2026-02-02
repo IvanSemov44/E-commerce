@@ -4,6 +4,7 @@ using ECommerce.Application.DTOs.Users;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -26,22 +27,22 @@ public class UserService : IUserService
         _logger = logger;
     }
 
-    public async Task<UserProfileDto> GetUserProfileAsync(Guid userId)
+    public async Task<UserProfileDto> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
-        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
 
         return _mapper.Map<UserProfileDto>(user);
     }
 
-    public async Task<UserProfileDto> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto)
+    public async Task<UserProfileDto> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating profile for user {UserId}", userId);
 
-        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
 
@@ -51,8 +52,8 @@ public class UserService : IUserService
         user.AvatarUrl = dto.AvatarUrl;
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.Users.UpdateAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         _logger.LogInformation("Profile updated successfully for user {UserId}", userId);
 

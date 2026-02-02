@@ -4,6 +4,7 @@ using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
+using System.Threading;
 
 namespace ECommerce.Application.Services;
 
@@ -20,13 +21,13 @@ public class WishlistService : IWishlistService
         _mapper = mapper;
     }
 
-    public async Task<WishlistDto> GetUserWishlistAsync(Guid userId)
+    public async Task<WishlistDto> GetUserWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
 
-        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false);
+        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
         var userWishlistEntries = wishlistEntries
             .Where(w => w.UserId == userId)
             .ToList();
@@ -34,15 +35,15 @@ public class WishlistService : IWishlistService
         return await MapWishlistToDtoAsync(userWishlistEntries);
     }
 
-    public async Task<WishlistDto> AddToWishlistAsync(Guid userId, Guid productId)
+    public async Task<WishlistDto> AddToWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
-        var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken: cancellationToken);
         if (product == null)
             throw new ProductNotFoundException(productId);
-        if (await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId))
+        if (await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken))
             throw new DuplicateWishlistItemException();
 
         var wishlistEntry = new Wishlist
@@ -52,49 +53,49 @@ public class WishlistService : IWishlistService
             ProductId = productId
         };
 
-        await _unitOfWork.Wishlists.AddAsync(wishlistEntry);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Wishlists.AddAsync(wishlistEntry, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        return await GetUserWishlistAsync(userId);
+        return await GetUserWishlistAsync(userId, cancellationToken);
     }
 
-    public async Task<WishlistDto> RemoveFromWishlistAsync(Guid userId, Guid productId)
+    public async Task<WishlistDto> RemoveFromWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
-        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false);
+        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
         var entryToRemove = wishlistEntries.FirstOrDefault(w => w.UserId == userId && w.ProductId == productId);
         if (entryToRemove == null)
             throw new WishlistItemNotFoundException();
-        await _unitOfWork.Wishlists.DeleteAsync(entryToRemove);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Wishlists.DeleteAsync(entryToRemove, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        return await GetUserWishlistAsync(userId);
+        return await GetUserWishlistAsync(userId, cancellationToken);
     }
 
-    public async Task<bool> IsProductInWishlistAsync(Guid userId, Guid productId)
+    public async Task<bool> IsProductInWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
     {
-        return await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId);
+        return await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken);
     }
 
-    public async Task<WishlistDto> ClearWishlistAsync(Guid userId)
+    public async Task<WishlistDto> ClearWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
-        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false);
+        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
         var userWishlistEntries = wishlistEntries
             .Where(w => w.UserId == userId)
             .ToList();
 
         foreach (var entry in userWishlistEntries)
         {
-            await _unitOfWork.Wishlists.DeleteAsync(entry);
+            await _unitOfWork.Wishlists.DeleteAsync(entry, cancellationToken: cancellationToken);
         }
         if (userWishlistEntries.Count > 0)
         {
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
         }
 
         return new WishlistDto { Id = userId, Items = new List<WishlistItemDto>(), ItemCount = 0 };
