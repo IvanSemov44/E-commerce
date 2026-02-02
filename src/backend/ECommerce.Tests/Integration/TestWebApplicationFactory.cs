@@ -50,9 +50,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll(typeof(IEmailService));
             services.AddScoped<IEmailService, NoOpEmailService>();
 
+            // Use a separate internal service provider for EF InMemory to avoid multiple provider registrations
+            var inMemoryServiceProvider = new ServiceCollection()
+                .AddEntityFrameworkInMemoryDatabase()
+                .BuildServiceProvider();
+
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseInMemoryDatabase("IntegrationTestsDb");
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
             });
 
             // Replace authentication with test scheme
@@ -78,7 +84,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     db.Users.Add(new User { Id = userId, Email = "integration@test", FirstName = "Integration", LastName = "User", Role = Core.Enums.UserRole.Customer });
                 }
 
-                var productId = Guid.NewGuid();
+                var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
                 if (!db.Products.Any())
                 {
                     db.Products.Add(new Product { Id = productId, Name = "IntegrationProduct", Slug = "integration-product", Price = 10.0m, StockQuantity = 100, IsActive = true });

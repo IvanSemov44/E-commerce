@@ -22,7 +22,7 @@ public class AddToCartCreateOrderTests
         var client = _factory.CreateClient();
 
         // Add to cart (anonymous allowed)
-        var addBody = new { ProductId = "integration-product", Quantity = 2 };
+        var addBody = new { ProductId = "22222222-2222-2222-2222-222222222222", Quantity = 2 };
         var addResponse = await client.PostAsync("/api/cart/add-item", new StringContent(JsonSerializer.Serialize(addBody), Encoding.UTF8, "application/json"));
         addResponse.EnsureSuccessStatusCode();
 
@@ -40,7 +40,7 @@ public class AddToCartCreateOrderTests
                 PostalCode = "12345",
                 Country = "US",
             },
-            Items = new[] { new { ProductId = "integration-product", ProductName = "IntegrationProduct", Price = 10.0m, Quantity = 2 } }
+            Items = new[] { new { ProductId = "22222222-2222-2222-2222-222222222222", ProductName = "IntegrationProduct", Price = 10.0m, Quantity = 2 } }
         };
 
         // Ensure auth is applied (TestAuthHandler supplies user)
