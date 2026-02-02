@@ -106,22 +106,14 @@ public class WishlistService : IWishlistService
 
         foreach (var entry in wishlistEntries)
         {
+            // Fetch product details (repository may not include navigation property)
             var product = await _unitOfWork.Products.GetByIdAsync(entry.ProductId, trackChanges: false);
             if (product == null) continue;
 
-            var wishlistItemDto = new WishlistItemDto
-            {
-                Id = entry.Id,
-                ProductId = product.Id,
-                ProductName = product.Name,
-                ProductImage = product.Images.FirstOrDefault(x => x.IsPrimary)?.Url
-                    ?? product.Images.FirstOrDefault()?.Url,
-                Price = product.Price,
-                CompareAtPrice = product.CompareAtPrice,
-                StockQuantity = product.StockQuantity,
-                IsAvailable = product.IsActive && product.StockQuantity > 0,
-                AddedAt = entry.CreatedAt
-            };
+            // Use AutoMapper to map product -> WishlistItemDto, then fill entry-specific fields
+            var wishlistItemDto = _mapper.Map<ECommerce.Application.DTOs.Wishlist.WishlistItemDto>(product);
+            wishlistItemDto.Id = entry.Id;
+            wishlistItemDto.AddedAt = entry.CreatedAt;
 
             dto.Items.Add(wishlistItemDto);
         }

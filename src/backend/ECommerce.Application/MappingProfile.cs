@@ -127,6 +127,17 @@ public class MappingProfile : Profile
         CreateMap<Wishlist, WishlistDto>()
             .ReverseMap();
 
+        CreateMap<Product, ECommerce.Application.DTOs.Wishlist.WishlistItemDto>()
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.Images.FirstOrDefault() != null ? src.Images.FirstOrDefault()!.Url : null))
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
+            .ForMember(dest => dest.CompareAtPrice, opt => opt.MapFrom(src => src.CompareAtPrice))
+            .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.StockQuantity))
+            .ForMember(dest => dest.IsAvailable, opt => opt.MapFrom(src => src.IsActive && src.StockQuantity > 0))
+            .ForMember(dest => dest.AddedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
+
         // PromoCode mappings
         CreateMap<PromoCode, PromoCodeDto>();
         CreateMap<PromoCode, PromoCodeDetailDto>();

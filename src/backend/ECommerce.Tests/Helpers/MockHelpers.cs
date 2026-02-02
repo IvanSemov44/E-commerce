@@ -145,6 +145,27 @@ public static class MockHelpers
             return dto;
         });
 
+        // Provide mapping for Product -> WishlistItemDto used by wishlist service tests
+        mock.Setup(m => m.Map<ECommerce.Application.DTOs.Wishlist.WishlistItemDto>(It.IsAny<object>())).Returns((object src) =>
+        {
+            if (src == null) return null!;
+            var prod = src as ECommerce.Core.Entities.Product;
+            if (prod == null) return null!;
+
+            return new ECommerce.Application.DTOs.Wishlist.WishlistItemDto
+            {
+                Id = Guid.Empty,
+                ProductId = prod.Id,
+                ProductName = prod.Name,
+                ProductImage = prod.Images.FirstOrDefault() != null ? prod.Images.FirstOrDefault()!.Url : null,
+                Price = prod.Price,
+                CompareAtPrice = prod.CompareAtPrice,
+                StockQuantity = prod.StockQuantity,
+                IsAvailable = prod.IsActive && prod.StockQuantity > 0,
+                AddedAt = DateTime.MinValue
+            };
+        });
+
         // Note: No broad fallback mapping is configured so specific setups above
         // will be used. Tests that require other mappings should explicitly
         // configure the mock in their setup.
