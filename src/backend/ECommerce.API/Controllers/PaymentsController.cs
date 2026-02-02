@@ -164,21 +164,24 @@ public class PaymentsController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpGet("methods")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SupportedPaymentMethodsResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public IActionResult GetSupportedPaymentMethods()
     {
-        var methods = new List<string>
+        var response = new SupportedPaymentMethodsResponseDto
         {
-            "stripe",
-            "paypal",
-            "credit_card",
-            "debit_card",
-            "apple_pay",
-            "google_pay"
+            Methods = new List<string>
+            {
+                "stripe",
+                "paypal",
+                "credit_card",
+                "debit_card",
+                "apple_pay",
+                "google_pay"
+            }
         };
 
-        return Ok(ApiResponse<List<string>>.Ok(methods, "Supported payment methods retrieved successfully"));
+        return Ok(ApiResponse<SupportedPaymentMethodsResponseDto>.Ok(response, "Supported payment methods retrieved successfully"));
     }
 
     /// <summary>
@@ -188,7 +191,7 @@ public class PaymentsController : ControllerBase
     /// <response code="200">Payment service is healthy.</response>
     [HttpGet("health")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(HealthCheckResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<HealthCheckResponseDto>), StatusCodes.Status200OK)]
     public IActionResult HealthCheck()
     {
         var response = new HealthCheckResponseDto
@@ -198,6 +201,6 @@ public class PaymentsController : ControllerBase
             Timestamp = DateTime.UtcNow
         };
 
-        return Ok(response);
+        return Ok(ApiResponse<HealthCheckResponseDto>.Ok(response, "Payment service is healthy"));
     }
 }

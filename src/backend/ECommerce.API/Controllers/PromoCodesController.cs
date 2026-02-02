@@ -127,7 +127,7 @@ public class PromoCodesController : ControllerBase
         _logger.LogInformation("Deactivating promo code {Id}", id);
 
         await _promoCodeService.DeactivateAsync(id);
-        return Ok(ApiResponse<object>.Ok(null, "Promo code deactivated successfully"));
+        return Ok(ApiResponse<object>.Ok(new object(), "Promo code deactivated successfully"));
     }
 
     /// <summary>
