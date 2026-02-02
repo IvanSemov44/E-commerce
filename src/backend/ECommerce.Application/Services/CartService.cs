@@ -207,27 +207,8 @@ public class CartService : ICartService
 
     private async Task<CartDto> MapCartToDtoAsync(Cart cart)
     {
-        var dto = new CartDto { Id = cart.Id };
-
-        foreach (var item in cart.Items)
-        {
-            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, trackChanges: false);
-            if (product == null) continue;
-
-            var cartItemDto = new CartItemDto
-            {
-                Id = item.Id,
-                ProductId = product.Id,
-                ProductName = product.Name,
-                ProductImage = product.Images.FirstOrDefault(x => x.IsPrimary)?.Url
-                    ?? product.Images.FirstOrDefault()?.Url,
-                Price = product.Price,
-                Quantity = item.Quantity,
-                Total = product.Price * item.Quantity
-            };
-
-            dto.Items.Add(cartItemDto);
-        }
+        // Use AutoMapper to map cart and its items (CartRepository ensures Product is included)
+        var dto = _mapper.Map<CartDto>(cart);
 
         dto.Subtotal = dto.Items.Sum(x => x.Total);
         dto.Total = dto.Subtotal; // Could add tax/shipping calculations here

@@ -8,16 +8,7 @@ namespace ECommerce.Application.Interfaces;
 /// </summary>
 public interface IProductService
 {
-    Task<PaginatedResult<ProductDto>> GetProductsAsync(
-        int page = 1,
-        int pageSize = 20,
-        Guid? categoryId = null,
-        string? searchQuery = null,
-        decimal? minPrice = null,
-        decimal? maxPrice = null,
-        decimal? minRating = null,
-        bool? isFeatured = null,
-        string? sortBy = null);
+    Task<PaginatedResult<ProductDto>> GetProductsAsync(ProductQueryDto query);
 
     Task<ProductDetailDto> GetProductBySlugAsync(string slug);
     Task<ProductDetailDto> GetProductByIdAsync(Guid id);

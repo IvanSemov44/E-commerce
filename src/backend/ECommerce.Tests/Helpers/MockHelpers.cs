@@ -97,14 +97,57 @@ public static class MockHelpers
     {
         var mock = new Mock<IMapper>();
 
-        // Setup default behavior to return a new instance of TDestination
-        // Tests can override this for specific scenarios
-        mock.Setup(m => m.Map<It.IsAnyType>(It.IsAny<object>()))
-            .Returns((object source) =>
+        // Provide simple, null-safe mappings for cart-related DTOs so unit tests
+        // using the mapper without explicit setups won't receive nulls.
+        mock.Setup(m => m.Map<ECommerce.Application.DTOs.Cart.CartDto>(It.IsAny<object>())).Returns((object src) =>
+        {
+            if (src == null) return null!;
+            var cart = src as ECommerce.Core.Entities.Cart;
+            if (cart == null) return null!;
+
+            var dto = new ECommerce.Application.DTOs.Cart.CartDto
             {
-                // Return null for now - tests will setup specific mappings
-                return null!;
-            });
+                Id = cart.Id,
+                Items = cart.Items?.Select(i => new ECommerce.Application.DTOs.Cart.CartItemDto
+                {
+                    Id = i.Id,
+                    ProductId = i.Product != null ? i.Product.Id : i.ProductId,
+                    ProductName = i.Product != null ? i.Product.Name : string.Empty,
+                    ProductImage = i.Product != null && i.Product.Images.FirstOrDefault() != null ? i.Product.Images.FirstOrDefault()!.Url : null,
+                    Price = i.Product != null ? i.Product.Price : 0m,
+                    Quantity = i.Quantity,
+                    Total = (i.Product != null ? i.Product.Price : 0m) * i.Quantity
+                }).ToList() ?? new List<ECommerce.Application.DTOs.Cart.CartItemDto>()
+            };
+
+            dto.Subtotal = dto.Items.Sum(x => x.Total);
+            dto.Total = dto.Subtotal;
+            return dto;
+        });
+
+        mock.Setup(m => m.Map<ECommerce.Application.DTOs.Cart.CartItemDto>(It.IsAny<object>())).Returns((object src) =>
+        {
+            if (src == null) return null!;
+            var item = src as ECommerce.Core.Entities.CartItem;
+            if (item == null) return null!;
+
+            var dto = new ECommerce.Application.DTOs.Cart.CartItemDto
+            {
+                Id = item.Id,
+                ProductId = item.Product != null ? item.Product.Id : item.ProductId,
+                ProductName = item.Product != null ? item.Product.Name : string.Empty,
+                ProductImage = item.Product != null && item.Product.Images.FirstOrDefault() != null ? item.Product.Images.FirstOrDefault()!.Url : null,
+                Price = item.Product != null ? item.Product.Price : 0m,
+                Quantity = item.Quantity,
+                Total = (item.Product != null ? item.Product.Price : 0m) * item.Quantity
+            };
+
+            return dto;
+        });
+
+        // Note: No broad fallback mapping is configured so specific setups above
+        // will be used. Tests that require other mappings should explicitly
+        // configure the mock in their setup.
 
         return mock;
     }

@@ -46,7 +46,7 @@ public class ProductServiceTests
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name });
 
         // Act
-        var result = await _service.GetProductsAsync(page: 1, pageSize: 10);
+        var result = await _service.GetProductsAsync(new ProductQueryDto { Page = 1, PageSize = 10 });
 
         // Assert
         result.Should().NotBeNull();

@@ -19,20 +19,22 @@ public class ProductService : IProductService
         _mapper = mapper;
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetProductsAsync(
-        int page = 1,
-        int pageSize = 8,
-        Guid? categoryId = null,
-        string? searchQuery = null,
-        decimal? minPrice = null,
-        decimal? maxPrice = null,
-        decimal? minRating = null,
-        bool? isFeatured = null,
-        string? sortBy = null)
+    public async Task<PaginatedResult<ProductDto>> GetProductsAsync(ProductQueryDto query)
     {
+        var page = query?.Page ?? 1;
+        var pageSize = query?.PageSize ?? 8;
         var skip = (page - 1) * pageSize;
+
         var (products, totalCount) = await _unitOfWork.Products.GetProductsWithFiltersAsync(
-            skip, pageSize, categoryId, searchQuery, minPrice, maxPrice, minRating, isFeatured, sortBy);
+            skip,
+            pageSize,
+            query?.CategoryId,
+            query?.Search,
+            query?.MinPrice,
+            query?.MaxPrice,
+            query?.MinRating,
+            query?.IsFeatured,
+            query?.SortBy);
 
         return new PaginatedResult<ProductDto>
         {
@@ -104,7 +106,8 @@ public class ProductService : IProductService
 
     public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = 20)
     {
-        return await GetProductsAsync(page, pageSize);
+        var query = new ProductQueryDto { Page = page, PageSize = pageSize };
+        return await GetProductsAsync(query);
     }
 
     public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20)

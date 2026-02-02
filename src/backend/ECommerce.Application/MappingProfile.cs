@@ -102,10 +102,22 @@ public class MappingProfile : Profile
 
         // Cart mappings
         CreateMap<Cart, CartDto>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
             .ReverseMap();
 
         CreateMap<CartItem, CartItemDto>()
-            .ReverseMap();
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Product != null ? src.Product.Id : src.ProductId))
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
+            .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src =>
+                src.Product != null
+                    ? (src.Product.Images.FirstOrDefault(x => x.IsPrimary) != null
+                        ? src.Product.Images.FirstOrDefault(x => x.IsPrimary)!.Url
+                        : src.Product.Images.FirstOrDefault() != null
+                            ? src.Product.Images.FirstOrDefault()!.Url
+                            : null)
+                    : null))
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product != null ? src.Product.Price : 0m))
+            .ForMember(dest => dest.Total, opt => opt.MapFrom(src => (src.Product != null ? src.Product.Price : 0m) * src.Quantity));
 
         // Address mappings
         CreateMap<Address, AddressDto>()
