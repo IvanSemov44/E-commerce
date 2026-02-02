@@ -1,3 +1,5 @@
+using ECommerce.Application.DTOs;
+
 namespace ECommerce.Application.DTOs.Orders;
 
 public class OrderDto
@@ -54,20 +56,7 @@ public class CreateOrderItemDto
     public string? ImageUrl { get; set; }
 }
 
-public class AddressDto
-{
-    public Guid? Id { get; set; }
-    public string FirstName { get; set; } = null!;
-    public string LastName { get; set; } = null!;
-    public string? Company { get; set; }
-    public string StreetLine1 { get; set; } = null!;
-    public string? StreetLine2 { get; set; }
-    public string City { get; set; } = null!;
-    public string State { get; set; } = null!;
-    public string PostalCode { get; set; } = null!;
-    public string Country { get; set; } = null!;
-    public string? Phone { get; set; }
-}
+// AddressDto moved to ECommerce.Application.DTOs.Common/AddressDto.cs
 
 /// <summary>
 /// Request DTO for updating order status.

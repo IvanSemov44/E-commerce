@@ -1,4 +1,5 @@
 using ECommerce.Application.Interfaces;
+using AutoMapper;
 using ECommerce.Application.DTOs.Dashboard;
 using ECommerce.Core.Interfaces.Repositories;
 
@@ -7,10 +8,12 @@ namespace ECommerce.Application.Services;
 public class DashboardService : IDashboardService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
-    public DashboardService(IUnitOfWork unitOfWork)
+    public DashboardService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     public async Task<DashboardStatsDto> GetDashboardStatsAsync()
@@ -29,21 +32,13 @@ public class DashboardService : IDashboardService
         var ordersTrend = ordersTrendDict
             .OrderByDescending(x => x.Key)
             .Take(30)
-            .Select(x => new OrderTrendDto
-            {
-                Date = x.Key.ToString("yyyy-MM-dd"),
-                Count = x.Value
-            })
+            .Select(x => _mapper.Map<ECommerce.Application.DTOs.Dashboard.OrderTrendDto>(x))
             .ToList();
 
         var revenueTrend = revenueTrendDict
             .OrderByDescending(x => x.Key)
             .Take(30)
-            .Select(x => new RevenueTrendDto
-            {
-                Date = x.Key.ToString("yyyy-MM-dd"),
-                Amount = x.Value
-            })
+            .Select(x => _mapper.Map<ECommerce.Application.DTOs.Dashboard.RevenueTrendDto>(x))
             .ToList();
 
         return new DashboardStatsDto

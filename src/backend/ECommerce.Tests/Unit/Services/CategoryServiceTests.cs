@@ -1,5 +1,5 @@
 using AutoMapper;
-using ECommerce.Application.DTOs;
+    using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
