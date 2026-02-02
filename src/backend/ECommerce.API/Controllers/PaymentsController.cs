@@ -40,12 +40,12 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentDto dto)
+    public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentDto dto, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Payment processing initiated for order {OrderId} via {PaymentMethod}",
             dto.OrderId, dto.PaymentMethod);
 
-        var result = await _paymentService.ProcessPaymentAsync(dto);
+        var result = await _paymentService.ProcessPaymentAsync(dto, cancellationToken: cancellationToken);
 
         if (result.Success)
         {
@@ -76,11 +76,11 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetPaymentDetails(Guid orderId)
+    public async Task<IActionResult> GetPaymentDetails(Guid orderId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
-        var paymentDetails = await _paymentService.GetPaymentDetailsAsync(orderId);
+        var paymentDetails = await _paymentService.GetPaymentDetailsAsync(orderId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment details retrieved successfully"));
     }
 
@@ -104,13 +104,13 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RefundPayment(Guid orderId, [FromBody] RefundPaymentDto dto)
+    public async Task<IActionResult> RefundPayment(Guid orderId, [FromBody] RefundPaymentDto dto, CancellationToken cancellationToken)
     {
         dto.OrderId = orderId;
 
         _logger.LogInformation("Refund initiated for order {OrderId}", orderId);
 
-        var result = await _paymentService.RefundPaymentAsync(dto);
+        var result = await _paymentService.RefundPaymentAsync(dto, cancellationToken: cancellationToken);
 
         if (result.Success)
         {
@@ -141,11 +141,11 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetPaymentIntent(string paymentIntentId)
+    public async Task<IActionResult> GetPaymentIntent(string paymentIntentId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving payment intent {PaymentIntentId}", paymentIntentId);
 
-        var paymentDetails = await _paymentService.GetPaymentIntentAsync(paymentIntentId);
+        var paymentDetails = await _paymentService.GetPaymentIntentAsync(paymentIntentId, cancellationToken: cancellationToken);
 
         if (paymentDetails == null)
         {

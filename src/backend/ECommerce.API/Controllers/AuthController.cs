@@ -35,9 +35,9 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Register([FromBody] RegisterDto registerDto)
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Register([FromBody] RegisterDto registerDto, CancellationToken cancellationToken)
     {
-        var result = await _authService.RegisterAsync(registerDto);
+        var result = await _authService.RegisterAsync(registerDto, cancellationToken: cancellationToken);
         _logger.LogInformation("User registered successfully: {Email}", registerDto.Email);
         return Ok(ApiResponse<AuthResponseDto>.Ok(result, "User registered successfully"));
     }
@@ -53,9 +53,9 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login([FromBody] LoginDto loginDto)
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login([FromBody] LoginDto loginDto, CancellationToken cancellationToken)
     {
-        var result = await _authService.LoginAsync(loginDto);
+        var result = await _authService.LoginAsync(loginDto, cancellationToken: cancellationToken);
         _logger.LogInformation("User logged in successfully: {Email}", loginDto.Email);
         return Ok(ApiResponse<AuthResponseDto>.Ok(result, "Login successful"));
     }
@@ -71,9 +71,9 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> RefreshToken([FromBody] RefreshTokenRequest request)
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var result = await _authService.RefreshTokenAsync(request.Token);
+        var result = await _authService.RefreshTokenAsync(request.Token, cancellationToken: cancellationToken);
         return Ok(ApiResponse<AuthResponseDto>.Ok(result, "Token refreshed successfully"));
     }
 
@@ -90,9 +90,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailRequest request)
+    public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailRequest request, CancellationToken cancellationToken)
     {
-        await _authService.VerifyEmailAsync(request.UserId, request.Token);
+        await _authService.VerifyEmailAsync(request.UserId, request.Token, cancellationToken: cancellationToken);
         _logger.LogInformation("Email verified successfully for user {UserId}", request.UserId);
         return Ok(ApiResponse<object>.Ok(new object(), "Email verified successfully"));
     }
@@ -106,9 +106,9 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        await _authService.GeneratePasswordResetTokenAsync(request.Email);
+        await _authService.GeneratePasswordResetTokenAsync(request.Email, cancellationToken: cancellationToken);
 
         // Always return success for security reasons (don't reveal if email exists)
         _logger.LogInformation("Password reset requested for {Email}", request.Email);
@@ -128,9 +128,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordRequest request)
+    public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword);
+        await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword, cancellationToken: cancellationToken);
         _logger.LogInformation("Password reset successfully for {Email}", request.Email);
         return Ok(ApiResponse<object>.Ok(new object(), "Password reset successfully. You can now login with your new password"));
     }

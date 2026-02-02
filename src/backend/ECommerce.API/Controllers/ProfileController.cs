@@ -28,24 +28,24 @@ public class ProfileController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetProfile()
+    public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
-        var profile = await _userService.GetUserProfileAsync(userId);
+        var profile = await _userService.GetUserProfileAsync(userId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Profile retrieved successfully"));
     }
 
     [HttpPut]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
         _logger.LogInformation("Updating profile for user {UserId}", userId);
 
-        var profile = await _userService.UpdateUserProfileAsync(userId, updateProfileDto);
+        var profile = await _userService.UpdateUserProfileAsync(userId, updateProfileDto, cancellationToken: cancellationToken);
         return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Profile updated successfully"));
     }
 

@@ -36,9 +36,9 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] ProductQueryDto query)
+    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] ProductQueryDto query, CancellationToken cancellationToken)
     {
-        var result = await _productService.GetProductsAsync(query);
+        var result = await _productService.GetProductsAsync(query, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
     }
 
@@ -53,9 +53,9 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetFeaturedProducts([FromQuery] int count = 10)
+    public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetFeaturedProducts([FromQuery] int count = 10, CancellationToken cancellationToken = default)
     {
-        var result = await _productService.GetFeaturedProductsAsync(count);
+        var result = await _productService.GetFeaturedProductsAsync(count, cancellationToken: cancellationToken);
         return Ok(ApiResponse<List<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
     }
 
@@ -72,9 +72,9 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductById([FromRoute] Guid id)
+    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var product = await _productService.GetProductByIdAsync(id);
+        var product = await _productService.GetProductByIdAsync(id, cancellationToken: cancellationToken);
         return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
     }
 
@@ -91,9 +91,9 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductBySlug([FromRoute] string slug)
+    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductBySlug([FromRoute] string slug, CancellationToken cancellationToken)
     {
-        var product = await _productService.GetProductBySlugAsync(slug);
+        var product = await _productService.GetProductBySlugAsync(slug, cancellationToken: cancellationToken);
         return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
     }
 
@@ -117,9 +117,9 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto)
+    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto, CancellationToken cancellationToken)
     {
-        var product = await _productService.CreateProductAsync(createProductDto);
+        var product = await _productService.CreateProductAsync(createProductDto, cancellationToken: cancellationToken);
         _logger.LogInformation("Product created: {ProductId}", product.Id);
 
         return CreatedAtAction(nameof(GetProductById), new { id = product.Id },
@@ -148,9 +148,9 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto)
+    public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto, CancellationToken cancellationToken)
     {
-        var product = await _productService.UpdateProductAsync(id, updateProductDto);
+        var product = await _productService.UpdateProductAsync(id, updateProductDto, cancellationToken: cancellationToken);
         _logger.LogInformation("Product updated: {ProductId}", id);
 
         return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product updated successfully"));
@@ -173,9 +173,9 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<object>>> DeleteProduct([FromRoute] Guid id)
+    public async Task<ActionResult<ApiResponse<object>>> DeleteProduct([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        await _productService.DeleteProductAsync(id);
+        await _productService.DeleteProductAsync(id, cancellationToken: cancellationToken);
         _logger.LogInformation("Product deleted: {ProductId}", id);
 
         return Ok(ApiResponse<object>.Ok(new object(), "Product deleted successfully"));

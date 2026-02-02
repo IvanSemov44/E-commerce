@@ -28,10 +28,10 @@ public class DashboardController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetStats()
+    public async Task<IActionResult> GetStats(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving dashboard statistics");
-        var stats = await _dashboardService.GetDashboardStatsAsync();
+        var stats = await _dashboardService.GetDashboardStatsAsync(cancellationToken: cancellationToken);
         return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "Dashboard statistics retrieved successfully"));
     }
 }

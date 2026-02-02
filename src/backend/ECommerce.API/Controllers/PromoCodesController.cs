@@ -38,12 +38,13 @@ public class PromoCodesController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
-        [FromQuery] bool? isActive = null)
+        [FromQuery] bool? isActive = null,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving promo codes (page: {Page}, pageSize: {PageSize}, search: {Search}, isActive: {IsActive})",
             page, pageSize, search, isActive);
 
-        var result = await _promoCodeService.GetAllAsync(page, pageSize, search, isActive);
+        var result = await _promoCodeService.GetAllAsync(page, pageSize, search, isActive, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PaginatedResult<PromoCodeDto>>.Ok(result, "Promo codes retrieved successfully"));
     }
 
@@ -57,11 +58,11 @@ public class PromoCodesController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetPromoCodeById(Guid id)
+    public async Task<IActionResult> GetPromoCodeById(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving promo code {Id}", id);
 
-        var promoCode = await _promoCodeService.GetByIdAsync(id);
+        var promoCode = await _promoCodeService.GetByIdAsync(id, cancellationToken: cancellationToken);
         if (promoCode == null)
         {
             return NotFound(ApiResponse<string>.Error("Promo code not found"));
@@ -81,11 +82,11 @@ public class PromoCodesController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> CreatePromoCode([FromBody] CreatePromoCodeDto dto)
+    public async Task<IActionResult> CreatePromoCode([FromBody] CreatePromoCodeDto dto, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Creating promo code: {Code}", dto.Code);
 
-        var promoCode = await _promoCodeService.CreateAsync(dto);
+        var promoCode = await _promoCodeService.CreateAsync(dto, cancellationToken: cancellationToken);
         return CreatedAtAction(
             nameof(GetPromoCodeById),
             new { id = promoCode.Id },
@@ -104,11 +105,11 @@ public class PromoCodesController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UpdatePromoCode(Guid id, [FromBody] UpdatePromoCodeDto dto)
+    public async Task<IActionResult> UpdatePromoCode(Guid id, [FromBody] UpdatePromoCodeDto dto, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Updating promo code {Id}", id);
 
-        var promoCode = await _promoCodeService.UpdateAsync(id, dto);
+        var promoCode = await _promoCodeService.UpdateAsync(id, dto, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PromoCodeDetailDto>.Ok(promoCode, "Promo code updated successfully"));
     }
 
@@ -122,11 +123,11 @@ public class PromoCodesController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> DeactivatePromoCode(Guid id)
+    public async Task<IActionResult> DeactivatePromoCode(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Deactivating promo code {Id}", id);
 
-        await _promoCodeService.DeactivateAsync(id);
+        await _promoCodeService.DeactivateAsync(id, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Promo code deactivated successfully"));
     }
 
@@ -138,11 +139,11 @@ public class PromoCodesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ValidatePromoCodeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ValidatePromoCode([FromBody] ValidatePromoCodeRequest request)
+    public async Task<IActionResult> ValidatePromoCode([FromBody] ValidatePromoCodeRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Validating promo code: {Code}", request.Code);
 
-        var result = await _promoCodeService.ValidatePromoCodeAsync(request.Code, request.OrderAmount);
+        var result = await _promoCodeService.ValidatePromoCodeAsync(request.Code, request.OrderAmount, cancellationToken: cancellationToken);
         return Ok(ApiResponse<ValidatePromoCodeDto>.Ok(result, "Promo code validation completed"));
     }
 }

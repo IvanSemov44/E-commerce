@@ -38,12 +38,13 @@ public class InventoryController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         [FromQuery] string? search = null,
-        [FromQuery] bool? lowStockOnly = null)
+        [FromQuery] bool? lowStockOnly = null,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving inventory (page: {Page}, pageSize: {PageSize}, search: {Search}, lowStockOnly: {LowStockOnly})",
             page, pageSize, search, lowStockOnly);
 
-        var inventory = await _inventoryService.GetAllInventoryAsync(page, pageSize, search, lowStockOnly);
+        var inventory = await _inventoryService.GetAllInventoryAsync(page, pageSize, search, lowStockOnly, cancellationToken: cancellationToken);
         return Ok(ApiResponse<List<InventoryDto>>.Ok(inventory, "Inventory retrieved successfully"));
     }
 
@@ -55,11 +56,11 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetLowStockProducts()
+    public async Task<IActionResult> GetLowStockProducts(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving low stock products");
 
-        var lowStockProducts = await _inventoryService.GetLowStockProductsAsync();
+        var lowStockProducts = await _inventoryService.GetLowStockProductsAsync(cancellationToken: cancellationToken);
         return Ok(ApiResponse<List<LowStockAlertDto>>.Ok(lowStockProducts, "Low stock products retrieved successfully"));
     }
 
@@ -75,12 +76,13 @@ public class InventoryController : ControllerBase
     public async Task<IActionResult> GetInventoryHistory(
         Guid productId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving inventory history for product {ProductId} (page: {Page}, pageSize: {PageSize})",
             productId, page, pageSize);
 
-        var history = await _inventoryService.GetInventoryHistoryAsync(productId, page, pageSize);
+        var history = await _inventoryService.GetInventoryHistoryAsync(productId, page, pageSize, cancellationToken: cancellationToken);
         return Ok(ApiResponse<List<InventoryLogDto>>.Ok(history, "Inventory history retrieved successfully"));
     }
 
@@ -94,7 +96,7 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AdjustStock(Guid productId, [FromBody] AdjustStockRequest request)
+    public async Task<IActionResult> AdjustStock(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
 
@@ -106,7 +108,8 @@ public class InventoryController : ControllerBase
             request.Quantity,
             request.Reason,
             request.Notes,
-            userId
+            userId,
+            cancellationToken: cancellationToken
         );
 
         var response = new StockAdjustmentResponseDto
@@ -130,7 +133,7 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RestockProduct(Guid productId, [FromBody] AdjustStockRequest request)
+    public async Task<IActionResult> RestockProduct(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
 
@@ -142,7 +145,8 @@ public class InventoryController : ControllerBase
             request.Quantity,
             request.Reason ?? "restock",
             null,
-            userId
+            userId,
+            cancellationToken: cancellationToken
         );
 
         var response = new StockAdjustmentResponseDto
@@ -163,11 +167,11 @@ public class InventoryController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<StockCheckResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> CheckStockAvailability([FromBody] StockCheckRequest request)
+    public async Task<IActionResult> CheckStockAvailability([FromBody] StockCheckRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Checking stock availability for {ItemCount} items", request.Items.Count);
 
-        var result = await _inventoryService.CheckStockAvailabilityAsync(request.Items);
+        var result = await _inventoryService.CheckStockAvailabilityAsync(request.Items, cancellationToken: cancellationToken);
         var message = result.IsAvailable ? "All items are available" : "Some items have stock issues";
 
         return Ok(ApiResponse<StockCheckResponse>.Ok(result, message));
