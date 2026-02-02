@@ -73,6 +73,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Reset auth state at the beginning of each WebHost configuration
+        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
+        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
+        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
+
         builder.UseEnvironment("Development");
         builder.ConfigureTestServices(services =>
         {
@@ -192,6 +197,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         ConditionalTestAuthHandler.IsAuthenticationEnabled = false;
         return CreateClient();
+    }
+
+    /// <summary>
+    /// Resets the authentication state to default (enabled, customer role).
+    /// Call this in test cleanup to prevent state leakage to other tests.
+    /// </summary>
+    public static void ResetAuthState()
+    {
+        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
+        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
+        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
     }
 
     private class NoOpEmailService : IEmailService
