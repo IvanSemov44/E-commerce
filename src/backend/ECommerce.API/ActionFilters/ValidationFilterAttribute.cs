@@ -1,32 +1,52 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using ECommerce.Application.DTOs.Common;
 
 namespace ECommerce.API.ActionFilters;
 
+/// <summary>
+/// Action filter for automatic model state validation.
+/// Eliminates the need for manual try-catch validation blocks in controllers.
+/// Returns standardized ApiResponse with validation errors.
+/// </summary>
 public class ValidationFilterAttribute : IActionFilter
 {
+    /// <summary>
+    /// Executes when the action is executing - validates the request before controller action runs.
+    /// </summary>
     public void OnActionExecuting(ActionExecutingContext context)
     {
         var action = context.RouteData.Values["action"];
         var controller = context.RouteData.Values["controller"];
 
-        // Check for null DTO
+        // Check for null DTO parameter
         var param = context.ActionArguments
             .SingleOrDefault(x => x.Value?.GetType().Name.EndsWith("Dto") ?? false).Value;
 
         if (param is null)
         {
-            context.Result = new BadRequestObjectResult(
-                $"Object is null. Controller: {controller}, action: {action}");
+            var error = $"Object is null. Controller: {controller}, action: {action}";
+            var errorResponse = ApiResponse<object>.Error(error, new List<string> { error });
+            context.Result = new BadRequestObjectResult(errorResponse);
             return;
         }
 
-        // Check ModelState
+        // Validate ModelState
         if (!context.ModelState.IsValid)
         {
-            context.Result = new UnprocessableEntityObjectResult(context.ModelState);
+            var errors = context.ModelState
+                .Where(ms => ms.Value?.Errors.Count > 0)
+                .SelectMany(x => x.Value!.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            var errorResponse = ApiResponse<object>.Error("Validation failed", errors);
+            context.Result = new UnprocessableEntityObjectResult(errorResponse);
         }
     }
 
+    /// <summary>
+    /// Executes after the action has completed - no validation needed here.
+    /// </summary>
     public void OnActionExecuted(ActionExecutedContext context) { }
 }

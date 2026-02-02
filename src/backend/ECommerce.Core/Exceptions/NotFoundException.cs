@@ -6,6 +6,10 @@ namespace ECommerce.Core.Exceptions;
 /// </summary>
 public abstract class NotFoundException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the NotFoundException class.
+    /// </summary>
+    /// <param name="message">The exception message.</param>
     protected NotFoundException(string message) : base(message)
     {
     }
