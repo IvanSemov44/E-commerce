@@ -7,6 +7,7 @@ using ECommerce.Application.DTOs.Dashboard;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using ECommerce.Tests.Helpers;
 
 namespace ECommerce.Tests.Unit.Services
 {
@@ -49,7 +50,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetOrdersTrendAsync(30)).ReturnsAsync(ordersTrend);
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(revenueTrend);
 
-            var service = new DashboardService(mockUnitOfWork.Object);
+            var mockMapper = MockHelpers.CreateMockMapper();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();
@@ -91,7 +93,8 @@ namespace ECommerce.Tests.Unit.Services
             mockUnitOfWork.Setup(u => u.Users).Returns(userRepo.Object);
             mockUnitOfWork.Setup(u => u.Products).Returns(productRepo.Object);
 
-            var service = new DashboardService(mockUnitOfWork.Object);
+            var mockMapper = MockHelpers.CreateMockMapper();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();

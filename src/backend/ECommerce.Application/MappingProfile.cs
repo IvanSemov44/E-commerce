@@ -9,6 +9,7 @@ using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.DTOs.PromoCodes;
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs;
 
 namespace ECommerce.Application;
@@ -60,7 +61,8 @@ public class MappingProfile : Profile
             .ReverseMap();
 
         // Category mappings (from new DTOs folder)
-        CreateMap<Category, DTOs.CategoryDto>()
+        // Category -> DTO (centralized)
+        CreateMap<Category, ECommerce.Application.DTOs.Common.CategoryDto>()
             .ForMember(dest => dest.ProductCount, opt => opt.Ignore());
 
         CreateMap<Category, CategoryDetailDto>()
@@ -175,7 +177,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.StockAfterChange, opt => opt.Ignore());
 
         // Address mapping (DTO -> Entity)
-        CreateMap<ECommerce.Application.DTOs.Orders.AddressDto, Address>()
+        CreateMap<ECommerce.Application.DTOs.AddressDto, Address>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.UserId, opt => opt.Ignore())
             .ForMember(dest => dest.Type, opt => opt.Ignore())
@@ -200,5 +202,14 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.UserId, opt => opt.Ignore())
             .ForMember(dest => dest.PromoCodeId, opt => opt.Ignore())
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Dashboard trend mappings from KeyValuePair<DateTime, T> to DTOs
+        CreateMap<KeyValuePair<DateTime, int>, ECommerce.Application.DTOs.Dashboard.OrderTrendDto>()
+            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd")))
+            .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.Value));
+
+        CreateMap<KeyValuePair<DateTime, decimal>, ECommerce.Application.DTOs.Dashboard.RevenueTrendDto>()
+            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd")))
+            .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Value));
     }
 }

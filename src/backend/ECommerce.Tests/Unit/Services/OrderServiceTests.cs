@@ -1,5 +1,7 @@
 using AutoMapper;
 using ECommerce.Application.DTOs.Inventory;
+using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Interfaces;

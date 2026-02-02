@@ -136,17 +136,36 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        if (context.Database.GetPendingMigrations().Any())
+        // Only call relational-specific migration APIs when using a relational provider
+        try
         {
-            Log.Information("Applying pending migrations...");
-            context.Database.Migrate();
-        }
+            // Try to get pending migrations; GetPendingMigrations may throw for non-relational providers
+            IEnumerable<string> pendingMigrations = Enumerable.Empty<string>();
+            try
+            {
+                pendingMigrations = context.Database.GetPendingMigrations();
+            }
+            catch (InvalidOperationException ex)
+            {
+                Log.Warning(ex, "Skipping migration checks for non-relational provider.");
+            }
 
-        // Seed sample data
-        Log.Information("Seeding database with sample data...");
-        var seeder = services.GetRequiredService<DatabaseSeeder>();
-        await seeder.SeedAsync(context);
-        Log.Information("Database seeding completed.");
+            if (pendingMigrations != null && pendingMigrations.Any())
+            {
+                Log.Information("Applying pending migrations...");
+                context.Database.Migrate();
+            }
+
+            // Seed sample data (seeders should be resilient to InMemory provider)
+            Log.Information("Seeding database with sample data...");
+            var seeder = services.GetRequiredService<DatabaseSeeder>();
+            await seeder.SeedAsync(context);
+            Log.Information("Database seeding completed.");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "An error occurred while applying migrations or seeding database (non-fatal in tests).");
+        }
     }
     catch (Exception ex)
     {

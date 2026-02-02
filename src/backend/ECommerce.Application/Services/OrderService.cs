@@ -228,7 +228,7 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
 
-            var order = await _unitOfWork.Orders.GetWithItemsAsync(id);
+        var order = await _unitOfWork.Orders.GetWithItemsAsync(id);
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
@@ -236,7 +236,7 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Retrieving order {OrderNumber}", orderNumber);
 
-            var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber);
+        var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber);
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
