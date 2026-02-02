@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
@@ -60,6 +61,7 @@ public class CategoriesController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto, CancellationToken cancellationToken)
@@ -72,6 +74,7 @@ public class CategoriesController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]

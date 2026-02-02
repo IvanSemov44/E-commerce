@@ -17,7 +17,7 @@ public static class MockHelpers
     public static Mock<IUnitOfWork> CreateMockUnitOfWork()
     {
         var mock = new Mock<IUnitOfWork>();
-        mock.Setup(u => u.SaveChangesAsync())
+        mock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         var mockTransaction = new Mock<IAsyncTransaction>();
@@ -26,7 +26,7 @@ public static class MockHelpers
         mockTransaction.Setup(t => t.RollbackAsync())
             .Returns(Task.CompletedTask);
 
-        mock.Setup(u => u.BeginTransactionAsync())
+        mock.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockTransaction.Object);
 
         return mock;
@@ -42,16 +42,16 @@ public static class MockHelpers
         var mock = new Mock<IRepository<T>>();
 
         // GetAllAsync (matches signature with optional trackChanges)
-        mock.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync((bool _)=> items.ToList());
+        mock.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((bool _, CancellationToken __) => items.ToList());
 
         // GetByIdAsync (matches signature with optional trackChanges)
-        mock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>()))
-            .ReturnsAsync((Guid id, bool _) => items.FirstOrDefault(i => i.Id == id));
+        mock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid id, bool _, CancellationToken __) => items.FirstOrDefault(i => i.Id == id));
 
         // AddAsync - assign id and add to backing list, return completed task
-        mock.Setup(r => r.AddAsync(It.IsAny<T>()))
-            .Callback<T>((T item) =>
+        mock.Setup(r => r.AddAsync(It.IsAny<T>(), It.IsAny<CancellationToken>()))
+            .Callback<T, CancellationToken>((item, _) =>
             {
                 if (item.Id == Guid.Empty)
                     item.Id = Guid.NewGuid();
@@ -60,8 +60,8 @@ public static class MockHelpers
             .Returns(Task.CompletedTask);
 
         // UpdateAsync
-        mock.Setup(r => r.UpdateAsync(It.IsAny<T>()))
-            .Callback<T>((item) =>
+        mock.Setup(r => r.UpdateAsync(It.IsAny<T>(), It.IsAny<CancellationToken>()))
+            .Callback<T, CancellationToken>((item, _) =>
             {
                 var existing = items.FirstOrDefault(i => i.Id == item.Id);
                 if (existing != null)
@@ -73,8 +73,8 @@ public static class MockHelpers
             .Returns(Task.CompletedTask);
 
         // DeleteAsync
-        mock.Setup(r => r.DeleteAsync(It.IsAny<T>()))
-            .Callback<T>((item) => items.Remove(item))
+        mock.Setup(r => r.DeleteAsync(It.IsAny<T>(), It.IsAny<CancellationToken>()))
+            .Callback<T, CancellationToken>((item, _) => items.Remove(item))
             .Returns(Task.CompletedTask);
 
         return mock;

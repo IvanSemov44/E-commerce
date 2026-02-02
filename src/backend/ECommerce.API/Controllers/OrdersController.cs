@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -26,6 +27,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -84,6 +86,7 @@ public class OrdersController : ControllerBase
 
     [HttpPut("{id:guid}/status")]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]

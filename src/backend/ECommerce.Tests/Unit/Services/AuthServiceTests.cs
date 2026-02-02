@@ -73,11 +73,11 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.EmailExistsAsync(dto.Email))
             .ReturnsAsync(false);
 
-        _mockUserRepository.Setup(r => r.AddAsync(It.IsAny<User>()))
-            .Callback<User>(user => { if (user.Id == Guid.Empty) user.Id = Guid.NewGuid(); })
+        _mockUserRepository.Setup(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((user, _) => { if (user.Id == Guid.Empty) user.Id = Guid.NewGuid(); })
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         var result = await _service.RegisterAsync(dto);
@@ -137,15 +137,15 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.EmailExistsAsync(dto.Email))
             .ReturnsAsync(false);
 
-        _mockUserRepository.Setup(r => r.AddAsync(It.IsAny<User>()))
-            .Callback<User>(u =>
+        _mockUserRepository.Setup(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((u, _) =>
             {
                 if (u.Id == Guid.Empty) u.Id = Guid.NewGuid();
                 capturedUser = u;
             })
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         await _service.RegisterAsync(dto);
@@ -365,10 +365,10 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
-        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
+        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         await _service.VerifyEmailAsync(user.Id, token);
@@ -426,10 +426,10 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.GetByEmailAsync(user.Email))
             .ReturnsAsync(user);
 
-        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
+        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         var token = await _service.GeneratePasswordResetTokenAsync(user.Email);
@@ -474,10 +474,10 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.GetByEmailAsync(user.Email))
             .ReturnsAsync(user);
 
-        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
+        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         await _service.ResetPasswordAsync(user.Email, token, "NewSecurePassword123!");
@@ -559,10 +559,10 @@ public class AuthServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>()))
             .ReturnsAsync(user);
 
-        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>()))
+        _mockUserRepository.Setup(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         await _service.ChangePasswordAsync(user.Id, oldPassword, newPassword);

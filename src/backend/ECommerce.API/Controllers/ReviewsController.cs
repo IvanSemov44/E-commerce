@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Common;
@@ -71,6 +72,7 @@ public class ReviewsController : ControllerBase
 
     [HttpPost]
     [Authorize]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -88,6 +90,7 @@ public class ReviewsController : ControllerBase
 
     [HttpPut("{reviewId:guid}")]
     [Authorize]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]

@@ -124,10 +124,10 @@ public class CategoryServiceTests
         _mockCategoryRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug)).ReturnsAsync(true);
         _mockMapper.Setup(m => m.Map<Category>(It.IsAny<CreateCategoryDto>()))
             .Returns((CreateCategoryDto d) => new Category { Id = Guid.NewGuid(), Name = d.Name, Slug = d.Slug });
-        _mockCategoryRepository.Setup(r => r.AddAsync(It.IsAny<Category>()))
-            .Callback<Category>(c => { if (c.Id == Guid.Empty) c.Id = Guid.NewGuid(); })
+        _mockCategoryRepository.Setup(r => r.AddAsync(It.IsAny<Category>(), It.IsAny<CancellationToken>()))
+            .Callback<Category, CancellationToken>((c, _) => { if (c.Id == Guid.Empty) c.Id = Guid.NewGuid(); })
             .Returns(Task.CompletedTask);
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<CategoryDetailDto>(It.IsAny<Category>()))
             .Returns((Category c) => new CategoryDetailDto { Id = c.Id, Name = c.Name, Slug = c.Slug });
 
@@ -170,7 +170,7 @@ public class CategoryServiceTests
             existing.Slug = dto.Slug!;
         });
         _mockCategoryRepository.Setup(r => r.Update(existing));
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<CategoryDetailDto>(It.IsAny<Category>())).Returns((Category c) => new CategoryDetailDto { Id = c.Id, Name = c.Name, Slug = c.Slug });
 
         // Act
@@ -205,7 +205,7 @@ public class CategoryServiceTests
         _mockCategoryRepository.Setup(r => r.GetByIdAsync(category.Id, It.IsAny<bool>())).ReturnsAsync(category);
         _mockCategoryRepository.Setup(r => r.GetProductCountAsync(category.Id)).ReturnsAsync(0);
         _mockCategoryRepository.Setup(r => r.Delete(category));
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         await _service.DeleteCategoryAsync(category.Id);

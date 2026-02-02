@@ -99,11 +99,11 @@ public class ProductServiceTests
         _mockMapper.Setup(m => m.Map<Product>(It.IsAny<CreateProductDto>()))
             .Returns((CreateProductDto d) => new Product { Id = Guid.NewGuid(), Name = d.Name, Slug = d.Slug, Price = d.Price });
 
-        _mockProductRepository.Setup(r => r.AddAsync(It.IsAny<Product>()))
-            .Callback<Product>(p => { if (p.Id == Guid.Empty) p.Id = Guid.NewGuid(); })
+        _mockProductRepository.Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Callback<Product, CancellationToken>((p, _) => { if (p.Id == Guid.Empty) p.Id = Guid.NewGuid(); })
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<ProductDetailDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDetailDto { Id = p.Id, Name = p.Name, Slug = p.Slug });
@@ -150,8 +150,8 @@ public class ProductServiceTests
             existing.Price = dto.Price;
         });
 
-        _mockProductRepository.Setup(r => r.UpdateAsync(existing)).Returns(Task.CompletedTask);
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockProductRepository.Setup(r => r.UpdateAsync(existing, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _mockMapper.Setup(m => m.Map<ProductDetailDto>(It.IsAny<Product>())).Returns((Product p) => new ProductDetailDto { Id = p.Id, Name = p.Name, Slug = p.Slug });
 
         // Act
@@ -184,8 +184,8 @@ public class ProductServiceTests
         // Arrange
         var product = TestDataFactory.CreateProduct();
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
-        _mockProductRepository.Setup(r => r.DeleteAsync(product)).Returns(Task.CompletedTask);
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockProductRepository.Setup(r => r.DeleteAsync(product, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         await _service.DeleteProductAsync(product.Id);

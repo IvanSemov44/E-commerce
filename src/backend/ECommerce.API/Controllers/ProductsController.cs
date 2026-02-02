@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Services;
@@ -111,6 +112,7 @@ public class ProductsController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status401Unauthorized)]
@@ -141,6 +143,7 @@ public class ProductsController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status401Unauthorized)]

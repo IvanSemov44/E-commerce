@@ -1,6 +1,7 @@
 using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
+using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,6 +34,7 @@ public class AuthController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPost("register")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Register([FromBody] RegisterDto registerDto, CancellationToken cancellationToken)
@@ -51,6 +53,7 @@ public class AuthController : ControllerBase
     /// <response code="401">Invalid credentials.</response>
     [HttpPost("login")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login([FromBody] LoginDto loginDto, CancellationToken cancellationToken)
@@ -69,6 +72,7 @@ public class AuthController : ControllerBase
     /// <response code="401">Invalid or expired token.</response>
     [HttpPost("refresh-token")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<AuthResponseDto>>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
@@ -87,6 +91,7 @@ public class AuthController : ControllerBase
     /// <response code="404">User not found.</response>
     [HttpPost("verify-email")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -105,6 +110,7 @@ public class AuthController : ControllerBase
     /// <response code="200">Password reset email sent (or user not found, but we don't reveal that).</response>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {

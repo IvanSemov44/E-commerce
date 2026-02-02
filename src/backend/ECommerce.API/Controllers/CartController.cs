@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
@@ -63,6 +64,7 @@ public class CartController : ControllerBase
 
     [HttpPost("add-item")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -78,6 +80,7 @@ public class CartController : ControllerBase
 
     [HttpPut("update-item/{cartItemId:guid}")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]

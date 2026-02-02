@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.Interfaces;
@@ -38,6 +39,7 @@ public class ProfileController : ControllerBase
     }
 
     [HttpPut]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto, CancellationToken cancellationToken)

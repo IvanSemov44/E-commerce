@@ -52,7 +52,10 @@
       "Bash(jq:*)",
       "Bash(xargs:*)",
       "Bash(dotnet test:*)",
-      "Bash(dotnet restore:*)"
+      "Bash(dotnet restore:*)",
+      "Bash(Select-Object -Last 50)",
+      "Bash(for controller in ECommerce.API/Controllers/*.cs)",
+      "Bash(done)"
     ]
   }
 }

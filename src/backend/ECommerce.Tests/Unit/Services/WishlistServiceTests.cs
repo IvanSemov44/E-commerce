@@ -84,10 +84,10 @@ public class WishlistServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
         _mockWishlistRepository.Setup(r => r.IsProductInWishlistAsync(user.Id, product.Id)).ReturnsAsync(false);
-        _mockWishlistRepository.Setup(r => r.AddAsync(It.IsAny<Wishlist>()))
-            .Callback<Wishlist>(w => { if (w.Id == Guid.Empty) w.Id = Guid.NewGuid(); })
+        _mockWishlistRepository.Setup(r => r.AddAsync(It.IsAny<Wishlist>(), It.IsAny<CancellationToken>()))
+            .Callback<Wishlist, CancellationToken>((w, _) => { if (w.Id == Guid.Empty) w.Id = Guid.NewGuid(); })
             .Returns(Task.CompletedTask);
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(new List<Wishlist> { TestDataFactory.CreateWishlistItem(user.Id, product.Id) });
 
         // Act
@@ -128,10 +128,10 @@ public class WishlistServiceTests
         var entries = new List<Wishlist> { entry };
         _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(() => entries.ToList());
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
-            _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>()))
-                .Callback<Wishlist>(w => entries.RemoveAll(x => x.Id == w.Id))
+            _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>(), It.IsAny<CancellationToken>()))
+                .Callback<Wishlist, CancellationToken>((w, _) => entries.RemoveAll(x => x.Id == w.Id))
                 .Returns(Task.CompletedTask);
-            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         // (after deletion, repository will return empty list) - handled by sequence above
 
         // Act
@@ -189,8 +189,8 @@ public class WishlistServiceTests
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(entries);
-        _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>())).Returns(Task.CompletedTask);
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         var result = await _service.ClearWishlistAsync(user.Id);

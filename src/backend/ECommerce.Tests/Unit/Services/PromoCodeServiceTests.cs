@@ -220,8 +220,8 @@ public class PromoCodeServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Code.Should().Be("NEWCODE");
-        _mockPromoCodeRepository.Verify(r => r.AddAsync(It.IsAny<PromoCode>()), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        _mockPromoCodeRepository.Verify(r => r.AddAsync(It.IsAny<PromoCode>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [TestMethod]

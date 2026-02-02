@@ -1,4 +1,4 @@
-using ECommerce.API.Extensions;
+using ECommerce.API.Middleware;
 using ECommerce.Application;
 using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
@@ -174,8 +174,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure global exception handler middleware
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-app.ConfigureExceptionHandler(logger);
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

@@ -100,11 +100,13 @@ public class OrderServiceTests
                 Issues = new List<StockIssueDto>()
             });
 
-        _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>()))
-            .Callback<Order>(order => { if (order.Id == Guid.Empty) order.Id = Guid.NewGuid(); })
+        Order capturedOrder = null!;
+
+        _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .Callback<Order, CancellationToken>((order, _) => { if (order.Id == Guid.Empty) order.Id = Guid.NewGuid(); })
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
             .Returns(new OrderDetailDto { Id = Guid.NewGuid() });
@@ -193,15 +195,15 @@ public class OrderServiceTests
 
         Order capturedOrder = null!;
 
-        _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>()))
-            .Callback<Order>(o =>
+        _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .Callback<Order, CancellationToken>((o, _) =>
             {
                 if (o.Id == Guid.Empty) o.Id = Guid.NewGuid();
                 capturedOrder = o;
             })
             .Returns(Task.CompletedTask);
 
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
             .Returns(new OrderDetailDto { Id = Guid.NewGuid() });

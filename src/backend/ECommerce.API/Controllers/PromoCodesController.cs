@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Interfaces;
@@ -76,6 +77,7 @@ public class PromoCodesController : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<PromoCodeDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
@@ -98,6 +100,7 @@ public class PromoCodesController : ControllerBase
     /// </summary>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<PromoCodeDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -136,6 +139,7 @@ public class PromoCodesController : ControllerBase
     /// </summary>
     [HttpPost("validate")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ValidatePromoCodeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]

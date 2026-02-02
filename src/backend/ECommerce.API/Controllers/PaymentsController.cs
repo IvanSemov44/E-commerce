@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Payments;
@@ -35,6 +36,7 @@ public class PaymentsController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPost("process")]
     [Authorize]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
@@ -98,6 +100,7 @@ public class PaymentsController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPost("{orderId:guid}/refund")]
     [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<RefundResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]

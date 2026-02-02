@@ -9,12 +9,12 @@ namespace ECommerce.API.ActionFilters;
 /// Eliminates the need for manual try-catch validation blocks in controllers.
 /// Returns standardized ApiResponse with validation errors.
 /// </summary>
-public class ValidationFilterAttribute : IActionFilter
+public class ValidationFilterAttribute : ActionFilterAttribute
 {
     /// <summary>
     /// Executes when the action is executing - validates the request before controller action runs.
     /// </summary>
-    public void OnActionExecuting(ActionExecutingContext context)
+    public override void OnActionExecuting(ActionExecutingContext context)
     {
         var action = context.RouteData.Values["action"];
         var controller = context.RouteData.Values["controller"];
@@ -48,5 +48,5 @@ public class ValidationFilterAttribute : IActionFilter
     /// <summary>
     /// Executes after the action has completed - no validation needed here.
     /// </summary>
-    public void OnActionExecuted(ActionExecutedContext context) { }
+    public override void OnActionExecuted(ActionExecutedContext context) { }
 }

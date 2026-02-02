@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
@@ -38,6 +39,7 @@ public class WishlistController : ControllerBase
     }
 
     [HttpPost("add")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
