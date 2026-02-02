@@ -45,6 +45,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts(
+        [FromQuery] ProductQueryDto? query = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] Guid? categoryId = null,
@@ -55,8 +56,22 @@ public class ProductsController : ControllerBase
         [FromQuery] bool? isFeatured = null,
         [FromQuery] string? sortBy = null)
     {
+        var q = query ?? new ProductQueryDto
+        {
+            Page = page,
+            PageSize = pageSize,
+            CategoryId = categoryId,
+            Search = search,
+            MinPrice = minPrice,
+            MaxPrice = maxPrice,
+            MinRating = minRating,
+            IsFeatured = isFeatured,
+            SortBy = sortBy
+        };
+
         var result = await _productService.GetProductsAsync(
-            page, pageSize, categoryId, search, minPrice, maxPrice, minRating, isFeatured, sortBy);
+            q.Page, q.PageSize, q.CategoryId, q.Search, q.MinPrice, q.MaxPrice, q.MinRating, q.IsFeatured, q.SortBy);
+
         return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
     }
 
@@ -196,6 +211,6 @@ public class ProductsController : ControllerBase
         await _productService.DeleteProductAsync(id);
         _logger.LogInformation("Product deleted: {ProductId}", id);
 
-        return Ok(ApiResponse<object?>.Ok(null, "Product deleted successfully"));
+        return Ok(ApiResponse<object>.Ok(new object(), "Product deleted successfully"));
     }
 }

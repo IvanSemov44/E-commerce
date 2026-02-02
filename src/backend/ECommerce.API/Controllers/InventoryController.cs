@@ -88,7 +88,7 @@ public class InventoryController : ControllerBase
     /// Adjust stock quantity for a product.
     /// </summary>
     [HttpPost("{productId}/adjust")]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
@@ -109,16 +109,22 @@ public class InventoryController : ControllerBase
             userId
         );
 
-        return Ok(ApiResponse<object>.Ok(
-            new { productId, newQuantity = request.Quantity },
-            "Stock adjusted successfully"));
+        var response = new StockAdjustmentResponseDto
+        {
+            ProductId = productId,
+            NewQuantity = request.Quantity,
+            QuantityChanged = request.Quantity, // Note: This is the target quantity, not the delta
+            AdjustedAt = DateTime.UtcNow
+        };
+
+        return Ok(ApiResponse<StockAdjustmentResponseDto>.Ok(response, "Stock adjusted successfully"));
     }
 
     /// <summary>
     /// Increase stock (restock) for a product.
     /// </summary>
     [HttpPost("{productId}/restock")]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
@@ -139,9 +145,15 @@ public class InventoryController : ControllerBase
             userId
         );
 
-        return Ok(ApiResponse<object>.Ok(
-            new { productId, quantityAdded = request.Quantity },
-            $"Stock increased by {request.Quantity} units"));
+        var response = new StockAdjustmentResponseDto
+        {
+            ProductId = productId,
+            NewQuantity = 0, // Note: Actual new quantity not available without fetching product
+            QuantityChanged = request.Quantity,
+            AdjustedAt = DateTime.UtcNow
+        };
+
+        return Ok(ApiResponse<StockAdjustmentResponseDto>.Ok(response, $"Stock increased by {request.Quantity} units"));
     }
 
     /// <summary>

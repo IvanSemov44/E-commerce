@@ -188,9 +188,16 @@ public class PaymentsController : ControllerBase
     /// <response code="200">Payment service is healthy.</response>
     [HttpGet("health")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(HealthCheckResponseDto), StatusCodes.Status200OK)]
     public IActionResult HealthCheck()
     {
-        return Ok(new { status = "healthy", service = "PaymentService", timestamp = DateTime.UtcNow });
+        var response = new HealthCheckResponseDto
+        {
+            Status = "healthy",
+            Service = "PaymentService",
+            Timestamp = DateTime.UtcNow
+        };
+
+        return Ok(response);
     }
 }

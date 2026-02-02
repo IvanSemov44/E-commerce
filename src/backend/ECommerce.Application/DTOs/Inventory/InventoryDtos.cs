@@ -68,3 +68,11 @@ public class LowStockAlertDto
     public int CurrentStock { get; set; }
     public int LowStockThreshold { get; set; }
 }
+
+public class StockAdjustmentResponseDto
+{
+    public Guid ProductId { get; set; }
+    public int NewQuantity { get; set; }
+    public int QuantityChanged { get; set; }
+    public DateTime AdjustedAt { get; set; }
+}
