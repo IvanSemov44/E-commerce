@@ -26,6 +26,14 @@ public class ReviewsController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves all approved reviews for a specific product.
+    /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of approved reviews for the product.</returns>
+    /// <response code="200">Reviews retrieved successfully.</response>
+    /// <response code="404">Product not found.</response>
     [HttpGet("product/{productId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDto>>), StatusCodes.Status200OK)]
@@ -37,6 +45,13 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<ReviewDto>>.Ok(reviews, "Reviews retrieved successfully"));
     }
 
+    /// <summary>
+    /// Retrieves the average rating for a specific product based on approved reviews.
+    /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The average rating (0-5 stars).</returns>
+    /// <response code="200">Average rating retrieved successfully.</response>
     [HttpGet("product/{productId:guid}/rating")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<decimal>), StatusCodes.Status200OK)]
@@ -47,6 +62,14 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<decimal>.Ok(rating, "Average rating retrieved successfully"));
     }
 
+    /// <summary>
+    /// Retrieves all reviews created by the authenticated user.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of the user's reviews including pending and approved ones.</returns>
+    /// <response code="200">Reviews retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">User not found.</response>
     [HttpGet("my-reviews")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDetailDto>>), StatusCodes.Status200OK)]
@@ -59,6 +82,14 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(reviews, "Your reviews retrieved successfully"));
     }
 
+    /// <summary>
+    /// Retrieves a specific review by its ID.
+    /// </summary>
+    /// <param name="reviewId">The review ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The review details.</returns>
+    /// <response code="200">Review retrieved successfully.</response>
+    /// <response code="404">Review not found.</response>
     [HttpGet("{reviewId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
@@ -70,6 +101,17 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<ReviewDetailDto>.Ok(review, "Review retrieved successfully"));
     }
 
+    /// <summary>
+    /// Creates a new product review. Reviews require admin approval before being displayed.
+    /// </summary>
+    /// <param name="dto">The review details including rating and comment.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The newly created review in pending status.</returns>
+    /// <response code="201">Review created successfully and awaiting approval.</response>
+    /// <response code="400">Invalid review data or rating out of range.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Product not found.</response>
+    /// <response code="409">User has already reviewed this product.</response>
     [HttpPost]
     [Authorize]
     [ValidationFilter]
@@ -88,6 +130,17 @@ public class ReviewsController : ControllerBase
             ApiResponse<ReviewDetailDto>.Ok(review, "Review created successfully. It will be visible after admin approval."));
     }
 
+    /// <summary>
+    /// Updates an existing review. Users can only update their own reviews.
+    /// </summary>
+    /// <param name="reviewId">The review ID.</param>
+    /// <param name="dto">The updated review details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated review.</returns>
+    /// <response code="200">Review updated successfully.</response>
+    /// <response code="400">Invalid review data or rating out of range.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Review not found or user does not have permission to update this review.</response>
     [HttpPut("{reviewId:guid}")]
     [Authorize]
     [ValidationFilter]
@@ -103,6 +156,15 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<ReviewDetailDto>.Ok(review, "Review updated successfully"));
     }
 
+    /// <summary>
+    /// Deletes a review. Users can only delete their own reviews.
+    /// </summary>
+    /// <param name="reviewId">The review ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Deletion result.</returns>
+    /// <response code="200">Review deleted successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Review not found or user does not have permission to delete this review.</response>
     [HttpDelete("{reviewId:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -116,6 +178,14 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<object>.Ok(new object(), "Review deleted successfully"));
     }
 
+    /// <summary>
+    /// Retrieves all reviews awaiting admin approval (admin only).
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of pending reviews.</returns>
+    /// <response code="200">Pending reviews retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to view pending reviews.</response>
     [HttpGet("admin/pending")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDetailDto>>), StatusCodes.Status200OK)]
@@ -126,6 +196,16 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(reviews, "Pending reviews retrieved successfully"));
     }
 
+    /// <summary>
+    /// Approves a pending review, making it visible to all users (admin only).
+    /// </summary>
+    /// <param name="reviewId">The review ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The approved review.</returns>
+    /// <response code="200">Review approved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to approve reviews.</response>
+    /// <response code="404">Review not found.</response>
     [HttpPost("{reviewId:guid}/approve")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
@@ -137,6 +217,16 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<ReviewDetailDto>.Ok(review, "Review approved successfully"));
     }
 
+    /// <summary>
+    /// Rejects a pending review and removes it from the system (admin only).
+    /// </summary>
+    /// <param name="reviewId">The review ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The rejection result.</returns>
+    /// <response code="200">Review rejected and deleted successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to reject reviews.</response>
+    /// <response code="404">Review not found.</response>
     [HttpPost("{reviewId:guid}/reject")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]

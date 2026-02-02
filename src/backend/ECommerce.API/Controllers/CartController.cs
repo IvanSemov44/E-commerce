@@ -36,6 +36,14 @@ public class CartController : ControllerBase
         return Request.Cookies.TryGetValue("sessionId", out var sessionId) ? sessionId : null;
     }
 
+    /// <summary>
+    /// Retrieves the authenticated user's shopping cart.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user's shopping cart with all items and totals.</returns>
+    /// <response code="200">Cart retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Cart not found.</response>
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
@@ -50,6 +58,12 @@ public class CartController : ControllerBase
         return Ok(ApiResponse<CartDto>.Ok(cart, "Cart retrieved successfully"));
     }
 
+    /// <summary>
+    /// Retrieves the cart for the current user or session, creating a new cart if one doesn't exist.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user's or session's shopping cart.</returns>
+    /// <response code="200">Cart retrieved or created successfully.</response>
     [HttpPost("get-or-create")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
@@ -62,6 +76,15 @@ public class CartController : ControllerBase
         return Ok(ApiResponse<CartDto>.Ok(cart, "Cart retrieved or created successfully"));
     }
 
+    /// <summary>
+    /// Adds a product to the shopping cart or increments its quantity if already present.
+    /// </summary>
+    /// <param name="dto">The product and quantity to add.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated shopping cart.</returns>
+    /// <response code="200">Item added to cart successfully.</response>
+    /// <response code="400">Invalid request data.</response>
+    /// <response code="404">Product not found or insufficient stock.</response>
     [HttpPost("add-item")]
     [AllowAnonymous]
     [ValidationFilter]
@@ -78,6 +101,16 @@ public class CartController : ControllerBase
         return Ok(ApiResponse<CartDto>.Ok(cart, "Item added to cart successfully"));
     }
 
+    /// <summary>
+    /// Updates the quantity of a specific item in the shopping cart.
+    /// </summary>
+    /// <param name="cartItemId">The cart item ID.</param>
+    /// <param name="dto">The updated quantity.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated shopping cart.</returns>
+    /// <response code="200">Cart item updated successfully.</response>
+    /// <response code="400">Invalid quantity or insufficient stock.</response>
+    /// <response code="404">Cart item not found.</response>
     [HttpPut("update-item/{cartItemId:guid}")]
     [AllowAnonymous]
     [ValidationFilter]
@@ -94,6 +127,14 @@ public class CartController : ControllerBase
         return Ok(ApiResponse<CartDto>.Ok(cart, "Cart item updated successfully"));
     }
 
+    /// <summary>
+    /// Removes a specific item from the shopping cart.
+    /// </summary>
+    /// <param name="cartItemId">The cart item ID to remove.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated shopping cart.</returns>
+    /// <response code="200">Item removed from cart successfully.</response>
+    /// <response code="404">Cart item not found.</response>
     [HttpDelete("remove-item/{cartItemId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
@@ -108,6 +149,12 @@ public class CartController : ControllerBase
         return Ok(ApiResponse<CartDto>.Ok(cart, "Item removed from cart successfully"));
     }
 
+    /// <summary>
+    /// Removes all items from the shopping cart.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The emptied shopping cart.</returns>
+    /// <response code="200">Cart cleared successfully.</response>
     [HttpPost("clear")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
@@ -121,6 +168,15 @@ public class CartController : ControllerBase
         return Ok(ApiResponse<CartDto>.Ok(cart, "Cart cleared successfully"));
     }
 
+    /// <summary>
+    /// Validates a cart to ensure all items are available and stock is sufficient for checkout.
+    /// </summary>
+    /// <param name="cartId">The cart ID to validate.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Validation result.</returns>
+    /// <response code="200">Cart is valid and ready for checkout.</response>
+    /// <response code="400">Cart validation failed due to stock issues or unavailable items.</response>
+    /// <response code="404">Cart not found.</response>
     [HttpPost("validate/{cartId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]

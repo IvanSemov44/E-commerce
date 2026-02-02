@@ -26,6 +26,16 @@ public class OrdersController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Creates a new order for the authenticated user from their shopping cart.
+    /// </summary>
+    /// <param name="dto">The order creation details including shipping and payment information.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The newly created order with all details.</returns>
+    /// <response code="201">Order created successfully.</response>
+    /// <response code="400">Invalid order data or cart validation failed.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Cart or products not found.</response>
     [HttpPost]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status201Created)]
@@ -42,6 +52,15 @@ public class OrdersController : ControllerBase
             ApiResponse<OrderDetailDto>.Ok(order, "Order created successfully"));
     }
 
+    /// <summary>
+    /// Retrieves an order by its ID.
+    /// </summary>
+    /// <param name="id">The order ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The order details.</returns>
+    /// <response code="200">Order retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Order not found.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -52,6 +71,15 @@ public class OrdersController : ControllerBase
         return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
     }
 
+    /// <summary>
+    /// Retrieves an order by its order number.
+    /// </summary>
+    /// <param name="orderNumber">The order number.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The order details.</returns>
+    /// <response code="200">Order retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Order not found.</response>
     [HttpGet("number/{orderNumber}")]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -62,6 +90,15 @@ public class OrdersController : ControllerBase
         return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of orders for the authenticated user.
+    /// </summary>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="pageSize">The number of orders per page (default: 10).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A paginated list of the user's orders.</returns>
+    /// <response code="200">Orders retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
     [HttpGet("my-orders")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
@@ -74,6 +111,16 @@ public class OrdersController : ControllerBase
         return Ok(ApiResponse<PaginatedResult<OrderDto>>.Ok(result, "Orders retrieved successfully"));
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of all orders in the system (admin only).
+    /// </summary>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="pageSize">The number of orders per page (default: 20).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A paginated list of all orders.</returns>
+    /// <response code="200">Orders retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to view all orders.</response>
     [HttpGet]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
@@ -84,6 +131,18 @@ public class OrdersController : ControllerBase
         return Ok(ApiResponse<PaginatedResult<OrderDto>>.Ok(result, "Orders retrieved successfully"));
     }
 
+    /// <summary>
+    /// Updates the status of an order (admin only).
+    /// </summary>
+    /// <param name="id">The order ID.</param>
+    /// <param name="statusUpdate">The new order status.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated order.</returns>
+    /// <response code="200">Order status updated successfully.</response>
+    /// <response code="400">Invalid status or status transition not allowed.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to update order status.</response>
+    /// <response code="404">Order not found.</response>
     [HttpPut("{id:guid}/status")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
@@ -97,6 +156,16 @@ public class OrdersController : ControllerBase
         return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order status updated successfully"));
     }
 
+    /// <summary>
+    /// Cancels an order if it hasn't been shipped yet.
+    /// </summary>
+    /// <param name="id">The order ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Cancellation result.</returns>
+    /// <response code="200">Order cancelled successfully.</response>
+    /// <response code="400">Order cannot be cancelled because it has already been shipped or delivered.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Order not found.</response>
     [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]

@@ -125,7 +125,23 @@ builder.Services.AddScoped<ValidationFilterAttribute>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "E-Commerce API",
+        Version = "v1",
+        Description = "A comprehensive e-commerce platform API with product management, orders, payments, and more."
+    });
+
+    // Include XML comments
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+});
 
 var app = builder.Build();
 

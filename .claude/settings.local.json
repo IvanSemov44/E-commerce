@@ -55,7 +55,8 @@
       "Bash(dotnet restore:*)",
       "Bash(Select-Object -Last 50)",
       "Bash(for controller in ECommerce.API/Controllers/*.cs)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(dotnet list:*)"
     ]
   }
 }

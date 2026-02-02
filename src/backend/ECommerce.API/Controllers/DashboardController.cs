@@ -24,6 +24,14 @@ public class DashboardController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves dashboard statistics including sales, revenue, and order metrics (admin only).
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Comprehensive dashboard statistics and analytics.</returns>
+    /// <response code="200">Dashboard statistics retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to view dashboard statistics.</response>
     [HttpGet("stats")]
     [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]

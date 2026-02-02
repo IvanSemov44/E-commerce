@@ -26,6 +26,14 @@ public class ProfileController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves the authenticated user's profile information.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user's profile details.</returns>
+    /// <response code="200">Profile retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">User profile not found.</response>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -38,6 +46,16 @@ public class ProfileController : ControllerBase
         return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Profile retrieved successfully"));
     }
 
+    /// <summary>
+    /// Updates the authenticated user's profile information.
+    /// </summary>
+    /// <param name="updateProfileDto">The updated profile details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated user profile.</returns>
+    /// <response code="200">Profile updated successfully.</response>
+    /// <response code="400">Invalid profile data.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">User profile not found.</response>
     [HttpPut]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]

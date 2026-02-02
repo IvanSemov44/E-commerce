@@ -26,6 +26,14 @@ public class WishlistController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves the authenticated user's wishlist with all saved products.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user's wishlist.</returns>
+    /// <response code="200">Wishlist retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Wishlist not found.</response>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -38,6 +46,16 @@ public class WishlistController : ControllerBase
         return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist retrieved successfully"));
     }
 
+    /// <summary>
+    /// Adds a product to the user's wishlist for future reference.
+    /// </summary>
+    /// <param name="dto">The product to add to the wishlist.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated wishlist.</returns>
+    /// <response code="200">Product added to wishlist successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Product not found.</response>
+    /// <response code="409">Product is already in the wishlist.</response>
     [HttpPost("add")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
@@ -52,6 +70,15 @@ public class WishlistController : ControllerBase
         return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product added to wishlist successfully"));
     }
 
+    /// <summary>
+    /// Removes a product from the user's wishlist.
+    /// </summary>
+    /// <param name="productId">The product ID to remove.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated wishlist.</returns>
+    /// <response code="200">Product removed from wishlist successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Product not found in wishlist.</response>
     [HttpDelete("remove/{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -64,6 +91,14 @@ public class WishlistController : ControllerBase
         return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product removed from wishlist successfully"));
     }
 
+    /// <summary>
+    /// Checks if a specific product is in the user's wishlist.
+    /// </summary>
+    /// <param name="productId">The product ID to check.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if the product is in the wishlist, false otherwise.</returns>
+    /// <response code="200">Check completed successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
     [HttpGet("contains/{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> IsProductInWishlist(Guid productId, CancellationToken cancellationToken)
@@ -75,6 +110,14 @@ public class WishlistController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(isInWishlist, "Check completed successfully"));
     }
 
+    /// <summary>
+    /// Removes all products from the user's wishlist.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The emptied wishlist.</returns>
+    /// <response code="200">Wishlist cleared successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">Wishlist not found.</response>
     [HttpPost("clear")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
