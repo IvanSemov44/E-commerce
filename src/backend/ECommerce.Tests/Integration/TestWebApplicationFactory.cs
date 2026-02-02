@@ -17,18 +17,51 @@ using ECommerce.Application.Interfaces;
 
 namespace ECommerce.Tests.Integration;
 
-public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+/// <summary>
+/// Conditional authentication handler that can enable/disable authentication based on configuration.
+/// </summary>
+public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     public const string TestUserId = "11111111-1111-1111-1111-111111111111";
+    public const string TestAdminUserId = "33333333-3333-3333-3333-333333333333";
+    
+    // Static flags to control authentication and user context per test session
+    public static bool IsAuthenticationEnabled { get; set; } = true;
+    public static string CurrentUserId { get; set; } = TestUserId;
+    public static string CurrentUserRole { get; set; } = "Customer";
 
-    public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, System.Text.Encodings.Web.UrlEncoder encoder, ISystemClock clock)
+    public ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, System.Text.Encodings.Web.UrlEncoder encoder, ISystemClock clock)
         : base(options, logger, encoder, clock)
     {
     }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, TestUserId), new Claim(ClaimTypes.Name, "integration@test") };
+        // If authentication is disabled, return no result (will fall through to next auth scheme)
+        if (!IsAuthenticationEnabled)
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        // Build claims based on current user role
+        var claims = new List<Claim>
+        { 
+            new Claim(ClaimTypes.NameIdentifier, CurrentUserId), 
+            new Claim(ClaimTypes.Name, CurrentUserRole == "Admin" ? "admin@test" : "integration@test"),
+        };
+        
+        // Add role claims (can add multiple roles)
+        if (CurrentUserRole == "Admin" || CurrentUserRole == "SuperAdmin")
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+            if (CurrentUserRole == "SuperAdmin")
+                claims.Add(new Claim(ClaimTypes.Role, "SuperAdmin"));
+        }
+        else
+        {
+            claims.Add(new Claim(ClaimTypes.Role, CurrentUserRole));
+        }
+
         var identity = new ClaimsIdentity(claims, "Test");
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, "Test");
@@ -61,12 +94,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.UseInternalServiceProvider(inMemoryServiceProvider);
             });
 
-            // Replace authentication with test scheme
+            // Replace authentication with conditional test scheme
             services.AddAuthentication(options =>
             {
-                options.DefaultAuthenticateScheme = "Test";
-                options.DefaultChallengeScheme = "Test";
-            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", o => { });
+                options.DefaultAuthenticateScheme = "ConditionalTest";
+                options.DefaultChallengeScheme = "ConditionalTest";
+            }).AddScheme<AuthenticationSchemeOptions, ConditionalTestAuthHandler>("ConditionalTest", o => { });
 
             // Ensure DB created and seeded
             var sp = services.BuildServiceProvider();
@@ -77,22 +110,88 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 db.Database.EnsureDeleted();
                 db.Database.EnsureCreated();
 
-                // Seed a user and a product
-                var userId = Guid.Parse(TestAuthHandler.TestUserId);
+                // Seed a customer user
+                var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
                 if (!db.Users.Any(u => u.Id == userId))
                 {
-                    db.Users.Add(new User { Id = userId, Email = "integration@test", FirstName = "Integration", LastName = "User", Role = Core.Enums.UserRole.Customer });
+                    db.Users.Add(new User 
+                    { 
+                        Id = userId, 
+                        Email = "integration@test", 
+                        FirstName = "Integration", 
+                        LastName = "User", 
+                        Role = Core.Enums.UserRole.Customer,
+                        PasswordHash = "test_hash"
+                    });
                 }
 
+                // Seed an admin user
+                var adminId = Guid.Parse(ConditionalTestAuthHandler.TestAdminUserId);
+                if (!db.Users.Any(u => u.Id == adminId))
+                {
+                    db.Users.Add(new User 
+                    { 
+                        Id = adminId, 
+                        Email = "admin@test", 
+                        FirstName = "Admin", 
+                        LastName = "User", 
+                        Role = Core.Enums.UserRole.Admin,
+                        PasswordHash = "test_hash"
+                    });
+                }
+
+                // Seed a test product
                 var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
                 if (!db.Products.Any())
                 {
-                    db.Products.Add(new Product { Id = productId, Name = "IntegrationProduct", Slug = "integration-product", Price = 10.0m, StockQuantity = 100, IsActive = true });
+                    db.Products.Add(new Product 
+                    { 
+                        Id = productId, 
+                        Name = "IntegrationProduct", 
+                        Slug = "integration-product", 
+                        Price = 10.0m, 
+                        StockQuantity = 100, 
+                        IsActive = true 
+                    });
                 }
 
                 db.SaveChanges();
             }
+
+            // Reset auth to enabled by default
+            ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
         });
+    }
+
+    /// <summary>
+    /// Creates an authenticated HTTP client (customer user).
+    /// </summary>
+    public HttpClient CreateAuthenticatedClient()
+    {
+        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
+        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
+        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
+        return CreateClient();
+    }
+
+    /// <summary>
+    /// Creates an authenticated HTTP client with admin privileges.
+    /// </summary>
+    public HttpClient CreateAdminClient()
+    {
+        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
+        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestAdminUserId;
+        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
+        return CreateClient();
+    }
+
+    /// <summary>
+    /// Creates an unauthenticated HTTP client.
+    /// </summary>
+    public HttpClient CreateUnauthenticatedClient()
+    {
+        ConditionalTestAuthHandler.IsAuthenticationEnabled = false;
+        return CreateClient();
     }
 
     private class NoOpEmailService : IEmailService

@@ -1,8 +1,839 @@
-  Determining projects to restore...
-  All projects are up-to-date for restore.
-  ECommerce.Core -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Core\bin\Debug\net10.0\ECommerce.Core.dll
-  ECommerce.Infrastructure -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Infrastructure\bin\Debug\net10.0\ECommerce.Infrastructure.dll
-  ECommerce.Application -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Application\bin\Debug\net10.0\ECommerce.Application.dll
-  ECommerce.API -> C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\bin\Debug\net10.0\ECommerce.API.dll
-C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\TestWebApplicationFactory.cs(24,151): warning CS0618: 'ISystemClock' is obsolete: 'Use TimeProvider instead.' [C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\ECommerce.Tests.csproj]
-C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Unit\Services\InventoryServiceTests.cs(20,18): error CS0246: The type or namespace name 'IInventoryLogRepository' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\ECommerce.Tests.csproj]
+Test run for C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\bin\Debug\net10.0\ECommerce.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed RefreshToken_WithEmptyToken_ReturnsUnauthorized [2 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<Unauthorized>. Actual:<BadRequest>. 'expected' expression: 'HttpStatusCode.Unauthorized', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.AuthControllerTests.RefreshToken_WithEmptyToken_ReturnsUnauthorized() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\AuthControllerTests.cs:line 258
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:20 INF] Using SMTP email provider
+ [15:57:21 INF] Saved 0 entities to in-memory store.
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ [15:57:22 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:22 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:22 INF] Database seeding completed.
+ [15:57:22 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:22 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:22 INF] Hosting environment: Development
+ [15:57:22 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:23 INF] Application is shutting down...
+
+
+  Failed RefreshToken_WithInvalidToken_ReturnsUnauthorized [2 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<Unauthorized>. Actual:<BadRequest>. 'expected' expression: 'HttpStatusCode.Unauthorized', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.AuthControllerTests.RefreshToken_WithInvalidToken_ReturnsUnauthorized() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\AuthControllerTests.cs:line 223
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:20 INF] Using SMTP email provider
+ [15:57:21 INF] Saved 0 entities to in-memory store.
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ [15:57:22 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:22 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:22 INF] Database seeding completed.
+ [15:57:22 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:22 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:22 INF] Hosting environment: Development
+ [15:57:22 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:23 INF] Application is shutting down...
+
+
+  Failed Login_WithWrongPassword_ReturnsUnauthorized [2 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<Unauthorized>. Actual:<InternalServerError>. 'expected' expression: 'HttpStatusCode.Unauthorized', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.AuthControllerTests.Login_WithWrongPassword_ReturnsUnauthorized() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\AuthControllerTests.cs:line 142
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:20 INF] Using SMTP email provider
+ [15:57:21 INF] Saved 0 entities to in-memory store.
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ [15:57:22 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:22 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:22 INF] Database seeding completed.
+ [15:57:22 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:22 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:22 INF] Hosting environment: Development
+ [15:57:22 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:23 INF] Application is shutting down...
+
+
+  Failed Login_AllowsAnonymousAccess [2 s]
+  Error Message:
+   Assert.IsFalse failed. 'condition' expression: 'response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden'. Login endpoint should allow anonymous access
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertIsFalseFailed(String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 200
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsFalse(Nullable`1 condition, String message, String conditionExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 191
+   at ECommerce.Tests.Integration.AuthControllerTests.Login_AllowsAnonymousAccess() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\AuthControllerTests.cs:line 305
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:20 INF] Using SMTP email provider
+ [15:57:21 INF] Saved 0 entities to in-memory store.
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ [15:57:22 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:22 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:22 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:22 INF] Database seeding completed.
+ [15:57:22 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:22 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:22 INF] Hosting environment: Development
+ [15:57:22 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:23 INF] Application is shutting down...
+
+
+  Failed GetUserOrders_WithPagination_ReturnsPaginatedResult [866 ms]
+  Error Message:
+   Assert.AreEqual failed. Expected:<OK>. Actual:<NotFound>. 'expected' expression: 'HttpStatusCode.OK', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.OrdersControllerTests.GetUserOrders_WithPagination_ReturnsPaginatedResult() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\OrdersControllerTests.cs:line 228
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:24 INF] Application is shutting down...
+
+
+  Failed GetUserOrders_WithAuthentication_ReturnsSuccessfulResponse [951 ms]
+  Error Message:
+   Assert.AreEqual failed. Expected:<OK>. Actual:<NotFound>. 'expected' expression: 'HttpStatusCode.OK', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.OrdersControllerTests.GetUserOrders_WithAuthentication_ReturnsSuccessfulResponse() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\OrdersControllerTests.cs:line 215
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:24 INF] Application is shutting down...
+
+
+  Failed UpdateOrderStatus_WithValidStatus_ReturnsSuccessOrNotFound [981 ms]
+  Error Message:
+   Assert.IsTrue failed. 'condition' expression: 'response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound'. Update should return OK or NotFound if order doesn't exist
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertIsTrueFailed(String message) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 161
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(Nullable`1 condition, String message, String conditionExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 153
+   at ECommerce.Tests.Integration.OrdersControllerTests.UpdateOrderStatus_WithValidStatus_ReturnsSuccessOrNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\OrdersControllerTests.cs:line 252
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:24 INF] Application is shutting down...
+
+
+  Failed UpdateOrderStatus_WithInvalidStatus_ReturnsBadRequest [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<BadRequest>. Actual:<Forbidden>. 'expected' expression: 'HttpStatusCode.BadRequest', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.OrdersControllerTests.UpdateOrderStatus_WithInvalidStatus_ReturnsBadRequest() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\OrdersControllerTests.cs:line 273
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:24 INF] Application is shutting down...
+
+
+  Failed GetUserOrders_ReturnsCorrectResponseFormat [1 s]
+  Error Message:
+   Test method ECommerce.Tests.Integration.OrdersControllerTests.GetUserOrders_ReturnsCorrectResponseFormat threw exception:
+System.Text.Json.JsonException: The input does not contain any JSON tokens. Expected the input to start with a valid JSON token, when isFinalBlock is true. Path: $ | LineNumber: 0 | BytePositionInLine: 0. ---> System.Text.Json.JsonReaderException: The input does not contain any JSON tokens. Expected the input to start with a valid JSON token, when isFinalBlock is true. LineNumber: 0 | BytePositionInLine: 0.
+  Stack Trace:
+     at System.Text.Json.ThrowHelper.ThrowJsonReaderException(Utf8JsonReader& json, ExceptionResource resource, Byte nextByte, ReadOnlySpan`1 bytes)
+   at System.Text.Json.Utf8JsonReader.Read()
+   at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader& reader, T& value, JsonSerializerOptions options, ReadStack& state)
+--- End of inner exception stack trace ---
+   at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack& state, JsonReaderException ex)
+   at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader& reader, T& value, JsonSerializerOptions options, ReadStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.Deserialize(Utf8JsonReader& reader, ReadStack& state)
+   at System.Text.Json.JsonSerializer.ReadFromSpan[TValue](ReadOnlySpan`1 utf8Json, JsonTypeInfo`1 jsonTypeInfo, Nullable`1 actualByteCount)
+   at System.Text.Json.JsonSerializer.ReadFromSpan[TValue](ReadOnlySpan`1 json, JsonTypeInfo`1 jsonTypeInfo)
+   at System.Text.Json.JsonSerializer.Deserialize[TValue](String json, JsonSerializerOptions options)
+   at ECommerce.Tests.Integration.OrdersControllerTests.GetUserOrders_ReturnsCorrectResponseFormat() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\OrdersControllerTests.cs:line 333
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:24 INF] Application is shutting down...
+
+
+  Failed ProcessPayment_WithValidData_ReturnsOk [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<OK>. Actual:<NotFound>. 'expected' expression: 'HttpStatusCode.OK', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.PaymentsControllerTests.ProcessPayment_WithValidData_ReturnsOk() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 51
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:24 INF] Application is shutting down...
+
+
+  Failed GetOrderById_WithNonexistentOrder_ReturnsNotFound [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<NotFound>. Actual:<OK>. 'expected' expression: 'HttpStatusCode.NotFound', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.OrdersControllerTests.GetOrderById_WithNonexistentOrder_ReturnsNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\OrdersControllerTests.cs:line 185
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:25 INF] Application is shutting down...
+
+
+  Failed GetOrderByNumber_WithNonexistentOrderNumber_ReturnsNotFound [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<NotFound>. Actual:<OK>. 'expected' expression: 'HttpStatusCode.NotFound', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.OrdersControllerTests.GetOrderByNumber_WithNonexistentOrderNumber_ReturnsNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\OrdersControllerTests.cs:line 198
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:23 INF] Using SMTP email provider
+ [15:57:23 INF] Saved 0 entities to in-memory store.
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ [15:57:24 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:24 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:24 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:24 INF] Database seeding completed.
+ [15:57:24 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:24 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:24 INF] Hosting environment: Development
+ [15:57:24 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:25 INF] Application is shutting down...
+
+
+  Failed GetPaymentStatus_WithNonexistentOrderId_ReturnsNotFound [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<NotFound>. Actual:<Unauthorized>. 'expected' expression: 'HttpStatusCode.NotFound', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.PaymentsControllerTests.GetPaymentStatus_WithNonexistentOrderId_ReturnsNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 173
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:24 INF] Using SMTP email provider
+ [15:57:24 INF] Saved 0 entities to in-memory store.
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ [15:57:25 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:25 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:25 INF] Database seeding completed.
+ [15:57:25 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:25 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:25 INF] Hosting environment: Development
+ [15:57:25 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:25 INF] Application is shutting down...
+
+
+  Failed RefundPayment_WithValidOrderId_ReturnsSuccessOrNotFound [1 s]
+  Error Message:
+   Assert.IsTrue failed. 'condition' expression: 'response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound'. Should return OK or NotFound if payment/order doesn't exist
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertIsTrueFailed(String message) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 161
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(Nullable`1 condition, String message, String conditionExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 153
+   at ECommerce.Tests.Integration.PaymentsControllerTests.RefundPayment_WithValidOrderId_ReturnsSuccessOrNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 197
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:24 INF] Using SMTP email provider
+ [15:57:24 INF] Saved 0 entities to in-memory store.
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ [15:57:25 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:25 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:25 INF] Database seeding completed.
+ [15:57:25 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:25 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:25 INF] Hosting environment: Development
+ [15:57:25 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:25 INF] Application is shutting down...
+
+
+  Failed RefundPayment_WithNegativeAmount_ReturnsBadRequest [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<BadRequest>. Actual:<Forbidden>. 'expected' expression: 'HttpStatusCode.BadRequest', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.PaymentsControllerTests.RefundPayment_WithNegativeAmount_ReturnsBadRequest() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 241
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:24 INF] Using SMTP email provider
+ [15:57:25 INF] Saved 0 entities to in-memory store.
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ [15:57:25 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:25 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:25 INF] Database seeding completed.
+ [15:57:25 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:25 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:25 INF] Hosting environment: Development
+ [15:57:25 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:25 INF] Application is shutting down...
+
+
+  Failed RefundPayment_WithPartialRefund_ReturnsSuccessOrNotFound [1 s]
+  Error Message:
+   Assert.IsTrue failed. 'condition' expression: 'response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound'. Partial refund should return OK or NotFound
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertIsTrueFailed(String message) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 161
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(Nullable`1 condition, String message, String conditionExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 153
+   at ECommerce.Tests.Integration.PaymentsControllerTests.RefundPayment_WithPartialRefund_ReturnsSuccessOrNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 219
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:24 INF] Using SMTP email provider
+ [15:57:25 INF] Saved 0 entities to in-memory store.
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ [15:57:25 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:25 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:25 INF] Database seeding completed.
+ [15:57:25 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:25 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:25 INF] Hosting environment: Development
+ [15:57:25 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:25 INF] Application is shutting down...
+
+
+  Failed ProcessPaymentWebhook_WithValidPayload_ReturnsSuccessful [1 s]
+  Error Message:
+   Assert.IsTrue failed. 'condition' expression: 'response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent'. Webhook should return OK or NoContent
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertIsTrueFailed(String message) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 161
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(Nullable`1 condition, String message, String conditionExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.IsTrue.cs:line 153
+   at ECommerce.Tests.Integration.PaymentsControllerTests.ProcessPaymentWebhook_WithValidPayload_ReturnsSuccessful() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 267
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:24 INF] Using SMTP email provider
+ [15:57:25 INF] Saved 0 entities to in-memory store.
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ [15:57:25 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:25 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:25 INF] Database seeding completed.
+ [15:57:25 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:25 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:25 INF] Hosting environment: Development
+ [15:57:25 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:25 INF] Application is shutting down...
+
+
+  Failed ProcessPayment_WithCreditCard_ReturnsOk [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<OK>. Actual:<NotFound>. 'expected' expression: 'HttpStatusCode.OK', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.PaymentsControllerTests.ProcessPayment_WithCreditCard_ReturnsOk() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 348
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:24 INF] Using SMTP email provider
+ [15:57:25 INF] Saved 0 entities to in-memory store.
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ [15:57:25 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:25 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:25 INF] Database seeding completed.
+ [15:57:25 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:25 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:25 INF] Hosting environment: Development
+ [15:57:25 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:26 INF] Application is shutting down...
+
+
+  Failed ProcessPayment_WithPayPal_ReturnsOk [1 s]
+  Error Message:
+   Assert.AreEqual failed. Expected:<OK>. Actual:<BadRequest>. 'expected' expression: 'HttpStatusCode.OK', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.PaymentsControllerTests.ProcessPayment_WithPayPal_ReturnsOk() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\PaymentsControllerTests.cs:line 371
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:25 INF] Using SMTP email provider
+ [15:57:25 INF] Saved 0 entities to in-memory store.
+ [15:57:25 INF] Saved 3 entities to in-memory store.
+ [15:57:25 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:25 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:26 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:26 INF] Database seeding completed.
+ [15:57:26 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:26 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:26 INF] Hosting environment: Development
+ [15:57:26 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:26 INF] Application is shutting down...
+
+
+  Failed CreateProduct_WithMissingName_ReturnsBadRequest [953 ms]
+  Error Message:
+   Assert.AreEqual failed. Expected:<BadRequest>. Actual:<Forbidden>. 'expected' expression: 'HttpStatusCode.BadRequest', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.ProductsControllerTests.CreateProduct_WithMissingName_ReturnsBadRequest() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\ProductsControllerTests.cs:line 257
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:26 INF] Using SMTP email provider
+ [15:57:26 INF] Saved 0 entities to in-memory store.
+ [15:57:26 INF] Saved 3 entities to in-memory store.
+ [15:57:26 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:26 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:26 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:26 INF] Database seeding completed.
+ [15:57:27 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:27 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:27 INF] Hosting environment: Development
+ [15:57:27 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:27 INF] Application is shutting down...
+
+
+  Failed CreateProduct_WithInvalidPrice_ReturnsBadRequest [961 ms]
+  Error Message:
+   Assert.AreEqual failed. Expected:<BadRequest>. Actual:<Forbidden>. 'expected' expression: 'HttpStatusCode.BadRequest', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.ProductsControllerTests.CreateProduct_WithInvalidPrice_ReturnsBadRequest() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\ProductsControllerTests.cs:line 279
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:26 INF] Using SMTP email provider
+ [15:57:26 INF] Saved 0 entities to in-memory store.
+ [15:57:26 INF] Saved 3 entities to in-memory store.
+ [15:57:26 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:26 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:26 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:27 INF] Database seeding completed.
+ [15:57:27 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:27 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:27 INF] Hosting environment: Development
+ [15:57:27 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:27 INF] Application is shutting down...
+
+
+  Failed UpdateProduct_WithNonexistentProduct_ReturnsNotFound [937 ms]
+  Error Message:
+   Assert.AreEqual failed. Expected:<NotFound>. Actual:<Forbidden>. 'expected' expression: 'HttpStatusCode.NotFound', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.ProductsControllerTests.UpdateProduct_WithNonexistentProduct_ReturnsNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\ProductsControllerTests.cs:line 306
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:26 INF] Using SMTP email provider
+ [15:57:26 INF] Saved 0 entities to in-memory store.
+ [15:57:26 INF] Saved 3 entities to in-memory store.
+ [15:57:26 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:26 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:27 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:27 INF] Database seeding completed.
+ [15:57:27 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:27 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:27 INF] Hosting environment: Development
+ [15:57:27 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:27 INF] Application is shutting down...
+
+
+  Failed DeleteProduct_WithNonexistentProduct_ReturnsNotFound [748 ms]
+  Error Message:
+   Assert.AreEqual failed. Expected:<NotFound>. Actual:<Forbidden>. 'expected' expression: 'HttpStatusCode.NotFound', 'actual' expression: 'response.StatusCode'.
+  Stack Trace:
+     at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at ECommerce.Tests.Integration.ProductsControllerTests.DeleteProduct_WithNonexistentProduct_ReturnsNotFound() in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.Tests\Integration\ProductsControllerTests.cs:line 347
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.<>c__DisplayClass55_1.<<ExecuteInternalAsync>b__1>d.MoveNext() in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 424
+--- End of stack trace from previous location ---
+   at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo.ExecuteInternalAsync(Object[] arguments, CancellationTokenSource timeoutTokenSource) in /_/src/Adapter/MSTestAdapter.PlatformServices/Execution/TestMethodInfo.cs:line 442
+  Standard Output Messages:
+ [15:57:26 INF] Using SMTP email provider
+ [15:57:26 INF] Saved 0 entities to in-memory store.
+ [15:57:27 INF] Saved 3 entities to in-memory store.
+ [15:57:27 WRN] Skipping migration checks for non-relational provider.
+ System.InvalidOperationException: Relational-specific methods can only be used when the context is using a relational database provider.
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetRelationalService[TService](IInfrastructure`1 databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetMigrations(DatabaseFacade databaseFacade)
+    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.GetPendingMigrations(DatabaseFacade databaseFacade)
+    at Program.<Main>$(String[] args) in C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API\Program.cs:line 162
+ [15:57:27 INF] Seeding database with sample data...
+ Starting database seeding...
+ Seeding users...
+ Seeding categories...
+ [15:57:27 INF] Saved 3 entities to in-memory store.
+ Seeding products...
+ Database seeding completed successfully!
+ [15:57:27 INF] Database seeding completed.
+ [15:57:27 INF] User profile is available. Using 'C:\Users\ivans\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+ [15:57:27 INF] Application started. Press Ctrl+C to shut down.
+ [15:57:27 INF] Hosting environment: Development
+ [15:57:27 INF] Content root path: C:\Users\ivans\Desktop\Dev\E-commerce\src\backend\ECommerce.API
+ [15:57:27 INF] Application is shutting down...
+
+
+
+Failed!  - Failed:    23, Passed:   372, Skipped:     0, Total:   395, Duration: 8 s - ECommerce.Tests.dll (net10.0)
