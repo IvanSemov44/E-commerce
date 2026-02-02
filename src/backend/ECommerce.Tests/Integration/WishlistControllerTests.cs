@@ -84,7 +84,7 @@ public class WishlistControllerTests
     #region Add to Wishlist Tests
 
     [TestMethod]
-    public async Task AddToWishlist_WithValidProductId_ReturnsCreated()
+    public async Task AddToWishlist_WithValidProductId_ReturnsOk()
     {
         // Arrange
         using var client = _factory.CreateAuthenticatedClient();
@@ -96,11 +96,11 @@ public class WishlistControllerTests
         var content = new StringContent(JsonSerializer.Serialize(addWishlistDto), Encoding.UTF8, "application/json");
 
         // Act
-        var response = await client.PostAsync("/api/wishlist/items", content);
+        var response = await client.PostAsync("/api/wishlist/add", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest,
-            "AddToWishlist should return Created, OK, or BadRequest");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
+            "AddToWishlist should return OK, Created, or BadRequest");
     }
 
     [TestMethod]
@@ -116,7 +116,7 @@ public class WishlistControllerTests
         var content = new StringContent(JsonSerializer.Serialize(addWishlistDto), Encoding.UTF8, "application/json");
 
         // Act
-        var response = await client.PostAsync("/api/wishlist/items", content);
+        var response = await client.PostAsync("/api/wishlist/add", content);
 
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
@@ -128,18 +128,18 @@ public class WishlistControllerTests
     #region Remove from Wishlist Tests
 
     [TestMethod]
-    public async Task RemoveFromWishlist_WithExistingItem_ReturnsNoContent()
+    public async Task RemoveFromWishlist_WithExistingItem_ReturnsOk()
     {
         // Arrange
         using var client = _factory.CreateAuthenticatedClient();
         var productId = Guid.NewGuid();
 
         // Act
-        var response = await client.DeleteAsync($"/api/wishlist/items/{productId}");
+        var response = await client.DeleteAsync($"/api/wishlist/remove/{productId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "RemoveFromWishlist should return NoContent, OK, or NotFound");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.NotFound,
+            "RemoveFromWishlist should return OK, NoContent, or NotFound");
     }
 
     [TestMethod]
@@ -150,7 +150,7 @@ public class WishlistControllerTests
         var productId = Guid.NewGuid();
 
         // Act
-        var response = await client.DeleteAsync($"/api/wishlist/items/{productId}");
+        var response = await client.DeleteAsync($"/api/wishlist/remove/{productId}");
 
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
@@ -169,7 +169,7 @@ public class WishlistControllerTests
         var productId = Guid.NewGuid();
 
         // Act
-        var response = await client.GetAsync($"/api/wishlist/check/{productId}");
+        var response = await client.GetAsync($"/api/wishlist/contains/{productId}");
 
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,

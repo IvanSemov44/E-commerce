@@ -84,7 +84,7 @@ public class CartControllerTests
     #region Add Item Tests
 
     [TestMethod]
-    public async Task AddItemToCart_WithValidProductId_ReturnsCreated()
+    public async Task AddItemToCart_WithValidProductId_ReturnsOk()
     {
         // Arrange
         using var client = _factory.CreateAuthenticatedClient();
@@ -97,11 +97,11 @@ public class CartControllerTests
         var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
 
         // Act
-        var response = await client.PostAsync("/api/cart/items", content);
+        var response = await client.PostAsync("/api/cart/add-item", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest,
-            "AddItem should return Created, OK, or BadRequest");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
+            "AddItem should return OK, Created, or BadRequest");
     }
 
     [TestMethod]
@@ -118,7 +118,7 @@ public class CartControllerTests
         var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
 
         // Act
-        var response = await client.PostAsync("/api/cart/items", content);
+        var response = await client.PostAsync("/api/cart/add-item", content);
 
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity || response.StatusCode == HttpStatusCode.OK,
@@ -126,7 +126,7 @@ public class CartControllerTests
     }
 
     [TestMethod]
-    public async Task AddItemToCart_WithUnauthenticated_ReturnsUnauthorized()
+    public async Task AddItemToCart_WithUnauthenticated_AllowedForGuests()
     {
         // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
@@ -139,11 +139,11 @@ public class CartControllerTests
         var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
 
         // Act
-        var response = await client.PostAsync("/api/cart/items", content);
+        var response = await client.PostAsync("/api/cart/add-item", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
-            "Unauthenticated add should return Unauthorized");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.NotFound,
+            "Guest users can add to cart");
     }
 
     #endregion

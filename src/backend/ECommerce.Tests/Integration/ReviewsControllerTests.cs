@@ -40,7 +40,7 @@ public class ReviewsControllerTests
         var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         // Act
-        var response = await client.GetAsync($"/api/reviews?productId={productId}");
+        var response = await client.GetAsync($"/api/reviews/product/{productId}");
 
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
@@ -48,17 +48,18 @@ public class ReviewsControllerTests
     }
 
     [TestMethod]
-    public async Task GetReviews_WithoutProductId_ReturnsAllReviews()
+    public async Task GetReviews_ForProductRating_ReturnsOk()
     {
         // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
+        var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
         // Act
-        var response = await client.GetAsync("/api/reviews");
+        var response = await client.GetAsync($"/api/reviews/product/{productId}/rating");
 
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "GetReviews without filter should return OK");
+            "GetProductRating should return OK or NotFound");
     }
 
     [TestMethod]
@@ -69,7 +70,7 @@ public class ReviewsControllerTests
         var productId = Guid.NewGuid();
 
         // Act
-        var response = await client.GetAsync($"/api/reviews?productId={productId}");
+        var response = await client.GetAsync($"/api/reviews/product/{productId}");
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert

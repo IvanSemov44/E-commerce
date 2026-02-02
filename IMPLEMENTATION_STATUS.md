@@ -295,10 +295,39 @@ E-commerce/
 
 ---
 
+---
+
+## 🔄 CURRENT SESSION STATUS - Phase 14 (Week 5-6)
+
+### Latest Achievement: Route Corrections Applied! 🎯
+
+**Test Suite Update:**
+- **Total Tests:** 489
+- **Passing:** 437 (89.4%) ✅
+- **Failing:** 52 (10.6%) ⏳
+- **Build Status:** 0 errors ✅
+
+**What Was Fixed:**
+✅ Reviews Controller - Changed route from `/api/reviews?productId=` to `/api/reviews/product/{productId}`
+✅ Wishlist Controller - Updated routes to `/api/wishlist/add`, `/api/wishlist/remove/{productId}`, `/api/wishlist/contains/{productId}`
+✅ Promo Codes Controller - Routes verified
+✅ Cart Controller - Route `/api/cart/add-item` verified
+
+**Remaining Issues (52 failures):**
+- **23 failures** - Phase 13 auth/role propagation issues (static flag not working)
+- **4 failures** - Dashboard admin endpoints (auth handler issue)
+- **20+ failures** - Mix of auth issues and endpoint implementation gaps
+
+**Root Cause:** Admin role claims not propagating through ConditionalTestAuthHandler. Controllers exist and routes are correct, but tests fail due to static auth flags.
+
+**Next Priority:** Implement JWT token generation in TestWebApplicationFactory to replace static flags (should fix ~30 failures)
+
+---
+
 ## Contact & Support
 
 For detailed architecture decisions, see [ARCHITECTURE_PLAN.md](ARCHITECTURE_PLAN.md)
 For quick setup instructions, see [QUICK_SETUP.md](QUICK_SETUP.md)
 
 Created: January 14, 2026
-Last Updated: January 14, 2026
+Last Updated: February 3, 2026

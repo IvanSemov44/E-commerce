@@ -633,13 +633,56 @@ result.Id.Should().Be(product.Id);
 
 ## Phase 14 - Controller Integration Tests Part 2 (Week 5-6)
 
-**Status:** IN PROGRESS - 62 NEW TESTS ADDED
+**Status:** ROUTES CORRECTED - 437/489 PASSING (89.4%)
 
-**Summary:**
-- **Previous Total:** 397 tests (374 passing, 23 deferred)
-- **New Total:** 459 tests
-- **Current Passing:** 429 (87.7%)
-- **Current Failing:** 60 (13.3%)
+**Summary After Route Fixes:**
+- **Previous:** 429/459 passing (93.5% - but with wrong routes)
+- **After Corrections:** 437/489 passing (89.4%)
+- **Change:** +8 tests now passing (ReviewsControllerTests and WishlistControllerTests routes fixed)
+- **Remaining:** 52 failures (10.6% - mostly auth/role propagation issues)
+
+**Route Corrections Applied:**
+- ✅ ReviewsController: Changed `/api/reviews?productId=` → `/api/reviews/product/{productId}`
+- ✅ WishlistController: Changed `/api/wishlist/items` → `/api/wishlist/add` and `/api/wishlist/remove/{productId}`
+- ✅ WishlistController: Changed `/api/wishlist/check/{productId}` → `/api/wishlist/contains/{productId}`
+- ✅ CartController: Changed `/api/cart/items` → `/api/cart/add-item`
+- ✅ PromoCodesController: Routes verified (`/api/promo-codes/validate` exists)
+
+**Test Files Status:**
+
+| Controller | Test File | Test Count | Status | Notes |
+|---|---|---|---|---|
+| Categories | CategoriesControllerTests.cs | 9 | ⏳ 1 failure | Missing auth on admin endpoints |
+| Cart | CartControllerTests.cs | 10 | ⏳ 2 failures | Guest cart support; endpoint mismatch |
+| Reviews | ReviewsControllerTests.cs | 9 | ✅ NOW PASSING | Routes fixed! |
+| Wishlist | WishlistControllerTests.cs | 9 | ✅ NOW PASSING | Routes fixed! |
+| Promo Codes | PromoCodesControllerTests.cs | 9 | ⏳ 1-2 failures | Admin role not propagating |
+| Profile | ProfileControllerTests.cs | 10 | ⏳ 3 failures | Endpoints exist, auth issues |
+| Dashboard | DashboardControllerTests.cs | 7 | ⏳ 4 failures | Admin role auth failing |
+| Inventory | InventoryControllerTests.cs | 10 | ⏳ Multiple failures | Admin role, endpoints need verification |
+
+**Remaining 52 Failures (Breakdown):**
+- **Auth/Role Propagation (23 from Phase 13):** Login, RefreshToken, Product CRUD, Order status
+- **Dashboard Admin Auth (4):** Stats endpoints require admin role but static flag not working
+- **Cart/Profile/Other (20+):** Mix of auth issues and endpoint implementation gaps
+
+**Root Cause of Remaining Failures:**
+The 52 remaining failures are primarily due to the **static auth handler flag issue from Phase 13**:
+- Controllers exist and routes are correct
+- Tests fail because admin role claims not propagating through ConditionalTestAuthHandler
+- Need to migrate from static flags to JWT token generation
+
+**Current Test Suite Metrics:**
+- Total Tests: 489
+- Passing: 437 (89.4%) ✅
+- Failing: 52 (10.6%) ⏳
+- Build Status: 0 errors ✅
+
+**Next Steps to Reach 95%+ Pass Rate:**
+1. **Implement JWT Token Generation** in TestWebApplicationFactory (replaces static flags)
+2. **Regenerate failing Phase 13 tests** with proper JWT tokens
+3. **Verify Phase 14 endpoint implementations** are complete
+4. **Re-run full test suite** - should reach 95%+ pass rate
 
 **New Test Files (8 controllers):**
 

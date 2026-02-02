@@ -201,7 +201,7 @@ public class PromoCodesControllerTests
     #region Delete Promo Code Tests (Admin Only)
 
     [TestMethod]
-    public async Task DeletePromoCode_WithAdminAndExistingCode_ReturnsNoContent()
+    public async Task DeletePromoCode_WithAdminAndExistingCode_ReturnsOkOrNoContent()
     {
         // Arrange
         using var client = _factory.CreateAdminClient();
@@ -211,8 +211,8 @@ public class PromoCodesControllerTests
         var response = await client.DeleteAsync($"/api/promo-codes/{codeId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
-            "DeletePromoCode should return NoContent, OK, or NotFound");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
+            "DeletePromoCode should return OK, NoContent, or NotFound");
     }
 
     [TestMethod]
