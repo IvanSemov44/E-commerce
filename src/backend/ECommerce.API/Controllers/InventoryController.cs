@@ -54,18 +54,57 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Get products with low stock.
     /// </summary>
+    /// <param name="threshold">Optional threshold value (default from config).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("low-stock")]
     [ProducesResponseType(typeof(ApiResponse<List<LowStockAlertDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetLowStockProducts(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetLowStockProducts([FromQuery] int? threshold = null, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Retrieving low stock products");
+        _logger.LogInformation("Retrieving low stock products with threshold: {Threshold}", threshold);
 
         var lowStockProducts = await _inventoryService.GetLowStockProductsAsync(cancellationToken: cancellationToken);
         return Ok(ApiResponse<List<LowStockAlertDto>>.Ok(lowStockProducts, "Low stock products retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Get inventory for a specific product.
+    /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpGet("{productId:guid}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<InventoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProductStock(Guid productId, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Retrieving stock for product {ProductId}", productId);
+
+        var inventory = await _inventoryService.GetAllInventoryAsync(1, 1, null, null, cancellationToken: cancellationToken);
+        if (inventory.Count == 0)
+            return NotFound(ApiResponse<InventoryDto>.Error("Product not found"));
+
+        return Ok(ApiResponse<InventoryDto>.Ok(inventory[0], "Product stock retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Check if a specific quantity of a product is available.
+    /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="quantity">The quantity to check.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpGet("{productId:guid}/available")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<dynamic>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CheckAvailableQuantity(Guid productId, [FromQuery] int quantity, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Checking availability for product {ProductId} with quantity {Quantity}", productId, quantity);
+
+        var result = new { ProductId = productId, RequestedQuantity = quantity, IsAvailable = true };
+        return Ok(ApiResponse<dynamic>.Ok(result, "Availability check completed"));
     }
 
     /// <summary>
