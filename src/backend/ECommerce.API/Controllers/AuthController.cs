@@ -28,6 +28,7 @@ public class AuthController : ControllerBase
     /// Registers a new user account.
     /// </summary>
     /// <param name="registerDto">The registration details including email, password, and name.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The newly created user information and authentication token.</returns>
     /// <response code="200">User registered successfully.</response>
     /// <response code="400">Invalid registration data or user already exists.</response>
@@ -48,6 +49,7 @@ public class AuthController : ControllerBase
     /// Authenticates a user and returns a JWT token.
     /// </summary>
     /// <param name="loginDto">The login credentials including email and password.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Authenticated user information and JWT token.</returns>
     /// <response code="200">Login successful.</response>
     /// <response code="401">Invalid credentials.</response>
@@ -67,6 +69,7 @@ public class AuthController : ControllerBase
     /// Refreshes an expired JWT token.
     /// </summary>
     /// <param name="request">The refresh token request containing the expired token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A new valid JWT token.</returns>
     /// <response code="200">Token refreshed successfully.</response>
     /// <response code="401">Invalid or expired token.</response>
@@ -85,6 +88,7 @@ public class AuthController : ControllerBase
     /// Verifies a user's email address using the verification token.
     /// </summary>
     /// <param name="request">The email verification request containing userId and token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Verification result.</returns>
     /// <response code="200">Email verified successfully.</response>
     /// <response code="401">Invalid or expired verification token.</response>
@@ -106,6 +110,7 @@ public class AuthController : ControllerBase
     /// Sends a password reset email to the user.
     /// </summary>
     /// <param name="request">The forgot password request containing the user's email.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success message if email exists (security: always return success).</returns>
     /// <response code="200">Password reset email sent (or user not found, but we don't reveal that).</response>
     [HttpPost("forgot-password")]
@@ -125,6 +130,7 @@ public class AuthController : ControllerBase
     /// Resets the user's password using a valid reset token.
     /// </summary>
     /// <param name="request">The reset password request containing email, token, and new password.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Password reset result.</returns>
     /// <response code="200">Password reset successfully.</response>
     /// <response code="401">Invalid or expired reset token.</response>

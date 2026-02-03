@@ -76,29 +76,9 @@ public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSc
             }
         }
 
-        // Fall back to static flags if no Bearer token is provided
-        var claims = new List<Claim>
-        { 
-            new Claim(ClaimTypes.NameIdentifier, CurrentUserId), 
-            new Claim(ClaimTypes.Name, CurrentUserRole == "Admin" ? "admin@test" : "integration@test"),
-        };
-        
-        // Add role claims (can add multiple roles)
-        if (CurrentUserRole == "Admin" || CurrentUserRole == "SuperAdmin")
-        {
-            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
-            if (CurrentUserRole == "SuperAdmin")
-                claims.Add(new Claim(ClaimTypes.Role, "SuperAdmin"));
-        }
-        else
-        {
-            claims.Add(new Claim(ClaimTypes.Role, CurrentUserRole));
-        }
-
-        var identity = new ClaimsIdentity(claims, "Test");
-        var principal2 = new ClaimsPrincipal(identity);
-        var ticket2 = new AuthenticationTicket(principal2, "Test");
-        return Task.FromResult(AuthenticateResult.Success(ticket2));
+        // If no Bearer token is present, return NoResult() to let [Authorize] reject with 401
+        // This ensures unauthenticated clients properly get 401 on protected endpoints
+        return Task.FromResult(AuthenticateResult.NoResult());
     }
 }
 
@@ -263,12 +243,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Creates an unauthenticated HTTP client.
+    /// Creates an unauthenticated HTTP client (no Authorization header).
+    /// This allows [Authorize] decorators to properly reject the request with 401.
     /// </summary>
     public HttpClient CreateUnauthenticatedClient()
     {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = false;
-        return CreateClient();
+        var client = CreateClient();
+        // Don't set any Authorization header - this will trigger [Authorize] rejection with 401
+        // Don't disable authentication - that would bypass [Authorize] checks entirely
+        return client;
     }
 
     /// <summary>

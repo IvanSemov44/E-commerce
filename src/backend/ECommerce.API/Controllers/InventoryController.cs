@@ -51,6 +51,7 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Get products with low stock.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("low-stock")]
     [ProducesResponseType(typeof(ApiResponse<List<LowStockAlertDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
@@ -89,6 +90,9 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Adjust stock quantity for a product.
     /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="request">Stock adjustment request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("{productId}/adjust")]
     [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
@@ -126,6 +130,9 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Increase stock (restock) for a product.
     /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="request">Restock request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("{productId}/restock")]
     [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
@@ -163,6 +170,8 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Check stock availability for items (used by storefront before checkout).
     /// </summary>
+    /// <param name="request">Stock check request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("check-availability")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<StockCheckResponse>), StatusCodes.Status200OK)]

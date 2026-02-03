@@ -28,6 +28,7 @@ public class PaymentsController : ControllerBase
     /// Process a payment for an order.
     /// </summary>
     /// <param name="dto">Payment details including order ID and payment method.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Payment response with success/failure status and payment intent ID.</returns>
     /// <response code="200">Payment processed successfully or failed with details.</response>
     /// <response code="400">Invalid payment request.</response>
@@ -67,6 +68,7 @@ public class PaymentsController : ControllerBase
     /// Get payment details for a specific order.
     /// </summary>
     /// <param name="orderId">The order ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Payment details including status and amount.</returns>
     /// <response code="200">Payment details retrieved successfully.</response>
     /// <response code="404">Order or payment not found.</response>
@@ -91,6 +93,7 @@ public class PaymentsController : ControllerBase
     /// </summary>
     /// <param name="orderId">The order ID.</param>
     /// <param name="dto">Refund details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Refund response with status and refund ID.</returns>
     /// <response code="200">Refund processed successfully.</response>
     /// <response code="400">Invalid refund request.</response>
@@ -133,6 +136,7 @@ public class PaymentsController : ControllerBase
     /// Get payment intent details.
     /// </summary>
     /// <param name="paymentIntentId">The payment intent ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Payment intent details if found.</returns>
     /// <response code="200">Payment intent details retrieved successfully.</response>
     /// <response code="404">Payment intent not found.</response>

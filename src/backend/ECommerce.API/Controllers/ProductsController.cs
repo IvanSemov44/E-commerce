@@ -30,6 +30,7 @@ public class ProductsController : ControllerBase
     /// Retrieves a paginated list of products with optional filtering and sorting.
     /// </summary>
     /// <param name="query">Query parameters for paging, filtering and sorting.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A paginated list of products.</returns>
     /// <response code="200">Products retrieved successfully.</response>
     /// <response code="500">Internal server error.</response>
@@ -47,6 +48,7 @@ public class ProductsController : ControllerBase
     /// Retrieves featured products.
     /// </summary>
     /// <param name="count">The number of featured products to retrieve (default: 10).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of featured products.</returns>
     /// <response code="200">Featured products retrieved successfully.</response>
     /// <response code="500">Internal server error.</response>
@@ -64,6 +66,7 @@ public class ProductsController : ControllerBase
     /// Retrieves a product by its ID.
     /// </summary>
     /// <param name="id">The product ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The product details.</returns>
     /// <response code="200">Product retrieved successfully.</response>
     /// <response code="404">Product not found.</response>
@@ -83,6 +86,7 @@ public class ProductsController : ControllerBase
     /// Retrieves a product by its slug.
     /// </summary>
     /// <param name="slug">The product slug.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The product details.</returns>
     /// <response code="200">Product retrieved successfully.</response>
     /// <response code="404">Product not found.</response>
@@ -103,6 +107,7 @@ public class ProductsController : ControllerBase
     /// Creates a new product (admin only).
     /// </summary>
     /// <param name="createProductDto">The product creation details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The newly created product.</returns>
     /// <response code="201">Product created successfully.</response>
     /// <response code="400">Invalid product data.</response>
@@ -133,6 +138,7 @@ public class ProductsController : ControllerBase
     /// </summary>
     /// <param name="id">The product ID.</param>
     /// <param name="updateProductDto">The updated product details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The updated product.</returns>
     /// <response code="200">Product updated successfully.</response>
     /// <response code="400">Invalid product data.</response>
@@ -163,6 +169,7 @@ public class ProductsController : ControllerBase
     /// Deletes a product (admin only).
     /// </summary>
     /// <param name="id">The product ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Deletion result.</returns>
     /// <response code="200">Product deleted successfully.</response>
     /// <response code="401">User is not authenticated.</response>

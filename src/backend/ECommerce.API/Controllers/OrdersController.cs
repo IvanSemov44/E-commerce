@@ -68,6 +68,10 @@ public class OrdersController : ControllerBase
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
         var order = await _orderService.GetOrderByIdAsync(id, cancellationToken: cancellationToken);
+        if (order == null)
+        {
+            return NotFound(ApiResponse<OrderDetailDto>.Error("Order not found"));
+        }
         return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
     }
 
@@ -87,6 +91,10 @@ public class OrdersController : ControllerBase
     {
         _logger.LogInformation("Retrieving order by number {OrderNumber}", orderNumber);
         var order = await _orderService.GetOrderByNumberAsync(orderNumber, cancellationToken: cancellationToken);
+        if (order == null)
+        {
+            return NotFound(ApiResponse<OrderDetailDto>.Error("Order not found"));
+        }
         return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
     }
 

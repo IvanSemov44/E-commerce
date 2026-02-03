@@ -52,6 +52,8 @@ public class PromoCodesController : ControllerBase
     /// <summary>
     /// Get promo code by ID (Admin only).
     /// </summary>
+    /// <param name="id">The promo code ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("{id}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PromoCodeDetailDto>), StatusCodes.Status200OK)]
@@ -75,6 +77,8 @@ public class PromoCodesController : ControllerBase
     /// <summary>
     /// Create a new promo code (Admin only).
     /// </summary>
+    /// <param name="dto">Promo code creation details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
@@ -98,6 +102,9 @@ public class PromoCodesController : ControllerBase
     /// <summary>
     /// Update an existing promo code (Admin only).
     /// </summary>
+    /// <param name="id">The promo code ID.</param>
+    /// <param name="dto">Updated promo code details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
@@ -119,6 +126,8 @@ public class PromoCodesController : ControllerBase
     /// <summary>
     /// Deactivate a promo code (Admin only) - Soft delete.
     /// </summary>
+    /// <param name="id">The promo code ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("{id}/deactivate")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -137,6 +146,8 @@ public class PromoCodesController : ControllerBase
     /// <summary>
     /// Validate a promo code for an order (Public - supports guest checkout).
     /// </summary>
+    /// <param name="request">Validation request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("validate")]
     [AllowAnonymous]
     [ValidationFilter]
