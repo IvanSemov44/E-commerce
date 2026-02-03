@@ -50,7 +50,7 @@ public class UpdatePromoCodeDto
 public class ValidatePromoCodeRequest
 {
     public string Code { get; set; } = null!;
-    public decimal OrderAmount { get; set; }
+    public decimal OrderAmount { get; set; } = 0m;
 }
 
 public class ValidatePromoCodeDto
