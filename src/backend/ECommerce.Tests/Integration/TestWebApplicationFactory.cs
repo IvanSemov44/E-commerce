@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Hosting;
@@ -43,7 +45,38 @@ public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSc
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
-        // Build claims based on current user role
+        // First, try to extract JWT Bearer token from Authorization header
+        var authHeader = Request.Headers["Authorization"].ToString();
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough"));
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = key,
+                    ValidateIssuer = true,
+                    ValidIssuer = "test",
+                    ValidateAudience = true,
+                    ValidAudience = "test",
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(10)
+                };
+
+                var principal = handler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                var ticket = new AuthenticationTicket(principal, "Test");
+                return Task.FromResult(AuthenticateResult.Success(ticket));
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(AuthenticateResult.Fail($"JWT validation failed: {ex.Message}"));
+            }
+        }
+
+        // Fall back to static flags if no Bearer token is provided
         var claims = new List<Claim>
         { 
             new Claim(ClaimTypes.NameIdentifier, CurrentUserId), 
@@ -63,9 +96,9 @@ public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSc
         }
 
         var identity = new ClaimsIdentity(claims, "Test");
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, "Test");
-        return Task.FromResult(AuthenticateResult.Success(ticket));
+        var principal2 = new ClaimsPrincipal(identity);
+        var ticket2 = new AuthenticationTicket(principal2, "Test");
+        return Task.FromResult(AuthenticateResult.Success(ticket2));
     }
 }
 
@@ -169,14 +202,53 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
+    /// Generates a JWT token for testing with specified roles.
+    /// </summary>
+    public string GenerateJwtToken(string userId = "", params string[] roles)
+    {
+        userId = string.IsNullOrEmpty(userId) ? ConditionalTestAuthHandler.TestUserId : userId;
+        
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Name, roles.Contains("Admin") ? "admin@test" : "integration@test"),
+            new Claim(ClaimTypes.Email, roles.Contains("Admin") ? "admin@test" : "integration@test")
+        };
+        
+        // Add role claims
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+        
+        // If no roles specified, add Customer role
+        if (roles.Length == 0)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Customer"));
+        }
+        
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough"));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        
+        var token = new JwtSecurityToken(
+            issuer: "test",
+            audience: "test",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: creds);
+        
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    /// <summary>
     /// Creates an authenticated HTTP client (customer user).
     /// </summary>
     public HttpClient CreateAuthenticatedClient()
     {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-        return CreateClient();
+        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestUserId, "Customer");
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
     }
 
     /// <summary>
@@ -184,10 +256,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public HttpClient CreateAdminClient()
     {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestAdminUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        return CreateClient();
+        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestAdminUserId, "Admin");
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
     }
 
     /// <summary>
