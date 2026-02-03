@@ -9,9 +9,4 @@ public sealed class InvalidOrderStatusException : BadRequestException
         : base($"Cannot change order status from '{currentStatus}' to '{newStatus}'.")
     {
     }
-
-    public InvalidOrderStatusException(string message)
-        : base(message)
-    {
-    }
 }

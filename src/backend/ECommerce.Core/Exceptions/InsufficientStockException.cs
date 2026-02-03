@@ -9,9 +9,4 @@ public sealed class InsufficientStockException : BadRequestException
         : base($"Insufficient stock for product '{productName}'. Requested: {requestedQuantity}, Available: {availableQuantity}.")
     {
     }
-
-    public InsufficientStockException(string message)
-        : base(message)
-    {
-    }
 }

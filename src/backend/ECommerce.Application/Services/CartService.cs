@@ -60,7 +60,7 @@ public class CartService : ICartService
     {
         var cart = await _unitOfWork.Carts.GetByUserIdAsync(userId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException($"Cart not found for user {userId}");
+            throw new CartNotFoundException(userId);
 
         return await MapCartToDtoAsync(cart, cancellationToken);
     }

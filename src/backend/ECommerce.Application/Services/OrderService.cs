@@ -133,8 +133,8 @@ public class OrderService : IOrderService
                 var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
                 if (!stockCheck.IsAvailable)
                 {
-                    var issueMessages = string.Join("; ", stockCheck.Issues.Select(i => i.Message));
-                    throw new InsufficientStockException($"Insufficient stock: {issueMessages}");
+                    var firstIssue = stockCheck.Issues.First();
+                    throw new InsufficientStockException(firstIssue.ProductName, firstIssue.RequestedQuantity, firstIssue.AvailableQuantity);
                 }
             }
 
@@ -271,7 +271,7 @@ public class OrderService : IOrderService
         // Validate status
         if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var orderStatus))
         {
-            throw new InvalidOrderStatusException(status);
+            throw new InvalidOrderStatusException(order.Status.ToString(), status);
         }
 
         order.Status = orderStatus;
@@ -312,7 +312,7 @@ public class OrderService : IOrderService
         // Can't cancel if already shipped or delivered
         if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
         {
-            throw new InvalidOrderStatusException($"Cannot cancel order with status {order.Status}");
+            throw new InvalidOrderStatusException(order.Status.ToString(), "Cancelled");
         }
 
         order.Status = OrderStatus.Cancelled;

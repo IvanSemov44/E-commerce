@@ -171,6 +171,27 @@ public class PromoCodeService : IPromoCodeService
         _logger.LogInformation("Promo code deactivated: {Code}", promoCode.Code);
     }
 
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
+        if (promoCode == null)
+        {
+            throw new PromoCodeNotFoundException(id);
+        }
+
+        await _unitOfWork.PromoCodes.DeleteAsync(promoCode, cancellationToken: cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Promo code deleted: {Code}", promoCode.Code);
+    }
+
+    public async Task<List<PromoCodeDto>> GetActiveCodesAsync(CancellationToken cancellationToken = default)
+    {
+        var allCodes = await _unitOfWork.PromoCodes.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
+        var activeCodes = allCodes.Where(p => p.IsActive).ToList();
+        return _mapper.Map<List<PromoCodeDto>>(activeCodes);
+    }
+
     public async Task<ValidatePromoCodeDto> ValidatePromoCodeAsync(string code, decimal orderAmount, CancellationToken cancellationToken = default)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();

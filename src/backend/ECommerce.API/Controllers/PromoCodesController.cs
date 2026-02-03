@@ -27,6 +27,21 @@ public class PromoCodesController : ControllerBase
     }
 
     /// <summary>
+    /// Get all active promo codes (Public - for storefront display).
+    /// </summary>
+    [HttpGet("active")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<List<PromoCodeDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetActiveCodes(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Retrieving active promo codes");
+
+        var activeCodes = await _promoCodeService.GetActiveCodesAsync(cancellationToken: cancellationToken);
+        return Ok(ApiResponse<List<PromoCodeDto>>.Ok(activeCodes, "Active promo codes retrieved successfully"));
+    }
+
+    /// <summary>
     /// Get all promo codes with pagination and filtering (Admin only).
     /// </summary>
     [HttpGet]
@@ -141,6 +156,26 @@ public class PromoCodesController : ControllerBase
 
         await _promoCodeService.DeactivateAsync(id, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Promo code deactivated successfully"));
+    }
+
+    /// <summary>
+    /// Delete a promo code (Admin only) - Hard delete.
+    /// </summary>
+    /// <param name="id">The promo code ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeletePromoCode(Guid id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Deleting promo code {Id}", id);
+
+        await _promoCodeService.DeleteAsync(id, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<object>.Ok(new object(), "Promo code deleted successfully"));
     }
 
     /// <summary>

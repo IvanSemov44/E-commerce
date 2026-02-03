@@ -9,4 +9,9 @@ public sealed class CartNotFoundException : NotFoundException
         : base($"Cart for user with ID '{userId}' was not found.")
     {
     }
+
+    public CartNotFoundException(string message)
+        : base(message)
+    {
+    }
 }

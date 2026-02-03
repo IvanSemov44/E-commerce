@@ -180,7 +180,7 @@ public class AuthService : IAuthService
 
         if (user.EmailVerificationToken != token)
         {
-            throw new InvalidTokenException("Invalid or expired verification token");
+            throw new InvalidTokenException();
         }
 
         user.IsEmailVerified = true;
@@ -232,7 +232,7 @@ public class AuthService : IAuthService
 
         if (user.PasswordResetToken != token || user.PasswordResetExpires < DateTime.UtcNow)
         {
-            throw new InvalidTokenException("Invalid or expired reset token");
+            throw new InvalidTokenException();
         }
 
         user.PasswordHash = HashPassword(newPassword);
