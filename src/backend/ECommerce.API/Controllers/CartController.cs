@@ -4,7 +4,6 @@ using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ECommerce.API.Controllers;
 
@@ -17,23 +16,14 @@ namespace ECommerce.API.Controllers;
 public class CartController : ControllerBase
 {
     private readonly ICartService _cartService;
+    private readonly ICurrentUserService _currentUser;
     private readonly ILogger<CartController> _logger;
 
-    public CartController(ICartService cartService, ILogger<CartController> logger)
+    public CartController(ICartService cartService, ICurrentUserService currentUser, ILogger<CartController> logger)
     {
         _cartService = cartService;
+        _currentUser = currentUser;
         _logger = logger;
-    }
-
-    private Guid? GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
-        return userIdClaim?.Value != null ? Guid.Parse(userIdClaim.Value) : null;
-    }
-
-    private string? GetSessionId()
-    {
-        return Request.Cookies.TryGetValue("sessionId", out var sessionId) ? sessionId : null;
     }
 
     /// <summary>
@@ -50,7 +40,7 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CartDto>>> GetCart(CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
+        var userId = _currentUser.UserIdOrNull;
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<CartDto>.Error("User not authenticated"));
 
@@ -69,8 +59,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CartDto>>> GetOrCreateCart(CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var sessionId = GetSessionId();
+        var userId = _currentUser.UserIdOrNull;
+        var sessionId = _currentUser.SessionId;
 
         var cart = await _cartService.GetOrCreateCartAsync(userId, sessionId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<CartDto>.Ok(cart, "Cart retrieved or created successfully"));
@@ -93,8 +83,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CartDto>>> AddToCart([FromBody] AddToCartDto dto, CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var sessionId = GetSessionId();
+        var userId = _currentUser.UserIdOrNull;
+        var sessionId = _currentUser.SessionId;
 
         var cart = await _cartService.AddToCartAsync(userId, sessionId, dto.ProductId, dto.Quantity, cancellationToken: cancellationToken);
         _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
@@ -119,8 +109,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CartDto>>> UpdateCartItem(Guid cartItemId, [FromBody] UpdateCartItemDto dto, CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var sessionId = GetSessionId();
+        var userId = _currentUser.UserIdOrNull;
+        var sessionId = _currentUser.SessionId;
 
         var cart = await _cartService.UpdateCartItemAsync(userId, sessionId, cartItemId, dto.Quantity, cancellationToken: cancellationToken);
         _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
@@ -141,8 +131,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CartDto>>> RemoveFromCart(Guid cartItemId, CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var sessionId = GetSessionId();
+        var userId = _currentUser.UserIdOrNull;
+        var sessionId = _currentUser.SessionId;
 
         var cart = await _cartService.RemoveFromCartAsync(userId, sessionId, cartItemId, cancellationToken: cancellationToken);
         _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
@@ -160,8 +150,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CartDto>>> ClearCart(CancellationToken cancellationToken)
     {
-        var userId = GetUserId();
-        var sessionId = GetSessionId();
+        var userId = _currentUser.UserIdOrNull;
+        var sessionId = _currentUser.SessionId;
 
         var cart = await _cartService.ClearCartAsync(userId, sessionId, cancellationToken: cancellationToken);
         _logger.LogInformation("Cart cleared");

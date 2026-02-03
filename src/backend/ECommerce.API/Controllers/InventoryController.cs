@@ -16,13 +16,16 @@ namespace ECommerce.API.Controllers;
 public class InventoryController : ControllerBase
 {
     private readonly IInventoryService _inventoryService;
+    private readonly ICurrentUserService _currentUser;
     private readonly ILogger<InventoryController> _logger;
 
     public InventoryController(
         IInventoryService inventoryService,
+        ICurrentUserService currentUser,
         ILogger<InventoryController> logger)
     {
         _inventoryService = inventoryService;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -102,7 +105,7 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AdjustStock(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserIdOrNull;
 
         _logger.LogInformation("Adjusting stock for product {ProductId} to {Quantity} (User: {UserId})",
             productId, request.Quantity, userId);
@@ -142,7 +145,7 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RestockProduct(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserIdOrNull;
 
         _logger.LogInformation("Restocking product {ProductId} with {Quantity} units (User: {UserId})",
             productId, request.Quantity, userId);
@@ -184,11 +187,5 @@ public class InventoryController : ControllerBase
         var message = result.IsAvailable ? "All items are available" : "Some items have stock issues";
 
         return Ok(ApiResponse<StockCheckResponse>.Ok(result, message));
-    }
-
-    private Guid? GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst("sub") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        return userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId) ? userId : null;
     }
 }

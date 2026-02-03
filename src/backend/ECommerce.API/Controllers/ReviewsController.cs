@@ -5,7 +5,6 @@ using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ECommerce.API.Controllers;
 
@@ -18,11 +17,13 @@ namespace ECommerce.API.Controllers;
 public class ReviewsController : ControllerBase
 {
     private readonly IReviewService _reviewService;
+    private readonly ICurrentUserService _currentUser;
     private readonly ILogger<ReviewsController> _logger;
 
-    public ReviewsController(IReviewService reviewService, ILogger<ReviewsController> logger)
+    public ReviewsController(IReviewService reviewService, ICurrentUserService currentUser, ILogger<ReviewsController> logger)
     {
         _reviewService = reviewService;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -76,7 +77,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyReviews(CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving reviews for user {UserId}", userId);
         var reviews = await _reviewService.GetUserReviewsAsync(userId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(reviews, "Your reviews retrieved successfully"));
@@ -121,7 +122,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateReview([FromBody] CreateReviewDto dto, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Creating review for product {ProductId} by user {UserId}", dto.ProductId, userId);
 
         var review = await _reviewService.CreateReviewAsync(userId, dto, cancellationToken: cancellationToken);
@@ -149,7 +150,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReview(Guid reviewId, [FromBody] UpdateReviewDto dto, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Updating review {ReviewId} by user {UserId}", reviewId, userId);
 
         var review = await _reviewService.UpdateReviewAsync(userId, reviewId, dto, cancellationToken: cancellationToken);
@@ -171,7 +172,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteReview(Guid reviewId, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Deleting review {ReviewId} by user {UserId}", reviewId, userId);
 
         await _reviewService.DeleteReviewAsync(userId, reviewId, cancellationToken: cancellationToken);
@@ -236,15 +237,5 @@ public class ReviewsController : ControllerBase
         _logger.LogInformation("Rejecting review {ReviewId}", reviewId);
         var review = await _reviewService.RejectReviewAsync(reviewId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<ReviewDetailDto>.Ok(review, "Review rejected and deleted successfully"));
-    }
-
-    private Guid GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
-        if (userIdClaim?.Value == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-        {
-            throw new UnauthorizedAccessException("User ID not found in token");
-        }
-        return userId;
     }
 }

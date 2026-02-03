@@ -82,7 +82,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
 // Register Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+// Register HTTP context accessor
+builder.Services.AddHttpContextAccessor();
+
 // Register services
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();

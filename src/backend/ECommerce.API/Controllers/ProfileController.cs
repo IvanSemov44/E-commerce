@@ -4,7 +4,6 @@ using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ECommerce.API.Controllers;
 
@@ -18,11 +17,13 @@ namespace ECommerce.API.Controllers;
 public class ProfileController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ICurrentUserService _currentUser;
     private readonly ILogger<ProfileController> _logger;
 
-    public ProfileController(IUserService userService, ILogger<ProfileController> logger)
+    public ProfileController(IUserService userService, ICurrentUserService currentUser, ILogger<ProfileController> logger)
     {
         _userService = userService;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -39,7 +40,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
         var profile = await _userService.GetUserProfileAsync(userId, cancellationToken: cancellationToken);
@@ -62,7 +63,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Updating profile for user {UserId}", userId);
 
         var profile = await _userService.UpdateUserProfileAsync(userId, updateProfileDto, cancellationToken: cancellationToken);
@@ -82,7 +83,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPreferences(CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
 
         var preferences = await _userService.GetUserPreferencesAsync(userId, cancellationToken: cancellationToken);
@@ -104,20 +105,40 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdatePreferences([FromBody] UserPreferencesDto dto, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Updating preferences for user {UserId}", userId);
 
         var preferences = await _userService.UpdateUserPreferencesAsync(userId, dto, cancellationToken: cancellationToken);
         return Ok(ApiResponse<UserPreferencesDto>.Ok(preferences, "Preferences updated successfully"));
     }
 
-    private Guid GetCurrentUserId()
+    /// <summary>
+    /// Changes the authenticated user's password.
+    /// </summary>
+    /// <param name="dto">The password change request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Success message.</returns>
+    /// <response code="200">Password changed successfully.</response>
+    /// <response code="400">Invalid request or mismatched passwords.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">User not found.</response>
+    [HttpPost("change-password")]
+    [ValidationFilter]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
-        if (userIdClaim?.Value == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        var userId = _currentUser.UserId;
+        _logger.LogInformation("Changing password for user {UserId}", userId);
+
+        // Validate that new passwords match
+        if (dto.NewPassword != dto.ConfirmPassword)
         {
-            throw new UnauthorizedAccessException("User ID not found in token");
+            return BadRequest(ApiResponse<object>.Error("New password and confirmation do not match"));
         }
-        return userId;
+
+        await _userService.ChangePasswordAsync(userId, dto.OldPassword, dto.NewPassword, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<object>.Ok(new object(), "Password changed successfully"));
     }
 }

@@ -1,7 +1,6 @@
 using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
@@ -18,11 +17,13 @@ namespace ECommerce.API.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly ICurrentUserService _currentUser;
     private readonly ILogger<OrdersController> _logger;
 
-    public OrdersController(IOrderService orderService, ILogger<OrdersController> logger)
+    public OrdersController(IOrderService orderService, ICurrentUserService currentUser, ILogger<OrdersController> logger)
     {
         _orderService = orderService;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -43,7 +44,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Creating order for user {UserId}", userId);
 
         var order = await _orderService.CreateOrderAsync(userId, dto, cancellationToken: cancellationToken);
@@ -111,7 +112,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var userId = GetCurrentUserId();
+        var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, page);
 
         var result = await _orderService.GetUserOrdersAsync(userId, page, pageSize, cancellationToken: cancellationToken);
@@ -183,16 +184,6 @@ public class OrdersController : ControllerBase
         _logger.LogInformation("Cancelling order {OrderId}", id);
         var result = await _orderService.CancelOrderAsync(id, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Order cancelled successfully"));
-    }
-
-    private Guid GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
-        if (userIdClaim?.Value == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-        {
-            throw new UnauthorizedAccessException("User ID not found in token");
-        }
-        return userId;
     }
 }
 

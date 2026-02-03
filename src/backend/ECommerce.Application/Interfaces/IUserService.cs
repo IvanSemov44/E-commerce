@@ -40,4 +40,14 @@ public interface IUserService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated user preferences DTO.</returns>
     Task<UserPreferencesDto> UpdateUserPreferencesAsync(Guid userId, UserPreferencesDto dto, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Changes a user's password.
+    /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="oldPassword">The old password.</param>
+    /// <param name="newPassword">The new password.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Task completed.</returns>
+    Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default);
 }
