@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Core.Entities;
 using ECommerce.Application.Interfaces;
+using BCrypt.Net;
 
 namespace ECommerce.Tests.Integration;
 
@@ -128,6 +129,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 db.Database.EnsureDeleted();
                 db.Database.EnsureCreated();
 
+                // Generate proper BCrypt hash for test password
+                string passwordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+
                 // Seed a customer user
                 var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
                 if (!db.Users.Any(u => u.Id == userId))
@@ -139,7 +143,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                         FirstName = "Integration", 
                         LastName = "User", 
                         Role = Core.Enums.UserRole.Customer,
-                        PasswordHash = "test_hash"
+                        PasswordHash = passwordHash
                     });
                 }
 
@@ -154,7 +158,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                         FirstName = "Admin", 
                         LastName = "User", 
                         Role = Core.Enums.UserRole.Admin,
-                        PasswordHash = "test_hash"
+                        PasswordHash = passwordHash
                     });
                 }
 

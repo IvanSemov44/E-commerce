@@ -125,11 +125,13 @@ public class CartController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The updated shopping cart.</returns>
     /// <response code="200">Item removed from cart successfully.</response>
+    /// <response code="401">User not authenticated.</response>
     /// <response code="404">Cart item not found.</response>
     [HttpDelete("remove-item/{cartItemId:guid}")]
     [HttpDelete("items/{cartItemId:guid}")]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CartDto>>> RemoveFromCart(Guid cartItemId, CancellationToken cancellationToken)
     {
