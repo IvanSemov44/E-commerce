@@ -102,6 +102,7 @@ public class CartController : ControllerBase
     /// <response code="400">Invalid quantity or insufficient stock.</response>
     /// <response code="404">Cart item not found.</response>
     [HttpPut("update-item/{cartItemId:guid}")]
+    [HttpPut("items/{cartItemId:guid}")]
     [AllowAnonymous]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
@@ -126,6 +127,7 @@ public class CartController : ControllerBase
     /// <response code="200">Item removed from cart successfully.</response>
     /// <response code="404">Cart item not found.</response>
     [HttpDelete("remove-item/{cartItemId:guid}")]
+    [HttpDelete("items/{cartItemId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
@@ -146,6 +148,7 @@ public class CartController : ControllerBase
     /// <returns>The emptied shopping cart.</returns>
     /// <response code="200">Cart cleared successfully.</response>
     [HttpPost("clear")]
+    [HttpDelete]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CartDto>>> ClearCart(CancellationToken cancellationToken)
