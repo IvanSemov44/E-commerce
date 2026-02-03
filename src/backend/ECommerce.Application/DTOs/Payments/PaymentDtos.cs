@@ -8,7 +8,8 @@ public class ProcessPaymentDto
     public Guid OrderId { get; set; }
     public string PaymentMethod { get; set; } = null!; // "stripe", "paypal", "credit_card", etc.
     public string? CardToken { get; set; } // Stripe token or payment token
-    public string? PayPalEmail { get; set; } // For PayPal payments
+    public string? PayPalEmail { get; set; } // For PayPal payments via email
+    public string? PaypalToken { get; set; } // For PayPal payments via token (alternative to PayPalEmail)
     public decimal Amount { get; set; }
     public string? IdempotencyKey { get; set; } // For idempotent requests
 }
@@ -67,4 +68,17 @@ public class RefundResponseDto
     public string Status { get; set; } = null!;
     public string Message { get; set; } = null!;
     public DateTime ProcessedAt { get; set; }
+}
+
+/// <summary>
+/// DTO for payment webhook events from payment providers.
+/// </summary>
+public class PaymentWebhookDto
+{
+    public string? EventType { get; set; }
+    public string? PaymentIntentId { get; set; }
+    public decimal? Amount { get; set; }
+    public string? Status { get; set; }
+    public string? Currency { get; set; }
+    public long? Timestamp { get; set; }
 }

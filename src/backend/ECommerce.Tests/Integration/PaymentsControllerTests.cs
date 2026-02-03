@@ -33,7 +33,7 @@ public class PaymentsControllerTests
     {
         // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-        var orderId = Guid.NewGuid();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
         var processPaymentDto = new
         {
             OrderId = orderId,
@@ -181,8 +181,8 @@ public class PaymentsControllerTests
     public async Task RefundPayment_WithValidOrderId_ReturnsSuccessOrNotFound()
     {
         // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var orderId = Guid.NewGuid();
+        using var client = _factory.CreateAdminClient();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
         var refundDto = new
         {
             Reason = "Customer requested refund"
@@ -202,8 +202,8 @@ public class PaymentsControllerTests
     public async Task RefundPayment_WithPartialRefund_ReturnsSuccessOrNotFound()
     {
         // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var orderId = Guid.NewGuid();
+        using var client = _factory.CreateAdminClient();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
         var refundDto = new
         {
             Amount = 50.00m,
@@ -224,8 +224,8 @@ public class PaymentsControllerTests
     public async Task RefundPayment_WithNegativeAmount_ReturnsBadRequest()
     {
         // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var orderId = Guid.NewGuid();
+        using var client = _factory.CreateAdminClient();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
         var refundDto = new
         {
             Amount = -50.00m,  // Invalid negative amount
@@ -330,7 +330,7 @@ public class PaymentsControllerTests
     {
         // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-        var orderId = Guid.NewGuid();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
         var processPaymentDto = new
         {
             OrderId = orderId,
@@ -353,7 +353,7 @@ public class PaymentsControllerTests
     {
         // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-        var orderId = Guid.NewGuid();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
         var processPaymentDto = new
         {
             OrderId = orderId,

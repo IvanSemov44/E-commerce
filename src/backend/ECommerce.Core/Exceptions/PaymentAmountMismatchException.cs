@@ -1,13 +1,10 @@
 namespace ECommerce.Core.Exceptions;
 
 /// <summary>
-/// Exception thrown when payment amount does not match the order total.
+/// Exception thrown when payment amount doesn't match order amount.
 /// </summary>
 public sealed class PaymentAmountMismatchException : BadRequestException
 {
     public PaymentAmountMismatchException(decimal expectedAmount, decimal providedAmount)
-        : base($"Payment amount does not match order total. Expected: {expectedAmount:C}, Got: {providedAmount:C}") { }
-
-    public PaymentAmountMismatchException(string message)
-        : base(message) { }
+        : base($"Payment amount mismatch. Expected: {expectedAmount:C}, Provided: {providedAmount:C}") { }
 }

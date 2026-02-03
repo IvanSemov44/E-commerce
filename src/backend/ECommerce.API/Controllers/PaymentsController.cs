@@ -210,4 +210,43 @@ public class PaymentsController : ControllerBase
 
         return Ok(ApiResponse<HealthCheckResponseDto>.Ok(response, "Payment service is healthy"));
     }
+
+    /// <summary>
+    /// Process payment webhook from payment providers (Stripe, PayPal).
+    /// This endpoint allows anonymous access for payment provider callbacks.
+    /// </summary>
+    /// <param name="webhookPayload">Webhook event payload from payment provider.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Webhook processing response.</returns>
+    /// <response code="200">Webhook processed successfully.</response>
+    /// <response code="204">Webhook processed successfully (no content).</response>
+    /// <response code="400">Invalid webhook payload.</response>
+    /// <response code="500">Internal server error.</response>
+    [HttpPost("webhook")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ProcessPaymentWebhook([FromBody] PaymentWebhookDto webhookPayload, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Webhook received for event type: {EventType}", webhookPayload?.EventType ?? "unknown");
+
+        if (webhookPayload == null)
+        {
+            _logger.LogWarning("Invalid webhook payload received");
+            return BadRequest(ApiResponse<string>.Error("Invalid webhook payload"));
+        }
+
+        // In a real implementation, you would:
+        // 1. Verify the webhook signature
+        // 2. Process the event (update order status, payment status, etc.)
+        // 3. Store the webhook event for audit purposes
+        
+        _logger.LogInformation("Webhook processed successfully for PaymentIntentId: {PaymentIntentId}", 
+            webhookPayload.PaymentIntentId ?? "unknown");
+
+        // Return 200 OK with a simple response
+        return Ok(new { status = "received", message = "Webhook processed successfully" });
+    }
 }

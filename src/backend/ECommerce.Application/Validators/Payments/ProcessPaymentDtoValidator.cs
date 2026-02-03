@@ -34,9 +34,13 @@ public class ProcessPaymentDtoValidator : AbstractValidator<ProcessPaymentDto>
 
         When(x => x.PaymentMethod != null && x.PaymentMethod.Equals("paypal", StringComparison.OrdinalIgnoreCase), () =>
         {
+            RuleFor(x => x)
+                .Must(x => !string.IsNullOrEmpty(x.PayPalEmail) || !string.IsNullOrEmpty(x.PaypalToken))
+                .WithMessage("Either PayPalEmail or PaypalToken is required for PayPal payments");
+            
             RuleFor(x => x.PayPalEmail)
-                .NotEmpty().WithMessage("PayPalEmail is required for PayPal payments")
-                .EmailAddress().WithMessage("PayPalEmail must be a valid email address");
+                .EmailAddress().When(x => !string.IsNullOrEmpty(x.PayPalEmail))
+                .WithMessage("PayPalEmail must be a valid email address");
         });
     }
 }

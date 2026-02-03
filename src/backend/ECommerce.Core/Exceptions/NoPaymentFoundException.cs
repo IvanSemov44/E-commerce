@@ -7,7 +7,4 @@ public sealed class NoPaymentFoundException : NotFoundException
 {
     public NoPaymentFoundException(Guid orderId)
         : base($"No payment found for order {orderId}") { }
-
-    public NoPaymentFoundException(string message)
-        : base(message) { }
 }

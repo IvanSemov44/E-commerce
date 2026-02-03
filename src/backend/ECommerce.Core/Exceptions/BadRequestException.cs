@@ -35,13 +35,6 @@ public sealed class InvalidCredentialsBadRequestException : BadRequestException
     /// </summary>
     public InvalidCredentialsBadRequestException()
         : base("Email or password is incorrect.") { }
-
-    /// <summary>
-    /// Initializes a new instance with a custom message.
-    /// </summary>
-    /// <param name="message">Custom error message for credentials validation.</param>
-    public InvalidCredentialsBadRequestException(string message)
-        : base(message) { }
 }
 
 /// <summary>
@@ -54,13 +47,6 @@ public sealed class InvalidPasswordChangeBadRequestException : BadRequestExcepti
     /// </summary>
     public InvalidPasswordChangeBadRequestException()
         : base("Current password is incorrect.") { }
-
-    /// <summary>
-    /// Initializes a new instance with a custom message.
-    /// </summary>
-    /// <param name="message">The error message describing the password change issue.</param>
-    public InvalidPasswordChangeBadRequestException(string message)
-        : base(message) { }
 }
 
 /// <summary>

@@ -1,13 +1,10 @@
 namespace ECommerce.Core.Exceptions;
 
 /// <summary>
-/// Exception thrown when attempting to update a review after the allowed time window.
+/// Exception thrown when attempting to update a review past the allowed time window.
 /// </summary>
 public sealed class ReviewUpdateTimeExpiredException : BadRequestException
 {
     public ReviewUpdateTimeExpiredException()
-        : base("Reviews can only be updated within 24 hours of creation") { }
-
-    public ReviewUpdateTimeExpiredException(string message)
-        : base(message) { }
+        : base("Review can no longer be updated as the time window has expired") { }
 }

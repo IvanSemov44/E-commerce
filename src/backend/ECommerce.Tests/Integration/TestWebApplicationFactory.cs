@@ -27,6 +27,7 @@ public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSc
 {
     public const string TestUserId = "11111111-1111-1111-1111-111111111111";
     public const string TestAdminUserId = "33333333-3333-3333-3333-333333333333";
+    public const string TestOrderId = "44444444-4444-4444-4444-444444444444";
     
     // Static flags to control authentication and user context per test session
     public static bool IsAuthenticationEnabled { get; set; } = true;
@@ -174,6 +175,26 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                         Price = 10.0m, 
                         StockQuantity = 100, 
                         IsActive = true 
+                    });
+                }
+
+                // Seed a test order for payment processing tests
+                var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+                if (!db.Orders.Any(o => o.Id == orderId))
+                {
+                    db.Orders.Add(new Order
+                    {
+                        Id = orderId,
+                        OrderNumber = "TEST-ORDER-001",
+                        UserId = userId,
+                        Status = Core.Enums.OrderStatus.Pending,
+                        PaymentStatus = Core.Enums.PaymentStatus.Paid,  // Pre-paid for refund testing
+                        Subtotal = 100.00m,
+                        DiscountAmount = 0.00m,
+                        ShippingAmount = 10.00m,
+                        TaxAmount = 0.00m,
+                        TotalAmount = 100.00m,
+                        Currency = "USD"
                     });
                 }
 
