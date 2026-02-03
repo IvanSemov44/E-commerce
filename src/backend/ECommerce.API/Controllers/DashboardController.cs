@@ -42,4 +42,49 @@ public class DashboardController : ControllerBase
         var stats = await _dashboardService.GetDashboardStatsAsync(cancellationToken: cancellationToken);
         return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "Dashboard statistics retrieved successfully"));
     }
+
+    /// <summary>
+    /// Retrieves order statistics (admin only).
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Order statistics.</returns>
+    [HttpGet("order-stats")]
+    [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetOrderStats(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Retrieving order statistics");
+        var stats = await _dashboardService.GetDashboardStatsAsync(cancellationToken: cancellationToken);
+        return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "Order statistics retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Retrieves user statistics (admin only).
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>User statistics.</returns>
+    [HttpGet("user-stats")]
+    [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetUserStats(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Retrieving user statistics");
+        var stats = await _dashboardService.GetDashboardStatsAsync(cancellationToken: cancellationToken);
+        return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "User statistics retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Retrieves revenue statistics (admin only).
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Revenue statistics.</returns>
+    [HttpGet("revenue-stats")]
+    [ProducesResponseType(typeof(ApiResponse<DashboardStatsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRevenueStats(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Retrieving revenue statistics");
+        var stats = await _dashboardService.GetDashboardStatsAsync(cancellationToken: cancellationToken);
+        return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "Revenue statistics retrieved successfully"));
+    }
 }

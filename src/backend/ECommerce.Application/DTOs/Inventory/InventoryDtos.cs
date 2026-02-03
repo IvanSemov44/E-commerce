@@ -76,3 +76,14 @@ public class StockAdjustmentResponseDto
     public int QuantityChanged { get; set; }
     public DateTime AdjustedAt { get; set; }
 }
+
+public class BulkStockUpdateRequest
+{
+    public List<BulkStockUpdateItem> Updates { get; set; } = new();
+}
+
+public class BulkStockUpdateItem
+{
+    public Guid ProductId { get; set; }
+    public int Quantity { get; set; }
+}
