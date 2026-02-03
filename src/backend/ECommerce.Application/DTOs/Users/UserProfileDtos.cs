@@ -39,3 +39,18 @@ public class UpdateProfileDto
     [StringLength(500, ErrorMessage = "Avatar URL must not exceed 500 characters")]
     public string? AvatarUrl { get; set; }
 }
+
+/// <summary>
+/// DTO for user preferences.
+/// </summary>
+public class UserPreferencesDto
+{
+    public Guid UserId { get; set; }
+    public bool EmailNotifications { get; set; } = true;
+    public bool SmsNotifications { get; set; } = false;
+    public bool PushNotifications { get; set; } = true;
+    public string Language { get; set; } = "en";
+    public string Currency { get; set; } = "USD";
+    public bool NewsletterSubscribed { get; set; } = false;
+}
+

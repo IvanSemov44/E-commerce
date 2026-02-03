@@ -59,4 +59,47 @@ public class UserService : IUserService
 
         return _mapper.Map<UserProfileDto>(user);
     }
+
+    public async Task<UserPreferencesDto> GetUserPreferencesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
+
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        if (user == null)
+            throw new UserNotFoundException(userId);
+
+        // Return default preferences for now
+        return new UserPreferencesDto
+        {
+            UserId = userId,
+            EmailNotifications = true,
+            SmsNotifications = false,
+            PushNotifications = true,
+            Language = "en",
+            Currency = "USD",
+            NewsletterSubscribed = false
+        };
+    }
+
+    public async Task<UserPreferencesDto> UpdateUserPreferencesAsync(Guid userId, UserPreferencesDto dto, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Updating preferences for user {UserId}", userId);
+
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        if (user == null)
+            throw new UserNotFoundException(userId);
+
+        // Return updated preferences
+        return new UserPreferencesDto
+        {
+            UserId = userId,
+            EmailNotifications = dto.EmailNotifications,
+            SmsNotifications = dto.SmsNotifications,
+            PushNotifications = dto.PushNotifications,
+            Language = dto.Language,
+            Currency = dto.Currency,
+            NewsletterSubscribed = dto.NewsletterSubscribed
+        };
+    }
 }
+

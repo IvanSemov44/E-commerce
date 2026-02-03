@@ -69,6 +69,48 @@ public class ProfileController : ControllerBase
         return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Profile updated successfully"));
     }
 
+    /// <summary>
+    /// Retrieves the authenticated user's preferences.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The user's preferences.</returns>
+    /// <response code="200">Preferences retrieved successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">User not found.</response>
+    [HttpGet("preferences")]
+    [ProducesResponseType(typeof(ApiResponse<UserPreferencesDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPreferences(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
+
+        var preferences = await _userService.GetUserPreferencesAsync(userId, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<UserPreferencesDto>.Ok(preferences, "Preferences retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Updates the authenticated user's preferences.
+    /// </summary>
+    /// <param name="dto">The updated preferences.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated user preferences.</returns>
+    /// <response code="200">Preferences updated successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="404">User not found.</response>
+    [HttpPut("preferences")]
+    [ValidationFilter]
+    [ProducesResponseType(typeof(ApiResponse<UserPreferencesDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdatePreferences([FromBody] UserPreferencesDto dto, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Updating preferences for user {UserId}", userId);
+
+        var preferences = await _userService.UpdateUserPreferencesAsync(userId, dto, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<UserPreferencesDto>.Ok(preferences, "Preferences updated successfully"));
+    }
+
     private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
