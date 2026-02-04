@@ -7,7 +7,7 @@ namespace ECommerce.Application.DTOs.Auth
     /// </summary>
     public class RefreshTokenRequest
     {
-        public string Token { get; set; } = null!;
+        public string? Token { get; set; }
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Exceptions;
+using ECommerce.Core.Exceptions.Base;
 using Microsoft.AspNetCore.Http;
 
 namespace ECommerce.API.Middleware;

@@ -1,17 +1,29 @@
 # Exception Class Structure
 
-## Folder: `ECommerce.Core/Exceptions`
+## Folder Structure
+
+```
+ECommerce.Core/Exceptions/
+├── Base/                           (Abstract base exception classes)
+│   ├── NotFoundException.cs
+│   ├── BadRequestException.cs
+│   ├── UnauthorizedException.cs
+│   └── ConflictException.cs
+└── *.cs                            (Specific exception implementations)
+```
 
 All exception classes follow **type-safe constructor patterns** - no generic `(string message)` constructors.
 
-### Base Exceptions (Abstract)
+All specific exceptions use `using ECommerce.Core.Exceptions.Base;` to import base classes.
 
-| File | Constructors | Usage |
-|------|--------------|-------|
-| `NotFoundException.cs` | Abstract base class | Base for 404 errors |
-| `BadRequestException.cs` | `(string message)` protected | Base for 400 errors |
-| `UnauthorizedException.cs` | Abstract base class | Base for 401 errors |
-| `ConflictException.cs` | Abstract base class | Base for 409 errors |
+### Base Exceptions (Abstract) - Located in `Base/` subfolder
+
+| File | Namespace | Constructors | Usage |
+|------|-----------|--------------|-------|
+| `Base/NotFoundException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 404 errors |
+| `Base/BadRequestException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 400 errors |
+| `Base/UnauthorizedException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 401 errors |
+| `Base/ConflictException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 409 errors |
 
 ---
 
@@ -50,16 +62,11 @@ All exception classes follow **type-safe constructor patterns** - no generic `(s
 | `ProductNotAvailableException.cs` | `(string productName)` | ✓ Type-safe |
 | `UnsupportedPaymentMethodException.cs` | `(string paymentMethod)` | ✓ Type-safe |
 | `CategoryHasProductsException.cs` | `(Guid categoryId)` | ✓ Type-safe |
-
-#### Nested in BadRequestException.cs
-
-| Class | Constructors | Pattern |
-|-------|--------------|---------|
-| `InvalidPriceRangeBadRequestException` | `(decimal minPrice, decimal maxPrice)` | ✓ Type-safe |
-| `InvalidCredentialsBadRequestException` | `()` | ✓ Type-safe (parameterless) |
-| `InvalidPasswordChangeBadRequestException` | `()` | ✓ Type-safe (parameterless) |
-| `UserAlreadyExistsBadRequestException` | `(string email)` | ✓ Type-safe |
-| `InvalidPaginationBadRequestException` | `(int pageNumber)` | ✓ Type-safe |
+| `InvalidPriceRangeBadRequestException.cs` | `(decimal minPrice, decimal maxPrice)` | ✓ Type-safe |
+| `InvalidCredentialsBadRequestException.cs` | `()` | ✓ Type-safe (parameterless) |
+| `InvalidPasswordChangeBadRequestException.cs` | `()` | ✓ Type-safe (parameterless) |
+| `UserAlreadyExistsBadRequestException.cs` | `(string email)` | ✓ Type-safe |
+| `InvalidPaginationBadRequestException.cs` | `(int pageNumber)` | ✓ Type-safe |
 
 ---
 
@@ -69,13 +76,8 @@ All exception classes follow **type-safe constructor patterns** - no generic `(s
 |------|--------------|---------|
 | `InvalidTokenException.cs` | `()` | ✓ Type-safe (parameterless) |
 | `InvalidCredentialsException.cs` | `()` | ✓ Type-safe (parameterless) |
-
-#### Nested in UnauthorizedException.cs
-
-| Class | Constructors | Pattern |
-|-------|--------------|---------|
-| `InvalidTokenUnauthorizedException` | `()` | ✓ Type-safe (parameterless) |
-| `UserNotAuthenticatedUnauthorizedException` | `()` | ✓ Type-safe (parameterless) |
+| `InvalidTokenUnauthorizedException.cs` | `()` | ✓ Type-safe (parameterless) |
+| `UserNotAuthenticatedUnauthorizedException.cs` | `()` | ✓ Type-safe (parameterless) |
 
 ---
 
@@ -95,9 +97,11 @@ All exception classes follow **type-safe constructor patterns** - no generic `(s
 
 ## Summary
 
-**Total Exception Files**: 36  
-**All Constructors**: Type-safe ✓  
-**No Generic `(string message)` Anti-patterns**: ✓  
+**Total Exception Files**: 43 (4 base + 39 specific)
+**Folder Organization**: Base exceptions in `Base/` subfolder ✓
+**All Constructors**: Type-safe ✓
+**No Generic `(string message)` Anti-patterns**: ✓
+**Namespace Structure**: `ECommerce.Core.Exceptions.Base` for base classes, `ECommerce.Core.Exceptions` for specific exceptions ✓
 
 ### Pattern Categories:
 1. **Typed Parameters**: Most exceptions use strongly-typed parameters (Guid, int, decimal, etc.)

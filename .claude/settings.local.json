@@ -56,7 +56,8 @@
       "Bash(Select-Object -Last 50)",
       "Bash(for controller in ECommerce.API/Controllers/*.cs)",
       "Bash(done)",
-      "Bash(dotnet list:*)"
+      "Bash(dotnet list:*)",
+      "Bash(git mv:*)"
     ]
   }
 }

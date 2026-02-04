@@ -10,8 +10,17 @@ public class RefreshTokenRequestValidator : AbstractValidator<RefreshTokenReques
 {
     public RefreshTokenRequestValidator()
     {
+        // Token is REQUIRED - must be provided (not null)
+        // If null, it means the property was missing from the JSON
         RuleFor(x => x.Token)
-            .NotEmpty().WithMessage("Refresh token is required")
-            .MinimumLength(10).WithMessage("Refresh token must be valid");
+            .NotNull()
+            .WithMessage("Token is required");
+
+        // If token is provided as empty string, let it through to service
+        // which will validate and return 401 Unauthorized
+        // If token is provided but too short, let it through to service
+        RuleFor(x => x.Token)
+            .MinimumLength(10).When(x => !string.IsNullOrEmpty(x.Token))
+            .WithMessage("Refresh token must be valid");
     }
 }

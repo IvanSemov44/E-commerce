@@ -19,9 +19,13 @@ public class ValidationFilterAttribute : ActionFilterAttribute
         var action = context.RouteData.Values["action"];
         var controller = context.RouteData.Values["controller"];
 
-        // Check for null DTO parameter
+        // Check for null DTO parameter (supports Dto and Request types)
         var param = context.ActionArguments
-            .SingleOrDefault(x => x.Value?.GetType().Name.EndsWith("Dto") ?? false).Value;
+            .SingleOrDefault(x => 
+            {
+                var typeName = x.Value?.GetType().Name ?? "";
+                return typeName.EndsWith("Dto") || typeName.EndsWith("Request");
+            }).Value;
 
         if (param is null)
         {

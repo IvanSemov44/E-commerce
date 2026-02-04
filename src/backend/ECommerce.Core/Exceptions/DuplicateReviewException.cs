@@ -1,3 +1,5 @@
+using ECommerce.Core.Exceptions.Base;
+
 namespace ECommerce.Core.Exceptions;
 
 /// <summary>
