@@ -1,0 +1,9 @@
+namespace ECommerce.Core.Exceptions.Base;
+
+/// <summary>
+/// Base exception for all "Bad Request" errors (400).
+/// All specific bad request exceptions should inherit from this class.
+/// </summary>
+public abstract class BadRequestException(string message) : Exception(message)
+{
+}
