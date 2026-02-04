@@ -110,12 +110,12 @@ public class OrdersController : ControllerBase
     /// <response code="401">User is not authenticated.</response>
     [HttpGet("my-orders")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMyOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetMyOrders([FromQuery] OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
         var userId = _currentUser.UserId;
-        _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, page);
+        _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, parameters.Page);
 
-        var result = await _orderService.GetUserOrdersAsync(userId, page, pageSize, cancellationToken: cancellationToken);
+        var result = await _orderService.GetUserOrdersAsync(userId, parameters, cancellationToken: cancellationToken);
 
         return Ok(ApiResponse<PaginatedResult<OrderDto>>.Ok(result, "Orders retrieved successfully"));
     }
@@ -133,10 +133,10 @@ public class OrdersController : ControllerBase
     [HttpGet]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetAllOrders([FromQuery] OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Retrieving all orders, page {Page}", page);
-        var result = await _orderService.GetAllOrdersAsync(page, pageSize, cancellationToken: cancellationToken);
+        _logger.LogInformation("Retrieving all orders, page {Page}", parameters.Page);
+        var result = await _orderService.GetAllOrdersAsync(parameters, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PaginatedResult<OrderDto>>.Ok(result, "Orders retrieved successfully"));
     }
 

@@ -26,7 +26,7 @@ public interface IOrderService
     /// <summary>
     /// Get user's orders with pagination.
     /// </summary>
-    Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, OrderQueryParameters parameters, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Update order status.
@@ -41,5 +41,5 @@ public interface IOrderService
     /// <summary>
     /// Get all orders (admin only).
     /// </summary>
-    Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(OrderQueryParameters parameters, CancellationToken cancellationToken = default);
 }

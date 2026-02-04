@@ -1,3 +1,4 @@
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
 
 namespace ECommerce.Application.Interfaces;
@@ -17,7 +18,7 @@ public interface IInventoryService
     Task<bool> IsStockAvailableAsync(Guid productId, int quantity, CancellationToken cancellationToken = default);
 
     // Inventory Queries
-    Task<List<InventoryDto>> GetAllInventoryAsync(int page = 1, int pageSize = 50, string? search = null, bool? lowStockOnly = null, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default);
     Task<List<LowStockAlertDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default);
     Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default);
 

@@ -241,20 +241,20 @@ public class OrderService : IOrderService
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
-    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, page);
+        _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, parameters.Page);
 
         var totalCount = await _unitOfWork.Orders.GetUserOrdersCountAsync(userId, cancellationToken: cancellationToken);
-        var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId, (page - 1) * pageSize, pageSize, cancellationToken: cancellationToken);
+        var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId, parameters.GetSkip(), parameters.PageSize, cancellationToken: cancellationToken);
         var dtos = orders.Select(o => _mapper.Map<OrderDto>(o)).ToList();
 
         return new PaginatedResult<OrderDto>
         {
             Items = dtos,
             TotalCount = totalCount,
-            Page = page,
-            PageSize = pageSize
+            Page = parameters.Page,
+            PageSize = parameters.PageSize
         };
     }
 
@@ -327,17 +327,17 @@ public class OrderService : IOrderService
         return true;
     }
 
-    public async Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Retrieving all orders, page {Page}", page);
+        _logger.LogInformation("Retrieving all orders, page {Page}", parameters.Page);
 
         var allOrders = await _unitOfWork.Orders.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
         var totalCount = allOrders.Count();
 
         var orders = allOrders
             .OrderByDescending(o => o.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip(parameters.GetSkip())
+            .Take(parameters.PageSize)
             .ToList();
 
         var dtos = orders.Select(o => _mapper.Map<OrderDto>(o)).ToList();
@@ -346,8 +346,8 @@ public class OrderService : IOrderService
         {
             Items = dtos,
             TotalCount = totalCount,
-            Page = page,
-            PageSize = pageSize
+            Page = parameters.Page,
+            PageSize = parameters.PageSize
         };
     }
 

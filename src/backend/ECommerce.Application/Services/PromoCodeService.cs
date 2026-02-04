@@ -26,7 +26,7 @@ public class PromoCodeService : IPromoCodeService
         _logger = logger;
     }
 
-    public async Task<PaginatedResult<PromoCodeDto>> GetAllAsync(int page = 1, int pageSize = 20, string? search = null, bool? isActive = null, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<PromoCodeDto>> GetAllAsync(PromoCodeQueryParameters parameters, CancellationToken cancellationToken = default)
     {
         // Get all promo codes (this is in-memory filtering for simplicity)
         // In a production app with large datasets, you'd want a custom repository method
@@ -35,15 +35,15 @@ public class PromoCodeService : IPromoCodeService
         // Apply filters
         var filtered = allPromoCodes.AsEnumerable();
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
-            var searchTerm = search.ToLowerInvariant();
+            var searchTerm = parameters.Search.ToLowerInvariant();
             filtered = filtered.Where(p => p.Code.ToLower().Contains(searchTerm));
         }
 
-        if (isActive.HasValue)
+        if (parameters.IsActive.HasValue)
         {
-            filtered = filtered.Where(p => p.IsActive == isActive.Value);
+            filtered = filtered.Where(p => p.IsActive == parameters.IsActive.Value);
         }
 
         // Get total count
@@ -52,8 +52,8 @@ public class PromoCodeService : IPromoCodeService
         // Apply pagination and ordering
         var items = filtered
             .OrderByDescending(p => p.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip(parameters.GetSkip())
+            .Take(parameters.PageSize)
             .ToList();
 
         var dtos = _mapper.Map<List<PromoCodeDto>>(items);
@@ -62,8 +62,8 @@ public class PromoCodeService : IPromoCodeService
         {
             Items = dtos,
             TotalCount = totalCount,
-            Page = page,
-            PageSize = pageSize
+            Page = parameters.Page,
+            PageSize = parameters.PageSize
         };
     }
 

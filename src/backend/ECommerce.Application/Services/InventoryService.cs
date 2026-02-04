@@ -1,4 +1,5 @@
 using ECommerce.Application.Interfaces;
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
 using AutoMapper;
 using ECommerce.Core.Entities;
@@ -190,31 +191,41 @@ public class InventoryService : IInventoryService
         return product != null && product.StockQuantity >= quantity;
     }
 
-    public async Task<List<InventoryDto>> GetAllInventoryAsync(int page = 1, int pageSize = 50, string? search = null, bool? lowStockOnly = null, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default)
     {
         var allProducts = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
         var query = allProducts.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
-            var searchLower = search.ToLower();
+            var searchLower = parameters.Search.ToLower();
             query = query.Where(p => p.Name.ToLower().Contains(searchLower) ||
                                    (p.Sku != null && p.Sku.ToLower().Contains(searchLower)));
         }
 
-        if (lowStockOnly == true)
+        if (parameters.LowStockOnly == true)
         {
             query = query.Where(p => p.StockQuantity <= p.LowStockThreshold);
         }
 
         query = query.OrderBy(p => p.StockQuantity).ThenBy(p => p.Name);
 
+        var totalCount = query.Count();
+
         var products = query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip(parameters.GetSkip())
+            .Take(parameters.PageSize)
             .ToList();
 
-        return products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
+        var dtos = products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
+
+        return new PaginatedResult<InventoryDto>
+        {
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = parameters.Page,
+            PageSize = parameters.PageSize
+        };
     }
 
     public async Task<List<LowStockAlertDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)

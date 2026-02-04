@@ -3,9 +3,9 @@ using ECommerce.Application.DTOs.Products;
 
 namespace ECommerce.Application.Validators.Products;
 
-public class ProductQueryDtoValidator : AbstractValidator<ProductQueryDto>
+public class ProductQueryParametersValidator : AbstractValidator<ProductQueryParameters>
 {
-    public ProductQueryDtoValidator()
+    public ProductQueryParametersValidator()
     {
         RuleFor(x => x.Page).GreaterThanOrEqualTo(1);
         RuleFor(x => x.PageSize).InclusiveBetween(1, 100);

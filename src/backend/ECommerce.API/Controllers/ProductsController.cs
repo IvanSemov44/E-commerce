@@ -29,7 +29,7 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Retrieves a paginated list of products with optional filtering and sorting.
     /// </summary>
-    /// <param name="query">Query parameters for paging, filtering and sorting.</param>
+    /// <param name="parameters">Query parameters for paging, filtering and sorting.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A paginated list of products.</returns>
     /// <response code="200">Products retrieved successfully.</response>
@@ -38,9 +38,9 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] ProductQueryDto query, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] ProductQueryParameters parameters, CancellationToken cancellationToken)
     {
-        var result = await _productService.GetProductsAsync(query, cancellationToken: cancellationToken);
+        var result = await _productService.GetProductsAsync(parameters, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Products retrieved successfully"));
     }
 

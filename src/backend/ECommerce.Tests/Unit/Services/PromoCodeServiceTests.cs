@@ -61,7 +61,7 @@ public class PromoCodeServiceTests
             }).ToList());
 
         // Act
-        var result = await _service.GetAllAsync(page: 1, pageSize: 10);
+        var result = await _service.GetAllAsync(new PromoCodeQueryParameters { Page = 1, PageSize = 10 });
 
         // Assert
         result.Should().NotBeNull();
@@ -92,7 +92,7 @@ public class PromoCodeServiceTests
             }).ToList());
 
         // Act
-        var result = await _service.GetAllAsync(page: 1, pageSize: 10, search: "SAVE");
+        var result = await _service.GetAllAsync(new PromoCodeQueryParameters { Page = 1, PageSize = 10, Search = "SAVE" });
 
         // Assert
         result.Items.Should().HaveCount(1);
@@ -121,7 +121,7 @@ public class PromoCodeServiceTests
             }).ToList());
 
         // Act
-        var result = await _service.GetAllAsync(page: 1, pageSize: 10, isActive: true);
+        var result = await _service.GetAllAsync(new PromoCodeQueryParameters { Page = 1, PageSize = 10, IsActive = true });
 
         // Assert
         result.Items.Should().HaveCount(2);

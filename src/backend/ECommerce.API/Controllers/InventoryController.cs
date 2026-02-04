@@ -33,22 +33,19 @@ public class InventoryController : ControllerBase
     /// Get all inventory with pagination and filters.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<List<InventoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllInventory(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50,
-        [FromQuery] string? search = null,
-        [FromQuery] bool? lowStockOnly = null,
+        [FromQuery] InventoryQueryParameters parameters,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving inventory (page: {Page}, pageSize: {PageSize}, search: {Search}, lowStockOnly: {LowStockOnly})",
-            page, pageSize, search, lowStockOnly);
+            parameters.Page, parameters.PageSize, parameters.Search, parameters.LowStockOnly);
 
-        var inventory = await _inventoryService.GetAllInventoryAsync(page, pageSize, search, lowStockOnly, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<List<InventoryDto>>.Ok(inventory, "Inventory retrieved successfully"));
+        var inventory = await _inventoryService.GetAllInventoryAsync(parameters, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<PaginatedResult<InventoryDto>>.Ok(inventory, "Inventory retrieved successfully"));
     }
 
     /// <summary>
@@ -82,11 +79,11 @@ public class InventoryController : ControllerBase
     {
         _logger.LogInformation("Retrieving stock for product {ProductId}", productId);
 
-        var inventory = await _inventoryService.GetAllInventoryAsync(1, 1, null, null, cancellationToken: cancellationToken);
-        if (inventory.Count == 0)
+        var product = await _inventoryService.GetAllInventoryAsync(new InventoryQueryParameters { Page = 1, PageSize = 1 }, cancellationToken: cancellationToken);
+        if (product.Items.Count == 0)
             return NotFound(ApiResponse<InventoryDto>.Error("Product not found"));
 
-        return Ok(ApiResponse<InventoryDto>.Ok(inventory[0], "Product stock retrieved successfully"));
+        return Ok(ApiResponse<InventoryDto>.Ok(product.Items[0], "Product stock retrieved successfully"));
     }
 
     /// <summary>

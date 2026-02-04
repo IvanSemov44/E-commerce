@@ -12,7 +12,7 @@ public interface IProductService
     /// <summary>
     /// Gets paginated products with optional filters.
     /// </summary>
-    Task<PaginatedResult<ProductDto>> GetProductsAsync(ProductQueryDto query, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ProductDto>> GetProductsAsync(ProductQueryParameters parameters, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a product by its slug (URL-friendly identifier).

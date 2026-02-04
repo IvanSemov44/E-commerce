@@ -51,16 +51,13 @@ public class PromoCodesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllPromoCodes(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null,
-        [FromQuery] bool? isActive = null,
+        [FromQuery] PromoCodeQueryParameters parameters,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving promo codes (page: {Page}, pageSize: {PageSize}, search: {Search}, isActive: {IsActive})",
-            page, pageSize, search, isActive);
+            parameters.Page, parameters.PageSize, parameters.Search, parameters.IsActive);
 
-        var result = await _promoCodeService.GetAllAsync(page, pageSize, search, isActive, cancellationToken: cancellationToken);
+        var result = await _promoCodeService.GetAllAsync(parameters, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PaginatedResult<PromoCodeDto>>.Ok(result, "Promo codes retrieved successfully"));
     }
 

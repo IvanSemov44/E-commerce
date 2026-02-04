@@ -17,6 +17,7 @@
 | `RequestParameters` abstract base class | Single source of truth for page/pageSize/search/sort. Eliminates copy-pasted `[FromQuery]` params across every controller. |
 | Derived query parameter classes per feature | `ProductQueryParameters`, `PromoCodeQueryParameters`, `InventoryQueryParameters`, `OrderQueryParameters`. Each adds only the filters that endpoint needs. |
 | FluentValidation validators per parameter class | Follows existing codebase pattern (`AddressDtoValidator`, `ProductQueryDtoValidator`). |
+| **Explicit validator registration in DI** | Validators are auto-discovered by FluentValidation; no manual registration needed beyond the existing `AddValidatorsFromAssemblyContaining()` call in `Program.cs`. |
 
 | Delete | Reason |
 |---|---|
@@ -42,6 +43,7 @@
 - **Async:** Every async method ends in `Async` and has `CancellationToken cancellationToken = default` as the last parameter.
 - **XML docs:** Public interface methods get `/// <summary>`. Implementations do not repeat them.
 - **Property defaults:** The base class sets `Page = 1`, `PageSize = 20`. Derived classes only add new properties — they do not re-declare Page or PageSize unless they need a different cap.
+- **Validation scope:** Controller actions validate via `[FromQuery]` binding + FluentValidation middleware (`AddValidatorsFromAssemblyContaining()` already registered in `Program.cs`). Internal service-to-service calls are not validated — callers are trusted to pass valid objects (they are all under our control).
 
 ---
 
@@ -148,6 +150,21 @@ public class ApiResponse<T>
 **File:** `src/backend/ECommerce.Application/DTOs/Common/RequestParameters.cs`
 
 This file already exists. Overwrite it completely with the following. The property renames (`PageNumber` → `Page`, `SearchTerm` → `Search`) must match the query string contract above.
+
+**Important — DefaultPageSize decision:**
+
+| Endpoint | Current default | New default | Reason |
+|---|---|---|---|
+| Products | 8 | 20 | Unified sensible default; frontend always sends explicit pageSize anyway. |
+| PromoCodes | 20 | 20 | No change. |
+| Inventory | 50 | 20 | **CHANGE:** Base class uses 20. InventoryController will need explicit `pageSize = 50` in Swagger docs / defaults to document, or leave it at 20 for consistency. Admin frontend always sends explicit pageSize, so this is safe. |
+| Orders (user) | 10 | 20 | **CHANGE:** Unifying to 20. Admin frontend sends explicit pageSize, customer frontend sends explicit pageSize. |
+| Orders (admin) | 20 | 20 | No change. |
+
+**Decision:** Use unified `DefaultPageSize = 20` in the base class. This is safe because:
+1. All controllers send `pageSize` explicitly from the frontend.
+2. Manual API calls (Swagger, curl) get a sensible default (20 items).
+3. If a specific endpoint wants a different default, document it in the controller's Swagger attributes.
 
 **Full file content:**
 ```csharp
@@ -300,7 +317,8 @@ namespace ECommerce.Application.DTOs.Orders;
 
 /// <summary>
 /// Query parameters for order listing endpoints.
-/// Currently pagination-only. Add status/date filters here when needed.
+/// Inherits page, pageSize, search, sortBy, sortOrder from RequestParameters.
+/// Currently pagination-only. Add status, dateRange, and other filters here when needed in future sprints.
 /// </summary>
 public class OrderQueryParameters : RequestParameters { }
 ```
@@ -453,8 +471,10 @@ Task<List<InventoryDto>> GetAllInventoryAsync(int page = 1, int pageSize = 50, s
 ```
 With:
 ```csharp
-Task<List<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default);
+Task<PaginatedResult<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default);
 ```
+
+**Critical:** This changes the return type from `List<InventoryDto>` to `PaginatedResult<InventoryDto>`. This is necessary for consistency and for the frontend to receive pagination metadata. The controller's `ProducesResponseType` attribute must also change from `List<InventoryDto>` to `PaginatedResult<InventoryDto>` in Phase 7.
 
 **`GetInventoryHistoryAsync` stays unchanged.** It is a sub-resource endpoint (`/inventory/{id}/history`) with only `page` and `pageSize`. Inline params are appropriate here — no parameter object needed for two params.
 
@@ -680,7 +700,7 @@ public async Task<List<InventoryDto>> GetAllInventoryAsync(int page = 1, int pag
 
 New:
 ```csharp
-public async Task<List<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default)
+public async Task<PaginatedResult<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default)
 {
     var allProducts = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
     var query = allProducts.AsQueryable();
@@ -699,14 +719,26 @@ public async Task<List<InventoryDto>> GetAllInventoryAsync(InventoryQueryParamet
 
     query = query.OrderBy(p => p.StockQuantity).ThenBy(p => p.Name);
 
+    var totalCount = query.Count();
+
     var products = query
         .Skip(parameters.GetSkip())
         .Take(parameters.PageSize)
         .ToList();
 
-    return products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
+    var dtos = products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
+
+    return new PaginatedResult<InventoryDto>
+    {
+        Items = dtos,
+        TotalCount = totalCount,
+        Page = parameters.Page,
+        PageSize = parameters.PageSize
+    };
 }
 ```
+
+**Key change:** The method now returns `PaginatedResult<InventoryDto>` with metadata instead of just `List<InventoryDto>`. This enables frontend pagination controls to work correctly.
 
 ### 6.4 `OrderService.cs`
 
@@ -887,7 +919,17 @@ var result = await _promoCodeService.GetAllAsync(parameters, cancellationToken: 
 
 **File:** `src/backend/ECommerce.API/Controllers/InventoryController.cs`
 
-Find the `GetAllInventory` action. Replace params and body.
+Find the `GetAllInventory` action. Replace params, Swagger attribute, and body.
+
+**Swagger attribute — from:**
+```csharp
+[ProducesResponseType(typeof(ApiResponse<List<InventoryDto>>), StatusCodes.Status200OK)]
+```
+
+**To:**
+```csharp
+[ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryDto>>), StatusCodes.Status200OK)]
+```
 
 **Parameters — from:**
 ```csharp
@@ -912,6 +954,7 @@ _logger.LogInformation("Retrieving inventory (page: {Page}, pageSize: {PageSize}
     page, pageSize, search, lowStockOnly);
 
 var inventory = await _inventoryService.GetAllInventoryAsync(page, pageSize, search, lowStockOnly, cancellationToken: cancellationToken);
+return Ok(ApiResponse<List<InventoryDto>>.Ok(inventory, "Inventory retrieved successfully"));
 ```
 
 **To:**
@@ -920,6 +963,7 @@ _logger.LogInformation("Retrieving inventory (page: {Page}, pageSize: {PageSize}
     parameters.Page, parameters.PageSize, parameters.Search, parameters.LowStockOnly);
 
 var inventory = await _inventoryService.GetAllInventoryAsync(parameters, cancellationToken: cancellationToken);
+return Ok(ApiResponse<PaginatedResult<InventoryDto>>.Ok(inventory, "Inventory retrieved successfully"));
 ```
 
 **`GetInventoryHistory` — no changes.** Keeps inline `[FromQuery] int page = 1, [FromQuery] int pageSize = 50`.
@@ -1068,6 +1112,23 @@ Run the integration tests after Phase 7 completes. If any endpoint returns `400 
 
 ---
 
+## Phase 9.5 — Verify Mock Setup Compatibility
+
+**Before running Phase 8 tests, confirm mock parameter matching works:**
+
+The existing test mocks use hardcoded skip/take values (e.g., `.Setup(r => r.GetUserOrdersAsync(userId, 0, 10))`).
+
+With the new `OrderQueryParameters { Page = 1, PageSize = 10 }`, calling `parameters.GetSkip()` returns `0` and `parameters.PageSize` returns `10` — **the values are identical**. No mock changes needed.
+
+**To verify this, run OrderServiceTests after Phase 6.4 and Phase 8.2 are complete:**
+```bash
+dotnet test ECommerce.Tests --filter "OrderServiceTests.GetUserOrdersAsync_ValidParameters_ReturnsOrdersPaginated" --no-restore
+```
+
+If the test passes, the mock is matching correctly. If it fails with "*Expected invocation on the mock is not performed*", there is a parameter mismatch — revisit the mock setup and the `GetSkip()` calculation.
+
+---
+
 ## Phase 10 — Frontend Impact
 
 **No code changes required in this rewrite.** Confirmed by checking every frontend API call:
@@ -1094,7 +1155,7 @@ Run the integration tests after Phase 7 completes. If any endpoint returns `400 
 ```
 This is exactly what `PaginatedResult<T>` produces. No frontend changes.
 
-**Known pre-existing issue (out of scope):** `InventoryService.GetAllInventoryAsync` returns `List<InventoryDto>` instead of `PaginatedResult<InventoryDto>`. The admin inventory page does not receive `totalCount` from the backend. This should be fixed in a follow-up — not part of this rewrite.
+**Known pre-existing issue (out of scope):** ~~`InventoryService.GetAllInventoryAsync` returns `List<InventoryDto>` instead of `PaginatedResult<InventoryDto>`. The admin inventory page does not receive `totalCount` from the backend.~~ **FIXED in this rewrite** — the method now returns `PaginatedResult<InventoryDto>`. The controller's Swagger response type has been updated to reflect this.
 
 ---
 
@@ -1122,6 +1183,7 @@ dotnet test ECommerce.Tests --no-restore
 4. **Method signature mismatch on service** → The controller or test is calling the old signature (e.g., `GetAllAsync(page, pageSize, ...)`). Replace with the parameter object version.
 5. **Property `PageNumber` not found** → `RequestParameters` was renamed to `Page`. Search for `PageNumber` and replace with `Page`.
 6. **Property `SearchTerm` not found** → `RequestParameters` was renamed to `Search`. Search for `SearchTerm` and replace with `Search`.
+7. **`IEnumerable<InventoryDto>` or `List<InventoryDto>` cannot convert to `PaginatedResult<InventoryDto>`** → The controller is still calling `Ok(inventory)` on the old `List<T>` response. Update the controller to wrap it in `ApiResponse<PaginatedResult<InventoryDto>>` (Phase 7.3).
 
 ---
 
@@ -1136,7 +1198,7 @@ Phase 1 — Delete Dead Code
 [ ] 1.3  Remove PagedRequest class from PaginatedResult.cs
 
 Phase 2 — Base Class
-[ ] 2.0  Overwrite RequestParameters.cs
+[ ] 2.0  Overwrite RequestParameters.cs (DefaultPageSize = 20, properties: Page, PageSize, Search, SortBy, SortOrder)
 
 Phase 3 — Query Parameter Classes
 [ ] 3.1  Delete ProductQueryDto.cs
@@ -1155,19 +1217,19 @@ Phase 4 — Validators
 Phase 5 — Service Interfaces
 [ ] 5.1  Update IProductService.cs
 [ ] 5.2  Update IPromoCodeService.cs
-[ ] 5.3  Update IInventoryService.cs
+[ ] 5.3  Update IInventoryService.cs (return type: PaginatedResult<InventoryDto>)
 [ ] 5.4  Update IOrderService.cs
 
 Phase 6 — Service Implementations
 [ ] 6.1  Update ProductService.cs
 [ ] 6.2  Update PromoCodeService.cs
-[ ] 6.3  Update InventoryService.cs
+[ ] 6.3  Update InventoryService.cs (return type: PaginatedResult<InventoryDto>, includes totalCount)
 [ ] 6.4  Update OrderService.cs
 
 Phase 7 — Controllers
 [ ] 7.1  Update ProductsController.cs
 [ ] 7.2  Update PromoCodesController.cs
-[ ] 7.3  Update InventoryController.cs
+[ ] 7.3  Update InventoryController.cs (ProducesResponseType: PaginatedResult<InventoryDto>)
 [ ] 7.4  Update OrdersController.cs
 
 Phase 8 — Unit Tests
@@ -1178,10 +1240,13 @@ Phase 8 — Unit Tests
 Phase 9 — Integration Tests
 [ ] 9.0  Run integration tests — confirm no query string changes needed
 
-Phase 10 — Frontend
-[ ] 10.0 Confirm no frontend changes required
+Phase 9.5 — Verify Mock Setup
+[ ] 9.5  Run OrderServiceTests.GetUserOrdersAsync to verify mock parameter matching
 
-Phase 11 — Verify
+Phase 10 — Frontend
+[ ] 10.0 Confirm no frontend changes required (response shape unchanged)
+
+Phase 11 — Verify Build
 [ ] 11.1 dotnet build — 0 errors
 [ ] 11.2 dotnet test — all pass
 ```

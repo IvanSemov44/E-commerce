@@ -596,7 +596,7 @@ public class OrderServiceTests
             .Returns((Order o) => new OrderDto { Id = o.Id });
 
         // Act
-        var result = await _service.GetUserOrdersAsync(userId, page: 1, pageSize: 10);
+        var result = await _service.GetUserOrdersAsync(userId, new OrderQueryParameters { Page = 1, PageSize = 10 });
 
         // Assert
         result.Should().NotBeNull();
@@ -630,7 +630,7 @@ public class OrderServiceTests
             .Returns((Order o) => new OrderDto { Id = o.Id });
 
         // Act
-        var result = await _service.GetAllOrdersAsync(page: 1, pageSize: 20);
+        var result = await _service.GetAllOrdersAsync(new OrderQueryParameters { Page = 1, PageSize = 20 });
 
         // Assert
         result.Should().NotBeNull();

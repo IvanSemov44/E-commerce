@@ -24,30 +24,26 @@ public class ProductService : IProductService
         _mapper = mapper;
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetProductsAsync(ProductQueryDto query, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<ProductDto>> GetProductsAsync(ProductQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        var page = query?.Page ?? 1;
-        var pageSize = query?.PageSize ?? 8;
-        var skip = (page - 1) * pageSize;
-
         var (products, totalCount) = await _unitOfWork.Products.GetProductsWithFiltersAsync(
-            skip,
-            pageSize,
-            query?.CategoryId,
-            query?.Search,
-            query?.MinPrice,
-            query?.MaxPrice,
-            query?.MinRating,
-            query?.IsFeatured,
-            query?.SortBy,
+            parameters.GetSkip(),
+            parameters.PageSize,
+            parameters.CategoryId,
+            parameters.Search,
+            parameters.MinPrice,
+            parameters.MaxPrice,
+            parameters.MinRating,
+            parameters.IsFeatured,
+            parameters.SortBy,
             cancellationToken: cancellationToken);
 
         return new PaginatedResult<ProductDto>
         {
             Items = products.Select(p => _mapper.Map<ProductDto>(p)).ToList(),
             TotalCount = totalCount,
-            Page = page,
-            PageSize = pageSize
+            Page = parameters.Page,
+            PageSize = parameters.PageSize
         };
     }
 
@@ -112,8 +108,8 @@ public class ProductService : IProductService
 
     public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
-        var query = new ProductQueryDto { Page = page, PageSize = pageSize };
-        return await GetProductsAsync(query, cancellationToken);
+        var parameters = new ProductQueryParameters { Page = page, PageSize = pageSize };
+        return await GetProductsAsync(parameters, cancellationToken);
     }
 
     public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20)
