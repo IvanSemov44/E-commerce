@@ -57,7 +57,8 @@
       "Bash(for controller in ECommerce.API/Controllers/*.cs)",
       "Bash(done)",
       "Bash(dotnet list:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(tree:*)"
     ]
   }
 }

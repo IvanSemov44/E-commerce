@@ -11,7 +11,7 @@ public class RefundPaymentDtoValidator : AbstractValidator<RefundPaymentDto>
         // so we don't validate it here. The service layer will validate that the order exists.
         
         RuleFor(x => x.Amount)
-            .GreaterThan(0).When(x => x.Amount.HasValue).WithMessage("Refund amount must be greater than zero");
+            .GreaterThan(0).WithMessage("Refund amount must be greater than zero");
 
         RuleFor(x => x.Reason)
             .MaximumLength(500).WithMessage("Reason must be 500 characters or fewer");

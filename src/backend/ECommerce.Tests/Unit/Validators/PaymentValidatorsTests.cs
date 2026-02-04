@@ -49,7 +49,8 @@ public class PaymentValidatorsTests
     {
         var dto = new RefundPaymentDto { OrderId = Guid.Empty, Amount = -5M };
         var result = _refundValidator.TestValidate(dto);
-        result.ShouldHaveValidationErrorFor(x => x.OrderId);
+        // OrderId is set from route parameter by controller, not validated here
+        // Only Amount is validated (must be positive)
         result.ShouldHaveValidationErrorFor(x => x.Amount);
     }
 
