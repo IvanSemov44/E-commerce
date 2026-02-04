@@ -64,7 +64,7 @@ public class CategoriesController : ControllerBase
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryById(Guid id, CancellationToken cancellationToken)
     {
         var category = await _categoryService.GetCategoryByIdAsync(id, cancellationToken: cancellationToken);
@@ -82,7 +82,7 @@ public class CategoriesController : ControllerBase
     [HttpGet("slug/{slug}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryBySlug(string slug, CancellationToken cancellationToken)
     {
         var category = await _categoryService.GetCategoryBySlugAsync(slug, cancellationToken: cancellationToken);
@@ -104,7 +104,7 @@ public class CategoriesController : ControllerBase
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto, CancellationToken cancellationToken)
     {
         var category = await _categoryService.CreateCategoryAsync(dto, cancellationToken: cancellationToken);
@@ -130,8 +130,8 @@ public class CategoriesController : ControllerBase
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryDto dto, CancellationToken cancellationToken)
     {
         var category = await _categoryService.UpdateCategoryAsync(id, dto, cancellationToken: cancellationToken);
@@ -153,8 +153,8 @@ public class CategoriesController : ControllerBase
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken cancellationToken)
     {
         await _categoryService.DeleteCategoryAsync(id, cancellationToken: cancellationToken);
@@ -162,3 +162,4 @@ public class CategoriesController : ControllerBase
         return Ok(ApiResponse<object>.Ok(new object(), "Category deleted successfully"));
     }
 }
+

@@ -1,5 +1,5 @@
 using FluentValidation.TestHelper;
-using ECommerce.Application.DTOs;
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.Validators.Orders;
 using FluentAssertions;

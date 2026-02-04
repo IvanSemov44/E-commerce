@@ -38,7 +38,7 @@ public class ReviewsController : ControllerBase
     [HttpGet("product/{productId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductReviews(Guid productId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving reviews for product {ProductId}", productId);
@@ -74,7 +74,7 @@ public class ReviewsController : ControllerBase
     [HttpGet("my-reviews")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDetailDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyReviews(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -94,7 +94,7 @@ public class ReviewsController : ControllerBase
     [HttpGet("{reviewId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetReviewById(Guid reviewId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving review {ReviewId}", reviewId);
@@ -117,9 +117,9 @@ public class ReviewsController : ControllerBase
     [Authorize]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateReview([FromBody] CreateReviewDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -146,8 +146,8 @@ public class ReviewsController : ControllerBase
     [Authorize]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReview(Guid reviewId, [FromBody] UpdateReviewDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -169,7 +169,7 @@ public class ReviewsController : ControllerBase
     [HttpDelete("{reviewId:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteReview(Guid reviewId, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -210,7 +210,7 @@ public class ReviewsController : ControllerBase
     [HttpPost("{reviewId:guid}/approve")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ApproveReview(Guid reviewId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Approving review {ReviewId}", reviewId);
@@ -231,7 +231,7 @@ public class ReviewsController : ControllerBase
     [HttpPost("{reviewId:guid}/reject")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RejectReview(Guid reviewId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Rejecting review {ReviewId}", reviewId);
@@ -239,3 +239,4 @@ public class ReviewsController : ControllerBase
         return Ok(ApiResponse<ReviewDetailDto>.Ok(review, "Review rejected and deleted successfully"));
     }
 }
+

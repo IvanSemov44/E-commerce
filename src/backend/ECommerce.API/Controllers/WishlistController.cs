@@ -37,7 +37,7 @@ public class WishlistController : ControllerBase
     /// <response code="404">Wishlist not found.</response>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWishlist(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -60,8 +60,8 @@ public class WishlistController : ControllerBase
     [HttpPost("add")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AddToWishlist([FromBody] AddToWishlistDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -82,7 +82,7 @@ public class WishlistController : ControllerBase
     /// <response code="404">Product not found in wishlist.</response>
     [HttpDelete("remove/{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -121,7 +121,7 @@ public class WishlistController : ControllerBase
     /// <response code="404">Wishlist not found.</response>
     [HttpPost("clear")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearWishlist(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -131,3 +131,4 @@ public class WishlistController : ControllerBase
         return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist cleared successfully"));
     }
 }
+

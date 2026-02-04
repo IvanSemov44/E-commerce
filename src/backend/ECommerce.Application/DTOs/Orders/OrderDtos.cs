@@ -1,4 +1,4 @@
-using ECommerce.Application.DTOs;
+using ECommerce.Application.DTOs.Common;
 
 namespace ECommerce.Application.DTOs.Orders;
 

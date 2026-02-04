@@ -40,8 +40,8 @@ public class OrdersController : ControllerBase
     [HttpPost]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
@@ -64,7 +64,7 @@ public class OrdersController : ControllerBase
     /// <response code="404">Order not found.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
@@ -87,7 +87,7 @@ public class OrdersController : ControllerBase
     /// <response code="404">Order not found.</response>
     [HttpGet("number/{orderNumber}")]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderByNumber(string orderNumber, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving order by number {OrderNumber}", orderNumber);
@@ -156,8 +156,8 @@ public class OrdersController : ControllerBase
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateOrderStatusDto statusUpdate, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Updating order {OrderId} status to {Status}", id, statusUpdate.Status);
@@ -177,8 +177,8 @@ public class OrdersController : ControllerBase
     /// <response code="404">Order not found.</response>
     [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelOrder(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
@@ -186,4 +186,5 @@ public class OrdersController : ControllerBase
         return Ok(ApiResponse<object>.Ok(new object(), "Order cancelled successfully"));
     }
 }
+
 

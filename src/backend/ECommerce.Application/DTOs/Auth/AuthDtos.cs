@@ -32,13 +32,3 @@ public class UserDto
     public string Role { get; set; } = null!;
     public string? AvatarUrl { get; set; }
 }
-
-public class GoogleOAuthDto
-{
-    public string Token { get; set; } = null!;
-}
-
-public class FacebookOAuthDto
-{
-    public string Token { get; set; } = null!;
-}

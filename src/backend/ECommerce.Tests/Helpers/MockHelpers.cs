@@ -190,7 +190,7 @@ public static class MockHelpers
         mock.Setup(m => m.Map<ECommerce.Core.Entities.Address>(It.IsAny<object>())).Returns((object src) =>
         {
             if (src == null) return null!;
-            var dto = src as ECommerce.Application.DTOs.AddressDto;
+            var dto = src as ECommerce.Application.DTOs.Common.AddressDto;
             if (dto == null) return null!;
 
             return new ECommerce.Core.Entities.Address

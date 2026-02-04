@@ -177,7 +177,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.StockAfterChange, opt => opt.Ignore());
 
         // Address mapping (DTO -> Entity)
-        CreateMap<ECommerce.Application.DTOs.AddressDto, Address>()
+        CreateMap<ECommerce.Application.DTOs.Common.AddressDto, Address>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.UserId, opt => opt.Ignore())
             .ForMember(dest => dest.Type, opt => opt.Ignore())

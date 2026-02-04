@@ -65,7 +65,6 @@ All exceptions use **C# 12 primary constructors**. Single-constructor exceptions
 | `UnsupportedPaymentMethodException.cs` | `(string paymentMethod)` | ✓ Type-safe |
 | `CategoryHasProductsException.cs` | `(Guid categoryId)` | ✓ Type-safe |
 | `InvalidPriceRangeException.cs` | `(decimal minPrice, decimal maxPrice)` | ✓ Type-safe |
-| `InvalidCredentialsBadRequestException.cs` | `()` | ⚠️ Dead code — never thrown |
 | `InvalidPasswordChangeException.cs` | `()` | ✓ Type-safe (parameterless) |
 | `UserAlreadyExistsException.cs` | `(string email)` | ✓ Type-safe |
 | `InvalidPaginationException.cs` | `(int pageNumber)` | ✓ Type-safe |
@@ -78,7 +77,6 @@ All exceptions use **C# 12 primary constructors**. Single-constructor exceptions
 |------|--------------|---------|
 | `InvalidTokenException.cs` | `()` | ✓ Type-safe (parameterless) |
 | `InvalidCredentialsException.cs` | `()` | ✓ Type-safe (parameterless) |
-| `InvalidTokenUnauthorizedException.cs` | `()` | ⚠️ Dead code — never thrown |
 | `UserNotAuthenticatedException.cs` | `()` | ✓ Type-safe (parameterless) |
 
 ---
@@ -99,7 +97,7 @@ All exceptions use **C# 12 primary constructors**. Single-constructor exceptions
 
 ## Summary
 
-**Total Exception Files**: 43 (4 base + 39 specific)
+**Total Exception Files**: 41 (4 base + 37 specific)
 **Folder Organization**: Base exceptions in `Base/` subfolder ✓
 **All Constructors**: Type-safe ✓
 **No Generic `(string message)` Anti-patterns**: ✓
