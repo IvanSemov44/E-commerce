@@ -124,7 +124,7 @@ public class InventoryControllerTests
         // Arrange
         using var client = _factory.CreateAdminClient();
         var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var updateStockDto = new { Quantity = 150 };
+        var updateStockDto = new { Quantity = 150, Reason = "restock", Notes = "Test restock" };
 
         var content = new StringContent(JsonSerializer.Serialize(updateStockDto), Encoding.UTF8, "application/json");
 
@@ -143,7 +143,7 @@ public class InventoryControllerTests
         // Arrange
         using var client = _factory.CreateAdminClient();
         var productId = Guid.NewGuid();
-        var updateStockDto = new { Quantity = -50 };
+        var updateStockDto = new { Quantity = -50, Reason = "correction", Notes = "Test negative" };
 
         var content = new StringContent(JsonSerializer.Serialize(updateStockDto), Encoding.UTF8, "application/json");
 

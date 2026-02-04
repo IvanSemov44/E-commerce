@@ -2,13 +2,5 @@ using ECommerce.Core.Exceptions.Base;
 
 namespace ECommerce.Core.Exceptions;
 
-/// <summary>
-/// Exception thrown when an order status transition is invalid.
-/// </summary>
-public sealed class InvalidOrderStatusException : BadRequestException
-{
-    public InvalidOrderStatusException(string currentStatus, string newStatus)
-        : base($"Cannot change order status from '{currentStatus}' to '{newStatus}'.")
-    {
-    }
-}
+public sealed class InvalidOrderStatusException(string currentStatus, string newStatus)
+    : BadRequestException($"Cannot change order status from '{currentStatus}' to '{newStatus}'.") { }

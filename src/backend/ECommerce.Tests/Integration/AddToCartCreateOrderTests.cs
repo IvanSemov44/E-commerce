@@ -16,17 +16,25 @@ public class AddToCartCreateOrderTests
         _factory = new TestWebApplicationFactory();
     }
 
+    [TestCleanup]
+    public void Cleanup()
+    {
+        TestWebApplicationFactory.ResetAuthState();
+    }
+
     [TestMethod]
     public async Task AddToCart_Then_CreateOrder_EndToEnd()
     {
-        var client = _factory.CreateClient();
+        // Use unauthenticated client for cart (anonymous allowed)
+        var anonClient = _factory.CreateClient();
 
         // Add to cart (anonymous allowed)
         var addBody = new { ProductId = "22222222-2222-2222-2222-222222222222", Quantity = 2 };
-        var addResponse = await client.PostAsync("/api/cart/add-item", new StringContent(JsonSerializer.Serialize(addBody), Encoding.UTF8, "application/json"));
+        var addResponse = await anonClient.PostAsync("/api/cart/add-item", new StringContent(JsonSerializer.Serialize(addBody), Encoding.UTF8, "application/json"));
         addResponse.EnsureSuccessStatusCode();
 
-        // Create order (authenticated via test auth)
+        // Create order (use authenticated client with JWT token)
+        var authClient = _factory.CreateAuthenticatedClient();
         var createOrder = new
         {
             PaymentMethod = "credit_card",
@@ -43,8 +51,8 @@ public class AddToCartCreateOrderTests
             Items = new[] { new { ProductId = "22222222-2222-2222-2222-222222222222", ProductName = "IntegrationProduct", Price = 10.0m, Quantity = 2 } }
         };
 
-        // Ensure auth is applied (TestAuthHandler supplies user)
-        var orderResponse = await client.PostAsync("/api/orders", new StringContent(JsonSerializer.Serialize(createOrder), Encoding.UTF8, "application/json"));
+        // Send order request with authentication
+        var orderResponse = await authClient.PostAsync("/api/orders", new StringContent(JsonSerializer.Serialize(createOrder), Encoding.UTF8, "application/json"));
         orderResponse.EnsureSuccessStatusCode();
 
         var content = await orderResponse.Content.ReadAsStringAsync();

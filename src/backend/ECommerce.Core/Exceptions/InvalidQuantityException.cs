@@ -2,8 +2,5 @@ using ECommerce.Core.Exceptions.Base;
 
 namespace ECommerce.Core.Exceptions;
 
-public class InvalidQuantityException : BadRequestException
-{
-    public InvalidQuantityException(string message)
-        : base(message) { }
-}
+public sealed class InvalidQuantityException(string message)
+    : BadRequestException(message) { }

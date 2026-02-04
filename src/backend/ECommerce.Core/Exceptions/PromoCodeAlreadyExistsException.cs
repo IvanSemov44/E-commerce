@@ -2,11 +2,5 @@ using ECommerce.Core.Exceptions.Base;
 
 namespace ECommerce.Core.Exceptions;
 
-/// <summary>
-/// Exception thrown when attempting to create a promo code that already exists.
-/// </summary>
-public sealed class PromoCodeAlreadyExistsException : ConflictException
-{
-    public PromoCodeAlreadyExistsException(string code)
-        : base($"Promo code '{code}' already exists") { }
-}
+public sealed class PromoCodeAlreadyExistsException(string code)
+    : ConflictException($"Promo code '{code}' already exists") { }

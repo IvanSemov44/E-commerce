@@ -16,14 +16,16 @@ All exception classes follow **type-safe constructor patterns** - no generic `(s
 
 All specific exceptions use `using ECommerce.Core.Exceptions.Base;` to import base classes.
 
+All exceptions use **C# 12 primary constructors**. Single-constructor exceptions use the compact form; multi-constructor exceptions retain traditional syntax.
+
 ### Base Exceptions (Abstract) - Located in `Base/` subfolder
 
-| File | Namespace | Constructors | Usage |
-|------|-----------|--------------|-------|
-| `Base/NotFoundException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 404 errors |
-| `Base/BadRequestException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 400 errors |
-| `Base/UnauthorizedException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 401 errors |
-| `Base/ConflictException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` protected | Base for 409 errors |
+| File | Namespace | Constructor | Usage |
+|------|-----------|-------------|-------|
+| `Base/NotFoundException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` primary | Base for 404 errors |
+| `Base/BadRequestException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` primary | Base for 400 errors |
+| `Base/UnauthorizedException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` primary | Base for 401 errors |
+| `Base/ConflictException.cs` | `ECommerce.Core.Exceptions.Base` | `(string message)` primary | Base for 409 errors |
 
 ---
 
@@ -62,11 +64,11 @@ All specific exceptions use `using ECommerce.Core.Exceptions.Base;` to import ba
 | `ProductNotAvailableException.cs` | `(string productName)` | ✓ Type-safe |
 | `UnsupportedPaymentMethodException.cs` | `(string paymentMethod)` | ✓ Type-safe |
 | `CategoryHasProductsException.cs` | `(Guid categoryId)` | ✓ Type-safe |
-| `InvalidPriceRangeBadRequestException.cs` | `(decimal minPrice, decimal maxPrice)` | ✓ Type-safe |
-| `InvalidCredentialsBadRequestException.cs` | `()` | ✓ Type-safe (parameterless) |
-| `InvalidPasswordChangeBadRequestException.cs` | `()` | ✓ Type-safe (parameterless) |
-| `UserAlreadyExistsBadRequestException.cs` | `(string email)` | ✓ Type-safe |
-| `InvalidPaginationBadRequestException.cs` | `(int pageNumber)` | ✓ Type-safe |
+| `InvalidPriceRangeException.cs` | `(decimal minPrice, decimal maxPrice)` | ✓ Type-safe |
+| `InvalidCredentialsBadRequestException.cs` | `()` | ⚠️ Dead code — never thrown |
+| `InvalidPasswordChangeException.cs` | `()` | ✓ Type-safe (parameterless) |
+| `UserAlreadyExistsException.cs` | `(string email)` | ✓ Type-safe |
+| `InvalidPaginationException.cs` | `(int pageNumber)` | ✓ Type-safe |
 
 ---
 
@@ -76,8 +78,8 @@ All specific exceptions use `using ECommerce.Core.Exceptions.Base;` to import ba
 |------|--------------|---------|
 | `InvalidTokenException.cs` | `()` | ✓ Type-safe (parameterless) |
 | `InvalidCredentialsException.cs` | `()` | ✓ Type-safe (parameterless) |
-| `InvalidTokenUnauthorizedException.cs` | `()` | ✓ Type-safe (parameterless) |
-| `UserNotAuthenticatedUnauthorizedException.cs` | `()` | ✓ Type-safe (parameterless) |
+| `InvalidTokenUnauthorizedException.cs` | `()` | ⚠️ Dead code — never thrown |
+| `UserNotAuthenticatedException.cs` | `()` | ✓ Type-safe (parameterless) |
 
 ---
 

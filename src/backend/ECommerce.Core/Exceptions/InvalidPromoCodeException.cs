@@ -2,13 +2,5 @@ using ECommerce.Core.Exceptions.Base;
 
 namespace ECommerce.Core.Exceptions;
 
-/// <summary>
-/// Exception thrown when a promo code is invalid or cannot be applied.
-/// </summary>
-public sealed class InvalidPromoCodeException : BadRequestException
-{
-    public InvalidPromoCodeException(string message)
-        : base(message)
-    {
-    }
-}
+public sealed class InvalidPromoCodeException(string message)
+    : BadRequestException(message) { }

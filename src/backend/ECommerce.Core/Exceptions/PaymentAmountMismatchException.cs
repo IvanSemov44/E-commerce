@@ -2,11 +2,5 @@ using ECommerce.Core.Exceptions.Base;
 
 namespace ECommerce.Core.Exceptions;
 
-/// <summary>
-/// Exception thrown when payment amount doesn't match order amount.
-/// </summary>
-public sealed class PaymentAmountMismatchException : BadRequestException
-{
-    public PaymentAmountMismatchException(decimal expectedAmount, decimal providedAmount)
-        : base($"Payment amount mismatch. Expected: {expectedAmount:C}, Provided: {providedAmount:C}") { }
-}
+public sealed class PaymentAmountMismatchException(decimal expectedAmount, decimal providedAmount)
+    : BadRequestException($"Payment amount mismatch. Expected: {expectedAmount:C}, Provided: {providedAmount:C}") { }

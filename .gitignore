@@ -38,6 +38,10 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+**/TestResults/
+*.trx
+test_*.txt
+testout.txt
 
 # Build outputs
 out/
