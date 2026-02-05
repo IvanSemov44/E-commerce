@@ -2,6 +2,8 @@ import Card from './ui/Card';
 import ErrorAlert from './ErrorAlert';
 import StarRating from './StarRating';
 
+import styles from './ReviewList.module.css';
+
 export interface Review {
   id: string;
   title?: string;
@@ -20,7 +22,7 @@ interface ReviewListProps {
 
 export default function ReviewList({ reviews, isLoading, error }: ReviewListProps) {
   if (isLoading) {
-    return <div style={{ color: '#666' }}>Loading reviews...</div>;
+    return <div className={styles.loading}>Loading reviews...</div>;
   }
 
   if (error) {
@@ -28,24 +30,24 @@ export default function ReviewList({ reviews, isLoading, error }: ReviewListProp
   }
 
   if (reviews.length === 0) {
-    return <div style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>No reviews yet</div>;
+    return <div className={styles.emptyState}>No reviews yet</div>;
   }
 
   return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
+    <div className={styles.grid}>
       {reviews.map((review) => (
         <Card key={review.id} variant="bordered" padding="lg">
-          <div style={{ marginBottom: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
-              <div style={{ flex: 1 }}>
+          <div className={styles.reviewCard}>
+            <div className={styles.header}>
+              <div className={styles.headerContent}>
                 {review.title && (
-                  <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.125rem' }}>
+                  <h4 className={styles.title}>
                     {review.title}
                   </h4>
                 )}
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div className={styles.ratingRow}>
                   <StarRating rating={review.rating} readonly size="md" />
-                  <span style={{ fontSize: '0.875rem', color: '#666' }}>
+                  <span className={styles.ratingText}>
                     {review.rating}/5
                   </span>
                 </div>
@@ -53,18 +55,11 @@ export default function ReviewList({ reviews, isLoading, error }: ReviewListProp
             </div>
           </div>
 
-          <p
-            style={{
-              margin: '1rem 0 0.5rem 0',
-              color: '#333',
-              lineHeight: 1.6,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
+          <p className={styles.comment}>
             {review.comment}
           </p>
 
-          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#666' }}>
+          <div className={styles.footer}>
             <span>By {review.userName || 'Anonymous'}</span>
             <span>{new Date(review.createdAt).toLocaleDateString()}</span>
           </div>

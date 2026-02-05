@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useGetProductBySlugQuery } from '../store/api/productApi';
-import { useGetProductReviewsQuery } from '../store/api/reviewsApi';
-import { useAddToWishlistMutation, useRemoveFromWishlistMutation, useCheckInWishlistQuery } from '../store/api/wishlistApi';
-import { useAddToCartMutation } from '../store/api/cartApi';
+
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/constants';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addItem, selectCartItemById } from '../store/slices/cartSlice';
+import useProductDetails from '../hooks/useProductDetails';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import ErrorAlert from '../components/ErrorAlert';
@@ -14,49 +10,35 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import EmptyState from '../components/EmptyState';
 import ReviewForm from '../components/ReviewForm';
 import ReviewList from '../components/ReviewList';
+
 import styles from './ProductDetail.module.css';
 
 export default function ProductDetail() {
   const { slug = '' } = useParams();
-  const { data: product, isLoading, error } = useGetProductBySlugQuery(slug);
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-
-  const { data: reviews, isLoading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useGetProductReviewsQuery(product?.id || '', {
-    skip: !product?.id,
-  });
-
-  const { data: isInWishlist, refetch: refetchWishlist } = useCheckInWishlistQuery(product?.id || '', {
-    skip: !product?.id || !isAuthenticated,
-  });
-
-  const [addToWishlist, { isLoading: addingToWishlist }] = useAddToWishlistMutation();
-  const [removeFromWishlist, { isLoading: removingFromWishlist }] = useRemoveFromWishlistMutation();
-  const [addToCartBackend, { isLoading: addingToCartBackend }] = useAddToCartMutation();
-
-  const [quantity, setQuantity] = useState(1);
-  const [addedToCart, setAddedToCart] = useState(false);
-  const [cartError, setCartError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const dispatch = useAppDispatch();
-  const cartItem = useAppSelector((state) => {
-    if (!product?.id) return undefined;
-    return selectCartItemById(product.id)(state);
-  });
 
-  const handleWishlistToggle = async () => {
-    if (!product?.id) return;
-
-    try {
-      if (isInWishlist) {
-        await removeFromWishlist(product.id).unwrap();
-      } else {
-        await addToWishlist(product.id).unwrap();
-      }
-      refetchWishlist();
-    } catch {
-      // Error handled by mutation state
-    }
-  };
+  const {
+    product,
+    productLoading: isLoading,
+    productError: error,
+    reviews,
+    reviewsLoading,
+    reviewsError,
+    refetchReviews,
+    isInWishlist,
+    addingToWishlist,
+    removingFromWishlist,
+    toggleWishlist,
+    quantity,
+    setQuantity,
+    addedToCart,
+    cartError,
+    setCartError,
+    cartItem,
+    addingToCartBackend,
+    addToCart,
+    isAuthenticated,
+  } = useProductDetails(slug);
 
   if (isLoading) {
     return (
@@ -198,51 +180,7 @@ export default function ProductDetail() {
 
               <div className={styles.actions}>
                 <Button
-                  onClick={async () => {
-                    setCartError(null);
-                    const currentInCart = cartItem?.quantity || 0;
-                    const totalQuantity = currentInCart + quantity;
-
-                    if (totalQuantity > product.stockQuantity) {
-                      setCartError(
-                        `Only ${product.stockQuantity} items available. You already have ${currentInCart} in cart.`
-                      );
-                      return;
-                    }
-
-                    try {
-                      // Add to local cart
-                      dispatch(
-                        addItem({
-                          id: product.id,
-                          name: product.name,
-                          slug: product.slug,
-                          price: product.price,
-                          quantity,
-                          maxStock: product.stockQuantity,
-                          image: product.images[0]?.url || DEFAULT_PRODUCT_IMAGE,
-                          compareAtPrice: product.compareAtPrice,
-                        })
-                      );
-
-                      // Sync to backend if authenticated
-                      if (isAuthenticated) {
-                        await addToCartBackend({
-                          productId: product.id,
-                          quantity,
-                        }).unwrap();
-                      }
-
-                      setAddedToCart(true);
-                      setTimeout(() => setAddedToCart(false), 2000);
-                      setQuantity(1);
-                    } catch (error: any) {
-                      console.error('Failed to add to cart:', error);
-                      // Parse backend error message
-                      const errorMessage = error?.data?.message || error?.message || 'Failed to add item to cart. Please try again.';
-                      setCartError(errorMessage);
-                    }
-                  }}
+                  onClick={addToCart}
                   disabled={product.stockQuantity === 0 || addedToCart || addingToCartBackend}
                   size="lg"
                 >
@@ -252,7 +190,7 @@ export default function ProductDetail() {
                   <Button
                     variant={isInWishlist ? 'primary' : 'secondary'}
                     size="lg"
-                    onClick={handleWishlistToggle}
+                    onClick={toggleWishlist}
                     disabled={addingToWishlist || removingFromWishlist}
                   >
                     {isInWishlist ? '♥ In Wishlist' : '♡ Add to Wishlist'}

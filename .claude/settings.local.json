@@ -67,7 +67,8 @@
       "Bash(if [ -d \"c:\\\\Users\\\\ivans\\\\Desktop\\\\Dev\\\\E-commerce\\\\src\\\\frontend\\\\storefront\\\\src\\\\hooks\" ])",
       "Bash(then echo \"exists\")",
       "Bash(else echo \"not found\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(test:*)"
     ]
   }
 }

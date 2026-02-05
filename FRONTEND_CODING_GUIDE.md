@@ -51,8 +51,24 @@ src/
 │   └── index.ts
 ├── pages/                   # Page components (route-level)
 │   ├── ProductsPage.tsx
-│   ├── CartPage.tsx
-│   └── NotFound.tsx
+│   ├── ProductDetailPage.tsx
+│   ├── CheckoutPage.tsx
+│   └── components/          # Page-specific feature components
+│       ├── ProductsPage/
+│       │   ├── ProductFilter.tsx
+│       │   ├── ProductSort.tsx
+│       │   ├── ProductGrid.tsx
+│       │   └── index.ts
+│       ├── ProductDetail/
+│       │   ├── ProductImages.tsx
+│       │   ├── ProductInfo.tsx
+│       │   ├── PriceSection.tsx
+│       │   └── index.ts
+│       └── Checkout/
+│           ├── OrderSummary.tsx
+│           ├── ShippingForm.tsx
+│           ├── PaymentForm.tsx
+│           └── index.ts
 ├── store/
 │   ├── api/                 # RTK Query APIs (one per feature)
 │   │   ├── productApi.ts
@@ -62,7 +78,397 @@ src/
 │   ├── slices/              # Redux slices (auth, ui, cart)
 │   │   ├── authSlice.ts
 │   │   ├── uiSlice.ts
-│   │   └── index.ts
+│  
+
+## Page Organization Formula (Critical Pattern)
+
+### The Orchestration Rule
+
+**Formula**: `Page Component = Data Fetching + Layout Composition + Event Orchestration`
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Page Component (Thin Layer — 50-100 lines max)             │
+│                                                             │
+│  ✓ RTK Query hooks (data fetching)                         │
+│  ✓ Route-level state (filters, pagination)                 │
+│  ✓ Layout structure (composition)                          │
+│  ✓ Event handlers (orchestration)                          │
+│  ✗ NO business logic                                       │
+│  ✗ NO complex JSX (extract to components)                  │
+│  ✗ NO direct UI rendering (delegate to children)           │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+         ┌────────────────┴────────────────┐
+         │                                  │
+         ▼                                  ▼
+┌─────────────────────┐          ┌─────────────────────┐
+│ Page-Specific       │          │ Shared Feature      │
+│ Components          │          │ Components          │
+│                     │          │                     │
+│ pages/components/   │          │ components/         │
+│   PageName/         │          │   features/         │
+│                     │          │   ui/               │
+│ Used by 1 page only │          │ Used by 2+ pages    │
+└─────────────────────┘          └─────────────────────┘
+```
+
+### Decision Tree: Where Does This Component Go?
+
+```
+                    Creating a Component?
+                            │
+                            ▼
+              ┌─────────────────────────────┐
+              │ Is it a pure UI element?    │
+              │ (Button, Card, Modal, etc.) │
+              └─────────────────────────────┘
+                    │           │
+              Yes   │           │   No
+                    ▼           ▼
+           components/ui/   ┌─────────────────────────────┐
+                            │ Is it used by 2+ pages?     │
+                            └─────────────────────────────┘
+                                  │           │
+                            Yes   │           │   No
+                                  ▼           ▼
+                      components/features/   ┌─────────────────────────────┐
+                                             │ Is it a layout wrapper?     │
+                                             │ (Header, Footer, Sidebar)   │
+                                             └─────────────────────────────┘
+                                                   │           │
+                                             Yes   │           │   No
+                                                   ▼           ▼
+                                        components/layout/   pages/components/
+                                                             {PageName}/
+```
+
+### Component Classification Rules
+
+| Component Type | Location | Example | Usage Pattern |
+|---------------|----------|---------|---------------|
+| **Pure UI** | `components/ui/` | Button, Input, Card, Modal, Dropdown | Used everywhere, no business logic |
+| **Layout Wrappers** | `components/layout/` | Header, Footer, Sidebar, PageWrapper | Structural, wraps content |
+| **Shared Features** | `components/features/{Feature}/` | ProductCard, CartItem, OrderCard | Used by 2+ pages, feature-specific |
+| **Page Features** | `pages/components/{PageName}/` | ProductFilter, ShippingForm, OrderSummary | Used by 1 page only |
+| **Pages** | `pages/` | ProductsPage, CheckoutPage | Orchestration only, thin layer |
+
+### Size Thresholds (When to Extract)
+
+```typescript
+// ❌ BAD — Page component over 150 lines, complex JSX embedded
+export default function ProductsPage() {
+  const [filters, setFilters] = useState({});
+  const { data } = useGetProductsQuery(filters);
+
+  return (
+    <main>
+      <h1>Products</h1>
+      {/* 100+ lines of filter UI code here */}
+      <aside>
+        <div className={styles.filterSection}>
+          <h3>Categories</h3>
+          {/* Complex filter logic... */}
+        </div>
+        <div className={styles.priceRange}>
+          {/* Complex price slider... */}
+        </div>
+      </aside>
+      
+      {/* 100+ lines of product grid code here */}
+      <section>
+        <div className={styles.grid}>
+          {data?.items.map(product => (
+            <div className={styles.card}>
+              {/* Complex product card... */}
+            </div>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// ✅ GOOD — Page is orchestration layer only (50 lines)
+export default function ProductsPage() {
+  const [filters, setFilters] = useState({});
+  const { data } = useGetProductsQuery(filters);
+
+  return (
+    <main className={styles.page}>
+      <h1>Products</h1>
+      <div className={styles.layout}>
+        <ProductFilter filters={filters} onChange={setFilters} />
+        <ProductGrid products={data?.items || []} />
+      </div>
+    </main>
+  );
+}
+```
+
+**Extraction Triggers**:
+- Page component exceeds **100 lines**
+- Section of JSX exceeds **30 lines**
+- Logic block is reusable or testable in isolation
+- Section has its own state management
+- Visual complexity makes page hard to scan
+
+### Naming Conventions for Page Components
+
+```typescript
+// Pattern: {PageName}{ComponentPurpose}
+// Location: pages/components/{PageName}/{ComponentPurpose}.tsx
+
+// ProductsPage components
+pages/components/ProductsPage/
+├── ProductFilter.tsx       // ✅ Clear: filters for ProductsPage
+├── ProductSort.tsx         // ✅ Clear: sorting for ProductsPage
+├── ProductGrid.tsx         // ✅ Clear: grid layout for ProductsPage
+└── index.ts                // Barrel export
+
+// CheckoutPage components
+pages/components/Checkout/
+├── ShippingForm.tsx        // ✅ Clear: shipping step
+├── PaymentForm.tsx         // ✅ Clear: payment step
+├── OrderSummary.tsx        // ✅ Clear: order review
+└── index.ts
+
+// ❌ BAD — Generic names lose context
+pages/components/ProductsPage/
+├── Filter.tsx              // ❌ Too generic
+├── Grid.tsx                // ❌ What kind of grid?
+├── List.tsx                // ❌ List of what?
+```
+
+### Import/Export Pattern for Page Components
+
+```typescript
+// pages/components/ProductsPage/index.ts — Barrel export
+export { default as ProductFilter } from './ProductFilter';
+export { default as ProductSort } from './ProductSort';
+export { default as ProductGrid } from './ProductGrid';
+
+// pages/ProductsPage.tsx — Clean imports
+import { ProductFilter, ProductSort, ProductGrid } from './components/ProductsPage';
+
+// ✅ Benefits:
+// - Single import line
+// - Clear component origin
+// - Easy to refactor
+// - Autocomplete works perfectly
+```
+
+### Real-World Example: ProductsPage Refactoring
+
+**Before** (400+ lines, tangled):
+```tsx
+// pages/ProductsPage.tsx
+export default function ProductsPage() {
+  const [filters, setFilters] = useState({});
+  const [sortBy, setSortBy] = useState('newest');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const { data: categories } = useGetCategoriesQuery();
+  const { data: products } = useGetProductsQuery({ filters, sortBy });
+
+  // 50 lines of filter logic
+  const handleCategoryChange = (id: string) => { /* ... */ };
+  const handlePriceChange = (min: number, max: number) => { /* ... */ };
+  
+  // 50 lines of sort logic
+  const handleSortChange = (value: string) => { /* ... */ };
+  
+  return (
+    <main>
+      {/* 100 lines of filter JSX */}
+      <aside>...</aside>
+      
+      {/* 100 lines of sort JSX */}
+      <div>...</div>
+      
+      {/* 100 lines of grid JSX */}
+      <section>...</section>
+    </main>
+  );
+}
+```
+
+**After** (50 lines, clear):
+```tsx
+// pages/ProductsPage.tsx — ORCHESTRATION ONLY
+import { useState } from 'react';
+import { useGetProductsQuery } from '../store/api/productApi';
+import QueryRenderer from '../components/QueryRenderer';
+import { ProductFilter, ProductSort, ProductGrid } from './components/ProductsPage';
+import styles from './ProductsPage.module.css';
+
+export default function ProductsPage() {
+  const [filters, setFilters] = useState({});
+  const [sortBy, setSortBy] = useState('newest');
+
+  const productsQuery = useGetProductsQuery({
+    page: 1,
+    limit: 20,
+    ...filters,
+    sortBy,
+  });
+
+  return (
+    <main className={styles.page}>
+      <h1>Products</h1>
+      
+      <div className={styles.layout}>
+        <aside className={styles.sidebar}>
+          <ProductFilter filters={filters} onChange={setFilters} />
+        </aside>
+
+        <section className={styles.content}>
+          <ProductSort value={sortBy} onChange={setSortBy} />
+          
+          <QueryRenderer query={productsQuery}>
+            {(data) => <ProductGrid products={data.items} />}
+          </QueryRenderer>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+// pages/components/ProductsPage/ProductFilter.tsx — EXTRACTED
+import { useGetCategoriesQuery } from '../../../store/api/categoriesApi';
+import styles from './ProductFilter.module.css';
+
+interface ProductFilterProps {
+  filters: {
+    category?: string;
+    priceRange?: [number, number];
+  };
+  onChange: (filters: any) => void;
+}
+
+export default function ProductFilter({ filters, onChange }: ProductFilterProps) {
+  const { data: categories } = useGetCategoriesQuery();
+
+  const handleCategoryChange = (categoryId: string) => {
+    onChange({ ...filters, category: categoryId });
+  };
+
+  return (
+    <div className={styles.filter}>
+      <h3>Filter</h3>
+      
+      <div className={styles.section}>
+        <label>Category</label>
+        {categories?.map((cat) => (
+          <button
+            key={cat.id}
+            className={filters.category === cat.id ? styles.active : ''}
+            onClick={() => handleCategoryChange(cat.id)}
+          >
+            {cat.name}
+          </button>
+        ))}
+      </div>
+      
+      {/* Price range controls */}
+    </div>
+  );
+}
+
+// pages/components/ProductsPage/ProductGrid.tsx — EXTRACTED
+import ProductCard from '../../../components/features/Product/ProductCard';
+import type { Product } from '../../../types/entities';
+import styles from './ProductGrid.module.css';
+
+interface ProductGridProps {
+  products: Product[];
+}
+
+export default function ProductGrid({ products }: ProductGridProps) {
+  if (products.length === 0) {
+    return <div className={styles.empty}>No products found</div>;
+  }
+
+  return (
+    <div className={styles.grid}>
+      {products.map((product) => (
+        <ProductCard
+          key={product.id}
+          id={product.id}
+          name={product.name}
+          slug={product.slug}
+          price={product.price}
+          imageUrl={product.images[0]?.url}
+          rating={Math.round(product.averageRating)}
+          reviewCount={product.reviewCount}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+### Benefits Achieved
+
+| Before (Monolithic) | After (Extracted) |
+|---------------------|-------------------|
+| 400+ line page file | 50-line orchestration file |
+| Hard to understand flow | Clear composition pattern |
+| Can't test filter in isolation | Each component testable |
+| Difficult to reuse logic | Components are reusable |
+| Merge conflicts common | Changes isolated to features |
+| Poor code discoverability | Clear folder structure |
+| Slow IDE performance | Fast syntax highlighting |
+
+### Testing Benefits
+
+```typescript
+// ❌ BEFORE — Must test entire page
+test('ProductsPage filters work', () => {
+  render(<ProductsPage />);
+  // Complex: page includes auth, routing, multiple queries
+  // Hard to isolate filter behavior
+});
+
+// ✅ AFTER — Test component in isolation
+test('ProductFilter updates filters', () => {
+  const onChange = vi.fn();
+  render(<ProductFilter filters={{}} onChange={onChange} />);
+  
+  fireEvent.click(screen.getByText('Electronics'));
+  
+  expect(onChange).toHaveBeenCalledWith({ category: 'electronics' });
+});
+```
+
+### Migration Checklist
+
+When refactoring an existing page:
+
+1. **Identify extraction candidates**:
+   - [ ] Sections over 30 lines of JSX
+   - [ ] Repeated patterns
+   - [ ] Independent state management
+   - [ ] Logical groupings (filters, forms, etc.)
+
+2. **Create component structure**:
+   - [ ] Create `pages/components/{PageName}/` folder
+   - [ ] Move first component
+   - [ ] Add `index.ts` barrel export
+   - [ ] Update page imports
+
+3. **Define clean interfaces**:
+   - [ ] Props are data + handlers only
+   - [ ] No prop drilling (use context if needed)
+   - [ ] TypeScript interfaces defined
+
+4. **Verify extraction**:
+   - [ ] Page file under 100 lines
+   - [ ] Each component under 150 lines
+   - [ ] Components are independently testable
+   - [ ] No circular dependencies
+
+--- │   └── index.ts
 │   ├── hooks.ts             # useAppDispatch, useAppSelector (typed)
 │   └── store.ts             # Redux store configuration
 ├── types/
@@ -1288,6 +1694,7 @@ products?.items.map(product => product.name); // Direct access
 |---------|---------|---------------|------------------|
 | Using `any` type | `function foo(x: any)` | Define proper types | Match backend DTO types |
 | Global CSS classes | `.productCard { }` | CSS Modules: `styles.productCard` | N/A |
+| Monolithic page components | 400+ line page files | Extract to `pages/components/{PageName}/` | Like backend extracts to helper methods |
 | Lifting state too high | All state at root | Keep state close to usage | Like backend services |
 | Not memoizing callbacks | Every function is new | Use `useCallback` for handler props | N/A |
 | Ignoring TypeScript errors | `// @ts-ignore` | Fix or use proper types | Backend uses strict C# |
@@ -1296,12 +1703,12 @@ products?.items.map(product => product.name); // Direct access
 | Forgetting alt text on images | `<img src="..." />` | `<img src="..." alt="description" />` | N/A |
 | Not handling loading/error states | Show only success | Show loading spinners, error messages | Backend provides structured errors |
 | Conditional hook calls | Hooks inside if/loops | Hooks always top-level | N/A |
-| Inline complex logic in JSX | Long ternaries | Extract to functions/hooks | Like backend helper methods |
+| Inline complex logic in JSX | Long ternaries (50+ lines) | Extract to components/hooks | Like backend helper methods |
 | Mutating Redux state | `state.user.name = 'John'` | Use RTK's Immer: `state.user.name = 'John'` | Immutable like backend entities |
 | Not using RTK Query | Manual fetch + useEffect | Use `useGetProductsQuery()` | Matches backend Repository pattern |
 | Wrong token storage key | `localStorage.getItem('token')` | `localStorage.getItem('authToken')` | Match your current pattern |
 | Inconsistent API base URLs | Different URLs per API file | Single `VITE_API_URL` env var | Match backend base path |
-| Not extracting data from ApiResponse | `return response` | `return response.data` | Backend wraps all responses
+| Not extracting data from ApiResponse | `return response` | `return response.data` | Backend wraps all responses |
 ### 2. Hook Tests
 
 ```tsx
@@ -1456,6 +1863,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 - [ ] **Testing**: Components tested, RTK Query mocked, edge cases covered
 - [ ] **Accessibility**: Semantic HTML, alt text, ARIA labels, keyboard navigation
 - [ ] **Performance**: Code-split routes, `useCallback` for handlers, `useMemo` sparingly
+- [ ] **Page Organization**: Pages under 100 lines, complex features extracted to `pages/components/{PageName}/`
 
 ### Frontend-Backend Integration Checks  
 - [ ] **API Response**: Always handle `ApiResponse<T>` format, extract `data` field
@@ -1468,30 +1876,32 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 ### Frontend Core Principles
 1. **Type Safety**: Embrace TypeScript strictly — no `any`, mirror backend DTO types exactly
 2. **Component Isolation**: Small, single-responsibility components using composition patterns
-3. **State Management**: RTK Query for server state, Redux slices for client-only state
-4. **Performance**: Code-split routes, lazy-load images, memoize callbacks appropriately
-5. **Quality**: Strict linting, comprehensive testing, accessibility-first development
-6. **Consistency**: Follow established patterns in your codebase religiously
-7. **DRY**: Extract reusable logic to hooks and utilities, avoid duplicate API patterns
-8. **Error Handling**: Show loading/error states consistently, graceful degradation
-9. **Accessibility**: Semantic HTML, ARIA labels, keyboard navigation support
-10. **Documentation**: Comments for "why", not "what" — code should be self-documenting
+3. **Page Organization**: Pages are thin orchestration layers — extract complexity to `pages/components/{PageName}/`
+4. **State Management**: RTK Query for server state, Redux slices for client-only state
+5. **Performance**: Code-split routes, lazy-load images, memoize callbacks appropriately
+6. **Quality**: Strict linting, comprehensive testing, accessibility-first development
+7. **Consistency**: Follow established patterns in your codebase religiously
+8. **DRY**: Extract reusable logic to hooks and utilities, avoid duplicate API patterns
+9. **Error Handling**: Show loading/error states consistently, graceful degradation
+10. **Accessibility**: Semantic HTML, ARIA labels, keyboard navigation support
+11. **Documentation**: Comments for "why", not "what" — code should be self-documenting
 
 ### Frontend-Backend Alignment Principles  
-11. **API Consistency**: Always handle backend's `ApiResponse<T>` format consistently
-12. **Error Mapping**: Map backend exception types to appropriate frontend error handling
-13. **DTO Mirroring**: Frontend interfaces exactly match backend DTO structure
-14. **Authentication Flow**: Follow backend JWT patterns, handle token lifecycle correctly
-15. **Cache Invalidation**: RTK Query tags align with backend entity boundaries
-16. **Environment Parity**: Use same base URLs and configuration patterns as backend
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-      'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_' },
+12. **API Consistency**: Always handle backend's `ApiResponse<T>` format consistently
+13. **Error Mapping**: Map backend exception types to appropriate frontend error handling
+14. **DTO Mirroring**: Frontend interfaces exactly match backend DTO structure
+15. **Authentication Flow**: Follow backend JWT patterns, handle token lifecycle correctly
+16. **Cache Invalidation**: RTK Query tags align with backend entity boundaries
+17. **Environment Parity**: Use same base URLs and configuration patterns as backend
+
+### Architecture Alignment
+18. **Component → Service**: Frontend components mirror backend's Controller → Service pattern (thin orchestration)
+19. **Extract Early**: Extract complex JSX (30+ lines) just like backend extracts helper methods
+20. **Single Responsibility**: One component = one feature, matching backend's single-responsibility principle
+
+---
+
+## ESLint Configuration
       ],
       '@typescript-eslint/no-explicit-any': 'error',
     },
@@ -1577,6 +1987,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 - **Card component**: Consistent card UI with variant props
 - **Conditional wishlist UI**: Only show for authenticated users
 - **Skip queries**: `{skip: !isAuthenticated}` pattern
+- **Page organization**: Extract complex sections to `pages/components/{PageName}/` (see Page Organization Formula above)
 
 ### 4. Store Organization (Your Current Structure)
 - **Storefront APIs**: `productApi`, `cartApi`, `wishlistApi`, `profileApi`, `authApi`, `ordersApi`, `categoriesApi`, `reviewsApi`
@@ -1625,27 +2036,5 @@ This document complements [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md):
 ---
 
 **Last Updated**: February 5, 2026  
-**Version**: 2.0  
-**Companion Document**: [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md)Linting, testing, accessibility from the start
-6. **Consistency**: Follow naming and structure conventions religiously
-7. **DRY**: Extract reusable logic to hooks and utilities
-8. **Error Handling**: Show loading/error states, don't swallow errors
-9. **Accessibility**: Semantic HTML, ARIA labels, keyboard navigation
-10. **Documentation**: Comments for "why", not "what" (code should be self-documenting)
-
----
-
-## References
-
-- [React 19 Docs](https://react.dev)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Redux Toolkit Docs](https://redux-toolkit.js.org/)
-- [RTK Query Docs](https://redux-toolkit.js.org/rtk-query/overview)
-- [Vite Docs](https://vitejs.dev/)
-- [React Router Docs](https://reactrouter.com/)
-- [Web Accessibility Guidelines (WCAG)](https://www.w3.org/WAI/WCAG21/quickref/)
-
----
-
-**Last Updated**: February 5, 2026  
-**Version**: 1.0
+**Version**: 2.1  
+**Companion Document**: [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md)

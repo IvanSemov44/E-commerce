@@ -1,0 +1,58 @@
+.loading {
+  color: #666;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.reviewCard {
+  margin-bottom: 0.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: start;
+  gap: 1rem;
+}
+
+.headerContent {
+  flex: 1;
+}
+
+.title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+}
+
+.ratingRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ratingText {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.comment {
+  margin: 1rem 0 0.5rem 0;
+  color: #333;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.footer {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.emptyState {
+  color: #666;
+  text-align: center;
+  padding: 2rem;
+}

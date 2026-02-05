@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { selectCartItems, updateQuantity, removeItem } from '../store/slices/cartSlice';
 import { useGetCartQuery, useUpdateCartItemMutation, useRemoveFromCartMutation } from '../store/api/cartApi';
+import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
@@ -56,8 +57,8 @@ export default function Cart() {
 
   // Calculate cart totals
   const cartSubtotal = displayItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = cartSubtotal > 100 ? 0 : cartSubtotal > 0 ? 10 : 0;
-  const tax = cartSubtotal * 0.08;
+  const shipping = cartSubtotal > FREE_SHIPPING_THRESHOLD ? 0 : cartSubtotal > 0 ? STANDARD_SHIPPING_COST : 0;
+  const tax = cartSubtotal * DEFAULT_TAX_RATE;
   const total = cartSubtotal + shipping + tax;
 
   const handleUpdateQuantity = async (id: string, quantity: number) => {
@@ -162,9 +163,9 @@ export default function Cart() {
                       {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
                     </span>
                   </div>
-                  {cartSubtotal > 50 && cartSubtotal < 100 && (
+                  {cartSubtotal > 50 && cartSubtotal < FREE_SHIPPING_THRESHOLD && (
                     <div>
-                      Add ${(100 - cartSubtotal).toFixed(2)} more for free shipping!
+                      Add ${(FREE_SHIPPING_THRESHOLD - cartSubtotal).toFixed(2)} more for free shipping!
                     </div>
                   )}
                   <div>

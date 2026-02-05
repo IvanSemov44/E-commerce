@@ -322,3 +322,7 @@
     opacity: 1;
   }
 }
+
+.errorContainer { margin-bottom: 16px; }
+
+.reviewFormContainer { margin-bottom: 2rem; }

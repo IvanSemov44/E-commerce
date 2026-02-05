@@ -1,0 +1,33 @@
+.title {
+  margin-top: 0;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  box-sizing: border-box;
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
+}

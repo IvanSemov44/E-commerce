@@ -5,6 +5,8 @@ import Card from './ui/Card';
 import ErrorAlert from './ErrorAlert';
 import StarRating from './StarRating';
 
+import styles from './ReviewForm.module.css';
+
 interface ReviewFormProps {
   productId: string;
   onSuccess?: () => void;
@@ -43,23 +45,18 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
 
   return (
     <Card variant="bordered" padding="lg">
-      <h3 style={{ marginTop: 0 }}>Write a Review</h3>
+      <h3 className={styles.title}>Write a Review</h3>
 
       {error && <ErrorAlert message="Failed to submit review. Please try again." />}
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-            Rating
-          </label>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>Rating</label>
           <StarRating rating={rating} onRatingChange={setRating} size="lg" />
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label
-            htmlFor="review-title"
-            style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}
-          >
+        <div className={styles.formGroup}>
+          <label htmlFor="review-title" className={styles.label}>
             Title (Optional)
           </label>
           <input
@@ -68,22 +65,12 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., Great product!"
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              fontSize: '1rem',
-              border: '1px solid #e0e0e0',
-              borderRadius: '0.5rem',
-              boxSizing: 'border-box',
-            }}
+            className={styles.input}
           />
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label
-            htmlFor="review-comment"
-            style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}
-          >
+        <div className={styles.formGroup}>
+          <label htmlFor="review-comment" className={styles.label}>
             Comment *
           </label>
           <textarea
@@ -92,16 +79,7 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
             onChange={(e) => setComment(e.target.value)}
             placeholder="Share your experience with this product..."
             rows={4}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              fontSize: '1rem',
-              border: '1px solid #e0e0e0',
-              borderRadius: '0.5rem',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-              resize: 'vertical',
-            }}
+            className={styles.textarea}
             required
           />
         </div>

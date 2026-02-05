@@ -5,6 +5,8 @@ import { selectCartItems, selectCartSubtotal, clearCart } from '../store/slices/
 import { useCreateOrderMutation } from '../store/api/ordersApi';
 import { useClearCartMutation } from '../store/api/cartApi';
 import type { CreateOrderRequest } from '../store/api/ordersApi';
+import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
+import { CheckIcon } from '../components/icons';
 
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -38,8 +40,8 @@ export default function Checkout() {
 
   // Calculate totals with discount
   const discount = promoCodeValidation?.isValid ? promoCodeValidation.discountAmount : 0;
-  const shipping = subtotal > 100 ? 0 : 10;
-  const tax = subtotal * 0.08;
+  const shipping = subtotal > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
+  const tax = subtotal * DEFAULT_TAX_RATE;
   const total = subtotal - discount + shipping + tax;
 
   // Form state
@@ -226,19 +228,7 @@ export default function Checkout() {
         <div className={styles.successContent}>
           <Card variant="elevated" padding="lg">
             <div className={styles.successIcon}>
-              <svg
-                className={styles.successIconSvg}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+              <CheckIcon className={styles.successIconSvg} />
             </div>
             <h1 className={styles.successTitle}>Order Placed Successfully!</h1>
             <p className={styles.successMessage}>Thank you for your purchase.</p>
