@@ -623,7 +623,9 @@ public class OrderServiceTests
             TestDataFactory.CreateOrder(Guid.NewGuid())
         };
 
-        _mockOrderRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
+        _mockOrderRepository.Setup(r => r.GetTotalOrdersCountAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+        _mockOrderRepository.Setup(r => r.GetAllOrdersPaginatedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(orders);
 
         _mockMapper.Setup(m => m.Map<OrderDto>(It.IsAny<Order>()))
@@ -645,7 +647,7 @@ public class OrderServiceTests
     #region Guest Checkout Tests
 
     [TestMethod]
-    public async Task CreateOrderAsync_GuestWithoutEmail_ThrowsInvalidOperationException()
+    public async Task CreateOrderAsync_GuestWithoutEmail_ThrowsGuestEmailRequiredException()
     {
         // Arrange
         var dto = new CreateOrderDto
@@ -677,16 +679,16 @@ public class OrderServiceTests
         try
         {
             await _service.CreateOrderAsync(null, dto);
-            Assert.Fail("Expected InvalidOperationException was not thrown");
+            Assert.Fail("Expected GuestEmailRequiredException was not thrown");
         }
-        catch (InvalidOperationException ex)
+        catch (GuestEmailRequiredException ex)
         {
             Assert.IsTrue(ex.Message.Contains("email"), "Exception message should mention email requirement");
         }
     }
 
     [TestMethod]
-    public async Task CreateOrderAsync_GuestWithEmptyEmail_ThrowsInvalidOperationException()
+    public async Task CreateOrderAsync_GuestWithEmptyEmail_ThrowsGuestEmailRequiredException()
     {
         // Arrange
         var dto = new CreateOrderDto
@@ -718,9 +720,9 @@ public class OrderServiceTests
         try
         {
             await _service.CreateOrderAsync(null, dto);
-            Assert.Fail("Expected InvalidOperationException was not thrown");
+            Assert.Fail("Expected GuestEmailRequiredException was not thrown");
         }
-        catch (InvalidOperationException ex)
+        catch (GuestEmailRequiredException ex)
         {
             Assert.IsTrue(ex.Message.Contains("email"), "Exception message should mention email requirement");
         }
@@ -787,9 +789,9 @@ public class OrderServiceTests
         try
         {
             await _service.CreateOrderAsync(null, dto);
-            Assert.Fail("Expected InvalidOperationException for guest checkout without email");
+            Assert.Fail("Expected GuestEmailRequiredException for guest checkout without email");
         }
-        catch (InvalidOperationException ex)
+        catch (GuestEmailRequiredException ex)
         {
             Assert.IsTrue(ex.Message.Contains("email") || ex.Message.Contains("Guest"),
                 "Should have error message about guest email requirement");

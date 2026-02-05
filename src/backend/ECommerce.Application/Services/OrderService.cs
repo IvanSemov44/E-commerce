@@ -23,6 +23,25 @@ public class OrderService : IOrderService
     private readonly ILogger<OrderService> _logger;
     private readonly IUnitOfWork _unitOfWork;
 
+    private static readonly Dictionary<string, string> CountryCodeMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "United States", "US" },
+        { "USA", "US" },
+        { "Canada", "CA" },
+        { "United Kingdom", "UK" },
+        { "UK", "UK" },
+        { "Mexico", "MX" },
+        { "Germany", "DE" },
+        { "France", "FR" },
+        { "Italy", "IT" },
+        { "Spain", "ES" },
+        { "Japan", "JP" },
+        { "China", "CN" },
+        { "India", "IN" },
+        { "Australia", "AU" },
+        { "Brazil", "BR" }
+    };
+
     public OrderService(
         IPromoCodeService promoCodeService,
         IInventoryService inventoryService,
@@ -44,9 +63,7 @@ public class OrderService : IOrderService
         var isGuest = userId == null;
         _logger.LogInformation("Creating order. UserId: {UserId}, IsGuest: {IsGuest}", userId, isGuest);
 
-        try
-        {
-            // Verify user exists if not guest
+        // Verify user exists if not guest
             if (userId.HasValue)
             {
                 var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, trackChanges: false, cancellationToken: cancellationToken);
@@ -61,7 +78,7 @@ public class OrderService : IOrderService
                 if (string.IsNullOrWhiteSpace(dto.GuestEmail))
                 {
                     _logger.LogWarning("Guest checkout attempted without email");
-                    throw new InvalidOperationException("Guest checkout requires an email address. Please provide guestEmail in the request.");
+                    throw new GuestEmailRequiredException();
                 }
             }
 
@@ -215,7 +232,16 @@ public class OrderService : IOrderService
             // Increment promo code usage after successful order creation
             if (order.PromoCodeId.HasValue)
             {
-                await _promoCodeService.IncrementUsedCountAsync(order.PromoCodeId.Value);
+                try
+                {
+                    await _promoCodeService.IncrementUsedCountAsync(order.PromoCodeId.Value);
+                }
+                catch (Exception promoEx)
+                {
+                    _logger.LogError(promoEx, "Failed to increment usage count for promo code {PromoCodeId} in order {OrderNumber}",
+                        order.PromoCodeId.Value, order.OrderNumber);
+                    // Continue - order was created successfully
+                }
             }
 
             // Send order confirmation email
@@ -237,12 +263,6 @@ public class OrderService : IOrderService
             _logger.LogInformation("Order created successfully: {OrderNumber}", order.OrderNumber);
 
             return _mapper.Map<OrderDetailDto>(order);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating order for user {UserId}", userId);
-            throw;
-        }
     }
 
     public async Task<OrderDetailDto?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -351,14 +371,8 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Retrieving all orders, page {Page}", parameters.Page);
 
-        var allOrders = await _unitOfWork.Orders.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var totalCount = allOrders.Count();
-
-        var orders = allOrders
-            .OrderByDescending(o => o.CreatedAt)
-            .Skip(parameters.GetSkip())
-            .Take(parameters.PageSize)
-            .ToList();
+        var totalCount = await _unitOfWork.Orders.GetTotalOrdersCountAsync(cancellationToken: cancellationToken);
+        var orders = await _unitOfWork.Orders.GetAllOrdersPaginatedAsync(parameters.GetSkip(), parameters.PageSize, cancellationToken: cancellationToken);
 
         var dtos = orders.Select(o => _mapper.Map<OrderDto>(o)).ToList();
 
@@ -394,27 +408,7 @@ public class OrderService : IOrderService
         if (country.Length == 2)
             return country.ToUpper();
 
-        // Common country name to code mappings
-        var countryMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "United States", "US" },
-            { "USA", "US" },
-            { "Canada", "CA" },
-            { "United Kingdom", "UK" },
-            { "UK", "UK" },
-            { "Mexico", "MX" },
-            { "Germany", "DE" },
-            { "France", "FR" },
-            { "Italy", "IT" },
-            { "Spain", "ES" },
-            { "Japan", "JP" },
-            { "China", "CN" },
-            { "India", "IN" },
-            { "Australia", "AU" },
-            { "Brazil", "BR" }
-        };
-
-        if (countryMap.TryGetValue(country, out var code))
+        if (CountryCodeMap.TryGetValue(country, out var code))
             return code;
 
         // Default: take first 2 characters

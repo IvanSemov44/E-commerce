@@ -8,6 +8,7 @@ using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -19,6 +20,7 @@ public class AuthServiceTests
     private Mock<IUserRepository> _mockUserRepository = null!;
     private Mock<IConfiguration> _mockConfiguration = null!;
     private Mock<IEmailService> _mockEmailService = null!;
+    private Mock<ILogger<AuthService>> _mockLogger = null!;
     private Mock<IMapper> _mockMapper = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private AuthService _service = null!;
@@ -51,9 +53,10 @@ public class AuthServiceTests
                 AvatarUrl = u.AvatarUrl
             });
 
+        _mockLogger = new Mock<ILogger<AuthService>>();
         _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
 
-        _service = new AuthService(_mockUnitOfWork.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockMapper.Object);
+        _service = new AuthService(_mockUnitOfWork.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockMapper.Object, _mockLogger.Object);
     }
 
     #region RegisterAsync Tests

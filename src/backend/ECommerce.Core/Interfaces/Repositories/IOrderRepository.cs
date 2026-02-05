@@ -47,6 +47,16 @@ public interface IOrderRepository : IRepository<Order>
     Task<Order?> GetWithItemsAsync(Guid orderId, bool trackChanges = false, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets all orders with pagination at the database level.
+    /// </summary>
+    /// <param name="skip">Number of orders to skip.</param>
+    /// <param name="take">Number of orders to take.</param>
+    /// <param name="trackChanges">Whether to track changes for the entities.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Paginated orders.</returns>
+    Task<IEnumerable<Order>> GetAllOrdersPaginatedAsync(int skip, int take, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets the total count of all orders asynchronously.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>

@@ -45,6 +45,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var jwtSettings = configuration.GetSection("Jwt");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? "your-secret-key-minimum-32-characters-long");
 
+var isDevelopment = builder.Environment.IsDevelopment();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -56,8 +58,10 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(secretKey),
-        ValidateIssuer = false,
-        ValidateAudience = false,
+        ValidateIssuer = !isDevelopment,
+        ValidateAudience = !isDevelopment,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
         ClockSkew = TimeSpan.Zero
     };
 });
@@ -75,12 +79,27 @@ builder.Services.Configure<JsonOptions>(options =>
 // Add CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    if (isDevelopment)
     {
-        builder.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
-    });
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+    }
+    else
+    {
+        var allowedOrigins = configuration.GetSection("Cors:Origins").Get<string[]>()
+            ?? new[] { "http://localhost:5173" };
+
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+    }
 });
 
 // Add AutoMapper

@@ -73,6 +73,22 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     }
 
     /// <summary>
+    /// Retrieves paginated orders across the entire system.
+    /// </summary>
+    public async Task<IEnumerable<Order>> GetAllOrdersPaginatedAsync(int skip, int take, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Include(o => o.Items)
+                .ThenInclude(oi => oi.Product)
+            .Include(o => o.ShippingAddress)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Gets the total count of all orders in the system.
     /// </summary>
     public async Task<int> GetTotalOrdersCountAsync(CancellationToken cancellationToken = default)

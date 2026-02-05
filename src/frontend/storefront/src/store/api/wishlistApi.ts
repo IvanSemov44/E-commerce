@@ -32,7 +32,7 @@ export const wishlistApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Wishlist'],
+  tagTypes: ['Wishlist', 'WishlistCheck'],
   endpoints: (builder) => ({
     getWishlist: builder.query<WishlistResponse, void>({
       query: () => '/wishlist',
@@ -44,6 +44,7 @@ export const wishlistApi = createApi({
     checkInWishlist: builder.query<boolean, string>({
       query: (productId) => `/wishlist/contains/${productId}`,
       transformResponse: (response: ApiResponse<boolean>) => response.data || false,
+      providesTags: (_result, _error, productId) => [{ type: 'WishlistCheck', id: productId }],
     }),
 
     addToWishlist: builder.mutation<WishlistResponse, string>({
@@ -54,7 +55,10 @@ export const wishlistApi = createApi({
       }),
       transformResponse: (response: ApiResponse<WishlistResponse>) =>
         response.data || { items: [] },
-      invalidatesTags: ['Wishlist'],
+      invalidatesTags: (_result, _error, productId) => [
+        'Wishlist',
+        { type: 'WishlistCheck', id: productId },
+      ],
     }),
 
     removeFromWishlist: builder.mutation<WishlistResponse, string>({
@@ -64,7 +68,10 @@ export const wishlistApi = createApi({
       }),
       transformResponse: (response: ApiResponse<WishlistResponse>) =>
         response.data || { items: [] },
-      invalidatesTags: ['Wishlist'],
+      invalidatesTags: (_result, _error, productId) => [
+        'Wishlist',
+        { type: 'WishlistCheck', id: productId },
+      ],
     }),
 
     clearWishlist: builder.mutation<void, void>({

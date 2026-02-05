@@ -47,7 +47,8 @@ export default function ProductCard({
       } else {
         await addToWishlist(id).unwrap();
       }
-      refetchWishlist();
+      // Immediately refetch to update the heart icon
+      await refetchWishlist();
     } catch {
       // Error handled by mutation state
     }

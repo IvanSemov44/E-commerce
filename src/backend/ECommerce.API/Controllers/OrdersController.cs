@@ -48,23 +48,10 @@ public class OrdersController : ControllerBase
         var userId = _currentUser.UserIdOrNull;
         _logger.LogInformation("Creating order for user {UserId}. Guest: {IsGuest}", userId, userId == null);
 
-        try
-        {
-            var order = await _orderService.CreateOrderAsync(userId, dto, cancellationToken: cancellationToken);
+        var order = await _orderService.CreateOrderAsync(userId, dto, cancellationToken: cancellationToken);
 
-            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id },
-                ApiResponse<OrderDetailDto>.Ok(order, "Order created successfully"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Guest checkout validation failed");
-            return BadRequest(ApiResponse<object>.Error(ex.Message));
-        }
-        catch (ArgumentException ex) when (ex.Message.Contains("Guest"))
-        {
-            _logger.LogWarning(ex, "Guest checkout validation failed");
-            return BadRequest(ApiResponse<object>.Error(ex.Message));
-        }
+        return CreatedAtAction(nameof(GetOrderById), new { id = order.Id },
+            ApiResponse<OrderDetailDto>.Ok(order, "Order created successfully"));
     }
 
     /// <summary>

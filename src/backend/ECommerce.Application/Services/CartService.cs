@@ -104,9 +104,10 @@ public class CartService : ICartService
         }
 
         // Reload cart to get fresh data
-        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id, cancellationToken: cancellationToken);
+        var cartId = cart.Id;
+        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cart.Id);
+            throw new CartNotFoundException(cartId);
 
         return await MapCartToDtoAsync(cart, cancellationToken);
     }
@@ -152,9 +153,10 @@ public class CartService : ICartService
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         // Reload cart to get fresh data
-        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id, cancellationToken: cancellationToken);
+        var cartId = cart.Id;
+        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cart.Id);
+            throw new CartNotFoundException(cartId);
 
         return await MapCartToDtoAsync(cart, cancellationToken);
     }
@@ -170,9 +172,10 @@ public class CartService : ICartService
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         // Reload cart to get fresh data
-        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id, cancellationToken: cancellationToken);
+        var cartId = cart.Id;
+        cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cart.Id);
+            throw new CartNotFoundException(cartId);
 
         return await MapCartToDtoAsync(cart, cancellationToken);
     }

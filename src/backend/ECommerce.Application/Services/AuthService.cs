@@ -9,6 +9,7 @@ using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading;
 
@@ -18,15 +19,17 @@ public class AuthService : IAuthService
 {
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly ILogger<AuthService> _logger;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
-    public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, IEmailService emailService, IMapper mapper)
+    public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, IEmailService emailService, IMapper mapper, ILogger<AuthService> logger)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
         _emailService = emailService;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
@@ -59,9 +62,9 @@ public class AuthService : IAuthService
             {
                 await _emailService.SendWelcomeEmailAsync(user.Email, user.FirstName, verificationLink);
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently fail - email failure should not affect registration
+                _logger.LogWarning(ex, "Failed to send welcome email to {Email}", user.Email);
             }
         });
 
@@ -213,9 +216,9 @@ public class AuthService : IAuthService
             {
                 await _emailService.SendPasswordResetEmailAsync(user.Email, user.FirstName, resetLink);
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently fail - email failure should not affect token generation
+                _logger.LogWarning(ex, "Failed to send password reset email to {Email}", user.Email);
             }
         });
 

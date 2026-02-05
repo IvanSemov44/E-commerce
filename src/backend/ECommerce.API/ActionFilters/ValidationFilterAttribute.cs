@@ -49,8 +49,4 @@ public class ValidationFilterAttribute : ActionFilterAttribute
         }
     }
 
-    /// <summary>
-    /// Executes after the action has completed - no validation needed here.
-    /// </summary>
-    public override void OnActionExecuted(ActionExecutedContext context) { }
 }
