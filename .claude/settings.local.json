@@ -63,7 +63,11 @@
       "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command \"grep -rn ''ErrorDetails'' ''C:\\\\Users\\\\ivans\\\\Desktop\\\\Dev\\\\E-commerce\\\\src\\\\backend\\\\ECommerce.API\\\\Controllers''\")",
       "WebFetch(domain:code-maze.com)",
       "WebFetch(domain:www.speakeasy.com)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(if [ -d \"c:\\\\Users\\\\ivans\\\\Desktop\\\\Dev\\\\E-commerce\\\\src\\\\frontend\\\\storefront\\\\src\\\\hooks\" ])",
+      "Bash(then echo \"exists\")",
+      "Bash(else echo \"not found\")",
+      "Bash(fi)"
     ]
   }
 }

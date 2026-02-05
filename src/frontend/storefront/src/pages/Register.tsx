@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useRegisterMutation } from '../store/api/authApi';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess } from '../store/slices/authSlice';
+import useForm from '../hooks/useForm';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
@@ -10,37 +11,47 @@ import ErrorAlert from '../components/ErrorAlert';
 import styles from './Register.module.css';
 
 export default function Register() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [register, { isLoading }] = useRegisterMutation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    try {
-      const response = await register({ email, password, firstName, lastName }).unwrap();
-      if (response.success && response.user && response.token) {
-        dispatch(loginSuccess({ user: response.user, token: response.token }));
-        navigate('/');
-      } else {
-        setError(response.message || 'Registration failed');
+  const form = useForm({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validate: (values) => {
+      const errors: any = {};
+      if (!values.firstName) errors.firstName = 'First name is required';
+      if (!values.lastName) errors.lastName = 'Last name is required';
+      if (!values.email) errors.email = 'Email is required';
+      if (!values.password) errors.password = 'Password is required';
+      if (!values.confirmPassword) errors.confirmPassword = 'Please confirm password';
+      if (values.password && values.confirmPassword && values.password !== values.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
       }
-    } catch (err: any) {
-      setError(err?.data?.message || 'An error occurred during registration');
-    }
-  };
+      return errors;
+    },
+    onSubmit: async (values) => {
+      setError('');
+      try {
+        const { confirmPassword, ...registerData } = values;
+        const response = await register(registerData).unwrap();
+        if (response.success && response.user && response.token) {
+          dispatch(loginSuccess({ user: response.user, token: response.token }));
+          navigate('/');
+        } else {
+          setError(response.message || 'Registration failed');
+        }
+      } catch (err: any) {
+        setError(err?.data?.message || 'An error occurred during registration');
+      }
+    },
+  });
 
   return (
     <div className={styles.container}>
@@ -53,20 +64,24 @@ export default function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={form.handleSubmit} className={styles.form}>
           <div className={styles.nameFields}>
             <Input
               label="First Name"
               type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              name="firstName"
+              value={form.values.firstName}
+              onChange={form.handleChange}
+              error={form.errors.firstName}
               required
             />
             <Input
               label="Last Name"
               type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              name="lastName"
+              value={form.values.lastName}
+              onChange={form.handleChange}
+              error={form.errors.lastName}
               required
             />
           </div>
@@ -74,33 +89,39 @@ export default function Register() {
           <Input
             label="Email"
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            name="email"
+            value={form.values.email}
+            onChange={form.handleChange}
+            error={form.errors.email}
             required
           />
 
           <Input
             label="Password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            name="password"
+            value={form.values.password}
+            onChange={form.handleChange}
+            error={form.errors.password}
             required
           />
 
           <Input
             label="Confirm Password"
             type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            name="confirmPassword"
+            value={form.values.confirmPassword}
+            onChange={form.handleChange}
+            error={form.errors.confirmPassword}
             required
           />
 
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || form.isSubmitting}
             size="lg"
           >
-            {isLoading ? 'Registering...' : 'Register'}
+            {isLoading || form.isSubmitting ? 'Registering...' : 'Register'}
           </Button>
         </form>
 
