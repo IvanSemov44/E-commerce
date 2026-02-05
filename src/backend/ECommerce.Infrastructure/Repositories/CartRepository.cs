@@ -24,6 +24,7 @@ public class CartRepository : Repository<Cart>, ICartRepository
         return await query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.Images)
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
 
@@ -36,6 +37,7 @@ public class CartRepository : Repository<Cart>, ICartRepository
         return await query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.Images)
             .FirstOrDefaultAsync(c => c.SessionId == sessionId, cancellationToken);
     }
 
@@ -48,6 +50,7 @@ public class CartRepository : Repository<Cart>, ICartRepository
         return await query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.Images)
             .FirstOrDefaultAsync(c => c.Id == cartId, cancellationToken);
     }
 
@@ -67,6 +70,7 @@ public class CartRepository : Repository<Cart>, ICartRepository
         var cart = await DbSet
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.Images)
             .FirstOrDefaultAsync(c => c.Id == cartId, cancellationToken);
 
         if (cart == null) return 0;

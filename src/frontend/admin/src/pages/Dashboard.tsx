@@ -92,15 +92,8 @@ export default function Dashboard() {
             {dashboardStats!.ordersTrend && dashboardStats!.ordersTrend.length > 0 ? (
               <ul className={styles.trendList}>
                 {dashboardStats!.ordersTrend.slice(0, 7).map((trend) => (
-                  <li
-                    key={trend.date}
-                    style={{
-                      padding: '0.5rem 0',
-                      borderBottom: '1px solid #e2e8f0',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    <span style={{ color: '#64748b' }}>
+                  <li key={trend.date} className={styles.trendItem}>
+                    <span className={styles.trendLabel}>
                       {new Date(trend.date).toLocaleDateString()}
                     </span>
                     : <strong>{trend.count}</strong> orders
@@ -108,7 +101,7 @@ export default function Dashboard() {
                 ))}
               </ul>
             ) : (
-              <p style={{ color: '#94a3b8' }}>No trend data available</p>
+              <p className={styles.emptyText}>No trend data available</p>
             )}
           </CardContent>
         </Card>
@@ -121,15 +114,8 @@ export default function Dashboard() {
             {dashboardStats!.revenueTrend && dashboardStats!.revenueTrend.length > 0 ? (
               <ul className={styles.trendList}>
                 {dashboardStats!.revenueTrend.slice(0, 7).map((trend) => (
-                  <li
-                    key={trend.date}
-                    style={{
-                      padding: '0.5rem 0',
-                      borderBottom: '1px solid #e2e8f0',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    <span style={{ color: '#64748b' }}>
+                  <li key={trend.date} className={styles.trendItem}>
+                    <span className={styles.trendLabel}>
                       {new Date(trend.date).toLocaleDateString()}
                     </span>
                     : <strong>${trend.amount.toFixed(2)}</strong>
@@ -137,7 +123,7 @@ export default function Dashboard() {
                 ))}
               </ul>
             ) : (
-              <p style={{ color: '#94a3b8' }}>No trend data available</p>
+              <p className={styles.emptyText}>No trend data available</p>
             )}
           </CardContent>
         </Card>
