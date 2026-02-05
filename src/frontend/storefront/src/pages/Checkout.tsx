@@ -201,6 +201,7 @@ export default function Checkout() {
         },
         paymentMethod: 'card',
         promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
+        guestEmail: formData.email,
       };
 
       const result = await createOrder(orderData).unwrap();

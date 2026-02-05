@@ -43,6 +43,7 @@ export interface CreateOrderRequest {
   };
   paymentMethod: string;
   promoCode?: string;
+  guestEmail?: string;
 }
 
 export interface OrderResponse {

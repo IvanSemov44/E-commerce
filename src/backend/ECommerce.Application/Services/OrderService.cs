@@ -39,17 +39,30 @@ public class OrderService : IOrderService
         _logger = logger;
     }
 
-    public async Task<OrderDetailDto> CreateOrderAsync(Guid userId, CreateOrderDto dto, CancellationToken cancellationToken = default)
+    public async Task<OrderDetailDto> CreateOrderAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Creating order for user {UserId}", userId);
+        var isGuest = userId == null;
+        _logger.LogInformation("Creating order. UserId: {UserId}, IsGuest: {IsGuest}", userId, isGuest);
 
         try
         {
-            // Verify user exists
-            var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
-            if (user == null)
+            // Verify user exists if not guest
+            if (userId.HasValue)
             {
-                throw new UserNotFoundException(userId);
+                var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, trackChanges: false, cancellationToken: cancellationToken);
+                if (user == null)
+                {
+                    throw new UserNotFoundException(userId.Value);
+                }
+            }
+            else
+            {
+                // For guest checkout, validate that guest email is provided
+                if (string.IsNullOrWhiteSpace(dto.GuestEmail))
+                {
+                    _logger.LogWarning("Guest checkout attempted without email");
+                    throw new InvalidOperationException("Guest checkout requires an email address. Please provide guestEmail in the request.");
+                }
             }
 
             // Create order entity
@@ -67,7 +80,8 @@ public class OrderService : IOrderService
             if (dto.ShippingAddress != null)
             {
                 var shippingAddress = _mapper.Map<Address>(dto.ShippingAddress);
-                shippingAddress.UserId = userId;
+                if (userId.HasValue)
+                    shippingAddress.UserId = userId.Value;
                 shippingAddress.Type = "Shipping";
                 shippingAddress.IsDefault = false;
                 // Normalize country code
@@ -78,7 +92,8 @@ public class OrderService : IOrderService
             if (dto.BillingAddress != null)
             {
                 var billingAddress = _mapper.Map<Address>(dto.BillingAddress);
-                billingAddress.UserId = userId;
+                if (userId.HasValue)
+                    billingAddress.UserId = userId.Value;
                 billingAddress.Type = "Billing";
                 billingAddress.IsDefault = false;
                 billingAddress.Country = NormalizeCountryCode(dto.BillingAddress.Country);
@@ -87,7 +102,8 @@ public class OrderService : IOrderService
             else if (dto.ShippingAddress != null)
             {
                 var billingAddress = _mapper.Map<Address>(dto.ShippingAddress);
-                billingAddress.UserId = userId;
+                if (userId.HasValue)
+                    billingAddress.UserId = userId.Value;
                 billingAddress.Type = "Billing";
                 billingAddress.IsDefault = false;
                 billingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
@@ -205,8 +221,12 @@ public class OrderService : IOrderService
             // Send order confirmation email
             try
             {
-                await _emailService.SendOrderConfirmationEmailAsync(user.Email, order);
-                _logger.LogInformation("Order confirmation email sent to {Email}", user.Email);
+                var emailAddress = !string.IsNullOrWhiteSpace(dto.GuestEmail) ? dto.GuestEmail : await GetUserEmailAsync(userId.Value, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(emailAddress))
+                {
+                    await _emailService.SendOrderConfirmationEmailAsync(emailAddress, order);
+                    _logger.LogInformation("Order confirmation email sent to {Email}", emailAddress);
+                }
             }
             catch (Exception emailEx)
             {
@@ -400,4 +420,11 @@ public class OrderService : IOrderService
         // Default: take first 2 characters
         return country.Substring(0, Math.Min(2, country.Length)).ToUpper();
     }
+
+    private async Task<string?> GetUserEmailAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
+        return user?.Email;
+    }
 }
+

@@ -630,4 +630,5 @@ public class PromoCodeValidatorsTests
         Assert.AreEqual(0m, deserialized.OrderAmount, "OrderAmount should default to 0m");
     }
 
-    #endregion}
+    #endregion
+}

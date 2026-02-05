@@ -9,9 +9,12 @@ namespace ECommerce.Application.Interfaces;
 public interface IOrderService
 {
     /// <summary>
-    /// Create a new order from cart items.
+    /// Create a new order from cart items. Supports both authenticated and guest checkout.
     /// </summary>
-    Task<OrderDetailDto> CreateOrderAsync(Guid userId, CreateOrderDto dto, CancellationToken cancellationToken = default);
+    /// <param name="userId">User ID if authenticated, null for guest checkout.</param>
+    /// <param name="dto">Order creation DTO. GuestEmail is required if userId is null.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<OrderDetailDto> CreateOrderAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get order details by ID.

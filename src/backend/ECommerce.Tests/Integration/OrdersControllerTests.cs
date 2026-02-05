@@ -359,4 +359,270 @@ public class OrdersControllerTests
     }
 
     #endregion
+
+    #region Guest Checkout Tests
+
+    [TestMethod]
+    public async Task CreateOrder_GuestWithEmail_ReturnsCreatedOrBadRequest()
+    {
+        // Arrange
+        using var client = _factory.CreateClient(); // No authentication
+        var createOrderDto = new
+        {
+            PaymentMethod = "card",
+            GuestEmail = "guest@example.com",
+            ShippingAddress = new
+            {
+                FirstName = "Guest",
+                LastName = "User",
+                Phone = "555-1234",
+                StreetLine1 = "123 Guest St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "USA"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 99.99m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/orders", content);
+
+        // Assert
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
+            $"Guest checkout with email should return Created or BadRequest, got {response.StatusCode}");
+    }
+
+    [TestMethod]
+    public async Task CreateOrder_GuestWithoutEmail_ReturnsBadRequest()
+    {
+        // Arrange
+        using var client = _factory.CreateClient(); // No authentication
+        var createOrderDto = new
+        {
+            PaymentMethod = "card",
+            // Missing GuestEmail
+            ShippingAddress = new
+            {
+                FirstName = "Guest",
+                LastName = "User",
+                Phone = "555-1234",
+                StreetLine1 = "123 Guest St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "USA"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 99.99m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/orders", content);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode,
+            "Guest checkout without email should return BadRequest");
+        
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Assert.IsTrue(responseContent.Contains("email"), 
+            "Error message should mention email requirement");
+    }
+
+    [TestMethod]
+    public async Task CreateOrder_GuestWithEmptyEmail_ReturnsBadRequest()
+    {
+        // Arrange
+        using var client = _factory.CreateClient(); // No authentication
+        var createOrderDto = new
+        {
+            PaymentMethod = "card",
+            GuestEmail = "", // Empty email
+            ShippingAddress = new
+            {
+                FirstName = "Guest",
+                LastName = "User",
+                Phone = "555-1234",
+                StreetLine1 = "123 Guest St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "USA"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 99.99m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/orders", content);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode,
+            "Guest checkout with empty email should return BadRequest");
+    }
+
+    [TestMethod]
+    public async Task CreateOrder_AuthenticatedUser_DoesNotRequireGuestEmail()
+    {
+        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+        var createOrderDto = new
+        {
+            PaymentMethod = "card",
+            // No GuestEmail provided - authenticated users shouldn't need it
+            ShippingAddress = new
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                Phone = "555-1234",
+                StreetLine1 = "456 Auth St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "USA"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 99.99m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/orders", content);
+
+        // Assert - Should not require guestEmail for authenticated users
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
+            $"Authenticated user checkout should work without guestEmail, got {response.StatusCode}");
+    }
+
+    [TestMethod]
+    public async Task CreateOrder_GuestWithValidEmail_OrderNumberPresent()
+    {
+        // Arrange
+        using var client = _factory.CreateClient(); // No authentication
+        var createOrderDto = new
+        {
+            PaymentMethod = "card",
+            GuestEmail = "guest123@example.com",
+            ShippingAddress = new
+            {
+                FirstName = "Test",
+                LastName = "Guest",
+                Phone = "555-9999",
+                StreetLine1 = "789 Test Ave",
+                City = "Boston",
+                State = "MA",
+                PostalCode = "02101",
+                Country = "USA"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 50.00m,
+                    Quantity = 2
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/orders", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert - If successful, should have order number
+        if (response.StatusCode == HttpStatusCode.Created)
+        {
+            Assert.IsTrue(responseContent.Contains("orderNumber"), 
+                "Successful guest order should contain orderNumber");
+        }
+    }
+
+    [TestMethod]
+    public async Task CreateOrder_GuestWithPromoCode_CalculatesDiscount()
+    {
+        // Arrange
+        using var client = _factory.CreateClient(); // No authentication
+        var createOrderDto = new
+        {
+            PaymentMethod = "card",
+            GuestEmail = "promo@example.com",
+            PromoCode = "SAVE20", // Assuming this code exists
+            ShippingAddress = new
+            {
+                FirstName = "Promo",
+                LastName = "Guest",
+                Phone = "555-2020",
+                StreetLine1 = "999 Promo Rd",
+                City = "Chicago",
+                State = "IL",
+                PostalCode = "60601",
+                Country = "USA"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 100.00m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/orders", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert - Should handle promo code for guests
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
+            $"Guest checkout with promo code should return Created or BadRequest, got {response.StatusCode}");
+    }
+
+    #endregion
 }

@@ -45,6 +45,10 @@ public class CreateOrderDto
     public AddressDto? BillingAddress { get; set; }
     public string? PaymentMethod { get; set; }
     public string? PromoCode { get; set; }
+    /// <summary>
+    /// Email address for guest checkout. Required if not authenticated.
+    /// </summary>
+    public string? GuestEmail { get; set; }
 }
 
 public class CreateOrderItemDto

@@ -4,7 +4,10 @@ namespace ECommerce.Core.Entities;
 
 public class Address : BaseEntity
 {
-    public Guid UserId { get; set; }
+    /// <summary>
+    /// User ID. Can be null for guest order addresses.
+    /// </summary>
+    public Guid? UserId { get; set; }
     public string Type { get; set; } = null!; // 'Shipping' or 'Billing'
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
@@ -19,5 +22,5 @@ public class Address : BaseEntity
     public bool IsDefault { get; set; }
 
     // Navigation property
-    public virtual User User { get; set; } = null!;
+    public virtual User? User { get; set; }
 }

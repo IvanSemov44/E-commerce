@@ -38,19 +38,33 @@ public class OrdersController : ControllerBase
     /// <response code="401">User is not authenticated.</response>
     /// <response code="404">Cart or products not found.</response>
     [HttpPost]
+    [AllowAnonymous]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Creating order for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        _logger.LogInformation("Creating order for user {UserId}. Guest: {IsGuest}", userId, userId == null);
 
-        var order = await _orderService.CreateOrderAsync(userId, dto, cancellationToken: cancellationToken);
+        try
+        {
+            var order = await _orderService.CreateOrderAsync(userId, dto, cancellationToken: cancellationToken);
 
-        return CreatedAtAction(nameof(GetOrderById), new { id = order.Id },
-            ApiResponse<OrderDetailDto>.Ok(order, "Order created successfully"));
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id },
+                ApiResponse<OrderDetailDto>.Ok(order, "Order created successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Guest checkout validation failed");
+            return BadRequest(ApiResponse<object>.Error(ex.Message));
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("Guest"))
+        {
+            _logger.LogWarning(ex, "Guest checkout validation failed");
+            return BadRequest(ApiResponse<object>.Error(ex.Message));
+        }
     }
 
     /// <summary>
