@@ -2,19 +2,23 @@
 
 Comprehensive coding standards for the React 19 + TypeScript frontend, using Vite, Redux Toolkit, and RTK Query.
 
+**Companion to**: [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md) — This document focuses exclusively on frontend patterns while the backend guide covers the ASP.NET Core API layer.
+
 ---
 
 ## Tech Stack
 
-- **React**: 19.2+ (latest features, RSC-inspired patterns)
-- **TypeScript**: 5.9+ (strict mode enforced)
-- **Build Tool**: Vite 7+
-- **State Management**: Redux Toolkit 2.11+ + RTK Query
-- **Routing**: React Router 7+
-- **HTTP Client**: Axios 1.13+ (via RTK Query)
-- **Styling**: CSS Modules (scoped styles)
+- **React**: 19.2+ (functional components only, hooks-based)
+- **TypeScript**: 5.9+ (strict mode enforced, no `any` types allowed)
+- **Build Tool**: Vite 7+ (ESM-first, fast HMR, environment variables)
+- **State Management**: Redux Toolkit 2.11+ + RTK Query (server state vs client state separation)
+- **Routing**: React Router 7+ (data loading, lazy routes)  
+- **HTTP Client**: RTK Query's fetchBaseQuery (no direct Axios usage)
+- **Styling**: CSS Modules (scoped `.module.css` files)
 - **Linting**: ESLint 9+ with TypeScript support
-- **Testing**: Vitest (recommended) or Jest
+- **Testing**: Vitest (preferred) or Jest + React Testing Library
+
+**Frontend-Backend Boundary**: Frontend consumes backend APIs defined in [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md). All DTOs and API contracts are shared — frontend mirrors backend `ApiResponse<T>` structure exactly.
 
 ---
 
@@ -78,18 +82,22 @@ src/
 
 ## Core Patterns & Conventions
 
-### 1. File Naming
+### 1. File Naming (Aligned with Backend)
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| Components | `PascalCase.tsx` | `ProductCard.tsx` |
-| CSS Modules | `ComponentName.module.css` | `ProductCard.module.css` |
-| Hooks | `camelCase.ts` (starts with `use`) | `useProductFilter.ts` |
-| Utils/helpers | `camelCase.ts` | `formatPrice.ts` |
-| Slices | `featureSlice.ts` | `authSlice.ts` |
-| API files | `featureApi.ts` | `productApi.ts` |
-| Types | `camelCase.ts` | `api.ts`, `entities.ts` |
-| Constants | `CONSTANT_CASE` inside files | `DEFAULT_PAGE_SIZE = 20` |
+**Frontend follows C# PascalCase for components but uses camelCase for utilities** (complementing backend's C# conventions):
+
+| Type | Pattern | Example | Backend Equivalent |
+|------|---------|---------|-------------------|
+| Components | `PascalCase.tsx` | `ProductCard.tsx` | `ProductController.cs` |
+| CSS Modules | `ComponentName.module.css` | `ProductCard.module.css` | N/A |
+| Hooks | `camelCase.ts` (starts with `use`) | `useProductFilter.ts` | N/A |
+| Utils/helpers | `camelCase.ts` | `formatPrice.ts` | Static helper methods |
+| Slices | `featureSlice.ts` | `authSlice.ts` | `FeatureService.cs` |
+| API files | `featureApi.ts` | `productApi.ts` | `ProductController.cs` |
+| Types | `camelCase.ts` | `api.ts`, `entities.ts` | `ProductDto.cs`, `Entities/` |
+| Constants | `CONSTANT_CASE` inside files | `DEFAULT_PAGE_SIZE = 20` | `const int DefaultPageSize` |
+
+**Note**: Frontend types mirror backend DTOs exactly — `ProductDto` becomes `Product` interface.
 
 ### 2. TypeScript Configuration
 
@@ -461,16 +469,26 @@ export const productApi = createApi({
     }),
   }),
 });
+ (matching backend ApiResponse structure):**
 
-export const { useGetProductsQuery, useGetProductByIdQuery, useAddProductMutation } = productApi;
+| Pattern | Purpose | Backend Alignment |
+|---------|---------|------------------|
+| `transformResponse: (response: ApiResponse<T>) => response.data` | Extract `data` from backend's `ApiResponse<T>` wrapper | Matches backend's consistent response format |
+| `providesTags: ['Product']` | Cache invalidation (READ operations) | Aligns with backend entity groupings |
+| `invalidatesTags: ['Product']` | Invalidate cache on mutation (WRITE) | Triggers refresh when backend data changes |
+| `tagTypes: ['Product', 'Order']` | Define cache tags at API level | Maps to backend entity types |
+| `skip: !isAuthenticated` | Conditionally skip query | Respects backend auth requirements |
+| `prepareHeaders: (headers) => headers.set('Authorization', 'Bearer ${token}')` | Add auth header | Required for backend JWT validation |
+
+**Critical**: Every API file must handle the backend's `ApiResponse<T>` format:
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;           // ← Extract this in transformResponse
+  errors?: string[];
+}
 ```
-
-**Key RTK Query patterns:**
-
-| Pattern | Purpose |
-|---------|---------|
-| `transformResponse` | Extract `data` from `ApiResponse<T>` wrapper |
-| `providesTags` | Cache invalidation (READ) |
 | `invalidatesTags` | Invalidate cache on mutation (WRITE) |
 | `tagTypes` | Define cache tags at API level |
 | `skip` | Conditionally skip query (e.g., if not authenticated) |
@@ -566,13 +584,19 @@ Always use typed hooks to access Redux state and dispatch:
 // src/store/hooks.ts
 
 import { useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from './store';
+import ty — Matches your current implementation
+const user = useAppSelector((state) => state.auth.user);
+const dispatch = useAppDispatch();
 
-export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector = <T,>(selector: (state: RootState) => T): T =>
+// ❌ BAD — Untyped, loses IntelliSense
+const user = useSelector((state: any) => state.auth.user);
+
+// ✅ CURRENT PATTERN — Your existing typed hook implementation
+export const useAppSelector = <T,>(selector: (state: RootState) => T) => 
   useSelector<RootState, T>(selector);
 ```
 
+**Note**: This matches your existing implementation in `src/frontend/storefront/src/store/hooks.ts` and `src/frontend/admin/src/store/hooks.ts`.
 **Always use these typed versions**, not the raw `useDispatch` / `useSelector`:
 
 ```tsx
@@ -580,9 +604,11 @@ export const useAppSelector = <T,>(selector: (state: RootState) => T): T =>
 const user = useAppSelector((state) => state.auth.user);
 const dispatch = useAppDispatch();
 
-// ❌ BAD
-const user = useSelector((state: any) => state.auth.user);
-```
+---
+
+## Real-World Examples (Based on Current Codebase)
+
+### 1. Current API Pattern (cartApi.ts
 
 ---
 
@@ -618,7 +644,7 @@ export default function Button({
     </button>
   );
 }
-```
+```Store Configuration (Following Your Current Pattern)
 
 ### 2. Feature Component with Hooks & RTK Query
 
@@ -653,7 +679,7 @@ export default function ProductList({ initialFilters = {} }: ProductListProps) {
 }
 ```
 
-### 3. Form Component with Validation
+### 3. Component Using QueryRenderer Pattern
 
 ```tsx
 // src/components/features/AddProductForm.tsx
@@ -766,6 +792,137 @@ export default function AddProductForm() {
   );
 }
 ```
+
+### 4. Current ProductCard Pattern (Your Implementation)
+
+```tsx
+// src/components/ProductCard.tsx — Your established pattern
+
+import { Link } from 'react-router-dom';
+import { useAppSelector } from '../store/hooks';
+import { 
+  useAddToWishlistMutation, 
+  useRemoveFromWishlistMutation, 
+  useCheckInWishlistQuery 
+} from '../store/api/wishlistApi';
+import Card from './ui/Card';
+
+interface ProductCardProps {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  compareAtPrice?: number;
+  imageUrl: string;
+  rating?: number;
+  reviewCount?: number;
+}
+
+export default function ProductCard({
+  id, name, slug, price, compareAtPrice, imageUrl, rating = 0, reviewCount = 0
+}: ProductCardProps) {
+  const DEFAULT_PRODUCT_IMAGE = 'https://placehold.co/400x400/f1f5f9/64748b?text=Product';
+  
+  // ✅ Your current auth pattern
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  
+  // ✅ Your conditional query pattern
+  const { data: isInWishlist, refetch: refetchWishlist } = useCheckInWishlistQuery(id, {
+    skip: !isAuthenticated,
+  });
+  
+  const [addToWishlist] = useAddToWishlistMutation();
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+
+  const handleWishlistClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      alert('Please sign in to add items to your wishlist');
+      return;
+    }
+
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(id).unwrap();
+      } else {
+        await addToWishlist(id).unwrap();
+      }
+      // ✅ Your immediate refetch pattern
+      await refetchWishlist();
+    } catch {
+      // Error handled by mutation state
+    }
+  };
+
+  return (
+    <Link to={`/products/${slug}`}>
+      <Card variant="default" padding="sm" style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
+          <img
+            src={imageUrl || DEFAULT_PRODUCT_IMAGE}
+            alt={name}
+            onError={(e) => {
+              e.currentTarget.src = DEFAULT_PRODUCT_IMAGE;
+            }}
+          />
+          
+          {/* ✅ Your conditional wishlist UI pattern */}
+          {isAuthenticated && (
+            <button
+              onClick={handleWishlistClick}
+              style={{
+                position: 'absolute',
+                top: '0.5rem',
+                right: '0.5rem',
+                background: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '2rem',
+                height: '2rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '1.25rem',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              }}
+              title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
+              {isInWishlist ? '♥' : '♡'}
+            </button>
+          )}
+        </div>
+        
+        <div>
+          <h3>{name}</h3>
+          <div>
+            {compareAtPrice && (
+              <span style={{ textDecoration: 'line-through', color: '#6b7280' }}>
+                ${compareAtPrice.toFixed(2)}
+              </span>
+            )}
+            <span style={{ fontWeight: 'bold' }}>${price.toFixed(2)}</span>
+          </div>
+          {rating > 0 && (
+            <div>
+              {'★'.repeat(rating)}{'☆'.repeat(5 - rating)} ({reviewCount} reviews)
+            </div>
+          )}
+        </div>
+      </Card>
+    </Link>
+  );
+}
+```
+
+**Key patterns from your implementation**:
+- **Conditional auth UI**: Only show wishlist button if authenticated
+- **Skip queries**: Use `skip: !isAuthenticated` to avoid unnecessary API calls
+- **Immediate refetch**: Call `refetchWishlist()` after mutations for instant UI updates
+- **Default images**: Graceful fallback with placeholder service
+- **Event handling**: Prevent navigation when clicking interactive elements
 
 ---
 
@@ -1049,25 +1206,102 @@ import Button from './Button';
 
 describe('Button Component', () => {
   it('renders with text', () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByText('Click me')).toBeInTheDocument();
-  });
+---
 
-  it('calls onClick handler when clicked', async () => {
-    const handleClick = vi.fn();
-    render(<Button onClick={handleClick}>Click</Button>);
-    
-    await userEvent.click(screen.getByRole('button'));
-    expect(handleClick).toHaveBeenCalledOnce();
-  });
+## Frontend-Backend Integration Patterns
 
-  it('shows loading state', () => {
-    render(<Button isLoading>Loading</Button>);
-    expect(screen.queryByText('Loading')).toBeDisabled();
-  });
+### 1. API Response Handling (Match Backend ApiResponse<T>)
+
+```typescript
+// ✅ Backend returns this structure (from BACKEND_CODING_GUIDE.md)
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  errors?: string[];
+}
+
+// ✅ Frontend handles it consistently
+export const productApi = createApi({
+  // ...
+  endpoints: (builder) => ({
+    getProducts: builder.query<PaginatedResult<Product>, ProductQueryParams>({
+      query: (params) => ({ url: '/products', params }),
+      transformResponse: (response: ApiResponse<PaginatedResult<Product>>) => {
+        // Always extract data, provide fallback
+        return response.data || { items: [], totalCount: 0, page: 1, pageSize: 20 };
+      },
+    }),
+  }),
 });
 ```
 
+### 2. Error Handling (Mirror Backend Exceptions)
+
+```typescript
+// Backend throws typed exceptions → Frontend catches structured errors
+const [createProduct, { isLoading }] = useCreateProductMutation();
+
+try {
+  await createProduct(productData).unwrap();
+} catch (error: any) {
+  // Backend's GlobalExceptionMiddleware formats errors consistently
+  if (error.status === 404) {
+    // NotFoundExceptionHandler
+    showNotification('Product not found', 'error');
+  } else if (error.status === 400) {
+    // ValidationExceptionHandler
+    const validationErrors = error.data?.errors || {};
+    setFormErrors(validationErrors);
+  } else if (error.status === 401) {
+    // UnauthorizedExceptionHandler
+    dispatch(logout());
+    navigate('/login');
+  }
+}
+```
+
+### 3. DTO Mapping (Frontend Types Mirror Backend DTOs)
+
+```typescript
+// Backend DTO (from BACKEND_CODING_GUIDE.md):
+// public class ProductDto { Id, Name, Price, ImageUrl, ... }
+
+// Frontend interface (mirrors exactly):
+interface Product {
+  id: string;        // Backend: Guid Id
+  name: string;      // Backend: string Name
+  price: number;     // Backend: decimal Price
+  imageUrl: string;  // Backend: string? ImageUrl
+}
+
+// ✅ No mapping needed — direct usage
+const { data: products } = useGetProductsQuery();
+products?.items.map(product => product.name); // Direct access
+```
+
+---
+
+## Common Mistakes to Avoid
+
+| Mistake | ❌ Don't | ✅ Do Instead | Backend Alignment |
+|---------|---------|---------------|------------------|
+| Using `any` type | `function foo(x: any)` | Define proper types | Match backend DTO types |
+| Global CSS classes | `.productCard { }` | CSS Modules: `styles.productCard` | N/A |
+| Lifting state too high | All state at root | Keep state close to usage | Like backend services |
+| Not memoizing callbacks | Every function is new | Use `useCallback` for handler props | N/A |
+| Ignoring TypeScript errors | `// @ts-ignore` | Fix or use proper types | Backend uses strict C# |
+| Hardcoding URLs | `'http://localhost:5000/api'` | Use `VITE_API_URL` env var | Match backend `appsettings.json` |
+| Manually creating dates/times | `new Date()` | Use date library (date-fns, Day.js) | Backend uses ISO strings |
+| Forgetting alt text on images | `<img src="..." />` | `<img src="..." alt="description" />` | N/A |
+| Not handling loading/error states | Show only success | Show loading spinners, error messages | Backend provides structured errors |
+| Conditional hook calls | Hooks inside if/loops | Hooks always top-level | N/A |
+| Inline complex logic in JSX | Long ternaries | Extract to functions/hooks | Like backend helper methods |
+| Mutating Redux state | `state.user.name = 'John'` | Use RTK's Immer: `state.user.name = 'John'` | Immutable like backend entities |
+| Not using RTK Query | Manual fetch + useEffect | Use `useGetProductsQuery()` | Matches backend Repository pattern |
+| Wrong token storage key | `localStorage.getItem('token')` | `localStorage.getItem('authToken')` | Match your current pattern |
+| Inconsistent API base URLs | Different URLs per API file | Single `VITE_API_URL` env var | Match backend base path |
+| Not extracting data from ApiResponse | `return response` | `return response.data` | Backend wraps all responses
 ### 2. Hook Tests
 
 ```tsx
@@ -1211,23 +1445,45 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+### Frontend-Specific Checks
+- [ ] **TypeScript**: No `any` types, strict mode enabled, matches backend DTO shapes
+- [ ] **React**: No class components, hooks at top level, functional patterns only
+- [ ] **Redux**: Using typed `useAppSelector`/`useAppDispatch` (your custom hooks)
+- [ ] **RTK Query**: Separate API files, `transformResponse` extracts `data` from `ApiResponse<T>`
+- [ ] **Props**: Interface defined, prop types strict, optional props have defaults
+- [ ] **Naming**: Files in correct case (PascalCase components, camelCase hooks/utils)
+- [ ] **Styling**: CSS Modules used, scoped classes, no global styles
+- [ ] **Testing**: Components tested, RTK Query mocked, edge cases covered
+- [ ] **Accessibility**: Semantic HTML, alt text, ARIA labels, keyboard navigation
+- [ ] **Performance**: Code-split routes, `useCallback` for handlers, `useMemo` sparingly
 
-export default [
-  {
-    ignores: ['dist', 'node_modules'],
-  },
-  {
-    files: ['**/*.{ts,tsx}'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    },
-    plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
-    },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
+### Frontend-Backend Integration Checks  
+- [ ] **API Response**: Always handle `ApiResponse<T>` format, extract `data` field
+- [ ] **Error Handling**: Match backend error status codes (400/401/404/500)
+- [ ] **Authentication**: Use `authToken` key, handle JWT expiration, logout on 401
+- [ ] **Environment**: Use `VITE_API_URL` consistently, no hardcoded backend URLs
+- [ ] **DTOs**: Frontend types mirror backend DTOs exactly, no manual mapping
+- [ ] **Tags**: RTK Query tags align with backend entities for cache invalidation
+- [ ] **Headers**: Authorization header format matches backend JWT validation
+### Frontend Core Principles
+1. **Type Safety**: Embrace TypeScript strictly — no `any`, mirror backend DTO types exactly
+2. **Component Isolation**: Small, single-responsibility components using composition patterns
+3. **State Management**: RTK Query for server state, Redux slices for client-only state
+4. **Performance**: Code-split routes, lazy-load images, memoize callbacks appropriately
+5. **Quality**: Strict linting, comprehensive testing, accessibility-first development
+6. **Consistency**: Follow established patterns in your codebase religiously
+7. **DRY**: Extract reusable logic to hooks and utilities, avoid duplicate API patterns
+8. **Error Handling**: Show loading/error states consistently, graceful degradation
+9. **Accessibility**: Semantic HTML, ARIA labels, keyboard navigation support
+10. **Documentation**: Comments for "why", not "what" — code should be self-documenting
+
+### Frontend-Backend Alignment Principles  
+11. **API Consistency**: Always handle backend's `ApiResponse<T>` format consistently
+12. **Error Mapping**: Map backend exception types to appropriate frontend error handling
+13. **DTO Mirroring**: Frontend interfaces exactly match backend DTO structure
+14. **Authentication Flow**: Follow backend JWT patterns, handle token lifecycle correctly
+15. **Cache Invalidation**: RTK Query tags align with backend entity boundaries
+16. **Environment Parity**: Use same base URLs and configuration patterns as backend
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
@@ -1299,20 +1555,78 @@ Before submitting a pull request, ensure:
 - [ ] **Accessibility**: Semantic HTML, alt text, ARIA labels where needed
 - [ ] **Performance**: Code-split large routes, memoized expensive components
 - [ ] **Env Vars**: No hardcoded URLs or secrets
-- [ ] **Error Handling**: Loading/error states shown, errors logged
-- [ ] **DRY**: No duplicated logic, extracted to hooks/utils
-- [ ] **Imports**: Organized (React, libraries, internal, types, styles)
-- [ ] **Linting**: No ESLint warnings, consistent formatting
+---
+
+## Project-Specific Conventions (Your Established Patterns)
+
+### 1. Auth Token Handling
+```typescript
+// ✅ Your current pattern (not 'token')
+localStorage.getItem('authToken');
+localStorage.setItem('authToken', token);
+```
+
+### 2. API Base URL Pattern  
+```typescript
+// ✅ Your current environment variable
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+```
+
+### 3. Component Patterns You're Using
+- **QueryRenderer**: Centralized loading/error state handling
+- **Card component**: Consistent card UI with variant props
+- **Conditional wishlist UI**: Only show for authenticated users
+- **Skip queries**: `{skip: !isAuthenticated}` pattern
+
+### 4. Store Organization (Your Current Structure)
+- **Storefront APIs**: `productApi`, `cartApi`, `wishlistApi`, `profileApi`, `authApi`, `ordersApi`, `categoriesApi`, `reviewsApi`
+- **Admin APIs**: `productsApi`, `ordersApi`, `dashboardApi`, `customersApi`, `reviewsApi`, `promoCodesApi`, `inventoryApi`, `authApi`
 
 ---
 
-## Summary of Key Principles
+## Compatibility with Backend Guide
 
-1. **Type Safety**: Embrace TypeScript strictly — no `any`
-2. **Component Isolation**: Small, single-responsibility components
-3. **State Management**: RTK Query for async data, Redux slices for global UI state
-4. **Performance**: Code-split routes, lazy-load images, memoize sparingly
-5. **Quality**: Linting, testing, accessibility from the start
+This document complements [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md):
+
+| Aspect | Frontend (This Doc) | Backend (BACKEND_CODING_GUIDE.md) |
+|--------|-------------------|-----------------------------------|
+| **Architecture** | Component → Hook → RTK Query → API | Controller → Service → Repository → Entity |
+| **State** | Redux slices + RTK Query | Entity Framework + Unit of Work |
+| **Validation** | Client-side TypeScript + forms | FluentValidation + DTOs |
+| **Error Handling** | RTK Query error states | GlobalExceptionMiddleware |
+| **Types** | TypeScript interfaces | C# DTOs + Entities |
+| **Auth** | JWT in localStorage + Redux | JWT validation + ICurrentUserService |
+| **Testing** | Vitest + React Testing Library | MSTest + Unit/Integration tests |
+
+**Key Integration Points**:
+- Frontend types mirror backend DTOs exactly — no mapping layer needed
+- RTK Query `transformResponse` always extracts `data` from `ApiResponse<T>`
+- Frontend error handling maps to backend exception hierarchy
+- Authentication flows match between JWT generation (backend) and consumption (frontend)
+
+---
+
+## References
+
+### Frontend-Specific
+- [React 19 Docs](https://react.dev)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [Redux Toolkit Docs](https://redux-toolkit.js.org/)
+- [RTK Query Docs](https://redux-toolkit.js.org/rtk-query/overview)
+- [Vite Docs](https://vitejs.dev/)
+- [React Router Docs](https://reactrouter.com/)
+- [Web Accessibility Guidelines (WCAG)](https://www.w3.org/WAI/WCAG21/quickref/)
+
+### Project-Specific
+- [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md) — Backend patterns and API structure this frontend consumes
+- [ARCHITECTURE_PLAN.md](ARCHITECTURE_PLAN.md) — Overall system architecture and technology decisions  
+- [src/frontend/AUTHENTICATION_GUIDE.md](src/frontend/AUTHENTICATION_GUIDE.md) — Detailed auth flow documentation
+
+---
+
+**Last Updated**: February 5, 2026  
+**Version**: 2.0  
+**Companion Document**: [BACKEND_CODING_GUIDE.md](BACKEND_CODING_GUIDE.md)Linting, testing, accessibility from the start
 6. **Consistency**: Follow naming and structure conventions religiously
 7. **DRY**: Extract reusable logic to hooks and utilities
 8. **Error Handling**: Show loading/error states, don't swallow errors
