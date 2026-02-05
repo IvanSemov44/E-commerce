@@ -300,7 +300,8 @@ public class PaymentsControllerTests
     {
         // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-        var orderId = Guid.NewGuid();
+        // Use the seeded test order ID instead of a random one
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
         var processPaymentDto = new
         {
             OrderId = orderId,

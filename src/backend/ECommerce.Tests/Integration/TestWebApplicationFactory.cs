@@ -178,6 +178,27 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     });
                 }
 
+                // Seed a test promo code (SAVE20 - 20% discount)
+                if (!db.PromoCodes.Any(p => p.Code == "SAVE20"))
+                {
+                    db.PromoCodes.Add(new PromoCode
+                    {
+                        Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
+                        Code = "SAVE20",
+                        DiscountType = "percentage",
+                        DiscountValue = 20,
+                        IsActive = true,
+                        MaxUses = null,
+                        UsedCount = 0,
+                        MinOrderAmount = null,
+                        MaxDiscountAmount = null,
+                        StartDate = null,
+                        EndDate = null,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
+
                 // Seed a test order for payment processing tests
                 var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
                 if (!db.Orders.Any(o => o.Id == orderId))
