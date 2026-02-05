@@ -13,7 +13,7 @@ import Modal from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
 import Badge from '../components/ui/Badge';
 import PromoCodeForm from '../components/PromoCodeForm';
-import styles from './Products.module.css';
+import styles from './PromoCodes.module.css';
 import type { PromoCode, PromoCodeDetail } from '@shared/types';
 
 export default function PromoCodes() {
@@ -127,7 +127,7 @@ export default function PromoCodes() {
     {
       header: 'Dates',
       accessor: (promo: PromoCode) => (
-        <div style={{ fontSize: '0.875rem' }}>
+        <div className={styles.codeDetails}>
           <div>Start: {formatDate(promo.startDate)}</div>
           <div>End: {formatDate(promo.endDate)}</div>
         </div>
@@ -137,7 +137,7 @@ export default function PromoCodes() {
     {
       header: 'Actions',
       accessor: (promo: PromoCode) => (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className={styles.actionButtons}>
           <Button
             size="sm"
             variant="outline"
@@ -193,17 +193,17 @@ export default function PromoCodes() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          style={{ minWidth: '300px' }}
+          className={styles.searchInput}
         />
       </div>
 
       <Card variant="elevated">
         {isLoading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <div className={styles.loadingState}>
             Loading promo codes...
           </div>
         ) : error ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
+          <div className={styles.errorState}>
             Failed to load promo codes
           </div>
         ) : (
@@ -213,7 +213,7 @@ export default function PromoCodes() {
               data={promoCodesResult?.items || []}
               keyExtractor={(promo) => promo.id}
             />
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
+            <div className={styles.modalFooter}>
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}

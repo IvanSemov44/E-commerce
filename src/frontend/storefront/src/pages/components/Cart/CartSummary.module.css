@@ -1,0 +1,62 @@
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #1a1a1a;
+}
+
+.totalsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.totalLine {
+  display: flex;
+  justify-content: space-between;
+  color: #555;
+}
+
+.totalValue {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.shippingMessage {
+  padding: 0.75rem;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  color: #1565c0;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.grandTotal {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 2px solid #333;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 1.5rem;
+}
+
+.grandTotalAmount {
+  color: #1976d2;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.actionLink {
+  width: 100%;
+}
+
+.actionLink button {
+  width: 100%;
+}

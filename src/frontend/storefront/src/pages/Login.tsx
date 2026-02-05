@@ -72,8 +72,8 @@ export default function Login() {
             required
           />
 
-          <div style={{ textAlign: 'right', marginTop: '-8px' }}>
-            <Link to="/forgot-password" className={styles.footerLink} style={{ fontSize: '14px' }}>
+          <div className={styles.forgotPassword}>
+            <Link to="/forgot-password" className={styles.footerLink}>
               Forgot password?
             </Link>
           </div>

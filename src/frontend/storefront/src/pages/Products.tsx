@@ -107,15 +107,15 @@ export default function Products() {
     <div className={styles.container}>
       <PageHeader title="All Products" />
 
-      <div style={{ display: 'flex', gap: '2rem', maxWidth: '1400px', margin: '0 auto', padding: '0 1rem' }}>
+      <div className={styles.layout}>
         {/* Sidebar */}
-        <div style={{ width: '280px', flexShrink: 0 }}>
+        <div className={styles.sidebar}>
           <CategoryFilter
             selectedCategoryId={selectedCategoryId}
             onSelectCategory={setSelectedCategoryId}
           />
 
-          <div style={{ marginTop: '2rem' }}>
+          <div className={styles.filtersSection}>
             <ProductFilters
               minPrice={minPrice}
               maxPrice={maxPrice}
@@ -130,8 +130,8 @@ export default function Products() {
         </div>
 
         {/* Main Content */}
-        <div className={styles.content} style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ marginBottom: '2rem' }}>
+        <div className={styles.content}>
+          <div className={styles.searchSection}>
             <ProductSearchBar
               searchValue={searchInput}
               sortBy={sortBy}

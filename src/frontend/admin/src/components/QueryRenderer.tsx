@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Card, CardContent } from './ui/Card';
 
+import styles from './QueryRenderer.module.css';
+
 interface QueryRendererProps<T> {
   isLoading: boolean;
   error: unknown;
@@ -24,7 +26,7 @@ export default function QueryRenderer<T>({
     return (
       <Card variant="elevated">
         <CardContent>
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+          <div className={`${styles.state} ${styles.loading}`}>
             Loading...
           </div>
         </CardContent>
@@ -36,7 +38,7 @@ export default function QueryRenderer<T>({
     return (
       <Card variant="elevated">
         <CardContent>
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#ef4444' }}>
+          <div className={`${styles.state} ${styles.error}`}>
             Failed to load data. Please try again.
           </div>
         </CardContent>
@@ -48,8 +50,8 @@ export default function QueryRenderer<T>({
     return (
       <Card variant="elevated">
         <CardContent>
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-            <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{emptyTitle}</div>
+          <div className={`${styles.state} ${styles.empty}`}>
+            <div className={styles.emptyTitle}>{emptyTitle}</div>
             <div>{emptyMessage}</div>
           </div>
         </CardContent>

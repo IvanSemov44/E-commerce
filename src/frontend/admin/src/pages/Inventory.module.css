@@ -1,68 +1,69 @@
 .container {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
 }
 
-.header h1 {
+.title {
+  font-size: 2rem;
+  font-weight: 700;
   margin: 0;
-  font-size: 24px;
-  color: #111827;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+}
+
+.error {
+  padding: 2rem;
+  text-align: center;
+  color: #ef4444;
 }
 
 .alert {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
   background-color: #fef3c7;
-  border: 1px solid #f59e0b;
-  border-radius: 6px;
+  border: 1px solid #fbbf24;
+  border-radius: 0.375rem;
   color: #92400e;
-  font-size: 14px;
 }
 
 .alertIcon {
-  font-size: 18px;
+  font-size: 1.25rem;
 }
 
 .filters {
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  align-items: center;
 }
 
 .searchInput {
   flex: 1;
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
 }
 
 .checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #374151;
-  cursor: pointer;
-}
-
-.checkbox input {
+  gap: 0.5rem;
   cursor: pointer;
 }
 
 .tableContainer {
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .table {
@@ -70,144 +71,99 @@
   border-collapse: collapse;
 }
 
-.table thead {
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+.table th,
+.table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .table th {
-  padding: 12px 16px;
-  text-align: left;
+  background-color: #f8fafc;
   font-weight: 600;
-  font-size: 13px;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: #0f172a;
 }
 
-.table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 14px;
-  color: #374151;
-}
-
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.table tbody tr:hover {
-  background-color: #f9fafb;
+.noData {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
 }
 
 .productCell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .productImage {
   width: 40px;
   height: 40px;
   object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
 }
 
 .stockQuantity {
   font-weight: 600;
-  font-size: 16px;
+}
+
+.stockInStock {
+  color: #16a34a;
+}
+
+.stockLowStock {
+  color: #f59e0b;
+}
+
+.stockOutOfStock {
+  color: #dc2626;
 }
 
 .statusBadge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: white;
+}
+
+.statusInStock {
+  background-color: #16a34a;
+}
+
+.statusLowStock {
+  background-color: #f59e0b;
+}
+
+.statusOutOfStock {
+  background-color: #dc2626;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
-.actions button,
-.actions a {
-  padding: 6px 10px;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  text-decoration: none;
-  color: #374151;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.actions button:hover,
-.actions a:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-.btnRestock {
-  background-color: #10b981 !important;
-  color: white !important;
-  border-color: #10b981 !important;
-  font-weight: 600;
-}
-
-.btnRestock:hover {
-  background-color: #059669 !important;
-  border-color: #059669 !important;
-}
-
-.btnAdjust {
-  background-color: #3b82f6 !important;
-  color: white !important;
-  border-color: #3b82f6 !important;
-}
-
-.btnAdjust:hover {
-  background-color: #2563eb !important;
-  border-color: #2563eb !important;
-}
-
+.btnRestock,
+.btnAdjust,
 .btnView {
-  background-color: #6366f1 !important;
-  color: white !important;
-  border-color: #6366f1 !important;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  background-color: white;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.875rem;
 }
 
+.btnRestock:hover,
+.btnAdjust:hover,
 .btnView:hover {
-  background-color: #4f46e5 !important;
-  border-color: #4f46e5 !important;
+  background-color: #f8fafc;
 }
 
-.noData {
-  text-align: center !important;
-  padding: 40px !important;
-  color: #9ca3af;
-  font-style: italic;
-}
-
-.loading,
-.error {
-  padding: 40px;
-  text-align: center;
-  font-size: 16px;
-}
-
-.error {
-  color: #dc2626;
-}
-
-/* Modal Styles */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -222,129 +178,110 @@
 }
 
 .modal {
-  background: white;
-  border-radius: 8px;
-  width: 500px;
-  max-width: 90%;
+  background-color: white;
+  border-radius: 0.5rem;
+  max-width: 500px;
+  width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .modalHeader h2 {
   margin: 0;
-  font-size: 18px;
-  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .closeBtn {
   background: none;
   border: none;
-  font-size: 28px;
-  color: #9ca3af;
+  font-size: 1.5rem;
   cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
+  color: #64748b;
 }
 
 .closeBtn:hover {
-  background-color: #f3f4f6;
-  color: #374151;
+  color: #0f172a;
 }
 
 .modalBody {
-  padding: 24px;
+  padding: 1rem;
 }
 
 .currentStock {
-  background-color: #f3f4f6;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #374151;
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
 }
 
 .formGroup {
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
 }
 
 .formGroup label {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 6px;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #0f172a;
 }
 
 .input,
 .select,
 .textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
   font-family: inherit;
 }
 
-.input:focus,
-.select:focus,
-.textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.textarea {
+  resize: vertical;
 }
 
 .preview {
-  background-color: #dbeafe;
-  padding: 12px;
-  border-radius: 6px;
-  color: #1e40af;
-  font-size: 14px;
-  font-weight: 500;
-  margin-top: 16px;
+  padding: 0.75rem;
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 0.375rem;
+  color: #166534;
+  font-weight: 600;
 }
 
 .modalFooter {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 .btnCancel,
 .btnSubmit {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
+  padding: 0.5rem 1rem;
   border: none;
-  transition: all 0.2s;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .btnCancel {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
 }
 
 .btnCancel:hover {
-  background-color: #e5e7eb;
+  background-color: #f8fafc;
 }
 
 .btnSubmit {
@@ -352,11 +289,21 @@
   color: white;
 }
 
-.btnSubmit:hover:not(:disabled) {
+.btnSubmit:hover {
   background-color: #2563eb;
 }
 
 .btnSubmit:disabled {
-  opacity: 0.5;
+  background-color: #94a3b8;
   cursor: not-allowed;
+}
+
+.lowStock {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.outOfStock {
+  color: #ef4444;
+  font-weight: 600;
 }

@@ -1,0 +1,68 @@
+.title {
+  margin-top: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.itemsList {
+  display: grid;
+  gap: 1rem;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 1rem;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 1rem;
+}
+
+.itemWithBorder {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.itemImage {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.itemName {
+  margin: 0;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.itemQuantity {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.itemPrice,
+.itemTotal {
+  text-align: right;
+}
+
+.priceLabel {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.priceValue {
+  margin: 0.25rem 0 0 0;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.totalValue {
+  margin: 0.25rem 0 0 0;
+  font-weight: 600;
+  font-size: 1.025rem;
+  color: #1976d2;
+}

@@ -241,7 +241,9 @@
   padding-top: 48px;
   border-top: 1px solid #e2e8f0;
 }
-
+.reviewFormSection {
+  margin-bottom: 2rem;
+}
 .reviewsTitle {
   font-size: 1.875rem;
   font-weight: 700;

@@ -110,7 +110,7 @@ export default function Products() {
     {
       header: 'Actions',
       accessor: (product: Product) => (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className={styles.actionButtons}>
           <Button
             size="sm"
             variant="outline"
@@ -144,7 +144,7 @@ export default function Products() {
             placeholder="Search products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ minWidth: '300px' }}
+            className={styles.searchInput}
           />
           <Button onClick={handleCreate}>Add Product</Button>
         </div>
@@ -152,11 +152,11 @@ export default function Products() {
 
       <Card variant="elevated">
         {isLoading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <div className={styles.loadingState}>
             Loading products...
           </div>
         ) : error ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
+          <div className={styles.errorState}>
             Failed to load products
           </div>
         ) : (
@@ -166,7 +166,7 @@ export default function Products() {
               data={productsResult?.items || []}
               keyExtractor={(product) => product.id}
             />
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
+            <div className={styles.modalFooter}>
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}

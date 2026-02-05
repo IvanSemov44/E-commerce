@@ -5,10 +5,10 @@ import { selectCartItems, updateQuantity, removeItem } from '../store/slices/car
 import { useGetCartQuery, useUpdateCartItemMutation, useRemoveFromCartMutation } from '../store/api/cartApi';
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
-import CartItem from '@/components/CartItem';
+import { CartItemList, CartSummary } from './components/Cart';
+import styles from './Cart.module.css';
 
 interface DisplayCartItem {
   id: string;
@@ -104,8 +104,8 @@ export default function Cart() {
   const isLoading = isAuthenticated && cartLoading;
 
   return (
-    <div>
-      <div>
+    <div className={styles.container}>
+      <div className={styles.content}>
         <PageHeader title="Shopping Cart" />
 
         {displayItems.length === 0 && !isLoading ? (
@@ -128,67 +128,19 @@ export default function Cart() {
             }
           />
         ) : (
-          <div>
-            {/* Cart Items */}
-            <div>
-              <Card variant="elevated" padding="lg">
-                <h2>
-                  Items ({displayItems.length} {displayItems.length === 1 ? 'product' : 'products'})
-                </h2>
-                <div>
-                  {displayItems.map((item) => (
-                    <CartItem
-                      key={item.id}
-                      item={item}
-                      onUpdateQuantity={handleUpdateQuantity}
-                      onRemove={handleRemove}
-                    />
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* Order Summary */}
-            <div>
-              <Card variant="elevated" padding="lg">
-                <h2>Order Summary</h2>
-                <div>
-                  <div>
-                    <span>Subtotal:</span>
-                    <span>${cartSubtotal.toFixed(2)}</span>
-                  </div>
-                  <div>
-                    <span>Shipping:</span>
-                    <span>
-                      {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
-                    </span>
-                  </div>
-                  {cartSubtotal > 50 && cartSubtotal < FREE_SHIPPING_THRESHOLD && (
-                    <div>
-                      Add ${(FREE_SHIPPING_THRESHOLD - cartSubtotal).toFixed(2)} more for free shipping!
-                    </div>
-                  )}
-                  <div>
-                    <span>Tax (8%):</span>
-                    <span>${tax.toFixed(2)}</span>
-                  </div>
-                </div>
-                <div>
-                  <span>Total:</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                <Link to="/checkout">
-                  <Button size="lg">
-                    Proceed to Checkout
-                  </Button>
-                </Link>
-                <Link to="/products">
-                  <Button variant="secondary" size="lg">
-                    Continue Shopping
-                  </Button>
-                </Link>
-              </Card>
-            </div>
+          <div className={styles.grid}>
+            <CartItemList
+              items={displayItems}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemove={handleRemove}
+            />
+            <CartSummary
+              subtotal={cartSubtotal}
+              shipping={shipping}
+              tax={tax}
+              total={total}
+              freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
+            />
           </div>
         )}
       </div>

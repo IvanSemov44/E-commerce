@@ -1,0 +1,36 @@
+.formGrid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.nameGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.avatarPreview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatarLabel {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.avatarImage {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #1976d2;
+}
+
+.buttonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}

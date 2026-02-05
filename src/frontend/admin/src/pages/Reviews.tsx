@@ -39,7 +39,7 @@ export default function Reviews() {
         <h1 className={styles.title}>Review Moderation</h1>
         <Card variant="elevated">
           <CardContent>
-            <p style={{ textAlign: 'center', padding: '2rem' }}>Loading reviews...</p>
+            <p className={styles.loadingState}>Loading reviews...</p>
           </CardContent>
         </Card>
       </div>
@@ -52,7 +52,7 @@ export default function Reviews() {
         <h1 className={styles.title}>Review Moderation</h1>
         <Card variant="elevated">
           <CardContent>
-            <p style={{ textAlign: 'center', padding: '2rem', color: '#ef4444' }}>
+            <p className={styles.errorState}>
               Failed to load reviews
             </p>
           </CardContent>
@@ -71,7 +71,7 @@ export default function Reviews() {
       {!reviews || reviews.length === 0 ? (
         <Card variant="elevated">
           <CardContent>
-            <p style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+            <p className={styles.emptyState}>
               No pending reviews to moderate
             </p>
           </CardContent>

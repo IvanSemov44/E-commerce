@@ -107,7 +107,7 @@ export default function ProductDetail() {
             <h2 className={styles.reviewsTitle}>Customer Reviews</h2>
 
             {isAuthenticated && (
-              <div style={{ marginBottom: '2rem' }}>
+              <div className={styles.reviewFormSection}>
                 <ReviewForm productId={product.id} onSuccess={() => refetchReviews()} />
               </div>
             )}

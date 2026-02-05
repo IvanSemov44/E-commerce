@@ -1,0 +1,31 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.orderNumber {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.value {
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.status {
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}

@@ -16,7 +16,7 @@
   margin: 0;
 }
 
-.actions {
+.filters {
   display: flex;
   gap: 1rem;
   align-items: center;
@@ -28,28 +28,21 @@
   border-radius: 0.375rem;
 }
 
-.statusSelect {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
-
 .searchInput {
   min-width: 300px;
 }
 
-.statusBadge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+.codeDetails {
   font-size: 0.875rem;
-  font-weight: 600;
-  display: inline-block;
 }
 
 .actionButtons {
   display: flex;
   gap: 0.5rem;
+}
+
+.modal {
+  min-width: 300px;
 }
 
 .loadingState {

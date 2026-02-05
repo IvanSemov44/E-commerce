@@ -1,0 +1,22 @@
+.title {
+  margin-top: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.detailsGrid {
+  display: grid;
+  gap: 1rem;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.detailItem {
+  margin: 0;
+}
+
+.activeStatus {
+  color: #4caf50;
+  font-weight: 600;
+}

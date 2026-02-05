@@ -78,10 +78,16 @@ export default function Inventory() {
     }
   };
 
-  const getStockStatusColor = (item: InventoryItem) => {
-    if (item.isOutOfStock) return '#dc2626';
-    if (item.isLowStock) return '#f59e0b';
-    return '#16a34a';
+  const getStockStatusClass = (item: InventoryItem) => {
+    if (item.isOutOfStock) return styles.stockOutOfStock;
+    if (item.isLowStock) return styles.stockLowStock;
+    return styles.stockInStock;
+  };
+
+  const getStatusBadgeClass = (item: InventoryItem) => {
+    if (item.isOutOfStock) return `${styles.statusBadge} ${styles.statusOutOfStock}`;
+    if (item.isLowStock) return `${styles.statusBadge} ${styles.statusLowStock}`;
+    return `${styles.statusBadge} ${styles.statusInStock}`;
   };
 
   const getStockStatusLabel = (item: InventoryItem) => {
@@ -174,19 +180,13 @@ export default function Inventory() {
                   <td>{item.sku || '-'}</td>
                   <td>${item.price.toFixed(2)}</td>
                   <td>
-                    <span
-                      className={styles.stockQuantity}
-                      style={{ color: getStockStatusColor(item) }}
-                    >
+                    <span className={`${styles.stockQuantity} ${getStockStatusClass(item)}`}>
                       {item.stockQuantity}
                     </span>
                   </td>
                   <td>{item.lowStockThreshold}</td>
                   <td>
-                    <span
-                      className={styles.statusBadge}
-                      style={{ backgroundColor: getStockStatusColor(item) }}
-                    >
+                    <span className={getStatusBadgeClass(item)}>
                       {getStockStatusLabel(item)}
                     </span>
                   </td>

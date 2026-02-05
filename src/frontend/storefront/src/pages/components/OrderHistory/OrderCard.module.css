@@ -1,0 +1,57 @@
+.cardLink {
+  text-decoration: none;
+  display: block;
+}
+
+.card {
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  align-items: center;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.orderNumber {
+  margin: 0.25rem 0 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.value {
+  margin: 0.25rem 0 0 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.status {
+  margin: 0.25rem 0 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.total {
+  margin: 0.25rem 0 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.actions {
+  text-align: right;
+}

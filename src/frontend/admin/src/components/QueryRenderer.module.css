@@ -1,0 +1,21 @@
+.state {
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading {
+  color: #64748b;
+}
+
+.error {
+  color: #ef4444;
+}
+
+.empty {
+  color: #94a3b8;
+}
+
+.emptyTitle {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}

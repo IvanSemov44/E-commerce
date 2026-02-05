@@ -4,6 +4,7 @@ import { useGetProductsQuery } from '../store/api/productApi';
 import Button from '../components/ui/Button';
 import PageHeader from '../components/PageHeader';
 import QueryRenderer from '../components/QueryRenderer';
+import { WishlistCard } from './components/Wishlist';
 import styles from './Wishlist.module.css';
 
 export default function Wishlist() {
@@ -33,7 +34,7 @@ export default function Wishlist() {
   const isLoading = wishlistLoading || productsLoading;
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+    <div className={styles.container}>
       <PageHeader title="My Wishlist" />
 
       <QueryRenderer
@@ -64,49 +65,11 @@ export default function Wishlist() {
         {(products) => (
           <div className={styles.grid}>
             {products.map((product) => (
-              <div key={product.id} className={styles.card}>
-                <Link
-                  to={`/products/${product.slug}`}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                  <div className={styles.imageContainer}>
-                    {product.images[0]?.url && (
-                      <img
-                        src={product.images[0].url}
-                        alt={product.name}
-                        className={styles.image}
-                      />
-                    )}
-                  </div>
-                  <div className={styles.content}>
-                    <h3 className={styles.name}>{product.name}</h3>
-                    {product.shortDescription && (
-                      <p className={styles.description}>{product.shortDescription}</p>
-                    )}
-                  </div>
-                </Link>
-
-                <div className={styles.footer}>
-                  <div className={styles.priceSection}>
-                    <span className={styles.price}>${product.price.toFixed(2)}</span>
-                    {product.compareAtPrice && product.compareAtPrice > product.price && (
-                      <span className={styles.comparePrice}>
-                        ${product.compareAtPrice.toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className={styles.actions}>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleRemoveFromWishlist(product.id)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <WishlistCard
+                key={product.id}
+                product={product}
+                onRemove={handleRemoveFromWishlist}
+              />
             ))}
           </div>
         )}

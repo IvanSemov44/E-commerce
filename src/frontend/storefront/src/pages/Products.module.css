@@ -5,10 +5,30 @@
   padding: 48px 0;
 }
 
-.content {
-  max-width: 1536px;
+.layout {
+  display: flex;
+  gap: 2rem;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 1rem;
+}
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.filtersSection {
+  margin-top: 2rem;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.searchSection {
+  margin-bottom: 2rem;
 }
 
 .grid {

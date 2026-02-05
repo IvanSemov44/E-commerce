@@ -31,6 +31,15 @@
   margin-bottom: 24px;
 }
 
+.forgotPassword {
+  text-align: right;
+  margin-top: -8px;
+}
+
+.forgotPassword .footerLink {
+  font-size: 14px;
+}
+
 .footer {
   margin-top: 24px;
   text-align: center;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from './ui/Button';
 import Input from './ui/Input';
-import styles from './ProductForm.module.css';
+import styles from './PromoCodeForm.module.css';
 import type { PromoCodeDetail } from '@shared/types';
 
 interface PromoCodeFormProps {
@@ -100,7 +100,7 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
         />
       </div>
 
-      <div className={styles.row} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div className={styles.formRow}>
         <div>
           <label htmlFor="discountType" className={styles.label}>
             Discount Type *
@@ -132,7 +132,7 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
         />
       </div>
 
-      <div className={styles.row} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div className={styles.formRow}>
         <Input
           label="Min Order Amount (optional)"
           name="minOrderAmount"
@@ -171,7 +171,7 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
         />
       </div>
 
-      <div className={styles.row} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div className={styles.formRow}>
         <Input
           label="Start Date (optional)"
           name="startDate"

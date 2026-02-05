@@ -130,18 +130,18 @@ export default function Orders() {
             placeholder="Search orders..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ minWidth: '300px' }}
+            className={styles.searchInput}
           />
         </div>
       </div>
 
       <Card variant="elevated">
         {isLoading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <div className={styles.loadingState}>
             Loading orders...
           </div>
         ) : error ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
+          <div className={styles.errorState}>
             Failed to load orders
           </div>
         ) : (
@@ -151,7 +151,7 @@ export default function Orders() {
               data={ordersResult?.items || []}
               keyExtractor={(order) => order.id}
             />
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
+            <div className={styles.modalFooter}>
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}

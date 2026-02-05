@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useGetOrdersQuery } from '../store/api/ordersApi';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
 import QueryRenderer from '../components/QueryRenderer';
+import { OrderCard } from './components/OrderHistory';
+import styles from './OrderHistory.module.css';
 
 interface OrderForDisplay {
   id: string;
@@ -25,25 +26,8 @@ export default function OrderHistory() {
     items: order.items || [],
   }));
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Pending':
-        return '#ff9800';
-      case 'Processing':
-        return '#2196f3';
-      case 'Shipped':
-        return '#9c27b0';
-      case 'Delivered':
-        return '#4caf50';
-      case 'Cancelled':
-        return '#f44336';
-      default:
-        return '#666';
-    }
-  };
-
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+    <div className={styles.container}>
       <PageHeader title="Order History" />
 
       <QueryRenderer
@@ -72,114 +56,9 @@ export default function OrderHistory() {
         }}
       >
         {(orders) => (
-          <div style={{ display: 'grid', gap: '1rem' }}>
+          <div className={styles.ordersList}>
             {orders.map((order) => (
-              <Link
-                key={order.id}
-                to={`/orders/${order.id}`}
-                style={{ textDecoration: 'none' }}
-              >
-                <Card
-                  variant="elevated"
-                  padding="lg"
-                  style={{
-                    cursor: 'pointer',
-                    transition: 'box-shadow 0.2s',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                      gap: '1rem',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>
-                        Order Number
-                      </p>
-                      <p
-                        style={{
-                          margin: '0.25rem 0 0 0',
-                          fontSize: '1.125rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {order.orderNumber}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>
-                        Date
-                      </p>
-                      <p
-                        style={{
-                          margin: '0.25rem 0 0 0',
-                          fontSize: '1rem',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>
-                        Status
-                      </p>
-                      <p
-                        style={{
-                          margin: '0.25rem 0 0 0',
-                          fontSize: '1rem',
-                          fontWeight: 600,
-                          color: getStatusColor(order.status),
-                        }}
-                      >
-                        {order.status}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>
-                        Total
-                      </p>
-                      <p
-                        style={{
-                          margin: '0.25rem 0 0 0',
-                          fontSize: '1.125rem',
-                          fontWeight: 600,
-                          color: '#1976d2',
-                        }}
-                      >
-                        ${order.totalAmount.toFixed(2)}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>
-                        Items
-                      </p>
-                      <p
-                        style={{
-                          margin: '0.25rem 0 0 0',
-                          fontSize: '1rem',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <Button variant="secondary" size="sm">
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
+              <OrderCard key={order.id} order={order} />
             ))}
           </div>
         )}
