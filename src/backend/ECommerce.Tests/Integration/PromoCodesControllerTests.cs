@@ -32,53 +32,152 @@ public class PromoCodesControllerTests
 
     #region Validate Promo Code Tests
 
+    /// <summary>
+    /// Tests JSON deserialization with camelCase property names (frontend format).
+    /// Verifies the fix for ValidatePromoCodeRequest [JsonPropertyName] attributes.
+    /// </summary>
     [TestMethod]
-    public async Task ValidatePromoCode_WithValidCode_ReturnsOk()
-    {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var validateDto = new { Code = "SUMMER2024" };
-        var content = new StringContent(JsonSerializer.Serialize(validateDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/promo-codes/validate", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.NotFound,
-            "Validate should return OK, BadRequest, or NotFound");
-    }
-
-    [TestMethod]
-    public async Task ValidatePromoCode_WithInvalidCode_ReturnsBadRequest()
-    {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var validateDto = new { Code = "INVALIDCODE123" };
-        var content = new StringContent(JsonSerializer.Serialize(validateDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/promo-codes/validate", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.OK,
-            "Invalid code should return BadRequest or NotFound");
-    }
-
-    [TestMethod]
-    public async Task ValidatePromoCode_Unauthenticated_ReturnsUnauthorized()
+    public async Task ValidatePromoCode_WithValidCodeAndAmount_DeserializesCamelCase_ReturnsOk()
     {
         // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
-        var validateDto = new { Code = "TEST" };
-        var content = new StringContent(JsonSerializer.Serialize(validateDto), Encoding.UTF8, "application/json");
+        // Simulate frontend JSON with camelCase properties
+        var jsonPayload = "{\"code\":\"SAVE20\",\"orderAmount\":100}";
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/promo-codes/validate", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, 
+            $"ValidatePromoCode should accept camelCase JSON. Response: {responseContent}");
+        
+        // Verify response contains valid data
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
+        Assert.IsTrue(responseData.TryGetProperty("success", out var successProp), "Response should have success property");
+        Assert.AreEqual(true, successProp.GetBoolean(), "Response success should be true");
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_WithZeroOrderAmount_AcceptsRequest_ReturnsValidation()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+        // Test that OrderAmount = 0 is now allowed (previously failed validation)
+        var jsonPayload = "{\"code\":\"SAVE20\",\"orderAmount\":0}";
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/promo-codes/validate", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        // Should NOT return 400 Bad Request with "Object is null" error
+        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode, 
+            "Zero order amount should be accepted by validator");
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_WithInvalidJsonPropertyNames_ReturnsBadRequest()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+        // Use PascalCase (wrong format) - should fail to deserialize properly
+        var jsonPayload = "{\"Code\":\"SAVE20\",\"OrderAmount\":100}";
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         // Act
         var response = await client.PostAsync("/api/promo-codes/validate", content);
 
         // Assert
-        // Accept 2xx/3xx/4xx (not 5xx server errors)
-        Assert.IsTrue((int)response.StatusCode < 500,
-            $"Endpoint should not return server error, got {response.StatusCode}");
+        // With JsonPropertyName attribute, it should only accept camelCase
+        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode, 
+            "PascalCase properties should fail validation");
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_WithMissingOrderAmount_UsesDefaultValue_ReturnsOk()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+        // Omit orderAmount - should use default value of 0m
+        var jsonPayload = "{\"code\":\"SAVE20\"}";
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/promo-codes/validate", content);
+
+        // Assert
+        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode, 
+            "Missing orderAmount should use default 0m and be accepted");
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_WithValidCode_CalculatesDiscountCorrectly()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+        var jsonPayload = "{\"code\":\"SAVE20\",\"orderAmount\":100}";
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/promo-codes/validate", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
+        
+        if (responseData.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("discountAmount", out var discountProp))
+        {
+            var discount = discountProp.GetDecimal();
+            Assert.IsTrue(discount > 0, "Valid promo code should calculate a discount");
+        }
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_WithInvalidCode_ReturnsValidationResponse()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+        var jsonPayload = "{\"code\":\"INVALIDCODE999\",\"orderAmount\":100}";
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/promo-codes/validate", content);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode,
+            "Invalid code should still return 200 with isValid=false");
+        
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
+        
+        if (responseData.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("isValid", out var isValidProp))
+        {
+            Assert.AreEqual(false, isValidProp.GetBoolean(), "Invalid code should have isValid=false");
+        }
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_AllowsAnonymousAccess_ReturnsSuccess()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+        var jsonPayload = "{\"code\":\"SAVE20\",\"orderAmount\":100}";
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/promo-codes/validate", content);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, 
+            "Endpoint should allow anonymous (unauthenticated) users");
     }
 
     #endregion

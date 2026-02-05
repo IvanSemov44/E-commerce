@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ECommerce.Application.DTOs.PromoCodes;
 
 public class PromoCodeDto
@@ -49,7 +51,10 @@ public class UpdatePromoCodeDto
 
 public class ValidatePromoCodeRequest
 {
+    [JsonPropertyName("code")]
     public string Code { get; set; } = null!;
+
+    [JsonPropertyName("orderAmount")]
     public decimal OrderAmount { get; set; } = 0m;
 }
 

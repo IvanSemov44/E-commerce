@@ -2,6 +2,7 @@ using FluentValidation.TestHelper;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Validators.PromoCodes;
 using FluentAssertions;
+using System.Text.Json;
 
 namespace ECommerce.Tests.Unit.Validators;
 
@@ -450,4 +451,183 @@ public class PromoCodeValidatorsTests
     }
 
     #endregion
-}
+
+    #region ValidatePromoCodeRequest Tests
+
+    /// <summary>
+    /// Tests for ValidatePromoCodeRequest validator.
+    /// Focuses on the JSON deserialization with camelCase property names.
+    /// </summary>
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Accept_ZeroOrderAmount()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = "SAVE20", OrderAmount = 0m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        // OrderAmount >= 0 should be valid now (previously required > 0)
+        result.ShouldNotHaveValidationErrorFor(x => x.OrderAmount);
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Accept_PositiveOrderAmount()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = "SAVE20", OrderAmount = 100m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.OrderAmount);
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Fail_With_NegativeOrderAmount()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = "SAVE20", OrderAmount = -10m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.OrderAmount);
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Empty()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = "", OrderAmount = 100m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Code);
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Exceeds_MaxLength()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = new string('A', 51), OrderAmount = 100m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Code);
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Contains_Lowercase()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = "save20", OrderAmount = 100m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Code);
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Contains_Special_Chars()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = "SAVE@20", OrderAmount = 100m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Code);
+    }
+
+    [TestMethod]
+    [DataRow("SAVE20")]
+    [DataRow("CODE-2024")]
+    [DataRow("PROMO100")]
+    [DataRow("ABC123")]
+    public void ValidatePromoCodeRequest_Should_Accept_Valid_Code(string code)
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = code, OrderAmount = 100m };
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.Code);
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Use_Default_OrderAmount_When_Omitted()
+    {
+        // Arrange
+        var validator = new ValidatePromoCodeRequestValidator();
+        var request = new ValidatePromoCodeRequest { Code = "SAVE20" }; // OrderAmount defaults to 0m
+
+        // Act
+        var result = validator.TestValidate(request);
+
+        // Assert
+        // Default value of 0m should pass validation
+        result.ShouldNotHaveValidationErrorFor(x => x.OrderAmount);
+    }
+
+    #endregion
+
+    #region JSON Deserialization Tests
+
+    /// <summary>
+    /// Tests for JSON deserialization with [JsonPropertyName] attributes.
+    /// Verifies the fix for frontend camelCase JSON compatibility.
+    /// </summary>
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Deserialize_CamelCaseJson()
+    {
+        // Arrange
+        var jsonString = "{\"code\":\"SAVE20\",\"orderAmount\":100}";
+        var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = false };
+
+        // Act
+        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequest>(jsonString, options);
+
+        // Assert
+        Assert.IsNotNull(deserialized, "Should deserialize camelCase JSON successfully");
+        Assert.AreEqual("SAVE20", deserialized.Code, "Code should be deserialized correctly");
+        Assert.AreEqual(100m, deserialized.OrderAmount, "OrderAmount should be deserialized correctly");
+    }
+
+    [TestMethod]
+    public void ValidatePromoCodeRequest_Should_Deserialize_PartialJson()
+    {
+        // Arrange
+        var jsonString = "{\"code\":\"SAVE20\"}";
+        var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = false };
+
+        // Act
+        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequest>(jsonString, options);
+
+        // Assert
+        Assert.IsNotNull(deserialized, "Should deserialize partial JSON");
+        Assert.AreEqual("SAVE20", deserialized.Code);
+        Assert.AreEqual(0m, deserialized.OrderAmount, "OrderAmount should default to 0m");
+    }
+
+    #endregion}

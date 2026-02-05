@@ -16,6 +16,6 @@ public class ValidatePromoCodeRequestValidator : AbstractValidator<ValidatePromo
             .Matches("^[A-Z0-9-]+$").WithMessage("Promo code must contain only uppercase letters, numbers, and hyphens");
 
         RuleFor(x => x.OrderAmount)
-            .GreaterThan(0).WithMessage("Order amount must be greater than 0");
+            .GreaterThanOrEqualTo(0).WithMessage("Order amount must be greater than or equal to 0");
     }
 }
