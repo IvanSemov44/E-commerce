@@ -118,9 +118,8 @@ export default function Header() {
                         to="/profile"
                         onClick={() => setUserMenuOpen(false)}
                         className={styles.dropdownItem}
-                        style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
                       >
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: '18px', height: '18px' }}>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={styles.dropdownIcon}>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         My Profile
@@ -235,8 +234,8 @@ export default function Header() {
                 </svg>
                 Cart
                 {cartItemCount > 0 && (
-                  <span style={{ marginLeft: 'auto' }}>
-                    <span className={styles.cartBadge} style={{ margin: 0 }}>
+                  <span className={styles.badgeWrapper}>
+                    <span className={styles.cartBadge}>
                       {cartItemCount > 99 ? '99+' : cartItemCount}
                     </span>
                   </span>

@@ -38,7 +38,7 @@ export default function OrderDetail() {
     }
   };
 
-  const canCancel = order && (order.status === 'Pending' || order.status === 'Processing');
+  const canCancel: boolean = !!(order && (order.status === 'Pending' || order.status === 'Processing'));
 
   return (
     <div className={styles.container}>

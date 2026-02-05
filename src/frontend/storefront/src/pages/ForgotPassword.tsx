@@ -38,15 +38,9 @@ export default function ForgotPassword() {
         )}
 
         {success ? (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              backgroundColor: '#dcfce7',
-              color: '#166534',
-              padding: '16px',
-              borderRadius: '8px',
-              marginBottom: '24px'
-            }}>
-              <p style={{ fontWeight: 600, marginBottom: '8px' }}>Check your email!</p>
+          <div className={styles.centered}>
+            <div className={styles.successBox}>
+              <p className={styles.successTitle}>Check your email!</p>
               <p>If an account exists with that email, we've sent you a password reset link.</p>
             </div>
             <Link to="/login" className={styles.footerLink}>
@@ -55,7 +49,7 @@ export default function ForgotPassword() {
           </div>
         ) : (
           <>
-            <p style={{ color: '#64748b', marginBottom: '24px', textAlign: 'center' }}>
+            <p className={styles.description}>
               Enter your email address and we'll send you a link to reset your password.
             </p>
 

@@ -3,6 +3,8 @@ interface LoadingSkeletonProps {
   type?: 'card' | 'text' | 'image';
 }
 
+import styles from './LoadingSkeleton.module.css';
+
 export default function LoadingSkeleton({ count = 1, type = 'card' }: LoadingSkeletonProps) {
   const skeletons = Array.from({ length: count }, (_, i) => i);
 
@@ -33,6 +35,6 @@ export default function LoadingSkeleton({ count = 1, type = 'card' }: LoadingSke
   }
 
   return (
-    <div className="animate-pulse" style={{ paddingBottom: '100%' }}></div>
+    <div className={`animate-pulse ${styles.imageSkeleton}`}></div>
   );
 }

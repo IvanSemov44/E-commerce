@@ -157,6 +157,15 @@
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+.badgeWrapper {
+  margin-left: auto;
+}
+
+.badgeWrapper .cartBadge {
+  position: static;
+  margin: 0;
+}
+
 /* Auth Section */
 .authContainer {
   display: flex;
@@ -296,6 +305,11 @@
 .dropdownItem svg {
   width: 1rem;
   height: 1rem;
+}
+
+.dropdownIcon {
+  width: 18px;
+  height: 18px;
 }
 
 /* Mobile Menu Button */

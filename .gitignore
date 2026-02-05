@@ -52,6 +52,7 @@ backend.log
 # OS files
 .DS_Store
 .AppleDouble
+nul
 
 # Reference/Tutorial projects (not part of main codebase)
 Tutorials/

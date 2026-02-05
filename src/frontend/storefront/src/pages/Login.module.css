@@ -59,3 +59,26 @@
 .footerLink:hover {
   color: #15803d;
 }
+
+.centered {
+  text-align: center;
+}
+
+.description {
+  color: #64748b;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.successBox {
+  background-color: #dcfce7;
+  color: #166534;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.successTitle {
+  font-weight: 600;
+  margin-bottom: 8px;
+}

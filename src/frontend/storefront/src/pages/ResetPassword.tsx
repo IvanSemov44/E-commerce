@@ -63,15 +63,9 @@ export default function ResetPassword() {
         )}
 
         {success ? (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              backgroundColor: '#dcfce7',
-              color: '#166534',
-              padding: '16px',
-              borderRadius: '8px',
-              marginBottom: '24px'
-            }}>
-              <p style={{ fontWeight: 600, marginBottom: '8px' }}>Password Reset Successful!</p>
+          <div className={styles.centered}>
+            <div className={styles.successBox}>
+              <p className={styles.successTitle}>Password Reset Successful!</p>
               <p>Your password has been reset. Redirecting to login...</p>
             </div>
             <Link to="/login" className={styles.footerLink}>
@@ -82,7 +76,7 @@ export default function ResetPassword() {
           <>
             {email && token ? (
               <>
-                <p style={{ color: '#64748b', marginBottom: '24px', textAlign: 'center' }}>
+                <p className={styles.description}>
                   Enter your new password for <strong>{email}</strong>
                 </p>
 
@@ -115,8 +109,8 @@ export default function ResetPassword() {
                 </form>
               </>
             ) : (
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ color: '#64748b', marginBottom: '24px' }}>
+              <div className={styles.centered}>
+                <p className={styles.description}>
                   This password reset link is invalid or has expired.
                 </p>
                 <Link to="/forgot-password" className={styles.footerLink}>

@@ -3,6 +3,7 @@ import { useAppSelector } from '../store/hooks';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation, useCheckInWishlistQuery } from '../store/api/wishlistApi';
 import Card from './ui/Card';
 import StarRating from './StarRating';
+import styles from './ProductCard.module.css';
 
 interface ProductCardProps {
   id: string;
@@ -60,9 +61,9 @@ export default function ProductCard({
       <Card
         variant="default"
         padding="sm"
-        style={{ position: 'relative' }}
+        className={styles.card}
       >
-        <div style={{ position: 'relative' }}>
+        <div className={styles.imageContainer}>
           <img
             src={imageUrl || DEFAULT_PRODUCT_IMAGE}
             alt={name}
@@ -73,22 +74,7 @@ export default function ProductCard({
           {isAuthenticated && (
             <button
               onClick={handleWishlistClick}
-              style={{
-                position: 'absolute',
-                top: '0.5rem',
-                right: '0.5rem',
-                background: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '2rem',
-                height: '2rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: '1.25rem',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              }}
+              className={styles.wishlistButton}
               title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
             >
               {isInWishlist ? '♥' : '♡'}
@@ -106,9 +92,9 @@ export default function ProductCard({
             )}
           </div>
           {rating > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div className={styles.ratingContainer}>
               <StarRating rating={Math.round(rating)} readonly size="md" />
-              <span style={{ fontSize: '0.875rem', color: '#666' }}>({reviewCount})</span>
+              <span className={styles.reviewCount}>({reviewCount})</span>
             </div>
           )}
         </div>
