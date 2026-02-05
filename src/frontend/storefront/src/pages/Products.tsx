@@ -6,6 +6,7 @@ import ProductCard from '../components/ProductCard';
 import CategoryFilter from '../components/CategoryFilter';
 import PageHeader from '../components/PageHeader';
 import QueryRenderer from '../components/QueryRenderer';
+import PaginatedView from '../components/PaginatedView';
 import styles from './Products.module.css';
 
 export default function Products() {
@@ -342,8 +343,14 @@ export default function Products() {
                   {hasActiveFilters && <span style={{ marginLeft: '0.5rem', fontStyle: 'italic' }}>(filtered)</span>}
                 </div>
 
-                <div className={styles.grid}>
-                  {data.items.map((product) => (
+                <PaginatedView
+                  items={data.items}
+                  totalCount={data.totalCount}
+                  currentPage={page}
+                  pageSize={12}
+                  onPageChange={setPage}
+                  gridClassName={styles.grid}
+                  renderItem={(product) => (
                     <ProductCard
                       key={product.id}
                       id={product.id}
@@ -355,27 +362,8 @@ export default function Products() {
                       rating={Math.round(product.averageRating)}
                       reviewCount={product.reviewCount}
                     />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                <div className={styles.pagination}>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className={styles.pageNumber}>Page {page} of {Math.ceil(data.totalCount / 12)}</span>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage(page + 1)}
-                    disabled={!data || data.items.length < 12}
-                  >
-                    Next
-                  </Button>
-                </div>
+                  )}
+                />
               </>
             )}
           </QueryRenderer>
