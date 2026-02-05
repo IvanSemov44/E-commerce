@@ -1,0 +1,46 @@
+.container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  border: 1px solid;
+}
+
+.badgeSearch {
+  background-color: #e3f2fd;
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.badgeCategory {
+  background-color: #f3e5f5;
+  border-color: #7b1fa2;
+  color: #7b1fa2;
+}
+
+.badgePrice {
+  background-color: #e8f5e9;
+  border-color: #388e3c;
+  color: #388e3c;
+}
+
+.badgeRating {
+  background-color: #fff3e0;
+  border-color: #f57c00;
+  color: #f57c00;
+}
+
+.badgeFeatured {
+  background-color: #fce4ec;
+  border-color: #c2185b;
+  color: #c2185b;
+}

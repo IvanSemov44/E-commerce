@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useGetProductsQuery } from '../store/api/productApi';
 import Button from '../components/ui/Button';
-import ProductCard from '../components/ProductCard';
 import CategoryFilter from '../components/CategoryFilter';
 import PageHeader from '../components/PageHeader';
 import QueryRenderer from '../components/QueryRenderer';
-import PaginatedView from '../components/PaginatedView';
+import {
+  ProductFilters,
+  ProductSearchBar,
+  ActiveFilters,
+  ProductGrid,
+} from './components/Products';
 import styles from './Products.module.css';
 
 export default function Products() {
@@ -86,7 +90,7 @@ export default function Products() {
     isFeatured,
   });
 
-  const hasActiveFilters = selectedCategoryId || debouncedSearch || minPrice !== undefined || maxPrice !== undefined || minRating !== undefined || isFeatured;
+  const hasActiveFilters = !!(selectedCategoryId || debouncedSearch || minPrice !== undefined || maxPrice !== undefined || minRating !== undefined || isFeatured);
 
   const handleClearFilters = () => {
     setSelectedCategoryId(undefined);
@@ -111,211 +115,39 @@ export default function Products() {
             onSelectCategory={setSelectedCategoryId}
           />
 
-          {/* Price Filter */}
-          <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Price Range</h3>
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <input
-                type="number"
-                placeholder="Min"
-                value={minPrice || ''}
-                onChange={(e) => setMinPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
-                style={{
-                  width: '50%',
-                  padding: '0.5rem',
-                  fontSize: '0.875rem',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '0.375rem',
-                }}
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                value={maxPrice || ''}
-                onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
-                style={{
-                  width: '50%',
-                  padding: '0.5rem',
-                  fontSize: '0.875rem',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '0.375rem',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Rating Filter */}
-          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Minimum Rating</h3>
-            <select
-              value={minRating || ''}
-              onChange={(e) => setMinRating(e.target.value ? parseFloat(e.target.value) : undefined)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                fontSize: '0.875rem',
-                border: '1px solid #e0e0e0',
-                borderRadius: '0.375rem',
-                backgroundColor: 'white',
-              }}
-            >
-              <option value="">All Ratings</option>
-              <option value="4">4+ Stars</option>
-              <option value="4.5">4.5+ Stars</option>
-              <option value="5">5 Stars</option>
-            </select>
-          </div>
-
-          {/* Featured Filter */}
-          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={isFeatured || false}
-                onChange={(e) => setIsFeatured(e.target.checked ? true : undefined)}
-                style={{ cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: '0.9rem' }}>Featured Products Only</span>
-            </label>
+          <div style={{ marginTop: '2rem' }}>
+            <ProductFilters
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              minRating={minRating}
+              isFeatured={isFeatured}
+              onMinPriceChange={setMinPrice}
+              onMaxPriceChange={setMaxPrice}
+              onMinRatingChange={setMinRating}
+              onIsFeaturedChange={setIsFeatured}
+            />
           </div>
         </div>
 
         {/* Main Content */}
         <div className={styles.content} style={{ flex: 1, minWidth: 0 }}>
-          {/* Search and Sort Bar */}
           <div style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  fontSize: '1rem',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '0.5rem',
-                }}
-              />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                style={{
-                  padding: '0.75rem',
-                  fontSize: '1rem',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '0.5rem',
-                  backgroundColor: 'white',
-                  minWidth: '180px',
-                }}
-              >
-                <option value="newest">Newest First</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-              </select>
-            </div>
+            <ProductSearchBar
+              searchValue={searchInput}
+              sortBy={sortBy}
+              onSearchChange={setSearchInput}
+              onSortChange={setSortBy}
+            />
 
-            {/* Active Filters Display */}
-            {hasActiveFilters && (
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                {debouncedSearch && (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.25rem 0.75rem',
-                      backgroundColor: '#e3f2fd',
-                      border: '1px solid #1976d2',
-                      borderRadius: '1rem',
-                      fontSize: '0.875rem',
-                      color: '#1976d2',
-                    }}
-                  >
-                    Search: <strong>{debouncedSearch}</strong>
-                  </div>
-                )}
-                {selectedCategoryId && (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.25rem 0.75rem',
-                      backgroundColor: '#f3e5f5',
-                      border: '1px solid #7b1fa2',
-                      borderRadius: '1rem',
-                      fontSize: '0.875rem',
-                      color: '#7b1fa2',
-                    }}
-                  >
-                    Category Selected
-                  </div>
-                )}
-                {(minPrice !== undefined || maxPrice !== undefined) && (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.25rem 0.75rem',
-                      backgroundColor: '#e8f5e9',
-                      border: '1px solid #388e3c',
-                      borderRadius: '1rem',
-                      fontSize: '0.875rem',
-                      color: '#388e3c',
-                    }}
-                  >
-                    Price: ${minPrice || 0} - ${maxPrice || '∞'}
-                  </div>
-                )}
-                {minRating !== undefined && (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.25rem 0.75rem',
-                      backgroundColor: '#fff3e0',
-                      border: '1px solid #f57c00',
-                      borderRadius: '1rem',
-                      fontSize: '0.875rem',
-                      color: '#f57c00',
-                    }}
-                  >
-                    {minRating}+ Stars
-                  </div>
-                )}
-                {isFeatured && (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.25rem 0.75rem',
-                      backgroundColor: '#fce4ec',
-                      border: '1px solid #c2185b',
-                      borderRadius: '1rem',
-                      fontSize: '0.875rem',
-                      color: '#c2185b',
-                    }}
-                  >
-                    Featured Only
-                  </div>
-                )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleClearFilters}
-                  style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            )}
+            <ActiveFilters
+              search={debouncedSearch}
+              categorySelected={!!selectedCategoryId}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              minRating={minRating}
+              isFeatured={isFeatured}
+              onClearAll={handleClearFilters}
+            />
           </div>
 
           <QueryRenderer
@@ -336,35 +168,13 @@ export default function Products() {
             }}
           >
             {(data) => (
-              <>
-                {/* Results Count */}
-                <div style={{ marginBottom: '1.5rem', color: '#666', fontSize: '0.95rem' }}>
-                  Showing <strong>{data.items.length}</strong> of <strong>{data.totalCount}</strong> products
-                  {hasActiveFilters && <span style={{ marginLeft: '0.5rem', fontStyle: 'italic' }}>(filtered)</span>}
-                </div>
-
-                <PaginatedView
-                  items={data.items}
-                  totalCount={data.totalCount}
-                  currentPage={page}
-                  pageSize={12}
-                  onPageChange={setPage}
-                  gridClassName={styles.grid}
-                  renderItem={(product) => (
-                    <ProductCard
-                      key={product.id}
-                      id={product.id}
-                      name={product.name}
-                      slug={product.slug}
-                      price={product.price}
-                      compareAtPrice={product.compareAtPrice}
-                      imageUrl={product.images[0]?.url}
-                      rating={Math.round(product.averageRating)}
-                      reviewCount={product.reviewCount}
-                    />
-                  )}
-                />
-              </>
+              <ProductGrid
+                products={data.items}
+                totalCount={data.totalCount}
+                currentPage={page}
+                pageSize={12}
+                onPageChange={setPage}
+              />
             )}
           </QueryRenderer>
         </div>

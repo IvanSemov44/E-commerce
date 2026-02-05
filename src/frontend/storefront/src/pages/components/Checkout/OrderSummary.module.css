@@ -1,0 +1,44 @@
+.summaryTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #1a1a1a;
+}
+
+.itemsList {
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.totalsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.totalLine {
+  display: flex;
+  justify-content: space-between;
+  color: #555;
+}
+
+.totalValue {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.grandTotal {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 2px solid #333;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.grandTotalAmount {
+  color: #1976d2;
+}

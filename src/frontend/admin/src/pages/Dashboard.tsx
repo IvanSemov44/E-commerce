@@ -15,7 +15,7 @@ export default function Dashboard() {
           {[1, 2, 3, 4].map((idx) => (
             <Card key={idx} variant="elevated">
               <CardContent className={styles.statContent}>
-                <div style={{ height: '100px', background: '#f0f0f0', borderRadius: '8px' }} />
+                <div className={styles.chartPlaceholder} />
               </CardContent>
             </Card>
           ))}
@@ -30,7 +30,7 @@ export default function Dashboard() {
         <h1 className={styles.title}>Dashboard</h1>
         <Card variant="elevated">
           <CardContent>
-            <p style={{ color: '#ef4444', textAlign: 'center' }}>
+            <p className={styles.errorText}>
               Failed to load dashboard statistics. Please try again.
             </p>
           </CardContent>
@@ -90,7 +90,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {dashboardStats!.ordersTrend && dashboardStats!.ordersTrend.length > 0 ? (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <ul className={styles.trendList}>
                 {dashboardStats!.ordersTrend.slice(0, 7).map((trend) => (
                   <li
                     key={trend.date}
@@ -119,7 +119,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {dashboardStats!.revenueTrend && dashboardStats!.revenueTrend.length > 0 ? (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <ul className={styles.trendList}>
                 {dashboardStats!.revenueTrend.slice(0, 7).map((trend) => (
                   <li
                     key={trend.date}

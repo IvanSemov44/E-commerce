@@ -6,16 +6,14 @@ import { useCreateOrderMutation } from '../store/api/ordersApi';
 import { useClearCartMutation } from '../store/api/cartApi';
 import type { CreateOrderRequest } from '../store/api/ordersApi';
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
-import { CheckIcon } from '../components/icons';
 
 import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import ErrorAlert from '../components/ErrorAlert';
+import { CheckoutForm, OrderSummary, OrderSuccess } from './components/Checkout';
 import styles from './Checkout.module.css';
-import CartItem from '../components/CartItem';
 
 export default function Checkout() {
   const dispatch = useAppDispatch();
@@ -223,31 +221,7 @@ export default function Checkout() {
 
   // Success screen
   if (orderComplete) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.successContent}>
-          <Card variant="elevated" padding="lg">
-            <div className={styles.successIcon}>
-              <CheckIcon className={styles.successIconSvg} />
-            </div>
-            <h1 className={styles.successTitle}>Order Placed Successfully!</h1>
-            <p className={styles.successMessage}>Thank you for your purchase.</p>
-            <p className={styles.successOrderNumber}>Order Number: {orderNumber}</p>
-            <p className={styles.successEmail}>A confirmation email has been sent to {formData.email || 'your email'}</p>
-            <div className={styles.successActions}>
-              <Link to="/products" className={styles.successActionLink}>
-                <Button size="lg">Continue Shopping</Button>
-              </Link>
-              <Link to="/" className={styles.successActionLink}>
-                <Button variant="secondary" size="lg">
-                  Return Home
-                </Button>
-              </Link>
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
+    return <OrderSuccess orderNumber={orderNumber} email={formData.email} />;
   }
 
   // Checkout form
@@ -261,191 +235,32 @@ export default function Checkout() {
           <div>
             <Card variant="elevated" padding="lg">
               <h2 className={styles.formTitle}>Shipping Information</h2>
-
               {error && <ErrorAlert message={error} />}
-
-              <form onSubmit={handleSubmit} className={styles.form}>
-                <div className={styles.formGroup}>
-                  <Input
-                    label="First Name"
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder="John"
-                    required
-                  />
-                  <Input
-                    label="Last Name"
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder="Doe"
-                    required
-                  />
-                </div>
-
-                <Input
-                  label="Email Address"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="your@email.com"
-                  required
-                />
-
-                <Input
-                  label="Phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+1 (555) 123-4567"
-                  required
-                />
-
-                <Input
-                  label="Street Address"
-                  type="text"
-                  value={formData.streetLine1}
-                  onChange={(e) => setFormData({ ...formData, streetLine1: e.target.value })}
-                  placeholder="123 Main St"
-                  required
-                />
-
-                <div className={styles.formGroup}>
-                  <Input
-                    label="City"
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="New York"
-                    required
-                  />
-                  <Input
-                    label="State"
-                    type="text"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    placeholder="NY"
-                    required
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <Input
-                    label="Zip Code"
-                    type="text"
-                    value={formData.postalCode}
-                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                    placeholder="10001"
-                    required
-                  />
-                  <Input
-                    label="Country"
-                    type="text"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    placeholder="United States"
-                    required
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  className={styles.actionButton}
-                >
-                  Place Order
-                </Button>
-              </form>
+              <CheckoutForm
+                formData={formData}
+                onFormDataChange={setFormData}
+                onSubmit={handleSubmit}
+              />
             </Card>
           </div>
 
           {/* Order Summary */}
           <div className={styles.summary}>
             <Card variant="elevated" padding="lg">
-              <h2 className={styles.summaryTitle}>Order Summary</h2>
-
-              {/* Items */}
-              <div className={styles.itemsList}>
-                {cartItems.map((item) => (
-                  <CartItem
-                    key={item.id}
-                    item={item}
-                    onUpdateQuantity={() => {}}
-                    onRemove={() => {}}
-                    readOnly={true}
-                  />
-                ))}
-              </div>
-
-              {/* Promo Code */}
-              <div className={styles.promoSection}>
-                {!promoCodeValidation?.isValid ? (
-                  <div className={styles.promoInput}>
-                    <Input
-                      placeholder="Enter promo code"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                      style={{ flex: 1 }}
-                    />
-                    <Button
-                      onClick={handleApplyPromoCode}
-                      disabled={validatingPromoCode || !promoCode.trim()}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      {validatingPromoCode ? 'Validating...' : 'Apply'}
-                    </Button>
-                  </div>
-                ) : null}
-
-                {promoCodeValidation && (
-                  <div
-                    className={`${styles.promoMessage} ${
-                      promoCodeValidation.isValid ? styles.promoSuccess : styles.promoError
-                    }`}
-                  >
-                    {promoCodeValidation.message}
-                    {promoCodeValidation.isValid && (
-                      <button
-                        onClick={handleRemovePromoCode}
-                        className={styles.promoRemove}
-                        type="button"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Totals */}
-              <div className={styles.totalsSection}>
-                <div className={styles.totalLine}>
-                  <span>Subtotal:</span>
-                  <span className={styles.totalValue}>${subtotal.toFixed(2)}</span>
-                </div>
-                {discount > 0 && (
-                  <div className={styles.totalLine} style={{ color: '#16a34a' }}>
-                    <span>Discount ({promoCode}):</span>
-                    <span className={styles.totalValue}>-${discount.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className={styles.totalLine}>
-                  <span>Shipping:</span>
-                  <span className={styles.totalValue}>
-                    {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
-                  </span>
-                </div>
-                <div className={styles.totalLine}>
-                  <span>Tax:</span>
-                  <span className={styles.totalValue}>${tax.toFixed(2)}</span>
-                </div>
-              </div>
-              <div className={styles.grandTotal}>
-                <span>Total:</span>
-                <span className={styles.grandTotalAmount}>${total.toFixed(2)}</span>
-              </div>
+              <OrderSummary
+                cartItems={cartItems}
+                subtotal={subtotal}
+                discount={discount}
+                shipping={shipping}
+                tax={tax}
+                total={total}
+                promoCode={promoCode}
+                onPromoCodeChange={setPromoCode}
+                promoCodeValidation={promoCodeValidation}
+                validatingPromoCode={validatingPromoCode}
+                onApplyPromoCode={handleApplyPromoCode}
+                onRemovePromoCode={handleRemovePromoCode}
+              />
             </Card>
           </div>
         </div>

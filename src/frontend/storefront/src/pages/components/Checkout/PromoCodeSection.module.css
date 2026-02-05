@@ -1,0 +1,44 @@
+.promoSection {
+  padding: 1rem 0;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  margin: 1rem 0;
+}
+
+.promoInput {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.promoMessage {
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.promoSuccess {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.promoError {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.promoRemove {
+  background: none;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.promoRemove:hover {
+  opacity: 0.8;
+}

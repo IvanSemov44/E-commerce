@@ -1,0 +1,17 @@
+.resultsCount {
+  margin-bottom: 1.5rem;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.filtered {
+  margin-left: 0.5rem;
+  font-style: italic;
+}
+
+/* Product grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}

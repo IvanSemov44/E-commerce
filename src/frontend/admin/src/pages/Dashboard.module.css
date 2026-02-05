@@ -80,3 +80,37 @@
     font-size: 1.5rem;
   }
 }
+
+.chartPlaceholder {
+  height: 100px;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.errorText {
+  color: #ef4444;
+  text-align: center;
+}
+
+.trendList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trendItem {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.trendItem:last-child {
+  border-bottom: none;
+}
+
+.trendLabel {
+  color: #64748b;
+}
+
+.emptyText {
+  color: #94a3b8;
+}
