@@ -1,5 +1,6 @@
 import Card from './ui/Card';
 import ErrorAlert from './ErrorAlert';
+import StarRating from './StarRating';
 
 export interface Review {
   id: string;
@@ -43,11 +44,7 @@ export default function ReviewList({ reviews, isLoading, error }: ReviewListProp
                   </h4>
                 )}
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', color: '#ffc107' }}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i}>{i < review.rating ? '★' : '☆'}</span>
-                    ))}
-                  </div>
+                  <StarRating rating={review.rating} readonly size="md" />
                   <span style={{ fontSize: '0.875rem', color: '#666' }}>
                     {review.rating}/5
                   </span>

@@ -3,6 +3,7 @@ import { useCreateReviewMutation } from '../store/api/reviewsApi';
 import Button from './ui/Button';
 import Card from './ui/Card';
 import ErrorAlert from './ErrorAlert';
+import StarRating from './StarRating';
 
 interface ReviewFormProps {
   productId: string;
@@ -51,26 +52,7 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
             Rating
           </label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(star)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  color: star <= rating ? '#ffc107' : '#ddd',
-                  padding: 0,
-                }}
-                title={`${star} stars`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
+          <StarRating rating={rating} onRatingChange={setRating} size="lg" />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>

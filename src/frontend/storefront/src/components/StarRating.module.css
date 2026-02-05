@@ -1,0 +1,51 @@
+.starRating {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.star {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star:disabled {
+  cursor: default;
+}
+
+.star.filled {
+  color: #ffc107;
+}
+
+.star.empty {
+  color: #e0e0e0;
+}
+
+.star:not(:disabled):hover {
+  transform: scale(1.1);
+}
+
+.star:not(:disabled):active {
+  transform: scale(0.95);
+}
+
+/* Size variants */
+.sm .star svg {
+  width: 14px;
+  height: 14px;
+}
+
+.md .star svg {
+  width: 16px;
+  height: 16px;
+}
+
+.lg .star svg {
+  width: 20px;
+  height: 20px;
+}
