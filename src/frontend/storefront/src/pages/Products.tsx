@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useGetProductsQuery } from '../store/api/productApi';
+import { useProductFilters } from '../hooks';
 import Button from '../components/ui/Button';
 import CategoryFilter from '../components/CategoryFilter';
 import PageHeader from '../components/PageHeader';
@@ -15,69 +14,27 @@ import {
 import styles from './Products.module.css';
 
 export default function Products() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Initialize state from URL params on mount (lazy initialization)
-  const [page, setPage] = useState(() => {
-    const pageParam = searchParams.get('page');
-    return pageParam ? parseInt(pageParam, 10) : 1;
-  });
-
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(
-    () => searchParams.get('categoryId') || undefined
-  );
-
-  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
-  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') || '');
-
-  // New filter states
-  const [minPrice, setMinPrice] = useState<number | undefined>(() => {
-    const val = searchParams.get('minPrice');
-    return val ? parseFloat(val) : undefined;
-  });
-  const [maxPrice, setMaxPrice] = useState<number | undefined>(() => {
-    const val = searchParams.get('maxPrice');
-    return val ? parseFloat(val) : undefined;
-  });
-  const [minRating, setMinRating] = useState<number | undefined>(() => {
-    const val = searchParams.get('minRating');
-    return val ? parseFloat(val) : undefined;
-  });
-  const [sortBy, setSortBy] = useState<string>(() => searchParams.get('sortBy') || 'newest');
-  const [isFeatured, setIsFeatured] = useState<boolean | undefined>(() => {
-    const val = searchParams.get('isFeatured');
-    return val === 'true' ? true : undefined;
-  });
-
-  // Debounce search input (500ms)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [selectedCategoryId, debouncedSearch, minPrice, maxPrice, minRating, sortBy, isFeatured]);
-
-  // Sync URL when filters change (after debounce completes)
-  useEffect(() => {
-    const params = new URLSearchParams();
-
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
-    if (minPrice !== undefined) params.set('minPrice', minPrice.toString());
-    if (maxPrice !== undefined) params.set('maxPrice', maxPrice.toString());
-    if (minRating !== undefined) params.set('minRating', minRating.toString());
-    if (sortBy !== 'newest') params.set('sortBy', sortBy);
-    if (isFeatured) params.set('isFeatured', 'true');
-    if (page > 1) params.set('page', page.toString());
-
-    setSearchParams(params, { replace: true }); // Use replace to avoid history pollution
-  }, [debouncedSearch, selectedCategoryId, minPrice, maxPrice, minRating, sortBy, isFeatured, page, setSearchParams]);
+  const {
+    page,
+    selectedCategoryId,
+    searchInput,
+    debouncedSearch,
+    minPrice,
+    maxPrice,
+    minRating,
+    sortBy,
+    isFeatured,
+    hasActiveFilters,
+    setPage,
+    setSelectedCategoryId,
+    setSearchInput,
+    setMinPrice,
+    setMaxPrice,
+    setMinRating,
+    setSortBy,
+    setIsFeatured,
+    handleClearFilters,
+  } = useProductFilters();
 
   const { data: result, isLoading, error } = useGetProductsQuery({
     page,
@@ -90,19 +47,6 @@ export default function Products() {
     sortBy,
     isFeatured,
   });
-
-  const hasActiveFilters = !!(selectedCategoryId || debouncedSearch || minPrice !== undefined || maxPrice !== undefined || minRating !== undefined || isFeatured);
-
-  const handleClearFilters = () => {
-    setSelectedCategoryId(undefined);
-    setSearchInput('');
-    setMinPrice(undefined);
-    setMaxPrice(undefined);
-    setMinRating(undefined);
-    setSortBy('newest');
-    setIsFeatured(undefined);
-    setPage(1);
-  };
 
   return (
     <div className={styles.container}>

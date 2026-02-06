@@ -1,108 +1,15 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { selectCartItems, updateQuantity, removeItem } from '../store/slices/cartSlice';
-import { useGetCartQuery, useUpdateCartItemMutation, useRemoveFromCartMutation } from '../store/api/cartApi';
-import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
+import { useCart } from '../hooks';
 import Button from '../components/ui/Button';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import { CartSkeleton } from '../components/Skeletons';
 import { CartItemList, CartSummary } from './components/Cart';
+import { FREE_SHIPPING_THRESHOLD } from '../utils/constants';
 import styles from './Cart.module.css';
 
-interface DisplayCartItem {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  quantity: number;
-  maxStock: number;
-  image: string;
-  compareAtPrice?: number;
-  cartItemId?: string; // Backend cart item ID for updates
-}
-
 export default function Cart() {
-  const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const localCartItems = useAppSelector(selectCartItems);
-  const [displayItems, setDisplayItems] = useState<DisplayCartItem[]>(localCartItems);
-
-  // Backend cart for authenticated users
-  const { data: backendCart, isLoading: cartLoading } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated,
-  });
-  const [updateCartItem] = useUpdateCartItemMutation();
-  const [removeFromCart] = useRemoveFromCartMutation();
-
-  // Sync displayed items based on auth state
-  useEffect(() => {
-    if (isAuthenticated && backendCart?.items) {
-      // Convert backend cart items to display format
-      const convertedItems: DisplayCartItem[] = backendCart.items.map((item) => ({
-        id: item.productId,
-        name: item.productName,
-        slug: '', // Backend doesn't provide slug
-        price: item.price,
-        quantity: item.quantity,
-        maxStock: 999, // Backend doesn't provide stock
-        image: item.imageUrl || '',
-        cartItemId: item.cartItemId, // Store for backend updates
-      }));
-      setDisplayItems(convertedItems);
-    } else {
-      setDisplayItems(localCartItems);
-    }
-  }, [isAuthenticated, backendCart, localCartItems]);
-
-  // Calculate cart totals
-  const cartSubtotal = displayItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = cartSubtotal > FREE_SHIPPING_THRESHOLD ? 0 : cartSubtotal > 0 ? STANDARD_SHIPPING_COST : 0;
-  const tax = cartSubtotal * DEFAULT_TAX_RATE;
-  const total = cartSubtotal + shipping + tax;
-
-  const handleUpdateQuantity = async (id: string, quantity: number) => {
-    if (quantity <= 0) {
-      handleRemove(id);
-      return;
-    }
-
-    if (isAuthenticated) {
-      const item = displayItems.find((i) => i.id === id);
-      if (item?.cartItemId) {
-        try {
-          await updateCartItem({
-            cartItemId: item.cartItemId,
-            quantity,
-          }).unwrap();
-        } catch (error) {
-          console.error('Failed to update cart item:', error);
-          alert('Failed to update item quantity');
-        }
-      }
-    } else {
-      dispatch(updateQuantity({ id, quantity }));
-    }
-  };
-
-  const handleRemove = async (id: string) => {
-    if (isAuthenticated) {
-      const item = displayItems.find((i) => i.id === id);
-      if (item?.cartItemId) {
-        try {
-          await removeFromCart(item.cartItemId).unwrap();
-        } catch (error) {
-          console.error('Failed to remove cart item:', error);
-          alert('Failed to remove item');
-        }
-      }
-    } else {
-      dispatch(removeItem(id));
-    }
-  };
-
-  const isLoading = isAuthenticated && cartLoading;
+  const { displayItems, totals, isLoading, handleUpdateQuantity, handleRemove } = useCart();
 
   return (
     <div className={styles.container}>
@@ -138,10 +45,10 @@ export default function Cart() {
               onRemove={handleRemove}
             />
             <CartSummary
-              subtotal={cartSubtotal}
-              shipping={shipping}
-              tax={tax}
-              total={total}
+              subtotal={totals.subtotal}
+              shipping={totals.shipping}
+              tax={totals.tax}
+              total={totals.total}
               freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
             />
           </div>
