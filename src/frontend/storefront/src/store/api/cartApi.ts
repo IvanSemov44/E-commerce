@@ -1,47 +1,20 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-export interface CartItemDto {
-  cartItemId: string;
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  imageUrl?: string;
-}
-
-export interface CartDto {
-  id: string;
-  items: CartItemDto[];
-  subtotal: number;
-  itemCount: number;
-}
-
-export interface AddToCartRequest {
-  productId: string;
-  quantity: number;
-}
-
-export interface UpdateCartItemRequest {
-  cartItemId: string;
-  quantity: number;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-  errors?: string[];
-}
+import {
+  CartItemDto,
+  CartDto,
+  AddToCartRequest,
+  UpdateCartItemRequest,
+  ApiResponse,
+} from '../../types';
+import { config } from '../../config';
 
 export const cartApi = createApi({
   reducerPath: 'cartApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_URL,
+    baseUrl: config.api.baseUrl,
     prepareHeaders: (headers) => {
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem(config.storage.authToken);
         if (token) {
           headers.set('Authorization', `Bearer ${token}`);
         }

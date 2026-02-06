@@ -1,52 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-export interface ResetPasswordRequest {
-  email: string;
-  token: string;
-  newPassword: string;
-}
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: string;
-  avatarUrl?: string;
-}
-
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  user?: AuthUser;
-  token?: string;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-  errors?: string[];
-}
+import {
+  AuthUser,
+  LoginRequest,
+  RegisterRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  AuthResponse,
+  ApiResponse,
+} from '../../types';
+import { config } from '../../config';
 
 interface AuthData {
   user: AuthUser;
@@ -56,10 +18,10 @@ interface AuthData {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_URL,
+    baseUrl: config.api.baseUrl,
     prepareHeaders: (headers) => {
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem(config.storage.authToken);
         if (token) {
           headers.set('Authorization', `Bearer ${token}`);
         }

@@ -1,43 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  imageUrl?: string;
-  parentCategoryId?: string;
-  subcategories?: Category[];
-}
-
-export interface CategoryDetailDto {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  imageUrl?: string;
-  parentCategoryId?: string;
-  parent?: Category;
-  children?: Category[];
-  productCount?: number;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-  errors?: string[];
-}
+import { Category, CategoryDetailDto, ApiResponse } from '../../types';
+import { config } from '../../config';
 
 export const categoriesApi = createApi({
   reducerPath: 'categoriesApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_URL,
+    baseUrl: config.api.baseUrl,
     prepareHeaders: (headers) => {
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem(config.storage.authToken);
         if (token) {
           headers.set('Authorization', `Bearer ${token}`);
         }

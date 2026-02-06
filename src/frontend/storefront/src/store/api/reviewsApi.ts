@@ -1,43 +1,22 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import {
+  Review,
+  CreateReviewRequest,
+  UpdateReviewRequest,
+  ApiResponse,
+} from '../../types';
+import { config } from '../../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-export interface ProductReview {
-  id: string;
-  title?: string;
-  comment?: string;
-  rating: number;
-  userName?: string;
-  createdAt: string;
-}
-
-export interface CreateReviewRequest {
-  productId: string;
-  title?: string;
-  comment: string;
-  rating: number;
-}
-
-export interface UpdateReviewRequest {
-  title?: string;
-  comment: string;
-  rating: number;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-  errors?: string[];
-}
+// Use ProductReview as alias for Review (API convention)
+type ProductReview = Review;
 
 export const reviewsApi = createApi({
   reducerPath: 'reviewsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: API_URL,
+    baseUrl: config.api.baseUrl,
     prepareHeaders: (headers) => {
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem(config.storage.authToken);
         if (token) {
           headers.set('Authorization', `Bearer ${token}`);
         }

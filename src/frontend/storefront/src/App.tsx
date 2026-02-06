@@ -3,8 +3,7 @@ import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { setUser } from './store/slices/authSlice';
 import { useGetProfileQuery } from './store/api/profileApi';
-import { useGetCartQuery, useAddToCartMutation } from './store/api/cartApi';
-import { selectCartItems, removeItem } from './store/slices/cartSlice';
+import { useCartSync, useErrorHandler } from './hooks';
 
 // Pages
 import Home from './pages/Home';
@@ -28,91 +27,109 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function AppContent() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user, token } = useAppSelector((state) => state.auth);
-  const localCartItems = useAppSelector(selectCartItems);
-  const { data: profileData } = useGetProfileQuery(undefined, {
+  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
+  const { handleError, clearError } = useErrorHandler();
+
+  // Fetch user profile when authenticated
+  const {
+    data: profileData,
+    error: profileError,
+    isLoading: profileLoading,
+  } = useGetProfileQuery(undefined, {
     skip: !isAuthenticated || !!user || !token,
   });
 
-  // Fetch backend cart for authenticated users
-  const { data: backendCart, isLoading: cartLoading, refetch: refetchCart } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated || !token,
+  // Use cart sync hook to handle local-to-backend cart sync
+  const { isLoading: cartLoading } = useCartSync({
+    enabled: isAuthenticated && !!token,
   });
 
-  const [addToCart] = useAddToCartMutation();
-
-  // When profile data is fetched, update auth state
+  /**
+   * Update Redux auth state when profile is fetched
+   */
   useEffect(() => {
     if (profileData && !user) {
-      dispatch(setUser({ ...profileData, role: profileData.role || 'customer' }));
+      dispatch(
+        setUser({
+          ...profileData,
+          role: profileData.role || 'customer',
+        })
+      );
+      clearError();
     }
-  }, [profileData, user, dispatch]);
+  }, [profileData, user, dispatch, clearError]);
 
-  // Sync cart when user logs in: merge local cart with backend cart
+  /**
+   * Handle profile fetch errors
+   */
   useEffect(() => {
-    if (!isAuthenticated || !token || !backendCart || cartLoading) return;
+    if (profileError) {
+      console.error('Failed to load user profile:', profileError);
+      handleError(profileError);
 
-    const syncCart = async () => {
-      // Get items from local cart that aren't in backend cart
-      const backendProductIds = new Set(backendCart.items.map((item) => item.productId));
-      const itemsToSync = localCartItems.filter((item) => !backendProductIds.has(item.id));
+      // If 401 Unauthorized, user's token is invalid - logout will be handled by API middleware
+      // For other errors, we continue with null user and let app gracefully degrade
+    }
+  }, [profileError, handleError]);
 
-      if (itemsToSync.length === 0) return;
-
-      let syncedCount = 0;
-      let failedItems: string[] = [];
-
-      // Sync each local item to backend individually
-      for (const item of itemsToSync) {
-        try {
-          await addToCart({
-            productId: item.id,
-            quantity: item.quantity,
-          }).unwrap();
-          syncedCount++;
-        } catch (error: any) {
-          // Product not found or other error - remove from local cart
-          console.warn(`Failed to sync item ${item.name} (${item.id}):`, error?.data?.message || error);
-          dispatch(removeItem(item.id));
-          failedItems.push(item.name);
-        }
-      }
-
-      // Refetch cart to get latest state if any items were synced
-      if (syncedCount > 0) {
-        refetchCart();
-      }
-
-      // Notify user if items were removed
-      if (failedItems.length > 0) {
-        console.info(
-          `Removed ${failedItems.length} unavailable item(s) from cart: ${failedItems.join(', ')}`
-        );
-      }
-    };
-
-    syncCart();
-  }, [isAuthenticated, token, backendCart, cartLoading, localCartItems, addToCart, refetchCart, dispatch]);
+  // Show loading state while fetching profile
+  const isAppLoading = profileLoading || cartLoading;
 
   return (
     <div>
       <Header />
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/:slug" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
-          <Route path="/orders/:orderId" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-        </Routes>
+        {isAppLoading && (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            Loading...
+          </div>
+        )}
+        {!isAppLoading && (
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:slug" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route
+              path="/wishlist"
+              element={
+                <ProtectedRoute>
+                  <Wishlist />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <OrderHistory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:orderId"
+              element={
+                <ProtectedRoute>
+                  <OrderDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+          </Routes>
+        )}
       </main>
       <Footer />
     </div>
