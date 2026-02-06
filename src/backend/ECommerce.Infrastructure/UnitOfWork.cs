@@ -31,6 +31,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<PromoCode>? _promoCodes;
     private IRepository<InventoryLog>? _inventoryLogs;
     private IRepository<ProductImage>? _productImages;
+    private IRepository<RefreshToken>? _refreshTokens;
 
     /// <summary>
     /// Initializes a new instance of the UnitOfWork class.
@@ -107,6 +108,11 @@ public class UnitOfWork : IUnitOfWork
     /// Gets the generic product images repository with lazy initialization.
     /// </summary>
     public IRepository<ProductImage> ProductImages => _productImages ??= new Repository<ProductImage>(_context);
+
+    /// <summary>
+    /// Gets the generic refresh tokens repository with lazy initialization.
+    /// </summary>
+    public IRepository<RefreshToken> RefreshTokens => _refreshTokens ??= new Repository<RefreshToken>(_context);
 
     #endregion
 

@@ -71,7 +71,8 @@
       "Bash(test:*)",
       "Bash(for f in Products Orders Reviews Inventory)",
       "Bash(do test -f \"$f.module.css\")",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(src/frontend/storefront/.env.example << 'EOF'\n# API Configuration\nVITE_API_URL=http://localhost:5000/api\n\n# Application\nVITE_APP_NAME=E-Commerce Store\nEOF)"
     ]
   }
 }

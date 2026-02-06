@@ -1,5 +1,6 @@
 using ECommerce.Application.Interfaces;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
@@ -195,10 +196,17 @@ public class CartService : ICartService
         if (cart == null)
             throw new CartNotFoundException(cartId);
 
+        // Batch query: Get all products for cart items in single query
+        var productIds = cart.Items.Select(i => i.ProductId).ToList();
+        var products = await _unitOfWork.Products
+            .FindByCondition(p => productIds.Contains(p.Id), trackChanges: false)
+            .ToListAsync(cancellationToken);
+
+        var productMap = products.ToDictionary(p => p.Id);
+
         foreach (var item in cart.Items)
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, trackChanges: false, cancellationToken: cancellationToken);
-            if (product == null)
+            if (!productMap.TryGetValue(item.ProductId, out var product))
                 throw new ProductNotFoundException(item.ProductId);
 
             if (product.StockQuantity < item.Quantity)

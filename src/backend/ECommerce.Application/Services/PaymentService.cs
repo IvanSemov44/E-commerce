@@ -3,6 +3,7 @@ using ECommerce.Application.DTOs.Payments;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -16,12 +17,19 @@ public class PaymentService : IPaymentService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PaymentService> _logger;
-    private static readonly Dictionary<string, PaymentDetailsDto> MockPaymentStore = new();
+    private readonly IConfiguration _configuration;
+    private readonly IPaymentStore _paymentStore;
 
-    public PaymentService(IUnitOfWork unitOfWork, ILogger<PaymentService> logger)
+    public PaymentService(
+        IUnitOfWork unitOfWork, 
+        ILogger<PaymentService> logger, 
+        IConfiguration configuration,
+        IPaymentStore paymentStore)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _configuration = configuration;
+        _paymentStore = paymentStore;
     }
 
     public async Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto, CancellationToken cancellationToken = default)
@@ -74,7 +82,7 @@ public class PaymentService : IPaymentService
                 ProcessedAt = DateTime.UtcNow
             };
 
-            MockPaymentStore[paymentIntentId] = paymentDetails;
+            await _paymentStore.StorePaymentAsync(paymentIntentId, paymentDetails);
 
             _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}", dto.OrderId, paymentIntentId);
 
@@ -137,7 +145,8 @@ public class PaymentService : IPaymentService
             throw new NoPaymentFoundException(orderId);
         }
 
-        if (MockPaymentStore.TryGetValue(order.PaymentIntentId, out var paymentDetails))
+        var paymentDetails = await _paymentStore.GetPaymentAsync(order.PaymentIntentId);
+        if (paymentDetails != null)
         {
             return paymentDetails;
         }
@@ -195,12 +204,8 @@ public class PaymentService : IPaymentService
     {
         _logger.LogInformation("Retrieving payment intent {PaymentIntentId}", paymentIntentId);
 
-        if (MockPaymentStore.TryGetValue(paymentIntentId, out var paymentDetails))
-        {
-            return paymentDetails;
-        }
-
-        return null;
+        var paymentDetails = await _paymentStore.GetPaymentAsync(paymentIntentId);
+        return paymentDetails;
     }
 
     public async Task<bool> IsPaymentMethodSupportedAsync(string paymentMethod, CancellationToken cancellationToken = default)
@@ -239,6 +244,12 @@ public class PaymentService : IPaymentService
 
     private bool ShouldSimulatePaymentFailure()
     {
+        // Only simulate failures in development/testing when explicitly enabled
+        var simulateFailures = _configuration.GetValue<bool>("Payment:SimulateFailures", false);
+        
+        if (!simulateFailures)
+            return false;
+
         var random = new Random();
         return random.Next(0, 100) < 5;
     }

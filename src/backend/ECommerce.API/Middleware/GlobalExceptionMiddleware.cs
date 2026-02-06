@@ -78,15 +78,27 @@ public class GlobalExceptionMiddleware
             BadRequestException => (StatusCodes.Status400BadRequest,
                 ApiResponse<object>.Error(exception.Message, new List<string> { exception.Message })),
 
+            // Argument validation errors (400)
+            ArgumentNullException argNullEx => (StatusCodes.Status400BadRequest,
+                ApiResponse<object>.Error($"Missing required parameter: {argNullEx.ParamName}")),
+
+            ArgumentException argEx => (StatusCodes.Status400BadRequest,
+                ApiResponse<object>.Error(argEx.Message)),
+
+            // Invalid operation (409)
+            InvalidOperationException => (StatusCodes.Status409Conflict,
+                ApiResponse<object>.Error("The requested operation could not be completed due to a conflict.")),
+
             // Conflict (409)
             ConflictException => (StatusCodes.Status409Conflict,
                 ApiResponse<object>.Error(exception.Message, new List<string> { exception.Message })),
 
             // Generic exception - Internal Server Error (500)
+            // Note: exception.Message is logged but NOT exposed to client for security
             _ => (StatusCodes.Status500InternalServerError,
                 ApiResponse<object>.Error(
                     "An internal server error occurred. Please try again later.",
-                    new List<string> { exception.Message }))
+                    new List<string>()))
         };
     }
 }

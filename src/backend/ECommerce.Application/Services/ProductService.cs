@@ -1,5 +1,6 @@
 using System.Threading;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Interfaces;
@@ -130,18 +131,21 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         var skip = (page - 1) * pageSize;
-        var allProducts = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
-        var searchResults = allProducts
-            .Where(p => p.IsActive && (p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                                        p.Description != null && p.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                                        p.Sku != null && p.Sku.Contains(query, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
+        
+        // Push filtering to database instead of loading all products into memory
+        var queryLower = query.ToLower();
+        var searchQuery = _unitOfWork.Products
+            .FindByCondition(p => p.IsActive && 
+                (EF.Functions.Like(p.Name.ToLower(), $"%{queryLower}%") ||
+                 (p.Description != null && EF.Functions.Like(p.Description.ToLower(), $"%{queryLower}%")) ||
+                 (p.Sku != null && EF.Functions.Like(p.Sku.ToLower(), $"%{queryLower}%"))), 
+                trackChanges: false);
 
-        var totalCount = searchResults.Count;
-        var products = searchResults
+        var totalCount = await searchQuery.CountAsync(cancellationToken);
+        var products = await searchQuery
             .Skip(skip)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         return new PaginatedResult<ProductDto>
         {

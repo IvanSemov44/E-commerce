@@ -153,6 +153,22 @@ public class ReviewsController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Updating review {ReviewId} by user {UserId}", reviewId, userId);
 
+        // Get review to check ownership
+        var existingReview = await _reviewService.GetReviewByIdAsync(reviewId, cancellationToken: cancellationToken);
+        if (existingReview == null)
+        {
+            return NotFound(ApiResponse<ReviewDetailDto>.Error("Review not found"));
+        }
+
+        // Ownership check: only review owner or admin can update
+        var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
+        if (!isAdmin && existingReview.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to update review {ReviewId} belonging to {ReviewOwnerId}",
+                userId, reviewId, existingReview.UserId);
+            return Forbid();
+        }
+
         var review = await _reviewService.UpdateReviewAsync(userId, reviewId, dto, cancellationToken: cancellationToken);
         return Ok(ApiResponse<ReviewDetailDto>.Ok(review, "Review updated successfully"));
     }
@@ -174,6 +190,22 @@ public class ReviewsController : ControllerBase
     {
         var userId = _currentUser.UserId;
         _logger.LogInformation("Deleting review {ReviewId} by user {UserId}", reviewId, userId);
+
+        // Get review to check ownership
+        var existingReview = await _reviewService.GetReviewByIdAsync(reviewId, cancellationToken: cancellationToken);
+        if (existingReview == null)
+        {
+            return NotFound(ApiResponse<object>.Error("Review not found"));
+        }
+
+        // Ownership check: only review owner or admin can delete
+        var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
+        if (!isAdmin && existingReview.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to delete review {ReviewId} belonging to {ReviewOwnerId}",
+                userId, reviewId, existingReview.UserId);
+            return Forbid();
+        }
 
         await _reviewService.DeleteReviewAsync(userId, reviewId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Review deleted successfully"));

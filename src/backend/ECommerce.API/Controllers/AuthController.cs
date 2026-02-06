@@ -4,6 +4,7 @@ using ECommerce.Application.Interfaces;
 using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ECommerce.API.Controllers;
 
@@ -35,6 +36,7 @@ public class AuthController : ControllerBase
     /// <response code="500">Internal server error.</response>
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthLimit")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
@@ -55,6 +57,7 @@ public class AuthController : ControllerBase
     /// <response code="401">Invalid credentials.</response>
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthLimit")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -115,6 +118,7 @@ public class AuthController : ControllerBase
     /// <response code="200">Password reset email sent (or user not found, but we don't reveal that).</response>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
+    [EnableRateLimiting("PasswordResetLimit")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)

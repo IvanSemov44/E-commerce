@@ -1,5 +1,6 @@
 using ECommerce.API.Middleware;
 using ECommerce.Application;
+using ECommerce.Application.Configuration;
 using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
 using ECommerce.Core.Interfaces.Repositories;
@@ -18,14 +19,20 @@ using ECommerce.Application.Validators.Cart;
 using ECommerce.API.ActionFilters;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Serilog configuration
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
     .WriteTo.Console()
     .WriteTo.File("logs/app-.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.File("logs/security-.txt",
+        rollingInterval: RollingInterval.Day,
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning)
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -58,15 +65,20 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(secretKey),
-        ValidateIssuer = !isDevelopment,
-        ValidateAudience = !isDevelopment,
+        ValidateIssuer = true,
+        ValidateAudience = true,
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
+        ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
 });
 
 builder.Services.AddAuthorization();
+
+// Configure business rules options
+builder.Services.Configure<BusinessRulesOptions>(
+    configuration.GetSection(BusinessRulesOptions.SectionName));
 
 // Configure JSON serialization to be case-sensitive (strict)
 builder.Services.Configure<JsonOptions>(options =>
@@ -91,15 +103,67 @@ builder.Services.AddCors(options =>
     else
     {
         var allowedOrigins = configuration.GetSection("Cors:Origins").Get<string[]>()
-            ?? new[] { "http://localhost:5173" };
+            ?? Array.Empty<string>();
+
+        if (allowedOrigins.Length == 0)
+            throw new InvalidOperationException("CORS origins must be configured for production");
 
         options.AddPolicy("AllowAll", policy =>
         {
             policy.WithOrigins(allowedOrigins)
-                .AllowAnyMethod()
-                .AllowAnyHeader();
+                .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .WithHeaders("Content-Type", "Authorization", "Accept")
+                .AllowCredentials();
         });
     }
+});
+
+// Add Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    // Global rate limit: 100 requests per minute per IP
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    // Strict limiter for auth endpoints (login/register)
+    options.AddPolicy("AuthLimit", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    // Strict limiter for password reset
+    options.AddPolicy("PasswordResetLimit", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(15),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        var response = new { message = "Too many requests. Please try again later." };
+        await context.HttpContext.Response.WriteAsJsonAsync(response, cancellationToken);
+    };
 });
 
 // Add AutoMapper
@@ -121,6 +185,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddSingleton<IPaymentStore, InMemoryPaymentStore>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
@@ -129,6 +194,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IWebhookVerificationService, WebhookVerificationService>();
 
 // Register email service based on configuration
 var emailProvider = configuration["EmailProvider"] ?? "SendGrid";
@@ -223,6 +289,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Configure security headers middleware (must be first in pipeline)
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 // Configure global exception handler middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -245,6 +314,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
+
+// Rate limiting must come after routing and before authentication
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

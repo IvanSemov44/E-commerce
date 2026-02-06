@@ -16,11 +16,16 @@ namespace ECommerce.API.Controllers;
 public class PaymentsController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
+    private readonly IWebhookVerificationService _webhookVerificationService;
     private readonly ILogger<PaymentsController> _logger;
 
-    public PaymentsController(IPaymentService paymentService, ILogger<PaymentsController> logger)
+    public PaymentsController(
+        IPaymentService paymentService,
+        IWebhookVerificationService webhookVerificationService,
+        ILogger<PaymentsController> logger)
     {
         _paymentService = paymentService;
+        _webhookVerificationService = webhookVerificationService;
         _logger = logger;
     }
 
@@ -42,6 +47,7 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentDto dto, CancellationToken cancellationToken)
     {
@@ -60,7 +66,7 @@ public class PaymentsController : ControllerBase
         {
             _logger.LogWarning("Payment failed for order {OrderId}. Reason: {Message}",
                 dto.OrderId, result.Message);
-            return Ok(ApiResponse<PaymentResponseDto>.Ok(result, "Payment processing failed"));
+            return UnprocessableEntity(ApiResponse<PaymentResponseDto>.Error(result.Message));
         }
     }
 
@@ -226,11 +232,30 @@ public class PaymentsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ProcessPaymentWebhook([FromBody] PaymentWebhookDto webhookPayload, CancellationToken cancellationToken)
+    public async Task<IActionResult> ProcessPaymentWebhook(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Webhook received for event type: {EventType}", webhookPayload?.EventType ?? "unknown");
+        // Read raw body for signature verification
+        Request.EnableBuffering();
+        using var reader = new StreamReader(Request.Body, leaveOpen: true);
+        var rawBody = await reader.ReadToEndAsync(cancellationToken);
+        Request.Body.Position = 0; // Reset stream position
+
+        // Verify webhook signature
+        var signature = Request.Headers["X-Webhook-Signature"].FirstOrDefault();
+        if (!_webhookVerificationService.VerifySignature(rawBody, signature ?? string.Empty))
+        {
+            _logger.LogWarning("Webhook signature verification failed from IP {IP}",
+                HttpContext.Connection.RemoteIpAddress);
+            return Unauthorized(ApiResponse<object>.Error("Invalid webhook signature"));
+        }
+
+        // Deserialize after verification
+        var webhookPayload = System.Text.Json.JsonSerializer.Deserialize<PaymentWebhookDto>(
+            rawBody,
+            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         if (webhookPayload == null)
         {
@@ -238,15 +263,18 @@ public class PaymentsController : ControllerBase
             return BadRequest(ApiResponse<string>.Error("Invalid webhook payload"));
         }
 
-        // In a real implementation, you would:
-        // 1. Verify the webhook signature
-        // 2. Process the event (update order status, payment status, etc.)
-        // 3. Store the webhook event for audit purposes
-        
-        _logger.LogInformation("Webhook processed successfully for PaymentIntentId: {PaymentIntentId}", 
+        _logger.LogInformation("Verified webhook received for event type: {EventType}",
+            webhookPayload.EventType ?? "unknown");
+
+        // Process the verified webhook event
+        // In a real implementation:
+        // 1. Update order status based on payment status
+        // 2. Store the webhook event for audit purposes
+        // 3. Trigger any necessary business logic
+
+        _logger.LogInformation("Webhook processed successfully for PaymentIntentId: {PaymentIntentId}",
             webhookPayload.PaymentIntentId ?? "unknown");
 
-        // Return 200 OK with a simple response
         return Ok(new { status = "received", message = "Webhook processed successfully" });
     }
 }

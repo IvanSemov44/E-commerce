@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<Review> Reviews { get; set; } = null!;
     public DbSet<Wishlist> Wishlists { get; set; } = null!;
     public DbSet<InventoryLog> InventoryLogs { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -154,6 +155,15 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Product).WithMany(e => e.InventoryLogs).HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // RefreshToken configuration
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

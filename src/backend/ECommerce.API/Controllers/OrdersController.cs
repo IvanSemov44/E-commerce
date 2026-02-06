@@ -74,6 +74,19 @@ public class OrdersController : ControllerBase
         {
             return NotFound(ApiResponse<OrderDetailDto>.Error("Order not found"));
         }
+
+        // Ownership check: only order owner or admin can view
+        var currentUserId = _currentUser.UserIdOrNull;
+        var isAdmin = _currentUser.IsAuthenticated &&
+                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+
+        if (!isAdmin && order.UserId != currentUserId)
+        {
+            _logger.LogWarning("User {UserId} attempted to access order {OrderId} belonging to {OrderOwnerId}",
+                currentUserId, id, order.UserId);
+            return Forbid();
+        }
+
         return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
     }
 
@@ -97,6 +110,19 @@ public class OrdersController : ControllerBase
         {
             return NotFound(ApiResponse<OrderDetailDto>.Error("Order not found"));
         }
+
+        // Ownership check: only order owner or admin can view
+        var currentUserId = _currentUser.UserIdOrNull;
+        var isAdmin = _currentUser.IsAuthenticated &&
+                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+
+        if (!isAdmin && order.UserId != currentUserId)
+        {
+            _logger.LogWarning("User {UserId} attempted to access order {OrderNumber} belonging to {OrderOwnerId}",
+                currentUserId, orderNumber, order.UserId);
+            return Forbid();
+        }
+
         return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
     }
 

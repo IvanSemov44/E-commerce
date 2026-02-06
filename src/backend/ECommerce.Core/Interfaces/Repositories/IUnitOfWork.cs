@@ -76,6 +76,11 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     /// </summary>
     IRepository<ProductImage> ProductImages { get; }
 
+    /// <summary>
+    /// Generic repository for refresh tokens (simple CRUD operations).
+    /// </summary>
+    IRepository<RefreshToken> RefreshTokens { get; }
+
     #endregion
 
     #region Transaction Management

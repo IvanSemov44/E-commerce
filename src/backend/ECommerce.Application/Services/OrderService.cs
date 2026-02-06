@@ -1,5 +1,6 @@
 using ECommerce.Application.Interfaces;
 using AutoMapper;
+using ECommerce.Application.Configuration;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Entities;
@@ -7,6 +8,7 @@ using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Threading;
 
 namespace ECommerce.Application.Services;
@@ -22,6 +24,7 @@ public class OrderService : IOrderService
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly BusinessRulesOptions _businessRules;
 
     private static readonly Dictionary<string, string> CountryCodeMap = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -48,7 +51,8 @@ public class OrderService : IOrderService
         IEmailService emailService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
-        ILogger<OrderService> logger)
+        ILogger<OrderService> logger,
+        IOptions<BusinessRulesOptions> businessRulesOptions)
     {
         _promoCodeService = promoCodeService;
         _inventoryService = inventoryService;
@@ -56,6 +60,7 @@ public class OrderService : IOrderService
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
+        _businessRules = businessRulesOptions.Value;
     }
 
     public async Task<OrderDetailDto> CreateOrderAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken = default)
@@ -195,8 +200,11 @@ public class OrderService : IOrderService
                 order.DiscountAmount = 0;
             }
 
-            order.ShippingAmount = subtotal > 100 ? 0 : 10.00m;
-            order.TaxAmount = subtotal * 0.08m;
+            // Apply business rules from configuration
+            order.ShippingAmount = subtotal > _businessRules.FreeShippingThreshold 
+                ? 0 
+                : _businessRules.StandardShippingCost;
+            order.TaxAmount = subtotal * _businessRules.TaxRate;
             order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
             order.Items = items;
 

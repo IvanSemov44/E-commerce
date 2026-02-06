@@ -2,6 +2,7 @@ using ECommerce.Application.Interfaces;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
@@ -296,9 +297,10 @@ public class InventoryService : IInventoryService
 
             if (product.StockQuantity <= product.LowStockThreshold && !_lowStockAlertsSent.Contains(productId))
             {
-                var admins = (await _unitOfWork.Users.GetAllAsync(cancellationToken: cancellationToken))
-                    .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.SuperAdmin)
-                    .ToList();
+                // Query only admin users from database instead of filtering in memory
+                var admins = await _unitOfWork.Users
+                    .FindByCondition(u => u.Role == UserRole.Admin || u.Role == UserRole.SuperAdmin, trackChanges: false)
+                    .ToListAsync(cancellationToken);
 
                 foreach (var admin in admins)
                 {

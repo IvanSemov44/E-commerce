@@ -8,6 +8,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -54,6 +55,8 @@ public class AuthService : IAuthService
         await _unitOfWork.Users.AddAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
+        _logger.LogInformation("New user registered: {Email} (ID: {UserId})", user.Email, user.Id);
+
         // Send welcome email (fire and forget - don't block registration)
         var verificationLink = $"{_configuration["AppUrl"]}/verify-email?userId={user.Id}&token={user.EmailVerificationToken}";
         _ = Task.Run(async () =>
@@ -70,13 +73,24 @@ public class AuthService : IAuthService
 
         var userDto = _mapper.Map<UserDto>(user);
         var token = GenerateJwtToken(userDto);
+        var refreshToken = GenerateRefreshToken();
+
+        // Save refresh token
+        await _unitOfWork.RefreshTokens.AddAsync(new RefreshToken
+        {
+            UserId = user.Id,
+            Token = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        }, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new AuthResponseDto
         {
             Success = true,
             Message = "Registration successful",
             User = userDto,
-            Token = token
+            Token = token,
+            RefreshToken = refreshToken
         };
     }
 
@@ -85,35 +99,82 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email, cancellationToken: cancellationToken);
         if (user == null || !VerifyPassword(dto.Password, user.PasswordHash!))
         {
+            _logger.LogWarning("Failed login attempt for {Email}: Invalid credentials", dto.Email);
             throw new InvalidCredentialsException();
         }
 
         var userDto = _mapper.Map<UserDto>(user);
         var token = GenerateJwtToken(userDto);
+        var refreshToken = GenerateRefreshToken();
+
+        // Save refresh token
+        await _unitOfWork.RefreshTokens.AddAsync(new RefreshToken
+        {
+            UserId = user.Id,
+            Token = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        }, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Successful login for user {Email} (ID: {UserId})", user.Email, user.Id);
 
         return new AuthResponseDto
         {
             Success = true,
             Message = "Login successful",
             User = userDto,
-            Token = token
+            Token = token,
+            RefreshToken = refreshToken
         };
     }
 
     public async Task<AuthResponseDto> RefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
-        // For MVP, simplified refresh token logic
-        if (!await ValidateTokenAsync(token, cancellationToken))
-        {
+        var storedToken = await _unitOfWork.RefreshTokens
+            .FindByCondition(rt => rt.Token == token && !rt.IsRevoked)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (storedToken == null || storedToken.ExpiresAt < DateTime.UtcNow)
             throw new InvalidTokenException();
-        }
+
+        // Revoke old refresh token (rotation)
+        storedToken.IsRevoked = true;
+
+        // Get user and generate new tokens
+        var user = await _unitOfWork.Users.GetByIdAsync(storedToken.UserId, cancellationToken: cancellationToken)
+            ?? throw new UserNotFoundException(storedToken.UserId);
+
+        var userDto = _mapper.Map<UserDto>(user);
+        var newAccessToken = GenerateJwtToken(userDto);
+        var newRefreshToken = GenerateRefreshToken();
+
+        // Save new refresh token
+        await _unitOfWork.RefreshTokens.AddAsync(new RefreshToken
+        {
+            UserId = user.Id,
+            Token = newRefreshToken,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow
+        }, cancellationToken);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new AuthResponseDto
         {
             Success = true,
             Message = "Token refreshed",
-            Token = token
+            User = userDto,
+            Token = newAccessToken,
+            RefreshToken = newRefreshToken
         };
+    }
+
+    private static string GenerateRefreshToken()
+    {
+        var randomBytes = new byte[64];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(randomBytes);
+        return Convert.ToBase64String(randomBytes);
     }
 
     public async Task<bool> ValidateTokenAsync(string token, CancellationToken cancellationToken = default)
@@ -127,8 +188,10 @@ public class AuthService : IAuthService
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = key,
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidateIssuer = true,
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = _configuration["Jwt:Audience"],
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
 
@@ -207,6 +270,8 @@ public class AuthService : IAuthService
         user.PasswordResetExpires = DateTime.UtcNow.AddHours(1);
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Password reset requested for {Email}", email);
 
         // Send password reset email (fire and forget)
         var resetLink = $"{_configuration["AppUrl"]}/reset-password?email={email}&token={user.PasswordResetToken}";
