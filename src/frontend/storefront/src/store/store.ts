@@ -10,6 +10,9 @@ import { categoriesApi } from './api/categoriesApi';
 import { profileApi } from './api/profileApi';
 import { reviewsApi } from './api/reviewsApi';
 import { wishlistApi } from './api/wishlistApi';
+import { promoCodeApi } from './api/promoCodeApi';
+import { inventoryApi } from './api/inventoryApi';
+import { cartPersistenceMiddleware } from './middleware/cartPersistence';
 
 export const store = configureStore({
   reducer: {
@@ -24,6 +27,8 @@ export const store = configureStore({
     [profileApi.reducerPath]: profileApi.reducer,
     [reviewsApi.reducerPath]: reviewsApi.reducer,
     [wishlistApi.reducerPath]: wishlistApi.reducer,
+    [promoCodeApi.reducerPath]: promoCodeApi.reducer,
+    [inventoryApi.reducerPath]: inventoryApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -34,7 +39,10 @@ export const store = configureStore({
       categoriesApi.middleware,
       profileApi.middleware,
       reviewsApi.middleware,
-      wishlistApi.middleware
+      wishlistApi.middleware,
+      promoCodeApi.middleware,
+      inventoryApi.middleware,
+      cartPersistenceMiddleware
     ),
 });
 

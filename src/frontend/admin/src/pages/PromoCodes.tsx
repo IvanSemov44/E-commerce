@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   useGetPromoCodesQuery,
   useCreatePromoCodeMutation,
@@ -49,20 +50,20 @@ export default function PromoCodes() {
 
     try {
       await deactivatePromoCode(promoCodeId).unwrap();
-      alert('Promo code deactivated successfully');
+      toast.success('Promo code deactivated successfully');
     } catch (err) {
-      alert('Failed to deactivate promo code');
+      toast.error('Failed to deactivate promo code');
     }
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: CreatePromoCodeRequest | (UpdatePromoCodeRequest & { id: string })) => {
     try {
       if (editingPromoCode) {
         await updatePromoCode({ ...data, id: editingPromoCode.id }).unwrap();
-        alert('Promo code updated successfully');
+        toast.success('Promo code updated successfully');
       } else {
         await createPromoCode(data).unwrap();
-        alert('Promo code created successfully');
+        toast.success('Promo code created successfully');
       }
       setModalOpen(false);
     } catch (err) {

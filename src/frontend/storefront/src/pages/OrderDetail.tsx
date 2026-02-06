@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '../store/api/ordersApi';
 import Button from '../components/ui/Button';
 import ErrorAlert from '../components/ErrorAlert';
@@ -33,7 +34,7 @@ export default function OrderDetail() {
         await cancelOrder(orderId).unwrap();
         navigate('/orders');
       } catch (err) {
-        alert('Failed to cancel order');
+        toast.error('Failed to cancel order');
       }
     }
   };

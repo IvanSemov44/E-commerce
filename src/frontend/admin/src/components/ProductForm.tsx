@@ -1,71 +1,131 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import Button from './ui/Button';
 import Input from './ui/Input';
+import useForm from '../hooks/useForm';
+import { validators } from '../utils/validation';
 import styles from './ProductForm.module.css';
-import type { ProductDetail } from '@shared/types';
+import type { ProductDetail, CreateProductRequest, UpdateProductRequest } from '@shared/types';
 
 interface ProductFormProps {
   product?: ProductDetail;
   categories: Array<{ id: string; name: string }>;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: CreateProductRequest | (UpdateProductRequest & { id: string })) => Promise<void>;
   onCancel: () => void;
 }
 
+interface ProductFormData {
+  name: string;
+  slug: string;
+  description: string;
+  shortDescription: string;
+  price: string;
+  compareAtPrice: string;
+  stockQuantity: string;
+  categoryId: string;
+  isFeatured: boolean;
+}
+
+// Validation function for product form
+const validateProductForm = (values: ProductFormData): Partial<Record<keyof ProductFormData, string>> => {
+  const errors: Partial<Record<keyof ProductFormData, string>> = {};
+
+  const nameError = validators.required('Product name')(values.name);
+  if (nameError) errors.name = nameError;
+
+  const slugError = validators.required('Slug')(values.slug);
+  if (slugError) errors.slug = slugError;
+
+  const priceRequiredError = validators.required('Price')(values.price);
+  if (priceRequiredError) {
+    errors.price = priceRequiredError;
+  } else {
+    const priceNumberError = validators.positiveNumber(values.price);
+    if (priceNumberError) errors.price = priceNumberError;
+  }
+
+  if (values.compareAtPrice && values.compareAtPrice.trim()) {
+    const compareAtPriceError = validators.positiveNumber(values.compareAtPrice);
+    if (compareAtPriceError) errors.compareAtPrice = compareAtPriceError;
+  }
+
+  const stockRequiredError = validators.required('Stock quantity')(values.stockQuantity);
+  if (stockRequiredError) {
+    errors.stockQuantity = stockRequiredError;
+  } else {
+    const stockNumeric = validators.numeric(values.stockQuantity);
+    if (stockNumeric) errors.stockQuantity = 'Stock quantity must be a whole number';
+  }
+
+  const categoryError = validators.required('Category')(values.categoryId);
+  if (categoryError) errors.categoryId = categoryError;
+
+  return errors;
+};
+
 export default function ProductForm({ product, categories, onSubmit, onCancel }: ProductFormProps) {
-  const [formData, setFormData] = useState({
-    name: product?.name || '',
-    slug: product?.slug || '',
-    description: product?.description || '',
-    shortDescription: product?.shortDescription || '',
-    price: product?.price?.toString() || '',
-    compareAtPrice: product?.compareAtPrice?.toString() || '',
-    stockQuantity: product?.stockQuantity?.toString() || '',
-    categoryId: product?.category?.id || '',
-    isFeatured: product?.isFeatured || false,
-  });
+  const [error, setError] = React.useState('');
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle form submission (called by useForm after validation)
+  const handleFormSubmit = async (values: ProductFormData) => {
     setError('');
-    setIsSubmitting(true);
 
     try {
       await onSubmit({
-        ...formData,
-        price: parseFloat(formData.price),
-        compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : undefined,
-        stockQuantity: parseInt(formData.stockQuantity, 10),
+        ...values,
+        price: parseFloat(values.price),
+        compareAtPrice: values.compareAtPrice ? parseFloat(values.compareAtPrice) : undefined,
+        stockQuantity: parseInt(values.stockQuantity, 10),
       });
     } catch (err: any) {
       setError(err.message || 'Failed to save product');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
+  // Initialize useForm hook
+  const form = useForm<ProductFormData>({
+    initialValues: {
+      name: '',
+      slug: '',
+      description: '',
+      shortDescription: '',
+      price: '',
+      compareAtPrice: '',
+      stockQuantity: '',
+      categoryId: '',
+      isFeatured: false,
+    },
+    validate: validateProductForm,
+    onSubmit: handleFormSubmit,
+  });
+
+  // Sync product data to form when product prop changes
+  useEffect(() => {
+    if (product) {
+      form.setValues({
+        name: product.name || '',
+        slug: product.slug || '',
+        description: product.description || '',
+        shortDescription: product.shortDescription || '',
+        price: product.price?.toString() || '',
+        compareAtPrice: product.compareAtPrice?.toString() || '',
+        stockQuantity: product.stockQuantity?.toString() || '',
+        categoryId: product.category?.id || '',
+        isFeatured: product.isFeatured || false,
+      });
+    }
+  }, [product]);
+
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
+    <form onSubmit={form.handleSubmit} className={styles.form}>
       {error && <div className={styles.error}>{error}</div>}
 
       <div className={styles.row}>
         <Input
           label="Product Name"
           name="name"
-          value={formData.name}
-          onChange={handleChange}
+          value={form.values.name}
+          onChange={form.handleChange}
+          error={form.errors.name}
           required
         />
       </div>
@@ -74,8 +134,9 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
         <Input
           label="Slug"
           name="slug"
-          value={formData.slug}
-          onChange={handleChange}
+          value={form.values.slug}
+          onChange={form.handleChange}
+          error={form.errors.slug}
           required
           helperText="URL-friendly version (e.g., laptop-stand)"
         />
@@ -87,8 +148,8 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
           <textarea
             id="description"
             name="description"
-            value={formData.description}
-            onChange={handleChange}
+            value={form.values.description}
+            onChange={form.handleChange}
             rows={4}
             className={styles.textarea}
           />
@@ -99,8 +160,8 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
         <Input
           label="Short Description"
           name="shortDescription"
-          value={formData.shortDescription}
-          onChange={handleChange}
+          value={form.values.shortDescription}
+          onChange={form.handleChange}
         />
       </div>
 
@@ -110,8 +171,9 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
           name="price"
           type="number"
           step="0.01"
-          value={formData.price}
-          onChange={handleChange}
+          value={form.values.price}
+          onChange={form.handleChange}
+          error={form.errors.price}
           required
         />
         <Input
@@ -119,8 +181,9 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
           name="compareAtPrice"
           type="number"
           step="0.01"
-          value={formData.compareAtPrice}
-          onChange={handleChange}
+          value={form.values.compareAtPrice}
+          onChange={form.handleChange}
+          error={form.errors.compareAtPrice}
         />
       </div>
 
@@ -129,8 +192,9 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
           label="Stock Quantity"
           name="stockQuantity"
           type="number"
-          value={formData.stockQuantity}
-          onChange={handleChange}
+          value={form.values.stockQuantity}
+          onChange={form.handleChange}
+          error={form.errors.stockQuantity}
           required
         />
         <div className={styles.field}>
@@ -138,8 +202,8 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
           <select
             id="categoryId"
             name="categoryId"
-            value={formData.categoryId}
-            onChange={handleChange}
+            value={form.values.categoryId}
+            onChange={form.handleChange}
             required
             className={styles.select}
           >
@@ -150,6 +214,7 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
               </option>
             ))}
           </select>
+          {form.errors.categoryId && <div className={styles.fieldError}>{form.errors.categoryId}</div>}
         </div>
       </div>
 
@@ -158,8 +223,8 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
           <input
             type="checkbox"
             name="isFeatured"
-            checked={formData.isFeatured}
-            onChange={handleChange}
+            checked={form.values.isFeatured}
+            onChange={form.handleChange}
           />
           <span>Featured Product</span>
         </label>
@@ -169,8 +234,8 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
+        <Button type="submit" disabled={form.isSubmitting}>
+          {form.isSubmitting ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
         </Button>
       </div>
     </form>

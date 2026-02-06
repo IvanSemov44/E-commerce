@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/constants';
 import type { CartItem as CartItemType } from '../store/slices/cartSlice';
@@ -10,7 +11,7 @@ interface CartItemProps {
   readOnly?: boolean;
 }
 
-export default function CartItem({ item, onUpdateQuantity, onRemove, readOnly = false }: CartItemProps) {
+const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove, readOnly = false }: CartItemProps) {
   return (
     <div className={styles.container}>
       {/* Image */}
@@ -78,5 +79,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove, readOnly = 
       </div>
     </div>
   );
-}
+});
+
+export default CartItem;
 

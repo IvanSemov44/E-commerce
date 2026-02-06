@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useGetPendingReviewsQuery, useApproveReviewMutation, useRejectReviewMutation } from '../store/api/reviewsApi';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -12,9 +13,9 @@ export default function Reviews() {
   const handleApprove = async (reviewId: string) => {
     try {
       await approveReview(reviewId).unwrap();
-      alert('Review approved successfully');
+      toast.success('Review approved successfully');
     } catch (err) {
-      alert('Failed to approve review');
+      toast.error('Failed to approve review');
     }
   };
 
@@ -23,9 +24,9 @@ export default function Reviews() {
 
     try {
       await rejectReview(reviewId).unwrap();
-      alert('Review rejected successfully');
+      toast.success('Review rejected successfully');
     } catch (err) {
-      alert('Failed to reject review');
+      toast.error('Failed to reject review');
     }
   };
 

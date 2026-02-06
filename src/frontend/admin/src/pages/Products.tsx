@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   useGetProductsQuery,
   useCreateProductMutation,
@@ -54,20 +55,20 @@ export default function Products() {
 
     try {
       await deleteProduct(productId).unwrap();
-      alert('Product deleted successfully');
+      toast.success('Product deleted successfully');
     } catch (err) {
-      alert('Failed to delete product');
+      toast.error('Failed to delete product');
     }
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: CreateProductRequest | (UpdateProductRequest & { id: string })) => {
     try {
       if (editingProduct) {
         await updateProduct({ ...data, id: editingProduct.id }).unwrap();
-        alert('Product updated successfully');
+        toast.success('Product updated successfully');
       } else {
         await createProduct(data).unwrap();
-        alert('Product created successfully');
+        toast.success('Product created successfully');
       }
       setModalOpen(false);
     } catch (err) {

@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../store/api/profileApi';
 import { useAppDispatch } from '../store/hooks';
 import { updateUser } from '../store/slices/authSlice';
+import useForm from './useForm';
+import { validators } from '../utils/validation';
 
 export interface ProfileFormData {
   firstName: string;
@@ -25,12 +27,32 @@ export interface UseProfileFormReturn {
   isLoading: boolean;
   isUpdating: boolean;
   error: any;
+  errors: Partial<Record<keyof ProfileFormData, string>>;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   setFormData: (data: ProfileFormData) => void;
   setIsEditMode: (mode: boolean) => void;
   setErrorMessage: (msg: string) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
   handleCancel: () => void;
 }
+
+// Validation function for profile form
+const validateProfileForm = (values: ProfileFormData): Partial<Record<keyof ProfileFormData, string>> => {
+  const errors: Partial<Record<keyof ProfileFormData, string>> = {};
+
+  const firstNameError = validators.required('First name')(values.firstName);
+  if (firstNameError) errors.firstName = firstNameError;
+
+  const lastNameError = validators.required('Last name')(values.lastName);
+  if (lastNameError) errors.lastName = lastNameError;
+
+  if (values.phone && values.phone.trim()) {
+    const phoneError = validators.phone(values.phone);
+    if (phoneError) errors.phone = phoneError;
+  }
+
+  return errors;
+};
 
 /**
  * Custom hook for managing profile form state and submission
@@ -48,49 +70,21 @@ export const useProfileForm = (): UseProfileFormReturn => {
   const { data: profile, isLoading, error } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
-  const [formData, setFormData] = useState<ProfileFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    avatarUrl: '',
-  });
-
   const [isEditMode, setIsEditMode] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Sync profile data to form when profile loads
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
-        avatarUrl: profile.avatarUrl || '',
-      });
-    }
-  }, [profile]);
-
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFormSubmit = async (values: ProfileFormData) => {
     setErrorMessage('');
     setSuccessMessage('');
 
-    // Validation
-    if (!formData.firstName || !formData.lastName) {
-      setErrorMessage('First name and last name are required');
-      return;
-    }
-
     try {
       const result = await updateProfile({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone || undefined,
-        avatarUrl: formData.avatarUrl || undefined,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        phone: values.phone || undefined,
+        avatarUrl: values.avatarUrl || undefined,
       }).unwrap();
 
       // Update auth state with new user data
@@ -114,14 +108,23 @@ export const useProfileForm = (): UseProfileFormReturn => {
     }
   };
 
-  // Handle form cancel
-  const handleCancel = () => {
-    setIsEditMode(false);
-    setErrorMessage('');
+  // Initialize useForm hook
+  const form = useForm<ProfileFormData>({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      avatarUrl: '',
+    },
+    validate: validateProfileForm,
+    onSubmit: handleFormSubmit,
+  });
 
-    // Reset form to original profile data
+  // Sync profile data to form when profile loads
+  useEffect(() => {
     if (profile) {
-      setFormData({
+      form.setValues({
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
         email: profile.email || '',
@@ -129,21 +132,46 @@ export const useProfileForm = (): UseProfileFormReturn => {
         avatarUrl: profile.avatarUrl || '',
       });
     }
+  }, [profile]);
+
+  // Handle form cancel
+  const handleCancel = () => {
+    setIsEditMode(false);
+    setErrorMessage('');
+
+    // Reset form to original profile data
+    if (profile) {
+      form.setValues({
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        avatarUrl: profile.avatarUrl || '',
+      });
+    }
+    form.reset();
+  };
+
+  // Adapter for backward compatibility with ProfileForm
+  const setFormData = (data: ProfileFormData) => {
+    form.setValues(data);
   };
 
   return {
     profile,
-    formData,
+    formData: form.values,
     isEditMode,
     successMessage,
     errorMessage,
     isLoading,
     isUpdating,
     error,
+    errors: form.errors,
+    handleChange: form.handleChange,
     setFormData,
     setIsEditMode,
     setErrorMessage,
-    handleSubmit,
+    handleSubmit: form.handleSubmit,
     handleCancel,
   };
 };

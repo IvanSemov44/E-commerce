@@ -3,6 +3,10 @@ import { Card, CardContent } from './ui/Card';
 
 import styles from './QueryRenderer.module.css';
 
+// Default isEmpty function (defined outside component to prevent recreation on every render)
+const defaultIsEmpty = <T,>(data: T): boolean =>
+  !data || (Array.isArray(data) && data.length === 0);
+
 interface QueryRendererProps<T> {
   isLoading: boolean;
   error: unknown;
@@ -17,7 +21,7 @@ export default function QueryRenderer<T>({
   isLoading,
   error,
   data,
-  isEmpty,
+  isEmpty = defaultIsEmpty,
   emptyMessage = 'No data available',
   emptyTitle = 'No Results',
   children,

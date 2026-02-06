@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { setUser } from './store/slices/authSlice';
 import { useGetProfileQuery } from './store/api/profileApi';
@@ -153,6 +154,7 @@ function App() {
   return (
     <Router>
       <ErrorBoundary>
+        <Toaster position="top-right" />
         <ToastContainer />
         <AppContent />
       </ErrorBoundary>

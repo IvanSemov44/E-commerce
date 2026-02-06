@@ -33,15 +33,6 @@ function loadCartFromLocalStorage(): CartItem[] {
   }
 }
 
-function saveCartToLocalStorage(items: CartItem[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  } catch (error) {
-    console.error('Failed to save cart to localStorage:', error);
-  }
-}
-
 const initialState: CartState = {
   items: loadCartFromLocalStorage(),
   lastUpdated: Date.now(),
@@ -67,13 +58,11 @@ export const cartSlice = createSlice({
       }
 
       state.lastUpdated = Date.now();
-      saveCartToLocalStorage(state.items);
     },
 
     removeItem: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(item => item.id !== action.payload);
       state.lastUpdated = Date.now();
-      saveCartToLocalStorage(state.items);
     },
 
     updateQuantity: (state, action: PayloadAction<{ id: string; quantity: number }>) => {
@@ -91,15 +80,11 @@ export const cartSlice = createSlice({
       }
 
       state.lastUpdated = Date.now();
-      saveCartToLocalStorage(state.items);
     },
 
     clearCart: (state) => {
       state.items = [];
       state.lastUpdated = Date.now();
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(CART_STORAGE_KEY);
-      }
     },
   },
 });

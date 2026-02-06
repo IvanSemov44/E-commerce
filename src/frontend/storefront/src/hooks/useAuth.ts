@@ -3,7 +3,6 @@
  * Centralized authentication logic (login, logout, registration, token management)
  */
 
-import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   loginSuccess,
@@ -30,86 +29,74 @@ export function useAuth() {
   /**
    * Persist token to localStorage when it changes
    */
-  const persistToken = useCallback((authToken: string | null) => {
+  const persistToken = (authToken: string | null) => {
     if (authToken) {
       setStoredToken(authToken);
     } else {
       setStoredToken(null);
     }
-  }, [setStoredToken]);
+  };
 
   /**
    * Handle successful login
    */
-  const handleLoginSuccess = useCallback(
-    (userData: AuthUser, authToken: string) => {
-      dispatch(loginSuccess({ user: userData, token: authToken }));
-      persistToken(authToken);
-      clearError();
-    },
-    [dispatch, persistToken, clearError]
-  );
+  const handleLoginSuccess = (userData: AuthUser, authToken: string) => {
+    dispatch(loginSuccess({ user: userData, token: authToken }));
+    persistToken(authToken);
+    clearError();
+  };
 
   /**
    * Handle login failure
    */
-  const handleLoginFailure = useCallback(
-    (error: unknown) => {
-      const errorState = handleError(error);
-      dispatch(loginFailure(errorState.message));
-    },
-    [dispatch, handleError]
-  );
+  const handleLoginFailure = (error: unknown) => {
+    const errorState = handleError(error);
+    dispatch(loginFailure(errorState.message));
+  };
 
   /**
    * Update user profile in state
    */
-  const updateProfile = useCallback(
-    (userData: Partial<AuthUser>) => {
-      if (user) {
-        dispatch(setUser({ ...user, ...userData }));
-      }
-    },
-    [dispatch, user]
-  );
+  const updateProfile = (userData: Partial<AuthUser>) => {
+    if (user) {
+      dispatch(setUser({ ...user, ...userData }));
+    }
+  };
 
   /**
    * Logout and clear auth state
    */
-  const performLogout = useCallback(() => {
+  const performLogout = () => {
     dispatch(logout());
     persistToken(null);
     clearError();
-  }, [dispatch, persistToken, clearError]);
+  };
 
   /**
    * Check if user has specific role
    */
-  const hasRole = useCallback(
-    (role: string | string[]): boolean => {
-      if (!user) return false;
-      const roles = Array.isArray(role) ? role : [role];
-      return roles.includes(user.role);
-    },
-    [user]
-  );
+  const hasRole = (role: string | string[]): boolean => {
+    if (!user) return false;
+    const roles = Array.isArray(role) ? role : [role];
+    return roles.includes(user.role);
+  };
 
   /**
    * Check if token is valid (exists and decoded)
    */
-  const isTokenValid = useCallback((): boolean => {
+  const isTokenValid = (): boolean => {
     return !!token && !!user;
-  }, [token, user]);
+  };
 
   /**
    * Get auth header for API calls
    */
-  const getAuthHeader = useCallback((): Record<string, string> => {
+  const getAuthHeader = (): Record<string, string> => {
     if (!token) return {};
     return {
       Authorization: `Bearer ${token}`,
     };
-  }, [token]);
+  };
 
   return {
     // State

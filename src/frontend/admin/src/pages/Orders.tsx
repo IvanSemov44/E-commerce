@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   useGetOrdersQuery,
   useUpdateOrderStatusMutation,
@@ -36,9 +37,9 @@ export default function Orders() {
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
-      alert('Order status updated successfully');
+      toast.success('Order status updated successfully');
     } catch (err) {
-      alert('Failed to update order status');
+      toast.error('Failed to update order status');
     }
   };
 

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAppSelector } from '../store/hooks';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation, useCheckInWishlistQuery } from '../store/api/wishlistApi';
 import Card from './ui/Card';
@@ -39,7 +40,7 @@ export default function ProductCard({
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      alert('Please sign in to add items to your wishlist');
+      toast.error('Please sign in to add items to your wishlist');
       return;
     }
 

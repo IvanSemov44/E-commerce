@@ -2,6 +2,10 @@ import ErrorAlert from './ErrorAlert';
 import LoadingSkeleton from './LoadingSkeleton';
 import EmptyState from './EmptyState';
 
+// Default isEmpty function (defined outside component to prevent recreation on every render)
+const defaultIsEmpty = <T,>(data: T): boolean =>
+  !data || (Array.isArray(data) && data.length === 0);
+
 interface QueryRendererProps<T> {
   isLoading: boolean;
   error: any;
@@ -25,7 +29,7 @@ export default function QueryRenderer<T>({
   isLoading,
   error,
   data,
-  isEmpty = (data) => !data || (Array.isArray(data) && data.length === 0),
+  isEmpty = defaultIsEmpty,
   loadingSkeleton = { count: 4, type: 'card' },
   emptyState,
   errorMessage = 'Failed to load data. Please try again.',

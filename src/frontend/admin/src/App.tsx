@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
+import { Toaster } from 'react-hot-toast';
 
 // Layout
 import AdminLayout from './layouts/AdminLayout';
@@ -28,6 +29,7 @@ function App() {
     <Provider store={store}>
       <Router>
         <ErrorBoundary>
+          <Toaster position="top-right" />
           <ToastContainer />
           <Routes>
             {/* Public Routes */}

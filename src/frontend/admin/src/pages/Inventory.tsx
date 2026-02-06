@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   useGetInventoryQuery,
   useGetLowStockProductsQuery,
@@ -53,7 +54,7 @@ export default function Inventory() {
 
     const quantity = parseInt(newQuantity, 10);
     if (isNaN(quantity) || quantity < 0) {
-      alert('Please enter a valid quantity');
+      toast.error('Please enter a valid quantity');
       return;
     }
 
@@ -63,18 +64,18 @@ export default function Inventory() {
           productId: selectedProduct.productId,
           request: { quantity, reason, notes },
         }).unwrap();
-        alert(`Successfully added ${quantity} units to ${selectedProduct.productName}`);
+        toast.success(`Successfully added ${quantity} units to ${selectedProduct.productName}`);
       } else {
         await adjustStock({
           productId: selectedProduct.productId,
           request: { quantity, reason, notes },
         }).unwrap();
-        alert(`Stock adjusted to ${quantity} units for ${selectedProduct.productName}`);
+        toast.success(`Stock adjusted to ${quantity} units for ${selectedProduct.productName}`);
       }
       handleCloseAdjustModal();
       refetch();
     } catch (err: any) {
-      alert(err?.data?.message || 'Failed to adjust stock');
+      toast.error(err?.data?.message || 'Failed to adjust stock');
     }
   };
 

@@ -7,7 +7,7 @@
  * - Calculates cart totals and shipping
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { selectCartItems, updateQuantity, removeItem } from '../store/slices/cartSlice';
 import { useGetCartQuery, useUpdateCartItemMutation, useRemoveFromCartMutation } from '../store/api/cartApi';
@@ -76,18 +76,20 @@ export function useCart(): UseCartReturn {
     }
   }, [isAuthenticated, backendCart, localCartItems]);
 
-  // Calculate cart totals
-  const cartSubtotal = displayItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = cartSubtotal > FREE_SHIPPING_THRESHOLD ? 0 : cartSubtotal > 0 ? STANDARD_SHIPPING_COST : 0;
-  const tax = cartSubtotal * DEFAULT_TAX_RATE;
-  const total = cartSubtotal + shipping + tax;
+  // Calculate cart totals (memoized to prevent unnecessary recalculations)
+  const totals: CartTotals = useMemo(() => {
+    const cartSubtotal = displayItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shipping = cartSubtotal > FREE_SHIPPING_THRESHOLD ? 0 : cartSubtotal > 0 ? STANDARD_SHIPPING_COST : 0;
+    const tax = cartSubtotal * DEFAULT_TAX_RATE;
+    const total = cartSubtotal + shipping + tax;
 
-  const totals: CartTotals = {
-    subtotal: cartSubtotal,
-    shipping,
-    tax,
-    total,
-  };
+    return {
+      subtotal: cartSubtotal,
+      shipping,
+      tax,
+      total,
+    };
+  }, [displayItems]);
 
   // Handle quantity updates
   const handleUpdateQuantity = useCallback(
@@ -112,7 +114,7 @@ export function useCart(): UseCartReturn {
         }
       } catch (error) {
         console.error('Failed to update cart item:', error);
-        alert('Failed to update item quantity');
+        toast.error('Failed to update item quantity');
       } finally {
         setIsUpdating(false);
       }
@@ -135,7 +137,7 @@ export function useCart(): UseCartReturn {
         }
       } catch (error) {
         console.error('Failed to remove cart item:', error);
-        alert('Failed to remove item');
+        toast.error('Failed to remove item');
       } finally {
         setIsUpdating(false);
       }

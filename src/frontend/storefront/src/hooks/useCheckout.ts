@@ -13,7 +13,11 @@ import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { selectCartItems, selectCartSubtotal, clearCart } from '../store/slices/cartSlice';
 import { useCreateOrderMutation } from '../store/api/ordersApi';
 import { useClearCartMutation } from '../store/api/cartApi';
+import { useValidatePromoCodeMutation } from '../store/api/promoCodeApi';
+import { useCheckAvailabilityMutation } from '../store/api/inventoryApi';
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
+import useForm from './useForm';
+import { validators } from '../utils/validation';
 import type { CreateOrderRequest } from '../store/api/ordersApi';
 
 interface ShippingFormData {
@@ -38,6 +42,7 @@ interface UseCheckoutReturn {
   // Form state
   formData: ShippingFormData;
   setFormData: (data: Partial<ShippingFormData>) => void;
+  errors: Partial<Record<keyof ShippingFormData, string>>;
 
   // Promo code state
   promoCode: string;
@@ -66,6 +71,50 @@ interface UseCheckoutReturn {
   handleSubmit: (e: React.FormEvent) => Promise<void>;
 }
 
+// Validation function for checkout form
+const validateCheckoutForm = (values: ShippingFormData): Partial<Record<keyof ShippingFormData, string>> => {
+  const errors: Partial<Record<keyof ShippingFormData, string>> = {};
+
+  const firstNameError = validators.required('First name')(values.firstName);
+  if (firstNameError) errors.firstName = firstNameError;
+
+  const lastNameError = validators.required('Last name')(values.lastName);
+  if (lastNameError) errors.lastName = lastNameError;
+
+  const emailRequiredError = validators.required('Email')(values.email);
+  if (emailRequiredError) {
+    errors.email = emailRequiredError;
+  } else {
+    const emailFormatError = validators.email(values.email);
+    if (emailFormatError) errors.email = emailFormatError;
+  }
+
+  const phoneRequiredError = validators.required('Phone')(values.phone);
+  if (phoneRequiredError) {
+    errors.phone = phoneRequiredError;
+  } else {
+    const phoneFormatError = validators.phone(values.phone);
+    if (phoneFormatError) errors.phone = phoneFormatError;
+  }
+
+  const streetError = validators.required('Street address')(values.streetLine1);
+  if (streetError) errors.streetLine1 = streetError;
+
+  const cityError = validators.required('City')(values.city);
+  if (cityError) errors.city = cityError;
+
+  const stateError = validators.required('State')(values.state);
+  if (stateError) errors.state = stateError;
+
+  const postalCodeError = validators.required('Postal code')(values.postalCode);
+  if (postalCodeError) errors.postalCode = postalCodeError;
+
+  const countryError = validators.required('Country')(values.country);
+  if (countryError) errors.country = countryError;
+
+  return errors;
+};
+
 export function useCheckout(): UseCheckoutReturn {
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector(selectCartItems);
@@ -73,29 +122,93 @@ export function useCheckout(): UseCheckoutReturn {
 
   const [createOrder] = useCreateOrderMutation();
   const [clearCartApi] = useClearCartMutation();
+  const [validatePromoCodeMutation] = useValidatePromoCodeMutation();
+  const [checkAvailabilityMutation] = useCheckAvailabilityMutation();
 
   // Order state
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
-  const [formData, setFormDataState] = useState<ShippingFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    streetLine1: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: '',
-  });
-
   // Promo code state
   const [promoCode, setPromoCode] = useState('');
   const [promoCodeValidation, setPromoCodeValidation] = useState<PromoCodeValidation | null>(null);
   const [validatingPromoCode, setValidatingPromoCode] = useState(false);
+
+  // Handle order submission (called by useForm after validation)
+  const handleFormSubmit = async (values: ShippingFormData) => {
+    setError(null);
+
+    try {
+      // Check stock availability before placing order
+      const stockCheckResult = await checkAvailabilityMutation({
+        items: cartItems.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+      }).unwrap();
+
+      if (!stockCheckResult.isAvailable) {
+        const issueMessages = stockCheckResult.issues
+          .map((issue) => `${issue.productName}: ${issue.message}`)
+          .join(', ');
+        setError(`Some items are no longer available: ${issueMessages}`);
+        return;
+      }
+
+      const orderData: CreateOrderRequest = {
+        items: cartItems.map((item) => ({
+          productId: item.id,
+          productName: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        shippingAddress: {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          phone: values.phone,
+          streetLine1: values.streetLine1,
+          city: values.city,
+          state: values.state,
+          postalCode: values.postalCode,
+          country: values.country,
+        },
+        paymentMethod: 'card',
+        promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
+        guestEmail: values.email,
+      };
+
+      const result = await createOrder(orderData).unwrap();
+
+      // Clear cart from backend
+      await clearCartApi().unwrap();
+
+      // Clear local cart
+      dispatch(clearCart());
+
+      setOrderNumber(result.orderNumber);
+      setOrderComplete(true);
+    } catch (err: any) {
+      setError(err.data?.message || err.message || 'Failed to create order. Please try again.');
+    }
+  };
+
+  // Initialize useForm hook
+  const form = useForm<ShippingFormData>({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      streetLine1: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: '',
+    },
+    validate: validateCheckoutForm,
+    onSubmit: handleFormSubmit,
+  });
 
   // Calculate totals with discount
   const discount = promoCodeValidation?.isValid ? promoCodeValidation.discountAmount : 0;
@@ -103,10 +216,10 @@ export function useCheckout(): UseCheckoutReturn {
   const tax = subtotal * DEFAULT_TAX_RATE;
   const total = subtotal - discount + shipping + tax;
 
-  // Update form data
+  // Adapter for backward compatibility
   const setFormData = useCallback((data: Partial<ShippingFormData>) => {
-    setFormDataState((prev) => ({ ...prev, ...data }));
-  }, []);
+    form.setValues((prev) => ({ ...prev, ...data }));
+  }, [form]);
 
   // Validate promo code
   const handleApplyPromoCode = useCallback(async () => {
@@ -123,33 +236,16 @@ export function useCheckout(): UseCheckoutReturn {
     setPromoCodeValidation(null);
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${API_URL}/promo-codes/validate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: promoCode,
-          orderAmount: subtotal,
-        }),
+      const result = await validatePromoCodeMutation({
+        code: promoCode,
+        orderAmount: subtotal,
+      }).unwrap();
+
+      setPromoCodeValidation({
+        isValid: result.isValid,
+        discountAmount: result.discountAmount,
+        message: result.message,
       });
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setPromoCodeValidation({
-          isValid: result.data.isValid,
-          discountAmount: result.data.discountAmount,
-          message: result.data.message,
-        });
-      } else {
-        setPromoCodeValidation({
-          isValid: false,
-          discountAmount: 0,
-          message: 'Invalid promo code',
-        });
-      }
     } catch (err) {
       setPromoCodeValidation({
         isValid: false,
@@ -159,7 +255,7 @@ export function useCheckout(): UseCheckoutReturn {
     } finally {
       setValidatingPromoCode(false);
     }
-  }, [promoCode, subtotal]);
+  }, [promoCode, subtotal, validatePromoCodeMutation]);
 
   // Remove promo code
   const handleRemovePromoCode = useCallback(() => {
@@ -167,101 +263,10 @@ export function useCheckout(): UseCheckoutReturn {
     setPromoCodeValidation(null);
   }, []);
 
-  // Submit order
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setError(null);
-
-      // Validation
-      if (
-        !formData.firstName ||
-        !formData.lastName ||
-        !formData.email ||
-        !formData.phone ||
-        !formData.streetLine1 ||
-        !formData.city ||
-        !formData.state ||
-        !formData.postalCode ||
-        !formData.country
-      ) {
-        setError('Please fill in all fields');
-        return;
-      }
-
-      try {
-        // Check stock availability before placing order
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-        const stockCheckResponse = await fetch(`${API_URL}/inventory/check-availability`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            items: cartItems.map((item) => ({
-              productId: item.id,
-              quantity: item.quantity,
-            })),
-          }),
-        });
-
-        const stockCheckResult = await stockCheckResponse.json();
-
-        if (!stockCheckResult.success) {
-          setError('Failed to verify stock availability. Please try again.');
-          return;
-        }
-
-        if (!stockCheckResult.data.isAvailable) {
-          const issueMessages = stockCheckResult.data.issues
-            .map((issue: any) => `${issue.productName}: ${issue.message}`)
-            .join(', ');
-          setError(`Some items are no longer available: ${issueMessages}`);
-          return;
-        }
-
-        const orderData: CreateOrderRequest = {
-          items: cartItems.map((item) => ({
-            productId: item.id,
-            productName: item.name,
-            price: item.price,
-            quantity: item.quantity,
-          })),
-          shippingAddress: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            phone: formData.phone,
-            streetLine1: formData.streetLine1,
-            city: formData.city,
-            state: formData.state,
-            postalCode: formData.postalCode,
-            country: formData.country,
-          },
-          paymentMethod: 'card',
-          promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
-          guestEmail: formData.email,
-        };
-
-        const result = await createOrder(orderData).unwrap();
-
-        // Clear cart from backend
-        await clearCartApi().unwrap();
-
-        // Clear local cart
-        dispatch(clearCart());
-
-        setOrderNumber(result.orderNumber);
-        setOrderComplete(true);
-      } catch (err: any) {
-        setError(err.data?.message || err.message || 'Failed to create order. Please try again.');
-      }
-    },
-    [cartItems, formData, promoCode, promoCodeValidation, createOrder, clearCartApi, dispatch]
-  );
-
   return {
-    formData,
+    formData: form.values,
     setFormData,
+    errors: form.errors,
     promoCode,
     setPromoCode,
     promoCodeValidation,
@@ -277,6 +282,6 @@ export function useCheckout(): UseCheckoutReturn {
     shipping,
     tax,
     total,
-    handleSubmit,
+    handleSubmit: form.handleSubmit,
   };
 }
