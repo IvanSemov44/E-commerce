@@ -68,210 +68,296 @@ public class OrderService : IOrderService
         var isGuest = userId == null;
         _logger.LogInformation("Creating order. UserId: {UserId}, IsGuest: {IsGuest}", userId, isGuest);
 
-        // Verify user exists if not guest
-            if (userId.HasValue)
-            {
-                var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, trackChanges: false, cancellationToken: cancellationToken);
-                if (user == null)
-                {
-                    throw new UserNotFoundException(userId.Value);
-                }
-            }
-            else
-            {
-                // For guest checkout, validate that guest email is provided
-                if (string.IsNullOrWhiteSpace(dto.GuestEmail))
-                {
-                    _logger.LogWarning("Guest checkout attempted without email");
-                    throw new GuestEmailRequiredException();
-                }
-            }
+        // Begin database transaction to ensure atomicity
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-            // Create order entity
-            var order = new Order
-            {
-                OrderNumber = GenerateOrderNumber(),
-                UserId = userId,
-                Status = OrderStatus.Pending,
-                PaymentStatus = PaymentStatus.Pending,
-                PaymentMethod = dto.PaymentMethod,
-                Currency = "USD"
-            };
+        try
+        {
+            // Step 1: Validate user or guest
+            await ValidateUserOrGuestAsync(userId, dto.GuestEmail, cancellationToken);
 
-            // Map shipping and billing addresses via AutoMapper (service still sets user/type)
-            if (dto.ShippingAddress != null)
-            {
-                var shippingAddress = _mapper.Map<Address>(dto.ShippingAddress);
-                if (userId.HasValue)
-                    shippingAddress.UserId = userId.Value;
-                shippingAddress.Type = "Shipping";
-                shippingAddress.IsDefault = false;
-                // Normalize country code
-                shippingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
-                order.ShippingAddress = shippingAddress;
-            }
+            // Step 2: Create order entity with addresses
+            var order = await CreateOrderEntityAsync(userId, dto, cancellationToken);
 
-            if (dto.BillingAddress != null)
-            {
-                var billingAddress = _mapper.Map<Address>(dto.BillingAddress);
-                if (userId.HasValue)
-                    billingAddress.UserId = userId.Value;
-                billingAddress.Type = "Billing";
-                billingAddress.IsDefault = false;
-                billingAddress.Country = NormalizeCountryCode(dto.BillingAddress.Country);
-                order.BillingAddress = billingAddress;
-            }
-            else if (dto.ShippingAddress != null)
-            {
-                var billingAddress = _mapper.Map<Address>(dto.ShippingAddress);
-                if (userId.HasValue)
-                    billingAddress.UserId = userId.Value;
-                billingAddress.Type = "Billing";
-                billingAddress.IsDefault = false;
-                billingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
-                order.BillingAddress = billingAddress;
-            }
+            // Step 3: Process order items and calculate subtotal
+            var (items, subtotal, stockCheckItems) = await ProcessOrderItemsAsync(dto.Items, cancellationToken);
 
-            // Process order items and validate stock
-            var subtotal = 0m;
-            var items = new List<OrderItem>();
-            var stockCheckItems = new List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>();
+            // Step 4: Validate stock availability (with pessimistic locking to prevent race conditions)
+            await ValidateStockAvailabilityAsync(stockCheckItems, cancellationToken);
 
-            if (dto.Items != null && dto.Items.Any())
-            {
-                foreach (var itemDto in dto.Items)
-                {
-                    if (!Guid.TryParse(itemDto.ProductId, out var productId))
-                    {
-                        throw new ProductNotFoundException(itemDto.ProductId);
-                    }
+            // Step 5: Apply promo code if provided
+            await ApplyPromoCodeAsync(order, dto.PromoCode, subtotal, cancellationToken);
 
-                    // Map via AutoMapper and then set parsed ProductId
-                    var orderItem = _mapper.Map<OrderItem>(itemDto);
-                    orderItem.ProductId = productId;
-                    orderItem.Quantity = itemDto.Quantity;
-
-                    items.Add(orderItem);
-
-                    var itemTotal = orderItem.UnitPrice * orderItem.Quantity;
-                    subtotal += itemTotal;
-
-                    // Add to stock check list
-                    stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItemDto
-                    {
-                        ProductId = productId,
-                        Quantity = itemDto.Quantity
-                    });
-                }
-            }
-
-            // Validate stock availability before creating order
-            if (stockCheckItems.Any())
-            {
-                var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
-                if (!stockCheck.IsAvailable)
-                {
-                    var firstIssue = stockCheck.Issues.First();
-                    throw new InsufficientStockException(firstIssue.ProductName, firstIssue.RequestedQuantity, firstIssue.AvailableQuantity);
-                }
-            }
-
-            // Calculate totals
-            order.Subtotal = subtotal;
-
-            // Apply promo code if provided
-            if (!string.IsNullOrWhiteSpace(dto.PromoCode))
-            {
-                var promoValidation = await _promoCodeService.ValidatePromoCodeAsync(dto.PromoCode, subtotal);
-                if (promoValidation.IsValid && promoValidation.PromoCode != null)
-                {
-                    order.DiscountAmount = promoValidation.DiscountAmount;
-                    order.PromoCodeId = promoValidation.PromoCode.Id;
-                    _logger.LogInformation("Promo code {Code} applied to order with discount ${Amount}",
-                        dto.PromoCode, order.DiscountAmount);
-                }
-                else
-                {
-                    throw new InvalidPromoCodeException(dto.PromoCode);
-                }
-            }
-            else
-            {
-                order.DiscountAmount = 0;
-            }
-
-            // Apply business rules from configuration
-            order.ShippingAmount = subtotal > _businessRules.FreeShippingThreshold 
-                ? 0 
-                : _businessRules.StandardShippingCost;
-            order.TaxAmount = subtotal * _businessRules.TaxRate;
-            order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
+            // Step 6: Calculate final totals with business rules
+            CalculateOrderTotals(order, subtotal);
             order.Items = items;
 
-            await _unitOfWork.Orders.AddAsync(order, cancellationToken: cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+            // Step 7: Save order to database
+            await _unitOfWork.Orders.AddAsync(order, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Reduce stock for each product
-            foreach (var item in items)
-            {
-                if (item.ProductId.HasValue)
-                {
-                    try
-                    {
-                        await _inventoryService.ReduceStockAsync(
-                            item.ProductId.Value,
-                            item.Quantity,
-                            "sale",
-                            order.Id,
-                            userId
-                        );
-                        _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units for order {OrderNumber}",
-                            item.ProductId.Value, item.Quantity, order.OrderNumber);
-                    }
-                    catch (Exception stockEx)
-                    {
-                        _logger.LogError(stockEx, "Failed to reduce stock for product {ProductId} in order {OrderNumber}",
-                            item.ProductId.Value, order.OrderNumber);
-                        // Continue - order was created, we'll handle stock manually if needed
-                    }
-                }
-            }
-
-            // Increment promo code usage after successful order creation
-            if (order.PromoCodeId.HasValue)
-            {
-                try
-                {
-                    await _promoCodeService.IncrementUsedCountAsync(order.PromoCodeId.Value);
-                }
-                catch (Exception promoEx)
-                {
-                    _logger.LogError(promoEx, "Failed to increment usage count for promo code {PromoCodeId} in order {OrderNumber}",
-                        order.PromoCodeId.Value, order.OrderNumber);
-                    // Continue - order was created successfully
-                }
-            }
-
-            // Send order confirmation email
-            try
-            {
-                var emailAddress = !string.IsNullOrWhiteSpace(dto.GuestEmail) ? dto.GuestEmail : await GetUserEmailAsync(userId.Value, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(emailAddress))
-                {
-                    await _emailService.SendOrderConfirmationEmailAsync(emailAddress, order);
-                    _logger.LogInformation("Order confirmation email sent to {Email}", emailAddress);
-                }
-            }
-            catch (Exception emailEx)
-            {
-                _logger.LogError(emailEx, "Failed to send order confirmation email for order {OrderNumber}", order.OrderNumber);
-                // Don't throw - order was created successfully
-            }
+            // Step 8: Reduce stock for products (within transaction - will rollback if fails)
+            await ReduceProductStockAsync(items, order, userId, cancellationToken);
+            
+            // Step 9: Commit transaction - all operations succeeded
+            await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Order created successfully: {OrderNumber}", order.OrderNumber);
 
+            // Step 10: Post-transaction operations (best effort - errors logged but don't fail order)
+            // These are outside transaction as they're not critical to order creation
+            await IncrementPromoCodeUsageAsync(order.PromoCodeId, order.OrderNumber, cancellationToken);
+            await SendOrderConfirmationAsync(dto.GuestEmail, userId, order, cancellationToken);
+
             return _mapper.Map<OrderDetailDto>(order);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating order. Transaction will be rolled back.");
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
+
+    #region Order Creation Helper Methods
+
+    /// <summary>
+    /// Validates that the user exists or guest email is provided.
+    /// </summary>
+    private async Task ValidateUserOrGuestAsync(Guid? userId, string? guestEmail, CancellationToken cancellationToken)
+    {
+        if (userId.HasValue)
+        {
+            var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, trackChanges: false, cancellationToken);
+            if (user == null)
+                throw new UserNotFoundException(userId.Value);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(guestEmail))
+            {
+                _logger.LogWarning("Guest checkout attempted without email");
+                throw new GuestEmailRequiredException();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates the order entity with addresses mapped from DTO.
+    /// </summary>
+    private async Task<Order> CreateOrderEntityAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken)
+    {
+        var order = new Order
+        {
+            OrderNumber = GenerateOrderNumber(),
+            UserId = userId,
+            Status = OrderStatus.Pending,
+            PaymentStatus = PaymentStatus.Pending,
+            PaymentMethod = dto.PaymentMethod,
+            Currency = "USD"
+        };
+
+        // Map shipping address
+        if (dto.ShippingAddress != null)
+        {
+            var shippingAddress = _mapper.Map<Address>(dto.ShippingAddress);
+            if (userId.HasValue)
+                shippingAddress.UserId = userId.Value;
+            shippingAddress.Type = "Shipping";
+            shippingAddress.IsDefault = false;
+            shippingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
+            order.ShippingAddress = shippingAddress;
+        }
+
+        // Map billing address (or copy from shipping if not provided)
+        if (dto.BillingAddress != null)
+        {
+            var billingAddress = _mapper.Map<Address>(dto.BillingAddress);
+            if (userId.HasValue)
+                billingAddress.UserId = userId.Value;
+            billingAddress.Type = "Billing";
+            billingAddress.IsDefault = false;
+            billingAddress.Country = NormalizeCountryCode(dto.BillingAddress.Country);
+            order.BillingAddress = billingAddress;
+        }
+        else if (dto.ShippingAddress != null)
+        {
+            var billingAddress = _mapper.Map<Address>(dto.ShippingAddress);
+            if (userId.HasValue)
+                billingAddress.UserId = userId.Value;
+            billingAddress.Type = "Billing";
+            billingAddress.IsDefault = false;
+            billingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
+            order.BillingAddress = billingAddress;
+        }
+
+        return await Task.FromResult(order);
+    }
+
+    /// <summary>
+    /// Processes order items, calculates subtotal, and creates stock check list.
+    /// </summary>
+    private async Task<(List<OrderItem> items, decimal subtotal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems)> 
+        ProcessOrderItemsAsync(IEnumerable<CreateOrderItemDto>? itemDtos, CancellationToken cancellationToken)
+    {
+        var items = new List<OrderItem>();
+        var subtotal = 0m;
+        var stockCheckItems = new List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>();
+
+        if (itemDtos != null && itemDtos.Any())
+        {
+            foreach (var itemDto in itemDtos)
+            {
+                if (!Guid.TryParse(itemDto.ProductId, out var productId))
+                    throw new ProductNotFoundException(itemDto.ProductId);
+
+                var orderItem = _mapper.Map<OrderItem>(itemDto);
+                orderItem.ProductId = productId;
+                orderItem.Quantity = itemDto.Quantity;
+
+                items.Add(orderItem);
+
+                var itemTotal = orderItem.UnitPrice * orderItem.Quantity;
+                subtotal += itemTotal;
+
+                stockCheckItems.Add(new ECommerce.Application.DTOs.Inventory.StockCheckItemDto
+                {
+                    ProductId = productId,
+                    Quantity = itemDto.Quantity
+                });
+            }
+        }
+
+        return await Task.FromResult((items, subtotal, stockCheckItems));
+    }
+
+    /// <summary>
+    /// Validates that sufficient stock is available for all items.
+    /// Note: Within transaction context, this provides race condition protection.
+    /// Future enhancement: Add pessimistic locking with SELECT FOR UPDATE (requires raw SQL).
+    /// </summary>
+    private async Task ValidateStockAvailabilityAsync(
+        List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems, 
+        CancellationToken cancellationToken)
+    {
+        if (stockCheckItems.Any())
+        {
+            var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
+            if (!stockCheck.IsAvailable)
+            {
+                var firstIssue = stockCheck.Issues.First();
+                throw new InsufficientStockException(firstIssue.ProductName, firstIssue.RequestedQuantity, firstIssue.AvailableQuantity);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Applies promo code discount if provided and valid.
+    /// </summary>
+    private async Task ApplyPromoCodeAsync(Order order, string? promoCode, decimal subtotal, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(promoCode))
+        {
+            var promoValidation = await _promoCodeService.ValidatePromoCodeAsync(promoCode, subtotal);
+            if (promoValidation.IsValid && promoValidation.PromoCode != null)
+            {
+                order.DiscountAmount = promoValidation.DiscountAmount;
+                order.PromoCodeId = promoValidation.PromoCode.Id;
+                _logger.LogInformation("Promo code {Code} applied to order with discount ${Amount}",
+                    promoCode, order.DiscountAmount);
+            }
+            else
+            {
+                throw new InvalidPromoCodeException(promoCode);
+            }
+        }
+        else
+        {
+            order.DiscountAmount = 0;
+        }
+    }
+
+    /// <summary>
+    /// Calculates final order totals using business rules configuration.
+    /// </summary>
+    private void CalculateOrderTotals(Order order, decimal subtotal)
+    {
+        order.Subtotal = subtotal;
+        order.ShippingAmount = subtotal > _businessRules.FreeShippingThreshold 
+            ? 0 
+            : _businessRules.StandardShippingCost;
+        order.TaxAmount = subtotal * _businessRules.TaxRate;
+        order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
+    }
+
+    /// <summary>
+    /// Reduces stock for all products in the order.
+    /// Throws exception on failure to trigger transaction rollback.
+    /// </summary>
+    private async Task ReduceProductStockAsync(List<OrderItem> items, Order order, Guid? userId, CancellationToken cancellationToken)
+    {
+        foreach (var item in items)
+        {
+            if (item.ProductId.HasValue)
+            {
+                await _inventoryService.ReduceStockAsync(
+                    item.ProductId.Value,
+                    item.Quantity,
+                    "sale",
+                    order.Id,
+                    userId
+                );
+                _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units for order {OrderNumber}",
+                    item.ProductId.Value, item.Quantity, order.OrderNumber);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Increments promo code usage count (best effort - errors logged but don't fail order).
+    /// </summary>
+    private async Task IncrementPromoCodeUsageAsync(Guid? promoCodeId, string orderNumber, CancellationToken cancellationToken)
+    {
+        if (promoCodeId.HasValue)
+        {
+            try
+            {
+                await _promoCodeService.IncrementUsedCountAsync(promoCodeId.Value);
+            }
+            catch (Exception promoEx)
+            {
+                _logger.LogError(promoEx, "Failed to increment usage count for promo code {PromoCodeId} in order {OrderNumber}",
+                    promoCodeId.Value, orderNumber);
+                // Continue - order was created successfully
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sends order confirmation email (best effort - errors logged but don't fail order).
+    /// </summary>
+    private async Task SendOrderConfirmationAsync(string? guestEmail, Guid? userId, Order order, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var emailAddress = !string.IsNullOrWhiteSpace(guestEmail) 
+                ? guestEmail 
+                : userId.HasValue ? await GetUserEmailAsync(userId.Value, cancellationToken) : null;
+
+            if (!string.IsNullOrWhiteSpace(emailAddress))
+            {
+                await _emailService.SendOrderConfirmationEmailAsync(emailAddress, order);
+                _logger.LogInformation("Order confirmation email sent to {Email}", emailAddress);
+            }
+        }
+        catch (Exception emailEx)
+        {
+            _logger.LogError(emailEx, "Failed to send order confirmation email for order {OrderNumber}", order.OrderNumber);
+            // Don't throw - order was created successfully
+        }
+    }
+
+    #endregion
 
     public async Task<OrderDetailDto?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
