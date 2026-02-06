@@ -23,6 +23,7 @@ export const productApi = createApi({
       return headers;
     },
   }),
+  keepUnusedDataFor: 60, // Keep cache for 60 seconds
   endpoints: (builder) => ({
     getProducts: builder.query<
       PaginatedResult<Product>,

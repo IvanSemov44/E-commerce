@@ -25,6 +25,7 @@ export const ordersApi = createApi({
       return headers;
     },
   }),
+  keepUnusedDataFor: 60, // Keep cache for 60 seconds
   tagTypes: ['Order'],
   endpoints: (builder) => ({
     createOrder: builder.mutation<OrderResponse, CreateOrderRequest>({

@@ -22,6 +22,7 @@ export const cartApi = createApi({
       return headers;
     },
   }),
+  keepUnusedDataFor: 60, // Keep cache for 60 seconds
   tagTypes: ['Cart'],
   endpoints: (builder) => ({
     getCart: builder.query<CartDto, void>({

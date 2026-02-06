@@ -16,6 +16,7 @@ export const profileApi = createApi({
       return headers;
     },
   }),
+  keepUnusedDataFor: 60, // Keep cache for 60 seconds
   tagTypes: ['Profile'],
   endpoints: (builder) => ({
     getProfile: builder.query<UserProfile, void>({

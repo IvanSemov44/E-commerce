@@ -16,6 +16,7 @@ export const wishlistApi = createApi({
       return headers;
     },
   }),
+  keepUnusedDataFor: 60, // Keep cache for 60 seconds
   tagTypes: ['Wishlist', 'WishlistCheck'],
   endpoints: (builder) => ({
     getWishlist: builder.query<WishlistResponse, void>({

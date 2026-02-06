@@ -23,8 +23,7 @@ export const reviewsApi = createApi({
       }
       return headers;
     },
-  }),
-  tagTypes: ['Review'],
+  }),  keepUnusedDataFor: 60, // Keep cache for 60 seconds  tagTypes: ['Review'],
   endpoints: (builder) => ({
     getProductReviews: builder.query<ProductReview[], string>({
       query: (productId) => `/reviews/product/${productId}`,

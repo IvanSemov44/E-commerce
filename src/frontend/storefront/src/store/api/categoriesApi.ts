@@ -16,6 +16,7 @@ export const categoriesApi = createApi({
       return headers;
     },
   }),
+  keepUnusedDataFor: 60, // Keep cache for 60 seconds
   endpoints: (builder) => ({
     getCategories: builder.query<Category[], void>({
       query: () => '/categories',

@@ -29,6 +29,7 @@ export const authApi = createApi({
       return headers;
     },
   }),
+  keepUnusedDataFor: 60, // Keep cache for 60 seconds
   endpoints: (builder) => ({
     register: builder.mutation<AuthResponse, RegisterRequest>({
       query: (credentials) => ({
