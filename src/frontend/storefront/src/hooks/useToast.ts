@@ -1,0 +1,58 @@
+/**
+ * useToast Hook - Easy access to toast notifications
+ * Provides methods: success, error, warning, info, clear
+ */
+
+import { useCallback } from 'react';
+import { useAppDispatch } from '../store/hooks';
+import { addToast, removeToast, clearToasts as clearAllToasts } from '../store/slices/toastSlice';
+import type { ToastVariant } from '../store/slices/toastSlice';
+import { config } from '../config';
+
+interface UseToastReturn {
+  success: (message: string, duration?: number) => string;
+  error: (message: string, duration?: number) => string;
+  warning: (message: string, duration?: number) => string;
+  info: (message: string, duration?: number) => string;
+  clear: (id: string) => void;
+  clearAll: () => void;
+}
+
+export function useToast(): UseToastReturn {
+  const dispatch = useAppDispatch();
+
+  const showToast = useCallback(
+    (message: string, variant: ToastVariant, duration?: number): string => {
+      const id = `toast-${Date.now()}-${Math.random()}`;
+      const toastDuration = duration ?? config.ui.toastDuration;
+
+      dispatch(
+        addToast({
+          id,
+          message,
+          variant,
+          duration: toastDuration,
+        })
+      );
+
+      // Auto-remove after duration
+      if (toastDuration > 0) {
+        setTimeout(() => {
+          dispatch(removeToast(id));
+        }, toastDuration);
+      }
+
+      return id;
+    },
+    [dispatch]
+  );
+
+  return {
+    success: (message, duration) => showToast(message, 'success', duration),
+    error: (message, duration) => showToast(message, 'error', duration),
+    warning: (message, duration) => showToast(message, 'warning', duration),
+    info: (message, duration) => showToast(message, 'info', duration),
+    clear: (id) => dispatch(removeToast(id)),
+    clearAll: () => dispatch(clearAllToasts()),
+  };
+}

@@ -4,6 +4,8 @@ import { useAppDispatch, useAppSelector } from './store/hooks';
 import { setUser } from './store/slices/authSlice';
 import { useGetProfileQuery } from './store/api/profileApi';
 import { useCartSync, useErrorHandler } from './hooks';
+import ToastContainer from './components/Toast/ToastContainer';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import Home from './pages/Home';
@@ -139,7 +141,10 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <ErrorBoundary>
+        <ToastContainer />
+        <AppContent />
+      </ErrorBoundary>
     </Router>
   );
 }

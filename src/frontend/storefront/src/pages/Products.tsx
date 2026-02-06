@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import CategoryFilter from '../components/CategoryFilter';
 import PageHeader from '../components/PageHeader';
 import QueryRenderer from '../components/QueryRenderer';
+import { ProductsGridSkeleton } from '../components/Skeletons';
 import {
   ProductFilters,
   ProductSearchBar,
@@ -156,6 +157,7 @@ export default function Products() {
             data={result}
             errorMessage="Failed to load products. Please try again later."
             isEmpty={(data) => !data || data.items.length === 0}
+            loadingSkeleton={{ custom: <ProductsGridSkeleton count={12} /> }}
             emptyState={{
               icon: (
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

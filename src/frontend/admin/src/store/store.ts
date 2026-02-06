@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from './slices/authSlice';
+import toastReducer from './slices/toastSlice';
 import { authApi } from './api/authApi';
 import { productsApi } from './api/productsApi';
 import { ordersApi } from './api/ordersApi';
@@ -12,6 +13,7 @@ import { inventoryApi } from './api/inventoryApi';
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    toast: toastReducer,
     [authApi.reducerPath]: authApi.reducer,
     [productsApi.reducerPath]: productsApi.reducer,
     [ordersApi.reducerPath]: ordersApi.reducer,

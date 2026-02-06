@@ -5,3 +5,4 @@ export { useAuth } from './useAuth';
 export { useErrorHandler } from './useErrorHandler';
 export { useLocalStorage } from './useLocalStorage';
 export { useCartSync } from './useCartSync';
+export { useToast } from './useToast';

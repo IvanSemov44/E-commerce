@@ -6,6 +6,8 @@ import AdminLayout from './layouts/AdminLayout';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/Toast/ToastContainer';
 
 // Pages
 import Login from './pages/Login';
@@ -25,30 +27,33 @@ function App() {
   return (
     <Provider store={store}>
       <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
+        <ErrorBoundary>
+          <ToastContainer />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/reviews" element={<Reviews />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/promo-codes" element={<PromoCodes />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
+            {/* Protected Routes */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/reviews" element={<Reviews />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/promo-codes" element={<PromoCodes />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
       </Router>
     </Provider>
   );

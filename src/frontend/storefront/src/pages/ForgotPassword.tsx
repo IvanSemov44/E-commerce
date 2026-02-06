@@ -1,28 +1,27 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForgotPasswordMutation } from '../store/api/authApi';
+import { useToast } from '../hooks';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
-import ErrorAlert from '../components/ErrorAlert';
 import styles from './Login.module.css';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess(false);
 
     try {
       await forgotPassword({ email }).unwrap();
       setSuccess(true);
+      toast.success('Password reset link sent! Check your email.');
     } catch (err: any) {
-      setError(err?.data?.message || 'An error occurred. Please try again.');
+      toast.error(err?.data?.message || 'An error occurred. Please try again.');
     }
   };
 
@@ -30,12 +29,6 @@ export default function ForgotPassword() {
     <div className={styles.container}>
       <Card variant="elevated" padding="lg" className={styles.card}>
         <h1 className={styles.title}>Forgot Password</h1>
-
-        {error && (
-          <div className={styles.errorAlert}>
-            <ErrorAlert message={error} onDismiss={() => setError('')} />
-          </div>
-        )}
 
         {success ? (
           <div className={styles.centered}>

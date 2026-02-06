@@ -4,17 +4,17 @@ import { useRegisterMutation } from '../store/api/authApi';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess } from '../store/slices/authSlice';
 import useForm from '../hooks/useForm';
+import { useToast } from '../hooks';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
-import ErrorAlert from '../components/ErrorAlert';
 import styles from './Register.module.css';
 
 export default function Register() {
-  const [error, setError] = useState('');
   const [register, { isLoading }] = useRegisterMutation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const form = useForm({
     initialValues: {
@@ -37,18 +37,18 @@ export default function Register() {
       return errors;
     },
     onSubmit: async (values) => {
-      setError('');
       try {
         const { confirmPassword, ...registerData } = values;
         const response = await register(registerData).unwrap();
         if (response.success && response.user && response.token) {
           dispatch(loginSuccess({ user: response.user, token: response.token }));
+          toast.success('Registration successful!');
           navigate('/');
         } else {
-          setError(response.message || 'Registration failed');
+          toast.error(response.message || 'Registration failed');
         }
       } catch (err: any) {
-        setError(err?.data?.message || 'An error occurred during registration');
+        toast.error(err?.data?.message || 'An error occurred during registration');
       }
     },
   });
@@ -57,12 +57,6 @@ export default function Register() {
     <div className={styles.container}>
       <Card variant="elevated" padding="lg" className={styles.card}>
         <h1 className={styles.title}>Register</h1>
-
-        {error && (
-          <div className={styles.errorAlert}>
-            <ErrorAlert message={error} onDismiss={() => setError('')} />
-          </div>
-        )}
 
         <form onSubmit={form.handleSubmit} className={styles.form}>
           <div className={styles.nameFields}>

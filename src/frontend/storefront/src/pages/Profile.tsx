@@ -5,7 +5,7 @@ import { updateUser } from '../store/slices/authSlice';
 import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
 import ErrorAlert from '../components/ErrorAlert';
-import LoadingSkeleton from '../components/LoadingSkeleton';
+import { ProfileSkeleton } from '../components/Skeletons';
 import { ProfileHeader, ProfileForm, ProfileMessages, AccountDetails } from './components/Profile';
 import styles from './Profile.module.css';
 
@@ -97,7 +97,9 @@ export default function Profile() {
       {profileError ? (
         <ErrorAlert message="Failed to load profile. Please try again later." />
       ) : isLoadingProfile ? (
-        <LoadingSkeleton count={1} type="card" />
+        <Card variant="elevated" padding="lg">
+          <ProfileSkeleton />
+        </Card>
       ) : (
         <div className={styles.content}>
           <Card variant="elevated" padding="lg">

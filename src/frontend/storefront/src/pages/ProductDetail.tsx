@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import useProductDetails from '../hooks/useProductDetails';
 import Card from '../components/ui/Card';
 import ErrorAlert from '../components/ErrorAlert';
-import LoadingSkeleton from '../components/LoadingSkeleton';
+import { ProductSkeleton } from '../components/Skeletons';
 import EmptyState from '../components/EmptyState';
 import ReviewForm from '../components/ReviewForm';
 import ReviewList from '../components/ReviewList';
@@ -41,7 +41,9 @@ export default function ProductDetail() {
     return (
       <div className={styles.container}>
         <div className={styles.content}>
-          <LoadingSkeleton count={1} type="image" />
+          <Card variant="default" padding="lg">
+            <ProductSkeleton />
+          </Card>
         </div>
       </div>
     );

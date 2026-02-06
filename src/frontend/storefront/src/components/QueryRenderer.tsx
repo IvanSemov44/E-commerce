@@ -36,6 +36,11 @@ export default function QueryRenderer<T>({
   }
 
   if (isLoading) {
+    // Use custom loading component if provided
+    if (loadingSkeleton.custom) {
+      return <>{loadingSkeleton.custom}</>;
+    }
+    
     return (
       <LoadingSkeleton
         count={loadingSkeleton.count}

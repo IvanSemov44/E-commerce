@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../store/api/authApi';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess, type AdminUser } from '../store/slices/authSlice';
+import { useToast } from '../hooks';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -11,17 +12,16 @@ import styles from './LoginPage.module.css';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [login, { isLoading }] = useLoginMutation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (!email || !password) {
-      setError('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
@@ -34,12 +34,13 @@ export default function Login() {
 
       if (response.success && user && token) {
         dispatch(loginSuccess({ user: user as AdminUser, token }));
+        toast.success('Login successful!');
         navigate('/');
       } else {
-        setError(response.message || 'Login failed');
+        toast.error(response.message || 'Login failed');
       }
     } catch (err: any) {
-      setError(err?.data?.message || 'An error occurred during login');
+      toast.error(err?.data?.message || 'An error occurred during login');
     }
   };
 
@@ -56,13 +57,6 @@ export default function Login() {
             <CardTitle>Administrator Login</CardTitle>
           </CardHeader>
           <CardContent className={styles.cardContent}>
-            {error && (
-              <div className={styles.error}>
-                <div className={styles.errorIcon}>⚠️</div>
-                <p>{error}</p>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className={styles.form}>
               <Input
                 label="Email Address"

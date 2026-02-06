@@ -7,6 +7,7 @@ import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } fro
 import Button from '../components/ui/Button';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
+import { CartSkeleton } from '../components/Skeletons';
 import { CartItemList, CartSummary } from './components/Cart';
 import styles from './Cart.module.css';
 
@@ -108,7 +109,9 @@ export default function Cart() {
       <div className={styles.content}>
         <PageHeader title="Shopping Cart" />
 
-        {displayItems.length === 0 && !isLoading ? (
+        {isLoading ? (
+          <CartSkeleton />
+        ) : displayItems.length === 0 && !isLoading ? (
           <EmptyState
             icon={
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
