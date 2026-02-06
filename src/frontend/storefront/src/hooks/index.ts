@@ -12,3 +12,4 @@ export { useToast } from './useToast';
 export { useProductFilters } from './useProductFilters';
 export { useProfileForm } from './useProfileForm';
 export { useOnlineStatus } from './useOnlineStatus';
+export { usePerformanceMonitor } from './usePerformanceMonitor';
