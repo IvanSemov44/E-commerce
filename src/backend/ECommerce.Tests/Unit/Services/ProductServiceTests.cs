@@ -266,14 +266,15 @@ public class ProductServiceTests
     public async Task SearchProductsAsync_WithQuery_ReturnsMatchingProducts()
     {
         // Arrange
-        var all = new List<Product>
+        var matchingProducts = new List<Product>
         {
-            TestDataFactory.CreateProduct(name: "Alpha"),
-            TestDataFactory.CreateProduct(name: "Beta Product"),
-            TestDataFactory.CreateProduct(name: "Gamma")
+            TestDataFactory.CreateProduct(name: "Beta Product")
         };
 
-        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(all);
+        // Note: EF.Functions.Like() is not supported in LINQ to Objects, so we return pre-filtered results
+        var mockQueryable = matchingProducts.AsAsyncQueryable();
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns(mockQueryable);
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name });
 

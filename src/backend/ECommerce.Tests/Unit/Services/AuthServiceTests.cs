@@ -56,6 +56,12 @@ public class AuthServiceTests
         _mockLogger = new Mock<ILogger<AuthService>>();
         _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
 
+        // Mock RefreshTokens repository
+        var mockRefreshTokenRepo = new Mock<IRepository<RefreshToken>>();
+        mockRefreshTokenRepo.Setup(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.RefreshTokens).Returns(mockRefreshTokenRepo.Object);
+
         _service = new AuthService(_mockUnitOfWork.Object, _mockConfiguration.Object, _mockEmailService.Object, _mockMapper.Object, _mockLogger.Object);
     }
 
@@ -97,7 +103,7 @@ public class AuthServiceTests
         result.Token.Should().NotBeNullOrEmpty();
 
         _mockUserRepository.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Exactly(2)); // Once for user, once for refresh token
     }
 
     [TestMethod]

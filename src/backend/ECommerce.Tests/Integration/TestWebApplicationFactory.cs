@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -103,6 +104,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll(typeof(IEmailService));
             services.AddScoped<IEmailService, NoOpEmailService>();
 
+            // Replace webhook verification service with test implementation (always returns true)
+            services.RemoveAll(typeof(IWebhookVerificationService));
+            services.AddScoped<IWebhookVerificationService, TestWebhookVerificationService>();
+
             // Use a separate internal service provider for EF InMemory to avoid multiple provider registrations
             var inMemoryServiceProvider = new ServiceCollection()
                 .AddEntityFrameworkInMemoryDatabase()
@@ -112,6 +117,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.UseInMemoryDatabase("IntegrationTestsDb");
                 options.UseInternalServiceProvider(inMemoryServiceProvider);
+                // Suppress transaction warnings for InMemory provider (doesn't support transactions)
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
             // Replace authentication with conditional test scheme
@@ -322,5 +329,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private class TestWebhookVerificationService : IWebhookVerificationService
+    {
+        public bool VerifySignature(string payload, string signature) => true;
     }
 }

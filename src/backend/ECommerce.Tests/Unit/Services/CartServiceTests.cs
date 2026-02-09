@@ -502,8 +502,9 @@ public class CartServiceTests
         _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
             .ReturnsAsync(cart);
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>()))
-            .ReturnsAsync(product);
+        var products = new List<Product> { product }.AsAsyncQueryable();
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns(products);
 
         // Act
         Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
@@ -540,8 +541,9 @@ public class CartServiceTests
         _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
             .ReturnsAsync(cart);
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product?)null);
+        var products = new List<Product>().AsAsyncQueryable();
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns(products);
 
         // Act
         Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
@@ -562,8 +564,9 @@ public class CartServiceTests
         _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
             .ReturnsAsync(cart);
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>()))
-            .ReturnsAsync(product);
+        var products = new List<Product> { product }.AsAsyncQueryable();
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns(products);
 
         // Act
         Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
@@ -584,8 +587,9 @@ public class CartServiceTests
         _mockCartRepository.Setup(r => r.GetCartWithItemsAsync(cart.Id))
             .ReturnsAsync(cart);
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>()))
-            .ReturnsAsync(product);
+        var products = new List<Product> { product }.AsAsyncQueryable();
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns(products);
 
         // Act
         Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);

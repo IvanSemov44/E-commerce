@@ -111,7 +111,7 @@ public class GlobalExceptionMiddlewareTests
     public async Task InvokeAsync_WhenGenericException_Returns500()
     {
         // Arrange
-        var exception = new InvalidOperationException("Something went wrong");
+        var exception = new Exception("Something went wrong");
         var response = new MemoryStream();
         _httpContext.Response.Body = response;
 
