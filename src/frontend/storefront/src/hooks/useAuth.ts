@@ -10,7 +10,7 @@ import {
   logout,
   setUser,
 } from '../store/slices/authSlice';
-import type { AuthUser, LoginRequest, RegisterRequest } from '../types';
+import type { AuthUser } from '../types';
 import { config } from '../config';
 import { useErrorHandler } from './useErrorHandler';
 import { useLocalStorage } from './useLocalStorage';

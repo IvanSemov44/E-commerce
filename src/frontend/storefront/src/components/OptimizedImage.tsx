@@ -76,7 +76,7 @@ export default function OptimizedImage({
     onLoad?.();
   };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageError = (_e: React.SyntheticEvent<HTMLImageElement>) => {
     const error = new Error(`Failed to load image: ${src}`);
     setError(error);
     onError?.(error);

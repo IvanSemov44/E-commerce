@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { UserProfile, UpdateProfileRequest, ApiResponse } from '../../types';
+import type { UserProfile, UpdateProfileRequest, ApiResponse } from '../../types';
 import { config } from '../../config';
 
 export const profileApi = createApi({

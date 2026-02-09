@@ -1,5 +1,7 @@
-import { defineConfig } from 'vite'
+/// <reference types="vitest" />
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+// @ts-ignore - Type definitions not available for rollup-plugin-visualizer
 import visualizer from 'rollup-plugin-visualizer'
 import path from 'path'
 
@@ -19,11 +21,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  esbuild: {
+    // Drop console and debugger statements in production
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/e2e/**', // Exclude Playwright E2E tests
+      '**/.{idea,git,cache,output,temp}/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -56,18 +68,11 @@ export default defineConfig({
           'page-checkout': ['./src/pages/Checkout.tsx'],
           'page-auth': ['./src/pages/Login.tsx', './src/pages/Register.tsx'],
           'page-account': ['./src/pages/Profile.tsx', './src/pages/OrderHistory.tsx'],
-
-          // UI components
-          'ui-components': ['./src/components/ui/'],
         },
       },
     },
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: process.env.NODE_ENV === 'production', // Remove console in prod
-      },
-    },
+    // Use esbuild minification (faster than terser)
+    minify: 'esbuild',
     // Source maps for debugging
     sourcemap: process.env.NODE_ENV !== 'production',
   },

@@ -3,8 +3,7 @@
  * Fallback UI displayed when error boundary catches error
  */
 
-import { useNavigate } from 'react-router-dom';
-import Button from './ui/Button';
+import Button from '../components/ui/Button';
 import styles from './ErrorPage.module.css';
 
 interface ErrorPageProps {
@@ -18,8 +17,6 @@ export default function ErrorPage({
   isDevelopment,
   onReset,
 }: ErrorPageProps) {
-  const navigate = useNavigate();
-
   return (
     <div className={styles.container}>
       <div className={styles.content}>

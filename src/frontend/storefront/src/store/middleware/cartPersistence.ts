@@ -1,10 +1,9 @@
-import { Middleware } from '@reduxjs/toolkit';
-import { RootState } from '../store';
+import type { CartItem } from '../slices/cartSlice';
 
 const CART_STORAGE_KEY = 'ecommerce_cart';
 const CART_ACTIONS = ['cart/addItem', 'cart/removeItem', 'cart/updateQuantity', 'cart/clearCart'];
 
-export const saveCartToLocalStorage = (items: any[]): void => {
+export const saveCartToLocalStorage = (items: CartItem[]): void => {
   if (typeof window === 'undefined') return;
   try {
     if (items.length === 0) {
@@ -17,7 +16,7 @@ export const saveCartToLocalStorage = (items: any[]): void => {
   }
 };
 
-export const cartPersistenceMiddleware: Middleware<{}, RootState> = (store) => (next) => (action) => {
+export const cartPersistenceMiddleware = (store: any) => (next: any) => (action: any) => {
   const result = next(action);
 
   if (CART_ACTIONS.includes(action.type)) {

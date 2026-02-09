@@ -7,7 +7,7 @@ COPY . .
 
 # Restore and build
 RUN dotnet restore
-RUN dotnet build -c Release -o /app/build
+RUN dotnet publish -c Release -o /app/publish
 
 # Publish stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
@@ -16,7 +16,7 @@ WORKDIR /app
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/build .
+COPY --from=build /app/publish .
 
 # Expose port
 EXPOSE 5000

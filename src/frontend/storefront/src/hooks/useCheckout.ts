@@ -11,14 +11,16 @@
 import { useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { selectCartItems, selectCartSubtotal, clearCart } from '../store/slices/cartSlice';
+import type { CartItem } from '../store/slices/cartSlice';
 import { useCreateOrderMutation } from '../store/api/ordersApi';
 import { useClearCartMutation } from '../store/api/cartApi';
 import { useValidatePromoCodeMutation } from '../store/api/promoCodeApi';
 import { useCheckAvailabilityMutation } from '../store/api/inventoryApi';
+import type { StockIssue } from '../store/api/inventoryApi';
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
 import useForm from './useForm';
 import { validators } from '../utils/validation';
-import type { CreateOrderRequest } from '../store/api/ordersApi';
+import type { CreateOrderRequest } from '../types';
 
 interface ShippingFormData {
   firstName: string;
@@ -58,7 +60,7 @@ interface UseCheckoutReturn {
   error: string | null;
 
   // Cart info
-  cartItems: typeof selectCartItems;
+  cartItems: CartItem[];
   subtotal: number;
 
   // Totals
@@ -142,7 +144,7 @@ export function useCheckout(): UseCheckoutReturn {
     try {
       // Check stock availability before placing order
       const stockCheckResult = await checkAvailabilityMutation({
-        items: cartItems.map((item) => ({
+        items: cartItems.map((item: CartItem) => ({
           productId: item.id,
           quantity: item.quantity,
         })),
@@ -150,14 +152,14 @@ export function useCheckout(): UseCheckoutReturn {
 
       if (!stockCheckResult.isAvailable) {
         const issueMessages = stockCheckResult.issues
-          .map((issue) => `${issue.productName}: ${issue.message}`)
+          .map((issue: StockIssue) => `${issue.productName}: ${issue.message}`)
           .join(', ');
         setError(`Some items are no longer available: ${issueMessages}`);
         return;
       }
 
       const orderData: CreateOrderRequest = {
-        items: cartItems.map((item) => ({
+        items: cartItems.map((item: CartItem) => ({
           productId: item.id,
           productName: item.name,
           price: item.price,
@@ -218,7 +220,7 @@ export function useCheckout(): UseCheckoutReturn {
 
   // Adapter for backward compatibility
   const setFormData = useCallback((data: Partial<ShippingFormData>) => {
-    form.setValues((prev) => ({ ...prev, ...data }));
+    form.setValues({ ...form.values, ...data });
   }, [form]);
 
   // Validate promo code

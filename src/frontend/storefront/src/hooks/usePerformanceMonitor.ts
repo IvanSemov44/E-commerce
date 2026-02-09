@@ -29,7 +29,7 @@ interface UsePerformanceMonitorOptions {
 export function usePerformanceMonitor(
   options: UsePerformanceMonitorOptions = {}
 ): void {
-  const { onMetric, enableLogging = process.env.NODE_ENV === 'development' } = options;
+  const { onMetric, enableLogging = import.meta.env.MODE === 'development' } = options;
 
   useEffect(() => {
     // Helper to log metric
@@ -52,7 +52,7 @@ export function usePerformanceMonitor(
       try {
         const observer = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          const lastEntry = entries[entries.length - 1];
+          const lastEntry = entries[entries.length - 1] as any; // LCP entry type
           const value = lastEntry.renderTime || lastEntry.loadTime;
 
           const metric: PerformanceMetric = {
@@ -78,10 +78,11 @@ export function usePerformanceMonitor(
       try {
         const observer = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
+            const fidEntry = entry as any; // FID entry type
             const metric: PerformanceMetric = {
               name: 'First Input Delay (FID)',
-              value: entry.processingDuration,
-              rating: entry.processingDuration < 100 ? 'good' : entry.processingDuration < 300 ? 'needs-improvement' : 'poor',
+              value: fidEntry.processingDuration,
+              rating: fidEntry.processingDuration < 100 ? 'good' : fidEntry.processingDuration < 300 ? 'needs-improvement' : 'poor',
               timestamp: Date.now(),
             };
 

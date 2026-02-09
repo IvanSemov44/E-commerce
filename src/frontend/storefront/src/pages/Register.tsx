@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRegisterMutation } from '../store/api/authApi';
 import { useAppDispatch } from '../store/hooks';

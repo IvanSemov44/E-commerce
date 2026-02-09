@@ -5,7 +5,8 @@
 
 import { useCallback } from 'react';
 import { useAppDispatch } from '../store/hooks';
-import { addToast, removeToast, clearToasts, ToastVariant } from '../store/slices/toastSlice';
+import { addToast, removeToast, clearToasts } from '../store/slices/toastSlice';
+import type { ToastVariant } from '../store/slices/toastSlice';
 import config from '../config';
 
 interface UseToastReturn {
@@ -15,6 +16,14 @@ interface UseToastReturn {
   info: (message: string, duration?: number) => string;
   clear: (id: string) => void;
   clearAll: () => void;
+  toast: {
+    success: (message: string, duration?: number) => string;
+    error: (message: string, duration?: number) => string;
+    warning: (message: string, duration?: number) => string;
+    info: (message: string, duration?: number) => string;
+    clear: (id: string) => void;
+    clearAll: () => void;
+  };
 }
 
 export const useToast = (): UseToastReturn => {
@@ -44,12 +53,27 @@ export const useToast = (): UseToastReturn => {
     [dispatch]
   );
 
+  const success = (message: string, duration?: number) => showToast(message, 'success', duration);
+  const error = (message: string, duration?: number) => showToast(message, 'error', duration);
+  const warning = (message: string, duration?: number) => showToast(message, 'warning', duration);
+  const info = (message: string, duration?: number) => showToast(message, 'info', duration);
+  const clear = (id: string) => dispatch(removeToast(id));
+  const clearAll = () => dispatch(clearToasts());
+
   return {
-    success: (message: string, duration?: number) => showToast(message, 'success', duration),
-    error: (message: string, duration?: number) => showToast(message, 'error', duration),
-    warning: (message: string, duration?: number) => showToast(message, 'warning', duration),
-    info: (message: string, duration?: number) => showToast(message, 'info', duration),
-    clear: (id: string) => dispatch(removeToast(id)),
-    clearAll: () => dispatch(clearToasts()),
+    success,
+    error,
+    warning,
+    info,
+    clear,
+    clearAll,
+    toast: {
+      success,
+      error,
+      warning,
+      info,
+      clear,
+      clearAll,
+    },
   };
 };

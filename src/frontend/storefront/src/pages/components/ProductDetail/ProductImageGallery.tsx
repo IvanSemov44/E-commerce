@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DEFAULT_PRODUCT_IMAGE } from '../../../utils/constants';
-import type { ProductImage } from '../../../store/api/productApi';
+import type { ProductImage } from '../../../types';
 import styles from './ProductImageGallery.module.css';
 
 interface ProductImageGalleryProps {

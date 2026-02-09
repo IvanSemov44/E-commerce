@@ -14,6 +14,7 @@ interface QueryRendererProps<T> {
   loadingSkeleton?: {
     count?: number;
     type?: 'card' | 'text' | 'image';
+    custom?: React.ReactNode;
   };
   emptyState?: {
     icon?: React.ReactNode;

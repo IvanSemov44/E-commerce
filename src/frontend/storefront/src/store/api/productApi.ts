@@ -1,13 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import {
+import type {
   Product,
   ProductDetail,
-  ProductImage,
-  ProductCategory,
   PaginatedResult,
   ApiResponse,
 } from '../../types';
 import { config } from '../../config';
+
+// Re-export types for components
+export type { Product, ProductDetail, ProductImage, ProductCategory } from '../../types';
 
 export const productApi = createApi({
   reducerPath: 'productApi',
@@ -53,7 +54,7 @@ export const productApi = createApi({
         return `/products?${params}`;
       },
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>
-        response.data || { items: [], totalCount: 0, page: 1, pageSize: 20 },
+        response.data || { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0, hasNext: false, hasPrevious: false },
     }),
     getProductBySlug: builder.query<ProductDetail, string>({
       query: (slug) => `/products/slug/${slug}`,

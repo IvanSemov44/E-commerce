@@ -10,9 +10,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { selectCartItems, updateQuantity, removeItem } from '../store/slices/cartSlice';
-import { useGetCartQuery, useUpdateCartItemMutation, useRemoveFromCartMutation } from '../store/api/cartApi';
+import { useUpdateCartItemMutation, useRemoveFromCartMutation } from '../store/api/cartApi';
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
 import { useCartSync } from './useCartSync';
+import { useToast } from './useToast';
 
 interface DisplayCartItem {
   id: string;
@@ -38,6 +39,7 @@ interface UseCartReturn {
   totals: CartTotals;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isUpdating: boolean;
   handleUpdateQuantity: (id: string, quantity: number) => Promise<void>;
   handleRemove: (id: string) => Promise<void>;
 }
@@ -48,6 +50,7 @@ export function useCart(): UseCartReturn {
   const localCartItems = useAppSelector(selectCartItems);
   const [displayItems, setDisplayItems] = useState<DisplayCartItem[]>(localCartItems);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { error: errorToast } = useToast();
 
   // Use cart sync hook for backend synchronization
   const { backendCart, isLoading: cartLoading } = useCartSync({ enabled: isAuthenticated });
@@ -114,7 +117,7 @@ export function useCart(): UseCartReturn {
         }
       } catch (error) {
         console.error('Failed to update cart item:', error);
-        toast.error('Failed to update item quantity');
+        errorToast('Failed to update item quantity');
       } finally {
         setIsUpdating(false);
       }
@@ -137,7 +140,7 @@ export function useCart(): UseCartReturn {
         }
       } catch (error) {
         console.error('Failed to remove cart item:', error);
-        toast.error('Failed to remove item');
+        errorToast('Failed to remove item');
       } finally {
         setIsUpdating(false);
       }
@@ -150,6 +153,7 @@ export function useCart(): UseCartReturn {
     totals,
     isLoading: cartLoading,
     isAuthenticated,
+    isUpdating,
     handleUpdateQuantity,
     handleRemove,
   };

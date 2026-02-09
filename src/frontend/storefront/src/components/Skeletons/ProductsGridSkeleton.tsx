@@ -3,7 +3,6 @@
  */
 
 import ProductSkeleton from './ProductSkeleton';
-import styles from './Skeleton.module.css';
 
 interface ProductsGridSkeletonProps {
   count?: number;

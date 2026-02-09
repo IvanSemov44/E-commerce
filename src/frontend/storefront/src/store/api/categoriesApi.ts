@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { Category, CategoryDetailDto, ApiResponse } from '../../types';
+import type { Category, CategoryDetailDto, ApiResponse } from '../../types';
 import { config } from '../../config';
 
 export const categoriesApi = createApi({

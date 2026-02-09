@@ -1,6 +1,6 @@
 import ProductCard from '../../../components/ProductCard';
 import PaginatedView from '../../../components/PaginatedView';
-import type { Product } from '../../../store/api/productApi';
+import type { Product } from '../../../types';
 import styles from './ProductGrid.module.css';
 
 interface ProductGridProps {

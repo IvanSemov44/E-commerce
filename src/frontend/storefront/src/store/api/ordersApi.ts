@@ -1,11 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import {
+import type {
   Order,
-  OrderItem,
-  CreateOrderRequest,
-  CreateOrderItemRequest,
   OrderResponse,
-  Address,
+  CreateOrderRequest,
   ApiResponse,
   PaginatedResult,
 } from '../../types';
@@ -40,7 +37,7 @@ export const ordersApi = createApi({
     }),
     getOrders: builder.query<any[], void>({
       query: () => '/orders/my-orders',
-      transformResponse: (response: ApiResponse<PaginatedResult<OrderListItem>>) => {
+      transformResponse: (response: ApiResponse<PaginatedResult<Order>>) => {
         return response.data?.items || [];
       },
       providesTags: ['Order'],

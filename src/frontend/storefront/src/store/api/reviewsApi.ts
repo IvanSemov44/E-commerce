@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import {
+import type {
   Review,
   CreateReviewRequest,
   UpdateReviewRequest,
@@ -23,18 +23,19 @@ export const reviewsApi = createApi({
       }
       return headers;
     },
-  }),  keepUnusedDataFor: 60, // Keep cache for 60 seconds  tagTypes: ['Review'],
+  }),  keepUnusedDataFor: 60, // Keep cache for 60 seconds
+  tagTypes: ['Review'] as const,
   endpoints: (builder) => ({
     getProductReviews: builder.query<ProductReview[], string>({
       query: (productId) => `/reviews/product/${productId}`,
       transformResponse: (response: ApiResponse<ProductReview[]>) => response.data || [],
-      providesTags: ['Review'],
+      providesTags: (result) => result ? [{ type: 'Review' as const, id: 'LIST' }] : [],
     }),
 
     getMyReviews: builder.query<ProductReview[], void>({
       query: () => '/reviews/my-reviews',
       transformResponse: (response: ApiResponse<ProductReview[]>) => response.data || [],
-      providesTags: ['Review'],
+      providesTags: (result) => result ? [{ type: 'Review' as const, id: 'MY_LIST' }] : [],
     }),
 
     createReview: builder.mutation<ProductReview, CreateReviewRequest>({
@@ -44,7 +45,7 @@ export const reviewsApi = createApi({
         body: reviewData,
       }),
       transformResponse: (response: ApiResponse<ProductReview>) => response.data || {} as ProductReview,
-      invalidatesTags: ['Review'],
+      invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
     }),
 
     updateReview: builder.mutation<ProductReview, { reviewId: string; data: UpdateReviewRequest }>({
@@ -54,7 +55,7 @@ export const reviewsApi = createApi({
         body: data,
       }),
       transformResponse: (response: ApiResponse<ProductReview>) => response.data || {} as ProductReview,
-      invalidatesTags: ['Review'],
+      invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
     }),
 
     deleteReview: builder.mutation<void, string>({
@@ -62,7 +63,7 @@ export const reviewsApi = createApi({
         url: `/reviews/${reviewId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Review'],
+      invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
     }),
   }),
 });

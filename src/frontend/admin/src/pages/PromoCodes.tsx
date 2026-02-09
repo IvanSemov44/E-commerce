@@ -15,7 +15,7 @@ import Pagination from '../components/ui/Pagination';
 import Badge from '../components/ui/Badge';
 import PromoCodeForm from '../components/PromoCodeForm';
 import styles from './PromoCodes.module.css';
-import type { PromoCode, PromoCodeDetail } from '@shared/types';
+import type { PromoCode, PromoCodeDetail, CreatePromoCodeRequest, UpdatePromoCodeRequest } from '@shared/types';
 
 export default function PromoCodes() {
   const [page, setPage] = useState(1);
@@ -59,10 +59,10 @@ export default function PromoCodes() {
   const handleFormSubmit = async (data: CreatePromoCodeRequest | (UpdatePromoCodeRequest & { id: string })) => {
     try {
       if (editingPromoCode) {
-        await updatePromoCode({ ...data, id: editingPromoCode.id }).unwrap();
+        await updatePromoCode(data as (UpdatePromoCodeRequest & { id: string })).unwrap();
         toast.success('Promo code updated successfully');
       } else {
-        await createPromoCode(data).unwrap();
+        await createPromoCode(data as CreatePromoCodeRequest).unwrap();
         toast.success('Promo code created successfully');
       }
       setModalOpen(false);

@@ -8,12 +8,6 @@ import { useToast } from './useToast';
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { SerializedError } from '@reduxjs/toolkit';
 
-interface ErrorResponse {
-  success: false;
-  message?: string;
-  errors?: Record<string, string[]>;
-}
-
 type ApiError = FetchBaseQueryError | SerializedError | Error | unknown;
 
 interface UseApiErrorHandlerReturn {
@@ -22,7 +16,7 @@ interface UseApiErrorHandlerReturn {
 }
 
 export function useApiErrorHandler(): UseApiErrorHandlerReturn {
-  const { toast } = useToast();
+  const { error: errorToast } = useToast();
 
   const getErrorMessage = (error: ApiError, defaultMessage = 'An error occurred'): string => {
     // Handle RTK Query FetchBaseQueryError
@@ -85,7 +79,7 @@ export function useApiErrorHandler(): UseApiErrorHandlerReturn {
 
   const handleError = (error: ApiError, defaultMessage?: string): void => {
     const message = getErrorMessage(error, defaultMessage);
-    toast.error(message);
+    errorToast(message);
   };
 
   return {

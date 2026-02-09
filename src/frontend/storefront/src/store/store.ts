@@ -14,22 +14,24 @@ import { promoCodeApi } from './api/promoCodeApi';
 import { inventoryApi } from './api/inventoryApi';
 import { cartPersistenceMiddleware } from './middleware/cartPersistence';
 
+const rootReducer = {
+  auth: authReducer,
+  cart: cartReducer,
+  toast: toastReducer,
+  [productApi.reducerPath]: productApi.reducer,
+  [authApi.reducerPath]: authApi.reducer,
+  [ordersApi.reducerPath]: ordersApi.reducer,
+  [cartApi.reducerPath]: cartApi.reducer,
+  [categoriesApi.reducerPath]: categoriesApi.reducer,
+  [profileApi.reducerPath]: profileApi.reducer,
+  [reviewsApi.reducerPath]: reviewsApi.reducer,
+  [wishlistApi.reducerPath]: wishlistApi.reducer,
+  [promoCodeApi.reducerPath]: promoCodeApi.reducer,
+  [inventoryApi.reducerPath]: inventoryApi.reducer,
+};
+
 export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    cart: cartReducer,
-    toast: toastReducer,
-    [productApi.reducerPath]: productApi.reducer,
-    [authApi.reducerPath]: authApi.reducer,
-    [ordersApi.reducerPath]: ordersApi.reducer,
-    [cartApi.reducerPath]: cartApi.reducer,
-    [categoriesApi.reducerPath]: categoriesApi.reducer,
-    [profileApi.reducerPath]: profileApi.reducer,
-    [reviewsApi.reducerPath]: reviewsApi.reducer,
-    [wishlistApi.reducerPath]: wishlistApi.reducer,
-    [promoCodeApi.reducerPath]: promoCodeApi.reducer,
-    [inventoryApi.reducerPath]: inventoryApi.reducer,
-  },
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       productApi.middleware,

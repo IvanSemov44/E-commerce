@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { WishlistItem, WishlistResponse, ApiResponse } from '../../types';
+import type { WishlistResponse, ApiResponse } from '../../types';
 import { config } from '../../config';
 
 export const wishlistApi = createApi({

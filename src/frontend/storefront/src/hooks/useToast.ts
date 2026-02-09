@@ -16,6 +16,15 @@ interface UseToastReturn {
   info: (message: string, duration?: number) => string;
   clear: (id: string) => void;
   clearAll: () => void;
+  // Backward compatibility: allows destructuring { toast } for legacy code
+  toast: {
+    success: (message: string, duration?: number) => string;
+    error: (message: string, duration?: number) => string;
+    warning: (message: string, duration?: number) => string;
+    info: (message: string, duration?: number) => string;
+    clear: (id: string) => void;
+    clearAll: () => void;
+  };
 }
 
 export function useToast(): UseToastReturn {
@@ -47,12 +56,28 @@ export function useToast(): UseToastReturn {
     [dispatch]
   );
 
+  const successFn = (message: string, duration?: number) => showToast(message, 'success', duration);
+  const errorFn = (message: string, duration?: number) => showToast(message, 'error', duration);
+  const warningFn = (message: string, duration?: number) => showToast(message, 'warning', duration);
+  const infoFn = (message: string, duration?: number) => showToast(message, 'info', duration);
+  const clearFn = (id: string) => dispatch(removeToast(id));
+  const clearAllFn = () => dispatch(clearAllToasts());
+
   return {
-    success: (message, duration) => showToast(message, 'success', duration),
-    error: (message, duration) => showToast(message, 'error', duration),
-    warning: (message, duration) => showToast(message, 'warning', duration),
-    info: (message, duration) => showToast(message, 'info', duration),
-    clear: (id) => dispatch(removeToast(id)),
-    clearAll: () => dispatch(clearAllToasts()),
+    success: successFn,
+    error: errorFn,
+    warning: warningFn,
+    info: infoFn,
+    clear: clearFn,
+    clearAll: clearAllFn,
+    // Backward compatibility: allows { toast } = useToast(); toast.success()
+    toast: {
+      success: successFn,
+      error: errorFn,
+      warning: warningFn,
+      info: infoFn,
+      clear: clearFn,
+      clearAll: clearAllFn,
+    },
   };
 }

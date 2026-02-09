@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react';
-import type { Toast } from '../store/slices/toastSlice';
+import type { Toast } from '../../store/slices/toastSlice';
 import styles from './Toast.module.css';
 
 interface ToastProps {

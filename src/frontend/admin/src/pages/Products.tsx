@@ -14,7 +14,7 @@ import Modal from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
 import ProductForm from '../components/ProductForm';
 import styles from './Products.module.css';
-import type { Product, ProductDetail } from '@shared/types';
+import type { Product, ProductDetail, CreateProductRequest, UpdateProductRequest } from '@shared/types';
 
 export default function Products() {
   const [page, setPage] = useState(1);
@@ -64,10 +64,10 @@ export default function Products() {
   const handleFormSubmit = async (data: CreateProductRequest | (UpdateProductRequest & { id: string })) => {
     try {
       if (editingProduct) {
-        await updateProduct({ ...data, id: editingProduct.id }).unwrap();
+        await updateProduct(data as UpdateProductRequest).unwrap();
         toast.success('Product updated successfully');
       } else {
-        await createProduct(data).unwrap();
+        await createProduct(data as CreateProductRequest).unwrap();
         toast.success('Product created successfully');
       }
       setModalOpen(false);

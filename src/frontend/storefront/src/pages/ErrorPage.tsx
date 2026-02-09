@@ -3,7 +3,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import Button from './ui/Button';
+import Button from '../components/ui/Button';
 import styles from './ErrorPage.module.css';
 
 interface ErrorPageProps {

@@ -3,7 +3,7 @@
  * Manages state synchronized with browser localStorage
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   // Get from local storage by key

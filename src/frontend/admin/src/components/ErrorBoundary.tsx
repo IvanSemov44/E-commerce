@@ -39,7 +39,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
         <ErrorPage
           error={this.state.error}
           isDevelopment={
-            import.meta.env.DEV || process.env.NODE_ENV === 'development'
+            import.meta.env.DEV || import.meta.env.MODE === 'development'
           }
           onReset={this.handleReset}
         />

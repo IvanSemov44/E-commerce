@@ -61,17 +61,17 @@ export const cartSlice = createSlice({
     },
 
     removeItem: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(item => item.id !== action.payload);
+      state.items = state.items.filter((item: CartItem) => item.id !== action.payload);
       state.lastUpdated = Date.now();
     },
 
     updateQuantity: (state, action: PayloadAction<{ id: string; quantity: number }>) => {
       const { id, quantity } = action.payload;
-      const item = state.items.find(item => item.id === id);
+      const item = state.items.find((item: CartItem) => item.id === id);
 
       if (item) {
         if (quantity <= 0) {
-          state.items = state.items.filter(item => item.id !== id);
+          state.items = state.items.filter((item: CartItem) => item.id !== id);
         } else if (quantity <= item.maxStock) {
           item.quantity = quantity;
         } else {
@@ -96,10 +96,10 @@ export const cartReducer = cartSlice.reducer;
 export const selectCartItems = (state: RootState) => state.cart.items;
 
 export const selectCartItemCount = (state: RootState) =>
-  state.cart.items.reduce((sum, item) => sum + item.quantity, 0);
+  state.cart.items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
 
 export const selectCartSubtotal = (state: RootState) =>
-  state.cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  state.cart.items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
 
 export const selectCartItemById = (id: string) => (state: RootState) =>
-  state.cart.items.find(item => item.id === id);
+  state.cart.items.find((item: CartItem) => item.id === id);
