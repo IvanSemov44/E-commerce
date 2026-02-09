@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # .NET dependencies
+  - package-ecosystem: "nuget"
+    directory: "/src/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Storefront dependencies
+  - package-ecosystem: "npm"
+    directory: "/src/frontend/storefront"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Admin dependencies  
+  - package-ecosystem: "npm"
+    directory: "/src/frontend/admin"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

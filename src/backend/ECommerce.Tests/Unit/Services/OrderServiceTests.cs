@@ -1,4 +1,5 @@
 using AutoMapper;
+using ECommerce.Application.Configuration;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs;
@@ -12,6 +13,7 @@ using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace ECommerce.Tests.Unit.Services;
@@ -28,6 +30,7 @@ public class OrderServiceTests
     private Mock<IMapper> _mockMapper = null!;
     private Mock<ILogger<OrderService>> _mockLogger = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
+    private IOptions<BusinessRulesOptions> _businessRulesOptions = null!;
     private OrderService _service = null!;
 
     [TestInitialize]
@@ -47,13 +50,28 @@ public class OrderServiceTests
         _mockUnitOfWork.Setup(u => u.Users).Returns(_mockUserRepository.Object);
         _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
 
+        // Setup transaction mock
+        var mockTransaction = new Mock<IAsyncTransaction>();
+        mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        mockTransaction.Setup(t => t.RollbackAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        mockTransaction.Setup(t => t.DisposeAsync()).Returns(ValueTask.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(mockTransaction.Object);
+
+        _businessRulesOptions = Options.Create(new BusinessRulesOptions
+        {
+            FreeShippingThreshold = 100.00m,
+            StandardShippingCost = 10.00m,
+            TaxRate = 0.08m
+        });
+
         _service = new OrderService(
             _mockPromoCodeService.Object,
             _mockInventoryService.Object,
             _mockEmailService.Object,
             _mockUnitOfWork.Object,
             _mockMapper.Object,
-            _mockLogger.Object);
+            _mockLogger.Object,
+            _businessRulesOptions);
     }
 
     #region CreateOrderAsync Tests

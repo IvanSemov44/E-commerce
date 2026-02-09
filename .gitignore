@@ -49,6 +49,20 @@ logs/
 *.log
 backend.log
 
+# Large files
+*.pdf
+
+# Secrets
+appsettings.Development.json
+appsettings.*.local.json
+*.pfx
+*.p12
+
+# Environment files
+.env
+.env.*
+!.env.example
+
 # OS files
 .DS_Store
 .AppleDouble

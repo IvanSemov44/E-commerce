@@ -1,10 +1,12 @@
 using ECommerce.Application.DTOs.Payments;
+using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -16,6 +18,8 @@ public class PaymentServiceTests
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IOrderRepository> _mockOrderRepository = null!;
     private Mock<ILogger<PaymentService>> _mockLogger = null!;
+    private Mock<IConfiguration> _mockConfiguration = null!;
+    private Mock<IPaymentStore> _mockPaymentStore = null!;
     private PaymentService _service = null!;
 
     [TestInitialize]
@@ -24,10 +28,20 @@ public class PaymentServiceTests
         _mockUnitOfWork = MockHelpers.CreateMockUnitOfWork();
         _mockOrderRepository = new Mock<IOrderRepository>();
         _mockLogger = new Mock<ILogger<PaymentService>>();
+        _mockConfiguration = new Mock<IConfiguration>();
+        _mockPaymentStore = new Mock<IPaymentStore>();
 
         _mockUnitOfWork.Setup(u => u.Orders).Returns(_mockOrderRepository.Object);
 
-        _service = new PaymentService(_mockUnitOfWork.Object, _mockLogger.Object);
+        // Setup configuration defaults
+        _mockConfiguration.Setup(c => c["Payment:SimulateFailures"]).Returns("false");
+        _mockConfiguration.Setup(c => c.GetSection("Payment:SimulateFailures").Value).Returns("false");
+
+        _service = new PaymentService(
+            _mockUnitOfWork.Object,
+            _mockLogger.Object,
+            _mockConfiguration.Object,
+            _mockPaymentStore.Object);
     }
 
     #region ProcessPaymentAsync Tests

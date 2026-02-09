@@ -273,9 +273,10 @@ using (var scope = app.Services.CreateScope())
             }
 
             // Seed sample data (seeders should be resilient to InMemory provider)
+            // Seeding is skipped in production environments for safety
             Log.Information("Seeding database with sample data...");
             var seeder = services.GetRequiredService<DatabaseSeeder>();
-            await seeder.SeedAsync(context);
+            await seeder.SeedAsync(context, app.Environment);
             Log.Information("Database seeding completed.");
         }
         catch (Exception ex)

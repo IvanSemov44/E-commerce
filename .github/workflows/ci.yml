@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:alpine
+        env:
+          POSTGRES_DB: ECommerceTestDb
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore src/backend/ECommerce.sln
+      
+      - name: Build
+        run: dotnet build src/backend/ECommerce.sln --no-restore
+      
+      - name: Test
+        run: dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --no-restore --verbosity normal
+        env:
+          ConnectionStrings__DefaultConnection: 'Host=localhost;Database=ECommerceTestDb;Username=test;Password=test'
+
+  frontend-storefront-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/storefront/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: src/frontend/storefront
+        run: npm ci
+      
+      - name: Build
+        working-directory: src/frontend/storefront
+        run: npm run build
+
+  frontend-admin-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/admin/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: src/frontend/admin
+        run: npm ci
+      
+      - name: Build
+        working-directory: src/frontend/admin
+        run: npm run build
