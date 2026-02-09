@@ -161,8 +161,6 @@ export function useCheckout(): UseCheckoutReturn {
       const orderData: CreateOrderRequest = {
         items: cartItems.map((item: CartItem) => ({
           productId: item.id,
-          productName: item.name,
-          price: item.price,
           quantity: item.quantity,
         })),
         shippingAddress: {

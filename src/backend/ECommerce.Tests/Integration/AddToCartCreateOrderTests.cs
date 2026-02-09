@@ -48,7 +48,7 @@ public class AddToCartCreateOrderTests
                 PostalCode = "12345",
                 Country = "US",
             },
-            Items = new[] { new { ProductId = "22222222-2222-2222-2222-222222222222", ProductName = "IntegrationProduct", Price = 10.0m, Quantity = 2 } }
+            Items = new[] { new { ProductId = "22222222-2222-2222-2222-222222222222", Quantity = 2 } }
         };
 
         // Send order request with authentication

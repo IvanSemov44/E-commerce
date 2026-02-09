@@ -101,8 +101,6 @@ public class OrderServiceTests
                 new CreateOrderItemDto
                 {
                     ProductId = Guid.NewGuid().ToString(),
-                    ProductName = "Test Product",
-                    Price = 100,
                     Quantity = 2
                 }
             }
@@ -186,8 +184,7 @@ public class OrderServiceTests
                 new CreateOrderItemDto
                 {
                     ProductId = Guid.NewGuid().ToString(),
-                    ProductName = "Test Product",
-                    Price = 100,
+
                     Quantity = 1
                 }
             }
@@ -262,8 +259,6 @@ public class OrderServiceTests
                 new CreateOrderItemDto
                 {
                     ProductId = Guid.NewGuid().ToString(),
-                    ProductName = "Test Product",
-                    Price = 100,
                     Quantity = 1
                 }
             }
@@ -318,8 +313,6 @@ public class OrderServiceTests
                 new CreateOrderItemDto
                 {
                     ProductId = Guid.NewGuid().ToString(),
-                    ProductName = "Test Product",
-                    Price = 100,
                     Quantity = 10
                 }
             }
@@ -672,7 +665,7 @@ public class OrderServiceTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new() { ProductId = "test-product", ProductName = "Test", Price = 99.99m, Quantity = 1 }
+                new() { ProductId = "test-product", Quantity = 1 }
             },
             ShippingAddress = new AddressDto
             {
@@ -713,7 +706,7 @@ public class OrderServiceTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new() { ProductId = "test-product", ProductName = "Test", Price = 99.99m, Quantity = 1 }
+                new() { ProductId = "test-product", Quantity = 1 }
             },
             ShippingAddress = new AddressDto
             {
@@ -782,7 +775,7 @@ public class OrderServiceTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new() { ProductId = "test-product", ProductName = "Test", Price = 99.99m, Quantity = 1 }
+                new() { ProductId = "test-product", Quantity = 1 }
             },
             ShippingAddress = new AddressDto
             {

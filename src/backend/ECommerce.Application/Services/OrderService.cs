@@ -196,6 +196,7 @@ public class OrderService : IOrderService
 
     /// <summary>
     /// Processes order items, calculates subtotal, and creates stock check list.
+    /// SECURITY: Uses server-side product lookup to prevent price manipulation attacks.
     /// </summary>
     private async Task<(List<OrderItem> items, decimal subtotal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems)> 
         ProcessOrderItemsAsync(IEnumerable<CreateOrderItemDto>? itemDtos, CancellationToken cancellationToken)
@@ -211,9 +212,27 @@ public class OrderService : IOrderService
                 if (!Guid.TryParse(itemDto.ProductId, out var productId))
                     throw new ProductNotFoundException(itemDto.ProductId);
 
-                var orderItem = _mapper.Map<OrderItem>(itemDto);
-                orderItem.ProductId = productId;
-                orderItem.Quantity = itemDto.Quantity;
+                // 🔒 SECURITY FIX: Look up product from database to get authoritative price
+                var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken);
+                if (product == null)
+                    throw new ProductNotFoundException(productId);
+
+                // Validate product is available for purchase
+                if (!product.IsActive)
+                    throw new ProductNotAvailableException(product.Name);
+
+                // 🔒 Use database price, not client-provided price
+                var orderItem = new OrderItem
+                {
+                    ProductId = productId,
+                    ProductName = product.Name,
+                    ProductSku = product.Sku,
+                    ProductImageUrl = product.Images.FirstOrDefault(i => i.IsPrimary)?.Url 
+                                      ?? product.Images.FirstOrDefault()?.Url,
+                    Quantity = itemDto.Quantity,
+                    UnitPrice = product.Price,  // ✓ Server-side price
+                    TotalPrice = product.Price * itemDto.Quantity
+                };
 
                 items.Add(orderItem);
 
@@ -228,7 +247,7 @@ public class OrderService : IOrderService
             }
         }
 
-        return await Task.FromResult((items, subtotal, stockCheckItems));
+        return (items, subtotal, stockCheckItems);
     }
 
     /// <summary>

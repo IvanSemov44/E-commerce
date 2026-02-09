@@ -67,7 +67,7 @@ public class OrderValidatorsTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Item", Price = 10M, Quantity = 1 }
+                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 1 }
             },
             ShippingAddress = null
         };
@@ -87,8 +87,8 @@ public class OrderValidatorsTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Item 1", Price = 50M, Quantity = 2 },
-                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Item 2", Price = 25M, Quantity = 1 }
+                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 2 },
+                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 1 }
             },
             ShippingAddress = new AddressDto
             {
@@ -117,7 +117,7 @@ public class OrderValidatorsTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = "", ProductName = "", Price = 0, Quantity = 0 } // Invalid
+                new CreateOrderItemDto { ProductId = "", Quantity = 0 } // Invalid
             },
             ShippingAddress = new AddressDto { City = "Test", StreetLine1 = "Test St", PostalCode = "12345", State = "CA", Country = "USA" }
         };
@@ -137,7 +137,7 @@ public class OrderValidatorsTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Item", Price = 10M, Quantity = 1 }
+                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 1 }
             },
             ShippingAddress = new AddressDto { City = "", StreetLine1 = "", PostalCode = "", State = "", Country = "" } // Invalid
         };
@@ -157,9 +157,9 @@ public class OrderValidatorsTests
         {
             Items = new List<CreateOrderItemDto>
             {
-                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Item 1", Price = 10M, Quantity = 1 },
-                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Item 2", Price = 20M, Quantity = 2 },
-                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Item 3", Price = 30M, Quantity = 3 }
+                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 1 },
+                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 2 },
+                new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 3 }
             },
             ShippingAddress = new AddressDto
             {
@@ -264,7 +264,7 @@ public class OrderValidatorsTests
     public void CreateOrderItem_Should_Fail_When_ProductId_Empty()
     {
         // Arrange
-        var dto = new CreateOrderItemDto { ProductId = "", ProductName = "Test", Price = 10M, Quantity = 1 };
+        var dto = new CreateOrderItemDto { ProductId = "", Quantity = 1 };
 
         // Act
         var validator = new CreateOrderItemDtoValidator();
@@ -278,7 +278,7 @@ public class OrderValidatorsTests
     public void CreateOrderItem_Should_Fail_When_Quantity_Zero()
     {
         // Arrange
-        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Test", Price = 10M, Quantity = 0 };
+        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 0 };
 
         // Act
         var validator = new CreateOrderItemDtoValidator();
@@ -292,7 +292,7 @@ public class OrderValidatorsTests
     public void CreateOrderItem_Should_Fail_When_Quantity_Negative()
     {
         // Arrange
-        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Test", Price = 10M, Quantity = -5 };
+        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = -5 };
 
         // Act
         var validator = new CreateOrderItemDtoValidator();
@@ -306,7 +306,7 @@ public class OrderValidatorsTests
     public void CreateOrderItem_Should_Pass_With_Valid_Data()
     {
         // Arrange
-        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Widget", Price = 99.99M, Quantity = 1 };
+        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 1 };
 
         // Act
         var validator = new CreateOrderItemDtoValidator();
@@ -320,7 +320,7 @@ public class OrderValidatorsTests
     public void CreateOrderItem_Should_Pass_With_Large_Quantity()
     {
         // Arrange
-        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), ProductName = "Bulk Item", Price = 10M, Quantity = 9999 };
+        var dto = new CreateOrderItemDto { ProductId = Guid.NewGuid().ToString(), Quantity = 9999 };
 
         // Act
         var validator = new CreateOrderItemDtoValidator();

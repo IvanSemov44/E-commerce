@@ -197,10 +197,7 @@ export interface Address {
 
 export interface CreateOrderItemRequest {
   productId: string;
-  productName: string;
-  price: number;
   quantity: number;
-  imageUrl?: string;
 }
 
 export interface CreateOrderRequest {

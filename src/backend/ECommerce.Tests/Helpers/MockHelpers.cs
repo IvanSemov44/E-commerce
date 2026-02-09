@@ -167,6 +167,7 @@ public static class MockHelpers
         });
 
         // Provide mapping for CreateOrderItemDto -> OrderItem used by OrderService tests
+        // Note: ProductName, Price, and ImageUrl are now populated by OrderService from Product entity
         mock.Setup(m => m.Map<ECommerce.Core.Entities.OrderItem>(It.IsAny<object>())).Returns((object src) =>
         {
             if (src == null) return null!;
@@ -177,12 +178,12 @@ public static class MockHelpers
             {
                 Id = Guid.Empty,
                 ProductId = null,
-                ProductName = dto.ProductName,
+                ProductName = string.Empty,
                 ProductSku = null,
-                ProductImageUrl = dto.ImageUrl,
+                ProductImageUrl = null,
                 Quantity = dto.Quantity,
-                UnitPrice = dto.Price,
-                TotalPrice = dto.Price * dto.Quantity
+                UnitPrice = 0m,
+                TotalPrice = 0m
             };
         });
 

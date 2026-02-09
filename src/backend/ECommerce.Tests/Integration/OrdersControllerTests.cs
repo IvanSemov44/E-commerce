@@ -86,8 +86,6 @@ public class OrdersControllerTests
                 new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "IntegrationProduct",
-                    Price = 10.0m,
                     Quantity = 2
                 }
             }
@@ -155,8 +153,6 @@ public class OrdersControllerTests
                 new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "IntegrationProduct",
-                    Price = 10.0m,
                     Quantity = 0  // Invalid quantity
                 }
             }
@@ -384,11 +380,9 @@ public class OrdersControllerTests
             },
             Items = new[]
             {
-                new
+          new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "TestProduct",
-                    Price = 99.99m,
                     Quantity = 1
                 }
             }
@@ -429,8 +423,6 @@ public class OrdersControllerTests
                 new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "TestProduct",
-                    Price = 99.99m,
                     Quantity = 1
                 }
             }
@@ -475,8 +467,6 @@ public class OrdersControllerTests
                 new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "TestProduct",
-                    Price = 99.99m,
                     Quantity = 1
                 }
             }
@@ -517,8 +507,6 @@ public class OrdersControllerTests
                 new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "TestProduct",
-                    Price = 99.99m,
                     Quantity = 1
                 }
             }
@@ -559,8 +547,6 @@ public class OrdersControllerTests
                 new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "TestProduct",
-                    Price = 50.00m,
                     Quantity = 2
                 }
             }
@@ -606,8 +592,6 @@ public class OrdersControllerTests
                 new
                 {
                     ProductId = ExistingProductId.ToString(),
-                    ProductName = "TestProduct",
-                    Price = 100.00m,
                     Quantity = 1
                 }
             }

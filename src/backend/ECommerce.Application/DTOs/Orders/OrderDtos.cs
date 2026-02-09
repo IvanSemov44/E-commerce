@@ -55,10 +55,7 @@ public class CreateOrderDto
 public class CreateOrderItemDto
 {
     public string ProductId { get; set; } = null!;
-    public string ProductName { get; set; } = null!;
-    public decimal Price { get; set; }
     public int Quantity { get; set; }
-    public string? ImageUrl { get; set; }
 }
 
 // AddressDto moved to ECommerce.Application.DTOs.Common/AddressDto.cs

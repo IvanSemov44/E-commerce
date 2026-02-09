@@ -185,13 +185,8 @@ public class MappingProfile : Profile
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // Order item mapping (CreateOrderItemDto -> OrderItem)
-        CreateMap<ECommerce.Application.DTOs.Orders.CreateOrderItemDto, OrderItem>()
-            .ForMember(dest => dest.ProductId, opt => opt.Ignore()) // parsed separately in service
-            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.ProductName))
-            .ForMember(dest => dest.ProductImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
-            .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.Price))
-            .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Price * src.Quantity))
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
+        // NOTE: Mapping removed - OrderItem is now constructed in OrderService with server-side product lookup
+        // This prevents price manipulation attacks where client sends fake prices
 
         // CreateOrderDto -> Order (basic mapping for top-level fields)
         CreateMap<ECommerce.Application.DTOs.Orders.CreateOrderDto, Order>()
