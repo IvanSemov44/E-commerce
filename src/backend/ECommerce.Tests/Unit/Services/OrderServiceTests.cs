@@ -82,6 +82,8 @@ public class OrderServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
+        var productId = Guid.NewGuid();
+        
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -100,11 +102,25 @@ public class OrderServiceTests
             {
                 new CreateOrderItemDto
                 {
-                    ProductId = Guid.NewGuid().ToString(),
+                    ProductId = productId.ToString(),
                     Quantity = 2
                 }
             }
         };
+
+        var mockProduct = new Product
+        {
+            Id = productId,
+            Name = "Test Product",
+            Sku = "TEST-001",
+            Price = 99.99m,
+            IsActive = true,
+            StockQuantity = 100,
+            Images = new List<ProductImage>()
+        };
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockProduct);
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
@@ -164,6 +180,8 @@ public class OrderServiceTests
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
         var promoCode = TestDataFactory.CreatePromoCode("SAVE20", discountValue: 20);
+        var productId = Guid.NewGuid();
+        
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -183,12 +201,26 @@ public class OrderServiceTests
             {
                 new CreateOrderItemDto
                 {
-                    ProductId = Guid.NewGuid().ToString(),
+                    ProductId = productId.ToString(),
 
                     Quantity = 1
                 }
             }
         };
+
+        var mockProduct = new Product
+        {
+            Id = productId,
+            Name = "Test Product",
+            Sku = "TEST-002",
+            Price = 50.00m,
+            IsActive = true,
+            StockQuantity = 50,
+            Images = new List<ProductImage>()
+        };
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockProduct);
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
@@ -239,6 +271,8 @@ public class OrderServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
+        var productId = Guid.NewGuid();
+        
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -258,11 +292,25 @@ public class OrderServiceTests
             {
                 new CreateOrderItemDto
                 {
-                    ProductId = Guid.NewGuid().ToString(),
+                    ProductId = productId.ToString(),
                     Quantity = 1
                 }
             }
         };
+
+        var mockProduct = new Product
+        {
+            Id = productId,
+            Name = "Test Product",
+            Sku = "TEST-003",
+            Price = 75.00m,
+            IsActive = true,
+            StockQuantity = 30,
+            Images = new List<ProductImage>()
+        };
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockProduct);
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);
@@ -294,6 +342,8 @@ public class OrderServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
+        var productId = Guid.NewGuid();
+        
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -312,11 +362,25 @@ public class OrderServiceTests
             {
                 new CreateOrderItemDto
                 {
-                    ProductId = Guid.NewGuid().ToString(),
+                    ProductId = productId.ToString(),
                     Quantity = 10
                 }
             }
         };
+
+        var mockProduct = new Product
+        {
+            Id = productId,
+            Name = "Test Product",
+            Sku = "TEST-004",
+            Price = 120.00m,
+            IsActive = true,
+            StockQuantity = 5,
+            Images = new List<ProductImage>()
+        };
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockProduct);
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
             .ReturnsAsync(user);

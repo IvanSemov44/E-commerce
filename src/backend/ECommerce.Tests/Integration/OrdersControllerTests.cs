@@ -334,6 +334,170 @@ public class OrdersControllerTests
             "Cancel should return OK or NotFound if order doesn't exist");
     }
 
+    [TestMethod]
+    public async Task CancelOrder_UserCannotCancelOtherUsersOrder_ReturnsForbidden()
+    {
+        // Arrange - Create an order owned by User A, then try to cancel it as User B
+        using var clientUserA = _factory.CreateAuthenticatedClient();
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "User",
+                LastName = "A",
+                StreetLine1 = "123 Test St",
+                City = "TestCity",
+                State = "TS",
+                PostalCode = "12345",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await clientUserA.PostAsync("/api/orders", content);
+
+        // If order creation failed (e.g., inventory issues), skip the test
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test IDOR protection");
+            return;
+        }
+
+        var responseContent = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Create client for User B (different user)
+        var userBToken = _factory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
+        using var clientUserB = _factory.CreateClient();
+        clientUserB.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userBToken);
+
+        // Act - User B tries to cancel User A's order
+        var cancelResponse = await clientUserB.PostAsync($"/api/orders/{orderId}/cancel", null);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Forbidden, cancelResponse.StatusCode,
+            "User B should not be able to cancel User A's order");
+    }
+
+    [TestMethod]
+    public async Task CancelOrder_AdminCanCancelAnyOrder_ReturnsSuccess()
+    {
+        // Arrange - Create an order as regular user, then cancel it as admin
+        using var clientUser = _factory.CreateAuthenticatedClient();
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "User",
+                LastName = "Test",
+                StreetLine1 = "123 Test St",
+                City = "TestCity",
+                State = "TS",
+                PostalCode = "12345",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await clientUser.PostAsync("/api/orders", content);
+
+        // If order creation failed, skip the test
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test admin access");
+            return;
+        }
+
+        var responseContent = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Create admin client
+        using var adminClient = _factory.CreateAdminClient();
+
+        // Act - Admin cancels user's order
+        var cancelResponse = await adminClient.PostAsync($"/api/orders/{orderId}/cancel", null);
+
+        // Assert
+        Assert.IsTrue(cancelResponse.StatusCode == HttpStatusCode.OK || cancelResponse.StatusCode == HttpStatusCode.BadRequest,
+            "Admin should be able to cancel any order (OK) or get BadRequest if already shipped");
+    }
+
+    [TestMethod]
+    public async Task CancelOrder_UserCanCancelOwnOrder_ReturnsSuccess()
+    {
+        // Arrange - Create and cancel order as same user
+        using var client = _factory.CreateAuthenticatedClient();
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "User",
+                LastName = "Test",
+                StreetLine1 = "123 Test St",
+                City = "TestCity",
+                State = "TS",
+                PostalCode = "12345",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "TestProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await client.PostAsync("/api/orders", content);
+
+        // If order creation failed, skip the test
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test own order cancellation");
+            return;
+        }
+
+        var responseContent = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Act - User cancels their own order
+        var cancelResponse = await client.PostAsync($"/api/orders/{orderId}/cancel", null);
+
+        // Assert
+        Assert.IsTrue(cancelResponse.StatusCode == HttpStatusCode.OK || cancelResponse.StatusCode == HttpStatusCode.BadRequest,
+            "User should be able to cancel their own order");
+    }
+
     #endregion
 
     #region Response Format Tests

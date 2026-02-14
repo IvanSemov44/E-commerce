@@ -1,22 +1,7 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { Category, CategoryDetailDto, ApiResponse } from '../../types';
-import { config } from '../../config';
+import { baseApi } from './baseApi';
 
-export const categoriesApi = createApi({
-  reducerPath: 'categoriesApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-    prepareHeaders: (headers) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(config.storage.authToken);
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  }),
-  keepUnusedDataFor: 60, // Keep cache for 60 seconds
+const categoriesApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCategories: builder.query<Category[], void>({
       query: () => '/categories',
@@ -47,4 +32,4 @@ export const {
   useGetTopLevelCategoriesQuery,
   useGetCategoryByIdQuery,
   useGetCategoryBySlugQuery,
-} = categoriesApi;
+} = categoriesApiSlice;

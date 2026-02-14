@@ -37,38 +37,66 @@ public class InventoryService : IInventoryService
         if (quantity <= 0)
             throw new InvalidQuantityException("Quantity must be positive");
 
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
 
-        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
-        if (product == null)
-            throw new ProductNotFoundException(productId);
-
-        if (product.StockQuantity < quantity)
-            throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
-
-        var previousStock = product.StockQuantity;
-        product.StockQuantity -= quantity;
-
-        await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
-
-        var log = new InventoryLog
+        IAsyncTransaction? transaction = null;
+        if (useOwnTransaction)
         {
-            ProductId = productId,
-            QuantityChange = -quantity,
-            Reason = reason,
-            ReferenceId = referenceId,
-            Notes = $"Stock reduced from {previousStock} to {product.StockQuantity}",
-            CreatedByUserId = userId
-        };
+            transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        }
 
-        await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-        await transaction.CommitAsync();
+        try
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
+            if (product == null)
+                throw new ProductNotFoundException(productId);
 
-        _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units. New stock: {NewStock}",
-            productId, quantity, product.StockQuantity);
+            if (product.StockQuantity < quantity)
+                throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
 
-        await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
+            var previousStock = product.StockQuantity;
+            product.StockQuantity -= quantity;
+
+            await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
+
+            var log = new InventoryLog
+            {
+                ProductId = productId,
+                QuantityChange = -quantity,
+                Reason = reason,
+                ReferenceId = referenceId,
+                Notes = $"Stock reduced from {previousStock} to {product.StockQuantity}",
+                CreatedByUserId = userId
+            };
+
+            await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units. New stock: {NewStock}",
+                productId, quantity, product.StockQuantity);
+
+            await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
+        }
+        catch
+        {
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
     }
 
     public async Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
@@ -76,37 +104,65 @@ public class InventoryService : IInventoryService
         if (quantity <= 0)
             throw new InvalidQuantityException("Quantity must be positive");
 
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
 
-        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
-        if (product == null)
-            throw new ProductNotFoundException(productId);
-
-        var previousStock = product.StockQuantity;
-        product.StockQuantity += quantity;
-
-        await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
-
-        var log = new InventoryLog
+        IAsyncTransaction? transaction = null;
+        if (useOwnTransaction)
         {
-            ProductId = productId,
-            QuantityChange = quantity,
-            Reason = reason,
-            ReferenceId = referenceId,
-            Notes = $"Stock increased from {previousStock} to {product.StockQuantity}",
-            CreatedByUserId = userId
-        };
+            transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        }
 
-        await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-        await transaction.CommitAsync();
-
-        _logger.LogInformation("Stock increased for product {ProductId}: {Quantity} units. New stock: {NewStock}",
-            productId, quantity, product.StockQuantity);
-
-        if (product.StockQuantity > product.LowStockThreshold)
+        try
         {
-            _lowStockAlertsSent.Remove(productId);
+            var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
+            if (product == null)
+                throw new ProductNotFoundException(productId);
+
+            var previousStock = product.StockQuantity;
+            product.StockQuantity += quantity;
+
+            await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
+
+            var log = new InventoryLog
+            {
+                ProductId = productId,
+                QuantityChange = quantity,
+                Reason = reason,
+                ReferenceId = referenceId,
+                Notes = $"Stock increased from {previousStock} to {product.StockQuantity}",
+                CreatedByUserId = userId
+            };
+
+            await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            _logger.LogInformation("Stock increased for product {ProductId}: {Quantity} units. New stock: {NewStock}",
+                productId, quantity, product.StockQuantity);
+
+            if (product.StockQuantity > product.LowStockThreshold)
+            {
+                _lowStockAlertsSent.Remove(productId);
+            }
+        }
+        catch
+        {
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
 
@@ -115,45 +171,78 @@ public class InventoryService : IInventoryService
         if (newQuantity < 0)
             throw new InvalidQuantityException("Quantity cannot be negative");
 
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
 
-        var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
-        if (product == null)
-            throw new ProductNotFoundException(productId);
-
-        var previousStock = product.StockQuantity;
-        var quantityChange = newQuantity - previousStock;
-
-        product.StockQuantity = newQuantity;
-        await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
-
-        var log = new InventoryLog
+        IAsyncTransaction? transaction = null;
+        if (useOwnTransaction)
         {
-            ProductId = productId,
-            QuantityChange = quantityChange,
-            Reason = reason,
-            Notes = notes ?? $"Stock adjusted from {previousStock} to {newQuantity}",
-            CreatedByUserId = userId
-        };
+            transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        }
 
-        await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-        await transaction.CommitAsync();
+        try
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
+            if (product == null)
+                throw new ProductNotFoundException(productId);
 
-        _logger.LogInformation("Stock adjusted for product {ProductId}: {PreviousStock} -> {NewStock}",
-            productId, previousStock, newQuantity);
+            var previousStock = product.StockQuantity;
+            var quantityChange = newQuantity - previousStock;
 
-        await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
+            product.StockQuantity = newQuantity;
+            await _unitOfWork.Products.UpdateAsync(product, cancellationToken: cancellationToken);
+
+            var log = new InventoryLog
+            {
+                ProductId = productId,
+                QuantityChange = quantityChange,
+                Reason = reason,
+                Notes = notes ?? $"Stock adjusted from {previousStock} to {newQuantity}",
+                CreatedByUserId = userId
+            };
+
+            await _unitOfWork.InventoryLogs.AddAsync(log, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            _logger.LogInformation("Stock adjusted for product {ProductId}: {PreviousStock} -> {NewStock}",
+                productId, previousStock, newQuantity);
+
+            await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
+        }
+        catch
+        {
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
     }
 
     public async Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items, CancellationToken cancellationToken = default)
     {
         var response = new StockCheckResponse { IsAvailable = true };
 
+        // Batch-load all products to avoid N+1
+        var productIds = items.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _unitOfWork.Products
+            .FindByCondition(p => productIds.Contains(p.Id), trackChanges: false)
+            .ToDictionaryAsync(p => p.Id, cancellationToken);
+
         foreach (var item in items)
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, cancellationToken: cancellationToken);
-            if (product == null)
+            if (!products.TryGetValue(item.ProductId, out var product))
             {
                 response.IsAvailable = false;
                 response.Issues.Add(new StockIssueDto
@@ -194,8 +283,7 @@ public class InventoryService : IInventoryService
 
     public async Task<PaginatedResult<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        var allProducts = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
-        var query = allProducts.AsQueryable();
+        var query = _unitOfWork.Products.FindByCondition(_ => true, trackChanges: false);
 
         if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
@@ -211,12 +299,12 @@ public class InventoryService : IInventoryService
 
         query = query.OrderBy(p => p.StockQuantity).ThenBy(p => p.Name);
 
-        var totalCount = query.Count();
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        var products = query
+        var products = await query
             .Skip(parameters.GetSkip())
             .Take(parameters.PageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         var dtos = products.Select(p => _mapper.Map<InventoryDto>(p)).ToList();
 
@@ -231,40 +319,39 @@ public class InventoryService : IInventoryService
 
     public async Task<List<LowStockAlertDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
     {
-        var products = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
-
-        var lowStockProducts = products
-            .Where(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive)
+        var lowStockProducts = await _unitOfWork.Products
+            .FindByCondition(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive, trackChanges: false)
             .OrderBy(p => p.StockQuantity)
-            .Select(p => _mapper.Map<LowStockAlertDto>(p))
-            .ToList();
+            .ToListAsync(cancellationToken);
 
-        return lowStockProducts;
+        return lowStockProducts.Select(p => _mapper.Map<LowStockAlertDto>(p)).ToList();
     }
 
     public async Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
-        var logsQuery = (await _unitOfWork.InventoryLogs.GetAllAsync(cancellationToken: cancellationToken))
-            .Where(log => log.ProductId == productId)
-            .OrderByDescending(log => log.CreatedAt);
-
-        var logs = logsQuery
+        var logs = await _unitOfWork.InventoryLogs
+            .FindByCondition(log => log.ProductId == productId, trackChanges: false)
+            .OrderByDescending(log => log.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
         var productName = product?.Name ?? "Unknown Product";
 
-        var userIds = logs.Where(l => l.CreatedByUserId.HasValue).Select(l => l.CreatedByUserId!.Value).Distinct();
+        // Batch-load users to avoid N+1
+        var userIds = logs.Where(l => l.CreatedByUserId.HasValue).Select(l => l.CreatedByUserId!.Value).Distinct().ToList();
         var users = new Dictionary<Guid, string>();
 
-        foreach (var userId in userIds)
+        if (userIds.Count > 0)
         {
-            var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
-            if (user != null)
+            var userEntities = await _unitOfWork.Users
+                .FindByCondition(u => userIds.Contains(u.Id), trackChanges: false)
+                .ToListAsync(cancellationToken);
+
+            foreach (var user in userEntities)
             {
-                users[userId] = $"{user.FirstName} {user.LastName}";
+                users[user.Id] = $"{user.FirstName} {user.LastName}";
             }
         }
 

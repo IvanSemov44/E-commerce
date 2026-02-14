@@ -5,6 +5,7 @@ using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -28,33 +29,26 @@ public class PromoCodeService : IPromoCodeService
 
     public async Task<PaginatedResult<PromoCodeDto>> GetAllAsync(PromoCodeQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        // Get all promo codes (this is in-memory filtering for simplicity)
-        // In a production app with large datasets, you'd want a custom repository method
-        var allPromoCodes = await _unitOfWork.PromoCodes.GetAllAsync(cancellationToken: cancellationToken);
-
-        // Apply filters
-        var filtered = allPromoCodes.AsEnumerable();
+        var query = _unitOfWork.PromoCodes.FindByCondition(_ => true, trackChanges: false);
 
         if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
-            var searchTerm = parameters.Search.ToLowerInvariant();
-            filtered = filtered.Where(p => p.Code.ToLower().Contains(searchTerm));
+            var searchTerm = parameters.Search.ToLower();
+            query = query.Where(p => p.Code.ToLower().Contains(searchTerm));
         }
 
         if (parameters.IsActive.HasValue)
         {
-            filtered = filtered.Where(p => p.IsActive == parameters.IsActive.Value);
+            query = query.Where(p => p.IsActive == parameters.IsActive.Value);
         }
 
-        // Get total count
-        var totalCount = filtered.Count();
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        // Apply pagination and ordering
-        var items = filtered
+        var items = await query
             .OrderByDescending(p => p.CreatedAt)
             .Skip(parameters.GetSkip())
             .Take(parameters.PageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<PromoCodeDto>>(items);
 
@@ -76,23 +70,22 @@ public class PromoCodeService : IPromoCodeService
     public async Task<PromoCodeDetailDto?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
-        var allPromoCodes = await _unitOfWork.PromoCodes.GetAllAsync(cancellationToken: cancellationToken);
-        var promoCode = allPromoCodes.FirstOrDefault(p => p.Code.ToUpper() == normalizedCode);
+        var promoCode = await _unitOfWork.PromoCodes
+            .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
+            .FirstOrDefaultAsync(cancellationToken);
 
         return promoCode == null ? null : _mapper.Map<PromoCodeDetailDto>(promoCode);
     }
 
     public async Task<PromoCodeDetailDto> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default)
     {
-        // Normalize code
         var normalizedCode = dto.Code.Trim().ToUpperInvariant();
 
-        // Validate input
         ValidatePromoCodeDto(dto.DiscountType, dto.DiscountValue, dto.StartDate, dto.EndDate, dto.MinOrderAmount);
 
-        // Check for duplicate code
-        var allPromoCodes = await _unitOfWork.PromoCodes.GetAllAsync(cancellationToken: cancellationToken);
-        var existingCode = allPromoCodes.Any(p => p.Code.ToUpper() == normalizedCode);
+        var existingCode = await _unitOfWork.PromoCodes
+            .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
+            .AnyAsync(cancellationToken);
 
         if (existingCode)
         {
@@ -119,14 +112,13 @@ public class PromoCodeService : IPromoCodeService
             throw new PromoCodeNotFoundException(id);
         }
 
-        // UpdateAsync only provided fields
         if (!string.IsNullOrWhiteSpace(dto.Code))
         {
             var normalizedCode = dto.Code.Trim().ToUpperInvariant();
 
-            // Check for duplicate code (excluding current)
-            var allPromoCodes = await _unitOfWork.PromoCodes.GetAllAsync(cancellationToken: cancellationToken);
-            var existingCode = allPromoCodes.Any(p => p.Code.ToUpper() == normalizedCode && p.Id != id);
+            var existingCode = await _unitOfWork.PromoCodes
+                .FindByCondition(p => p.Code == normalizedCode && p.Id != id, trackChanges: false)
+                .AnyAsync(cancellationToken);
 
             if (existingCode)
             {
@@ -145,7 +137,6 @@ public class PromoCodeService : IPromoCodeService
         if (dto.EndDate.HasValue) promoCode.EndDate = dto.EndDate;
         if (dto.IsActive.HasValue) promoCode.IsActive = dto.IsActive.Value;
 
-        // Validate updated values
         ValidatePromoCodeDto(promoCode.DiscountType, promoCode.DiscountValue, promoCode.StartDate, promoCode.EndDate, promoCode.MinOrderAmount);
 
         await _unitOfWork.PromoCodes.UpdateAsync(promoCode, cancellationToken: cancellationToken);
@@ -187,8 +178,10 @@ public class PromoCodeService : IPromoCodeService
 
     public async Task<List<PromoCodeDto>> GetActiveCodesAsync(CancellationToken cancellationToken = default)
     {
-        var allCodes = await _unitOfWork.PromoCodes.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var activeCodes = allCodes.Where(p => p.IsActive).ToList();
+        var activeCodes = await _unitOfWork.PromoCodes
+            .FindByCondition(p => p.IsActive, trackChanges: false)
+            .ToListAsync(cancellationToken);
+
         return _mapper.Map<List<PromoCodeDto>>(activeCodes);
     }
 
@@ -196,8 +189,9 @@ public class PromoCodeService : IPromoCodeService
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
 
-        var allPromoCodes = await _unitOfWork.PromoCodes.GetAllAsync(cancellationToken: cancellationToken);
-        var promoCode = allPromoCodes.FirstOrDefault(p => p.Code.ToUpper() == normalizedCode);
+        var promoCode = await _unitOfWork.PromoCodes
+            .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
+            .FirstOrDefaultAsync(cancellationToken);
 
         // Code not found
         if (promoCode == null)
@@ -290,8 +284,13 @@ public class PromoCodeService : IPromoCodeService
 
     public async Task IncrementUsedCountAsync(Guid promoCodeId, CancellationToken cancellationToken = default)
     {
-        // Use a transaction to ensure atomic increment and prevent race conditions
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
+
+        IAsyncDisposable? transaction = null;
+        if (useOwnTransaction)
+        {
+            transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        }
 
         try
         {
@@ -311,14 +310,27 @@ public class PromoCodeService : IPromoCodeService
             await _unitOfWork.PromoCodes.UpdateAsync(promoCode, cancellationToken: cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-            await transaction.CommitAsync();
+            if (useOwnTransaction && transaction != null)
+            {
+                await ((IAsyncTransaction)transaction).CommitAsync(cancellationToken);
+            }
 
             _logger.LogInformation("Promo code usage incremented: {Code}, New count: {Count}", promoCode.Code, promoCode.UsedCount);
         }
         catch
         {
-            await transaction.RollbackAsync();
+            if (useOwnTransaction && transaction != null)
+            {
+                await ((IAsyncTransaction)transaction).RollbackAsync(cancellationToken);
+            }
             throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
 

@@ -99,6 +99,12 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     /// <returns>The transaction object that must be committed or rolled back.</returns>
     Task<IAsyncTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Indicates whether there is an active database transaction.
+    /// Used by services to avoid creating nested transactions.
+    /// </summary>
+    bool HasActiveTransaction { get; }
+
     #endregion
 }
 

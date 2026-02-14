@@ -201,14 +201,36 @@ public class OrdersController : ControllerBase
     /// <response code="200">Order cancelled successfully.</response>
     /// <response code="400">Order cannot be cancelled because it has already been shipped or delivered.</response>
     /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to cancel this order.</response>
     /// <response code="404">Order not found.</response>
     [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelOrder(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
+
+        // Ownership check: retrieve order first
+        var order = await _orderService.GetOrderByIdAsync(id, cancellationToken: cancellationToken);
+        if (order == null)
+        {
+            return NotFound(ApiResponse<object>.Error("Order not found"));
+        }
+
+        // Check if user owns the order or is admin
+        var currentUserId = _currentUser.UserIdOrNull;
+        var isAdmin = _currentUser.IsAuthenticated &&
+                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+
+        if (!isAdmin && order.UserId != currentUserId)
+        {
+            _logger.LogWarning("User {UserId} attempted to cancel order {OrderId} belonging to {OrderOwnerId}",
+                currentUserId, id, order.UserId);
+            return StatusCode(403, ApiResponse<object>.Error("You do not have permission to cancel this order"));
+        }
+
         var result = await _orderService.CancelOrderAsync(id, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Order cancelled successfully"));
     }

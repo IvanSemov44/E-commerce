@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
@@ -34,6 +35,16 @@ public class PromoCodeServiceTests
         _service = new PromoCodeService(_mockUnitOfWork.Object, _mockMapper.Object, _mockLogger.Object);
     }
 
+    /// <summary>
+    /// Helper to setup FindByCondition mock that applies the predicate to the given list.
+    /// </summary>
+    private void SetupFindByCondition(List<PromoCode> promoCodes)
+    {
+        _mockPromoCodeRepository.Setup(r => r.FindByCondition(It.IsAny<Expression<Func<PromoCode, bool>>>(), It.IsAny<bool>()))
+            .Returns((Expression<Func<PromoCode, bool>> predicate, bool _) =>
+                promoCodes.AsQueryable().Where(predicate).AsAsyncQueryable());
+    }
+
     #region GetAllAsync Tests
 
     [TestMethod]
@@ -46,8 +57,8 @@ public class PromoCodeServiceTests
             TestDataFactory.CreatePromoCode("SAVE20"),
             TestDataFactory.CreatePromoCode("SAVE30")
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(promoCodes);
+
+        SetupFindByCondition(promoCodes);
 
         // Setup mapper to map list
         _mockMapper.Setup(m => m.Map<List<PromoCodeDto>>(It.IsAny<List<PromoCode>>()))
@@ -81,8 +92,8 @@ public class PromoCodeServiceTests
             TestDataFactory.CreatePromoCode("SUMMER20"),
             TestDataFactory.CreatePromoCode("WINTER30")
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(promoCodes);
+
+        SetupFindByCondition(promoCodes);
 
         _mockMapper.Setup(m => m.Map<List<PromoCodeDto>>(It.IsAny<IEnumerable<PromoCode>>()))
             .Returns((IEnumerable<PromoCode> source) => source.Select(p => new PromoCodeDto
@@ -109,8 +120,8 @@ public class PromoCodeServiceTests
             TestDataFactory.CreatePromoCode("ACTIVE2", isActive: true),
             TestDataFactory.CreatePromoCode("INACTIVE", isActive: false)
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(promoCodes);
+
+        SetupFindByCondition(promoCodes);
 
         _mockMapper.Setup(m => m.Map<List<PromoCodeDto>>(It.IsAny<IEnumerable<PromoCode>>()))
             .Returns((IEnumerable<PromoCode> source) => source.Select(p => new PromoCodeDto
@@ -189,8 +200,8 @@ public class PromoCodeServiceTests
             IsActive = true
         };
 
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
-            .ReturnsAsync(new List<PromoCode>());
+        // No existing codes - FindByCondition returns empty for duplicate check
+        SetupFindByCondition(new List<PromoCode>());
 
         _mockMapper.Setup(m => m.Map<PromoCode>(It.IsAny<CreatePromoCodeDto>()))
             .Returns(new PromoCode
@@ -229,8 +240,9 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var existing = TestDataFactory.CreatePromoCode("DUPLICATE");
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(new List<PromoCode> { existing });
+
+        // FindByCondition will find the existing code when checking for duplicates
+        SetupFindByCondition(new List<PromoCode> { existing });
 
         var dto = new CreatePromoCodeDto
         {
@@ -256,8 +268,8 @@ public class PromoCodeServiceTests
             DiscountType = "percentage",
             DiscountValue = 150 // Invalid: > 100
         };
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(new List<PromoCode>());
+
+        SetupFindByCondition(new List<PromoCode>());
 
         // Act
         Func<Task> act = async () => await _service.CreateAsync(dto);
@@ -280,8 +292,7 @@ public class PromoCodeServiceTests
             discountValue: 20,
             isActive: true);
 
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(new List<PromoCode> { promoCode });
+        SetupFindByCondition(new List<PromoCode> { promoCode });
 
         _mockMapper.Setup(m => m.Map<PromoCodeDto>(It.IsAny<PromoCode>()))
             .Returns(new PromoCodeDto
@@ -305,9 +316,8 @@ public class PromoCodeServiceTests
     [TestMethod]
     public async Task ValidatePromoCodeAsync_NonExistentCode_ReturnsInvalid()
     {
-        // Arrange
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(new List<PromoCode>());
+        // Arrange - empty list, no codes found
+        SetupFindByCondition(new List<PromoCode>());
 
         // Act
         var result = await _service.ValidatePromoCodeAsync("NOTFOUND", orderAmount: 100);
@@ -323,8 +333,7 @@ public class PromoCodeServiceTests
     {
         // Arrange
         var promoCode = TestDataFactory.CreatePromoCode("INACTIVE", isActive: false);
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(new List<PromoCode> { promoCode });
+        SetupFindByCondition(new List<PromoCode> { promoCode });
 
         // Act
         var result = await _service.ValidatePromoCodeAsync("INACTIVE", orderAmount: 100);
@@ -343,8 +352,7 @@ public class PromoCodeServiceTests
             isActive: true,
             endDate: DateTime.UtcNow.AddDays(-1));
 
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>()))
-            .ReturnsAsync(new List<PromoCode> { promoCode });
+        SetupFindByCondition(new List<PromoCode> { promoCode });
 
         // Act
         var result = await _service.ValidatePromoCodeAsync("EXPIRED", orderAmount: 100);
@@ -364,8 +372,7 @@ public class PromoCodeServiceTests
             discountValue: 25,
             isActive: true);
 
-        _mockPromoCodeRepository.Setup(r => r.GetAllAsync())
-            .ReturnsAsync(new List<PromoCode> { promoCode });
+        SetupFindByCondition(new List<PromoCode> { promoCode });
 
         _mockMapper.Setup(m => m.Map<PromoCodeDto>(It.IsAny<PromoCode>()))
             .Returns(new PromoCodeDto { Id = promoCode.Id, Code = promoCode.Code });

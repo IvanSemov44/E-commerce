@@ -1,6 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { config } from '../../config';
 import type { ApiResponse } from '../../types';
+import { baseApi } from './baseApi';
 
 export interface CheckAvailabilityItem {
   productId: string;
@@ -24,11 +23,7 @@ export interface CheckAvailabilityResponse {
   issues: StockIssue[];
 }
 
-export const inventoryApi = createApi({
-  reducerPath: 'inventoryApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-  }),
+const inventoryApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     checkAvailability: builder.mutation<CheckAvailabilityResponse, CheckAvailabilityRequest>({
       query: (body) => ({
@@ -42,4 +37,4 @@ export const inventoryApi = createApi({
   }),
 });
 
-export const { useCheckAvailabilityMutation } = inventoryApi;
+export const { useCheckAvailabilityMutation } = inventoryApiSlice;

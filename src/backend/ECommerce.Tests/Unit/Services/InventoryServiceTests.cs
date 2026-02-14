@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.Interfaces;
@@ -44,6 +45,16 @@ public class InventoryServiceTests
             _mockEmailService.Object,
             _mockLogger.Object,
             _mockMapper.Object);
+    }
+
+    /// <summary>
+    /// Helper to setup FindByCondition mock that applies the predicate to the given list.
+    /// </summary>
+    private void SetupFindByConditionForProducts(List<Product> products)
+    {
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns((Expression<Func<Product, bool>> predicate, bool _) =>
+                products.AsQueryable().Where(predicate).AsAsyncQueryable());
     }
 
     #region ReduceStockAsync Tests
@@ -342,10 +353,7 @@ public class InventoryServiceTests
         var product1 = TestDataFactory.CreateProduct(stock: 100);
         var product2 = TestDataFactory.CreateProduct(stock: 50);
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product1.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(product1);
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product2.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(product2);
+        SetupFindByConditionForProducts(new List<Product> { product1, product2 });
 
         var items = new List<StockCheckItemDto>
         {
@@ -367,8 +375,7 @@ public class InventoryServiceTests
         // Arrange
         var product = TestDataFactory.CreateProduct(stock: 5, name: "Test Product");
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(product);
+        SetupFindByConditionForProducts(new List<Product> { product });
 
         var items = new List<StockCheckItemDto>
         {
@@ -393,8 +400,7 @@ public class InventoryServiceTests
         // Arrange
         var productId = Guid.NewGuid();
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product?)null);
+        SetupFindByConditionForProducts(new List<Product>());
 
         var items = new List<StockCheckItemDto>
         {
@@ -416,8 +422,7 @@ public class InventoryServiceTests
         // Arrange
         var product = TestDataFactory.CreateProduct(stock: 0, name: "Out of Stock Product");
 
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(product);
+        SetupFindByConditionForProducts(new List<Product> { product });
 
         var items = new List<StockCheckItemDto>
         {
@@ -504,8 +509,7 @@ public class InventoryServiceTests
         products[1].LowStockThreshold = 10;
         products[2].LowStockThreshold = 10;
 
-        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(products);
+        SetupFindByConditionForProducts(products);
 
         _mockMapper.Setup(m => m.Map<LowStockAlertDto>(It.IsAny<Product>()))
             .Returns((Product p) => new LowStockAlertDto { ProductName = p.Name, CurrentStock = p.StockQuantity });
@@ -531,8 +535,7 @@ public class InventoryServiceTests
         products[0].LowStockThreshold = 10;
         products[1].LowStockThreshold = 10;
 
-        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(products);
+        SetupFindByConditionForProducts(products);
 
         _mockMapper.Setup(m => m.Map<LowStockAlertDto>(It.IsAny<Product>()))
             .Returns((Product p) => new LowStockAlertDto { ProductName = p.Name });

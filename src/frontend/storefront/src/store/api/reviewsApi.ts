@@ -1,30 +1,15 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type {
   Review,
   CreateReviewRequest,
   UpdateReviewRequest,
   ApiResponse,
 } from '../../types';
-import { config } from '../../config';
+import { baseApi } from './baseApi';
 
 // Use ProductReview as alias for Review (API convention)
 type ProductReview = Review;
 
-export const reviewsApi = createApi({
-  reducerPath: 'reviewsApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-    prepareHeaders: (headers) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(config.storage.authToken);
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  }),  keepUnusedDataFor: 60, // Keep cache for 60 seconds
-  tagTypes: ['Review'] as const,
+const reviewsApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProductReviews: builder.query<ProductReview[], string>({
       query: (productId) => `/reviews/product/${productId}`,
@@ -74,4 +59,4 @@ export const {
   useCreateReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
-} = reviewsApi;
+} = reviewsApiSlice;

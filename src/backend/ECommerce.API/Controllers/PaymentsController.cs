@@ -16,15 +16,21 @@ namespace ECommerce.API.Controllers;
 public class PaymentsController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
+    private readonly IOrderService _orderService;
+    private readonly ICurrentUserService _currentUser;
     private readonly IWebhookVerificationService _webhookVerificationService;
     private readonly ILogger<PaymentsController> _logger;
 
     public PaymentsController(
         IPaymentService paymentService,
+        IOrderService orderService,
+        ICurrentUserService currentUser,
         IWebhookVerificationService webhookVerificationService,
         ILogger<PaymentsController> logger)
     {
         _paymentService = paymentService;
+        _orderService = orderService;
+        _currentUser = currentUser;
         _webhookVerificationService = webhookVerificationService;
         _logger = logger;
     }
@@ -77,18 +83,39 @@ public class PaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Payment details including status and amount.</returns>
     /// <response code="200">Payment details retrieved successfully.</response>
+    /// <response code="403">User does not have permission to view payment details for this order.</response>
     /// <response code="404">Order or payment not found.</response>
     /// <response code="401">Unauthorized - authentication required.</response>
     /// <response code="500">Internal server error.</response>
     [HttpGet("{orderId:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PaymentDetailsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPaymentDetails(Guid orderId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
+
+        // Ownership check: retrieve order first
+        var order = await _orderService.GetOrderByIdAsync(orderId, cancellationToken: cancellationToken);
+        if (order == null)
+        {
+            return NotFound(ApiResponse<object>.Error("Order not found"));
+        }
+
+        // Check if user owns the order or is admin
+        var currentUserId = _currentUser.UserIdOrNull;
+        var isAdmin = _currentUser.IsAuthenticated &&
+                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+
+        if (!isAdmin && order.UserId != currentUserId)
+        {
+            _logger.LogWarning("User {UserId} attempted to access payment details for order {OrderId} belonging to {OrderOwnerId}",
+                currentUserId, orderId, order.UserId);
+            return StatusCode(403, ApiResponse<object>.Error("You do not have permission to view payment details for this order"));
+        }
 
         var paymentDetails = await _paymentService.GetPaymentDetailsAsync(orderId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment details retrieved successfully"));

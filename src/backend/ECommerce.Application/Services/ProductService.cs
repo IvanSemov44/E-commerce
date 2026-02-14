@@ -131,14 +131,14 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         var skip = (page - 1) * pageSize;
-        
+
         // Push filtering to database instead of loading all products into memory
         var queryLower = query.ToLower();
         var searchQuery = _unitOfWork.Products
-            .FindByCondition(p => p.IsActive && 
+            .FindByCondition(p => p.IsActive &&
                 (EF.Functions.Like(p.Name.ToLower(), $"%{queryLower}%") ||
                  (p.Description != null && EF.Functions.Like(p.Description.ToLower(), $"%{queryLower}%")) ||
-                 (p.Sku != null && EF.Functions.Like(p.Sku.ToLower(), $"%{queryLower}%"))), 
+                 (p.Sku != null && EF.Functions.Like(p.Sku.ToLower(), $"%{queryLower}%"))),
                 trackChanges: false);
 
         var totalCount = await searchQuery.CountAsync(cancellationToken);
@@ -159,17 +159,20 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         var skip = (page - 1) * pageSize;
-        var products = await _unitOfWork.Products.GetByCategoryAsync(categoryId, cancellationToken: cancellationToken);
-        var totalCount = products.Count();
 
-        var paginatedProducts = products
+        var query = _unitOfWork.Products
+            .FindByCondition(p => p.CategoryId == categoryId && p.IsActive, trackChanges: false);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var products = await query
             .Skip(skip)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         return new PaginatedResult<ProductDto>
         {
-            Items = paginatedProducts.Select(p => _mapper.Map<ProductDto>(p)).ToList(),
+            Items = products.Select(p => _mapper.Map<ProductDto>(p)).ToList(),
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
@@ -179,16 +182,16 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> GetProductsByPriceRangeAsync(decimal minPrice, decimal maxPrice, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         var skip = (page - 1) * pageSize;
-        var allProducts = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
-        var filteredProducts = allProducts
-            .Where(p => p.IsActive && p.Price >= minPrice && p.Price <= maxPrice)
-            .ToList();
 
-        var totalCount = filteredProducts.Count;
-        var products = filteredProducts
+        var query = _unitOfWork.Products
+            .FindByCondition(p => p.IsActive && p.Price >= minPrice && p.Price <= maxPrice, trackChanges: false);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var products = await query
             .Skip(skip)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         return new PaginatedResult<ProductDto>
         {
@@ -201,10 +204,9 @@ public class ProductService : IProductService
 
     public async Task<List<ProductDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
     {
-        var allProducts = await _unitOfWork.Products.GetAllAsync(cancellationToken: cancellationToken);
-        var lowStockProducts = allProducts
-            .Where(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive)
-            .ToList();
+        var lowStockProducts = await _unitOfWork.Products
+            .FindByCondition(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive, trackChanges: false)
+            .ToListAsync(cancellationToken);
 
         return lowStockProducts.Select(p => _mapper.Map<ProductDto>(p)).ToList();
     }

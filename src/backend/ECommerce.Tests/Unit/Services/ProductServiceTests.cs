@@ -294,11 +294,15 @@ public class ProductServiceTests
         var categoryId = Guid.NewGuid();
         var products = new List<Product>
         {
-            TestDataFactory.CreateProduct(name: "C1"),
-            TestDataFactory.CreateProduct(name: "C2")
+            TestDataFactory.CreateProduct(name: "C1", isActive: true),
+            TestDataFactory.CreateProduct(name: "C2", isActive: true)
         };
+        products[0].CategoryId = categoryId;
+        products[1].CategoryId = categoryId;
 
-        _mockProductRepository.Setup(r => r.GetByCategoryAsync(categoryId)).ReturnsAsync(products);
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns((System.Linq.Expressions.Expression<Func<Product, bool>> predicate, bool _) =>
+                products.AsQueryable().Where(predicate).AsAsyncQueryable());
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name });
 
@@ -317,12 +321,14 @@ public class ProductServiceTests
         // Arrange
         var all = new List<Product>
         {
-            TestDataFactory.CreateProduct(name: "Cheap", price: 5),
-            TestDataFactory.CreateProduct(name: "Mid", price: 50),
-            TestDataFactory.CreateProduct(name: "Expensive", price: 200)
+            TestDataFactory.CreateProduct(name: "Cheap", price: 5, isActive: true),
+            TestDataFactory.CreateProduct(name: "Mid", price: 50, isActive: true),
+            TestDataFactory.CreateProduct(name: "Expensive", price: 200, isActive: true)
         };
 
-        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(all);
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns((System.Linq.Expressions.Expression<Func<Product, bool>> predicate, bool _) =>
+                all.AsQueryable().Where(predicate).AsAsyncQueryable());
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name, Price = p.Price });
 
@@ -338,15 +344,17 @@ public class ProductServiceTests
     public async Task GetLowStockProductsAsync_ReturnsLowStockItems()
     {
         // Arrange
-        var p1 = TestDataFactory.CreateProduct(name: "P1", price: 10);
+        var p1 = TestDataFactory.CreateProduct(name: "P1", price: 10, isActive: true);
         p1.StockQuantity = 2;
         p1.LowStockThreshold = 5;
-        var p2 = TestDataFactory.CreateProduct(name: "P2", price: 20);
+        var p2 = TestDataFactory.CreateProduct(name: "P2", price: 20, isActive: true);
         p2.StockQuantity = 10;
         p2.LowStockThreshold = 5;
 
         var all = new List<Product> { p1, p2 };
-        _mockProductRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(all);
+        _mockProductRepository.Setup(r => r.FindByCondition(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<bool>()))
+            .Returns((System.Linq.Expressions.Expression<Func<Product, bool>> predicate, bool _) =>
+                all.AsQueryable().Where(predicate).AsAsyncQueryable());
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name, Price = p.Price });
 

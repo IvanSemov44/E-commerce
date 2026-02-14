@@ -1,23 +1,7 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { WishlistResponse, ApiResponse } from '../../types';
-import { config } from '../../config';
+import { baseApi } from './baseApi';
 
-export const wishlistApi = createApi({
-  reducerPath: 'wishlistApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-    prepareHeaders: (headers) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(config.storage.authToken);
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  }),
-  keepUnusedDataFor: 60, // Keep cache for 60 seconds
-  tagTypes: ['Wishlist', 'WishlistCheck'],
+const wishlistApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getWishlist: builder.query<WishlistResponse, void>({
       query: () => '/wishlist',
@@ -75,4 +59,4 @@ export const {
   useAddToWishlistMutation,
   useRemoveFromWishlistMutation,
   useClearWishlistMutation,
-} = wishlistApi;
+} = wishlistApiSlice;

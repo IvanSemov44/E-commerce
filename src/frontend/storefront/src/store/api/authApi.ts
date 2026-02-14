@@ -1,4 +1,3 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type {
   AuthUser,
   LoginRequest,
@@ -8,28 +7,14 @@ import type {
   AuthResponse,
   ApiResponse,
 } from '../../types';
-import { config } from '../../config';
+import { baseApi } from './baseApi';
 
 interface AuthData {
   user: AuthUser;
   token: string;
 }
 
-export const authApi = createApi({
-  reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-    prepareHeaders: (headers) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(config.storage.authToken);
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  }),
-  keepUnusedDataFor: 60, // Keep cache for 60 seconds
+const authApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     register: builder.mutation<AuthResponse, RegisterRequest>({
       query: (credentials) => ({
@@ -101,4 +86,4 @@ export const {
   useRefreshTokenMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
-} = authApi;
+} = authApiSlice;

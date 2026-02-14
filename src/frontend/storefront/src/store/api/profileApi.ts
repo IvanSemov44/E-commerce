@@ -1,23 +1,7 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { UserProfile, UpdateProfileRequest, ApiResponse } from '../../types';
-import { config } from '../../config';
+import { baseApi } from './baseApi';
 
-export const profileApi = createApi({
-  reducerPath: 'profileApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-    prepareHeaders: (headers) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(config.storage.authToken);
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  }),
-  keepUnusedDataFor: 60, // Keep cache for 60 seconds
-  tagTypes: ['Profile'],
+const profileApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProfile: builder.query<UserProfile, void>({
       query: () => '/profile',
@@ -42,4 +26,4 @@ export const profileApi = createApi({
 export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
-} = profileApi;
+} = profileApiSlice;

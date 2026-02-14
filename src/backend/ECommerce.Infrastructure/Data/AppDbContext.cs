@@ -54,11 +54,15 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Slug).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.IsFeatured);
+            entity.HasIndex(e => new { e.IsActive, e.Price });
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Slug).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Price).HasPrecision(10, 2);
             entity.Property(e => e.CompareAtPrice).HasPrecision(10, 2);
             entity.Property(e => e.CostPrice).HasPrecision(10, 2);
+            entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasOne(e => e.Category).WithMany(e => e.Products).HasForeignKey(e => e.CategoryId).OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -85,6 +89,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Cart>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SessionId);
             entity.HasOne(e => e.User).WithOne(e => e.Cart).HasForeignKey<Cart>(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -106,6 +111,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.DiscountValue).HasPrecision(10, 2);
             entity.Property(e => e.MinOrderAmount).HasPrecision(10, 2);
             entity.Property(e => e.MaxDiscountAmount).HasPrecision(10, 2);
+            entity.Property(e => e.RowVersion).IsRowVersion();
         });
 
         // Order configuration
@@ -113,12 +119,16 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.OrderNumber).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.Status);
             entity.Property(e => e.OrderNumber).IsRequired().HasMaxLength(20);
             entity.Property(e => e.Subtotal).HasPrecision(10, 2);
             entity.Property(e => e.DiscountAmount).HasPrecision(10, 2);
             entity.Property(e => e.ShippingAmount).HasPrecision(10, 2);
             entity.Property(e => e.TaxAmount).HasPrecision(10, 2);
             entity.Property(e => e.TotalAmount).HasPrecision(10, 2);
+            entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasOne(e => e.User).WithMany(e => e.Orders).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.PromoCode).WithMany(e => e.Orders).HasForeignKey(e => e.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
         });
@@ -154,6 +164,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<InventoryLog>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ProductId);
+            entity.HasIndex(e => new { e.ProductId, e.CreatedAt });
             entity.HasOne(e => e.Product).WithMany(e => e.InventoryLogs).HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
 

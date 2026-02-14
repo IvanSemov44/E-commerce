@@ -79,11 +79,16 @@ public class InventoryController : ControllerBase
     {
         _logger.LogInformation("Retrieving stock for product {ProductId}", productId);
 
-        var product = await _inventoryService.GetAllInventoryAsync(new InventoryQueryParameters { Page = 1, PageSize = 1 }, cancellationToken: cancellationToken);
-        if (product.Items.Count == 0)
-            return NotFound(ApiResponse<InventoryDto>.Error("Product not found"));
+        var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(
+            new List<StockCheckItemDto> { new() { ProductId = productId, Quantity = 0 } },
+            cancellationToken);
 
-        return Ok(ApiResponse<InventoryDto>.Ok(product.Items[0], "Product stock retrieved successfully"));
+        if (stockCheck.Issues.Any(i => i.Message == "Product not found"))
+            return NotFound(ApiResponse<object>.Error("Product not found"));
+
+        var isAvailable = await _inventoryService.IsStockAvailableAsync(productId, 1, cancellationToken);
+        var result = new { ProductId = productId, IsAvailable = isAvailable };
+        return Ok(ApiResponse<object>.Ok(result, "Product stock retrieved successfully"));
     }
 
     /// <summary>
@@ -100,8 +105,9 @@ public class InventoryController : ControllerBase
     {
         _logger.LogInformation("Checking availability for product {ProductId} with quantity {Quantity}", productId, quantity);
 
-        var result = new { ProductId = productId, RequestedQuantity = quantity, IsAvailable = true };
-        return Ok(ApiResponse<dynamic>.Ok(result, "Availability check completed"));
+        var isAvailable = await _inventoryService.IsStockAvailableAsync(productId, quantity, cancellationToken);
+        var result = new { ProductId = productId, RequestedQuantity = quantity, IsAvailable = isAvailable };
+        return Ok(ApiResponse<object>.Ok(result, "Availability check completed"));
     }
 
     /// <summary>
@@ -237,7 +243,17 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateProductStock(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Updating stock for product {ProductId}", productId);
+        var userId = _currentUser.UserIdOrNull;
+        _logger.LogInformation("Updating stock for product {ProductId} to {Quantity} (User: {UserId})", productId, request.Quantity, userId);
+
+        await _inventoryService.AdjustStockAsync(
+            productId,
+            request.Quantity,
+            request.Reason ?? "stock_update",
+            request.Notes,
+            userId,
+            cancellationToken: cancellationToken
+        );
 
         var response = new StockAdjustmentResponseDto
         {
@@ -261,11 +277,21 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> BulkUpdateStock([FromBody] BulkStockUpdateRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Bulk updating stock for {ProductCount} products", request.Updates.Count);
+        var userId = _currentUser.UserIdOrNull;
+        _logger.LogInformation("Bulk updating stock for {ProductCount} products (User: {UserId})", request.Updates.Count, userId);
 
         var responses = new List<StockAdjustmentResponseDto>();
         foreach (var update in request.Updates)
         {
+            await _inventoryService.AdjustStockAsync(
+                update.ProductId,
+                update.Quantity,
+                "bulk_update",
+                null,
+                userId,
+                cancellationToken: cancellationToken
+            );
+
             responses.Add(new StockAdjustmentResponseDto
             {
                 ProductId = update.ProductId,

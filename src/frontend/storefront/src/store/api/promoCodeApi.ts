@@ -1,6 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { config } from '../../config';
 import type { ApiResponse } from '../../types';
+import { baseApi } from './baseApi';
 
 export interface ValidatePromoCodeRequest {
   code: string;
@@ -13,11 +12,7 @@ export interface ValidatePromoCodeResponse {
   message: string;
 }
 
-export const promoCodeApi = createApi({
-  reducerPath: 'promoCodeApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-  }),
+const promoCodeApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     validatePromoCode: builder.mutation<ValidatePromoCodeResponse, ValidatePromoCodeRequest>({
       query: (body) => ({
@@ -31,4 +26,4 @@ export const promoCodeApi = createApi({
   }),
 });
 
-export const { useValidatePromoCodeMutation } = promoCodeApi;
+export const { useValidatePromoCodeMutation } = promoCodeApiSlice;

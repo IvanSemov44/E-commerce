@@ -98,15 +98,16 @@ public class OrderService : IOrderService
 
             // Step 8: Reduce stock for products (within transaction - will rollback if fails)
             await ReduceProductStockAsync(items, order, userId, cancellationToken);
-            
-            // Step 9: Commit transaction - all operations succeeded
+
+            // Step 9: Increment promo code usage (within transaction for atomicity)
+            await IncrementPromoCodeUsageAsync(order.PromoCodeId, order.OrderNumber, cancellationToken);
+
+            // Step 10: Commit transaction - all operations succeeded
             await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Order created successfully: {OrderNumber}", order.OrderNumber);
 
-            // Step 10: Post-transaction operations (best effort - errors logged but don't fail order)
-            // These are outside transaction as they're not critical to order creation
-            await IncrementPromoCodeUsageAsync(order.PromoCodeId, order.OrderNumber, cancellationToken);
+            // Post-transaction operations (best effort - errors logged but don't fail order)
             await SendOrderConfirmationAsync(dto.GuestEmail, userId, order, cancellationToken);
 
             return _mapper.Map<OrderDetailDto>(order);

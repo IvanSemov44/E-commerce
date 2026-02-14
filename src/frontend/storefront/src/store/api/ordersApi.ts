@@ -1,4 +1,3 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type {
   Order,
   OrderResponse,
@@ -6,24 +5,9 @@ import type {
   ApiResponse,
   PaginatedResult,
 } from '../../types';
-import { config } from '../../config';
+import { baseApi } from './baseApi';
 
-export const ordersApi = createApi({
-  reducerPath: 'ordersApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-    prepareHeaders: (headers) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(config.storage.authToken);
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  }),
-  keepUnusedDataFor: 60, // Keep cache for 60 seconds
-  tagTypes: ['Order'],
+const ordersApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createOrder: builder.mutation<OrderResponse, CreateOrderRequest>({
       query: (orderData) => ({
@@ -63,4 +47,4 @@ export const {
   useGetOrdersQuery,
   useGetOrderByIdQuery,
   useCancelOrderMutation,
-} = ordersApi;
+} = ordersApiSlice;

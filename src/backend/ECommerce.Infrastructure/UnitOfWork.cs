@@ -139,6 +139,12 @@ public class UnitOfWork : IUnitOfWork
         return new AsyncTransaction(transaction);
     }
 
+    /// <summary>
+    /// Indicates whether there is an active database transaction.
+    /// Used by services to avoid creating nested transactions.
+    /// </summary>
+    public bool HasActiveTransaction => _context.Database.CurrentTransaction != null;
+
     #endregion
 
     #region Disposal

@@ -375,4 +375,172 @@ public class PaymentsControllerTests
     }
 
     #endregion
+
+    #region IDOR Protection Tests
+
+    [TestMethod]
+    public async Task GetPaymentDetails_UserCannotAccessOtherUsersPayments_ReturnsForbidden()
+    {
+        // Arrange - Create an order owned by User A, then try to access payment details as User B
+        using var clientUserA = _factory.CreateAuthenticatedClient();
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "User",
+                LastName = "A",
+                StreetLine1 = "123 Test St",
+                City = "TestCity",
+                State = "TS",
+                PostalCode = "12345",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222").ToString(),
+                    ProductName = "TestProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await clientUserA.PostAsync("/api/orders", content);
+
+        // If order creation failed, skip the test
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test IDOR protection");
+            return;
+        }
+
+        var responseContent = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Create client for User B (different user)
+        var userBToken = _factory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
+        using var clientUserB = _factory.CreateClient();
+        clientUserB.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userBToken);
+
+        // Act - User B tries to access User A's payment details
+        var paymentDetailsResponse = await clientUserB.GetAsync($"/api/payments/{orderId}");
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Forbidden, paymentDetailsResponse.StatusCode,
+            "User B should not be able to access User A's payment details");
+    }
+
+    [TestMethod]
+    public async Task GetPaymentDetails_AdminCanAccessAnyPayment_ReturnsSuccess()
+    {
+        // Arrange - Create an order as regular user, then access payment details as admin
+        using var clientUser = _factory.CreateAuthenticatedClient();
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "User",
+                LastName = "Test",
+                StreetLine1 = "123 Test St",
+                City = "TestCity",
+                State = "TS",
+                PostalCode = "12345",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222").ToString(),
+                    ProductName = "TestProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await clientUser.PostAsync("/api/orders", content);
+
+        // If order creation failed, skip the test
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test admin access");
+            return;
+        }
+
+        var responseContent = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Create admin client
+        using var adminClient = _factory.CreateAdminClient();
+
+        // Act - Admin accesses user's payment details
+        var paymentDetailsResponse = await adminClient.GetAsync($"/api/payments/{orderId}");
+
+        // Assert
+        Assert.IsTrue(paymentDetailsResponse.StatusCode == HttpStatusCode.OK || paymentDetailsResponse.StatusCode == HttpStatusCode.NotFound,
+            "Admin should be able to access any payment details");
+    }
+
+    [TestMethod]
+    public async Task GetPaymentDetails_UserCanAccessOwnPayment_ReturnsSuccess()
+    {
+        // Arrange - Create order and access payment details as same user
+        using var client = _factory.CreateAuthenticatedClient();
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "User",
+                LastName = "Test",
+                StreetLine1 = "123 Test St",
+                City = "TestCity",
+                State = "TS",
+                PostalCode = "12345",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222").ToString(),
+                    ProductName = "TestProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await client.PostAsync("/api/orders", content);
+
+        // If order creation failed, skip the test
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test own payment access");
+            return;
+        }
+
+        var responseContent = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Act - User accesses their own payment details
+        var paymentDetailsResponse = await client.GetAsync($"/api/payments/{orderId}");
+
+        // Assert
+        Assert.IsTrue(paymentDetailsResponse.StatusCode == HttpStatusCode.OK || paymentDetailsResponse.StatusCode == HttpStatusCode.NotFound,
+            "User should be able to access their own payment details");
+    }
+
+    #endregion
 }

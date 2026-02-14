@@ -1,28 +1,12 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type {
   CartDto,
   AddToCartRequest,
   UpdateCartItemRequest,
   ApiResponse,
 } from '../../types';
-import { config } from '../../config';
+import { baseApi } from './baseApi';
 
-export const cartApi = createApi({
-  reducerPath: 'cartApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: config.api.baseUrl,
-    prepareHeaders: (headers) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(config.storage.authToken);
-        if (token) {
-          headers.set('Authorization', `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  }),
-  keepUnusedDataFor: 60, // Keep cache for 60 seconds
-  tagTypes: ['Cart'],
+const cartApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCart: builder.query<CartDto, void>({
       query: () => '/cart',
@@ -81,4 +65,4 @@ export const {
   useUpdateCartItemMutation,
   useRemoveFromCartMutation,
   useClearCartMutation,
-} = cartApi;
+} = cartApiSlice;
