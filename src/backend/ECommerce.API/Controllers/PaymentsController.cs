@@ -248,7 +248,6 @@ public class PaymentsController : ControllerBase
     /// Process payment webhook from payment providers (Stripe, PayPal).
     /// This endpoint allows anonymous access for payment provider callbacks.
     /// </summary>
-    /// <param name="webhookPayload">Webhook event payload from payment provider.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Webhook processing response.</returns>
     /// <response code="200">Webhook processed successfully.</response>

@@ -129,8 +129,7 @@ public class OrdersController : ControllerBase
     /// <summary>
     /// Retrieves a paginated list of orders for the authenticated user.
     /// </summary>
-    /// <param name="page">The page number (default: 1).</param>
-    /// <param name="pageSize">The number of orders per page (default: 10).</param>
+    /// <param name="parameters">Query parameters for filtering and pagination.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A paginated list of the user's orders.</returns>
     /// <response code="200">Orders retrieved successfully.</response>
@@ -150,8 +149,7 @@ public class OrdersController : ControllerBase
     /// <summary>
     /// Retrieves a paginated list of all orders in the system (admin only).
     /// </summary>
-    /// <param name="page">The page number (default: 1).</param>
-    /// <param name="pageSize">The number of orders per page (default: 20).</param>
+    /// <param name="parameters">Query parameters for filtering and pagination.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A paginated list of all orders.</returns>
     /// <response code="200">Orders retrieved successfully.</response>
