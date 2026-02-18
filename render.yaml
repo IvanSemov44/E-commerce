@@ -1,0 +1,104 @@
+# Render Blueprint for E-Commerce Platform
+# https://render.com/docs/blueprint-spec
+#
+# This file defines the infrastructure for the e-commerce platform:
+# - PostgreSQL database
+# - .NET 10 Web API
+#
+# Usage:
+# 1. Push this file to your repository root
+# 2. In Render Dashboard, click "New" → "Blueprint"
+# 3. Connect your repository and apply this blueprint
+
+services:
+  # Backend API Web Service
+  - type: web
+    name: ecommerce-api
+    runtime: docker
+    plan: free
+    region: oregon # Change to your preferred region
+    branch: main
+    dockerfilePath: ./src/backend/Dockerfile
+    dockerContext: ./src/backend
+    
+    # Health check configuration
+    healthCheckPath: /health
+    
+    # Auto-deploy on push to main branch
+    autoDeploy: true
+    
+    # Environment variables
+    envVars:
+      # ASP.NET Core environment
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      
+      # Database connection from linked database
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: ecommerce-db
+          property: connectionString
+      
+      # JWT Configuration
+      - key: Jwt__SecretKey
+        generateValue: true # Generates a secure random value
+      - key: Jwt__Issuer
+        value: ecommerce-api
+      - key: Jwt__Audience
+        value: ecommerce-client
+      - key: Jwt__ExpireMinutes
+        value: "60"
+      
+      # CORS - Update these URLs after deploying frontends
+      - key: AllowedOrigins
+        value: https://your-storefront.vercel.app,https://your-admin.vercel.app
+      
+      # Email configuration (optional - uncomment and configure if needed)
+      # - key: EmailProvider
+      #   value: SendGrid
+      # - key: SendGrid__ApiKey
+      #   sync: false # Set manually in dashboard for security
+      # - key: SendGrid__FromEmail
+      #   value: noreply@yourdomain.com
+      # - key: SendGrid__FromName
+      #   value: E-Commerce Platform
+      
+      # Business rules
+      - key: BusinessRules__FreeShippingThreshold
+        value: "100.00"
+      - key: BusinessRules__StandardShippingCost
+        value: "10.00"
+      - key: BusinessRules__TaxRate
+        value: "0.08"
+      
+      # Monitoring
+      - key: Monitoring__EnableDetailedHealthChecks
+        value: "true"
+      - key: Monitoring__MemoryThresholdMB
+        value: "1024"
+
+# PostgreSQL Database
+databases:
+  - name: ecommerce-db
+    plan: free
+    region: oregon # Should match the API region
+    postgresMajorVersion: "15"
+    
+    # User and database name are auto-generated
+    # Connection string is available via fromDatabase reference
+
+# Optional: Add a background worker for email processing
+# services:
+#   - type: worker
+#     name: ecommerce-worker
+#     runtime: docker
+#     plan: free
+#     region: oregon
+#     branch: main
+#     dockerfilePath: ./src/worker/Dockerfile
+#     dockerContext: ./src/worker
+#     envVars:
+#       - key: ConnectionStrings__DefaultConnection
+#         fromDatabase:
+#           name: ecommerce-db
+#           property: connectionString

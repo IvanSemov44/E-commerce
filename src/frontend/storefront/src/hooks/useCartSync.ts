@@ -122,7 +122,6 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
   }, [
     enabled,
     isAuthenticated,
-    token,
     backendCart,
     cartLoading,
     localCartItems,
