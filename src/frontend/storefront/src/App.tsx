@@ -32,7 +32,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function AppContent() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, initialized } = useAppSelector((state) => state.auth);
   const { user } = useAppSelector((state) => state.auth);
   const { handleError, clearError } = useErrorHandler();
 
@@ -42,12 +42,12 @@ function AppContent() {
     error: profileError,
     isLoading: profileLoading,
   } = useGetProfileQuery(undefined, {
-    skip: !isAuthenticated || !!user || !token,
+    skip: !isAuthenticated || !!user || !initialized,
   });
 
   // Use cart sync hook to handle local-to-backend cart sync
   const { isLoading: cartLoading } = useCartSync({
-    enabled: isAuthenticated && !!token,
+    enabled: isAuthenticated,
   });
 
   /**

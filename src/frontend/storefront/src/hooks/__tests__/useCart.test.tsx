@@ -74,11 +74,10 @@ describe('useCart', () => {
         },
         auth: {
           user: null,
-          token: null,
-          refreshToken: null,
           isAuthenticated: false,
           loading: false,
           error: null,
+          initialized: true,
         },
       },
     })
@@ -126,11 +125,10 @@ describe('useCart', () => {
         },
         auth: {
           user: null,
-          token: null,
-          refreshToken: null,
           isAuthenticated: false,
           loading: false,
           error: null,
+          initialized: true,
         },
       },
     })
@@ -155,11 +153,10 @@ describe('useCart', () => {
         },
         auth: {
           user: null,
-          token: null,
-          refreshToken: null,
           isAuthenticated: false,
           loading: false,
           error: null,
+          initialized: true,
         },
       },
     })
