@@ -328,5 +328,15 @@ public class AuthService : IAuthService
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
     }
 
+    public async Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        if (user == null)
+        {
+            return null;
+        }
+        return _mapper.Map<UserDto>(user);
+    }
+
     
 }

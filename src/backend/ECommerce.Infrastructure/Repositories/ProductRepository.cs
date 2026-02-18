@@ -171,4 +171,28 @@ public class ProductRepository : Repository<Product>, IProductRepository
 
         return (items, totalCount);
     }
+
+    /// <summary>
+    /// Atomically reduces stock quantity for a product using optimistic concurrency.
+    /// Uses raw SQL to ensure atomic stock reduction and prevent race conditions.
+    /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="quantity">The quantity to reduce (must be positive).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if stock was successfully reduced; false if insufficient stock available.</returns>
+    public async Task<bool> TryReduceStockAsync(Guid productId, int quantity, CancellationToken cancellationToken = default)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentException("Quantity must be positive.", nameof(quantity));
+        }
+
+        var affectedRows = await Context.Database.ExecuteSqlRawAsync(
+            @"UPDATE Products 
+              SET StockQuantity = StockQuantity - {0}, UpdatedAt = {1}
+              WHERE Id = {2} AND StockQuantity >= {0}",
+            quantity, DateTime.UtcNow, productId, cancellationToken);
+
+        return affectedRows > 0;
+    }
 }

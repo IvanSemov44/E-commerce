@@ -25,6 +25,11 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // ============================================================================
+// Startup Validation - Fail Fast on Missing Secrets
+// ============================================================================
+builder.Configuration.ValidateRequiredConfiguration();
+
+// ============================================================================
 // Service Registration
 // ============================================================================
 

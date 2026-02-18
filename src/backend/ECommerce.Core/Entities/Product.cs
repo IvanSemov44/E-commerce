@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ECommerce.Core.Common;
 
 namespace ECommerce.Core.Entities;
@@ -21,6 +23,10 @@ public class Product : BaseEntity
     public bool IsFeatured { get; set; }
     public string? MetaTitle { get; set; }
     public string? MetaDescription { get; set; }
+
+    // Concurrency token for optimistic locking
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 
     // Navigation properties
     public virtual Category? Category { get; set; }

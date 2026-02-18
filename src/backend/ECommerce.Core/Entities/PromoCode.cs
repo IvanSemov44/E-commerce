@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ECommerce.Core.Common;
 
 namespace ECommerce.Core.Entities;
@@ -14,6 +15,10 @@ public class PromoCode : BaseEntity
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public bool IsActive { get; set; } = true;
+
+    // Concurrency token for optimistic locking
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 
     // Navigation properties
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();

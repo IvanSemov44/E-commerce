@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Configures JWT authentication for the application.
+    /// Supports both Authorization header and httpOnly cookie-based authentication.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The application configuration.</param>
@@ -58,6 +59,30 @@ public static class ServiceCollectionExtensions
                 ValidAudience = jwtSettings["Audience"],
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
+            };
+
+            // 🔒 SECURITY: Support reading JWT from httpOnly cookie
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    // First, try to get token from Authorization header
+                    var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                    }
+                    else
+                    {
+                        // Fall back to httpOnly cookie
+                        var accessToken = context.Request.Cookies["accessToken"];
+                        if (!string.IsNullOrEmpty(accessToken))
+                        {
+                            context.Token = accessToken;
+                        }
+                    }
+                    return Task.CompletedTask;
+                }
             };
         });
 
@@ -99,9 +124,16 @@ public static class ServiceCollectionExtensions
             {
                 options.AddPolicy("AllowAll", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    // 🔒 SECURITY: Allow credentials for httpOnly cookie support
+                    policy.WithOrigins(
+                            "http://localhost:5173",  // Vite dev server (storefront)
+                            "http://localhost:5177",  // Vite dev server (admin)
+                            "http://localhost:3000",  // Alternative dev port
+                            "http://localhost:3001"   // Alternative dev port
+                        )
                         .AllowAnyMethod()
-                        .AllowAnyHeader();
+                        .AllowAnyHeader()
+                        .AllowCredentials(); // Required for httpOnly cookies
                 });
             }
             else
@@ -117,7 +149,7 @@ public static class ServiceCollectionExtensions
                     policy.WithOrigins(allowedOrigins)
                         .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .WithHeaders("Content-Type", "Authorization", "Accept")
-                        .AllowCredentials();
+                        .AllowCredentials(); // Required for httpOnly cookies
                 });
             }
         });

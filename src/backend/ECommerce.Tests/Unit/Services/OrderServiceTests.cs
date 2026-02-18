@@ -874,4 +874,378 @@ public class OrderServiceTests
     }
 
     #endregion
+
+    #region Price Manipulation Prevention Tests
+
+    /// <summary>
+    /// SECURITY TEST: Verifies that the order uses server-side price from the database,
+    /// not any client-provided price. This prevents price manipulation attacks where
+    /// attackers could try to set their own prices.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateOrderAsync_UsesServerSidePrice_NotClientProvidedPrice()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = TestDataFactory.CreateUser();
+        var productId = Guid.NewGuid();
+        
+        // The actual product price in the database is $100.00
+        const decimal serverSidePrice = 100.00m;
+        
+        var dto = new CreateOrderDto
+        {
+            PaymentMethod = "CreditCard",
+            ShippingAddress = new AddressDto
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "123 Main St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "US",
+                Phone = "555-1234"
+            },
+            Items = new List<CreateOrderItemDto>
+            {
+                new CreateOrderItemDto
+                {
+                    ProductId = productId.ToString(),
+                    Quantity = 2
+                    // NOTE: No Price field exists in CreateOrderItemDto - this is the security fix!
+                    // The DTO only accepts ProductId and Quantity
+                }
+            }
+        };
+
+        var mockProduct = new Product
+        {
+            Id = productId,
+            Name = "Premium Product",
+            Sku = "PREM-001",
+            Price = serverSidePrice, // Server-side price: $100.00
+            IsActive = true,
+            StockQuantity = 100,
+            Images = new List<ProductImage>()
+        };
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockProduct);
+
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+            .ReturnsAsync(user);
+
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
+            .ReturnsAsync(new StockCheckResponse
+            {
+                IsAvailable = true,
+                Issues = new List<StockIssueDto>()
+            });
+
+        Order capturedOrder = null!;
+
+        _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .Callback<Order, CancellationToken>((order, _) => 
+            { 
+                if (order.Id == Guid.Empty) order.Id = Guid.NewGuid();
+                capturedOrder = order;
+            })
+            .Returns(Task.CompletedTask);
+
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
+            .Returns(new OrderDetailDto { Id = Guid.NewGuid() });
+
+        // Act
+        await _service.CreateOrderAsync(userId, dto);
+
+        // Assert
+        capturedOrder.Should().NotBeNull();
+        capturedOrder.Items.Should().HaveCount(1);
+        
+        // Verify the order item uses the SERVER-SIDE price ($100), not any client-provided price
+        var orderItem = capturedOrder.Items.First();
+        orderItem.UnitPrice.Should().Be(serverSidePrice, 
+            "because the order must use the server-side price from the database to prevent price manipulation");
+        orderItem.TotalPrice.Should().Be(serverSidePrice * 2, 
+            "because total should be calculated from server-side price");
+        
+        // Verify subtotal is calculated correctly from server-side prices
+        capturedOrder.Subtotal.Should().Be(serverSidePrice * 2,
+            "because subtotal must be calculated from server-side prices");
+    }
+
+    /// <summary>
+    /// SECURITY TEST: Verifies that attempting to order a non-existent product
+    /// throws ProductNotFoundException, preventing manipulation with fake product IDs.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateOrderAsync_NonExistentProduct_ThrowsProductNotFoundException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = TestDataFactory.CreateUser();
+        var nonExistentProductId = Guid.NewGuid();
+        
+        var dto = new CreateOrderDto
+        {
+            PaymentMethod = "CreditCard",
+            ShippingAddress = new AddressDto
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "123 Main St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "US",
+                Phone = "555-1234"
+            },
+            Items = new List<CreateOrderItemDto>
+            {
+                new CreateOrderItemDto
+                {
+                    ProductId = nonExistentProductId.ToString(),
+                    Quantity = 1
+                }
+            }
+        };
+
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+            .ReturnsAsync(user);
+
+        // Product does not exist in database
+        _mockProductRepository.Setup(r => r.GetByIdAsync(nonExistentProductId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Product?)null);
+
+        // Act
+        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+
+        // Assert
+        await act.Should().ThrowAsync<ProductNotFoundException>()
+            .WithMessage($"*{nonExistentProductId}*", 
+                "because ordering a non-existent product should be rejected");
+    }
+
+    /// <summary>
+    /// SECURITY TEST: Verifies that attempting to order an inactive/unavailable product
+    /// throws ProductNotAvailableException, preventing purchases of disabled products.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateOrderAsync_InactiveProduct_ThrowsProductNotAvailableException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = TestDataFactory.CreateUser();
+        var productId = Guid.NewGuid();
+        
+        var dto = new CreateOrderDto
+        {
+            PaymentMethod = "CreditCard",
+            ShippingAddress = new AddressDto
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "123 Main St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "US",
+                Phone = "555-1234"
+            },
+            Items = new List<CreateOrderItemDto>
+            {
+                new CreateOrderItemDto
+                {
+                    ProductId = productId.ToString(),
+                    Quantity = 1
+                }
+            }
+        };
+
+        // Product exists but is inactive (not available for purchase)
+        var inactiveProduct = new Product
+        {
+            Id = productId,
+            Name = "Discontinued Product",
+            Sku = "DISC-001",
+            Price = 50.00m,
+            IsActive = false, // Product is disabled
+            StockQuantity = 10,
+            Images = new List<ProductImage>()
+        };
+
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+            .ReturnsAsync(user);
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(inactiveProduct);
+
+        // Act
+        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+
+        // Assert
+        await act.Should().ThrowAsync<ProductNotAvailableException>()
+            .WithMessage("*Discontinued Product*", 
+                "because ordering an inactive product should be rejected");
+    }
+
+    /// <summary>
+    /// SECURITY TEST: Verifies that order totals are calculated entirely server-side
+    /// and cannot be manipulated by the client.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateOrderAsync_CalculatesTotalsServerSide()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = TestDataFactory.CreateUser();
+        var productId1 = Guid.NewGuid();
+        var productId2 = Guid.NewGuid();
+        
+        var dto = new CreateOrderDto
+        {
+            PaymentMethod = "CreditCard",
+            ShippingAddress = new AddressDto
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "123 Main St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "US",
+                Phone = "555-1234"
+            },
+            Items = new List<CreateOrderItemDto>
+            {
+                new CreateOrderItemDto { ProductId = productId1.ToString(), Quantity = 2 },
+                new CreateOrderItemDto { ProductId = productId2.ToString(), Quantity = 1 }
+            }
+        };
+
+        var product1 = new Product
+        {
+            Id = productId1,
+            Name = "Product 1",
+            Sku = "PROD-001",
+            Price = 50.00m, // $50 x 2 = $100
+            IsActive = true,
+            StockQuantity = 100,
+            Images = new List<ProductImage>()
+        };
+
+        var product2 = new Product
+        {
+            Id = productId2,
+            Name = "Product 2",
+            Sku = "PROD-002",
+            Price = 25.00m, // $25 x 1 = $25
+            IsActive = true,
+            StockQuantity = 50,
+            Images = new List<ProductImage>()
+        };
+
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId1, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product1);
+        _mockProductRepository.Setup(r => r.GetByIdAsync(productId2, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product2);
+
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+            .ReturnsAsync(user);
+
+        _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
+            .ReturnsAsync(new StockCheckResponse
+            {
+                IsAvailable = true,
+                Issues = new List<StockIssueDto>()
+            });
+
+        Order capturedOrder = null!;
+
+        _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .Callback<Order, CancellationToken>((order, _) => 
+            { 
+                if (order.Id == Guid.Empty) order.Id = Guid.NewGuid();
+                capturedOrder = order;
+            })
+            .Returns(Task.CompletedTask);
+
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        _mockMapper.Setup(m => m.Map<OrderDetailDto>(It.IsAny<Order>()))
+            .Returns(new OrderDetailDto { Id = Guid.NewGuid() });
+
+        // Act
+        await _service.CreateOrderAsync(userId, dto);
+
+        // Assert
+        capturedOrder.Should().NotBeNull();
+        
+        // Subtotal: $100 + $25 = $125
+        capturedOrder.Subtotal.Should().Be(125.00m, 
+            "because subtotal must be calculated from server-side prices");
+        
+        // Shipping: Free (over $100 threshold)
+        capturedOrder.ShippingAmount.Should().Be(0.00m,
+            "because shipping is free for orders over $100");
+        
+        // Tax: $125 * 0.08 = $10
+        capturedOrder.TaxAmount.Should().Be(10.00m,
+            "because tax must be calculated server-side");
+        
+        // Total: $125 + $0 + $10 - $0 = $135
+        capturedOrder.TotalAmount.Should().Be(135.00m,
+            "because total must be calculated server-side from all components");
+    }
+
+    /// <summary>
+    /// SECURITY TEST: Verifies that invalid product ID format is rejected.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateOrderAsync_InvalidProductIdFormat_ThrowsProductNotFoundException()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = TestDataFactory.CreateUser();
+        
+        var dto = new CreateOrderDto
+        {
+            PaymentMethod = "CreditCard",
+            ShippingAddress = new AddressDto
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "123 Main St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "US",
+                Phone = "555-1234"
+            },
+            Items = new List<CreateOrderItemDto>
+            {
+                new CreateOrderItemDto
+                {
+                    ProductId = "not-a-valid-guid", // Invalid GUID format
+                    Quantity = 1
+                }
+            }
+        };
+
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+            .ReturnsAsync(user);
+
+        // Act
+        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+
+        // Assert
+        await act.Should().ThrowAsync<ProductNotFoundException>()
+            .WithMessage("*not-a-valid-guid*",
+                "because invalid product ID format should be rejected");
+    }
+
+    #endregion
 }

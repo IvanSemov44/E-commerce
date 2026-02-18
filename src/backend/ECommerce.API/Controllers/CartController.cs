@@ -171,14 +171,37 @@ public class CartController : ControllerBase
     /// <returns>Validation result.</returns>
     /// <response code="200">Cart is valid and ready for checkout.</response>
     /// <response code="400">Cart validation failed due to stock issues or unavailable items.</response>
+    /// <response code="403">User does not have permission to validate this cart.</response>
     /// <response code="404">Cart not found.</response>
     [HttpPost("validate/{cartId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> ValidateCart(Guid cartId, CancellationToken cancellationToken)
     {
+        var cart = await _cartService.GetCartByIdAsync(cartId, cancellationToken: cancellationToken);
+        if (cart == null)
+        {
+            return NotFound(ApiResponse<object>.Error("Cart not found"));
+        }
+
+        // Check ownership: if cart belongs to a user, verify the current user owns it or is admin
+        if (cart.UserId.HasValue)
+        {
+            var currentUserId = _currentUser.UserIdOrNull;
+            var isAdmin = _currentUser.IsAuthenticated &&
+                         (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+
+            if (!isAdmin && cart.UserId != currentUserId)
+            {
+                _logger.LogWarning("User {UserId} attempted to validate cart {CartId} belonging to {CartOwnerId}",
+                    currentUserId, cartId, cart.UserId);
+                return StatusCode(403, ApiResponse<object>.Error("You do not have permission to validate this cart"));
+            }
+        }
+
         await _cartService.ValidateCartAsync(cartId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Cart is valid"));
     }

@@ -97,4 +97,14 @@ public interface IProductRepository : IRepository<Product>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>True if slug is unique; otherwise false.</returns>
     Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically reduces stock quantity for a product using optimistic concurrency.
+    /// This method uses raw SQL to ensure atomic stock reduction and prevent race conditions.
+    /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="quantity">The quantity to reduce (must be positive).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if stock was successfully reduced; false if insufficient stock available.</returns>
+    Task<bool> TryReduceStockAsync(Guid productId, int quantity, CancellationToken cancellationToken = default);
 }

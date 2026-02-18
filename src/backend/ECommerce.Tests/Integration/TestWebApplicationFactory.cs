@@ -95,6 +95,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
 
         builder.UseEnvironment("Development");
+        
+        // Configure test-specific configuration values for secrets using UseSetting
+        // This ensures values are available before Program.cs runs validation
+        builder.UseSetting("Jwt:SecretKey", "SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough");
+        builder.UseSetting("Jwt:Issuer", "test");
+        builder.UseSetting("Jwt:Audience", "test");
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=localhost;Database=TestDb;Username=test;Password=testpassword");
+        
         builder.ConfigureTestServices(services =>
         {
             // Replace AppDbContext with InMemory DB

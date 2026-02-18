@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ECommerce.Core.Common;
 using ECommerce.Core.Enums;
 
@@ -25,6 +26,10 @@ public class Order : BaseEntity
     public DateTime? ShippedAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
     public DateTime? CancelledAt { get; set; }
+
+    // Concurrency token for optimistic locking
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 
     // Navigation properties
     public virtual User? User { get; set; }

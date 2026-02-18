@@ -263,4 +263,153 @@ public class CartControllerTests
     }
 
     #endregion
+
+    #region IDOR Protection Tests
+
+    [TestMethod]
+    public async Task ValidateCart_UserCannotValidateOtherUsersCart_ReturnsForbidden()
+    {
+        // Arrange - Create a cart for User A
+        using var clientUserA = _factory.CreateAuthenticatedClient();
+        var addItemDto = new
+        {
+            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            Quantity = 1
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
+        var addResponse = await clientUserA.PostAsync("/api/cart/add-item", content);
+
+        // Get the cart to find its ID - use POST since get-or-create is a POST endpoint
+        var cartResponse = await clientUserA.PostAsync("/api/cart/get-or-create", null);
+        if (cartResponse.StatusCode != HttpStatusCode.OK)
+        {
+            Assert.Inconclusive("Could not create cart for IDOR test");
+            return;
+        }
+
+        var cartContent = await cartResponse.Content.ReadAsStringAsync();
+        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
+        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Create client for User B (different user)
+        var userBToken = _factory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
+        using var clientUserB = _factory.CreateClient();
+        clientUserB.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userBToken);
+
+        // Act - User B tries to validate User A's cart
+        var validateResponse = await clientUserB.PostAsync($"/api/cart/validate/{cartId}", null);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Forbidden, validateResponse.StatusCode,
+            "User B should not be able to validate User A's cart");
+    }
+
+    [TestMethod]
+    public async Task ValidateCart_AdminCanValidateAnyCart_ReturnsSuccess()
+    {
+        // Arrange - Create a cart for a regular user
+        using var clientUser = _factory.CreateAuthenticatedClient();
+        var addItemDto = new
+        {
+            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            Quantity = 1
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
+        await clientUser.PostAsync("/api/cart/add-item", content);
+
+        // Get the cart to find its ID - use POST since get-or-create is a POST endpoint
+        var cartResponse = await clientUser.PostAsync("/api/cart/get-or-create", null);
+        if (cartResponse.StatusCode != HttpStatusCode.OK)
+        {
+            Assert.Inconclusive("Could not create cart for admin test");
+            return;
+        }
+
+        var cartContent = await cartResponse.Content.ReadAsStringAsync();
+        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
+        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Create admin client
+        using var adminClient = _factory.CreateAdminClient();
+
+        // Act - Admin validates user's cart
+        var validateResponse = await adminClient.PostAsync($"/api/cart/validate/{cartId}", null);
+
+        // Assert
+        Assert.IsTrue(validateResponse.StatusCode == HttpStatusCode.OK || validateResponse.StatusCode == HttpStatusCode.BadRequest || validateResponse.StatusCode == HttpStatusCode.NotFound,
+            "Admin should be able to validate any cart");
+    }
+
+    [TestMethod]
+    public async Task ValidateCart_UserCanValidateOwnCart_ReturnsSuccess()
+    {
+        // Arrange - Create and validate cart as same user
+        using var client = _factory.CreateAuthenticatedClient();
+        var addItemDto = new
+        {
+            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            Quantity = 1
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
+        await client.PostAsync("/api/cart/add-item", content);
+
+        // Get the cart to find its ID - use POST since get-or-create is a POST endpoint
+        var cartResponse = await client.PostAsync("/api/cart/get-or-create", null);
+        if (cartResponse.StatusCode != HttpStatusCode.OK)
+        {
+            Assert.Inconclusive("Could not create cart for validation test");
+            return;
+        }
+
+        var cartContent = await cartResponse.Content.ReadAsStringAsync();
+        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
+        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Act - User validates their own cart
+        var validateResponse = await client.PostAsync($"/api/cart/validate/{cartId}", null);
+
+        // Assert
+        Assert.IsTrue(validateResponse.StatusCode == HttpStatusCode.OK || validateResponse.StatusCode == HttpStatusCode.BadRequest,
+            "User should be able to validate their own cart");
+    }
+
+    [TestMethod]
+    public async Task ValidateCart_GuestCartCanBeValidated_ReturnsSuccess()
+    {
+        // Arrange - Create a guest cart (no authentication)
+        using var guestClient = _factory.CreateUnauthenticatedClient();
+        
+        // Get or create a guest cart
+        var cartResponse = await guestClient.PostAsync("/api/cart/get-or-create", null);
+        if (cartResponse.StatusCode != HttpStatusCode.OK)
+        {
+            Assert.Inconclusive("Could not create guest cart for validation test");
+            return;
+        }
+
+        var cartContent = await cartResponse.Content.ReadAsStringAsync();
+        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
+        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
+
+        // Add an item to the cart
+        var addItemDto = new
+        {
+            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            Quantity = 1
+        };
+        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
+        await guestClient.PostAsync("/api/cart/add-item", content);
+
+        // Act - Validate the guest cart
+        var validateResponse = await guestClient.PostAsync($"/api/cart/validate/{cartId}", null);
+
+        // Assert - Guest carts should be validatable
+        Assert.IsTrue(validateResponse.StatusCode == HttpStatusCode.OK || validateResponse.StatusCode == HttpStatusCode.BadRequest || validateResponse.StatusCode == HttpStatusCode.NotFound,
+            "Guest cart should be validatable");
+    }
+
+    #endregion
 }

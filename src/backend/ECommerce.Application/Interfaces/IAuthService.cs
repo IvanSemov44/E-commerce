@@ -15,6 +15,7 @@ public interface IAuthService
     Task<string> GeneratePasswordResetTokenAsync(string email, CancellationToken cancellationToken = default);
     Task ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken = default);
     Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default);
+    Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default);
     string GenerateJwtToken(UserDto user);
     string HashPassword(string password);
     bool VerifyPassword(string password, string hash);
