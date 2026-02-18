@@ -48,9 +48,17 @@ public static class ApplicationBuilderExtensions
 
             if (pendingMigrations.Any())
             {
-                Log.Information("Applying pending migrations...");
+                Log.Information("Applying pending migrations... Count: {Count}", pendingMigrations.Count());
+                foreach (var migration in pendingMigrations)
+                {
+                    Log.Information("Pending migration: {Migration}", migration);
+                }
                 await context.Database.MigrateAsync();
                 Log.Information("Migrations applied successfully.");
+            }
+            else
+            {
+                Log.Information("No pending migrations found.");
             }
         }
         catch (InvalidOperationException ex)
@@ -59,7 +67,8 @@ public static class ApplicationBuilderExtensions
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "An error occurred while applying migrations (non-fatal in tests).");
+            Log.Error(ex, "Failed to apply database migrations. This is fatal in production.");
+            throw; // Re-throw to fail startup in production
         }
     }
 
