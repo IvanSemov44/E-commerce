@@ -1,6 +1,7 @@
 /**
  * useAuth Hook
- * Centralized authentication logic (login, logout, registration, token management)
+ * Centralized authentication logic (login, logout, registration)
+ * Uses httpOnly cookies for secure token storage - no localStorage needed
  */
 
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -11,38 +12,21 @@ import {
   setUser,
 } from '../store/slices/authSlice';
 import type { AuthUser } from '../types';
-import { config } from '../config';
 import { useErrorHandler } from './useErrorHandler';
-import { useLocalStorage } from './useLocalStorage';
 
 export function useAuth() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user, token, loading } = useAppSelector(
+  const { isAuthenticated, user, loading } = useAppSelector(
     (state) => state.auth
   );
   const { handleError, clearError } = useErrorHandler();
-  const [, setStoredToken] = useLocalStorage<string | null>(
-    config.storage.authToken,
-    null
-  );
-
-  /**
-   * Persist token to localStorage when it changes
-   */
-  const persistToken = (authToken: string | null) => {
-    if (authToken) {
-      setStoredToken(authToken);
-    } else {
-      setStoredToken(null);
-    }
-  };
 
   /**
    * Handle successful login
+   * Tokens are now stored in httpOnly cookies by the backend
    */
-  const handleLoginSuccess = (userData: AuthUser, authToken: string) => {
-    dispatch(loginSuccess({ user: userData, token: authToken }));
-    persistToken(authToken);
+  const handleLoginSuccess = (userData: AuthUser) => {
+    dispatch(loginSuccess(userData));
     clearError();
   };
 
@@ -65,10 +49,10 @@ export function useAuth() {
 
   /**
    * Logout and clear auth state
+   * Backend will clear httpOnly cookies
    */
   const performLogout = () => {
     dispatch(logout());
-    persistToken(null);
     clearError();
   };
 
@@ -82,27 +66,26 @@ export function useAuth() {
   };
 
   /**
-   * Check if token is valid (exists and decoded)
+   * Check if user is authenticated
+   * With httpOnly cookies, we rely on the user object being present
    */
   const isTokenValid = (): boolean => {
-    return !!token && !!user;
+    return !!user;
   };
 
   /**
-   * Get auth header for API calls
+   * Get CSRF token from cookie for API calls
    */
-  const getAuthHeader = (): Record<string, string> => {
-    if (!token) return {};
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+  const getCsrfToken = (): string | null => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
   };
 
   return {
     // State
     isAuthenticated,
     user,
-    token,
     loading,
 
     // Actions
@@ -114,6 +97,6 @@ export function useAuth() {
     // Checks
     hasRole,
     isTokenValid,
-    getAuthHeader,
+    getCsrfToken,
   };
 }

@@ -1,4 +1,5 @@
 using ECommerce.API.Configuration;
+using ECommerce.API.HealthChecks;
 using ECommerce.Application;
 using ECommerce.Application.Configuration;
 using ECommerce.Application.Interfaces;
@@ -10,8 +11,10 @@ using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -91,6 +94,27 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Configures CSRF/antiforgery protection for the application.
+    /// Uses the X-XSRF-TOKEN header pattern for SPA compatibility.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddCsrfProtection(this IServiceCollection services)
+    {
+        services.AddAntiforgery(options =>
+        {
+            // Use standard XSRF header name that SPAs expect
+            options.HeaderName = "X-XSRF-TOKEN";
+            // Cookie name for the CSRF token (readable by JavaScript)
+            options.Cookie.Name = "XSRF-TOKEN";
+            options.Cookie.HttpOnly = false; // Must be readable by JavaScript
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+        });
+        return services;
+    }
+
+    /// <summary>
     /// Configures JSON serialization options for strict case-sensitive handling.
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -107,7 +131,24 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// CORS policy names used throughout the application.
+    /// </summary>
+    public static class CorsPolicyNames
+    {
+        /// <summary>
+        /// Development policy - allows specific development origins.
+        /// </summary>
+        public const string Development = "Development";
+
+        /// <summary>
+        /// Production policy - restricts to configured allowed origins.
+        /// </summary>
+        public const string Production = "Production";
+    }
+
+    /// <summary>
     /// Configures CORS policies based on the hosting environment.
+    /// Uses distinct policy names for development and production environments.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="isDevelopment">Whether the application is running in development mode.</param>
@@ -120,38 +161,39 @@ public static class ServiceCollectionExtensions
     {
         services.AddCors(options =>
         {
-            if (isDevelopment)
+            // Always add both policies so they can be selected at runtime
+            // Development policy - permissive for local development
+            options.AddPolicy(CorsPolicyNames.Development, policy =>
             {
-                options.AddPolicy("AllowAll", policy =>
-                {
-                    // 🔒 SECURITY: Allow credentials for httpOnly cookie support
-                    policy.WithOrigins(
-                            "http://localhost:5173",  // Vite dev server (storefront)
-                            "http://localhost:5177",  // Vite dev server (admin)
-                            "http://localhost:3000",  // Alternative dev port
-                            "http://localhost:3001"   // Alternative dev port
-                        )
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials(); // Required for httpOnly cookies
-                });
-            }
-            else
+                // 🔒 SECURITY: Allow credentials for httpOnly cookie support
+                policy.WithOrigins(
+                        "http://localhost:5173",  // Vite dev server (storefront)
+                        "http://localhost:5177",  // Vite dev server (admin)
+                        "http://localhost:3000",  // Alternative dev port
+                        "http://localhost:3001"   // Alternative dev port
+                    )
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials(); // Required for httpOnly cookies
+            });
+
+            // Production policy - strict, configured origins only
+            options.AddPolicy(CorsPolicyNames.Production, policy =>
             {
-                var allowedOrigins = configuration.GetSection("Cors:Origins").Get<string[]>()
+                var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>()
                     ?? Array.Empty<string>();
 
                 if (allowedOrigins.Length == 0)
-                    throw new InvalidOperationException("CORS origins must be configured for production");
-
-                options.AddPolicy("AllowAll", policy =>
                 {
-                    policy.WithOrigins(allowedOrigins)
-                        .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .WithHeaders("Content-Type", "Authorization", "Accept")
-                        .AllowCredentials(); // Required for httpOnly cookies
-                });
-            }
+                    // Log warning but don't throw - allow configuration via environment variables
+                    Log.Warning("No AllowedOrigins configured in appsettings.json. Ensure CORS_ALLOWED_ORIGINS is set via environment variable for production.");
+                }
+
+                policy.WithOrigins(allowedOrigins)
+                    .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+                    .WithHeaders("Content-Type", "Authorization", "Accept", "X-XSRF-TOKEN", "X-Requested-With")
+                    .AllowCredentials(); // Required for httpOnly cookies
+            });
         });
         return services;
     }
@@ -369,6 +411,64 @@ public static class ServiceCollectionExtensions
         var appConfig = new AppConfiguration();
         configuration.Bind(appConfig);
         services.AddSingleton(appConfig);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures health checks for the application including database connectivity,
+    /// memory usage monitoring, and self-checks.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The application configuration.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <example>
+    /// Usage:
+    /// <code>
+    /// builder.Services.AddHealthChecksConfiguration(builder.Configuration);
+    /// </code>
+    /// </example>
+    public static IServiceCollection AddHealthChecksConfiguration(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Configure monitoring options
+        services.Configure<MonitoringOptions>(
+            configuration.GetSection(MonitoringOptions.SectionName));
+
+        var monitoringOptions = configuration
+            .GetSection(MonitoringOptions.SectionName)
+            .Get<MonitoringOptions>() ?? new MonitoringOptions();
+
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        var healthChecksBuilder = services.AddHealthChecks();
+
+        // Add PostgreSQL database health check if connection string is available
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            healthChecksBuilder.AddNpgSql(
+                connectionString,
+                name: "postgresql",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: new[] { "db", "sql", "ready" },
+                timeout: TimeSpan.FromMilliseconds(monitoringOptions.HealthCheckTimeoutMs));
+        }
+
+        // Add memory health check
+        healthChecksBuilder.AddCheck<MemoryHealthCheck>(
+            name: "memory",
+            failureStatus: HealthStatus.Degraded,
+            tags: new[] { "system", "ready" },
+            timeout: TimeSpan.FromMilliseconds(monitoringOptions.HealthCheckTimeoutMs));
+
+        // Add self-check (API is running)
+        healthChecksBuilder.AddCheck(
+            name: "self",
+            check: () => HealthCheckResult.Healthy("API is running"),
+            tags: new[] { "api", "ready" });
+
+        Log.Information("Health checks configured: postgresql, memory, self");
 
         return services;
     }

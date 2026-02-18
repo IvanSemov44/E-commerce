@@ -12,7 +12,7 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, user, initialized } = useAppSelector((state) => state.auth);
 
-  // Wait for auth state to be initialized from localStorage
+  // Wait for auth state to be initialized (from httpOnly cookie validation)
   if (!initialized) {
     return <div>Loading...</div>;
   }

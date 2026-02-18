@@ -21,19 +21,19 @@ interface UseCartSyncOptions {
 export function useCartSync(options: UseCartSyncOptions = {}) {
   const { enabled = true } = options;
   const dispatch = useAppDispatch();
-  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const localCartItems = useAppSelector(selectCartItems);
   const { handleError } = useErrorHandler();
   const syncInProgressRef = useRef(false);
 
-  // Backend cart query
+  // Backend cart query - httpOnly cookies handle authentication
   const {
     data: backendCart,
     isLoading: cartLoading,
     error: cartError,
     refetch: refetchCart,
   } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated || !token || !enabled,
+    skip: !isAuthenticated || !enabled,
   });
 
   // Add to cart mutation
@@ -46,7 +46,6 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
     if (
       !enabled ||
       !isAuthenticated ||
-      !token ||
       !backendCart ||
       cartLoading ||
       syncInProgressRef.current

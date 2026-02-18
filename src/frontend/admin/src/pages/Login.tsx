@@ -28,12 +28,11 @@ export default function Login() {
     try {
       const response = await login({ email, password }).unwrap();
 
-      // Handle both response structures for compatibility
-      const user = response.user || response.data?.user;
-      const token = response.token || response.data?.token;
+      // Tokens are now stored in httpOnly cookies by the backend
+      const user = response.user;
 
-      if (response.success && user && token) {
-        dispatch(loginSuccess({ user: user as AdminUser, token }));
+      if (response.success && user) {
+        dispatch(loginSuccess(user as AdminUser));
         toast.success('Login successful!');
         navigate('/');
       } else {

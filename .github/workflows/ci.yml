@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -7,6 +7,40 @@ on:
     branches: [main]
 
 jobs:
+  # Security Scanning
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp, javascript
+          
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Backend tests
   backend-tests:
     runs-on: ubuntu-latest
     services:
@@ -42,7 +76,18 @@ jobs:
         run: dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --no-restore --verbosity normal
         env:
           ConnectionStrings__DefaultConnection: 'Host=localhost;Database=ECommerceTestDb;Username=test;Password=test'
+          
+      - name: Upload backend test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: |
+            src/backend/ECommerce.Tests/TestResults/
+            **/*.trx
+          retention-days: 7
 
+  # Frontend storefront build
   frontend-storefront-build:
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +107,15 @@ jobs:
       - name: Build
         working-directory: src/frontend/storefront
         run: npm run build
+        
+      - name: Upload storefront build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: storefront-build
+          path: src/frontend/storefront/dist/
+          retention-days: 7
 
+  # Frontend admin build
   frontend-admin-build:
     runs-on: ubuntu-latest
     steps:
@@ -82,3 +135,71 @@ jobs:
       - name: Build
         working-directory: src/frontend/admin
         run: npm run build
+        
+      - name: Upload admin build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-build
+          path: src/frontend/admin/dist/
+          retention-days: 7
+
+  # Build Docker images
+  docker-build:
+    needs: [backend-tests, frontend-storefront-build, frontend-admin-build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/backend
+          push: false
+          tags: ecommerce-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Build Storefront Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/frontend/storefront
+          push: false
+          tags: ecommerce-storefront:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Build Admin Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/frontend/admin
+          push: false
+          tags: ecommerce-admin:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Staging deployment (manual trigger)
+  # To enable staging deployment:
+  # 1. Create a staging environment in GitHub repository settings
+  # 2. Configure deployment secrets (e.g., STAGING_SERVER, STAGING_SSH_KEY)
+  # 3. Uncomment this job and configure the deployment steps
+  #
+  # deploy-staging:
+  #   needs: [docker-build]
+  #   runs-on: ubuntu-latest
+  #   environment: staging
+  #   if: github.ref == 'refs/heads/main'
+  #   steps:
+  #     - name: Deploy to staging
+  #       run: |
+  #         echo "Deploying to staging environment..."
+  #         # Add your deployment commands here
+  #         # Example: SSH to server and run docker-compose pull && docker-compose up -d
+  #         
+  #     - name: Run smoke tests
+  #       run: |
+  #         echo "Running smoke tests against staging..."
+  #         # Add smoke test commands here

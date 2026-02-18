@@ -3,6 +3,15 @@ import type { ApiResponse } from '@shared/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+/**
+ * Helper function to get CSRF token from cookie
+ */
+const getCsrfToken = (): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 export interface ReviewDetailDto {
   id: string;
   productId: string;
@@ -21,10 +30,12 @@ export const reviewsApi = createApi({
   reducerPath: 'reviewsApi',
   baseQuery: fetchBaseQuery({
     baseUrl: API_URL,
+    credentials: 'include', // Required for httpOnly cookies to be sent
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+      // Add CSRF token header for state-changing requests
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        headers.set('X-XSRF-TOKEN', csrfToken);
       }
       return headers;
     },

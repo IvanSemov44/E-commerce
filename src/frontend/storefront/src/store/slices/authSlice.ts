@@ -14,26 +14,17 @@ export interface AuthUser {
 export interface AuthState {
   isAuthenticated: boolean;
   user: AuthUser | null;
-  token: string | null;
   loading: boolean;
   error: string | null;
+  initialized: boolean;
 }
 
-const getInitialToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('authToken');
-  }
-  return null;
-};
-
-const initialToken = getInitialToken();
-
 const initialState: AuthState = {
-  isAuthenticated: !!initialToken,
+  isAuthenticated: false,
   user: null,
-  token: initialToken,
   loading: false,
   error: null,
+  initialized: false,
 };
 
 export const authSlice = createSlice({
@@ -44,27 +35,22 @@ export const authSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    loginSuccess: (state, action: PayloadAction<{ user: AuthUser; token: string }>) => {
+    loginSuccess: (state, action: PayloadAction<AuthUser>) => {
       state.isAuthenticated = true;
-      state.user = action.payload.user;
-      state.token = action.payload.token;
+      state.user = action.payload;
       state.loading = false;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('authToken', action.payload.token);
-      }
+      state.initialized = true;
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
+      state.initialized = true;
     },
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
-      state.token = null;
       state.error = null;
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('authToken');
-      }
+      state.initialized = true;
     },
     clearError: (state) => {
       state.error = null;
@@ -76,9 +62,14 @@ export const authSlice = createSlice({
     },
     setUser: (state, action: PayloadAction<AuthUser>) => {
       state.user = action.payload;
+      state.isAuthenticated = true;
+      state.initialized = true;
+    },
+    setInitialized: (state) => {
+      state.initialized = true;
     },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, clearError, updateUser, setUser } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, clearError, updateUser, setUser, setInitialized } = authSlice.actions;
 export const authReducer = authSlice.reducer;

@@ -1,7 +1,10 @@
+using ECommerce.API.HealthChecks;
 using ECommerce.API.Middleware;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 
 namespace ECommerce.API.Extensions;
@@ -121,8 +124,11 @@ public static class ApplicationBuilderExtensions
             app.UseHttpsRedirection();
         }
 
-        // CORS
-        app.UseCors("AllowAll");
+        // CORS - use environment-appropriate policy
+        var corsPolicy = app.Environment.IsDevelopment()
+            ? ServiceCollectionExtensions.CorsPolicyNames.Development
+            : ServiceCollectionExtensions.CorsPolicyNames.Production;
+        app.UseCors(corsPolicy);
 
         // Rate limiting - before authentication
         app.UseRateLimiter();
@@ -131,11 +137,14 @@ public static class ApplicationBuilderExtensions
         app.UseAuthentication();
         app.UseAuthorization();
 
+        // CSRF Protection - after authentication so we can check if user is authenticated
+        app.UseCsrfProtection();
+
         // Controllers
         app.MapControllers();
 
-        // Health check endpoint
-        app.MapHealthCheckEndpoint();
+        // Health check endpoints
+        app.MapHealthCheckEndpoints();
 
         return app;
     }
@@ -158,15 +167,43 @@ public static class ApplicationBuilderExtensions
     }
 
     /// <summary>
-    /// Maps the health check endpoint for container orchestration.
+    /// Maps health check endpoints for container orchestration and monitoring.
+    /// Provides three endpoints:
+    /// - /health: Basic liveness probe (always returns 200 if app is running)
+    /// - /health/ready: Readiness probe (checks database, memory)
+    /// - /health/detail: Detailed health status for monitoring systems
     /// </summary>
     /// <param name="app">The web application.</param>
     /// <returns>The web application for chaining.</returns>
-    public static WebApplication MapHealthCheckEndpoint(this WebApplication app)
+    public static WebApplication MapHealthCheckEndpoints(this WebApplication app)
     {
+        // Basic liveness probe - always returns 200 if app is running
+        // Used by Kubernetes to know if the container should be restarted
         app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
             .WithName("Health")
-            .AllowAnonymous();
+            .AllowAnonymous()
+            .WithDescription("Basic liveness probe - returns 200 if the application is running");
+
+        // Readiness probe - checks all dependencies (database, memory)
+        // Used by Kubernetes to know if the container can receive traffic
+        app.MapHealthChecks("/health/ready", new HealthCheckOptions
+        {
+            Predicate = check => check.Tags.Contains("ready"),
+            ResponseWriter = HealthCheckResponseWriter.WriteHealthCheckResponse
+        }).AllowAnonymous()
+          .WithDescription("Readiness probe - checks database connectivity and system health");
+
+        // Detailed health check - all checks with full details
+        // Used by monitoring systems (Prometheus, Datadog, etc.)
+        app.MapHealthChecks("/health/detail", new HealthCheckOptions
+        {
+            Predicate = _ => true, // Run all health checks
+            ResponseWriter = HealthCheckResponseWriter.WriteHealthCheckResponse
+        }).AllowAnonymous()
+          .WithDescription("Detailed health check - returns full status of all health checks");
+
+        Log.Information("Health check endpoints configured: /health, /health/ready, /health/detail");
+
         return app;
     }
 }

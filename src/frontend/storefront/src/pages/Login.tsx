@@ -26,8 +26,8 @@ export default function Login() {
     onSubmit: async (values) => {
       try {
         const response = await login(values).unwrap();
-        if (response.success && response.user && response.token) {
-          dispatch(loginSuccess({ user: response.user, token: response.token }));
+        if (response.success && response.user) {
+          dispatch(loginSuccess(response.user));
           toast.success('Login successful!');
           navigate('/');
         } else {

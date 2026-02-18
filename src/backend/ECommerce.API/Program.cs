@@ -1,6 +1,5 @@
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Extensions;
-using Serilog;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -9,20 +8,9 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================================================================
-// Serilog Configuration
+// Serilog Configuration (Configuration-Based with Cloud-Ready Sinks)
 // ============================================================================
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
-    .WriteTo.Console()
-    .WriteTo.File("logs/app-.txt", rollingInterval: RollingInterval.Day)
-    .WriteTo.File("logs/security-.txt",
-        rollingInterval: RollingInterval.Day,
-        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning)
-    .CreateLogger();
-
-builder.Host.UseSerilog();
+builder.ConfigureSerilog();
 
 // ============================================================================
 // Startup Validation - Fail Fast on Missing Secrets
@@ -42,6 +30,9 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 // Business Rules
 builder.Services.AddBusinessRulesConfiguration(builder.Configuration);
 
+// Health Checks
+builder.Services.AddHealthChecksConfiguration(builder.Configuration);
+
 // JSON Serialization
 builder.Services.AddStrictJsonSerialization();
 
@@ -50,6 +41,9 @@ builder.Services.AddCorsConfiguration(builder.Environment.IsDevelopment(), build
 
 // Rate Limiting
 builder.Services.AddRateLimitingConfiguration();
+
+// CSRF Protection
+builder.Services.AddCsrfProtection();
 
 // Application Services
 builder.Services.AddApplicationServices(builder.Configuration);

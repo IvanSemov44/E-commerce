@@ -33,6 +33,12 @@ Phase completion summaries and retrospectives.
 - **PHASE_4_BACKEND_SYNC_SUMMARY.md** - Backend synchronization summary
 - **PHASE_5_PERFORMANCE_OPTIMIZATION_SUMMARY.md** - Performance optimization summary
 
+### 🔧 `/operations`
+Operational documentation for production support.
+
+- **INCIDENT_RESPONSE_RUNBOOK.md** - Incident classification, response procedures, and common scenarios
+- **DISASTER_RECOVERY_PLAN.md** - Backup strategy, recovery procedures, and failover plans
+
 ## Root Documentation
 
 See the project root for:

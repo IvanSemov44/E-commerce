@@ -4,56 +4,60 @@ import type {
   RegisterRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
-  AuthResponse,
   ApiResponse,
 } from '../../types';
 import { baseApi } from './baseApi';
 
-interface AuthData {
-  user: AuthUser;
-  token: string;
-}
-
 const authApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    register: builder.mutation<AuthResponse, RegisterRequest>({
+    register: builder.mutation<{ success: boolean; message: string; user?: AuthUser }, RegisterRequest>({
       query: (credentials) => ({
         url: '/auth/register',
         method: 'POST',
         body: credentials,
       }),
-      transformResponse: (response: ApiResponse<AuthData>) => ({
+      transformResponse: (response: ApiResponse<AuthUser>) => ({
         success: response.success,
         message: response.message,
-        user: response.data?.user,
-        token: response.data?.token,
+        user: response.data,
       }),
     }),
-    login: builder.mutation<AuthResponse, LoginRequest>({
+    login: builder.mutation<{ success: boolean; message: string; user?: AuthUser }, LoginRequest>({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
         body: credentials,
       }),
-      transformResponse: (response: ApiResponse<AuthData>) => ({
+      transformResponse: (response: ApiResponse<AuthUser>) => ({
         success: response.success,
         message: response.message,
-        user: response.data?.user,
-        token: response.data?.token,
+        user: response.data,
       }),
     }),
-    refreshToken: builder.mutation<AuthResponse, string>({
-      query: (token) => ({
+    refreshToken: builder.mutation<{ success: boolean; message: string; user?: AuthUser }, void>({
+      query: () => ({
         url: '/auth/refresh-token',
         method: 'POST',
-        body: { token },
       }),
-      transformResponse: (response: ApiResponse<AuthData>) => ({
+      transformResponse: (response: ApiResponse<AuthUser>) => ({
         success: response.success,
         message: response.message,
-        user: response.data?.user,
-        token: response.data?.token,
+        user: response.data,
       }),
+    }),
+    logout: builder.mutation<{ success: boolean; message: string }, void>({
+      query: () => ({
+        url: '/auth/logout',
+        method: 'POST',
+      }),
+      transformResponse: (response: ApiResponse<null>) => ({
+        success: response.success,
+        message: response.message,
+      }),
+    }),
+    getCurrentUser: builder.query<AuthUser | null, void>({
+      query: () => '/auth/me',
+      transformResponse: (response: ApiResponse<AuthUser>) => response.data || null,
     }),
     forgotPassword: builder.mutation<{ success: boolean; message: string }, ForgotPasswordRequest>({
       query: (data) => ({
@@ -84,6 +88,8 @@ export const {
   useRegisterMutation,
   useLoginMutation,
   useRefreshTokenMutation,
+  useLogoutMutation,
+  useGetCurrentUserQuery,
   useForgotPasswordMutation,
   useResetPasswordMutation,
 } = authApiSlice;

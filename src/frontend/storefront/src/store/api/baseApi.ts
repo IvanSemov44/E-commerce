@@ -3,14 +3,23 @@ import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolk
 import { config } from '../../config';
 import { logout } from '../slices/authSlice';
 
+/**
+ * Helper function to get CSRF token from cookie
+ */
+const getCsrfToken = (): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 const baseQuery = fetchBaseQuery({
   baseUrl: config.api.baseUrl,
+  credentials: 'include', // Required for httpOnly cookies to be sent
   prepareHeaders: (headers) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem(config.storage.authToken);
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
+    // Add CSRF token header for state-changing requests
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers.set('X-XSRF-TOKEN', csrfToken);
     }
     return headers;
   },
@@ -23,7 +32,20 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 ) => {
   const result = await baseQuery(args, api, extraOptions);
   if (result.error && result.error.status === 401) {
-    api.dispatch(logout());
+    // Try to refresh the token
+    const refreshResult = await baseQuery(
+      { url: '/auth/refresh-token', method: 'POST' },
+      api,
+      extraOptions
+    );
+    
+    if (refreshResult.error) {
+      // Refresh failed, logout user
+      api.dispatch(logout());
+    } else {
+      // Token refreshed, retry original request
+      return baseQuery(args, api, extraOptions);
+    }
   }
   return result;
 };

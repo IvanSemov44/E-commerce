@@ -39,8 +39,8 @@ export default function Register() {
       try {
         const { confirmPassword, ...registerData } = values;
         const response = await register(registerData).unwrap();
-        if (response.success && response.user && response.token) {
-          dispatch(loginSuccess({ user: response.user, token: response.token }));
+        if (response.success && response.user) {
+          dispatch(loginSuccess(response.user));
           toast.success('Registration successful!');
           navigate('/');
         } else {
