@@ -12,76 +12,70 @@ namespace ECommerce.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Add RowVersion column to all tables that inherit from BaseEntity
-            // RowVersion is used for optimistic concurrency control
+            // In PostgreSQL with Npgsql, RowVersion uses the xmin system column for optimistic concurrency
+            // The column type is 'bytea' and is configured as a concurrency token
+            
+            // Note: In PostgreSQL, we can also use the built-in xmin column, but EF Core expects
+            // a physical column when using [Timestamp] attribute. We add it as nullable bytea.
             
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "Products",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "Categories",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "Users",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "Addresses",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "Orders",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "OrderItems",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "ProductImages",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "PromoCodes",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "Reviews",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "InventoryLogs",
                 type: "bytea",
-                rowVersion: true,
                 nullable: true);
         }
 
