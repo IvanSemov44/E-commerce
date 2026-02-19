@@ -6,6 +6,10 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: 5177,
+    host: true,
+  },
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../shared'),

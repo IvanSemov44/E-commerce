@@ -1,8 +1,21 @@
+# =============================================================================
+# E-Commerce Platform - Local Development Environment
+# =============================================================================
+# Usage:
+#   docker-compose up -d          # Start all services in background
+#   docker-compose up -d api      # Start only API and its dependencies
+#   docker-compose logs -f api    # Follow API logs
+#   docker-compose down           # Stop all services
+#   docker-compose down -v        # Stop and remove volumes (reset database)
+# =============================================================================
+
 services:
+  # ===========================================================================
   # PostgreSQL Database
+  # ===========================================================================
   postgres:
     image: postgres:17-alpine
-    container_name: ecommerce_db
+    container_name: ecommerce_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ecommerce}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
@@ -19,8 +32,32 @@ services:
       timeout: 3s
       retries: 10
       start_period: 20s
+    restart: unless-stopped
 
+  # ===========================================================================
+  # Redis Cache
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce_redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ===========================================================================
   # Backend API
+  # ===========================================================================
   api:
     build:
       context: ./src/backend
@@ -29,61 +66,72 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
+      # Database Connection
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      
+      # Redis Connection
+      Redis__ConnectionString: "redis:6379"
+      Redis__InstanceName: "ecommerce:"
+      
+      # JWT Configuration
       Jwt__SecretKey: "${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}"
       Jwt__Issuer: "ecommerce-api"
       Jwt__Audience: "ecommerce-client"
       Jwt__ExpireMinutes: "60"
+      
+      # Email Configuration
+      EmailProvider: "${EMAIL_PROVIDER:-SMTP}"
       SendGrid__ApiKey: "${SENDGRID_API_KEY:-}"
+      Smtp__Host: "${SMTP_HOST:-smtp.gmail.com}"
+      Smtp__Port: "${SMTP_PORT:-587}"
+      Smtp__Username: "${SMTP_USERNAME:-}"
       Smtp__Password: "${SMTP_PASSWORD:-}"
+      
+      # Payment Configuration
       PaymentWebhook__Secret: "${PAYMENT_WEBHOOK_SECRET:-}"
-      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Production}"
+      
+      # Application Settings
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Development}"
       ASPNETCORE_URLS: "http://+:5000"
+      
+      # Monitoring
+      Monitoring__EnableDetailedHealthChecks: "true"
     ports:
       - "5000:5000"
     networks:
       - ecommerce-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
-  # Frontend Admin
-  admin:
-    build:
-      context: ./src/frontend
-      dockerfile: admin/Dockerfile
-    container_name: ecommerce_admin
-    depends_on:
-      - api
-    environment:
-      VITE_API_URL: "http://localhost:5000/api"
-    ports:
-      - "3001:5177"
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5177/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # Frontend Storefront
+  # ===========================================================================
+  # Frontend - Storefront (Customer-facing)
+  # ===========================================================================
   storefront:
     build:
       context: ./src/frontend/storefront
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: ecommerce_storefront
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     environment:
       VITE_API_URL: "http://localhost:5000/api"
+      NODE_ENV: development
     ports:
       - "3000:5173"
+    volumes:
+      - ./src/frontend/storefront/src:/app/src:ro
+      - ./src/frontend/storefront/public:/app/public:ro
+      - ./src/frontend/storefront/index.html:/app/index.html:ro
+      - ./src/frontend/storefront/vite.config.ts:/app/vite.config.ts:ro
     networks:
       - ecommerce-network
     healthcheck:
@@ -92,11 +140,52 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
 
+  # ===========================================================================
+  # Frontend - Admin Portal
+  # ===========================================================================
+  admin:
+    build:
+      context: ./src/frontend
+      dockerfile: admin/Dockerfile.dev
+    container_name: ecommerce_admin
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      VITE_API_URL: "http://localhost:5000/api"
+      NODE_ENV: development
+    ports:
+      - "3001:5177"
+    volumes:
+      - ./src/frontend/admin/src:/app/admin/src:ro
+      - ./src/frontend/admin/public:/app/admin/public:ro
+      - ./src/frontend/admin/index.html:/app/admin/index.html:ro
+      - ./src/frontend/admin/vite.config.ts:/app/admin/vite.config.ts:ro
+      - ./src/frontend/shared:/app/shared:ro
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5177/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   postgres_data:
     driver: local
+  redis_data:
+    driver: local
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   ecommerce-network:
     driver: bridge

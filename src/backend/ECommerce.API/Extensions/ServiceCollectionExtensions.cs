@@ -470,7 +470,55 @@ public static class ServiceCollectionExtensions
             check: () => HealthCheckResult.Healthy("API is running"),
             tags: new[] { "api", "ready" });
 
-        Log.Information("Health checks configured: postgresql, memory, self");
+        // Add Redis health check if connection string is available
+        var redisConnectionString = configuration["Redis:ConnectionString"];
+        if (!string.IsNullOrEmpty(redisConnectionString))
+        {
+            healthChecksBuilder.AddRedis(
+                redisConnectionString,
+                name: "redis",
+                failureStatus: HealthStatus.Degraded,
+                tags: new[] { "cache", "ready" },
+                timeout: TimeSpan.FromMilliseconds(monitoringOptions.HealthCheckTimeoutMs));
+            Log.Information("Health checks configured: postgresql, redis, memory, self");
+        }
+        else
+        {
+            Log.Information("Health checks configured: postgresql, memory, self");
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures Redis distributed caching for the application.
+    /// Falls back to in-memory caching if Redis is not available.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The application configuration.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddRedisCaching(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var redisConnectionString = configuration["Redis:ConnectionString"];
+        var instanceName = configuration["Redis:InstanceName"] ?? "ecommerce:";
+
+        if (!string.IsNullOrEmpty(redisConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = instanceName;
+            });
+            Log.Information("Redis caching configured: {ConnectionString}", redisConnectionString);
+        }
+        else
+        {
+            // Fallback to in-memory caching
+            services.AddDistributedMemoryCache();
+            Log.Information("Using in-memory distributed cache (Redis not configured)");
+        }
 
         return services;
     }

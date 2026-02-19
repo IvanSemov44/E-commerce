@@ -33,6 +33,9 @@ builder.Services.AddBusinessRulesConfiguration(builder.Configuration);
 // Health Checks
 builder.Services.AddHealthChecksConfiguration(builder.Configuration);
 
+// Redis Caching
+builder.Services.AddRedisCaching(builder.Configuration);
+
 // JSON Serialization
 builder.Services.AddStrictJsonSerialization();
 
