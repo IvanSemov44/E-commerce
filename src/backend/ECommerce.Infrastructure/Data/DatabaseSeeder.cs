@@ -7,7 +7,7 @@ namespace ECommerce.Infrastructure.Data;
 /// <summary>
 /// Orchestrates the seeding of all entities into the database.
 /// Calls individual seeders in the correct sequence to maintain referential integrity.
-/// Never seeds in production environments for safety.
+/// Seeds in production only when explicitly enabled via ENABLE_PRODUCTION_SEEDING environment variable.
 /// </summary>
 public class DatabaseSeeder
 {
@@ -30,17 +30,22 @@ public class DatabaseSeeder
 
     /// <summary>
     /// Seed all data into the database in the correct order.
-    /// Skips seeding in production environments to prevent accidental data corruption.
+    /// In production, requires ENABLE_PRODUCTION_SEEDING=true to seed.
     /// </summary>
     /// <param name="context">Database context</param>
     /// <param name="environment">Hosting environment (to check if production)</param>
     public async Task SeedAsync(AppDbContext context, IHostEnvironment environment)
     {
-        // Safety guard: Never seed in production
+        // Safety guard: Only seed in production if explicitly enabled
         if (environment.IsProduction())
         {
-            _logger.LogInformation("Skipping database seeding in Production environment");
-            return;
+            var enableSeeding = Environment.GetEnvironmentVariable("ENABLE_PRODUCTION_SEEDING");
+            if (!string.Equals(enableSeeding, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogInformation("Skipping database seeding in Production environment (set ENABLE_PRODUCTION_SEEDING=true to enable)");
+                return;
+            }
+            _logger.LogWarning("Production seeding is ENABLED. This should only be used for initial deployment!");
         }
 
         try

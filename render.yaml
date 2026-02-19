@@ -76,6 +76,11 @@ services:
         value: "true"
       - key: Monitoring__MemoryThresholdMB
         value: "1024"
+      
+      # Production Seeding - Set to "true" for initial deployment, then remove or set to "false"
+      # This enables sample data (users, categories, products) to be seeded on first run
+      - key: ENABLE_PRODUCTION_SEEDING
+        value: "true"
 
 # PostgreSQL Database
 databases:
