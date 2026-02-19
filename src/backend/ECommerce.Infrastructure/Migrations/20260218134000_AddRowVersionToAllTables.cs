@@ -77,11 +77,52 @@ namespace ECommerce.Infrastructure.Migrations
                 table: "InventoryLogs",
                 type: "bytea",
                 nullable: true);
+
+            // Add RowVersion to tables that were missing from the original migration
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "RefreshTokens",
+                type: "bytea",
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "Carts",
+                type: "bytea",
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "CartItems",
+                type: "bytea",
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "Wishlists",
+                type: "bytea",
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "Wishlists");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "CartItems");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "Carts");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "RefreshTokens");
+
             migrationBuilder.DropColumn(
                 name: "RowVersion",
                 table: "InventoryLogs");
