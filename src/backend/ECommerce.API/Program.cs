@@ -28,6 +28,9 @@ builder.Services.AddForwardedHeadersConfiguration();
 // Database
 builder.Services.AddPostgreSqlDatabase(builder.Configuration);
 
+// Data Protection - persistent key storage for containerized environments
+builder.Services.AddDataProtectionConfiguration(builder.Configuration);
+
 // Authentication & Authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
 

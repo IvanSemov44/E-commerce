@@ -13,6 +13,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
@@ -365,9 +366,13 @@ public static class ServiceCollectionExtensions
         {
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
-                // FIX: Configure query splitting behavior for multiple includes
-                // This prevents performance issues with complex queries
+                // Configure retry on failure for transient errors
                 npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
+                
+                // FIX: Configure query splitting behavior for multiple includes
+                // This prevents performance issues with complex queries that have multiple collection includes
+                // SplitQuery separates queries instead of creating one large cartesian product
+                npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             });
             
             // Configure warnings - ignore pending model changes warning
@@ -375,7 +380,7 @@ public static class ServiceCollectionExtensions
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
-        Log.Information("PostgreSQL database configured with retry on failure");
+        Log.Information("PostgreSQL database configured with retry on failure and split query behavior");
         return services;
     }
 
@@ -557,6 +562,65 @@ public static class ServiceCollectionExtensions
         });
 
         Log.Information("Forwarded headers configured for reverse proxy (Render)");
+        return services;
+    }
+
+    /// <summary>
+    /// Configures ASP.NET Core Data Protection with persistent key storage.
+    /// This ensures that encrypted cookies and sensitive data remain valid across container restarts.
+    /// For Render and similar containerized environments, keys are stored in the database.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The application configuration.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddDataProtectionConfiguration(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var dataProtectionSection = configuration.GetSection("DataProtection");
+
+        // Check if database storage is configured (recommended for production)
+        var useDatabaseStorage = dataProtectionSection.GetValue<bool>("UseDatabaseStorage");
+
+        if (useDatabaseStorage)
+        {
+            // Get the connection string for the Data Protection keys database
+            // By default, use the same database as the application
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? configuration.GetConnectionString("DataProtectionConnection");
+
+            if (!string.IsNullOrEmpty(connectionString))
+            {
+                services.AddDataProtection()
+                    .PersistKeysToDbContext<AppDbContext>()
+                    .SetApplicationName("ECommerce-API");
+
+                Log.Information("Data Protection keys configured with database persistence");
+                return services;
+            }
+        }
+
+        // Fallback: Use file system storage (works for containers with persistent volumes)
+        var keysDirectory = dataProtectionSection["KeysDirectory"];
+
+        if (!string.IsNullOrEmpty(keysDirectory))
+        {
+            var keysPath = Path.Combine(keysDirectory, "DataProtection-Keys");
+            Directory.CreateDirectory(keysPath);
+
+            services.AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
+                .SetApplicationName("ECommerce-API");
+
+            Log.Information("Data Protection keys configured with file system persistence: {Path}", keysPath);
+            return services;
+        }
+
+        // Default: Let ASP.NET Core use its default location
+        // This will show a warning in containers without persistent storage
+        Log.Warning("Data Protection keys using default ephemeral storage. " +
+                    "Keys will be lost on container restart. " +
+                    "Configure DataProtection:UseDatabaseStorage=true for production.");
         return services;
     }
 }

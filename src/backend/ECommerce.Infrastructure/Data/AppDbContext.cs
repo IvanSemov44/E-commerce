@@ -1,9 +1,10 @@
 using ECommerce.Core.Entities;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : DbContext, IDataProtectionKeyContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -24,6 +25,9 @@ public class AppDbContext : DbContext
     public DbSet<Wishlist> Wishlists { get; set; } = null!;
     public DbSet<InventoryLog> InventoryLogs { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+
+    // Data Protection Keys for persistent key storage
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
