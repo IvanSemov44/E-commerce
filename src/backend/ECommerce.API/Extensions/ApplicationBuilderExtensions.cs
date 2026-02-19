@@ -127,9 +127,12 @@ public static class ApplicationBuilderExtensions
             app.UseSwaggerDocumentation();
         }
 
-        // HTTPS redirect for production
+        // HTTPS redirect for production - configured for reverse proxy (Render, Azure, AWS, etc.)
         if (!app.Environment.IsDevelopment())
         {
+            // FIX: Configure HTTPS redirection to work behind reverse proxy
+            // Render terminates SSL at the load balancer, so we need to trust forwarded headers
+            app.UseForwardedHeaders();
             app.UseHttpsRedirection();
         }
 

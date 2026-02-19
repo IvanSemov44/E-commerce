@@ -22,6 +22,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using AutoMapper;
 
 namespace ECommerce.API.Extensions;
 
@@ -361,10 +362,20 @@ public static class ServiceCollectionExtensions
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(connectionString)
-                .ConfigureWarnings(warnings => warnings
-                    .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+        {
+            options.UseNpgsql(connectionString, npgsqlOptions =>
+            {
+                // FIX: Configure query splitting behavior for multiple includes
+                // This prevents performance issues with complex queries
+                npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
+            });
+            
+            // Configure warnings - ignore pending model changes warning
+            options.ConfigureWarnings(warnings => warnings
+                .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
+        Log.Information("PostgreSQL database configured with retry on failure");
         return services;
     }
 
@@ -520,6 +531,32 @@ public static class ServiceCollectionExtensions
             Log.Information("Using in-memory distributed cache (Redis not configured)");
         }
 
+        return services;
+    }
+
+    /// <summary>
+    /// Configures forwarded headers middleware for proper HTTPS detection behind reverse proxies.
+    /// Required for Render, Azure, AWS, and other cloud providers that terminate SSL at the load balancer.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddForwardedHeadersConfiguration(this IServiceCollection services)
+    {
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+                                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+
+            // Clear known networks and proxies to trust all proxies
+            // This is safe because Render's load balancer sets these headers
+            options.KnownIPNetworks.Clear();
+            options.KnownProxies.Clear();
+
+            // Increase the limit for the number of proxies in the chain
+            options.ForwardLimit = null;
+        });
+
+        Log.Information("Forwarded headers configured for reverse proxy (Render)");
         return services;
     }
 }

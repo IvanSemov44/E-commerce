@@ -21,6 +21,10 @@ builder.Configuration.ValidateRequiredConfiguration();
 // Service Registration
 // ============================================================================
 
+// Configure forwarded headers for reverse proxy (Render, Azure, AWS, etc.)
+// This must be called BEFORE other services that use IHttpContextAccessor
+builder.Services.AddForwardedHeadersConfiguration();
+
 // Database
 builder.Services.AddPostgreSqlDatabase(builder.Configuration);
 
