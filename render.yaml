@@ -50,8 +50,10 @@ services:
         value: "60"
       
       # CORS - Update these URLs after deploying frontends
+      # Note: For Render deployments, use the full URL including https://
+      # Multiple origins can be separated by commas
       - key: AllowedOrigins
-        value: https://your-storefront.vercel.app,https://your-admin.vercel.app
+        value: https://ecommerce-storefront-p9c3.onrender.com,https://ecommerce-admin.onrender.com
       
       # Email configuration (optional - uncomment and configure if needed)
       # - key: EmailProvider

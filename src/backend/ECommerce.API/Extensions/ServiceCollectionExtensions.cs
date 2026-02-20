@@ -182,13 +182,24 @@ public static class ServiceCollectionExtensions
             // Production policy - strict, configured origins only
             options.AddPolicy(CorsPolicyNames.Production, policy =>
             {
-                var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>()
+                // Try to get allowed origins from configuration
+                // Supports both array format (from appsettings.json) and comma-separated string (from environment variables)
+                var allowedOriginsArray = configuration.GetSection("AllowedOrigins").Get<string[]>();
+                var allowedOriginsString = configuration["AllowedOrigins"];
+                
+                var allowedOrigins = allowedOriginsArray?.Length > 0
+                    ? allowedOriginsArray
+                    : allowedOriginsString?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     ?? Array.Empty<string>();
 
                 if (allowedOrigins.Length == 0)
                 {
                     // Log warning but don't throw - allow configuration via environment variables
-                    Log.Warning("No AllowedOrigins configured in appsettings.json. Ensure CORS_ALLOWED_ORIGINS is set via environment variable for production.");
+                    Log.Warning("No AllowedOrigins configured. Set AllowedOrigins environment variable with comma-separated URLs (e.g., 'https://example.com,https://app.example.com')");
+                }
+                else
+                {
+                    Log.Information("CORS allowed origins: {Origins}", string.Join(", ", allowedOrigins));
                 }
 
                 policy.WithOrigins(allowedOrigins)

@@ -37,12 +37,17 @@ public class AuthController : ControllerBase
         var accessTokenExpiration = TimeSpan.FromMinutes(_configuration.GetValue<int>("Jwt:ExpireMinutes", 60));
         var refreshTokenExpiration = TimeSpan.FromDays(7);
 
+        // In production with cross-site setup (frontend and API on different domains),
+        // we need SameSite=None to allow cookies to be sent cross-site
+        // This requires Secure=true which is set in production
+        var sameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax;
+
         // Access token cookie (httpOnly for XSS protection)
         Response.Cookies.Append("accessToken", accessToken, new CookieOptions
         {
             HttpOnly = true,
             Secure = isProduction, // Only send over HTTPS in production
-            SameSite = isProduction ? SameSiteMode.Strict : SameSiteMode.Lax,
+            SameSite = sameSite,
             Expires = DateTimeOffset.UtcNow.Add(accessTokenExpiration),
             Path = "/"
         });
@@ -52,7 +57,7 @@ public class AuthController : ControllerBase
         {
             HttpOnly = true,
             Secure = isProduction,
-            SameSite = isProduction ? SameSiteMode.Strict : SameSiteMode.Lax,
+            SameSite = sameSite,
             Expires = DateTimeOffset.UtcNow.Add(refreshTokenExpiration),
             Path = "/"
         });
