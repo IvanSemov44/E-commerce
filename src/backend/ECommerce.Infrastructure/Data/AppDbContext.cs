@@ -180,6 +180,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
             entity.HasIndex(e => e.Token).IsUnique();
             entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
             entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+            // RefreshToken doesn't need optimistic concurrency - ignore RowVersion from BaseEntity
+            entity.Ignore(e => e.RowVersion);
         });
     }
 }

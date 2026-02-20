@@ -60,6 +60,10 @@ public static class ApplicationBuilderExtensions
             {
                 Log.Information("No pending migrations found.");
             }
+
+            // Validate that the database schema matches EF Core's model
+            // This catches cases where migration history is out of sync with actual schema
+            await ValidateDatabaseSchemaAsync(context);
         }
         catch (InvalidOperationException ex)
         {
@@ -69,6 +73,127 @@ public static class ApplicationBuilderExtensions
         {
             Log.Error(ex, "Failed to apply database migrations. This is fatal in production.");
             throw; // Re-throw to fail startup in production
+        }
+    }
+
+    /// <summary>
+    /// Validates that the database schema matches EF Core's model.
+    /// This catches issues where the migration history is out of sync with the actual schema.
+    /// </summary>
+    private static async Task ValidateDatabaseSchemaAsync(AppDbContext context)
+    {
+        try
+        {
+            var connection = context.Database.GetDbConnection();
+            await connection.OpenAsync();
+            
+            using var command = connection.CreateCommand();
+            
+            // First, check if critical tables exist
+            var requiredTables = new List<string>
+            {
+                "Users", "Products", "Orders", "RefreshTokens", "Categories"
+            };
+
+            var missingTables = new List<string>();
+            
+            foreach (var tableName in requiredTables)
+            {
+                command.CommandText = $@"
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = '{tableName}'
+                    )";
+                
+                var result = await command.ExecuteScalarAsync();
+                var tableExists = result != null && (bool)result;
+                
+                if (!tableExists)
+                {
+                    missingTables.Add(tableName);
+                }
+            }
+
+            if (missingTables.Any())
+            {
+                var errorMessage = $"Database schema validation failed. Missing required tables: {string.Join(", ", missingTables)}. " +
+                                   "The database may not be properly initialized or migrations may have failed.";
+                Log.Error(errorMessage);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            // Check critical columns that have caused issues in production
+            // Format: (TableName, ColumnName, ShouldExist, Reason)
+            var columnChecks = new List<(string TableName, string ColumnName, bool ShouldExist, string Reason)>
+            {
+                // RefreshToken ignores RowVersion from BaseEntity - column should NOT exist
+                ("RefreshTokens", "RowVersion", false, "RefreshToken entity ignores RowVersion from BaseEntity"),
+                // These tables should have RowVersion for optimistic concurrency
+                ("Products", "RowVersion", true, "Product entity uses RowVersion for optimistic concurrency"),
+                ("Orders", "RowVersion", true, "Order entity uses RowVersion for optimistic concurrency"),
+                ("PromoCodes", "RowVersion", true, "PromoCode entity uses RowVersion for optimistic concurrency"),
+                // Critical columns that must exist
+                ("RefreshTokens", "Token", true, "RefreshToken requires Token column for authentication"),
+                ("RefreshTokens", "UserId", true, "RefreshToken requires UserId column for user association"),
+                ("RefreshTokens", "ExpiresAt", true, "RefreshToken requires ExpiresAt column for validity"),
+            };
+
+            var schemaIssues = new List<string>();
+            
+            foreach (var (tableName, columnName, shouldExist, reason) in columnChecks)
+            {
+                command.CommandText = $@"
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_schema = 'public'
+                        AND table_name = '{tableName}' 
+                        AND column_name = '{columnName}'
+                    )";
+                
+                var result = await command.ExecuteScalarAsync();
+                var columnExists = result != null && (bool)result;
+                
+                if (shouldExist && !columnExists)
+                {
+                    schemaIssues.Add($"Table '{tableName}' is missing required column '{columnName}'. {reason}. " +
+                                    "Database schema is out of sync with migrations.");
+                }
+                else if (!shouldExist && columnExists)
+                {
+                    schemaIssues.Add($"Table '{tableName}' has column '{columnName}' which should not exist. {reason}. " +
+                                    "Run migration to drop it or manually remove the column.");
+                }
+            }
+
+            // Check for migration history consistency
+            command.CommandText = @"
+                SELECT COUNT(*) FROM ""__EFMigrationsHistory"" 
+                WHERE ""MigrationId"" LIKE '%AddRowVersionToAllTables%'";
+            var rowVersionMigrationResult = await command.ExecuteScalarAsync();
+            var rowVersionMigrationApplied = rowVersionMigrationResult != null && Convert.ToInt64(rowVersionMigrationResult) > 0;
+
+            // If the migration was applied, verify RefreshTokens has RowVersion (which we now need to drop)
+            if (rowVersionMigrationApplied)
+            {
+                Log.Information("AddRowVersionToAllTables migration was previously applied. " +
+                               "The IgnoreRefreshTokenRowVersion migration will handle the RefreshTokens.RowVersion column.");
+            }
+
+            await connection.CloseAsync();
+
+            if (schemaIssues.Any())
+            {
+                var errorMessage = $"Database schema validation failed. Issues found:\n{string.Join("\n", schemaIssues)}";
+                Log.Error(errorMessage);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            Log.Information("Database schema validation passed. All critical tables and columns verified.");
+        }
+        catch (Exception ex) when (ex is not InvalidOperationException)
+        {
+            Log.Warning(ex, "Could not validate database schema (non-fatal). This may indicate a connection issue.");
         }
     }
 
