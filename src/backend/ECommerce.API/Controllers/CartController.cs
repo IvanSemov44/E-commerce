@@ -27,24 +27,22 @@ public class CartController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves the authenticated user's shopping cart.
+    /// Retrieves the authenticated user's shopping cart, creating an empty cart if one doesn't exist.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The user's shopping cart with all items and totals.</returns>
     /// <response code="200">Cart retrieved successfully.</response>
     /// <response code="401">User is not authenticated.</response>
-    /// <response code="404">Cart not found.</response>
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<CartDto>>> GetCart(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<CartDto>.Error("User not authenticated"));
 
-        var cart = await _cartService.GetCartAsync(userId.Value, cancellationToken: cancellationToken);
+        var cart = await _cartService.GetOrCreateCartAsync(userId, sessionId: null, cancellationToken: cancellationToken);
         return Ok(ApiResponse<CartDto>.Ok(cart, "Cart retrieved successfully"));
     }
 
