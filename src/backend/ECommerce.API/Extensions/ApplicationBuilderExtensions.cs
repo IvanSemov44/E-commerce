@@ -176,6 +176,13 @@ public static class ApplicationBuilderExtensions
         {
             return Enumerable.Empty<string>();
         }
+        catch (Exception ex) when (ex.Message.Contains("__EFMigrationsHistory") || 
+                                   ex.InnerException?.Message.Contains("__EFMigrationsHistory") == true)
+        {
+            // Migration history table doesn't exist - return all migrations as pending
+            Log.Information("Migration history table does not exist, all migrations will be applied.");
+            return await Task.Run(() => context.Database.GetMigrations());
+        }
     }
 
     private static async Task SeedDatabaseAsync(
