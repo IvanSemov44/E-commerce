@@ -7,6 +7,7 @@ namespace ECommerce.Infrastructure.Data.Configurations;
 /// <summary>
 /// Configuration for User entity.
 /// Users don't need optimistic concurrency - updates are typically single-user operations.
+/// Note: User does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
@@ -18,15 +19,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
         entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
         entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-        
-        // Ignore RowVersion - User updates don't need optimistic concurrency
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for Category entity.
 /// Categories don't need optimistic concurrency - admin operations are typically sequential.
+/// Note: Category does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 {
@@ -42,15 +41,13 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .WithMany(e => e.Children)
             .HasForeignKey(e => e.ParentId)
             .OnDelete(DeleteBehavior.SetNull);
-        
-        // Ignore RowVersion - Category updates don't need optimistic concurrency
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for Product entity.
 /// Products NEED optimistic concurrency for inventory and pricing updates.
+/// Product implements IConcurrencyToken for RowVersion support.
 /// </summary>
 public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
@@ -81,6 +78,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 /// <summary>
 /// Configuration for ProductImage entity.
 /// ProductImages don't need optimistic concurrency - managed through Product aggregate.
+/// Note: ProductImage does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
 {
@@ -92,15 +90,13 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
             .WithMany(e => e.Images)
             .HasForeignKey(e => e.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        // Ignore RowVersion - images are managed through Product aggregate
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for Address entity.
 /// Addresses don't need optimistic concurrency - single user operations.
+/// Note: Address does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class AddressConfiguration : IEntityTypeConfiguration<Address>
 {
@@ -118,15 +114,13 @@ public class AddressConfiguration : IEntityTypeConfiguration<Address>
             .WithMany(e => e.Addresses)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        // Ignore RowVersion - address updates are single-user operations
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for Cart entity.
 /// Carts don't need optimistic concurrency - session-based operations.
+/// Note: Cart does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class CartConfiguration : IEntityTypeConfiguration<Cart>
 {
@@ -139,15 +133,13 @@ public class CartConfiguration : IEntityTypeConfiguration<Cart>
             .WithOne(e => e.Cart)
             .HasForeignKey<Cart>(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        // Ignore RowVersion - cart operations are session-based
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for CartItem entity.
 /// CartItems don't need optimistic concurrency - managed through Cart aggregate.
+/// Note: CartItem does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 {
@@ -165,15 +157,13 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
             .WithMany(e => e.CartItems)
             .HasForeignKey(e => e.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        // Ignore RowVersion - cart items are managed through Cart aggregate
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for PromoCode entity.
 /// PromoCodes NEED optimistic concurrency for usage count updates.
+/// PromoCode implements IConcurrencyToken for RowVersion support.
 /// </summary>
 public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
 {
@@ -195,6 +185,7 @@ public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
 /// <summary>
 /// Configuration for Order entity.
 /// Orders NEED optimistic concurrency for status and payment updates.
+/// Order implements IConcurrencyToken for RowVersion support.
 /// </summary>
 public class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
@@ -231,6 +222,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 /// <summary>
 /// Configuration for OrderItem entity.
 /// OrderItems don't need optimistic concurrency - managed through Order aggregate.
+/// Note: OrderItem does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 {
@@ -250,15 +242,13 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .WithMany(e => e.OrderItems)
             .HasForeignKey(e => e.ProductId)
             .OnDelete(DeleteBehavior.SetNull);
-        
-        // Ignore RowVersion - order items are managed through Order aggregate
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for Review entity.
 /// Reviews don't need optimistic concurrency - single user operations.
+/// Note: Review does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class ReviewConfiguration : IEntityTypeConfiguration<Review>
 {
@@ -275,15 +265,13 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
             .WithMany(e => e.Reviews)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.SetNull);
-        
-        // Ignore RowVersion - reviews are single-user operations
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for Wishlist entity.
 /// Wishlists don't need optimistic concurrency - single user operations.
+/// Note: Wishlist does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class WishlistConfiguration : IEntityTypeConfiguration<Wishlist>
 {
@@ -301,15 +289,13 @@ public class WishlistConfiguration : IEntityTypeConfiguration<Wishlist>
             .WithMany(e => e.Wishlists)
             .HasForeignKey(e => e.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        // Ignore RowVersion - wishlist operations are single-user
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for InventoryLog entity.
 /// InventoryLogs don't need optimistic concurrency - append-only audit records.
+/// Note: InventoryLog does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class InventoryLogConfiguration : IEntityTypeConfiguration<InventoryLog>
 {
@@ -323,15 +309,13 @@ public class InventoryLogConfiguration : IEntityTypeConfiguration<InventoryLog>
             .WithMany(e => e.InventoryLogs)
             .HasForeignKey(e => e.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        // Ignore RowVersion - inventory logs are append-only audit records
-        entity.Ignore(e => e.RowVersion);
     }
 }
 
 /// <summary>
 /// Configuration for RefreshToken entity.
 /// RefreshTokens don't need optimistic concurrency - simple create/revoke operations.
+/// Note: RefreshToken does not implement IConcurrencyToken, so no RowVersion property exists.
 /// </summary>
 public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
@@ -346,8 +330,5 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .WithMany()
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        
-        // Ignore RowVersion - tokens are simple create/revoke operations
-        entity.Ignore(e => e.RowVersion);
     }
 }

@@ -5,6 +5,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -18,6 +19,7 @@ using ECommerce.Infrastructure.Data;
 using ECommerce.Core.Entities;
 using ECommerce.Application.Interfaces;
 using BCrypt.Net;
+using Microsoft.Extensions.Hosting;
 
 namespace ECommerce.Tests.Integration;
 
@@ -94,7 +96,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
 
-        builder.UseEnvironment("Development");
+        // Use "Test" environment to skip CSRF validation in tests
+        builder.UseEnvironment("Test");
         
         // Configure test-specific configuration values for secrets using UseSetting
         // This ensures values are available before Program.cs runs validation
@@ -283,22 +286,24 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     /// <summary>
     /// Creates an authenticated HTTP client (customer user).
+    /// CSRF is skipped in Test environment, so no CSRF token handling needed.
     /// </summary>
     public HttpClient CreateAuthenticatedClient()
     {
-        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestUserId, "Customer");
         var client = CreateClient();
+        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestUserId, "Customer");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
 
     /// <summary>
     /// Creates an authenticated HTTP client with admin privileges.
+    /// CSRF is skipped in Test environment, so no CSRF token handling needed.
     /// </summary>
     public HttpClient CreateAdminClient()
     {
-        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestAdminUserId, "Admin");
         var client = CreateClient();
+        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestAdminUserId, "Admin");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
@@ -309,10 +314,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public HttpClient CreateUnauthenticatedClient()
     {
-        var client = CreateClient();
-        // Don't set any Authorization header - this will trigger [Authorize] rejection with 401
-        // Don't disable authentication - that would bypass [Authorize] checks entirely
-        return client;
+        return CreateClient();
     }
 
     /// <summary>

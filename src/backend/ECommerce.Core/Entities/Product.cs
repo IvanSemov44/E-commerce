@@ -1,10 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ECommerce.Core.Common;
+using ECommerce.Core.Interfaces;
 
 namespace ECommerce.Core.Entities;
 
-public class Product : BaseEntity
+/// <summary>
+/// Represents a product in the e-commerce catalog.
+/// Implements optimistic concurrency for inventory and pricing updates.
+/// </summary>
+public class Product : BaseEntity, IConcurrencyToken
 {
     public string Name { get; set; } = null!;
     public string Slug { get; set; } = null!;
@@ -24,7 +29,9 @@ public class Product : BaseEntity
     public string? MetaTitle { get; set; }
     public string? MetaDescription { get; set; }
 
-    // Concurrency token for optimistic locking
+    /// <summary>
+    /// Concurrency token for optimistic locking on inventory and pricing updates.
+    /// </summary>
     [Timestamp]
     public byte[]? RowVersion { get; set; }
 

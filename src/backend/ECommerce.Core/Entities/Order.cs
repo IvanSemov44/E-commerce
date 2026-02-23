@@ -1,10 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using ECommerce.Core.Common;
 using ECommerce.Core.Enums;
+using ECommerce.Core.Interfaces;
 
 namespace ECommerce.Core.Entities;
 
-public class Order : BaseEntity
+/// <summary>
+/// Represents an order in the e-commerce system.
+/// Implements optimistic concurrency for status and payment updates.
+/// </summary>
+public class Order : BaseEntity, IConcurrencyToken
 {
     public string OrderNumber { get; set; } = null!;
     public Guid? UserId { get; set; }
@@ -27,7 +32,9 @@ public class Order : BaseEntity
     public DateTime? DeliveredAt { get; set; }
     public DateTime? CancelledAt { get; set; }
 
-    // Concurrency token for optimistic locking
+    /// <summary>
+    /// Concurrency token for optimistic locking on status and payment updates.
+    /// </summary>
     [Timestamp]
     public byte[]? RowVersion { get; set; }
 

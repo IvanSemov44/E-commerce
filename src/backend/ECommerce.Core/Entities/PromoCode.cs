@@ -1,9 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using ECommerce.Core.Common;
+using ECommerce.Core.Interfaces;
 
 namespace ECommerce.Core.Entities;
 
-public class PromoCode : BaseEntity
+/// <summary>
+/// Represents a promotional code in the e-commerce system.
+/// Implements optimistic concurrency for usage count updates.
+/// </summary>
+public class PromoCode : BaseEntity, IConcurrencyToken
 {
     public string Code { get; set; } = null!;
     public string DiscountType { get; set; } = null!; // 'percentage' or 'fixed'
@@ -16,7 +21,9 @@ public class PromoCode : BaseEntity
     public DateTime? EndDate { get; set; }
     public bool IsActive { get; set; } = true;
 
-    // Concurrency token for optimistic locking
+    /// <summary>
+    /// Concurrency token for optimistic locking on usage count updates.
+    /// </summary>
     [Timestamp]
     public byte[]? RowVersion { get; set; }
 
