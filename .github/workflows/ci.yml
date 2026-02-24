@@ -115,6 +115,122 @@ jobs:
           path: src/frontend/storefront/dist/
           retention-days: 7
 
+  # Frontend storefront unit tests
+  storefront-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/storefront/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: src/frontend/storefront
+        run: npm ci
+      
+      - name: Run unit tests
+        working-directory: src/frontend/storefront
+        run: npm run test:run
+        
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storefront-unit-test-results
+          path: src/frontend/storefront/coverage/
+          retention-days: 7
+
+  # Frontend storefront E2E tests
+  storefront-e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [backend-tests]
+    services:
+      postgres:
+        image: postgres:alpine
+        env:
+          POSTGRES_DB: ECommerceTestDb
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/storefront/package-lock.json
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      
+      - name: Install frontend dependencies
+        working-directory: src/frontend/storefront
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        working-directory: src/frontend/storefront
+        run: npx playwright install --with-deps
+      
+      - name: Restore backend dependencies
+        run: dotnet restore src/backend/ECommerce.sln
+      
+      - name: Build backend
+        run: dotnet build src/backend/ECommerce.sln --no-restore
+      
+      - name: Start backend API
+        run: dotnet run --project src/backend/ECommerce.API/ECommerce.API.csproj --urls "http://localhost:5000" &
+        env:
+          ConnectionStrings__DefaultConnection: 'Host=localhost;Database=ECommerceTestDb;Username=test;Password=test'
+          JwtSettings__SecretKey: 'e2e-test-secret-key-for-ci-pipeline-minimum-32-characters'
+          JwtSettings__Issuer: 'ECommerce.API'
+          JwtSettings__Audience: 'ECommerce.Client'
+          ASPNETCORE_ENVIRONMENT: 'Development'
+      
+      - name: Wait for backend API to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:5000/health > /dev/null 2>&1; then
+              echo "Backend API is ready"
+              exit 0
+            fi
+            echo "Waiting for backend API... ($i/30)"
+            sleep 2
+          done
+          echo "Backend API did not become ready in time"
+          exit 1
+      
+      - name: Run E2E tests
+        working-directory: src/frontend/storefront
+        run: npm run test:e2e
+        env:
+          VITE_APP_URL: 'http://localhost:5173'
+          VITE_API_URL: 'http://localhost:5000'
+      
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storefront-e2e-test-results
+          path: |
+            src/frontend/storefront/playwright-report/
+            src/frontend/storefront/test-results/
+          retention-days: 7
+
   # Frontend admin build
   frontend-admin-build:
     runs-on: ubuntu-latest
@@ -143,9 +259,38 @@ jobs:
           path: src/frontend/admin/dist/
           retention-days: 7
 
+  # Frontend admin unit tests
+  admin-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/admin/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: src/frontend/admin
+        run: npm ci
+      
+      - name: Run unit tests
+        working-directory: src/frontend/admin
+        run: npm run test:run
+        
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admin-unit-test-results
+          path: src/frontend/admin/coverage/
+          retention-days: 7
+
   # Build Docker images
   docker-build:
-    needs: [backend-tests, frontend-storefront-build, frontend-admin-build]
+    needs: [backend-tests, frontend-storefront-build, storefront-unit-tests, storefront-e2e-tests, frontend-admin-build, admin-unit-tests]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
