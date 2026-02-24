@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { logger } from '../utils/logger';
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   // Get from local storage by key
@@ -16,7 +17,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error);
+      logger.warn('useLocalStorage', `Error reading localStorage key "${key}"`, error);
       return initialValue;
     }
   };
@@ -37,7 +38,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
     } catch (error) {
-      console.warn(`Error setting localStorage key "${key}":`, error);
+      logger.warn('useLocalStorage', `Error setting localStorage key "${key}"`, error);
     }
   };
 

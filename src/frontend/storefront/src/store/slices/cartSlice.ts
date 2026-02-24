@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
+import { logger } from '../../utils/logger';
 
 export interface CartItem {
   id: string;
@@ -28,7 +29,7 @@ function loadCartFromLocalStorage(): CartItem[] {
     const parsed = JSON.parse(stored);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.error('Failed to load cart from localStorage:', error);
+    logger.error('cartSlice', 'Failed to load cart from localStorage', error);
     return [];
   }
 }

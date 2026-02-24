@@ -10,6 +10,7 @@ import { useAddToCartMutation } from '../store/api/cartApi';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { addItem, selectCartItemById } from '../store/slices/cartSlice';
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/constants';
+import { logger } from '../utils/logger';
 
 export default function useProductDetails(slug: string) {
   const dispatch = useAppDispatch();
@@ -113,7 +114,7 @@ export default function useProductDetails(slug: string) {
       setTimeout(() => setAddedToCart(false), 2000);
       setQuantity(1);
     } catch (error: unknown) {
-      console.error('Failed to add to cart:', error);
+      logger.error('useProductDetails', 'Failed to add to cart', error);
       // Parse backend error message
       const err = error as { data?: { message?: string }; message?: string };
       const errorMessage =

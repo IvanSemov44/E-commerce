@@ -1,4 +1,5 @@
 import type { CartItem } from '../slices/cartSlice';
+import { logger } from '../../utils/logger';
 
 const CART_STORAGE_KEY = 'ecommerce_cart';
 const CART_ACTIONS = ['cart/addItem', 'cart/removeItem', 'cart/updateQuantity', 'cart/clearCart'];
@@ -12,7 +13,7 @@ export const saveCartToLocalStorage = (items: CartItem[]): void => {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
     }
   } catch (error) {
-    console.error('Failed to save cart to localStorage:', error);
+    logger.error('cartPersistence', 'Failed to save cart to localStorage', error);
   }
 };
 

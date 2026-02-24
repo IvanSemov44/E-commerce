@@ -3,6 +3,8 @@
  * Centralized config for all environment-specific settings
  */
 
+import { logger } from './utils/logger';
+
 const isDevelopment = import.meta.env.MODE === 'development';
 const isProduction = import.meta.env.MODE === 'production';
 
@@ -83,7 +85,7 @@ export const validateEnvironment = (): void => {
   );
 
   if (missing.length > 0 && isProduction) {
-    console.error('Missing required environment variables:', missing);
+    logger.error('config', 'Missing required environment variables', missing);
   }
 };
 

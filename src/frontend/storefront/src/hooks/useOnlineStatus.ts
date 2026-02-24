@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { logger } from '../utils/logger';
 
 interface UseOnlineStatusReturn {
   isOnline: boolean;
@@ -28,13 +29,13 @@ export function useOnlineStatus(): UseOnlineStatusReturn {
       setIsOnline(true);
       // Mark that user was offline (can be used to refetch data)
       setWasOffline(true);
-      console.log('[useOnlineStatus] Back online');
+      logger.info('useOnlineStatus', 'Back online');
     };
 
     // Handle going offline
     const handleOffline = () => {
       setIsOnline(false);
-      console.log('[useOnlineStatus] Went offline');
+      logger.info('useOnlineStatus', 'Went offline');
     };
 
     // Add event listeners

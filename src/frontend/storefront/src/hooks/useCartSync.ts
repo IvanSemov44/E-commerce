@@ -12,6 +12,7 @@ import {
   useAddToCartMutation,
 } from '../store/api/cartApi';
 import { useErrorHandler } from './useErrorHandler';
+import { logger } from '../utils/logger';
 import type { AddToCartRequest } from '../types';
 
 interface UseCartSyncOptions {
@@ -87,10 +88,7 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
             syncedCount++;
           } catch (error: unknown) {
             // Product not found or other error - remove from local cart
-            console.warn(
-              `Failed to sync item ${item.name} (${item.id}):`,
-              error
-            );
+            logger.warn('useCartSync', `Failed to sync item ${item.name} (${item.id})`, error);
             handleError(error);
             dispatch(removeItem(item.id));
             failedItems.push(item.name);
@@ -104,14 +102,10 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
 
         // Notify user if items were removed
         if (failedItems.length > 0) {
-          console.info(
-            `Removed ${failedItems.length} unavailable item(s) from cart: ${failedItems.join(
-              ', '
-            )}`
-          );
+          logger.info('useCartSync', `Removed ${failedItems.length} unavailable item(s) from cart: ${failedItems.join(', ')}`);
         }
       } catch (error) {
-        console.error('Cart sync failed:', error);
+        logger.error('useCartSync', 'Cart sync failed', error);
         handleError(error);
       } finally {
         syncInProgressRef.current = false;

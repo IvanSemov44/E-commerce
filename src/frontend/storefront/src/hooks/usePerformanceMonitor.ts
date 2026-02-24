@@ -9,6 +9,7 @@
  */
 
 import { useEffect } from 'react';
+import { logger } from '../utils/logger';
 
 interface PerformanceMetric {
   name: string;
@@ -35,11 +36,7 @@ export function usePerformanceMonitor(
     // Helper to log metric
     const logMetric = (metric: PerformanceMetric) => {
       if (enableLogging) {
-        const color = metric.rating === 'good' ? '#4ade80' : metric.rating === 'needs-improvement' ? '#facc15' : '#f87171';
-        console.group(`%c${metric.name}`, `color: ${color}; font-weight: bold;`);
-        console.log(`Value: ${metric.value.toFixed(2)}ms`);
-        console.log(`Rating: ${metric.rating}`);
-        console.groupEnd();
+        logger.metric(metric.name, metric.value, metric.rating);
       }
 
       if (onMetric) {
@@ -68,7 +65,7 @@ export function usePerformanceMonitor(
         observer.observe({ entryTypes: ['largest-contentful-paint'], buffered: true });
         return () => observer.disconnect();
       } catch (e) {
-        console.warn('LCP monitoring not supported');
+        logger.warn('usePerformanceMonitor', 'LCP monitoring not supported');
         return () => {};
       }
     };
@@ -93,7 +90,7 @@ export function usePerformanceMonitor(
         observer.observe({ entryTypes: ['first-input'], buffered: true });
         return () => observer.disconnect();
       } catch (e) {
-        console.warn('FID monitoring not supported');
+        logger.warn('usePerformanceMonitor', 'FID monitoring not supported');
         return () => {};
       }
     };
@@ -122,7 +119,7 @@ export function usePerformanceMonitor(
         observer.observe({ entryTypes: ['layout-shift'], buffered: true });
         return () => observer.disconnect();
       } catch (e) {
-        console.warn('CLS monitoring not supported');
+        logger.warn('usePerformanceMonitor', 'CLS monitoring not supported');
         return () => {};
       }
     };
@@ -149,7 +146,7 @@ export function usePerformanceMonitor(
         observer.observe({ entryTypes: ['paint'], buffered: true });
         return () => observer.disconnect();
       } catch (e) {
-        console.warn('FCP monitoring not supported');
+        logger.warn('usePerformanceMonitor', 'FCP monitoring not supported');
         return () => {};
       }
     };
@@ -159,14 +156,10 @@ export function usePerformanceMonitor(
       const handleVisibilityChange = () => {
         if (document.hidden) {
           // Page is hidden - user might have left
-          if (enableLogging) {
-            console.log('Page hidden - TTI tracking paused');
-          }
+          logger.debug('usePerformanceMonitor', 'Page hidden - TTI tracking paused');
         } else {
           // Page is visible - continue monitoring
-          if (enableLogging) {
-            console.log('Page visible - TTI tracking resumed');
-          }
+          logger.debug('usePerformanceMonitor', 'Page visible - TTI tracking resumed');
         }
       };
 
