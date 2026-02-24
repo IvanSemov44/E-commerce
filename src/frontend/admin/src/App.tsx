@@ -9,6 +9,7 @@ import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/Toast/ToastContainer';
+import AuthInitializer from './components/AuthInitializer';
 
 // Pages
 import Login from './pages/Login';
@@ -27,11 +28,12 @@ import { store } from './store/store';
 function App() {
   return (
     <Provider store={store}>
-      <Router>
-        <ErrorBoundary>
-          <Toaster position="top-right" />
-          <ToastContainer />
-          <Routes>
+      <AuthInitializer>
+        <Router>
+          <ErrorBoundary>
+            <Toaster position="top-right" />
+            <ToastContainer />
+            <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
 
@@ -57,6 +59,7 @@ function App() {
           </Routes>
         </ErrorBoundary>
       </Router>
+      </AuthInitializer>
     </Provider>
   );
 }
