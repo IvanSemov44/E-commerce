@@ -12,12 +12,15 @@ interface CartItemProps {
 }
 
 const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove, readOnly = false }: CartItemProps) {
+  // Use default image if item.image is empty or undefined
+  const imageSrc = item.image || DEFAULT_PRODUCT_IMAGE;
+
   return (
     <div className={styles.container}>
       {/* Image */}
       <Link to={`/products/${item.slug}`} className={styles.imageLink}>
         <img
-          src={item.image}
+          src={imageSrc}
           alt={item.name}
           className={styles.image}
           onError={(e) => {

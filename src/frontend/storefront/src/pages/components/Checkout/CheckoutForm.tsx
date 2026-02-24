@@ -2,24 +2,27 @@ import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import styles from './CheckoutForm.module.css';
 
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  streetLine1: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
 interface CheckoutFormProps {
-  formData: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    streetLine1: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
-  onFormDataChange: (data: CheckoutFormProps['formData']) => void;
+  formData: FormData;
+  errors?: Partial<Record<keyof FormData, string>>;
+  onFormDataChange: (data: FormData) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: CheckoutFormProps) {
-  const handleFieldChange = (field: keyof CheckoutFormProps['formData'], value: string) => {
+export default function CheckoutForm({ formData, errors = {}, onFormDataChange, onSubmit }: CheckoutFormProps) {
+  const handleFieldChange = (field: keyof FormData, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
   };
 
@@ -31,6 +34,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
           type="text"
           value={formData.firstName}
           onChange={(e) => handleFieldChange('firstName', e.target.value)}
+          error={errors.firstName}
           placeholder="John"
           required
         />
@@ -39,6 +43,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
           type="text"
           value={formData.lastName}
           onChange={(e) => handleFieldChange('lastName', e.target.value)}
+          error={errors.lastName}
           placeholder="Doe"
           required
         />
@@ -49,6 +54,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
         type="email"
         value={formData.email}
         onChange={(e) => handleFieldChange('email', e.target.value)}
+        error={errors.email}
         placeholder="your@email.com"
         required
       />
@@ -58,6 +64,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
         type="tel"
         value={formData.phone}
         onChange={(e) => handleFieldChange('phone', e.target.value)}
+        error={errors.phone}
         placeholder="+1 (555) 123-4567"
         required
       />
@@ -67,6 +74,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
         type="text"
         value={formData.streetLine1}
         onChange={(e) => handleFieldChange('streetLine1', e.target.value)}
+        error={errors.streetLine1}
         placeholder="123 Main St"
         required
       />
@@ -77,6 +85,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
           type="text"
           value={formData.city}
           onChange={(e) => handleFieldChange('city', e.target.value)}
+          error={errors.city}
           placeholder="New York"
           required
         />
@@ -85,6 +94,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
           type="text"
           value={formData.state}
           onChange={(e) => handleFieldChange('state', e.target.value)}
+          error={errors.state}
           placeholder="NY"
           required
         />
@@ -96,6 +106,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
           type="text"
           value={formData.postalCode}
           onChange={(e) => handleFieldChange('postalCode', e.target.value)}
+          error={errors.postalCode}
           placeholder="10001"
           required
         />
@@ -104,6 +115,7 @@ export default function CheckoutForm({ formData, onFormDataChange, onSubmit }: C
           type="text"
           value={formData.country}
           onChange={(e) => handleFieldChange('country', e.target.value)}
+          error={errors.country}
           placeholder="United States"
           required
         />

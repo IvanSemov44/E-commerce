@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
             };
 
             // 🔒 SECURITY: Support reading JWT from httpOnly cookie
+            // Uses app-specific cookie names to prevent conflicts between admin and storefront
             options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
             {
                 OnMessageReceived = context =>
@@ -79,8 +80,9 @@ public static class ServiceCollectionExtensions
                     }
                     else
                     {
-                        // Fall back to httpOnly cookie
-                        var accessToken = context.Request.Cookies["accessToken"];
+                        // Determine which app cookie to read based on Origin header
+                        var cookiePrefix = GetCookiePrefix(context.Request);
+                        var accessToken = context.Request.Cookies[$"{cookiePrefix}_accessToken"];
                         if (!string.IsNullOrEmpty(accessToken))
                         {
                             context.Token = accessToken;
@@ -377,8 +379,9 @@ public static class ServiceCollectionExtensions
         {
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
-                // Configure retry on failure for transient errors
-                npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
+                // NOTE: EnableRetryOnFailure is not compatible with manual transactions (BeginTransactionAsync)
+                // The OrderService uses manual transactions for atomicity, so we cannot use retry on failure here.
+                // If retry logic is needed, it should be implemented at the application level using IExecutionStrategy.
                 
                 // FIX: Configure query splitting behavior for multiple includes
                 // This prevents performance issues with complex queries that have multiple collection includes
@@ -633,5 +636,46 @@ public static class ServiceCollectionExtensions
                     "Keys will be lost on container restart. " +
                     "Configure DataProtection:UseDatabaseStorage=true for production.");
         return services;
+    }
+
+    /// <summary>
+    /// Gets the cookie prefix based on the requesting app.
+    /// Admin panel uses "admin" prefix, storefront uses "storefront" prefix.
+    /// This prevents cookie conflicts when both apps are used in the same browser.
+    /// </summary>
+    private static string GetCookiePrefix(HttpRequest request)
+    {
+        // Check for custom header that identifies the app
+        if (request.Headers.TryGetValue("X-App-Origin", out var appOrigin))
+        {
+            var appOriginStr = appOrigin.ToString().ToLowerInvariant();
+            if (appOriginStr.Contains("admin") || appOriginStr.Contains("5177") || appOriginStr.Contains("3001"))
+            {
+                return "admin";
+            }
+        }
+
+        // Check Origin header
+        if (request.Headers.TryGetValue("Origin", out var originHeader))
+        {
+            var originStr = originHeader.ToString().ToLowerInvariant();
+            if (originStr.Contains("5177") || originStr.Contains("3001"))
+            {
+                return "admin";
+            }
+        }
+
+        // Check Referer header as fallback
+        if (request.Headers.TryGetValue("Referer", out var referer))
+        {
+            var refererStr = referer.ToString().ToLowerInvariant();
+            if (refererStr.Contains("5177") || refererStr.Contains("3001"))
+            {
+                return "admin";
+            }
+        }
+
+        // Default to storefront
+        return "storefront";
     }
 }

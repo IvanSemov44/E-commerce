@@ -24,7 +24,7 @@ export default function Footer() {
               <li><Link to="/">Help Center</Link></li>
               <li><Link to="/">Contact Us</Link></li>
               <li><Link to="/">Track Order</Link></li>
-              <li><Link to="/">Returns</Link></li>
+              <li><Link to="/returns">Returns</Link></li>
             </ul>
           </div>
 
@@ -32,8 +32,8 @@ export default function Footer() {
           <div className={styles.section}>
             <h3>Legal</h3>
             <ul className={styles.links}>
-              <li><Link to="/">Privacy Policy</Link></li>
-              <li><Link to="/">Terms of Service</Link></li>
+              <li><Link to="/privacy">Privacy Policy</Link></li>
+              <li><Link to="/terms">Terms of Service</Link></li>
               <li><Link to="/">Cookies</Link></li>
               <li><Link to="/">Security</Link></li>
             </ul>

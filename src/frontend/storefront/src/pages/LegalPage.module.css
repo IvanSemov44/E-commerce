@@ -1,0 +1,98 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.card {
+  background: white;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+}
+
+.lastUpdated {
+  color: #666;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 0.75rem;
+}
+
+.section p {
+  color: #444;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.section ul,
+.section ol {
+  color: #444;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.section ul li,
+.section ol li {
+  margin-bottom: 0.5rem;
+}
+
+.link {
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.backLink {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.backLink a {
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.backLink a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .section h2 {
+    font-size: 1.125rem;
+  }
+}

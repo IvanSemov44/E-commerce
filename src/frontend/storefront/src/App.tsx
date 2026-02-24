@@ -25,10 +25,16 @@ const Wishlist = lazy(() => import('./pages/Wishlist'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
+// Legal pages
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const ReturnsPolicy = lazy(() => import('./pages/ReturnsPolicy'));
+
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import CookieConsent from './components/CookieConsent';
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -141,11 +147,16 @@ function AppContent() {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              {/* Legal Pages */}
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/returns" element={<ReturnsPolicy />} />
             </Routes>
           </Suspense>
         )}
       </main>
       <Footer />
+      <CookieConsent />
     </div>
   );
 }

@@ -1,295 +1,376 @@
 using ECommerce.API.Middleware;
-using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Exceptions;
+using ECommerce.Core.Exceptions.Base;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.IO;
+using System.Text.Json;
 
 namespace ECommerce.Tests.Unit.Middleware;
 
 /// <summary>
 /// Unit tests for GlobalExceptionMiddleware.
-/// Tests that the middleware properly catches exceptions and returns standardized ApiResponse.
+/// Tests exception handling and mapping to appropriate HTTP responses.
 /// </summary>
 [TestClass]
 public class GlobalExceptionMiddlewareTests
 {
-    private Mock<RequestDelegate> _mockNextMiddleware = null!;
-    private Mock<ILogger<GlobalExceptionMiddleware>> _mockLogger = null!;
-    private GlobalExceptionMiddleware _middleware = null!;
-    private DefaultHttpContext _httpContext = null!;
+    private readonly Mock<ILogger<GlobalExceptionMiddleware>> _loggerMock;
+
+    public GlobalExceptionMiddlewareTests()
+    {
+        _loggerMock = new Mock<ILogger<GlobalExceptionMiddleware>>();
+    }
 
     [TestInitialize]
     public void Setup()
     {
-        _mockNextMiddleware = new Mock<RequestDelegate>();
-        _mockLogger = new Mock<ILogger<GlobalExceptionMiddleware>>();
-        _middleware = new GlobalExceptionMiddleware(_mockNextMiddleware.Object, _mockLogger.Object);
-        _httpContext = new DefaultHttpContext();
+        _loggerMock.Reset();
+    }
+
+    #region NotFoundException Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithNotFoundException_Returns404()
+    {
+        // Arrange
+        var exception = new ProductNotFoundException(Guid.NewGuid());
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        context.Response.ContentType.Should().StartWith("application/json");
     }
 
     [TestMethod]
-    public async Task InvokeAsync_WhenProductNotFound_Returns404WithCorrectMessage()
+    public async Task InvokeAsync_WithNotFoundException_ReturnsCorrectMessage()
     {
         // Arrange
         var productId = Guid.NewGuid();
         var exception = new ProductNotFoundException(productId);
-        var response = new MemoryStream();
-        _httpContext.Response.Body = response;
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
         // Act
-        await _middleware.InvokeAsync(_httpContext);
+        await middleware.InvokeAsync(context);
+        var response = await ReadResponseBody<ErrorResponse>(context);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
-        _httpContext.Response.ContentType.Should().Contain("application/json");
+        response.Should().NotBeNull();
+        response!.Success.Should().BeFalse();
+        response.Message.Should().Contain(productId.ToString());
+    }
+
+    #endregion
+
+    #region UnauthorizedException Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithUnauthorizedException_Returns401()
+    {
+        // Arrange
+        var exception = new InvalidTokenException();
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
     }
 
     [TestMethod]
-    public async Task InvokeAsync_WhenUnauthorized_Returns401()
+    public async Task InvokeAsync_WithInvalidCredentialsException_Returns401()
     {
         // Arrange
         var exception = new InvalidCredentialsException();
-        var response = new MemoryStream();
-        _httpContext.Response.Body = response;
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
         // Act
-        await _middleware.InvokeAsync(_httpContext);
+        await middleware.InvokeAsync(context);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
     }
 
+    #endregion
+
+    #region BadRequestException Tests
+
     [TestMethod]
-    public async Task InvokeAsync_WhenBadRequest_Returns400()
+    public async Task InvokeAsync_WithBadRequestException_Returns400()
     {
         // Arrange
-        var exception = new InvalidQuantityException("Invalid quantity requested");
-        var response = new MemoryStream();
-        _httpContext.Response.Body = response;
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
+        var exception = new InvalidQuantityException("Quantity must be positive");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
         // Act
-        await _middleware.InvokeAsync(_httpContext);
+        await middleware.InvokeAsync(context);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
     }
 
     [TestMethod]
-    public async Task InvokeAsync_WhenConflict_Returns409()
+    public async Task InvokeAsync_WithEmptyCartException_Returns400()
+    {
+        // Arrange
+        var exception = new EmptyCartException();
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_WithInsufficientStockException_Returns400()
+    {
+        // Arrange
+        var exception = new InsufficientStockException("Product", 10, 5);
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    #endregion
+
+    #region ConflictException Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithConflictException_Returns409()
     {
         // Arrange
         var exception = new DuplicateEmailException("test@example.com");
-        var response = new MemoryStream();
-        _httpContext.Response.Body = response;
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
         // Act
-        await _middleware.InvokeAsync(_httpContext);
+        await middleware.InvokeAsync(context);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
     }
 
     [TestMethod]
-    public async Task InvokeAsync_WhenGenericException_Returns500()
+    public async Task InvokeAsync_WithDuplicateProductSlugException_Returns409()
+    {
+        // Arrange
+        var exception = new DuplicateProductSlugException("test-product");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+    }
+
+    #endregion
+
+    #region ArgumentException Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithArgumentNullException_Returns400()
+    {
+        // Arrange
+        var exception = new ArgumentNullException("param");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_WithArgumentException_Returns400()
+    {
+        // Arrange
+        var exception = new ArgumentException("Invalid argument");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    #endregion
+
+    #region InvalidOperationException Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithInvalidOperationException_Returns409()
+    {
+        // Arrange
+        var exception = new InvalidOperationException("Invalid operation");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+    }
+
+    #endregion
+
+    #region Generic Exception Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithGenericException_Returns500()
     {
         // Arrange
         var exception = new Exception("Something went wrong");
-        var response = new MemoryStream();
-        _httpContext.Response.Body = response;
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
         // Act
-        await _middleware.InvokeAsync(_httpContext);
+        await middleware.InvokeAsync(context);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
     }
 
     [TestMethod]
-    public async Task InvokeAsync_WhenExceptionOccurs_LogsError()
+    public async Task InvokeAsync_WithGenericException_DoesNotExposeMessage()
     {
         // Arrange
-        var exception = new InvalidOperationException("Test error");
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
+        var exception = new Exception("Sensitive internal error message");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
         // Act
-        await _middleware.InvokeAsync(_httpContext);
+        await middleware.InvokeAsync(context);
+        var response = await ReadResponseBody<ErrorResponse>(context);
 
         // Assert
-        _mockLogger.Verify(
+        response.Should().NotBeNull();
+        response!.Message.Should().NotContain("Sensitive internal error message");
+        response.Message.Should().Be("An internal server error occurred. Please try again later.");
+    }
+
+    #endregion
+
+    #region No Exception Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithoutException_CallsNext()
+    {
+        // Arrange
+        var wasNextCalled = false;
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => 
+        {
+            wasNextCalled = true;
+            return Task.CompletedTask;
+        }, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        wasNextCalled.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_WithoutException_DoesNotModifyResponse()
+    {
+        // Arrange
+        var context = CreateHttpContext();
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        var middleware = new GlobalExceptionMiddleware(_ => Task.CompletedTask, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+    }
+
+    #endregion
+
+    #region Logging Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithException_LogsError()
+    {
+        // Arrange
+        var exception = new Exception("Test exception");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
+                It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 
-    [TestMethod]
-    public async Task InvokeAsync_WhenExceptionOccurs_SetsContentTypeToJson()
+    #endregion
+
+    #region Helper Methods
+
+    private static HttpContext CreateHttpContext()
     {
-        // Arrange
-        var exception = new InvalidOperationException("Test");
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        _httpContext.Response.ContentType.Should().StartWith("application/json");
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+        context.Request.Scheme = "https";
+        context.Request.Host = new HostString("localhost:5000");
+        return context;
     }
 
-    [TestMethod]
-    public async Task InvokeAsync_WhenUserNotFound_Returns404()
+    private static async Task<T?> ReadResponseBody<T>(HttpContext context)
     {
-        // Arrange
-        var userId = Guid.NewGuid();
-        var exception = new UserNotFoundException(userId);
-        var response = new MemoryStream();
-        _httpContext.Response.Body = response;
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        using var reader = new StreamReader(context.Response.Body);
+        var body = await reader.ReadToEndAsync();
+        return JsonSerializer.Deserialize<T>(body, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
     }
 
-    [TestMethod]
-    public async Task InvokeAsync_WhenCartNotFound_Returns404()
+    #endregion
+
+    #region Response Models
+
+    private class ErrorResponse
     {
-        // Arrange
-        var userId = Guid.NewGuid();
-        var exception = new CartNotFoundException(userId);
-        _httpContext.Response.Body = new MemoryStream();
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        public bool Success { get; set; }
+        public string Message { get; set; } = null!;
     }
 
-    [TestMethod]
-    public async Task InvokeAsync_WhenInsufficientStock_Returns400()
-    {
-        // Arrange
-        var exception = new InsufficientStockException("Widget", 5, 2);
-        _httpContext.Response.Body = new MemoryStream();
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WhenRequestSucceeds_CallsNextMiddleware()
-    {
-        // Arrange
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        _mockNextMiddleware.Verify(x => x.Invoke(It.IsAny<HttpContext>()), Times.Once);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WhenOrderNotFound_Returns404()
-    {
-        // Arrange
-        var exception = new OrderNotFoundException(Guid.NewGuid());
-        _httpContext.Response.Body = new MemoryStream();
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WhenEmptyCart_Returns400()
-    {
-        // Arrange
-        var exception = new EmptyCartException();
-        _httpContext.Response.Body = new MemoryStream();
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WritesResponseAsJson()
-    {
-        // Arrange
-        var exception = new InvalidOperationException("Test error");
-        var response = new MemoryStream();
-        _httpContext.Response.Body = response;
-
-        _mockNextMiddleware
-            .Setup(x => x.Invoke(It.IsAny<HttpContext>()))
-            .ThrowsAsync(exception);
-
-        // Act
-        await _middleware.InvokeAsync(_httpContext);
-
-        // Assert
-        response.Length.Should().BeGreaterThan(0);
-        _httpContext.Response.ContentType.Should().Contain("application/json");
-    }
+    #endregion
 }

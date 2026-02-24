@@ -147,9 +147,10 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
     const uppercasedEvent = {
       ...e,
       target: {
-        ...e.target,
+        name: e.target.name,
+        type: e.target.type,
         value: e.target.value.toUpperCase(),
-      },
+      } as HTMLInputElement,
     };
     form.handleChange(uppercasedEvent as React.ChangeEvent<HTMLInputElement>);
   };

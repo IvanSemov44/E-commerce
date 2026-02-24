@@ -1,41 +1,376 @@
+/**
+ * ProductCard Component Styles
+ * 
+ * Premium e-commerce card design with:
+ * - Smooth hover animations
+ * - Quick add functionality
+ * - Clean, modern aesthetic
+ */
+
+/* =============================================================================
+   Card Container
+   ============================================================================= */
+
 .card {
   position: relative;
+  background-color: #f8fafc;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
 }
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12);
+}
+
+/* =============================================================================
+   Card Link
+   ============================================================================= */
+
+.cardLink {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cardLink:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+/* =============================================================================
+   Image Container
+   ============================================================================= */
 
 .imageContainer {
   position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background-color: #f1f5f9;
 }
+
+.productImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover .productImage {
+  transform: scale(1.08);
+}
+
+/* =============================================================================
+   Quick Add Button (appears on hover)
+   ============================================================================= */
+
+.quickAddWrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+}
+
+.quickAddWrapper.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.quickAddButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #ffffff;
+  color: #0f172a;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.quickAddButton:hover:not(:disabled) {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+.quickAddButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.quickAddButton:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.quickAddButton.adding {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.quickAddButton svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   Discount Badge
+   ============================================================================= */
+
+.discountBadge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  z-index: 2;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* =============================================================================
+   Out of Stock Overlay
+   ============================================================================= */
+
+.outOfStockOverlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+
+.outOfStockOverlay span {
+  background-color: #1e293b;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* =============================================================================
+   Wishlist Button
+   ============================================================================= */
 
 .wishlistButton {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: white;
+  top: 0.75rem;
+  right: 0.75rem;
+  background-color: #ffffff;
   border: none;
   border-radius: 50%;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1.25rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, 
+              background-color 0.2s ease,
+              box-shadow 0.2s ease;
 }
 
-.wishlistButton:hover {
+.wishlistButton:hover:not(:disabled) {
   transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.ratingContainer {
+.wishlistButton:focus {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.wishlistButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wishlistButton.active {
+  background-color: #fef2f2;
+}
+
+.wishlistButton svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #ef4444;
+}
+
+/* =============================================================================
+   Product Info Section
+   ============================================================================= */
+
+.productInfo {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex-grow: 1;
+  background-color: #ffffff;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.productName {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.625rem;
+}
+
+/* =============================================================================
+   Price Row
+   ============================================================================= */
+
+.priceRow {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
+.priceContainer {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.pricePrimary {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.priceCompare {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+  line-height: 1.2;
+}
+
+/* =============================================================================
+   Rating Badge
+   ============================================================================= */
+
+.ratingBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: #fef9c3;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #854d0e;
+}
+
+.ratingBadge svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #eab308;
+}
+
+/* =============================================================================
+   Review Count
+   ============================================================================= */
+
 .reviewCount {
-  font-size: 0.875rem;
-  color: #666;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* =============================================================================
+   Responsive Adjustments
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .productInfo {
+    padding: 0.75rem;
+  }
+  
+  .productName {
+    font-size: 0.875rem;
+    min-height: 2.45rem;
+  }
+  
+  .pricePrimary {
+    font-size: 1rem;
+  }
+  
+  .priceCompare {
+    font-size: 0.75rem;
+  }
+  
+  .wishlistButton {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  .wishlistButton svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  
+  .quickAddWrapper {
+    padding: 0.75rem;
+  }
+  
+  .quickAddButton {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+  
+  .ratingBadge {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.375rem;
+  }
 }

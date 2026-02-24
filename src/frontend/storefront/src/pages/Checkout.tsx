@@ -27,6 +27,7 @@ export default function Checkout() {
     shipping,
     tax,
     total,
+    errors,
     handleSubmit,
   } = useCheckout();
 
@@ -68,6 +69,7 @@ export default function Checkout() {
               {error && <ErrorAlert message={error} />}
               <CheckoutForm
                 formData={formData}
+                errors={errors}
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
               />

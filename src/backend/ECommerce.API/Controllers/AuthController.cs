@@ -30,6 +30,7 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Sets authentication tokens as httpOnly cookies.
+    /// Uses app-specific cookie names to prevent conflicts between admin and storefront.
     /// </summary>
     private void SetAuthCookies(string accessToken, string refreshToken)
     {
@@ -42,8 +43,12 @@ public class AuthController : ControllerBase
         // This requires Secure=true which is set in production
         var sameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax;
 
+        // Determine cookie prefix based on the app origin (admin vs storefront)
+        // This prevents cookie conflicts when both apps are used in the same browser
+        var cookiePrefix = GetCookiePrefix();
+
         // Access token cookie (httpOnly for XSS protection)
-        Response.Cookies.Append("accessToken", accessToken, new CookieOptions
+        Response.Cookies.Append($"{cookiePrefix}_accessToken", accessToken, new CookieOptions
         {
             HttpOnly = true,
             Secure = isProduction, // Only send over HTTPS in production
@@ -53,7 +58,7 @@ public class AuthController : ControllerBase
         });
 
         // Refresh token cookie (httpOnly for XSS protection)
-        Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+        Response.Cookies.Append($"{cookiePrefix}_refreshToken", refreshToken, new CookieOptions
         {
             HttpOnly = true,
             Secure = isProduction,
@@ -68,8 +73,70 @@ public class AuthController : ControllerBase
     /// </summary>
     private void ClearAuthCookies()
     {
-        Response.Cookies.Delete("accessToken", new CookieOptions { Path = "/" });
-        Response.Cookies.Delete("refreshToken", new CookieOptions { Path = "/" });
+        var cookiePrefix = GetCookiePrefix();
+        Response.Cookies.Delete($"{cookiePrefix}_accessToken", new CookieOptions { Path = "/" });
+        Response.Cookies.Delete($"{cookiePrefix}_refreshToken", new CookieOptions { Path = "/" });
+    }
+
+    /// <summary>
+    /// Gets the cookie prefix based on the requesting app.
+    /// Admin panel uses "admin" prefix, storefront uses "storefront" prefix.
+    /// This prevents cookie conflicts when both apps are used in the same browser.
+    /// </summary>
+    private string GetCookiePrefix()
+    {
+        // Check for custom header that identifies the app
+        if (Request.Headers.TryGetValue("X-App-Origin", out var appOrigin))
+        {
+            var appOriginStr = appOrigin.ToString().ToLowerInvariant();
+            if (appOriginStr.Contains("admin") || appOriginStr.Contains("5177") || appOriginStr.Contains("3001"))
+            {
+                return "admin";
+            }
+        }
+
+        // Check Origin header
+        if (Request.Headers.TryGetValue("Origin", out var originHeader))
+        {
+            var originStr = originHeader.ToString().ToLowerInvariant();
+            if (originStr.Contains("5177") || originStr.Contains("3001"))
+            {
+                return "admin";
+            }
+        }
+
+        // Check Referer header as fallback
+        if (Request.Headers.TryGetValue("Referer", out var referer))
+        {
+            var refererStr = referer.ToString().ToLowerInvariant();
+            if (refererStr.Contains("5177") || refererStr.Contains("3001"))
+            {
+                return "admin";
+            }
+        }
+
+        // Default to storefront
+        return "storefront";
+    }
+
+    /// <summary>
+    /// Gets the access token from the appropriate cookie based on the requesting app.
+    /// </summary>
+    private string? GetAccessTokenFromCookie()
+    {
+        var cookiePrefix = GetCookiePrefix();
+        Request.Cookies.TryGetValue($"{cookiePrefix}_accessToken", out var token);
+        return token;
+    }
+
+    /// <summary>
+    /// Gets the refresh token from the appropriate cookie based on the requesting app.
+    /// </summary>
+    private string? GetRefreshTokenFromCookie()
+    {
+        var cookiePrefix = GetCookiePrefix();
+        Request.Cookies.TryGetValue($"{cookiePrefix}_refreshToken", out var token);
+        return token;
     }
 
     /// <summary>
@@ -136,8 +203,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<UserDto>>> RefreshToken(CancellationToken cancellationToken)
     {
-        // Get refresh token from httpOnly cookie
-        if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken) || string.IsNullOrEmpty(refreshToken))
+        // Get refresh token from httpOnly cookie (app-specific)
+        var refreshToken = GetRefreshTokenFromCookie();
+        if (string.IsNullOrEmpty(refreshToken))
         {
             return Unauthorized(ApiResponse<object>.Error("Refresh token not found"));
         }
