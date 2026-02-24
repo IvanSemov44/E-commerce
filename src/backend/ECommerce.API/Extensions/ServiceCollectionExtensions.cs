@@ -107,9 +107,9 @@ public static class ServiceCollectionExtensions
         {
             // Use standard XSRF header name that SPAs expect
             options.HeaderName = "X-XSRF-TOKEN";
-            // Cookie name for the CSRF token (readable by JavaScript)
-            options.Cookie.Name = "XSRF-TOKEN";
-            options.Cookie.HttpOnly = false; // Must be readable by JavaScript
+            // The antiforgery system uses an internal cookie for the cookie token
+            // We'll set the request token in a separate cookie via middleware
+            options.Cookie.HttpOnly = true; // The internal cookie should be httpOnly
             options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             options.Cookie.SameSite = SameSiteMode.Strict;
         });

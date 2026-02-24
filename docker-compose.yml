@@ -35,27 +35,6 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # Redis Cache
-  # ===========================================================================
-  redis:
-    image: redis:7-alpine
-    container_name: ecommerce_redis
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-
-  # ===========================================================================
   # Backend API
   # ===========================================================================
   api:
@@ -66,15 +45,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       # Database Connection
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
-      
-      # Redis Connection
-      Redis__ConnectionString: "redis:6379"
-      Redis__InstanceName: "ecommerce:"
       
       # JWT Configuration
       Jwt__SecretKey: "${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}"
@@ -179,8 +152,6 @@ services:
 # =============================================================================
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
     driver: local
 
 # =============================================================================

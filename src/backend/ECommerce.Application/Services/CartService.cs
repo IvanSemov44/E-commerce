@@ -101,7 +101,32 @@ public class CartService : ICartService
                 Quantity = quantity
             };
             await _unitOfWork.CartItems.AddAsync(cartItem, cancellationToken: cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+            
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex) when (ex.InnerException?.Message?.Contains("IX_CartItems_CartId_ProductId") == true)
+            {
+                // Race condition: another request already added this product to the cart
+                // Detach the failed entity from the change tracker
+                _unitOfWork.DetachEntity(cartItem);
+                
+                // Reload the cart and update the existing item's quantity instead
+                cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id, cancellationToken: cancellationToken);
+                if (cart == null)
+                    throw new CartNotFoundException(cart.Id);
+                    
+                existingItem = cart.Items.FirstOrDefault(x => x.ProductId == productId);
+                if (existingItem != null)
+                {
+                    if (existingItem.Quantity + quantity > product.StockQuantity)
+                        throw new InsufficientStockException(product.Name, existingItem.Quantity + quantity, product.StockQuantity);
+                    
+                    existingItem.Quantity += quantity;
+                    await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+                }
+            }
         }
 
         // Reload cart to get fresh data

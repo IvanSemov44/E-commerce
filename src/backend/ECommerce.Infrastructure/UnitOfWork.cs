@@ -145,6 +145,17 @@ public class UnitOfWork : IUnitOfWork
     /// </summary>
     public bool HasActiveTransaction => _context.Database.CurrentTransaction != null;
 
+    /// <summary>
+    /// Detaches an entity from the change tracker, making it no longer tracked.
+    /// Useful for handling race conditions where an entity needs to be reloaded.
+    /// </summary>
+    /// <typeparam name="T">The entity type.</typeparam>
+    /// <param name="entity">The entity to detach.</param>
+    public void DetachEntity<T>(T entity) where T : class
+    {
+        _context.Entry(entity).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+    }
+
     #endregion
 
     #region Disposal

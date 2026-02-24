@@ -57,10 +57,14 @@ public class CsrfMiddleware
             if (SafeMethods.Contains(context.Request.Method))
             {
                 // Generate and set CSRF token for safe methods
+                // GetAndStoreTokens generates both cookie and request tokens
+                // The cookie token is automatically set as an httpOnly cookie by the antiforgery system
+                // We need to provide the request token to the client in a readable cookie
                 var tokens = antiforgery.GetAndStoreTokens(context);
                 if (tokens.RequestToken != null)
                 {
-                    // Set CSRF token in a readable cookie (non-httpOnly) for client-side access
+                    // Set the request token in a readable cookie (non-httpOnly) for client-side access
+                    // The client reads this and sends it back in the X-XSRF-TOKEN header
                     context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
                     {
                         HttpOnly = false, // Must be readable by JavaScript
@@ -73,6 +77,9 @@ public class CsrfMiddleware
             else
             {
                 // Validate CSRF token for state-changing methods (POST, PUT, DELETE, PATCH)
+                // The antiforgery system validates:
+                // 1. The cookie token from the httpOnly cookie (set by GetAndStoreTokens)
+                // 2. The request token from the X-XSRF-TOKEN header (sent by client)
                 try
                 {
                     await antiforgery.ValidateRequestAsync(context);

@@ -105,6 +105,14 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     /// </summary>
     bool HasActiveTransaction { get; }
 
+    /// <summary>
+    /// Detaches an entity from the change tracker, making it no longer tracked.
+    /// Useful for handling race conditions where an entity needs to be reloaded.
+    /// </summary>
+    /// <typeparam name="T">The entity type.</typeparam>
+    /// <param name="entity">The entity to detach.</param>
+    void DetachEntity<T>(T entity) where T : class;
+
     #endregion
 }
 
