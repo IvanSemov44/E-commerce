@@ -51,12 +51,13 @@ export interface AuthResponse {
 // ============================================
 
 export interface CartItemDto {
-  cartItemId: string;
+  id: string; // Cart item ID (renamed from cartItemId to match backend)
   productId: string;
   productName: string;
   quantity: number;
   price: number;
   imageUrl?: string;
+  productImage?: string; // Backend returns this field
 }
 
 export interface CartDto {

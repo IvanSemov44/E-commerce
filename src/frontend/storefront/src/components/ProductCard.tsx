@@ -9,7 +9,6 @@ import {
   useCheckInWishlistQuery,
 } from '../store/api/wishlistApi';
 import { useAddToCartMutation } from '../store/api/cartApi';
-import StarRating from './StarRating';
 import styles from './ProductCard.module.css';
 
 /**

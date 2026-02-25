@@ -1,20 +1,47 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import { selectCartItemCount } from '../store/slices/cartSlice';
+import { useGetCartQuery } from '../store/api/cartApi';
+import { useGetWishlistQuery } from '../store/api/wishlistApi';
 import { HeartIcon, ShoppingCartIcon } from './icons';
 import Button from './ui/Button';
 import styles from './Header.module.css';
 
 export default function Header() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-  const cartItemCount = useAppSelector(selectCartItemCount);
+  const localCartItemCount = useAppSelector(selectCartItemCount);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Backend cart query (only for authenticated users)
+  const { data: backendCart } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated,
+    refetchOnMountOrArgChange: true,
+  });
+
+  // Wishlist query (only for authenticated users)
+  const { data: wishlistData } = useGetWishlistQuery(undefined, {
+    skip: !isAuthenticated,
+    refetchOnMountOrArgChange: true,
+  });
+
+  // Calculate cart item count based on authentication status
+  const cartItemCount = useMemo(() => {
+    if (isAuthenticated && backendCart?.items) {
+      return backendCart.items.reduce((sum, item) => sum + item.quantity, 0);
+    }
+    return localCartItemCount;
+  }, [isAuthenticated, backendCart, localCartItemCount]);
+
+  // Calculate wishlist item count
+  const wishlistItemCount = useMemo(() => {
+    return wishlistData?.items?.length || 0;
+  }, [wishlistData]);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -74,6 +101,11 @@ export default function Header() {
             {isAuthenticated && (
               <Link to="/wishlist" className={styles.cartLink} aria-label="Wishlist">
                 <HeartIcon className={styles.cartIcon} />
+                {wishlistItemCount > 0 && (
+                  <span className={styles.cartBadge}>
+                    {wishlistItemCount > 99 ? '99+' : wishlistItemCount}
+                  </span>
+                )}
               </Link>
             )}
 
@@ -218,6 +250,13 @@ export default function Header() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                   Wishlist
+                  {wishlistItemCount > 0 && (
+                    <span className={styles.badgeWrapper}>
+                      <span className={styles.cartBadge}>
+                        {wishlistItemCount > 99 ? '99+' : wishlistItemCount}
+                      </span>
+                    </span>
+                  )}
                 </div>
               </Link>
             )}

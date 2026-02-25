@@ -12,8 +12,7 @@ import {
   selectCartItems,
   selectCartSubtotal,
   updateQuantity,
-  removeItem,
-  type CartItem
+  removeItem
 } from '../store/slices/cartSlice';
 import { authReducer } from '../store/slices/authSlice';
 import {
@@ -26,7 +25,7 @@ import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } fro
 import toast from 'react-hot-toast';
 
 interface DisplayItem {
-  id: string;
+  id: string; // For authenticated: cartItemId, for guest: productId
   name: string;
   slug: string;
   price: number;
@@ -79,13 +78,13 @@ export function useCart(): UseCartReturn {
   const displayItems: DisplayItem[] = useMemo(() => {
     if (isAuthenticated && backendCart?.items) {
       return backendCart.items.map(item => ({
-        id: item.productId,
+        id: item.id, // Backend returns 'id' as the cart item ID
         name: item.productName,
         slug: '', // Not available in CartItemDto
         price: item.price,
         quantity: item.quantity,
         maxStock: 99, // Default max stock
-        image: item.imageUrl || ''
+        image: item.productImage || item.imageUrl || ''
       }));
     }
     return localCartItems.map(item => ({
@@ -127,8 +126,10 @@ export function useCart(): UseCartReturn {
 
     try {
       if (isAuthenticated) {
+        // For authenticated users, itemId is the cart item ID
         await updateCartItem({ cartItemId: itemId, quantity }).unwrap();
       } else {
+        // For guest users, itemId is the product id
         dispatch(updateQuantity({ id: itemId, quantity }));
       }
       toast.success('Cart updated');
@@ -142,8 +143,10 @@ export function useCart(): UseCartReturn {
   const handleRemove = useCallback(async (itemId: string) => {
     try {
       if (isAuthenticated) {
+        // For authenticated users, itemId is the cart item ID
         await removeFromCartApi(itemId).unwrap();
       } else {
+        // For guest users, itemId is the product id
         dispatch(removeItem(itemId));
       }
       toast.success('Item removed from cart');

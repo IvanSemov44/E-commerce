@@ -20,6 +20,15 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
+// Mock RTK Query hooks
+vi.mock('../../store/api/cartApi', () => ({
+  useGetCartQuery: vi.fn(() => ({ data: null, isLoading: false })),
+}))
+
+vi.mock('../../store/api/wishlistApi', () => ({
+  useGetWishlistQuery: vi.fn(() => ({ data: null, isLoading: false })),
+}))
+
 const createTestStore = (authState: Partial<AuthState> = {}, cartState: Partial<CartState> = {}) => {
   return configureStore({
     reducer: {
