@@ -1,68 +1,45 @@
-using ECommerce.API.Middleware;
-using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Moq;
+using FluentAssertions;
+using ECommerce.API.Middleware;
 
 namespace ECommerce.Tests.Unit.Middleware;
 
-/// <summary>
-/// Unit tests for SecurityHeadersMiddleware.
-/// Tests that security headers are properly set on responses.
-/// </summary>
 [TestClass]
 public class SecurityHeadersMiddlewareTests
 {
-    private readonly Mock<IWebHostEnvironment> _environmentMock;
-
-    public SecurityHeadersMiddlewareTests()
-    {
-        _environmentMock = new Mock<IWebHostEnvironment>();
-    }
+    private SecurityHeadersMiddleware _middleware = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _environmentMock.Reset();
+        _middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
     }
-
-    #region Security Headers Tests
 
     [TestMethod]
     public async Task InvokeAsync_SetsXFrameOptionsHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var wasNextCalled = false;
-        
-        var middleware = new SecurityHeadersMiddleware(_ => 
-        {
-            wasNextCalled = true;
-            return Task.CompletedTask;
-        });
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().ContainKey("X-Frame-Options");
         context.Response.Headers["X-Frame-Options"].ToString().Should().Be("DENY");
-        wasNextCalled.Should().BeTrue();
     }
 
     [TestMethod]
     public async Task InvokeAsync_SetsXContentTypeOptionsHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().ContainKey("X-Content-Type-Options");
@@ -73,12 +50,10 @@ public class SecurityHeadersMiddlewareTests
     public async Task InvokeAsync_SetsXXSSProtectionHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().ContainKey("X-XSS-Protection");
@@ -89,12 +64,10 @@ public class SecurityHeadersMiddlewareTests
     public async Task InvokeAsync_SetsReferrerPolicyHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().ContainKey("Referrer-Policy");
@@ -105,12 +78,10 @@ public class SecurityHeadersMiddlewareTests
     public async Task InvokeAsync_SetsPermissionsPolicyHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().ContainKey("Permissions-Policy");
@@ -121,12 +92,10 @@ public class SecurityHeadersMiddlewareTests
     public async Task InvokeAsync_SetsContentSecurityPolicyHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().ContainKey("Content-Security-Policy");
@@ -134,33 +103,31 @@ public class SecurityHeadersMiddlewareTests
         csp.Should().Contain("default-src 'self'");
         csp.Should().Contain("script-src 'self'");
         csp.Should().Contain("style-src 'self' 'unsafe-inline'");
+        csp.Should().Contain("img-src 'self' data: https:");
+        csp.Should().Contain("font-src 'self' https:");
     }
 
     [TestMethod]
-    public async Task InvokeAsync_InDevelopment_DoesNotSetHSTSHeader()
+    public async Task InvokeAsync_InDevelopment_DoesNotSetHstsHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = CreateHttpContext(isDevelopment: true);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().NotContainKey("Strict-Transport-Security");
     }
 
     [TestMethod]
-    public async Task InvokeAsync_InProduction_SetsHSTSHeader()
+    public async Task InvokeAsync_InProduction_SetsHstsHeader()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Production");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
-        await middleware.InvokeAsync(context);
+        await _middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.Should().ContainKey("Strict-Transport-Security");
@@ -170,17 +137,42 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [TestMethod]
+    public async Task InvokeAsync_SetsAllRequiredSecurityHeaders()
+    {
+        // Arrange
+        var context = CreateHttpContext(isDevelopment: false);
+        var expectedHeaders = new[]
+        {
+            "X-Frame-Options",
+            "X-Content-Type-Options",
+            "X-XSS-Protection",
+            "Referrer-Policy",
+            "Permissions-Policy",
+            "Content-Security-Policy",
+            "Strict-Transport-Security"
+        };
+
+        // Act
+        await _middleware.InvokeAsync(context);
+
+        // Assert
+        foreach (var header in expectedHeaders)
+        {
+            context.Response.Headers.Should().ContainKey(header, $"because {header} should be set");
+        }
+    }
+
+    [TestMethod]
     public async Task InvokeAsync_CallsNextMiddleware()
     {
         // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Development");
-        var context = CreateHttpContext(_environmentMock.Object);
         var wasNextCalled = false;
-        var middleware = new SecurityHeadersMiddleware(_ => 
+        var middleware = new SecurityHeadersMiddleware(_ =>
         {
             wasNextCalled = true;
             return Task.CompletedTask;
         });
+        var context = CreateHttpContext(isDevelopment: false);
 
         // Act
         await middleware.InvokeAsync(context);
@@ -189,42 +181,20 @@ public class SecurityHeadersMiddlewareTests
         wasNextCalled.Should().BeTrue();
     }
 
-    [TestMethod]
-    public async Task InvokeAsync_SetsAllExpectedHeaders()
-    {
-        // Arrange
-        _environmentMock.Setup(x => x.EnvironmentName).Returns("Production");
-        var context = CreateHttpContext(_environmentMock.Object);
-        var middleware = new SecurityHeadersMiddleware(_ => Task.CompletedTask);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.Headers.Should().ContainKey("X-Frame-Options");
-        context.Response.Headers.Should().ContainKey("X-Content-Type-Options");
-        context.Response.Headers.Should().ContainKey("X-XSS-Protection");
-        context.Response.Headers.Should().ContainKey("Referrer-Policy");
-        context.Response.Headers.Should().ContainKey("Permissions-Policy");
-        context.Response.Headers.Should().ContainKey("Content-Security-Policy");
-        context.Response.Headers.Should().ContainKey("Strict-Transport-Security");
-    }
-
-    #endregion
-
     #region Helper Methods
 
-    private static HttpContext CreateHttpContext(IWebHostEnvironment environment)
+    private static DefaultHttpContext CreateHttpContext(bool isDevelopment)
     {
         var context = new DefaultHttpContext();
-        context.Request.Scheme = "https";
-        context.Request.Host = new HostString("localhost:5000");
         
-        // Set up RequestServices with the environment
+        var mockEnvironment = new Mock<IWebHostEnvironment>();
+        mockEnvironment.Setup(e => e.EnvironmentName)
+            .Returns(isDevelopment ? "Development" : "Production");
+
         var services = new ServiceCollection();
-        services.AddSingleton(environment);
+        services.AddSingleton<IWebHostEnvironment>(mockEnvironment.Object);
         context.RequestServices = services.BuildServiceProvider();
-        
+
         return context;
     }
 

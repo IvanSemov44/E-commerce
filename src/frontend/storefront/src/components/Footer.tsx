@@ -10,10 +10,10 @@ export default function Footer() {
           <div className={styles.section}>
             <h3>Company</h3>
             <ul className={styles.links}>
-              <li><Link to="/">About Us</Link></li>
-              <li><Link to="/">Careers</Link></li>
-              <li><Link to="/">Press</Link></li>
-              <li><Link to="/">Blog</Link></li>
+              <li><Link to="/about">About Us</Link></li>
+              <li><Link to="/careers">Careers</Link></li>
+              <li><Link to="/press">Press</Link></li>
+              <li><Link to="/blog">Blog</Link></li>
             </ul>
           </div>
 
@@ -21,9 +21,9 @@ export default function Footer() {
           <div className={styles.section}>
             <h3>Support</h3>
             <ul className={styles.links}>
-              <li><Link to="/">Help Center</Link></li>
-              <li><Link to="/">Contact Us</Link></li>
-              <li><Link to="/">Track Order</Link></li>
+              <li><Link to="/help">Help Center</Link></li>
+              <li><Link to="/contact">Contact Us</Link></li>
+              <li><Link to="/track-order">Track Order</Link></li>
               <li><Link to="/returns">Returns</Link></li>
             </ul>
           </div>
@@ -34,8 +34,8 @@ export default function Footer() {
             <ul className={styles.links}>
               <li><Link to="/privacy">Privacy Policy</Link></li>
               <li><Link to="/terms">Terms of Service</Link></li>
-              <li><Link to="/">Cookies</Link></li>
-              <li><Link to="/">Security</Link></li>
+              <li><Link to="/cookies">Cookies</Link></li>
+              <li><Link to="/security">Security</Link></li>
             </ul>
           </div>
 

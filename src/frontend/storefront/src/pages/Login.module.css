@@ -1,84 +1,445 @@
-/* Login Page Styles */
+/**
+ * Login Page Styles
+ * 
+ * Modern, clean authentication pages with:
+ * - Centered card layout
+ * - Social login options
+ * - Form validation states
+ * - Smooth transitions
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
 .container {
   min-height: 100vh;
-  background-color: #f8fafc;
+  background: linear-gradient(135deg, var(--surface-secondary) 0%, var(--color-neutral-100) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 16px;
+  padding: var(--space-8) var(--space-4);
+  position: relative;
+  overflow: hidden;
 }
 
+/* Decorative background */
+.container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.container::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 50%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* =============================================================================
+   Card
+   ============================================================================= */
+
 .card {
+  position: relative;
   width: 100%;
-  max-width: 448px;
+  max-width: 420px;
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-default);
+  animation: fadeInUp var(--duration-400) var(--ease-out);
+}
+
+@media (min-width: 480px) {
+  .card {
+    padding: var(--space-10);
+  }
+}
+
+/* =============================================================================
+   Header
+   ============================================================================= */
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+  text-decoration: none;
+}
+
+.logoBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: white;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+}
+
+.logoBadge svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.logoText {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-brand);
 }
 
 .title {
-  font-size: 1.875rem;
-  font-weight: 700;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
   text-align: center;
-  margin-bottom: 32px;
-  color: #0f172a;
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
 }
+
+.subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+/* =============================================================================
+   Form
+   ============================================================================= */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-5);
 }
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+/* =============================================================================
+   Error Alert
+   ============================================================================= */
 
 .errorAlert {
-  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-error-50);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+  animation: fadeIn var(--duration-200) var(--ease-out);
 }
+
+.errorAlert svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-error-500);
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.errorAlertContent {
+  flex: 1;
+}
+
+.errorAlertTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-error-600);
+  margin-bottom: var(--space-1);
+}
+
+.errorAlertMessage {
+  font-size: var(--text-sm);
+  color: var(--color-error-600);
+}
+
+/* =============================================================================
+   Success Box
+   ============================================================================= */
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background-color: var(--color-success-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  animation: fadeIn var(--duration-200) var(--ease-out);
+}
+
+.successTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-success-600);
+}
+
+.successMessage {
+  font-size: var(--text-sm);
+  color: var(--color-success-600);
+}
+
+/* =============================================================================
+   Forgot Password Link
+   ============================================================================= */
 
 .forgotPassword {
-  text-align: right;
-  margin-top: -8px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(var(--space-1) * -1);
+  margin-bottom: var(--space-2);
 }
 
-.forgotPassword .footerLink {
-  font-size: 14px;
+.forgotPasswordLink {
+  font-size: var(--text-sm);
+  color: var(--color-brand);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  transition: var(--transition-colors);
 }
+
+.forgotPasswordLink:hover {
+  color: var(--color-brand-hover);
+}
+
+/* =============================================================================
+   Submit Button
+   ============================================================================= */
+
+.submitButton {
+  width: 100%;
+  padding: var(--space-3-5);
+  margin-top: var(--space-2);
+  font-size: var(--text-base);
+}
+
+/* =============================================================================
+   Divider
+   ============================================================================= */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-default);
+}
+
+.dividerText {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* =============================================================================
+   Social Login
+   ============================================================================= */
+
+.socialButtons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.socialButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  background-color: var(--surface-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-colors), var(--transition-transform);
+}
+
+.socialButton:hover {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+
+.socialButton svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* =============================================================================
+   Footer
+   ============================================================================= */
 
 .footer {
-  margin-top: 24px;
+  margin-top: var(--space-8);
   text-align: center;
 }
 
 .footerText {
-  color: #475569;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .footerLink {
-  color: #16a34a;
+  color: var(--color-brand);
   text-decoration: none;
-  font-weight: 700;
-  transition: color 0.2s ease;
+  font-weight: var(--font-semibold);
+  transition: var(--transition-colors);
 }
 
 .footerLink:hover {
-  color: #15803d;
+  color: var(--color-brand-hover);
 }
 
-.centered {
+/* =============================================================================
+   Terms
+   ============================================================================= */
+
+.terms {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-default);
   text-align: center;
 }
 
-.description {
-  color: #64748b;
-  margin-bottom: 24px;
-  text-align: center;
+.termsText {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
 }
 
-.successBox {
-  background-color: #dcfce7;
-  color: #166534;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 24px;
+.termsText a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  transition: var(--transition-colors);
 }
 
-.successTitle {
-  font-weight: 600;
-  margin-bottom: 8px;
+.termsText a:hover {
+  color: var(--text-primary);
+}
+
+/* =============================================================================
+   Password Strength Indicator
+   ============================================================================= */
+
+.passwordStrength {
+  margin-top: var(--space-2);
+}
+
+.strengthBar {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.strengthSegment {
+  flex: 1;
+  height: 4px;
+  background-color: var(--color-neutral-200);
+  border-radius: var(--radius-full);
+  transition: background-color var(--duration-200) var(--ease-out);
+}
+
+.strengthSegment.weak {
+  background-color: var(--color-error-500);
+}
+
+.strengthSegment.medium {
+  background-color: var(--color-warning-500);
+}
+
+.strengthSegment.strong {
+  background-color: var(--color-success-500);
+}
+
+.strengthText {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.strengthText.weak {
+  color: var(--color-error-600);
+}
+
+.strengthText.medium {
+  color: var(--color-warning-600);
+}
+
+.strengthText.strong {
+  color: var(--color-success-600);
+}
+
+/* =============================================================================
+   Animations
+   ============================================================================= */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+   Loading State
+   ============================================================================= */
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.loadingSpinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--border-default);
+  border-right-color: var(--color-brand);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

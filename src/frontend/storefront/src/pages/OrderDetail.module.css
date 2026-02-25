@@ -1,169 +1,488 @@
-/* Order Detail Page Styles */
+/**
+ * Order Detail Page Styles
+ * 
+ * Modern order detail page with:
+ * - Order status timeline
+ * - Shipping information
+ * - Order items list
+ * - Order totals
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
 .container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  min-height: 100vh;
+  background-color: var(--surface-secondary);
+  padding: var(--space-6) 0;
 }
 
-.backButton {
-  margin-bottom: 2rem;
+@media (min-width: 768px) {
+  .container {
+    padding: var(--space-8) 0;
+  }
 }
 
-.backLink {
-  text-decoration: none;
-}
+/* =============================================================================
+   Content
+   ============================================================================= */
 
 .content {
-  display: grid;
-  gap: 2rem;
+  max-width: var(--container-lg);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
 }
 
-.orderHeader {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 32px;
-  margin-bottom: 32px;
+@media (min-width: 640px) {
+  .content {
+    padding: 0 var(--space-6);
+  }
 }
 
-.headerField {
+@media (min-width: 1024px) {
+  .content {
+    padding: 0 var(--space-8);
+  }
+}
+
+/* =============================================================================
+   Page Header
+   ============================================================================= */
+
+.pageHeader {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
 }
 
-.headerLabel {
-  font-size: 0.875rem;
-  color: #666;
-  font-weight: 500;
+@media (min-width: 640px) {
+  .pageHeader {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
 }
 
-.headerValue {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0f172a;
+.headerContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.orderNumber {
-  font-size: 1.25rem;
-  font-weight: 700;
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
-.statusBadge {
-  display: inline-block;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-weight: 600;
+.breadcrumb a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: var(--transition-colors);
+}
+
+.breadcrumb a:hover {
+  color: var(--color-brand);
+}
+
+.breadcrumbSeparator {
+  color: var(--text-muted);
+}
+
+.pageTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+@media (min-width: 768px) {
+  .pageTitle {
+    font-size: var(--text-3xl);
+  }
+}
+
+.orderMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.orderMetaItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.orderMetaItem svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-muted);
+}
+
+/* =============================================================================
+   Grid Layout
+   ============================================================================= */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* =============================================================================
+   Main Content
+   ============================================================================= */
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* =============================================================================
+   Status Timeline
+   ============================================================================= */
+
+.statusCard {
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-default);
+  padding: var(--space-5);
+}
+
+.cardTitle {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cardTitle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-brand);
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.timelineItem {
+  display: flex;
+  gap: var(--space-3);
+  position: relative;
+}
+
+.timelineItem:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 0.625rem;
+  top: 2rem;
+  bottom: -1rem;
+  width: 2px;
+  background-color: var(--border-default);
+}
+
+.timelineItem.completed:not(:last-child)::before {
+  background-color: var(--color-brand);
+}
+
+.timelineDot {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-secondary);
+  border: 2px solid var(--border-default);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.125rem;
+}
+
+.timelineItem.completed .timelineDot {
+  background-color: var(--color-brand);
+  border-color: var(--color-brand);
+}
+
+.timelineItem.completed .timelineDot svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: white;
+}
+
+.timelineItem.current .timelineDot {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 4px var(--color-primary-100);
+}
+
+.timelineContent {
+  flex: 1;
+}
+
+.timelineTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-0-5);
+}
+
+.timelineDate {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.timelineDescription {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* =============================================================================
+   Order Items
+   ============================================================================= */
+
+.itemsCard {
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+
+.itemsHeader {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .itemsList {
-  display: grid;
-  gap: 16px;
-  border-top: 1px solid #e0e0e0;
-  padding-top: 16px;
+  padding: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .itemsList {
+    padding: var(--space-5);
+  }
 }
 
 .itemRow {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  gap: 16px;
-  align-items: center;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.itemRow:last-child {
+  border-bottom: none;
 }
 
 .itemImage {
   width: 60px;
   height: 60px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-secondary);
+}
+
+.itemDetails {
+  flex: 1;
 }
 
 .itemName {
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-0-5);
 }
 
-.itemQuantity {
-  font-size: 0.875rem;
-  color: #666;
-  margin: 4px 0 0 0;
+.itemVariant {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.itemPriceRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .itemPrice {
-  text-align: right;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
 }
 
-.priceLabel {
-  font-size: 0.875rem;
-  color: #666;
-  margin: 0;
+.itemQuantity {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
-.priceValue {
-  font-weight: 600;
-  margin: 4px 0 0 0;
-}
+/* =============================================================================
+   Sidebar
+   ============================================================================= */
 
-.totalsSection {
-  display: grid;
-  gap: 16px;
-}
-
-.totalLine {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
-}
-
-.totalLabel {
-  color: #0f172a;
-}
-
-.totalAmount {
-  font-weight: 600;
-  text-align: right;
-}
-
-.grandTotal {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
-  font-size: 1.125rem;
-  font-weight: 700;
-  border-top: 1px solid #e0e0e0;
-  padding-top: 16px;
-  color: #1976d2;
-}
-
-.address {
+.sidebar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  line-height: 1.6;
+  gap: var(--space-6);
 }
 
-.addressLine {
-  margin: 0;
-  color: #0f172a;
+/* =============================================================================
+   Info Card
+   ============================================================================= */
+
+.infoCard {
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-default);
+  padding: var(--space-5);
 }
 
-.addressContact {
-  margin: 16px 0 0 0;
-  font-size: 0.875rem;
-  color: #666;
+.infoTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
 }
 
-@media (max-width: 768px) {
-  .itemRow {
-    grid-template-columns: auto 1fr;
+.infoContent {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.infoContent p {
+  margin-bottom: var(--space-1);
+}
+
+.infoContent p:last-child {
+  margin-bottom: 0;
+}
+
+.infoContent strong {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+/* =============================================================================
+   Totals Card
+   ============================================================================= */
+
+.totalsCard {
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-default);
+  padding: var(--space-5);
+}
+
+.totalsRow {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+}
+
+.totalsLabel {
+  color: var(--text-secondary);
+}
+
+.totalsValue {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+.totalsDivider {
+  height: 1px;
+  background-color: var(--border-default);
+  margin: var(--space-3) 0;
+}
+
+.totalsRow.total {
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+}
+
+.totalsRow.total .totalsValue {
+  color: var(--color-brand);
+}
+
+/* =============================================================================
+   Actions
+   ============================================================================= */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .actions {
+    flex-direction: row;
   }
+}
 
-  .itemRow > :nth-child(3),
-  .itemRow > :nth-child(4) {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 16px;
-  }
+/* =============================================================================
+   Loading State
+   ============================================================================= */
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-16);
+}
+
+.loadingSpinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border-default);
+  border-right-color: var(--color-brand);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .statusCard,
+[data-theme="dark"] .itemsCard,
+[data-theme="dark"] .infoCard,
+[data-theme="dark"] .totalsCard {
+  background-color: var(--color-neutral-800);
+  border-color: var(--color-neutral-700);
+}
+
+[data-theme="dark"] .itemsHeader,
+[data-theme="dark"] .itemRow,
+[data-theme="dark"] .totalsDivider {
+  border-color: var(--color-neutral-700);
+}
+
+[data-theme="dark"] .timelineItem:not(:last-child)::before {
+  background-color: var(--color-neutral-700);
 }

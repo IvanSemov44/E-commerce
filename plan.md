@@ -148,9 +148,9 @@ Full-stack e-commerce platform with:
   - Support: Credit Card, PayPal, Apple Pay, Google Pay
   - Backend already supports these via `GET /api/payments/methods`
 
-- [ ] **Trust Signals**
-  - Add trust bar to checkout (Secure Checkout, 30-Day Returns, Free Shipping)
-  - Add trust strip to product pages (below Add to Cart)
+- [x] **Trust Signals** - [`TrustSignals.tsx`](src/frontend/storefront/src/components/TrustSignals.tsx)
+  - Added to checkout page: Secure Checkout, Free Shipping, 30-Day Returns, Buyer Protection
+  - Two variants: full (checkout) and compact (product pages)
 
 - [ ] **Guest Checkout**
   - Frontend needs to send `guestEmail` field
@@ -167,15 +167,30 @@ Full-stack e-commerce platform with:
 
 ### Priority 3: Legal Compliance
 
-- [ ] **Privacy Policy Page** (GDPR requirement)
-- [ ] **Terms of Service Page**
-- [ ] **Returns Policy Page**
-- [ ] **Cookie Consent Banner**
-- [ ] **Fix Footer Links** (all currently point to `/`)
+- [x] **Privacy Policy Page** (GDPR requirement) - [`PrivacyPolicy.tsx`](src/frontend/storefront/src/pages/PrivacyPolicy.tsx)
+- [x] **Terms of Service Page** - [`TermsOfService.tsx`](src/frontend/storefront/src/pages/TermsOfService.tsx)
+- [x] **Returns Policy Page** - [`ReturnsPolicy.tsx`](src/frontend/storefront/src/pages/ReturnsPolicy.tsx)
+- [x] **Cookie Consent Banner** - Already implemented via [`CookieConsent.tsx`](src/frontend/storefront/src/components/CookieConsent.tsx)
+- [x] **Fix Footer Links** - All footer links now point to correct pages:
+  - Company: About Us, Careers, Press, Blog
+  - Support: Help Center, Contact Us, Track Order, Returns
+  - Legal: Privacy Policy, Terms of Service, Cookies, Security
+- [x] **Additional Pages Created**:
+  - [`AboutUs.tsx`](src/frontend/storefront/src/pages/AboutUs.tsx) - Company information
+  - [`Careers.tsx`](src/frontend/storefront/src/pages/Careers.tsx) - Job opportunities
+  - [`Press.tsx`](src/frontend/storefront/src/pages/Press.tsx) - Media resources
+  - [`Blog.tsx`](src/frontend/storefront/src/pages/Blog.tsx) - Blog placeholder
+  - [`HelpCenter.tsx`](src/frontend/storefront/src/pages/HelpCenter.tsx) - FAQ and support
+  - [`Contact.tsx`](src/frontend/storefront/src/pages/Contact.tsx) - Contact information
+  - [`TrackOrder.tsx`](src/frontend/storefront/src/pages/TrackOrder.tsx) - Order tracking info
+  - [`CookiePolicy.tsx`](src/frontend/storefront/src/pages/CookiePolicy.tsx) - Cookie policy
+  - [`Security.tsx`](src/frontend/storefront/src/pages/Security.tsx) - Security information
 
 ### Priority 4: Homepage Enhancement
 
-- [ ] **Announcement Bar** (top of page)
+- [x] **Announcement Bar** (top of page) - [`AnnouncementBar.tsx`](src/frontend/storefront/src/components/AnnouncementBar.tsx)
+  - Dismissible banner with customizable message and link
+  - Default: "Free shipping on orders over $50!"
 - [ ] **Trust Signals Section**
 - [ ] **Category Showcase**
 - [ ] **Bestsellers Section**

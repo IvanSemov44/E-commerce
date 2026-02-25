@@ -1,43 +1,287 @@
-/* Base Card Styles */
+/**
+ * Card Component Styles
+ * 
+ * Modern, versatile card component with:
+ * - Multiple variants (default, bordered, elevated, ghost, glass)
+ * - Padding options
+ * - Hover effects
+ * - Smooth transitions
+ */
+
+/* =============================================================================
+   Base Card
+   ============================================================================= */
+
 .card {
-  border-radius: 0.5rem;
-  transition: all 0.2s;
+  position: relative;
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  transition: var(--transition-transform), var(--transition-shadow), var(--transition-colors);
+  overflow: hidden;
 }
 
-/* Variant Styles */
+/* =============================================================================
+   Default Variant
+   ============================================================================= */
+
 .cardDefault {
-  background-color: #ffffff;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  background-color: var(--surface-primary);
+  box-shadow: var(--shadow-xs);
 }
+
+/* =============================================================================
+   Bordered Variant
+   ============================================================================= */
 
 .cardBordered {
-  background-color: #ffffff;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  border: 1px solid #e2e8f0;
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-xs);
 }
 
-.cardElevated {
-  background-color: #ffffff;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+.cardBordered:hover {
+  border-color: var(--border-hover);
 }
+
+/* =============================================================================
+   Elevated Variant
+   ============================================================================= */
+
+.cardElevated {
+  background-color: var(--surface-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+.cardElevated:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+
+/* =============================================================================
+   Ghost Variant
+   ============================================================================= */
 
 .cardGhost {
   background-color: transparent;
 }
 
-/* Padding Variants */
+/* =============================================================================
+   Glass Variant (Modern Frosted Glass Effect)
+   ============================================================================= */
+
+.cardGlass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-md);
+}
+
+.cardGlass:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-lg);
+}
+
+/* =============================================================================
+   Interactive Variant (Clickable Cards)
+   ============================================================================= */
+
+.cardInteractive {
+  cursor: pointer;
+}
+
+.cardInteractive:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.cardInteractive:active {
+  transform: translateY(-2px);
+}
+
+.cardInteractive:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   Padding Variants
+   ============================================================================= */
+
 .paddingNone {
-  /* no padding */
+  padding: 0;
 }
 
 .paddingSmall {
-  padding: 1rem;
+  padding: var(--space-3);
 }
 
 .paddingMedium {
-  padding: 1.5rem;
+  padding: var(--space-5);
 }
 
 .paddingLarge {
-  padding: 2rem;
+  padding: var(--space-8);
+}
+
+/* =============================================================================
+   Card Header
+   ============================================================================= */
+
+.cardHeader {
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.cardHeader:last-child {
+  border-bottom: none;
+}
+
+/* =============================================================================
+   Card Body
+   ============================================================================= */
+
+.cardBody {
+  padding: var(--space-5);
+}
+
+/* =============================================================================
+   Card Footer
+   ============================================================================= */
+
+.cardFooter {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-default);
+  background-color: var(--surface-secondary);
+}
+
+.cardFooter:first-child {
+  border-top: none;
+}
+
+/* =============================================================================
+   Card Image
+   ============================================================================= */
+
+.cardImage {
+  width: 100%;
+  display: block;
+}
+
+.cardImageTop {
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+/* =============================================================================
+   Card Overlay
+   ============================================================================= */
+
+.cardOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  opacity: 0;
+  transition: var(--transition-opacity);
+}
+
+.card:hover .cardOverlay {
+  opacity: 1;
+}
+
+/* =============================================================================
+   Card Badge
+   ============================================================================= */
+
+.cardBadge {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 10;
+}
+
+.cardBadgeTopRight {
+  left: auto;
+  right: var(--space-3);
+}
+
+/* =============================================================================
+   Card Loading State
+   ============================================================================= */
+
+.cardLoading {
+  position: relative;
+  overflow: hidden;
+}
+
+.cardLoading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* =============================================================================
+   Card Glow Effect (on hover)
+   ============================================================================= */
+
+.cardGlow {
+  position: relative;
+}
+
+.cardGlow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-400),
+    var(--color-primary-600)
+  );
+  opacity: 0;
+  z-index: -1;
+  transition: var(--transition-opacity);
+}
+
+.cardGlow:hover::before {
+  opacity: 0.1;
+}
+
+/* =============================================================================
+   Responsive Adjustments
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .paddingSmall {
+    padding: var(--space-2);
+  }
+
+  .paddingMedium {
+    padding: var(--space-4);
+  }
+
+  .paddingLarge {
+    padding: var(--space-6);
+  }
+
+  .cardHeader,
+  .cardBody {
+    padding: var(--space-4);
+  }
+
+  .cardFooter {
+    padding: var(--space-3) var(--space-4);
+  }
 }

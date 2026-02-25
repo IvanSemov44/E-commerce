@@ -1,55 +1,178 @@
-/* Checkout Page Styles */
+/**
+ * Checkout Page Styles
+ * 
+ * Modern, clean checkout experience with:
+ * - Two-column layout
+ * - Order summary sticky sidebar
+ * - Form sections with clear hierarchy
+ * - Success state animations
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
 .container {
   min-height: 100vh;
-  background-color: #f8fafc;
-  padding: 32px 0;
+  background-color: var(--surface-secondary);
+  padding: var(--space-8) 0;
 }
 
+@media (min-width: 768px) {
+  .container {
+    padding: var(--space-12) 0;
+  }
+}
+
+/* =============================================================================
+   Content
+   ============================================================================= */
+
 .content {
-  max-width: 1536px;
+  max-width: var(--container-2xl);
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .content {
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content {
+    padding: 0 var(--space-8);
+  }
 }
 
 .successContent {
-  max-width: 896px;
+  max-width: 560px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 var(--space-4);
 }
+
+/* =============================================================================
+   Page Header
+   ============================================================================= */
+
+.pageHeader {
+  margin-bottom: var(--space-8);
+}
+
+.pageTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+@media (min-width: 768px) {
+  .pageTitle {
+    font-size: var(--text-3xl);
+  }
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.breadcrumb a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: var(--transition-colors);
+}
+
+.breadcrumb a:hover {
+  color: var(--color-brand);
+}
+
+.breadcrumbSeparator {
+  color: var(--text-muted);
+}
+
+/* =============================================================================
+   Grid Layout
+   ============================================================================= */
 
 .grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 32px;
+  gap: var(--space-8);
 }
 
 @media (min-width: 1024px) {
   .grid {
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 1fr 400px;
+    gap: var(--space-10);
   }
 }
 
+/* =============================================================================
+   Form Section
+   ============================================================================= */
+
 .formSection {
-  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.formCard {
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-default);
+}
+
+@media (min-width: 768px) {
+  .formCard {
+    padding: var(--space-8);
+  }
 }
 
 .formTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #0f172a;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.formTitle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-brand);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-5);
 }
+
+/* =============================================================================
+   Form Groups
+   ============================================================================= */
 
 .formGroup {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 480px) {
+  .formGroup {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .formGroupFull {
@@ -57,165 +180,321 @@
 }
 
 .inputHint {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 8px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
 }
 
+/* =============================================================================
+   Order Summary (Sidebar)
+   ============================================================================= */
+
 .summary {
-  height: fit-content;
-  position: sticky;
-  top: 16px;
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .summary {
+    position: sticky;
+    top: calc(72px + var(--space-4));
+    height: fit-content;
+  }
+}
+
+.summaryCard {
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-default);
 }
 
 .summaryTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #0f172a;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
 }
 
+/* =============================================================================
+   Items List
+   ============================================================================= */
+
 .itemsList {
-  max-height: 256px;
+  max-height: 320px;
   overflow-y: auto;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-default);
 }
+
+.itemsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.itemsList::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-300);
+  border-radius: var(--radius-full);
+}
+
+/* =============================================================================
+   Totals Section
+   ============================================================================= */
 
 .totalsSection {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e2e8f0;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .totalLine {
   display: flex;
   justify-content: space-between;
-  color: #475569;
+  align-items: center;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .totalValue {
-  font-weight: 600;
-  color: #0f172a;
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.discount {
+  color: var(--color-success-600);
 }
 
 .grandTotal {
   display: flex;
   justify-content: space-between;
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 24px;
+  align-items: center;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
 }
 
 .grandTotalAmount {
-  color: #16a34a;
+  color: var(--color-brand);
+  font-size: var(--text-xl);
 }
 
-.successIcon {
-  width: 80px;
-  height: 80px;
-  background-color: #16a34a;
-  border-radius: 9999px;
+/* =============================================================================
+   Promo Code Section
+   ============================================================================= */
+
+.promoSection {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.promoInput {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.promoInput input {
+  flex: 1;
+}
+
+.promoMessage {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  margin-top: var(--space-3);
+}
+
+.promoSuccess {
+  background-color: var(--color-success-50);
+  color: var(--color-success-600);
+  border: 1px solid var(--color-primary-200);
+}
+
+.promoError {
+  background-color: var(--color-error-50);
+  color: var(--color-error-600);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.promoRemove {
+  background: none;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  padding: 0;
+  transition: var(--transition-opacity);
+}
+
+.promoRemove:hover {
+  opacity: 0.8;
+}
+
+/* =============================================================================
+   Checkout Button
+   ============================================================================= */
+
+.checkoutButton {
+  width: 100%;
+  padding: var(--space-4);
+  font-size: var(--text-base);
+}
+
+.secureCheckout {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
-.successIconSvg {
-  width: 48px;
-  height: 48px;
-  color: #ffffff;
+.secureCheckout svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* =============================================================================
+   Success State
+   ============================================================================= */
+
+.successContainer {
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.successIcon {
+  width: 5rem;
+  height: 5rem;
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-6);
+  box-shadow: var(--shadow-primary);
+  animation: scaleIn var(--duration-300) var(--ease-spring);
+}
+
+.successIcon svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: white;
 }
 
 .successTitle {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: #16a34a;
-  text-align: center;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-4);
+  color: var(--color-brand);
 }
 
 .successMessage {
-  color: #475569;
-  margin-bottom: 8px;
-  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-base);
 }
 
 .successOrderNumber {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 24px;
-  color: #0f172a;
-  text-align: center;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-6);
+  color: var(--text-primary);
 }
 
 .successEmail {
-  color: #475569;
-  margin-bottom: 32px;
-  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: var(--space-8);
+  font-size: var(--text-sm);
 }
 
 .successActions {
   display: flex;
-  gap: 16px;
-  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .successActions {
+    flex-direction: row;
+    justify-content: center;
+  }
 }
 
 .successActionLink {
   text-decoration: none;
 }
 
-/* Promo Code Styles */
-.promoSection {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e2e8f0;
+/* =============================================================================
+   Security Badges
+   ============================================================================= */
+
+.securityBadges {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-default);
 }
 
-.promoInput {
+.securityBadge {
   display: flex;
-  gap: 8px;
-  align-items: flex-end;
-}
-
-.promoMessage {
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  margin-top: 8px;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
-.promoSuccess {
-  background-color: #dcfce7;
-  color: #166534;
-  border: 1px solid #86efac;
+.securityBadge svg {
+  width: 1rem;
+  height: 1rem;
 }
 
-.promoError {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
+/* =============================================================================
+   Animations
+   ============================================================================= */
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.promoRemove {
-  background: none;
-  border: none;
-  color: #166534;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 0.875rem;
-  padding: 0;
+/* =============================================================================
+   Loading State
+   ============================================================================= */
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 
-.promoRemove:hover {
-  color: #14532d;
+.loadingSpinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border-default);
+  border-right-color: var(--color-brand);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

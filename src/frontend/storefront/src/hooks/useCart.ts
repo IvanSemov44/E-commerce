@@ -144,7 +144,17 @@ export function useCart(): UseCartReturn {
     try {
       if (isAuthenticated) {
         // For authenticated users, itemId is the cart item ID
+        // Find the product ID from backendCart to remove from local cart
+        const cartItem = backendCart?.items.find(item => item.id === itemId);
+        const productId = cartItem?.productId;
+        
         await removeFromCartApi(itemId).unwrap();
+        
+        // Also remove from local cart to prevent useCartSync from re-adding it
+        // Use productId since local cart stores items by product ID
+        if (productId) {
+          dispatch(removeItem(productId));
+        }
       } else {
         // For guest users, itemId is the product id
         dispatch(removeItem(itemId));
@@ -154,7 +164,7 @@ export function useCart(): UseCartReturn {
       toast.error('Failed to remove item');
       throw error;
     }
-  }, [isAuthenticated, removeFromCartApi, dispatch]);
+  }, [isAuthenticated, removeFromCartApi, dispatch, backendCart]);
 
   return {
     displayItems,

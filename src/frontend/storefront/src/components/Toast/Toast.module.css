@@ -1,135 +1,375 @@
-/* Toast Component Styles */
+/**
+ * Toast Component Styles
+ * 
+ * Modern, accessible toast notifications with:
+ * - Multiple variants (success, error, warning, info)
+ * - Smooth enter/exit animations
+ * - Auto-dismiss progress bar
+ * - Dark mode support
+ */
+
+/* =============================================================================
+   Toast Container
+   ============================================================================= */
 
 .container {
   position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 9999;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
   max-width: 400px;
+  width: calc(100% - var(--space-8));
   pointer-events: none;
 }
 
+/* Position variants */
+.topRight {
+  top: var(--space-4);
+  right: var(--space-4);
+}
+
+.topLeft {
+  top: var(--space-4);
+  left: var(--space-4);
+}
+
+.bottomRight {
+  bottom: var(--space-4);
+  right: var(--space-4);
+}
+
+.bottomLeft {
+  bottom: var(--space-4);
+  left: var(--space-4);
+}
+
+.topCenter {
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bottomCenter {
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* =============================================================================
+   Toast Item
+   ============================================================================= */
+
 .toast {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background-color: #ffffff;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  animation: slideIn 0.3s ease-out;
-  pointer-events: all;
-  border-left: 4px solid #64748b;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  overflow: hidden;
+  animation: slideInRight var(--duration-300) var(--ease-out);
 }
 
-.toast.success {
-  border-left-color: #16a34a;
-  background-color: #f0fdf4;
-  color: #15803d;
+.topLeft .toast,
+.bottomLeft .toast {
+  animation: slideInLeft var(--duration-300) var(--ease-out);
 }
 
-.toast.error {
-  border-left-color: #dc2626;
-  background-color: #fef2f2;
-  color: #b91c1c;
+.topCenter .toast,
+.bottomCenter .toast {
+  animation: slideInUp var(--duration-300) var(--ease-out);
 }
 
-.toast.warning {
-  border-left-color: #ea580c;
-  background-color: #fffbeb;
-  color: #c2410c;
+/* =============================================================================
+   Variant Styles
+   ============================================================================= */
+
+.success {
+  border-left: 4px solid var(--color-success-500);
 }
 
-.toast.info {
-  border-left-color: #0ea5e9;
-  background-color: #f0f9ff;
-  color: #0369a1;
+.success .icon {
+  color: var(--color-success-500);
 }
+
+.error {
+  border-left: 4px solid var(--color-error-500);
+}
+
+.error .icon {
+  color: var(--color-error-500);
+}
+
+.warning {
+  border-left: 4px solid var(--color-warning-500);
+}
+
+.warning .icon {
+  color: var(--color-warning-500);
+}
+
+.info {
+  border-left: 4px solid var(--color-info-500);
+}
+
+.info .icon {
+  color: var(--color-info-500);
+}
+
+/* =============================================================================
+   Icon
+   ============================================================================= */
 
 .icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.5rem;
+  flex-shrink: 0;
   width: 1.5rem;
   height: 1.5rem;
-  font-weight: 700;
-  font-size: 1rem;
+}
+
+/* =============================================================================
+   Content
+   ============================================================================= */
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
 }
 
 .message {
-  flex: 1;
-  word-break: break-word;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
 }
 
+/* =============================================================================
+   Close Button
+   ============================================================================= */
+
 .closeButton {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
   padding: 0;
-  margin: -0.5rem -0.75rem -0.5rem 0;
-  background: none;
+  background: transparent;
   border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
   cursor: pointer;
-  font-size: 1.5rem;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+  transition: var(--transition-colors);
 }
 
 .closeButton:hover {
-  opacity: 0.9;
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
 }
 
-.closeButton:focus {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
+.closeButton svg {
+  width: 1rem;
+  height: 1rem;
 }
 
-/* Animations */
-@keyframes slideIn {
+/* =============================================================================
+   Progress Bar
+   ============================================================================= */
+
+.progressBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background-color: var(--color-brand);
+  animation: progress linear forwards;
+}
+
+.success .progressBar {
+  background-color: var(--color-success-500);
+}
+
+.error .progressBar {
+  background-color: var(--color-error-500);
+}
+
+.warning .progressBar {
+  background-color: var(--color-warning-500);
+}
+
+.info .progressBar {
+  background-color: var(--color-info-500);
+}
+
+@keyframes progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* =============================================================================
+   Exit Animation
+   ============================================================================= */
+
+.exiting {
+  animation: slideOutRight var(--duration-200) var(--ease-in) forwards;
+}
+
+.topLeft .exiting,
+.bottomLeft .exiting {
+  animation: slideOutLeft var(--duration-200) var(--ease-in) forwards;
+}
+
+.topCenter .exiting,
+.bottomCenter .exiting {
+  animation: slideOutDown var(--duration-200) var(--ease-in) forwards;
+}
+
+/* =============================================================================
+   Animations
+   ============================================================================= */
+
+@keyframes slideInRight {
   from {
-    transform: translateX(400px);
     opacity: 0;
+    transform: translateX(100%);
   }
-
   to {
-    transform: translateX(0);
     opacity: 1;
+    transform: translateX(0);
   }
 }
 
-@keyframes slideOut {
+@keyframes slideInLeft {
   from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-
-  to {
-    transform: translateX(400px);
     opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-/* Mobile responsiveness */
-@media (max-width: 640px) {
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* =============================================================================
+   Action Button
+   ============================================================================= */
+
+.actionButton {
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.actionButton:hover {
+  background-color: var(--surface-tertiary);
+  color: var(--text-primary);
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .toast {
+  background-color: var(--color-neutral-800);
+  border-color: var(--color-neutral-700);
+}
+
+[data-theme="dark"] .closeButton:hover {
+  background-color: var(--color-neutral-700);
+}
+
+[data-theme="dark"] .actionButton {
+  background-color: var(--color-neutral-700);
+  border-color: var(--color-neutral-600);
+}
+
+[data-theme="dark"] .actionButton:hover {
+  background-color: var(--color-neutral-600);
+}
+
+/* =============================================================================
+   Responsive
+   ============================================================================= */
+
+@media (max-width: 480px) {
   .container {
-    left: 1rem;
-    right: 1rem;
-    top: auto;
-    bottom: 1rem;
+    left: var(--space-4);
+    right: var(--space-4);
     max-width: none;
+    width: auto;
   }
 
-  .toast {
-    width: 100%;
-    font-size: 0.875rem;
+  .topRight,
+  .topLeft,
+  .topCenter {
+    top: var(--space-3);
+  }
+
+  .bottomRight,
+  .bottomLeft,
+  .bottomCenter {
+    bottom: var(--space-3);
   }
 }

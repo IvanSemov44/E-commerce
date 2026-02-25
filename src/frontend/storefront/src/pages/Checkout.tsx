@@ -5,6 +5,7 @@ import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import ErrorAlert from '../components/ErrorAlert';
+import TrustSignals from '../components/TrustSignals';
 import { CheckoutForm, OrderSummary, OrderSuccess } from './components/Checkout';
 import styles from './Checkout.module.css';
 
@@ -60,6 +61,9 @@ export default function Checkout() {
     <div className={styles.container}>
       <div className={styles.content}>
         <PageHeader title="Checkout" />
+
+        {/* Trust Signals Bar */}
+        <TrustSignals />
 
         <div className={styles.grid}>
           {/* Shipping Form */}

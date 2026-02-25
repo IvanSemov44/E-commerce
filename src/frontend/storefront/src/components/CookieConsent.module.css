@@ -1,12 +1,290 @@
-.overlay {
+/**
+ * CookieConsent Component Styles
+ * 
+ * Modern, accessible cookie consent banner with:
+ * - Fixed positioning at bottom
+ * - Smooth animations
+ * - Dark mode support
+ * - Mobile responsive
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
+.container {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 9999;
-  padding: 1rem;
-  animation: slideUp 0.3s ease-out;
+  z-index: var(--z-modal);
+  background-color: var(--surface-primary);
+  border-top: 1px solid var(--border-default);
+  box-shadow: var(--shadow-2xl);
+  animation: slideUp var(--duration-300) var(--ease-out);
 }
+
+/* =============================================================================
+   Content
+   ============================================================================= */
+
+.content {
+  max-width: var(--container-2xl);
+  margin: 0 auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content {
+    padding: var(--space-5) var(--space-8);
+  }
+}
+
+/* =============================================================================
+   Text Section
+   ============================================================================= */
+
+.textSection {
+  flex: 1;
+}
+
+.title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 600px;
+}
+
+.description a {
+  color: var(--color-brand);
+  text-decoration: underline;
+  transition: var(--transition-colors);
+}
+
+.description a:hover {
+  color: var(--color-brand-hover);
+}
+
+/* =============================================================================
+   Actions
+   ============================================================================= */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+@media (min-width: 480px) {
+  .actions {
+    flex-direction: row;
+    gap: var(--space-3);
+  }
+}
+
+.acceptButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2-5) var(--space-5);
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: var(--transition-transform), var(--transition-shadow);
+  white-space: nowrap;
+}
+
+.acceptButton:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-primary);
+}
+
+.declineButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2-5) var(--space-5);
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: var(--transition-colors);
+  white-space: nowrap;
+}
+
+.declineButton:hover {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+/* =============================================================================
+   Preferences Panel
+   ============================================================================= */
+
+.preferencesPanel {
+  border-top: 1px solid var(--border-default);
+  padding: var(--space-4);
+  animation: fadeIn var(--duration-200) var(--ease-out);
+}
+
+@media (min-width: 768px) {
+  .preferencesPanel {
+    padding: var(--space-4) var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .preferencesPanel {
+    padding: var(--space-5) var(--space-8);
+  }
+}
+
+.preferencesGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .preferencesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .preferencesGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.preferenceItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--surface-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.preferenceItem.disabled {
+  opacity: 0.6;
+}
+
+.checkboxWrapper {
+  flex-shrink: 0;
+}
+
+.checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--color-brand);
+  cursor: pointer;
+}
+
+.preferenceContent {
+  flex: 1;
+}
+
+.preferenceName {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-0-5);
+}
+
+.preferenceDescription {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* =============================================================================
+   Preferences Toggle Button
+   ============================================================================= */
+
+.preferencesToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-brand);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.preferencesToggle:hover {
+  color: var(--color-brand-hover);
+}
+
+.preferencesToggle svg {
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--duration-200) var(--ease-out);
+}
+
+.preferencesToggle.open svg {
+  transform: rotate(180deg);
+}
+
+/* =============================================================================
+   Save Preferences Button
+   ============================================================================= */
+
+.saveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2-5) var(--space-5);
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: var(--transition-colors);
+  white-space: nowrap;
+}
+
+.saveButton:hover {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-hover);
+}
+
+/* =============================================================================
+   Animations
+   ============================================================================= */
 
 @keyframes slideUp {
   from {
@@ -19,111 +297,72 @@
   }
 }
 
-.banner {
-  max-width: 1200px;
-  margin: 0 auto;
-  background: #1a1a2e;
-  border-radius: 12px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-  padding: 1.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.content {
-  flex: 1;
-  min-width: 280px;
+/* =============================================================================
+   Exit Animation
+   ============================================================================= */
+
+.exiting {
+  animation: slideDown var(--duration-200) var(--ease-in) forwards;
 }
 
-.title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 0.5rem 0;
-}
-
-.description {
-  font-size: 0.9rem;
-  color: #a0a0a0;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.link {
-  color: #4f9cf9;
-  text-decoration: underline;
-  transition: color 0.2s ease;
-}
-
-.link:hover {
-  color: #6bb3ff;
-}
-
-.actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
-
-.acceptButton,
-.declineButton {
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.acceptButton {
-  background: #4f9cf9;
-  color: #fff;
-}
-
-.acceptButton:hover {
-  background: #3d8ce8;
-  transform: translateY(-1px);
-}
-
-.declineButton {
-  background: transparent;
-  color: #a0a0a0;
-  border: 1px solid #3a3a4a;
-}
-
-.declineButton:hover {
-  background: #2a2a3a;
-  color: #fff;
-}
-
-/* Mobile Responsive */
-@media (max-width: 640px) {
-  .overlay {
-    padding: 0.5rem;
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
   }
-
-  .banner {
-    flex-direction: column;
-    text-align: center;
-    padding: 1.25rem;
+  to {
+    transform: translateY(100%);
+    opacity: 0;
   }
+}
 
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .container {
+  background-color: var(--color-neutral-900);
+  border-top-color: var(--color-neutral-700);
+}
+
+[data-theme="dark"] .preferenceItem {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .declineButton:hover,
+[data-theme="dark"] .saveButton:hover {
+  background-color: var(--color-neutral-800);
+}
+
+/* =============================================================================
+   Mobile Responsive
+   ============================================================================= */
+
+@media (max-width: 480px) {
   .content {
-    min-width: 100%;
+    padding: var(--space-3);
+  }
+
+  .title {
+    font-size: var(--text-sm);
+  }
+
+  .description {
+    font-size: var(--text-xs);
   }
 
   .actions {
     width: 100%;
-    justify-content: center;
   }
 
   .acceptButton,
-  .declineButton {
-    flex: 1;
-    max-width: 140px;
+  .declineButton,
+  .saveButton {
+    width: 100%;
   }
 }

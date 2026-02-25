@@ -29,12 +29,26 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const ReturnsPolicy = lazy(() => import('./pages/ReturnsPolicy'));
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
+const Security = lazy(() => import('./pages/Security'));
+
+// Company pages
+const AboutUs = lazy(() => import('./pages/AboutUs'));
+const Careers = lazy(() => import('./pages/Careers'));
+const Press = lazy(() => import('./pages/Press'));
+const Blog = lazy(() => import('./pages/Blog'));
+
+// Support pages
+const HelpCenter = lazy(() => import('./pages/HelpCenter'));
+const Contact = lazy(() => import('./pages/Contact'));
+const TrackOrder = lazy(() => import('./pages/TrackOrder'));
 
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import CookieConsent from './components/CookieConsent';
+import AnnouncementBar from './components/AnnouncementBar';
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -96,6 +110,7 @@ function AppContent() {
 
   return (
     <div>
+      <AnnouncementBar />
       <Header />
       <main>
         {isAppLoading && (
@@ -151,6 +166,17 @@ function AppContent() {
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/returns" element={<ReturnsPolicy />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/security" element={<Security />} />
+              {/* Company Pages */}
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/press" element={<Press />} />
+              <Route path="/blog" element={<Blog />} />
+              {/* Support Pages */}
+              <Route path="/help" element={<HelpCenter />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/track-order" element={<TrackOrder />} />
             </Routes>
           </Suspense>
         )}
@@ -165,7 +191,14 @@ function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <Toaster position="top-right" />
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            style: {
+              marginTop: '80px', // Push toasts below the sticky header
+            },
+          }}
+        />
         <ToastContainer />
         <AppContent />
       </ErrorBoundary>

@@ -1,0 +1,279 @@
+/**
+ * ThemeToggle Component Styles
+ * 
+ * Modern, accessible theme toggle with:
+ * - Smooth icon transitions
+ * - Multiple size variants
+ * - Hover and focus states
+ */
+
+/* =============================================================================
+   Toggle Button
+   ============================================================================= */
+
+.toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: var(--transition-colors), var(--transition-transform);
+  color: var(--text-secondary);
+}
+
+.toggle:hover {
+  background-color: var(--surface-tertiary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.toggle:active {
+  transform: translateY(0);
+}
+
+/* =============================================================================
+   Size Variants
+   ============================================================================= */
+
+.sm {
+  padding: var(--space-1-5);
+}
+
+.sm .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.sm .label {
+  font-size: var(--text-xs);
+}
+
+.md {
+  padding: var(--space-2);
+}
+
+.md .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.md .label {
+  font-size: var(--text-sm);
+}
+
+.lg {
+  padding: var(--space-3);
+}
+
+.lg .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.lg .label {
+  font-size: var(--text-base);
+}
+
+/* =============================================================================
+   Icon Wrapper
+   ============================================================================= */
+
+.iconWrapper {
+  position: relative;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.sm .iconWrapper {
+  width: 1rem;
+  height: 1rem;
+}
+
+.lg .iconWrapper {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* =============================================================================
+   Icons
+   ============================================================================= */
+
+.icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+  transition: opacity var(--duration-300) var(--ease-out),
+              transform var(--duration-300) var(--ease-out);
+}
+
+.icon.active {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* Sun icon specific animation */
+.sunIcon.active {
+  transform: rotate(0deg) scale(1);
+}
+
+/* Moon icon specific animation */
+.moonIcon.active {
+  transform: rotate(0deg) scale(1);
+}
+
+/* System icon specific animation */
+.systemIcon.active {
+  transform: rotate(0deg) scale(1);
+}
+
+/* =============================================================================
+   Label
+   ============================================================================= */
+
+.label {
+  font-weight: var(--font-medium);
+  text-transform: capitalize;
+  color: var(--text-muted);
+  transition: var(--transition-colors);
+}
+
+.toggle:hover .label {
+  color: var(--text-secondary);
+}
+
+/* Hide label on small sizes */
+@media (max-width: 640px) {
+  .label {
+    display: none;
+  }
+}
+
+/* =============================================================================
+   Icon Placeholder (for SSR)
+   ============================================================================= */
+
+.iconPlaceholder {
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: var(--surface-tertiary);
+  border-radius: var(--radius-sm);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* =============================================================================
+   Dropdown Variant (Optional)
+   ============================================================================= */
+
+.dropdownWrapper {
+  position: relative;
+}
+
+.dropdownButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: var(--transition-colors);
+  color: var(--text-secondary);
+}
+
+.dropdownButton:hover {
+  background-color: var(--surface-tertiary);
+  color: var(--text-primary);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 140px;
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: var(--z-dropdown);
+  animation: fadeInDown var(--duration-200) var(--ease-out);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-colors);
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
+}
+
+.dropdownItem.active {
+  background-color: var(--color-brand-light);
+  color: var(--color-brand);
+}
+
+.dropdownItem svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* =============================================================================
+   Animations
+   ============================================================================= */
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+   Dark Mode Adjustments
+   ============================================================================= */
+
+[data-theme="dark"] .toggle {
+  background-color: var(--color-neutral-800);
+  border-color: var(--color-neutral-700);
+}
+
+[data-theme="dark"] .toggle:hover {
+  background-color: var(--color-neutral-700);
+  border-color: var(--color-neutral-600);
+}

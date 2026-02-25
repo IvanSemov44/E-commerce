@@ -1,96 +1,259 @@
-/* Container */
+/**
+ * Input Component Styles
+ * 
+ * Modern, accessible input component with:
+ * - Multiple variants (default, subtle)
+ * - Error and success states
+ * - Icon support
+ * - Proper focus states
+ * - Smooth transitions
+ */
+
+/* =============================================================================
+   Wrapper
+   ============================================================================= */
+
 .wrapper {
   width: 100%;
 }
 
-/* Label */
+/* =============================================================================
+   Label
+   ============================================================================= */
+
 .label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
 }
 
-/* Input Container */
+.labelRequired::after {
+  content: ' *';
+  color: var(--color-error-500);
+}
+
+/* =============================================================================
+   Input Container
+   ============================================================================= */
+
 .inputContainer {
   position: relative;
 }
 
-/* Base Input Styles */
+/* =============================================================================
+   Base Input Styles
+   ============================================================================= */
+
 .input {
   width: 100%;
-  padding: 0.625rem 1rem;
-  font-size: 1rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-  border: 1px solid;
-  placeholder-color: #94a3b8;
-  color: #1e293b;
-  font-family: inherit;
+  padding: var(--space-2-5) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background-color: var(--surface-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  transition: var(--transition-colors), var(--transition-shadow), var(--transition-transform);
+  outline: none;
 }
 
-/* Input Variants */
-.inputDefault {
-  border-color: #cbd5e1;
-  background-color: #ffffff;
+.input::placeholder {
+  color: var(--text-muted);
 }
 
-.inputDefault:hover {
-  border-color: #94a3b8;
+/* =============================================================================
+   Default Variant
+   ============================================================================= */
+
+.inputDefault:hover:not(:disabled):not(:focus) {
+  border-color: var(--border-hover);
 }
 
 .inputDefault:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #10b981;
-  border-color: #10b981;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
 }
+
+/* =============================================================================
+   Subtle Variant
+   ============================================================================= */
 
 .inputSubtle {
-  border-color: #e2e8f0;
-  background-color: #f8fafc;
+  background-color: var(--surface-secondary);
+  border-color: transparent;
 }
 
-.inputSubtle:hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
+.inputSubtle:hover:not(:disabled):not(:focus) {
+  background-color: var(--surface-tertiary);
 }
 
 .inputSubtle:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #10b981;
-  border-color: #10b981;
+  background-color: var(--surface-primary);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
 }
 
+/* =============================================================================
+   Error State
+   ============================================================================= */
+
 .inputError {
-  border-color: #f43f5e;
-  background-color: #ffffff;
+  border-color: var(--color-error-500);
+  background-color: var(--color-error-50);
+}
+
+.inputError:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-error-600);
 }
 
 .inputError:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #be185d;
-  border-color: #be185d;
+  border-color: var(--color-error-500);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
 }
 
-/* Icon */
+/* =============================================================================
+   Success State
+   ============================================================================= */
+
+.inputSuccess {
+  border-color: var(--color-success-500);
+}
+
+.inputSuccess:focus {
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* =============================================================================
+   Disabled State
+   ============================================================================= */
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--surface-secondary);
+}
+
+/* =============================================================================
+   Input with Icon
+   ============================================================================= */
+
 .icon {
   position: absolute;
-  left: 0.75rem;
+  left: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: var(--transition-colors);
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
-/* Input with Icon */
 .inputWithIcon {
-  padding-left: 2.5rem;
+  padding-left: var(--space-10);
 }
 
-/* Error Message */
+.inputWithIcon:focus ~ .icon {
+  color: var(--color-brand);
+}
+
+/* Icon on right side */
+.iconRight {
+  left: auto;
+  right: var(--space-3);
+}
+
+.inputWithIconRight {
+  padding-left: var(--space-4);
+  padding-right: var(--space-10);
+}
+
+/* =============================================================================
+   Error Message
+   ============================================================================= */
+
 .error {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #be185d;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1-5);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-error-600);
+}
+
+.error svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+   Helper Text
+   ============================================================================= */
+
+.helper {
+  margin-top: var(--space-1-5);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* =============================================================================
+   Size Variants
+   ============================================================================= */
+
+.inputSmall {
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.inputSmall.inputWithIcon {
+  padding-left: var(--space-8);
+}
+
+.inputLarge {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-lg);
+}
+
+.inputLarge.inputWithIcon {
+  padding-left: var(--space-12);
+}
+
+/* =============================================================================
+   Full Width
+   ============================================================================= */
+
+.inputFullWidth {
+  width: 100%;
+}
+
+/* =============================================================================
+   Textarea Specific
+   ============================================================================= */
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* =============================================================================
+   Focus Ring Animation
+   ============================================================================= */
+
+@keyframes focusRing {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-primary-200);
+  }
+  100% {
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+  }
+}
+
+.input:focus {
+  animation: focusRing var(--duration-150) var(--ease-out);
 }
