@@ -152,13 +152,18 @@ Full-stack e-commerce platform with:
   - Added to checkout page: Secure Checkout, Free Shipping, 30-Day Returns, Buyer Protection
   - Two variants: full (checkout) and compact (product pages)
 
-- [ ] **Guest Checkout**
-  - Frontend needs to send `guestEmail` field
+- [x] **Guest Checkout**
+  - Frontend now sends `guestEmail` field
   - Backend already supports it (`Order.GuestEmail` exists)
+  - Added account creation prompt for guest orders on success page
+  - Form pre-fills for authenticated users
+  - Email field prominent for guests
 
-- [ ] **Order Status Timeline**
-  - Replace text status with visual stepper
-  - Show: Pending → Processing → Shipped → Delivered
+- [x] **Order Status Timeline**
+  - Created [`OrderStatusTimeline.tsx`](src/frontend/storefront/src/pages/components/OrderDetail/OrderStatusTimeline.tsx)
+  - Visual stepper showing: Pending → Processing → Shipped → Delivered
+  - Special handling for Cancelled orders
+  - Responsive design for mobile
 
 - [ ] **Tracking Number Support**
   - Add `TrackingNumber` field to `Order` entity
@@ -191,11 +196,26 @@ Full-stack e-commerce platform with:
 - [x] **Announcement Bar** (top of page) - [`AnnouncementBar.tsx`](src/frontend/storefront/src/components/AnnouncementBar.tsx)
   - Dismissible banner with customizable message and link
   - Default: "Free shipping on orders over $50!"
-- [ ] **Trust Signals Section**
-- [ ] **Category Showcase**
-- [ ] **Bestsellers Section**
-- [ ] **Promotions Section**
-- [ ] **Working Newsletter Subscription**
+- [x] **Trust Signals Section** - Added to [`Home.tsx`](src/frontend/storefront/src/pages/Home.tsx)
+  - Uses existing [`TrustSignals.tsx`](src/frontend/storefront/src/components/TrustSignals.tsx) component
+  - Displays: Secure Checkout, Free Shipping, 30-Day Returns, Buyer Protection
+- [x] **Category Showcase** - Added to [`Home.tsx`](src/frontend/storefront/src/pages/Home.tsx)
+  - Uses `useGetTopLevelCategoriesQuery` from [`categoriesApi.ts`](src/frontend/storefront/src/store/api/categoriesApi.ts)
+  - Displays up to 6 top-level categories with images or placeholder icons
+  - Links to filtered products page
+- [x] **Bestsellers Section** - Added to [`Home.tsx`](src/frontend/storefront/src/pages/Home.tsx)
+  - Uses `useGetProductsQuery` with `sortBy=reviewCount&sortOrder=desc`
+  - Shows top 4 products by review count
+  - "View All Bestsellers" link to products page
+- [x] **Promotions Section** - Added to [`Home.tsx`](src/frontend/storefront/src/pages/Home.tsx)
+  - Filters products with `compareAtPrice` (on sale)
+  - Shows up to 4 promotional products
+  - "View All Offers" link
+- [x] **Working Newsletter Subscription** - Updated [`Footer.tsx`](src/frontend/storefront/src/components/Footer.tsx)
+  - Added form state management with email validation
+  - Shows success/error toast notifications via `useToast` hook
+  - Stores subscribers in localStorage (demo implementation)
+  - Prevents duplicate subscriptions
 
 ### Priority 5: Payment Integration
 
@@ -213,7 +233,13 @@ Full-stack e-commerce platform with:
 - [ ] **Product Variants** (size, color)
 - [ ] **Quick View Modal**
 - [ ] **Recently Viewed Products**
-- [ ] **Live Search** (debounced, with preview)
+- [x] **Live Search** (debounced, with preview) - Updated [`SearchBar.tsx`](src/frontend/storefront/src/components/SearchBar.tsx)
+  - 300ms debounce on search input
+  - Shows up to 5 product results with images and prices
+  - Keyboard navigation (arrow keys, enter to select)
+  - Loading spinner while fetching
+  - "View all results" link to full search page
+  - Click-outside-to-close behavior
 
 ### Priority 7: Order Management
 

@@ -47,7 +47,7 @@ public class UserRepositoryTests
                 FirstName = "John",
                 LastName = "Doe",
                 Role = UserRole.Customer,
-                EmailVerified = true,
+                IsEmailVerified = true,
                 GoogleId = "google-123",
                 FacebookId = null
             },
@@ -58,7 +58,7 @@ public class UserRepositoryTests
                 FirstName = "Admin",
                 LastName = "User",
                 Role = UserRole.Admin,
-                EmailVerified = true,
+                IsEmailVerified = true,
                 GoogleId = null,
                 FacebookId = null
             },
@@ -69,7 +69,7 @@ public class UserRepositoryTests
                 FirstName = "Facebook",
                 LastName = "User",
                 Role = UserRole.Customer,
-                EmailVerified = true,
+                IsEmailVerified = true,
                 GoogleId = null,
                 FacebookId = "facebook-456"
             },
@@ -80,7 +80,7 @@ public class UserRepositoryTests
                 FirstName = "Unverified",
                 LastName = "User",
                 Role = UserRole.Customer,
-                EmailVerified = false,
+                IsEmailVerified = false,
                 GoogleId = null,
                 FacebookId = null
             }
@@ -96,7 +96,10 @@ public class UserRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 UserId = customer.Id,
-                Street = "123 Main St",
+                Type = "Shipping",
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "123 Main St",
                 City = "New York",
                 State = "NY",
                 PostalCode = "10001",
@@ -107,7 +110,10 @@ public class UserRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 UserId = customer.Id,
-                Street = "456 Oak Ave",
+                Type = "Billing",
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "456 Oak Ave",
                 City = "Los Angeles",
                 State = "CA",
                 PostalCode = "90001",

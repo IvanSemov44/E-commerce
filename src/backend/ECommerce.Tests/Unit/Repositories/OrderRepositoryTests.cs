@@ -62,7 +62,10 @@ public class OrderRepositoryTests
         var address1 = new Address
         {
             Id = Guid.NewGuid(),
-            Street = "123 Main St",
+            Type = "Shipping",
+            FirstName = "John",
+            LastName = "Doe",
+            StreetLine1 = "123 Main St",
             City = "New York",
             State = "NY",
             PostalCode = "10001",
@@ -71,7 +74,10 @@ public class OrderRepositoryTests
         var address2 = new Address
         {
             Id = Guid.NewGuid(),
-            Street = "456 Oak Ave",
+            Type = "Billing",
+            FirstName = "Jane",
+            LastName = "Smith",
+            StreetLine1 = "456 Oak Ave",
             City = "Los Angeles",
             State = "CA",
             PostalCode = "90001",
@@ -83,10 +89,11 @@ public class OrderRepositoryTests
         {
             Id = Guid.NewGuid(),
             Code = "SAVE10",
-            DiscountPercentage = 10,
+            DiscountType = "percentage",
+            DiscountValue = 10,
             IsActive = true,
-            ValidFrom = DateTime.UtcNow.AddDays(-10),
-            ValidUntil = DateTime.UtcNow.AddDays(10)
+            StartDate = DateTime.UtcNow.AddDays(-10),
+            EndDate = DateTime.UtcNow.AddDays(10)
         };
         _context.PromoCodes.Add(promoCode);
 
@@ -530,7 +537,7 @@ public class OrderRepositoryTests
         var result = await _repository.GetRevenueTrendAsync(10);
 
         // Assert - All revenue should be from paid orders
-        result.Values.Should().AllBeGreaterThan(0);
+        result.Values.Should().OnlyContain(x => x > 0);
     }
 
     #endregion

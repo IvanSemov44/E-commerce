@@ -1,0 +1,66 @@
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.authenticated {
+  background-color: #ecfdf5;
+  border: 1px solid #10b981;
+}
+
+.guest {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon {
+  font-size: 1.5rem;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.text strong {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.subtext {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.signOutBtn {
+  color: #6b7280 !important;
+}
+
+.signOutBtn:hover {
+  color: #374151 !important;
+}
+
+@media (max-width: 640px) {
+  .banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .banner > button,
+  .banner > a {
+    align-self: flex-end;
+  }
+}

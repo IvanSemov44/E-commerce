@@ -30,6 +30,8 @@ export default function Checkout() {
     total,
     errors,
     handleSubmit,
+    isAuthenticated,
+    isGuestOrder,
   } = useCheckout();
 
   // Redirect if cart is empty
@@ -53,29 +55,48 @@ export default function Checkout() {
 
   // Success screen
   if (orderComplete) {
-    return <OrderSuccess orderNumber={orderNumber} email={formData.email} />;
+    return (
+      <OrderSuccess 
+        orderNumber={orderNumber} 
+        email={formData.email} 
+        isGuestOrder={isGuestOrder}
+      />
+    );
   }
 
   // Checkout form
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <PageHeader title="Checkout" />
+        {/* Page Header with Progress */}
+        <div className={styles.checkoutHeader}>
+          <h1 className={styles.checkoutTitle}>Secure Checkout</h1>
+          <p className={styles.checkoutSubtitle}>Complete your order safely and quickly</p>
+        </div>
 
         {/* Trust Signals Bar */}
-        <TrustSignals />
+        <div className={styles.trustSignalsWrapper}>
+          <TrustSignals />
+        </div>
 
         <div className={styles.grid}>
           {/* Shipping Form */}
           <div>
             <Card variant="elevated" padding="lg">
-              <h2 className={styles.formTitle}>Shipping Information</h2>
+              <h2 className={styles.formTitle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                Delivery Address
+              </h2>
               {error && <ErrorAlert message={error} />}
               <CheckoutForm
                 formData={formData}
                 errors={errors}
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
+                isAuthenticated={isAuthenticated}
               />
             </Card>
           </div>

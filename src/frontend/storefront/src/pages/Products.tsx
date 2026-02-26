@@ -13,6 +13,13 @@ import {
 } from './components/Products';
 import styles from './Products.module.css';
 
+// Icons
+const GridIcon = () => (
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+  </svg>
+);
+
 export default function Products() {
   const {
     page,
@@ -50,7 +57,12 @@ export default function Products() {
 
   return (
     <div className={styles.container}>
-      <PageHeader title="All Products" />
+      <PageHeader 
+        title="Discover Our Products" 
+        subtitle="Explore our curated collection of premium products. Find exactly what you're looking for with our powerful filters and search."
+        icon={<GridIcon />}
+        badge="Premium Selection"
+      />
 
       <div className={styles.layout}>
         {/* Sidebar */}

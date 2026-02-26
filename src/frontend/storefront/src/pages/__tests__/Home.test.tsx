@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import Home from '../Home'
+import toastReducer from '../../store/slices/toastSlice'
 
 // Mock the RTK Query hook
 vi.mock('../../store/api/productApi', () => ({
@@ -35,7 +36,7 @@ import { useGetFeaturedProductsQuery } from '../../store/api/productApi'
 const createTestStore = () => {
   return configureStore({
     reducer: {
-      // Minimal store setup
+      toast: toastReducer,
     },
   })
 }

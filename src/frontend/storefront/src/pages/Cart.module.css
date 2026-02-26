@@ -1,20 +1,52 @@
-/* Cart Page Styles */
+/**
+ * Cart Page Styles
+ * 
+ * Modern, accessible cart page with:
+ * - Design token integration
+ * - Dark mode support
+ * - Better color contrast
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
 .container {
   min-height: 100vh;
-  background-color: #f8fafc;
-  padding: 32px 0;
+  background-color: var(--surface-secondary);
+  padding: var(--space-8) 0;
 }
 
+/* =============================================================================
+   Content
+   ============================================================================= */
+
 .content {
-  max-width: 1536px;
+  max-width: var(--container-2xl);
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 var(--space-4);
 }
+
+@media (min-width: 640px) {
+  .content {
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content {
+    padding: 0 var(--space-8);
+  }
+}
+
+/* =============================================================================
+   Grid Layout
+   ============================================================================= */
 
 .grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 32px;
+  gap: var(--space-8);
 }
 
 @media (min-width: 1024px) {
@@ -22,6 +54,10 @@
     grid-template-columns: 1fr 1fr 0.8fr;
   }
 }
+
+/* =============================================================================
+   Cart Items Section
+   ============================================================================= */
 
 .cartItems {
   grid-column: 1;
@@ -34,76 +70,284 @@
 }
 
 .itemsTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #0f172a;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-6);
+  color: var(--text-primary);
 }
 
 .itemsList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
+
+/* =============================================================================
+   Order Summary Section
+   ============================================================================= */
 
 .summary {
   height: fit-content;
   position: sticky;
-  top: 16px;
+  top: calc(72px + var(--space-4));
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
 }
 
 .summaryTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #0f172a;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-6);
+  color: var(--text-primary);
 }
 
 .summaryLines {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e2e8f0;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .summaryLine {
   display: flex;
   justify-content: space-between;
-  color: #475569;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.summaryLabel {
+  color: var(--text-secondary);
 }
 
 .summaryValue {
-  font-weight: 600;
-  color: #0f172a;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
 }
 
 .freeShippingHint {
-  font-size: 0.875rem;
-  color: #16a34a;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--color-success-600);
+  font-weight: var(--font-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
+
+.freeShippingHint::before {
+  content: '✓';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: var(--color-success-500);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+}
+
+/* =============================================================================
+   Total Section
+   ============================================================================= */
 
 .totalLine {
   display: flex;
   justify-content: space-between;
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #0f172a;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-6);
+  color: var(--text-primary);
 }
 
 .totalAmount {
-  color: #16a34a;
+  color: var(--color-brand);
 }
+
+/* =============================================================================
+   Actions
+   ============================================================================= */
 
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .actionButton {
   width: 100%;
+}
+
+/* =============================================================================
+   Empty Cart State
+   ============================================================================= */
+
+.emptyCart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-4);
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 4rem;
+  height: 4rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.emptyTitle {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.emptyText {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+}
+
+/* =============================================================================
+   Continue Shopping Link
+   ============================================================================= */
+
+.continueShopping {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-brand);
+  font-weight: var(--font-medium);
+  text-decoration: none;
+  transition: var(--transition-colors);
+}
+
+.continueShopping:hover {
+  color: var(--color-brand-hover);
+}
+
+/* =============================================================================
+   Promo Code Section
+   ============================================================================= */
+
+.promoSection {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.promoLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.promoInput {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.promoInput input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
+  transition: var(--transition-colors);
+}
+
+.promoInput input:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.promoInput input::placeholder {
+  color: var(--text-muted);
+}
+
+/* =============================================================================
+   Trust Badges
+   ============================================================================= */
+
+.trustBadges {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-default);
+}
+
+.trustBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.trustBadge svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .container {
+  background-color: var(--surface-primary);
+}
+
+[data-theme="dark"] .summary {
+  background-color: var(--surface-elevated);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .freeShippingHint {
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .totalAmount {
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .trustBadge svg {
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .promoInput input {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .promoInput input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+/* =============================================================================
+   Reduced Motion
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .summary,
+  .promoInput input,
+  .continueShopping {
+    transition: none;
+  }
 }

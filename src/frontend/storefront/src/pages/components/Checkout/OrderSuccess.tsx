@@ -7,9 +7,10 @@ import styles from './OrderSuccess.module.css';
 interface OrderSuccessProps {
   orderNumber: string;
   email: string;
+  isGuestOrder?: boolean;
 }
 
-export default function OrderSuccess({ orderNumber, email }: OrderSuccessProps) {
+export default function OrderSuccess({ orderNumber, email, isGuestOrder }: OrderSuccessProps) {
   return (
     <div className={styles.container}>
       <div className={styles.successContent}>
@@ -23,6 +24,22 @@ export default function OrderSuccess({ orderNumber, email }: OrderSuccessProps) 
           <p className={styles.successEmail}>
             A confirmation email has been sent to {email || 'your email'}
           </p>
+          
+          {isGuestOrder && (
+            <div className={styles.guestPrompt}>
+              <h3 className={styles.guestPromptTitle}>Create an Account</h3>
+              <p className={styles.guestPromptText}>
+                Create an account to track your orders, save your information for faster checkout, 
+                and receive exclusive offers.
+              </p>
+              <Link to="/register" className={styles.guestPromptLink}>
+                <Button variant="primary" size="md">
+                  Create Account
+                </Button>
+              </Link>
+            </div>
+          )}
+          
           <div className={styles.successActions}>
             <Link to="/products" className={styles.successActionLink}>
               <Button size="lg">Continue Shopping</Button>

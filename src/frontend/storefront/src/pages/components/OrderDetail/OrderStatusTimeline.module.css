@@ -1,0 +1,219 @@
+/* Design Tokens */
+:root {
+  --timeline-bg: #ffffff;
+  --timeline-inactive: #e5e7eb;
+  --timeline-completed: #10b981;
+  --timeline-current: #3b82f6;
+  --timeline-cancelled: #ef4444;
+  --timeline-text: #1f2937;
+  --timeline-text-secondary: #6b7280;
+}
+
+[data-theme="dark"] {
+  --timeline-bg: #1f2937;
+  --timeline-inactive: #374151;
+  --timeline-completed: #34d399;
+  --timeline-current: #60a5fa;
+  --timeline-cancelled: #f87171;
+  --timeline-text: #f9fafb;
+  --timeline-text-secondary: #9ca3af;
+}
+
+.container {
+  margin: 2rem 0 0.5rem 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--timeline-inactive);
+}
+
+.timeline {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  padding: 0 0.5rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.stepCircle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--timeline-bg);
+  border: 3px solid var(--timeline-inactive);
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.stepCircle.completed {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: var(--timeline-completed);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+}
+
+.stepCircle.current {
+  background: var(--timeline-bg);
+  border-color: var(--timeline-current);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.stepIcon {
+  font-size: 1.25rem;
+}
+
+.stepLabel {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--timeline-text-secondary);
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.stepLabel.labelCompleted {
+  color: var(--timeline-completed);
+  font-weight: 600;
+}
+
+.stepLabel.labelCurrent {
+  color: var(--timeline-current);
+  font-weight: 700;
+}
+
+.connector {
+  position: absolute;
+  top: 26px;
+  left: calc(50% + 26px);
+  right: calc(-50% + 26px);
+  height: 3px;
+  background: var(--timeline-inactive);
+  z-index: 0;
+  border-radius: 2px;
+}
+
+.connector.connectorCompleted {
+  background: linear-gradient(90deg, var(--timeline-completed) 0%, #34d399 100%);
+}
+
+/* Cancelled status styles */
+.cancelledStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+[data-theme="dark"] .cancelledStatus {
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.3) 0%, rgba(185, 28, 28, 0.2) 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.cancelledIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.cancelledText {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--timeline-cancelled);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .container {
+    margin: 1.5rem 0 0.25rem 0;
+  }
+  
+  .timeline {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0;
+  }
+
+  .step {
+    flex-direction: row;
+    width: 100%;
+    padding-left: 0;
+    margin-bottom: 1.5rem;
+  }
+
+  .stepCircle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .stepIcon {
+    font-size: 1rem;
+  }
+
+  .stepLabel {
+    margin-top: 0;
+    margin-left: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .connector {
+    position: absolute;
+    top: 44px;
+    left: 20px;
+    width: 3px;
+    height: 28px;
+    right: auto;
+    border-radius: 2px;
+  }
+
+  .connector.connectorCompleted {
+    background: var(--timeline-completed);
+  }
+  
+  .cancelledStatus {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .cancelledIcon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .cancelledText {
+    font-size: 1rem;
+  }
+}

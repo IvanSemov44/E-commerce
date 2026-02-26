@@ -50,6 +50,33 @@
   margin-bottom: 2rem;
 }
 
+.guestPrompt {
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.guestPromptTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 0.5rem;
+}
+
+.guestPromptText {
+  color: #555;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.guestPromptLink {
+  display: inline-block;
+}
+
 .successActions {
   display: flex;
   gap: 1rem;

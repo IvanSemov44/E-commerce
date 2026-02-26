@@ -1,32 +1,108 @@
+/**
+ * Product Search Bar Component Styles
+ * 
+ * Modern search bar with:
+ * - Design tokens for theming
+ * - Dark mode support
+ * - Focus states
+ */
+
 .searchBar {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .searchInput {
   flex: 1;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  font-family: var(--font-sans);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
+  transition: var(--transition-colors), var(--transition-shadow);
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.searchInput:hover {
+  border-color: var(--border-hover);
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
 }
 
 .sortSelect {
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem;
-  background-color: white;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  font-family: var(--font-sans);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
   min-width: 180px;
+  cursor: pointer;
+  transition: var(--transition-colors), var(--transition-shadow);
+}
+
+.sortSelect:hover {
+  border-color: var(--border-hover);
 }
 
 .sortSelect:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .searchInput {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .searchInput:hover {
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .searchInput:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+}
+
+[data-theme="dark"] .sortSelect {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .sortSelect:hover {
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .sortSelect:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .searchBar {
+    flex-direction: column;
+  }
+  
+  .sortSelect {
+    min-width: 100%;
+  }
 }

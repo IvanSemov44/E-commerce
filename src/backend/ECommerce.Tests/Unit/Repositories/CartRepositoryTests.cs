@@ -71,8 +71,8 @@ public class CartRepositoryTests
         _context.Products.AddRange(product1, product2);
 
         // Add product images
-        var image1 = new ProductImage { Id = Guid.NewGuid(), ProductId = product1.Id, Url = "laptop.jpg", IsMain = true };
-        var image2 = new ProductImage { Id = Guid.NewGuid(), ProductId = product2.Id, Url = "phone.jpg", IsMain = true };
+        var image1 = new ProductImage { Id = Guid.NewGuid(), ProductId = product1.Id, Url = "laptop.jpg", IsPrimary = true };
+        var image2 = new ProductImage { Id = Guid.NewGuid(), ProductId = product2.Id, Url = "phone.jpg", IsPrimary = true };
         _context.ProductImages.AddRange(image1, image2);
 
         // Create carts

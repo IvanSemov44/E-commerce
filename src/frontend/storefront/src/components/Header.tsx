@@ -7,6 +7,8 @@ import { useGetCartQuery } from '../store/api/cartApi';
 import { useGetWishlistQuery } from '../store/api/wishlistApi';
 import { HeartIcon, ShoppingCartIcon } from './icons';
 import Button from './ui/Button';
+import { ThemeToggle } from './ThemeToggle';
+import { SearchBar } from './SearchBar';
 import styles from './Header.module.css';
 
 export default function Header() {
@@ -95,6 +97,11 @@ export default function Header() {
             )}
           </div>
 
+          {/* Search Bar - Centered */}
+          <div className={styles.searchContainer}>
+            <SearchBar size="sm" />
+          </div>
+
           {/* Desktop Right Items */}
           <div className={styles.desktopRight}>
             {/* Wishlist */}
@@ -118,6 +125,9 @@ export default function Header() {
                 </span>
               )}
             </Link>
+
+            {/* Theme Toggle */}
+            <ThemeToggle size="sm" />
 
             {/* Auth */}
             {isAuthenticated ? (
@@ -281,6 +291,15 @@ export default function Header() {
                 )}
               </div>
             </Link>
+
+            {/* Divider */}
+            <div className={styles.mobileDivider}></div>
+
+            {/* Theme Toggle for Mobile */}
+            <div className={styles.mobileThemeToggle}>
+              <span className={styles.mobileThemeLabel}>Appearance</span>
+              <ThemeToggle size="md" />
+            </div>
 
             {/* Divider */}
             <div className={styles.mobileDivider}></div>

@@ -8,15 +8,17 @@
  * - Error handling
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { selectCartItems, selectCartSubtotal, clearCart } from '../store/slices/cartSlice';
 import type { CartItem } from '../store/slices/cartSlice';
+import { authReducer } from '../store/slices/authSlice';
 import { useCreateOrderMutation } from '../store/api/ordersApi';
-import { useClearCartMutation } from '../store/api/cartApi';
+import { useGetCartQuery, useClearCartMutation } from '../store/api/cartApi';
 import { useValidatePromoCodeMutation } from '../store/api/promoCodeApi';
 import { useCheckAvailabilityMutation } from '../store/api/inventoryApi';
 import type { StockIssue } from '../store/api/inventoryApi';
+import { useCartSync } from './useCartSync';
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '../utils/constants';
 import useForm from './useForm';
 import { validators } from '../utils/validation';
@@ -58,6 +60,7 @@ interface UseCheckoutReturn {
   orderComplete: boolean;
   orderNumber: string;
   error: string | null;
+  isGuestOrder: boolean;
 
   // Cart info
   cartItems: CartItem[];
@@ -68,6 +71,9 @@ interface UseCheckoutReturn {
   shipping: number;
   tax: number;
   total: number;
+
+  // Auth state
+  isAuthenticated: boolean;
 
   // Submit handler
   handleSubmit: (e: React.FormEvent) => Promise<void>;
@@ -117,10 +123,29 @@ const validateCheckoutForm = (values: ShippingFormData): Partial<Record<keyof Sh
   return errors;
 };
 
+// Selector for authentication state
+const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) => 
+  state.auth.isAuthenticated;
+
+const selectUser = (state: { auth: ReturnType<typeof authReducer> }) => 
+  state.auth.user;
+
 export function useCheckout(): UseCheckoutReturn {
   const dispatch = useAppDispatch();
-  const cartItems = useAppSelector(selectCartItems);
-  const subtotal = useAppSelector(selectCartSubtotal);
+  const localCartItems = useAppSelector(selectCartItems);
+  const localSubtotal = useAppSelector(selectCartSubtotal);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const user = useAppSelector(selectUser);
+
+  // Backend cart query (only used when authenticated)
+  const { data: backendCart, isLoading: isCartLoading } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated
+  });
+
+  // Sync local cart with backend on login
+  const { isLoading: isSyncLoading } = useCartSync({
+    enabled: isAuthenticated
+  });
 
   const [createOrder] = useCreateOrderMutation();
   const [clearCartApi] = useClearCartMutation();
@@ -136,6 +161,30 @@ export function useCheckout(): UseCheckoutReturn {
   const [promoCode, setPromoCode] = useState('');
   const [promoCodeValidation, setPromoCodeValidation] = useState<PromoCodeValidation | null>(null);
   const [validatingPromoCode, setValidatingPromoCode] = useState(false);
+
+  // Determine which cart items to use (backend for authenticated, local for guest)
+  const cartItems: CartItem[] = useMemo(() => {
+    if (isAuthenticated && backendCart?.items) {
+      return backendCart.items.map(item => ({
+        id: item.productId,
+        name: item.productName,
+        slug: '',
+        price: item.price,
+        quantity: item.quantity,
+        maxStock: 99,
+        image: item.productImage || item.imageUrl || ''
+      }));
+    }
+    return localCartItems;
+  }, [isAuthenticated, backendCart, localCartItems]);
+
+  // Calculate subtotal
+  const subtotal = useMemo(() => {
+    if (isAuthenticated && backendCart?.items) {
+      return backendCart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    }
+    return localSubtotal;
+  }, [isAuthenticated, backendCart, localSubtotal]);
 
   // Handle order submission (called by useForm after validation)
   const handleFormSubmit = async (values: ShippingFormData) => {
@@ -186,6 +235,8 @@ export function useCheckout(): UseCheckoutReturn {
       // Clear local cart
       dispatch(clearCart());
 
+      // Track if this was a guest order for account creation prompt
+      setIsGuestOrder(!isAuthenticated);
       setOrderNumber(result.orderNumber);
       setOrderComplete(true);
     } catch (err: any) {
@@ -209,6 +260,22 @@ export function useCheckout(): UseCheckoutReturn {
     validate: validateCheckoutForm,
     onSubmit: handleFormSubmit,
   });
+
+  // Pre-fill form with user data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user && !form.values.firstName) {
+      form.setValues({
+        ...form.values,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [isAuthenticated, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Track if this is a guest order (for showing account creation prompt)
+  const [isGuestOrder, setIsGuestOrder] = useState(false);
 
   // Calculate totals with discount
   const discount = promoCodeValidation?.isValid ? promoCodeValidation.discountAmount : 0;
@@ -276,12 +343,14 @@ export function useCheckout(): UseCheckoutReturn {
     orderComplete,
     orderNumber,
     error,
+    isGuestOrder,
     cartItems,
     subtotal,
     discount,
     shipping,
     tax,
     total,
+    isAuthenticated,
     handleSubmit: form.handleSubmit,
   };
 }

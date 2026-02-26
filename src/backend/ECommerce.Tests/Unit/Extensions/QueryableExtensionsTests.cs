@@ -307,7 +307,7 @@ public class QueryableExtensionsTests
         Expression<Func<Product, bool>> predicate = p => p.Price > 500;
 
         // Act
-        var result = query.Where(predicate).ToList();
+        var result = System.Linq.Queryable.Where(query, predicate).ToList();
 
         // Assert
         result.Should().HaveCount(2); // Laptop (999.99) and Phone (599.99)

@@ -221,6 +221,28 @@
 }
 
 /* =============================================================================
+   Trust Signals Section
+   ============================================================================= */
+
+.trustSection {
+  padding: var(--space-12) var(--space-4);
+  background-color: var(--surface-primary);
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+@media (min-width: 640px) {
+  .trustSection {
+    padding: var(--space-16) var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .trustSection {
+    padding: var(--space-16) var(--space-8);
+  }
+}
+
+/* =============================================================================
    Featured Section
    ============================================================================= */
 
@@ -392,6 +414,29 @@
   box-shadow: var(--shadow-lg);
 }
 
+.categoryImage {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+.categoryPlaceholder {
+  width: 4rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary-100), var(--color-primary-200));
+  border-radius: var(--radius-lg);
+  color: var(--color-brand);
+}
+
+.categoryPlaceholder svg {
+  width: 2rem;
+  height: 2rem;
+}
+
 .categoryIcon {
   width: 3rem;
   height: 3rem;
@@ -527,4 +572,72 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   Bestsellers Section
+   ============================================================================= */
+
+.bestsellersSection {
+  padding: var(--space-16) 0;
+  max-width: var(--container-2xl);
+  margin: 0 auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+  background-color: var(--surface-secondary);
+}
+
+@media (min-width: 640px) {
+  .bestsellersSection {
+    padding: var(--space-20) 0;
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .bestsellersSection {
+    padding: var(--space-24) 0;
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+/* =============================================================================
+   Promotions Section
+   ============================================================================= */
+
+.promotionsSection {
+  padding: var(--space-16) 0;
+  max-width: var(--container-2xl);
+  margin: 0 auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+  background-color: var(--surface-primary);
+}
+
+@media (min-width: 640px) {
+  .promotionsSection {
+    padding: var(--space-20) 0;
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .promotionsSection {
+    padding: var(--space-24) 0;
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+/* =============================================================================
+   Section CTA
+   ============================================================================= */
+
+.sectionCta {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-8);
 }

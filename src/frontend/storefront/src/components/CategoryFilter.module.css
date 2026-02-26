@@ -1,25 +1,38 @@
+/**
+ * Category Filter Component Styles
+ * 
+ * Modern category filter with:
+ * - Design tokens for theming
+ * - Dark mode support
+ * - Smooth transitions
+ */
+
 .container {
-  border-radius: 0.5rem;
-  border: 1px solid #e0e0e0;
-  padding: 1.5rem;
-  background-color: #fafafa;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  padding: var(--space-4);
+  background-color: var(--surface-primary);
+  margin-bottom: var(--space-4);
 }
 
 .error {
-  padding: 1rem;
-  color: #d32f2f;
+  padding: var(--space-3);
+  color: var(--color-error);
+  font-size: var(--text-sm);
 }
 
 .title {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.125rem;
-  font-weight: 600;
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .loading {
-  color: #666;
-  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .list {
@@ -28,27 +41,62 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-1);
 }
 
 .categoryButton {
   background: none;
   border: none;
-  padding: 0.5rem 0;
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
-  color: #666;
-  font-weight: 400;
-  font-size: 0.95rem;
-  transition: color 0.2s;
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  transition: var(--transition-colors);
   text-align: left;
   width: 100%;
+  border-radius: var(--radius-md);
 }
 
 .categoryButton:hover {
-  color: #1976d2;
+  color: var(--color-brand);
+  background-color: var(--surface-secondary);
 }
 
 .categoryButton.active {
-  color: #1976d2;
-  font-weight: 600;
+  color: var(--color-brand);
+  font-weight: var(--font-semibold);
+  background-color: rgba(74, 222, 128, 0.1);
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .container {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .loading {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .categoryButton {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .categoryButton:hover {
+  color: var(--color-brand);
+  background-color: var(--surface-tertiary);
+}
+
+[data-theme="dark"] .categoryButton.active {
+  color: var(--color-brand);
+  background-color: rgba(74, 222, 128, 0.15);
 }

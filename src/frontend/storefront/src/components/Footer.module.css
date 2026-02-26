@@ -282,31 +282,65 @@
 
 .socialLinks {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
-.socialLinks a {
+.socialLink {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  background-color: var(--color-neutral-800);
-  color: var(--color-neutral-400);
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--surface-tertiary);
+  color: var(--text-secondary);
   border-radius: var(--radius-lg);
   text-decoration: none;
-  transition: var(--transition-colors), var(--transition-transform);
+  border: 1px solid var(--border-subtle);
+  transition: var(--transition-all);
 }
 
-.socialLinks a:hover {
-  background-color: var(--color-primary-600);
+.socialLink:hover {
+  background: linear-gradient(135deg, var(--color-brand), var(--color-success));
   color: white;
-  transform: translateY(-2px);
+  border-color: transparent;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
 }
 
-.socialLinks a svg {
+.socialLink:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-brand);
+}
+
+.socialLink svg {
   width: 1.125rem;
   height: 1.125rem;
+}
+
+/* Individual social link brand colors on hover */
+.socialLink[href*="facebook"]:hover {
+  background: #1877f2;
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+}
+
+.socialLink[href*="twitter"]:hover {
+  background: #000000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.socialLink[href*="instagram"]:hover {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  box-shadow: 0 4px 12px rgba(225, 48, 108, 0.3);
+}
+
+.socialLink[href*="linkedin"]:hover {
+  background: #0a66c2;
+  box-shadow: 0 4px 12px rgba(10, 102, 194, 0.3);
+}
+
+.socialLink[href*="youtube"]:hover {
+  background: #ff0000;
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
 }
 
 /* =============================================================================

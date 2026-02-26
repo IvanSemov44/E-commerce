@@ -153,6 +153,43 @@
   color: var(--color-brand);
 }
 
+/* =============================================================================
+   Checkout Header
+   ============================================================================= */
+
+.checkoutHeader {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.checkoutTitle {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+  letter-spacing: var(--tracking-tight);
+}
+
+.checkoutSubtitle {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .checkoutTitle {
+    font-size: var(--text-4xl);
+  }
+}
+
+/* =============================================================================
+   Trust Signals Wrapper
+   ============================================================================= */
+
+.trustSignalsWrapper {
+  margin-bottom: var(--space-8);
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -497,4 +534,59 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .container {
+  background-color: var(--surface-primary);
+}
+
+[data-theme="dark"] .formCard {
+  background-color: var(--surface-elevated);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .summaryCard {
+  background-color: var(--surface-elevated);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .itemsList::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-600);
+}
+
+[data-theme="dark"] .discount {
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .grandTotalAmount {
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .promoSuccess {
+  background-color: rgba(74, 222, 128, 0.1);
+  color: var(--color-brand);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+[data-theme="dark"] .promoError {
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+[data-theme="dark"] .successIcon {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
+}
+
+[data-theme="dark"] .successTitle {
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .loadingSpinner {
+  border-color: var(--border-default);
+  border-right-color: var(--color-brand);
 }

@@ -1,0 +1,244 @@
+/**
+ * PageHeader Component Styles
+ * 
+ * Modern page header with:
+ * - Gradient accent line
+ * - Animated underline
+ * - Dark mode support
+ * - Responsive typography
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
+.container {
+  margin-bottom: var(--space-8);
+  text-align: center;
+  position: relative;
+}
+
+/* =============================================================================
+   Title
+   ============================================================================= */
+
+.title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-2) 0;
+  position: relative;
+  display: inline-block;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: var(--text-4xl);
+  }
+}
+
+/* Title with icon */
+.titleWithIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.titleIcon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .titleIcon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* =============================================================================
+   Accent Line
+   ============================================================================= */
+
+.accentLine {
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-primary-400));
+  border-radius: var(--radius-full);
+  margin: 0 auto var(--space-4) auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.accentLine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    left: 100%;
+  }
+}
+
+/* =============================================================================
+   Subtitle
+   ============================================================================= */
+
+.subtitle {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: var(--leading-relaxed);
+}
+
+@media (min-width: 768px) {
+  .subtitle {
+    font-size: var(--text-lg);
+  }
+}
+
+/* =============================================================================
+   Badge
+   ============================================================================= */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-4);
+  background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100));
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-primary-700);
+  margin-bottom: var(--space-3);
+}
+
+.badgeIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* =============================================================================
+   Meta Info
+   ============================================================================= */
+
+.metaInfo {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.metaIcon {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--color-brand);
+}
+
+/* =============================================================================
+   Variants
+   ============================================================================= */
+
+/* Left aligned variant */
+.container.leftAligned {
+  text-align: left;
+}
+
+.container.leftAligned .accentLine {
+  margin-left: 0;
+}
+
+.container.leftAligned .subtitle {
+  margin-left: 0;
+}
+
+/* Compact variant */
+.container.compact {
+  margin-bottom: var(--space-4);
+}
+
+.container.compact .title {
+  font-size: var(--text-2xl);
+}
+
+@media (min-width: 768px) {
+  .container.compact .title {
+    font-size: var(--text-3xl);
+  }
+}
+
+.container.compact .accentLine {
+  width: 40px;
+  height: 3px;
+  margin-bottom: var(--space-2);
+}
+
+/* Hero variant */
+.container.hero {
+  padding: var(--space-8) 0;
+  background: linear-gradient(135deg, var(--color-primary-50) 0%, transparent 100%);
+  border-radius: var(--radius-2xl);
+  margin-bottom: var(--space-8);
+}
+
+@media (min-width: 768px) {
+  .container.hero {
+    padding: var(--space-12) var(--space-8);
+  }
+}
+
+.container.hero .title {
+  font-size: var(--text-4xl);
+}
+
+@media (min-width: 768px) {
+  .container.hero .title {
+    font-size: var(--text-5xl);
+  }
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .accentLine {
+  background: linear-gradient(90deg, var(--color-brand), var(--color-primary-500));
+}
+
+[data-theme="dark"] .badge {
+  background: linear-gradient(135deg, var(--color-neutral-800), var(--color-neutral-700));
+  border-color: var(--color-neutral-600);
+  color: var(--color-primary-300);
+}
+
+[data-theme="dark"] .container.hero {
+  background: linear-gradient(135deg, var(--color-neutral-800) 0%, transparent 100%);
+}

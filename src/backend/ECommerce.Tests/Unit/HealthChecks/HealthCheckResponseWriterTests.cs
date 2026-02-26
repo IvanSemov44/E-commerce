@@ -197,7 +197,7 @@ public class HealthCheckResponseWriterTests
         var data = new Dictionary<string, object> { { "AllocatedMB", 100L } };
         var entries = new Dictionary<string, HealthReportEntry>
         {
-            { "memory", new HealthReportEntry(HealthStatus.Healthy, "Memory OK", TimeSpan.FromMilliseconds(10), data, null) }
+            { "memory", new HealthReportEntry(HealthStatus.Healthy, "Memory OK", TimeSpan.FromMilliseconds(10), null, data, null) }
         };
         var healthReport = new HealthReport(entries, TimeSpan.FromMilliseconds(10));
 
@@ -218,7 +218,7 @@ public class HealthCheckResponseWriterTests
         var tags = new[] { "system", "monitoring" };
         var entries = new Dictionary<string, HealthReportEntry>
         {
-            { "memory", new HealthReportEntry(HealthStatus.Healthy, "Memory OK", TimeSpan.FromMilliseconds(10), null, tags) }
+            { "memory", new HealthReportEntry(HealthStatus.Healthy, "Memory OK", TimeSpan.FromMilliseconds(10), null, null, tags) }
         };
         var healthReport = new HealthReport(entries, TimeSpan.FromMilliseconds(10));
 

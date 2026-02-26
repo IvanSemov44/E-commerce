@@ -6,6 +6,13 @@ import QueryRenderer from '../components/QueryRenderer';
 import { OrderCard } from './components/OrderHistory';
 import styles from './OrderHistory.module.css';
 
+// Icons
+const PackageIcon = () => (
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>
+);
+
 interface OrderForDisplay {
   id: string;
   orderNumber: string;
@@ -28,7 +35,12 @@ export default function OrderHistory() {
 
   return (
     <div className={styles.container}>
-      <PageHeader title="Order History" />
+      <PageHeader 
+        title="Order History" 
+        subtitle="Track and manage all your orders in one place. View order details, status, and history."
+        icon={<PackageIcon />}
+        badge="Your Orders"
+      />
 
       <QueryRenderer
         isLoading={isLoading}

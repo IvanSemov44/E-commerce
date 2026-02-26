@@ -1,67 +1,162 @@
+/**
+ * Product Filters Component Styles
+ * 
+ * Modern filter panel with:
+ * - Design tokens for theming
+ * - Dark mode support
+ * - Clean visual hierarchy
+ */
+
 .filters {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .filterSection {
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  padding: var(--space-4);
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
 }
 
 .filterTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #333;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .priceInputs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .priceInput {
   width: 50%;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.375rem;
+  padding: var(--space-2-5) var(--space-3);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
+  transition: var(--transition-colors), var(--transition-shadow);
+}
+
+.priceInput::placeholder {
+  color: var(--text-muted);
+}
+
+.priceInput:hover {
+  border-color: var(--border-hover);
 }
 
 .priceInput:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
 }
 
 .filterSelect {
   width: 100%;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.375rem;
-  background-color: white;
+  padding: var(--space-2-5) var(--space-3);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-colors), var(--transition-shadow);
+}
+
+.filterSelect:hover {
+  border-color: var(--border-hover);
 }
 
 .filterSelect:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
 }
 
 .checkboxLabel {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: var(--transition-colors);
+}
+
+.checkboxLabel:hover {
+  background-color: var(--surface-secondary);
 }
 
 .checkbox {
   cursor: pointer;
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-brand);
 }
 
 .checkboxText {
-  font-size: 0.9rem;
-  color: #333;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .filterSection {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .filterTitle {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .priceInput {
+  background-color: var(--surface-tertiary);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .priceInput:hover {
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .priceInput:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+}
+
+[data-theme="dark"] .filterSelect {
+  background-color: var(--surface-tertiary);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .filterSelect:hover {
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .filterSelect:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+}
+
+[data-theme="dark"] .checkboxLabel:hover {
+  background-color: var(--surface-tertiary);
+}
+
+[data-theme="dark"] .checkboxText {
+  color: var(--text-secondary);
 }

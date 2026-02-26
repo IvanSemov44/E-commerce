@@ -16,9 +16,9 @@
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-default);
   transition: var(--transition-shadow);
 }
@@ -111,14 +111,31 @@
 
 .desktopNav {
   display: none;
-  gap: var(--space-8);
+  gap: var(--space-6);
   align-items: center;
-  flex: 1;
-  margin-left: var(--space-12);
+  margin-left: var(--space-8);
 }
 
 @media (min-width: 1024px) {
   .desktopNav {
+    display: flex;
+  }
+}
+
+/* =============================================================================
+   Search Container (Centered)
+   ============================================================================= */
+
+.searchContainer {
+  flex: 1;
+  display: none;
+  justify-content: center;
+  max-width: 400px;
+  margin: 0 var(--space-4);
+}
+
+@media (min-width: 1024px) {
+  .searchContainer {
     display: flex;
   }
 }
@@ -167,8 +184,9 @@
 
 .desktopRight {
   display: none;
-  gap: var(--space-4);
+  gap: var(--space-3);
   align-items: center;
+  margin-left: auto;
 }
 
 @media (min-width: 1024px) {
@@ -479,6 +497,25 @@
 }
 
 /* =============================================================================
+   Mobile Theme Toggle
+   ============================================================================= */
+
+.mobileThemeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.mobileThemeLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
    Mobile User Info
    ============================================================================= */
 
@@ -633,4 +670,101 @@
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* =============================================================================
+   Dark Mode Adjustments
+   ============================================================================= */
+
+[data-theme="dark"] .header {
+  background-color: rgba(12, 12, 15, 0.85);
+  border-bottom-color: var(--border-default);
+}
+
+[data-theme="dark"] .logo:hover .logoBadge {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
+}
+
+[data-theme="dark"] .navLink:hover {
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .navLink::after {
+  background: linear-gradient(90deg, var(--color-primary-400), var(--color-primary-300));
+}
+
+[data-theme="dark"] .cartLink:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .userButton:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .userAvatar {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
+}
+
+[data-theme="dark"] .dropdownMenu {
+  background-color: var(--color-neutral-900);
+  border-color: var(--border-default);
+  box-shadow: 
+    0 10px 40px -10px rgba(0, 0, 0, 0.5),
+    0 4px 16px -4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .dropdownHeader {
+  background-color: var(--color-neutral-800);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .dropdownItem:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .mobileMenu {
+  background-color: var(--color-neutral-900);
+  border-top-color: var(--border-default);
+}
+
+[data-theme="dark"] .mobileNavLink:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .mobileUserInfo {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .mobileSignInLink {
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .mobileSignInLink:hover {
+  background-color: var(--color-neutral-800);
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .mobileSignUpLink {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
+}
+
+[data-theme="dark"] .mobileLogoutButton {
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+}
+
+[data-theme="dark"] .mobileLogoutButton:hover {
+  background-color: rgba(248, 113, 113, 0.15);
+}
+
+[data-theme="dark"] .mobileMenuButton:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .mobileThemeToggle {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .mobileThemeLabel {
+  color: var(--text-secondary);
 }

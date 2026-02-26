@@ -19,15 +19,51 @@ interface CheckoutFormProps {
   errors?: Partial<Record<keyof FormData, string>>;
   onFormDataChange: (data: FormData) => void;
   onSubmit: (e: React.FormEvent) => void;
+  isAuthenticated?: boolean;
 }
 
-export default function CheckoutForm({ formData, errors = {}, onFormDataChange, onSubmit }: CheckoutFormProps) {
+export default function CheckoutForm({ 
+  formData, 
+  errors = {}, 
+  onFormDataChange, 
+  onSubmit,
+  isAuthenticated = false 
+}: CheckoutFormProps) {
   const handleFieldChange = (field: keyof FormData, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
   };
 
   return (
     <form onSubmit={onSubmit} className={styles.form}>
+      {/* Guest Email Section - Prominent for guests */}
+      {!isAuthenticated && (
+        <div className={styles.guestEmailSection}>
+          <h3 className={styles.sectionTitle}>Contact Information</h3>
+          <p className={styles.sectionDescription}>
+            We'll send your order confirmation to this email
+          </p>
+          <Input
+            label="Email Address"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleFieldChange('email', e.target.value)}
+            error={errors.email}
+            placeholder="your@email.com"
+            required
+          />
+        </div>
+      )}
+
+      {/* Authenticated user email display */}
+      {isAuthenticated && formData.email && (
+        <div className={styles.authenticatedEmail}>
+          <span className={styles.emailLabel}>Order confirmation sent to:</span>
+          <span className={styles.emailValue}>{formData.email}</span>
+        </div>
+      )}
+
+      <h3 className={styles.sectionTitle}>Shipping Address</h3>
+      
       <div className={styles.formGroup}>
         <Input
           label="First Name"
@@ -49,15 +85,18 @@ export default function CheckoutForm({ formData, errors = {}, onFormDataChange, 
         />
       </div>
 
-      <Input
-        label="Email Address"
-        type="email"
-        value={formData.email}
-        onChange={(e) => handleFieldChange('email', e.target.value)}
-        error={errors.email}
-        placeholder="your@email.com"
-        required
-      />
+      {/* Email field for authenticated users (hidden but editable) */}
+      {isAuthenticated && (
+        <Input
+          label="Email Address"
+          type="email"
+          value={formData.email}
+          onChange={(e) => handleFieldChange('email', e.target.value)}
+          error={errors.email}
+          placeholder="your@email.com"
+          required
+        />
+      )}
 
       <Input
         label="Phone"

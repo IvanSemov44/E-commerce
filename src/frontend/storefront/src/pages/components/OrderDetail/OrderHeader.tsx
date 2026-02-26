@@ -1,5 +1,6 @@
 import Card from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
+import OrderStatusTimeline from './OrderStatusTimeline';
 import styles from './OrderHeader.module.css';
 
 interface OrderHeaderProps {
@@ -11,23 +12,6 @@ interface OrderHeaderProps {
   onCancel: () => void;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Pending':
-      return '#ff9800';
-    case 'Processing':
-      return '#2196f3';
-    case 'Shipped':
-      return '#9c27b0';
-    case 'Delivered':
-      return '#4caf50';
-    case 'Cancelled':
-      return '#f44336';
-    default:
-      return '#666';
-  }
-};
-
 export default function OrderHeader({
   orderNumber,
   createdAt,
@@ -36,37 +20,34 @@ export default function OrderHeader({
   isCancelling,
   onCancel,
 }: OrderHeaderProps) {
+  const orderDate = new Date(createdAt);
+  
   return (
     <Card variant="elevated" padding="lg">
       <div className={styles.grid}>
-        <div>
+        <div className={styles.infoItem}>
           <p className={styles.label}>Order Number</p>
-          <p className={styles.orderNumber}>{orderNumber}</p>
+          <p className={styles.orderNumber}>#{orderNumber}</p>
         </div>
 
-        <div>
-          <p className={styles.label}>Date</p>
-          <p className={styles.value}>
-            {new Date(createdAt).toLocaleDateString()}{' '}
-            {new Date(createdAt).toLocaleTimeString()}
-          </p>
-        </div>
-
-        <div>
-          <p className={styles.label}>Status</p>
-          <p className={styles.status} style={{ color: getStatusColor(status) }}>
-            {status}
-          </p>
+        <div className={styles.infoItem}>
+          <p className={styles.label}>Order Date</p>
+          <div className={styles.dateSection}>
+            <p className={styles.dateValue}>{orderDate.toLocaleDateString()}</p>
+            <p className={styles.timeValue}>{orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
         </div>
 
         {canCancel && (
-          <div>
+          <div className={styles.cancelButton}>
             <Button variant="secondary" onClick={onCancel} disabled={isCancelling}>
               Cancel Order
             </Button>
           </div>
         )}
       </div>
+
+      <OrderStatusTimeline status={status} />
     </Card>
   );
 }

@@ -14,3 +14,57 @@
   width: 100%;
   margin-top: 1rem;
 }
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.sectionDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+}
+
+.guestEmailSection {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.guestEmailSection .sectionTitle {
+  margin-bottom: 0.25rem;
+}
+
+.authenticatedEmail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.emailLabel {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.emailValue {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+@media (max-width: 640px) {
+  .formGroup {
+    grid-template-columns: 1fr;
+  }
+}

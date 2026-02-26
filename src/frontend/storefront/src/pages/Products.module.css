@@ -445,3 +445,105 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .container {
+  background-color: var(--surface-primary);
+}
+
+[data-theme="dark"] .mobileFilterToggle {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .mobileFilterToggle:hover {
+  background-color: var(--surface-tertiary);
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .pageTitle {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .resultsCount {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .activeFilter {
+  background-color: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: var(--color-brand);
+}
+
+[data-theme="dark"] .clearAllFilters {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .clearAllFilters:hover {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .paginationButton {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .paginationButton:hover:not(:disabled) {
+  background-color: var(--surface-tertiary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .paginationButton.active {
+  background-color: var(--color-brand);
+  border-color: var(--color-brand);
+  color: white;
+}
+
+[data-theme="dark"] .emptyIcon {
+  background-color: var(--surface-tertiary);
+}
+
+[data-theme="dark"] .emptyIcon svg {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .emptyTitle {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .emptyDescription {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .loadingSpinner {
+  border-color: var(--border-default);
+  border-right-color: var(--color-brand);
+}
+
+[data-theme="dark"] .skeletonCard {
+  background-color: var(--surface-secondary);
+}
+
+[data-theme="dark"] .skeletonImage {
+  background: linear-gradient(
+    90deg,
+    var(--surface-tertiary) 25%,
+    var(--color-neutral-700) 50%,
+    var(--surface-tertiary) 75%
+  );
+}
+
+[data-theme="dark"] .skeletonText {
+  background: linear-gradient(
+    90deg,
+    var(--surface-tertiary) 25%,
+    var(--color-neutral-700) 50%,
+    var(--surface-tertiary) 75%
+  );
+}

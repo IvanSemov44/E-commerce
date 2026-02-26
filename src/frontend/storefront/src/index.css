@@ -238,31 +238,54 @@
 
 /* =============================================================================
    1.5 DARK MODE TOKENS
+   Professional dark mode with elevated surfaces and better contrast
    ============================================================================= */
 
 [data-theme="dark"] {
   --color-scheme: dark;
 
-  /* Surfaces - Dark mode */
-  --surface-primary: var(--color-neutral-900);
-  --surface-secondary: var(--color-neutral-800);
-  --surface-tertiary: var(--color-neutral-700);
-  --surface-elevated: var(--color-neutral-800);
-  --surface-overlay: rgba(0, 0, 0, 0.7);
+  /* Surfaces - Dark mode with subtle elevation hierarchy */
+  --surface-primary: #0c0c0f;
+  --surface-secondary: #141419;
+  --surface-tertiary: #1c1c24;
+  --surface-elevated: #1e1e28;
+  --surface-overlay: rgba(0, 0, 0, 0.75);
+  --surface-sunken: #0a0a0d;
 
-  /* Text - Dark mode */
-  --text-primary: var(--color-neutral-50);
-  --text-secondary: var(--color-neutral-300);
-  --text-muted: var(--color-neutral-500);
-  --text-inverse: var(--color-neutral-900);
+  /* Text - Dark mode with improved contrast ratios */
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-inverse: #0c0c0f;
+  --text-brand: #4ade80;
 
-  /* Borders - Dark mode */
-  --border-default: var(--color-neutral-700);
-  --border-hover: var(--color-neutral-600);
+  /* Borders - Dark mode with subtle visibility */
+  --border-default: #27272a;
+  --border-subtle: #1f1f23;
+  --border-hover: #3f3f46;
   --border-focus: var(--color-primary-500);
 
-  /* Brand adjustments for dark mode */
-  --color-brand-light: var(--color-primary-900);
+  /* Brand adjustments for dark mode - brighter for contrast */
+  --color-brand: #4ade80;
+  --color-brand-hover: #22c55e;
+  --color-brand-light: rgba(74, 222, 128, 0.12);
+  --color-brand-dark: #166534;
+
+  /* Enhanced shadows for dark mode */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+
+  /* Colored shadows for dark mode */
+  --shadow-primary: 0 4px 14px 0 rgb(74 222 128 / 0.2);
+  --shadow-primary-lg: 0 8px 24px 0 rgb(74 222 128 / 0.15);
+
+  /* Glow effects for dark mode */
+  --glow-brand: 0 0 20px rgba(74, 222, 128, 0.15);
+  --glow-error: 0 0 20px rgba(248, 113, 113, 0.15);
 }
 
 /* System preference fallback */
@@ -270,26 +293,48 @@
   :root:not([data-theme="light"]) {
     --color-scheme: dark;
 
-    /* Surfaces - Dark mode */
-    --surface-primary: var(--color-neutral-900);
-    --surface-secondary: var(--color-neutral-800);
-    --surface-tertiary: var(--color-neutral-700);
-    --surface-elevated: var(--color-neutral-800);
-    --surface-overlay: rgba(0, 0, 0, 0.7);
+    /* Surfaces - Dark mode with subtle elevation hierarchy */
+    --surface-primary: #0c0c0f;
+    --surface-secondary: #141419;
+    --surface-tertiary: #1c1c24;
+    --surface-elevated: #1e1e28;
+    --surface-overlay: rgba(0, 0, 0, 0.75);
+    --surface-sunken: #0a0a0d;
 
-    /* Text - Dark mode */
-    --text-primary: var(--color-neutral-50);
-    --text-secondary: var(--color-neutral-300);
-    --text-muted: var(--color-neutral-500);
-    --text-inverse: var(--color-neutral-900);
+    /* Text - Dark mode with improved contrast ratios */
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --text-inverse: #0c0c0f;
+    --text-brand: #4ade80;
 
-    /* Borders - Dark mode */
-    --border-default: var(--color-neutral-700);
-    --border-hover: var(--color-neutral-600);
+    /* Borders - Dark mode with subtle visibility */
+    --border-default: #27272a;
+    --border-subtle: #1f1f23;
+    --border-hover: #3f3f46;
     --border-focus: var(--color-primary-500);
 
     /* Brand adjustments for dark mode */
-    --color-brand-light: var(--color-primary-900);
+    --color-brand: #4ade80;
+    --color-brand-hover: #22c55e;
+    --color-brand-light: rgba(74, 222, 128, 0.12);
+    --color-brand-dark: #166534;
+
+    /* Enhanced shadows for dark mode */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+
+    /* Colored shadows for dark mode */
+    --shadow-primary: 0 4px 14px 0 rgb(74 222 128 / 0.2);
+    --shadow-primary-lg: 0 8px 24px 0 rgb(74 222 128 / 0.15);
+
+    /* Glow effects for dark mode */
+    --glow-brand: 0 0 20px rgba(74, 222, 128, 0.15);
+    --glow-error: 0 0 20px rgba(248, 113, 113, 0.15);
   }
 }
 

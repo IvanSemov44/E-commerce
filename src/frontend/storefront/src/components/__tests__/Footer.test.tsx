@@ -1,13 +1,27 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { configureStore } from '@reduxjs/toolkit'
+import { Provider } from 'react-redux'
+import toastReducer from '../../store/slices/toastSlice'
 import Footer from '../Footer'
 
+const createMockStore = () => {
+  return configureStore({
+    reducer: {
+      toast: toastReducer,
+    },
+  })
+}
+
 const renderFooter = () => {
+  const store = createMockStore()
   return render(
-    <MemoryRouter>
-      <Footer />
-    </MemoryRouter>
+    <Provider store={store}>
+      <MemoryRouter>
+        <Footer />
+      </MemoryRouter>
+    </Provider>
   )
 }
 

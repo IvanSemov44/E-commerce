@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
@@ -211,7 +212,7 @@ public class CsrfMiddlewareTests
         var context = CreateHttpContext("GET", "/api/products");
         context.User = CreateAuthenticatedUser();
 
-        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token");
+        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token", "__RequestVerificationToken", "X-XSRF-TOKEN");
         _mockAntiforgery.Setup(a => a.GetAndStoreTokens(context))
             .Returns(tokens);
 
@@ -231,7 +232,7 @@ public class CsrfMiddlewareTests
         var context = CreateHttpContext("HEAD", "/api/products");
         context.User = CreateAuthenticatedUser();
 
-        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token");
+        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token", "__RequestVerificationToken", "X-XSRF-TOKEN");
         _mockAntiforgery.Setup(a => a.GetAndStoreTokens(context))
             .Returns(tokens);
 
@@ -250,7 +251,7 @@ public class CsrfMiddlewareTests
         var context = CreateHttpContext("OPTIONS", "/api/products");
         context.User = CreateAuthenticatedUser();
 
-        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token");
+        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token", "__RequestVerificationToken", "X-XSRF-TOKEN");
         _mockAntiforgery.Setup(a => a.GetAndStoreTokens(context))
             .Returns(tokens);
 
@@ -269,7 +270,7 @@ public class CsrfMiddlewareTests
         var context = CreateHttpContext("TRACE", "/api/products");
         context.User = CreateAuthenticatedUser();
 
-        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token");
+        var tokens = new AntiforgeryTokenSet("request-token", "cookie-token", "__RequestVerificationToken", "X-XSRF-TOKEN");
         _mockAntiforgery.Setup(a => a.GetAndStoreTokens(context))
             .Returns(tokens);
 
