@@ -245,7 +245,7 @@ Page Sub-components:
 - [ ] **OrderSummary.test.tsx**
 - [ ] **PromoCodeSection.test.tsx**
 - [ ] **OrderHeader.test.tsx**
-- [ ] **OrderItemsList.test.tsx**
+- [x] **OrderItemsList.test.tsx**
 - [ ] **OrderTotals.test.tsx**
 - [ ] **ShippingAddress.test.tsx**
 - [ ] **OrderCard.test.tsx**
