@@ -153,7 +153,7 @@ Create `Unit/Repositories/` directory with tests for:
   - Test token validation
   - Test exclusion paths
 
-- [ ] **SecurityHeadersMiddlewareTests.cs**
+- [x] **SecurityHeadersMiddlewareTests.cs**
   - Test all security headers are added
   - Test header values
 
@@ -180,7 +180,7 @@ Create `Unit/Repositories/` directory with tests for:
 - [x] **ApplicationBuilderExtensionsTests.cs**
   - Test middleware registration order
 
-- [ ] **DatabaseSchemaValidatorTests.cs**
+- [x] **DatabaseSchemaValidatorTests.cs**
   - Test schema validation logic
 
 - [x] **LoggingExtensionsTests.cs**
@@ -189,8 +189,7 @@ Create `Unit/Repositories/` directory with tests for:
 ### Phase 4: Backend Controller Integration Tests
 
 #### 4.1 Missing Controller Tests
-- [ ] **HealthCheckControllerTests.cs** or add health check endpoints to existing tests
-  - Test /health endpoint
+- [x] Health check tests covered in existing integration tests
   - Test /health/ready endpoint
 
 ### Phase 5: Frontend Storefront Tests
@@ -227,7 +226,7 @@ Skeleton Components:
 - [ ] **ProductSkeleton.test.tsx**
 - [ ] **ProductsGridSkeleton.test.tsx**
 - [ ] **ProfileSkeleton.test.tsx**
-- [ ] **Skeleton.test.tsx**
+- [x] **Skeleton.test.tsx**
 
 Icon Components:
 - [ ] **CheckIcon.test.tsx**
@@ -235,7 +234,7 @@ Icon Components:
 - [ ] **PackageIcon.test.tsx**
 - [ ] **SearchIcon.test.tsx**
 - [ ] **ShoppingCartIcon.test.tsx**
-- [ ] **UserIcon.test.tsx**
+- [x] **UserIcon.test.tsx**
 
 Page Sub-components:
 - [x] **CartItemList.test.tsx**
@@ -309,8 +308,8 @@ Create tests in `src/pages/__tests__/`:
 Create tests in `src/store/`:
 
 Slices (`src/store/slices/__tests__/`):
-- [ ] **authSlice.test.ts**
-- [ ] **toastSlice.test.ts**
+- [x] **authSlice.test.ts**
+- [x] **toastSlice.test.ts**
 
 API (`src/store/api/__tests__/`):
 - [ ] **authApi.test.ts** - Mock API calls
@@ -323,7 +322,7 @@ API (`src/store/api/__tests__/`):
 - [ ] **profileApi.test.ts**
 - [ ] **promoCodeApi.test.ts**
 - [ ] **reviewsApi.test.ts**
-- [ ] **wishlistApi.test.ts**
+- [x] **wishlistApi.test.ts**
 
 Middleware (`src/store/middleware/__tests__/`):
 - [ ] **cartPersistence.test.ts**
