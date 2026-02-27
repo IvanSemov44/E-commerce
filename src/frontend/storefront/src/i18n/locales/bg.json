@@ -61,6 +61,22 @@
     "settings": "Настройки",
     "appearance": "В външен вид"
   },
+  "theme": {
+    "title": "В външен вид",
+    "light": "Светла",
+    "dark": "Тъмна",
+    "system": "Системна",
+    "lightDescription": "Светъл външен вид",
+    "darkDescription": "Тъмен външен вид",
+    "systemDescription": "Следвай системните настройки",
+    "currentTheme": "Текуща тема: {{theme}}. Кликнете за промяна.",
+    "themeOptions": "Опции за тема"
+  },
+  "announcement": {
+    "freeShipping": "Безплатна доставка за поръчки над 50$!",
+    "shopNow": "Пазарувай сега",
+    "dismiss": "Затвори съобщението"
+  },
   "home": {
     "title": "Добре дошли",
     "subtitle": "Открийте невероятни продукти",

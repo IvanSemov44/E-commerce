@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './ThemeToggle.module.css';
 
 type Theme = 'light' | 'dark' | 'system';
@@ -35,6 +36,7 @@ export function ThemeToggle({
   size = 'md',
   variant = 'dropdown'
 }: ThemeToggleProps) {
+  const { t } = useTranslation();
   const [theme, setTheme] = useState<Theme>('system');
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -45,8 +47,8 @@ export function ThemeToggle({
   const themeOptions: ThemeOption[] = [
     {
       value: 'light',
-      label: 'Light',
-      description: 'Light appearance',
+      label: t('theme.light'),
+      description: t('theme.lightDescription'),
       icon: (
         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path
@@ -59,8 +61,8 @@ export function ThemeToggle({
     },
     {
       value: 'dark',
-      label: 'Dark',
-      description: 'Dark appearance',
+      label: t('theme.dark'),
+      description: t('theme.darkDescription'),
       icon: (
         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path
@@ -73,8 +75,8 @@ export function ThemeToggle({
     },
     {
       value: 'system',
-      label: 'System',
-      description: 'Follow system settings',
+      label: t('theme.system'),
+      description: t('theme.systemDescription'),
       icon: (
         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path
@@ -199,7 +201,7 @@ export function ThemeToggle({
       <button
         onClick={cycleTheme}
         className={`${styles.toggle} ${styles[size]} ${className}`}
-        aria-label={`Current theme: ${theme}. Click to change.`}
+        aria-label={`${t('theme.currentTheme', { theme: t('theme.' + theme) })}`}
         title={`Theme: ${theme}`}
       >
         <div className={styles.iconWrapper}>
@@ -240,10 +242,10 @@ export function ThemeToggle({
         <div 
           className={styles.dropdown}
           role="listbox"
-          aria-label="Theme options"
+          aria-label={t('theme.themeOptions')}
         >
           <div className={styles.dropdownHeader}>
-            <span>Appearance</span>
+            <span>{t('theme.title')}</span>
           </div>
           {themeOptions.map((option) => (
             <button

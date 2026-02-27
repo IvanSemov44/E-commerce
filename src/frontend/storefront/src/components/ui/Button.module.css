@@ -73,7 +73,7 @@
 
 .buttonPrimary {
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  color: white;
+  color: var(--text-inverse);
   box-shadow: var(--shadow-sm), var(--shadow-primary);
 }
 
@@ -136,7 +136,7 @@
 
 .buttonDestructive {
   background: linear-gradient(135deg, var(--color-error-500), var(--color-error-600));
-  color: white;
+  color: var(--text-inverse);
   box-shadow: var(--shadow-sm), var(--shadow-error);
 }
 

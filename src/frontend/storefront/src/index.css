@@ -82,6 +82,7 @@
   --text-secondary: var(--color-neutral-600);
   --text-muted: var(--color-neutral-400);
   --text-inverse: #ffffff;
+  --text-inverse: #ffffff;
 
   /* Borders */
   --border-default: var(--color-neutral-200);
@@ -269,6 +270,7 @@
   --text-primary: #f4f4f5;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
+  --text-inverse: #0c0c0f;
   --text-inverse: #0c0c0f;
   --text-brand: #4ade80;
 

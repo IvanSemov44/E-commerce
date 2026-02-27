@@ -68,7 +68,7 @@
   height: 3rem;
   background: linear-gradient(135deg, var(--color-brand), var(--color-success));
   border-radius: var(--radius-lg);
-  color: white;
+  color: var(--text-inverse);
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
 }
