@@ -69,7 +69,7 @@ public class CsrfMiddleware
                     {
                         HttpOnly = false, // Must be readable by JavaScript
                         Secure = !context.Request.IsDevelopment(),
-                        SameSite = context.Request.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict,
+                        SameSite = context.Request.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
                         Path = "/"
                     });
                 }

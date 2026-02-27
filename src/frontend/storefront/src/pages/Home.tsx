@@ -17,14 +17,14 @@ export default function Home() {
   // Bestsellers - products sorted by review count (popularity)
   const { data: bestsellersData } = useGetProductsQuery({
     pageSize: 4,
-    sortBy: 'reviewCount',
+    sortBy: 'rating',
     sortOrder: 'desc',
   });
   
   // Promotions - products with compareAtPrice (on sale)
   const { data: promotionsData } = useGetProductsQuery({
     pageSize: 4,
-    sortBy: 'createdAt',
+    sortBy: 'newest',
     sortOrder: 'desc',
   });
 
@@ -141,7 +141,7 @@ export default function Home() {
             ))}
           </div>
           <div className={styles.sectionCta}>
-            <Link to="/products?sortBy=reviewCount&sortOrder=desc">
+            <Link to="/products?sortBy=rating&sortOrder=desc">
               <Button variant="outline">{t('home.viewAllBestsellers')}</Button>
             </Link>
           </div>
