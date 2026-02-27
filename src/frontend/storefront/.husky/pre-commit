@@ -1,0 +1,7 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+cd src/frontend/storefront
+
+echo "Running type-check..."
+npm run type-check

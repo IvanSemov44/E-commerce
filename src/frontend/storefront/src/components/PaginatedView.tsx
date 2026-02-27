@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import Pagination from './ui/Pagination';
-import styles from './PaginatedView.module.css';
 
 interface PaginatedViewProps<T> {
   items: T[];

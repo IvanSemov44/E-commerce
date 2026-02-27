@@ -46,7 +46,6 @@ export default function Pagination({
   pageSizeOptions = [12, 24, 48, 96],
   showFirstLast = true,
   showPageSizeSelector = false,
-  showTotal = true,
   className = '',
   pageLabel = (page) => `Go to page ${page}`,
 }: PaginationProps) {

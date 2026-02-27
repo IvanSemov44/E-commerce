@@ -353,11 +353,11 @@ Icon Components:
 
 Toast Components:
 - [ ] **Toast.test.tsx**
-- [ ] **ToastContainer.test.tsx**
+- [x] **ToastContainer.test.tsx**
 
 UI Components:
 - [ ] **Badge.test.tsx**
-- [ ] **Card.test.tsx**
+- [x] **Card.test.tsx**
 - [ ] **Pagination.test.tsx**
 - [ ] **Table.test.tsx**
 
@@ -391,7 +391,7 @@ API (`src/store/api/__tests__/`):
 
 #### 6.4 Hook Tests
 - [ ] **useAppDispatch.test.ts**
-- [ ] **useToast.test.ts**
+- [x] **useToast.test.ts**
 
 ---
 
