@@ -1,6 +1,6 @@
 .announcementBar {
   background: linear-gradient(90deg, var(--color-primary, #2563eb), var(--color-primary-dark, #1d4ed8));
-  color: white;
+  color: var(--text-inverse, #ffffff);
   padding: 0.625rem 1rem;
   display: flex;
   align-items: center;
@@ -24,7 +24,7 @@
 }
 
 .link {
-  color: white;
+  color: var(--text-inverse, #ffffff);
   text-decoration: underline;
   font-weight: 600;
   transition: opacity 0.2s ease;
@@ -41,7 +41,7 @@
   right: 1rem;
   background: none;
   border: none;
-  color: white;
+  color: var(--text-inverse, #ffffff);
   font-size: 1.25rem;
   cursor: pointer;
   padding: 0.25rem;

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Button from './ui/Button';
+import Pagination from './ui/Pagination';
 import styles from './PaginatedView.module.css';
 
 interface PaginatedViewProps<T> {
@@ -8,8 +8,10 @@ interface PaginatedViewProps<T> {
   currentPage: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   renderItem: (item: T) => ReactNode;
   gridClassName?: string;
+  showPageSizeSelector?: boolean;
 }
 
 export default function PaginatedView<T extends { id: string }>({
@@ -18,40 +20,27 @@ export default function PaginatedView<T extends { id: string }>({
   currentPage,
   pageSize,
   onPageChange,
+  onPageSizeChange,
   renderItem,
   gridClassName,
+  showPageSizeSelector = false,
 }: PaginatedViewProps<T>) {
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const hasNextPage = currentPage < totalPages;
-  const hasPrevPage = currentPage > 1;
-
   return (
     <>
       <div className={gridClassName}>
         {items.map(renderItem)}
       </div>
 
-      <div className={styles.pagination}>
-        <Button
-          variant="secondary"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={!hasPrevPage}
-        >
-          Previous
-        </Button>
-
-        <span className={styles.pageInfo}>
-          Page {currentPage} of {totalPages}
-        </span>
-
-        <Button
-          variant="secondary"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={!hasNextPage}
-        >
-          Next
-        </Button>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        showPageSizeSelector={showPageSizeSelector}
+        showFirstLast={true}
+        showTotal={true}
+      />
     </>
   );
 }

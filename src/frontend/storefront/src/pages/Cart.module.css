@@ -146,7 +146,7 @@
   width: 1.25rem;
   height: 1.25rem;
   background-color: var(--color-success-500);
-  color: white;
+  color: var(--text-inverse, #ffffff);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
 }

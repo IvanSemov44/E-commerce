@@ -139,7 +139,7 @@
   height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
+  color: var(--text-inverse, #ffffff);
   display: flex;
   align-items: center;
   justify-content: center;

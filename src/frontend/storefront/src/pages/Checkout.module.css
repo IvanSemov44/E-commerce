@@ -425,7 +425,7 @@
 .successIcon svg {
   width: 2.5rem;
   height: 2.5rem;
-  color: white;
+  color: var(--text-inverse, #ffffff);
 }
 
 .successTitle {

@@ -78,7 +78,7 @@
   gap: var(--space-2);
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
-  color: white;
+  color: var(--text-inverse, #ffffff);
   text-decoration: none;
   margin-bottom: var(--space-4);
   transition: var(--transition-colors);
@@ -93,7 +93,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  color: white;
+  color: var(--text-inverse, #ffffff);
   padding: var(--space-2);
   border-radius: var(--radius-lg);
 }
@@ -115,7 +115,7 @@
    ============================================================================= */
 
 .section h3 {
-  color: white;
+  color: var(--text-inverse, #ffffff);
   font-weight: var(--font-semibold);
   font-size: var(--text-sm);
   text-transform: uppercase;
@@ -148,7 +148,7 @@
 }
 
 .links a:hover {
-  color: white;
+  color: var(--text-inverse, #ffffff);
   transform: translateX(4px);
 }
 
@@ -196,7 +196,7 @@
   background-color: var(--color-neutral-800);
   border: 1px solid var(--color-neutral-700);
   border-radius: var(--radius-lg);
-  color: white;
+  color: var(--text-inverse, #ffffff);
   font-size: var(--text-sm);
   font-family: var(--font-sans);
   transition: var(--transition-colors), var(--transition-shadow);
@@ -223,7 +223,7 @@
   gap: var(--space-2);
   padding: var(--space-2-5) var(--space-5);
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  color: white;
+  color: var(--text-inverse, #ffffff);
   border: none;
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
@@ -273,7 +273,7 @@
 }
 
 .copyright a:hover {
-  color: white;
+  color: var(--text-inverse, #ffffff);
 }
 
 /* =============================================================================
@@ -301,7 +301,7 @@
 
 .socialLink:hover {
   background: linear-gradient(135deg, var(--color-brand), var(--color-success));
-  color: white;
+  color: var(--text-inverse, #ffffff);
   border-color: transparent;
   transform: translateY(-3px);
   box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
@@ -384,7 +384,7 @@
 }
 
 .legalLinks a:hover {
-  color: white;
+  color: var(--text-inverse, #ffffff);
 }
 
 /* =============================================================================

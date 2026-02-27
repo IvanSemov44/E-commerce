@@ -427,7 +427,7 @@
 .paginationButton.active {
   background-color: var(--color-brand);
   border-color: var(--color-brand);
-  color: white;
+  color: var(--text-inverse, #ffffff);
 }
 
 .paginationButton svg {

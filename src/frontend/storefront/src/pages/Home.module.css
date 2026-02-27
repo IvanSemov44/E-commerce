@@ -24,7 +24,7 @@
 .hero {
   position: relative;
   background: linear-gradient(135deg, var(--color-neutral-900) 0%, var(--color-neutral-800) 50%, var(--color-neutral-900) 100%);
-  color: white;
+  color: var(--text-inverse, #ffffff);
   padding: var(--space-20) 0;
   overflow: hidden;
 }
@@ -172,7 +172,7 @@
   gap: var(--space-2);
   padding: var(--space-3-5) var(--space-8);
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  color: white;
+  color: var(--text-inverse, #ffffff);
   border: none;
   border-radius: var(--radius-lg);
   font-size: var(--text-base);
@@ -204,7 +204,7 @@
   gap: var(--space-2);
   padding: var(--space-3-5) var(--space-6);
   background: transparent;
-  color: white;
+  color: var(--text-inverse, #ffffff);
   border: 1.5px solid var(--color-neutral-600);
   border-radius: var(--radius-lg);
   font-size: var(--text-base);
@@ -508,7 +508,7 @@
   justify-content: center;
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
   border-radius: var(--radius-xl);
-  color: white;
+  color: var(--text-inverse, #ffffff);
   margin-bottom: var(--space-4);
   box-shadow: var(--shadow-primary);
 }
