@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import styles from './Footer.module.css';
 
@@ -43,6 +44,7 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { success, error } = useToast();
@@ -51,7 +53,7 @@ export default function Footer() {
     e.preventDefault();
     
     if (!email || !email.includes('@')) {
-      error('Please enter a valid email address');
+      error(t('footer.emailInvalid'));
       return;
     }
 
@@ -66,14 +68,14 @@ export default function Footer() {
       if (!subscribers.includes(email)) {
         subscribers.push(email);
         localStorage.setItem('newsletter_subscribers', JSON.stringify(subscribers));
-        success('Successfully subscribed to our newsletter!');
+        success(t('footer.subscribeSuccess'));
       } else {
-        error('This email is already subscribed');
+        error(t('footer.emailAlreadySubscribed'));
       }
       
       setEmail('');
     } catch {
-      error('Failed to subscribe. Please try again later.');
+      error(t('footer.subscribeFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -85,23 +87,23 @@ export default function Footer() {
         <div className={styles.grid}>
           {/* Company */}
           <div className={styles.section}>
-            <h3>Company</h3>
+            <h3>{t('footer.company')}</h3>
             <ul className={styles.links}>
-              <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/careers">Careers</Link></li>
-              <li><Link to="/press">Press</Link></li>
-              <li><Link to="/blog">Blog</Link></li>
+              <li><Link to="/about">{t('footer.aboutUs')}</Link></li>
+              <li><Link to="/careers">{t('footer.careers')}</Link></li>
+              <li><Link to="/press">{t('footer.press')}</Link></li>
+              <li><Link to="/blog">{t('footer.blog')}</Link></li>
             </ul>
           </div>
 
           {/* Support */}
           <div className={styles.section}>
-            <h3>Support</h3>
+            <h3>{t('footer.support')}</h3>
             <ul className={styles.links}>
-              <li><Link to="/help">Help Center</Link></li>
-              <li><Link to="/contact">Contact Us</Link></li>
-              <li><Link to="/track-order">Track Order</Link></li>
-              <li><Link to="/returns">Returns</Link></li>
+              <li><Link to="/help">{t('footer.helpCenter')}</Link></li>
+              <li><Link to="/contact">{t('footer.contactUs')}</Link></li>
+              <li><Link to="/track-order">{t('footer.trackOrder')}</Link></li>
+              <li><Link to="/returns">{t('footer.returns')}</Link></li>
             </ul>
           </div>
 
@@ -109,21 +111,21 @@ export default function Footer() {
           <div className={styles.section}>
             <h3>Legal</h3>
             <ul className={styles.links}>
-              <li><Link to="/privacy">Privacy Policy</Link></li>
-              <li><Link to="/terms">Terms of Service</Link></li>
-              <li><Link to="/cookies">Cookies</Link></li>
-              <li><Link to="/security">Security</Link></li>
+              <li><Link to="/privacy">{t('footer.privacyPolicy')}</Link></li>
+              <li><Link to="/terms">{t('footer.termsOfService')}</Link></li>
+              <li><Link to="/cookies">{t('footer.cookiePolicy')}</Link></li>
+              <li><Link to="/security">{t('footer.security')}</Link></li>
             </ul>
           </div>
 
           {/* Newsletter */}
           <div className={styles.newsletter}>
-            <h3>Newsletter</h3>
-            <p className={styles.newsletterText}>Subscribe to get special offers and updates</p>
+            <h3>{t('footer.newsletter')}</h3>
+            <p className={styles.newsletterText}>{t('footer.newsletterSubtitle')}</p>
             <form className={styles.form} onSubmit={handleNewsletterSubmit}>
               <input
                 type="email"
-                placeholder="Your email"
+                placeholder={t('footer.yourEmail')}
                 className={styles.emailInput}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -134,7 +136,7 @@ export default function Footer() {
                 className={styles.subscribeButton}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Subscribing...' : 'Subscribe'}
+                {isSubmitting ? t('footer.subscribing') : t('footer.subscribe')}
               </button>
             </form>
           </div>
@@ -142,7 +144,7 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className={styles.bottom}>
-          <p className={styles.copyright}>&copy; 2026 E-Commerce. All rights reserved.</p>
+          <p className={styles.copyright}>&copy; 2026 E-Commerce. {t('footer.copyright')}</p>
           <div className={styles.socialLinks}>
             {socialLinks.map((social, index) => (
               <a 

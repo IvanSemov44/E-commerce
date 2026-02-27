@@ -33,6 +33,9 @@ export interface ProductFiltersActions {
 
 export type UseProductFiltersReturn = ProductFiltersState & ProductFiltersActions;
 
+// Valid sortBy values that match backend validation
+const VALID_SORT_BY = ['newest', 'name', 'price-asc', 'price-desc', 'rating'];
+
 /**
  * Custom hook for managing product filters with URL synchronization
  * Handles:
@@ -73,7 +76,11 @@ export const useProductFilters = (): UseProductFiltersReturn => {
     return val ? parseFloat(val) : undefined;
   });
 
-  const [sortBy, setSortBy] = useState<string>(() => searchParams.get('sortBy') || 'newest');
+  const [sortBy, setSortBy] = useState<string>(() => {
+    const urlSortBy = searchParams.get('sortBy');
+    // Validate sortBy against allowed values, default to 'newest' if invalid
+    return urlSortBy && VALID_SORT_BY.includes(urlSortBy) ? urlSortBy : 'newest';
+  });
 
   const [isFeatured, setIsFeatured] = useState<boolean | undefined>(() => {
     const val = searchParams.get('isFeatured');

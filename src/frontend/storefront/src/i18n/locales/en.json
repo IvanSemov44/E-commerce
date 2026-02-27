@@ -61,6 +61,22 @@
     "settings": "Settings",
     "appearance": "Appearance"
   },
+  "theme": {
+    "title": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "lightDescription": "Light appearance",
+    "darkDescription": "Dark appearance",
+    "systemDescription": "Follow system settings",
+    "currentTheme": "Current theme: {{theme}}. Click to change.",
+    "themeOptions": "Theme options"
+  },
+  "announcement": {
+    "freeShipping": "Free shipping on orders over $50!",
+    "shopNow": "Shop now",
+    "dismiss": "Dismiss announcement"
+  },
   "home": {
     "title": "Welcome",
     "subtitle": "Discover amazing products",
@@ -356,7 +372,25 @@
     "phoneNote": "Please have your order number ready for faster assistance.",
     "noteAccount": "Note: If you have an account, you can view all your orders and their current status in the Order History section."
   },
-  "errors": {
+  "trustSignals": {
+    "title": "Shop with Confidence",
+    "subtitle": "Your security and satisfaction are our priority",
+    "secureCheckout": "Secure Checkout",
+    "secureCheckoutDesc": "256-bit SSL encryption protects your data",
+    "sslSecured": "SSL Secured",
+    "freeShipping": "Free Shipping",
+    "freeShippingDesc": "On all orders over $50",
+    "free": "Free",
+    "returns": "30-Day Returns",
+    "returnsDesc": "No questions asked return policy",
+    "easy": "Easy",
+    "buyerProtection": "Buyer Protection",
+    "buyerProtectionDesc": "Full money-back guarantee on every order",
+    "guaranteed": "Guaranteed",
+    "ssl": "SSL",
+    "pciDss": "PCI DSS",
+    "verified": "Verified"
+  },
     "404": "Page Not Found",
     "500": "Server Error",
     "generic": "Something went wrong",
@@ -364,6 +398,25 @@
     "unauthorized": "You must be logged in to access this page.",
     "notFound": "The page you're looking for doesn't exist.",
     "goHome": "Go to Home"
+  },
+  "trustSignals": {
+    "title": "Shop with Confidence",
+    "subtitle": "Your security and satisfaction are our priority",
+    "secureCheckout": "Secure Checkout",
+    "secureCheckoutDesc": "256-bit SSL encryption protects your data",
+    "sslSecured": "SSL Secured",
+    "freeShipping": "Free Shipping",
+    "freeShippingDesc": "On all orders over $50",
+    "free": "Free",
+    "returns": "30-Day Returns",
+    "returnsDesc": "No questions asked return policy",
+    "easy": "Easy",
+    "buyerProtection": "Buyer Protection",
+    "buyerProtectionDesc": "Full money-back guarantee on every order",
+    "guaranteed": "Guaranteed",
+    "ssl": "SSL",
+    "pciDss": "PCI DSS",
+    "verified": "Verified"
   },
   "footer": {
     "about": "About Us",
@@ -395,7 +448,14 @@
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "cookiePolicy": "Cookie Policy",
-    "security": "Security"
+    "security": "Security",
+    "yourEmail": "Your email",
+    "subscribing": "Subscribing...",
+    "emailInvalid": "Please enter a valid email address",
+    "emailAlreadySubscribed": "This email is already subscribed",
+    "subscribeSuccess": "Successfully subscribed to our newsletter!",
+    "subscribeFailed": "Failed to subscribe. Please try again later.",
+    "newsletterSubtitle": "Subscribe to get special offers and updates"
   },
   "staticPages": {
     "about": {

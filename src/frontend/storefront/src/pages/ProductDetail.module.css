@@ -1,7 +1,7 @@
 /* ProductDetail Page Styles */
 .container {
   min-height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--color-neutral-50);
   padding: 48px 0;
 }
 
@@ -70,12 +70,12 @@
 
 .thumbnail:hover {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border-color: #cbd5e1;
+  border-color: var(--color-neutral-300);
 }
 
 .thumbnailActive {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3b82f6;
+  border-color: var(--color-info-500);
+  box-shadow: 0 0 0 2px var(--surface-primary), 0 0 0 4px var(--color-info-500);
 }
 
 .details h1 {

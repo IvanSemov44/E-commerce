@@ -45,12 +45,18 @@
   --color-success-600: #16a34a;
 
   --color-warning-50: #fffbeb;
+  --color-warning-400: #fbbf24;
   --color-warning-500: #f59e0b;
   --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+
+  --color-error-400: #f87171;
 
   --color-error-50: #fef2f2;
   --color-error-500: #ef4444;
   --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
 
   --color-info-50: #eff6ff;
   --color-info-500: #3b82f6;
@@ -178,6 +184,13 @@
   --shadow-primary-lg: 0 8px 24px 0 rgb(22 163 74 / 0.2);
   --shadow-error: 0 4px 14px 0 rgb(239 68 68 / 0.25);
 
+  /* Black shadow variants for component use */
+  --shadow-black-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-black-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow-black-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-black-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-black-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
   /* -----------------------------------------------------------------------------
      Animation System
      ----------------------------------------------------------------------------- */
@@ -283,9 +296,24 @@
   --shadow-primary: 0 4px 14px 0 rgb(74 222 128 / 0.2);
   --shadow-primary-lg: 0 8px 24px 0 rgb(74 222 128 / 0.15);
 
+  /* Black shadow variants for dark mode */
+  --shadow-black-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-black-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+  --shadow-black-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-black-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-black-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+
   /* Glow effects for dark mode */
   --glow-brand: 0 0 20px rgba(74, 222, 128, 0.15);
   --glow-error: 0 0 20px rgba(248, 113, 113, 0.15);
+
+  /* Warning colors for dark mode */
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-800: #b45309;
+
+  /* Error colors for dark mode */
+  --color-error-400: #f87171;
 }
 
 /* System preference fallback */
@@ -335,6 +363,14 @@
     /* Glow effects for dark mode */
     --glow-brand: 0 0 20px rgba(74, 222, 128, 0.15);
     --glow-error: 0 0 20px rgba(248, 113, 113, 0.15);
+
+    /* Warning colors for dark mode */
+    --color-warning-400: #fbbf24;
+    --color-warning-500: #f59e0b;
+    --color-warning-800: #b45309;
+
+    /* Error colors for dark mode */
+    --color-error-400: #f87171;
   }
 }
 
@@ -725,10 +761,6 @@ a:focus-visible {
     page-break-after: avoid;
   }
 }
-
-/* =============================================================================
-   8. UTILITY CLASSES
-   ============================================================================= */
 
 /* Layout */
 .page-note {

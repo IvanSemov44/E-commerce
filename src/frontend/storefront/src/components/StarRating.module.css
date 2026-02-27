@@ -19,11 +19,11 @@
 }
 
 .star.filled {
-  color: #ffc107;
+  color: var(--color-warning-500);
 }
 
 .star.empty {
-  color: #e0e0e0;
+  color: var(--color-neutral-300);
 }
 
 .star:not(:disabled):hover {

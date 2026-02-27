@@ -23,6 +23,7 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-default);
+  container-type: inline-size;
 }
 
 .card:hover {
@@ -133,8 +134,8 @@
 }
 
 .quickAddButton.adding {
-  background-color: var(--color-success);
-  color: white;
+  background-color: var(--color-success-500);
+  color: var(--surface-primary);
 }
 
 .quickAddButton svg {
@@ -159,9 +160,8 @@
   position: absolute;
   top: var(--space-3);
   left: var(--space-3);
-  background-color: #ef4444;
-  color: white;
-  font-size: 0.6875rem;
+  background-color: var(--color-error-500);
+  color: var(--surface-primary);
   font-weight: var(--font-bold);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
@@ -227,7 +227,7 @@
 .wishlistButton:hover:not(:disabled) {
   opacity: 1;
   transform: scale(1);
-  background-color: white;
+  background-color: var(--surface-primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -246,24 +246,24 @@
 .wishlistButton.active {
   opacity: 1;
   transform: scale(1);
-  background-color: white;
+  background-color: var(--surface-primary);
 }
 
 .wishlistButton svg {
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af;
+  color: var(--color-neutral-400);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .wishlistButton:hover:not(:disabled) svg {
-  color: #f87171;
+  color: var(--color-error-400);
   transform: scale(1.1);
 }
 
 .wishlistButton.active svg {
-  color: #ef4444;
-  fill: #ef4444;
+  color: var(--color-error-500);
+  fill: var(--color-error-500);
   animation: heartPop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -287,16 +287,16 @@
 }
 
 [data-theme="dark"] .wishlistButton svg {
-  color: #6b7280;
+  color: var(--color-neutral-500);
 }
 
 [data-theme="dark"] .wishlistButton:hover:not(:disabled) svg {
-  color: #f87171;
+  color: var(--color-error-400);
 }
 
 [data-theme="dark"] .wishlistButton.active svg {
-  color: #f87171;
-  fill: #f87171;
+  color: var(--color-error-400);
+  fill: var(--color-error-400);
 }
 
 /* =============================================================================
@@ -372,18 +372,18 @@
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  color: #854d0e;
+  color: var(--color-warning-800);
 }
 
 [data-theme="dark"] .ratingBadge {
   background-color: rgba(234, 179, 8, 0.2);
-  color: #fbbf24;
+  color: var(--color-warning-400);
 }
 
 .ratingBadge svg {
   width: 0.75rem;
   height: 0.75rem;
-  color: #eab308;
+  color: var(--color-warning-500);
 }
 
 /* =============================================================================
@@ -400,6 +400,52 @@
 /* =============================================================================
    Responsive Adjustments
    ============================================================================= */
+
+/* Container queries for component-level responsiveness */
+@container (max-width: 320px) {
+  .productInfo {
+    padding: var(--space-2-5);
+  }
+  
+  .productName {
+    font-size: var(--text-sm);
+    min-height: 2.1rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  
+  .pricePrimary {
+    font-size: 0.875rem;
+  }
+  
+  .priceCompare {
+    font-size: 0.6875rem;
+  }
+  
+  .wishlistButton {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  .wishlistButton svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+  
+  .quickAddWrapper {
+    padding: var(--space-2);
+  }
+  
+  .quickAddButton {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+  }
+  
+  .ratingBadge {
+    font-size: 0.625rem;
+    padding: var(--space-0-5) var(--space-1);
+  }
+}
 
 @media (max-width: 640px) {
   .productInfo {

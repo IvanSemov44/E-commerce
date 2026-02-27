@@ -109,13 +109,13 @@ Create `Unit/Repositories/` directory with tests for:
   - Test GetWishlistByUserIdAsync
 
 #### 1.2 UnitOfWork Tests
-- [ ] **UnitOfWorkTests.cs**
+- [x] **UnitOfWorkTests.cs**
   - Test repository property access
   - Test SaveChangesAsync
   - Test transaction handling if applicable
 
 #### 1.3 Extension Tests
-- [ ] **QueryableExtensionsTests.cs**
+- [x] **QueryableExtensionsTests.cs**
   - Test Paginate extension method
   - Test all filtering/sorting extensions
 
@@ -148,7 +148,7 @@ Create `Unit/Repositories/` directory with tests for:
 ### Phase 3: Backend Middleware and Configuration Tests
 
 #### 3.1 Middleware Tests
-- [ ] **CsrfMiddlewareTests.cs**
+- [x] **CsrfMiddlewareTests.cs**
   - Test token generation
   - Test token validation
   - Test exclusion paths
@@ -205,21 +205,21 @@ Create tests in `src/components/__tests__/`:
 - [x] **Footer.test.tsx** - Footer rendering
 - [x] **Header.test.tsx** - Navigation, auth state, cart icon
 - [x] **LoadingSkeleton.test.tsx** - Loading states
-- [ ] **OptimizedImage.test.tsx** - Image loading and optimization
-- [ ] **PageHeader.test.tsx** - Page header display
-- [ ] **PaginatedView.test.tsx** - Pagination controls
+- [x] **OptimizedImage.test.tsx** - Image loading and optimization
+- [x] **PageHeader.test.tsx** - Page header display
+- [x] **PaginatedView.test.tsx** - Pagination controls
 - [x] **ProductCard.test.tsx** - Product card display and actions
 - [x] **ProtectedRoute.test.tsx** - Route protection logic
 - [x] **QueryRenderer.test.tsx** - Query state rendering
 - [x] **ReviewForm.test.tsx** - Review submission form
-- [ ] **ReviewList.test.tsx** - Review list display
+- [x] **ReviewList.test.tsx** - Review list display
 - [x] **StarRating.test.tsx** - Star rating component
 - [x] **Toast.test.tsx** - Toast notifications
 - [x] **ToastContainer.test.tsx** - Toast container
 
 UI Components:
 - [x] **Button.test.tsx** - Button variants and states
-- [ ] **Card.test.tsx** - Card component
+- [x] **Card.test.tsx** - Card component
 - [x] **Input.test.tsx** - Input component
 
 Skeleton Components:
@@ -238,29 +238,29 @@ Icon Components:
 - [ ] **UserIcon.test.tsx**
 
 Page Sub-components:
-- [ ] **CartItemList.test.tsx**
-- [ ] **CartSummary.test.tsx**
+- [x] **CartItemList.test.tsx**
+- [x] **CartSummary.test.tsx**
 - [x] **CheckoutForm.test.tsx**
-- [ ] **OrderSuccess.test.tsx**
-- [ ] **OrderSummary.test.tsx**
-- [ ] **PromoCodeSection.test.tsx**
-- [ ] **OrderHeader.test.tsx**
+- [x] **OrderSuccess.test.tsx**
+- [x] **OrderSummary.test.tsx**
+- [x] **PromoCodeSection.test.tsx**
+- [x] **OrderHeader.test.tsx**
 - [x] **OrderItemsList.test.tsx**
-- [ ] **OrderTotals.test.tsx**
-- [ ] **ShippingAddress.test.tsx**
+- [x] **OrderTotals.test.tsx**
+- [x] **ShippingAddress.test.tsx**
 - [ ] **OrderCard.test.tsx**
-- [ ] **ProductActions.test.tsx**
+- [x] **ProductActions.test.tsx**
 - [ ] **ProductImageGallery.test.tsx**
-- [ ] **ProductInfo.test.tsx**
-- [ ] **ActiveFilters.test.tsx**
-- [ ] **ProductFilters.test.tsx**
-- [ ] **ProductGrid.test.tsx**
-- [ ] **ProductSearchBar.test.tsx**
-- [ ] **AccountDetails.test.tsx**
+- [x] **ProductInfo.test.tsx**
+- [x] **ActiveFilters.test.tsx**
+- [x] **ProductFilters.test.tsx**
+- [x] **ProductGrid.test.tsx**
+- [x] **ProductSearchBar.test.tsx**
+- [x] **AccountDetails.test.tsx**
 - [ ] **ProfileForm.test.tsx**
-- [ ] **ProfileHeader.test.tsx**
-- [ ] **ProfileMessages.test.tsx**
-- [ ] **WishlistCard.test.tsx**
+- [x] **ProfileHeader.test.tsx**
+- [x] **ProfileMessages.test.tsx**
+- [x] **WishlistCard.test.tsx**
 
 Additional Components:
 - [x] **CookieConsent.test.tsx** - Cookie consent banner
@@ -270,11 +270,11 @@ Additional Components:
 #### 5.2 Hook Tests
 Create tests in `src/hooks/__tests__/`:
 
-- [ ] **useApiErrorHandler.test.ts**
+- [x] **useApiErrorHandler.test.ts**
 - [x] **useAuth.test.ts**
 - [ ] **useCartSync.test.ts**
 - [ ] **useCheckout.test.ts**
-- [ ] **useErrorHandler.test.ts**
+- [x] **useErrorHandler.test.ts**
 - [x] **useForm.test.ts**
 - [x] **useLocalStorage.test.ts**
 - [x] **useOnlineStatus.test.ts**
