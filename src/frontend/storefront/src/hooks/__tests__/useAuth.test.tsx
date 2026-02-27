@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { configureStore } from '@reduxjs/toolkit';
+import { Provider } from 'react-redux';
 import { useAuth } from '../useAuth';
 import { authSlice } from '../../store/slices/authSlice';
 import type { AuthUser } from '../../types';

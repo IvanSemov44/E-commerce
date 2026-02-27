@@ -60,7 +60,7 @@ export default function CookiePolicy() {
             <li>Configure your browser settings to block or delete cookies</li>
             <li>Use browser extensions for more granular cookie control</li>
           </ul>
-          <p style={{ marginTop: '1rem' }}>
+          <p className="mt-4">
             <strong>Note:</strong> Blocking essential cookies may affect the functionality 
             of our website, particularly the shopping cart and checkout process.
           </p>

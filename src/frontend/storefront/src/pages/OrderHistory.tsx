@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGetOrdersQuery } from '../store/api/ordersApi';
 import Button from '../components/ui/Button';
 import PageHeader from '../components/PageHeader';
@@ -23,6 +24,7 @@ interface OrderForDisplay {
 }
 
 export default function OrderHistory() {
+  const { t } = useTranslation();
   const { data: ordersData, isLoading, error } = useGetOrdersQuery();
   const orders: OrderForDisplay[] = (ordersData || []).map((order: any) => ({
     id: order.id,
@@ -36,17 +38,17 @@ export default function OrderHistory() {
   return (
     <div className={styles.container}>
       <PageHeader 
-        title="Order History" 
-        subtitle="Track and manage all your orders in one place. View order details, status, and history."
+        title={t('orders.title')} 
+        subtitle={t('orders.subtitle')}
         icon={<PackageIcon />}
-        badge="Your Orders"
+        badge={t('account.myOrders')}
       />
 
       <QueryRenderer
         isLoading={isLoading}
         error={error}
         data={orders}
-        errorMessage="Failed to load orders. Please try again later."
+        errorMessage={t('orders.failedToLoadOrders')}
         emptyState={{
           icon: (
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,11 +60,11 @@ export default function OrderHistory() {
               />
             </svg>
           ),
-          title: "No orders yet",
-          description: "Start shopping to place your first order",
+          title: t('orders.noOrdersYet'),
+          description: t('account.startShopping'),
           action: (
             <Link to="/products">
-              <Button>Browse Products</Button>
+              <Button>{t('account.browseProducts')}</Button>
             </Link>
           ),
         }}

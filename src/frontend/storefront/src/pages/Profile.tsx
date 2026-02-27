@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useProfileForm } from '../hooks';
 import Card from '../components/ui/Card';
 import PageHeader from '../components/PageHeader';
@@ -7,6 +8,7 @@ import { ProfileHeader, ProfileForm, ProfileMessages, AccountDetails } from './c
 import styles from './Profile.module.css';
 
 export default function Profile() {
+  const { t } = useTranslation();
   const {
     profile,
     formData,
@@ -25,10 +27,10 @@ export default function Profile() {
 
   return (
     <div className={styles.container}>
-      <PageHeader title="My Profile" />
+      <PageHeader title={t('profile.title')} />
 
       {error ? (
-        <ErrorAlert message="Failed to load profile. Please try again later." />
+        <ErrorAlert message={t('profile.failedToLoad')} />
       ) : isLoading ? (
         <Card variant="elevated" padding="lg">
           <ProfileSkeleton />
@@ -47,7 +49,7 @@ export default function Profile() {
               onFormDataChange={setFormData}
               onSubmit={handleSubmit}
               onCancel={handleCancel}
-              onAvatarError={() => setErrorMessage('Invalid image URL')}
+              onAvatarError={() => setErrorMessage(t('profile.invalidImageUrl'))}
             />
           </Card>
 

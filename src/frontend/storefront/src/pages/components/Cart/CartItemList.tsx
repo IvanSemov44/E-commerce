@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Card from '../../../components/ui/Card';
 import CartItem from '../../../components/CartItem';
 import styles from './CartItemList.module.css';
@@ -21,10 +22,13 @@ interface CartItemListProps {
 }
 
 export default function CartItemList({ items, onUpdateQuantity, onRemove }: CartItemListProps) {
+  const { t } = useTranslation();
+  const itemText = items.length === 1 ? t('cart.item_one') : t('cart.item_other');
+  
   return (
     <Card variant="elevated" padding="lg">
       <h2 className={styles.title}>
-        Items ({items.length} {items.length === 1 ? 'product' : 'products'})
+        {t('cart.itemsCount', { count: items.length, itemText })}
       </h2>
       <div className={styles.itemsList}>
         {items.map((item) => (

@@ -5,10 +5,12 @@ import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import Home from '../Home'
 import toastReducer from '../../store/slices/toastSlice'
+import { baseApi } from '../../store/api/baseApi'
 
 // Mock the RTK Query hook
 vi.mock('../../store/api/productApi', () => ({
   useGetFeaturedProductsQuery: vi.fn(),
+  useGetTopLevelCategoriesQuery: vi.fn(),
 }))
 
 // Mock ProductCard component
@@ -37,7 +39,10 @@ const createTestStore = () => {
   return configureStore({
     reducer: {
       toast: toastReducer,
+      [baseApi.reducerPath]: baseApi.reducer,
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().concat(baseApi.middleware),
   })
 }
 

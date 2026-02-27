@@ -16,8 +16,8 @@ export default function TrackOrder() {
             your order number in your confirmation email or in your account's order history.
           </p>
           
-          <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--color-surface)', borderRadius: '8px' }}>
-            <p style={{ marginBottom: '1rem' }}>
+          <div className="page-note">
+            <p className="page-note-text">
               <strong>Note:</strong> If you have an account, you can view all your orders and their 
               current status in the <Link to="/orders" className={styles.link}>Order History</Link> section.
             </p>

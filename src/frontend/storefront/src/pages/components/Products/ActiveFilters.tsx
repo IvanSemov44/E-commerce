@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Button from '../../../components/ui/Button';
 import styles from './ActiveFilters.module.css';
 
@@ -20,6 +21,7 @@ export default function ActiveFilters({
   isFeatured,
   onClearAll,
 }: ActiveFiltersProps) {
+  const { t } = useTranslation();
   const hasFilters = search || categorySelected || minPrice !== undefined || maxPrice !== undefined || minRating !== undefined || isFeatured;
 
   if (!hasFilters) return null;
@@ -28,31 +30,31 @@ export default function ActiveFilters({
     <div className={styles.container}>
       {search && (
         <div className={`${styles.badge} ${styles.badgeSearch}`}>
-          Search: <strong>{search}</strong>
+          {t('products.search')}: <strong>{search}</strong>
         </div>
       )}
       
       {categorySelected && (
         <div className={`${styles.badge} ${styles.badgeCategory}`}>
-          Category Selected
+          {t('products.categorySelected')}
         </div>
       )}
       
       {(minPrice !== undefined || maxPrice !== undefined) && (
         <div className={`${styles.badge} ${styles.badgePrice}`}>
-          Price: ${minPrice || 0} - ${maxPrice || '∞'}
+          {t('products.price')}: ${minPrice || 0} - ${maxPrice || '∞'}
         </div>
       )}
       
       {minRating !== undefined && (
         <div className={`${styles.badge} ${styles.badgeRating}`}>
-          {minRating}+ Stars
+          {minRating}+ {t('products.stars')}
         </div>
       )}
       
       {isFeatured && (
         <div className={`${styles.badge} ${styles.badgeFeatured}`}>
-          Featured Only
+          {t('products.featuredOnly')}
         </div>
       )}
       
@@ -60,9 +62,8 @@ export default function ActiveFilters({
         variant="secondary"
         size="sm"
         onClick={onClearAll}
-        style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
       >
-        Clear Filters
+        {t('common.clear')}
       </Button>
     </div>
   );

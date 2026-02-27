@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGetFeaturedProductsQuery, useGetProductsQuery } from '../store/api/productApi';
 import { useGetTopLevelCategoriesQuery } from '../store/api/categoriesApi';
 import Button from '../components/ui/Button';
@@ -9,6 +10,7 @@ import TrustSignals from '../components/TrustSignals';
 import styles from './Home.module.css';
 
 export default function Home() {
+  const { t } = useTranslation();
   const { data: featured, isLoading, error } = useGetFeaturedProductsQuery(10);
   const { data: categories } = useGetTopLevelCategoriesQuery();
   
@@ -32,14 +34,14 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <h1 className={styles.heroTitle}>
-            Discover Premium Products
+            {t('home.title')}
           </h1>
           <p className={styles.heroSubtitle}>
-            Curated selection of quality items at exceptional prices
+            {t('home.subtitle')}
           </p>
           <Link to="/products">
             <Button size="lg">
-              Explore Products
+              {t('home.exploreProducts')}
             </Button>
           </Link>
         </div>
@@ -53,7 +55,7 @@ export default function Home() {
       {/* Category Showcase */}
       {categories && categories.length > 0 && (
         <section className={styles.categoriesSection}>
-          <PageHeader title="Shop by Category" />
+          <PageHeader title={t('home.browseCategories')} />
           <div className={styles.categoriesGrid}>
             {categories.slice(0, 6).map((category) => (
               <Link
@@ -83,20 +85,20 @@ export default function Home() {
 
       {/* Featured Products */}
       <section className={styles.featuredSection}>
-        <PageHeader title="Featured Products" />
+        <PageHeader title={t('home.featuredProducts')} subtitle={t('home.featuredProductsSubtitle')} />
 
         <QueryRenderer
           isLoading={isLoading}
           error={error}
           data={featured}
-          errorMessage="Failed to load featured products. Please try again later."
+          errorMessage={t('products.failedToLoadProducts')}
           emptyState={{
             icon: (
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             ),
-            title: "No featured products available"
+            title: t('products.noProducts')
           }}
         >
           {(featured) => (
@@ -122,7 +124,7 @@ export default function Home() {
       {/* Bestsellers Section */}
       {bestsellersData?.items && bestsellersData.items.length > 0 && (
         <section className={styles.bestsellersSection}>
-          <PageHeader title="Bestsellers" subtitle="Our most popular products" />
+          <PageHeader title={t('home.bestSellers')} subtitle={t('home.ourMostPopularProducts')} />
           <div className={styles.grid}>
             {bestsellersData.items.map((product) => (
               <ProductCard
@@ -140,7 +142,7 @@ export default function Home() {
           </div>
           <div className={styles.sectionCta}>
             <Link to="/products?sortBy=reviewCount&sortOrder=desc">
-              <Button variant="outline">View All Bestsellers</Button>
+              <Button variant="outline">{t('home.viewAllBestsellers')}</Button>
             </Link>
           </div>
         </section>
@@ -149,7 +151,7 @@ export default function Home() {
       {/* Promotions Section */}
       {promotionsData?.items && promotionsData.items.some(p => p.compareAtPrice) && (
         <section className={styles.promotionsSection}>
-          <PageHeader title="Special Offers" subtitle="Limited time deals" />
+          <PageHeader title={t('home.onSale')} subtitle={t('home.onSaleSubtitle')} />
           <div className={styles.grid}>
             {promotionsData.items
               .filter((product) => product.compareAtPrice)
@@ -170,7 +172,7 @@ export default function Home() {
           </div>
           <div className={styles.sectionCta}>
             <Link to="/products?onSale=true">
-              <Button variant="outline">View All Offers</Button>
+              <Button variant="outline">{t('home.viewAllOffers')}</Button>
             </Link>
           </div>
         </section>

@@ -87,10 +87,12 @@ describe('OptimizedImage', () => {
   describe('Loading Behavior', () => {
     it('shows loading skeleton initially', () => {
       const { container } = render(
-        <OptimizedImage src="/test-image.jpg" alt="Test image" />
+        <OptimizedImage src="/test-image.jpg" alt="Test image" loading="eager" />
       );
 
-      expect(container.querySelector('.skeleton')).toBeInTheDocument();
+      // Check for skeleton element - it exists when image is not loaded
+      const skeleton = container.querySelector('div[class*="skeleton"]');
+      expect(skeleton).toBeInTheDocument();
     });
 
     it('hides skeleton after image loads', async () => {

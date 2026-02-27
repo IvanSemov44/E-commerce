@@ -91,5 +91,9 @@
 
 .buttonGroup {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
+}
+
+.errorContainer {
+  margin-bottom: var(--space-4);
 }

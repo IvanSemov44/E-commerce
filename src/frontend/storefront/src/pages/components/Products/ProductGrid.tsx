@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import ProductCard from '../../../components/ProductCard';
 import PaginatedView from '../../../components/PaginatedView';
 import type { Product } from '../../../types';
@@ -18,11 +19,13 @@ export default function ProductGrid({
   pageSize,
   onPageChange,
 }: ProductGridProps) {
+  const { t } = useTranslation();
+  
   return (
     <>
       {/* Results Count */}
       <div className={styles.resultsCount}>
-        Showing <strong>{products.length}</strong> of <strong>{totalCount}</strong> products
+        {t('common.showing')} <strong>{products.length}</strong> {t('common.of')} <strong>{totalCount}</strong> {t('common.products')}
       </div>
 
       <PaginatedView

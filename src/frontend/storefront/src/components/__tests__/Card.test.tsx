@@ -138,11 +138,11 @@ describe('Card', () => {
 
     it('handles onClick events', () => {
       const handleClick = vi.fn();
+      const ref = { current: null as HTMLDivElement | null };
 
-      render(<Card onClick={handleClick}>Content</Card>);
+      render(<Card ref={ref} onClick={handleClick}>Content</Card>);
 
-      const card = screen.getByText('Content').parentElement;
-      card?.click();
+      ref.current?.click();
 
       expect(handleClick).toHaveBeenCalledTimes(1);
     });

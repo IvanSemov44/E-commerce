@@ -3,6 +3,7 @@
  */
 
 import ProductSkeleton from './ProductSkeleton';
+import styles from './Skeleton.module.css';
 
 interface ProductsGridSkeletonProps {
   count?: number;
@@ -10,7 +11,7 @@ interface ProductsGridSkeletonProps {
 
 export default function ProductsGridSkeleton({ count = 12 }: ProductsGridSkeletonProps) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+    <div className={styles.productsGrid}>
       {[...Array(count)].map((_, i) => (
         <ProductSkeleton key={i} />
       ))}

@@ -2,22 +2,22 @@
 .iconContainer {
   width: 96px;
   height: 96px;
-  margin: 0 auto 16px;
-  color: #cbd5e1;
+  margin: 0 auto var(--space-4);
+  color: var(--color-neutral-300);
 }
 
 .title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin-bottom: 8px;
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
 }
 
 .description {
-  color: #475569;
-  margin-bottom: 24px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
 }
 
 .actionContainer {
-  margin-top: 24px;
+  margin-top: var(--space-6);
 }

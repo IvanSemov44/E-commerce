@@ -49,6 +49,7 @@ import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import CookieConsent from './components/CookieConsent';
 import AnnouncementBar from './components/AnnouncementBar';
+import LoadingFallback from './components/LoadingFallback';
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -102,11 +103,7 @@ function AppContent() {
   const isAppLoading = profileLoading || cartLoading;
 
   // Loading fallback component for lazy-loaded routes
-  const LazyLoadingFallback = (
-    <div style={{ textAlign: 'center', padding: '2rem' }}>
-      <p>Loading page...</p>
-    </div>
-  );
+  const lazyLoadingFallback = <LoadingFallback />;
 
   return (
     <div>
@@ -114,12 +111,10 @@ function AppContent() {
       <Header />
       <main>
         {isAppLoading && (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            Loading...
-          </div>
+          <LoadingFallback />
         )}
         {!isAppLoading && (
-          <Suspense fallback={LazyLoadingFallback}>
+          <Suspense fallback={lazyLoadingFallback}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/products" element={<Products />} />

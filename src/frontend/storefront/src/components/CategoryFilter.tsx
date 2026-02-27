@@ -1,4 +1,5 @@
 import { useGetTopLevelCategoriesQuery } from '../store/api/categoriesApi';
+import { useTranslation } from 'react-i18next';
 import styles from './CategoryFilter.module.css';
 
 interface CategoryFilterProps {
@@ -8,11 +9,12 @@ interface CategoryFilterProps {
 
 export default function CategoryFilter({ selectedCategoryId, onSelectCategory }: CategoryFilterProps) {
   const { data: categories, isLoading, error } = useGetTopLevelCategoriesQuery();
+  const { t } = useTranslation();
 
   if (error) {
     return (
       <div className={styles.error}>
-        Failed to load categories
+        {t('products.failedToLoadCategories')}
       </div>
     );
   }
@@ -20,11 +22,11 @@ export default function CategoryFilter({ selectedCategoryId, onSelectCategory }:
   return (
     <div className={styles.container}>
       <h3 className={styles.title}>
-        Categories
+        {t('products.categories')}
       </h3>
 
       {isLoading ? (
-        <div className={styles.loading}>Loading categories...</div>
+        <div className={styles.loading}>{t('products.loadingCategories')}</div>
       ) : (
         <ul className={styles.list}>
           <li>
@@ -32,7 +34,7 @@ export default function CategoryFilter({ selectedCategoryId, onSelectCategory }:
               onClick={() => onSelectCategory(undefined)}
               className={`${styles.categoryButton} ${!selectedCategoryId ? styles.active : ''}`}
             >
-              All Products
+              {t('products.allProducts')}
             </button>
           </li>
 

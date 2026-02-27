@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGetProductsQuery } from '../store/api/productApi';
+import { useTranslation } from 'react-i18next';
 import styles from './SearchBar.module.css';
 
 interface SearchBarProps {
@@ -25,11 +26,13 @@ interface SearchBarProps {
  * - Search icon animation
  */
 export function SearchBar({ 
-  placeholder = 'Search products...', 
+  placeholder, 
   size = 'md',
   className = '',
   showOnMobile = false
 }: SearchBarProps) {
+  const { t } = useTranslation();
+  const defaultPlaceholder = t('products.searchProducts');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -180,7 +183,7 @@ export function SearchBar({
             onChange={(e) => setQuery(e.target.value)}
             onFocus={handleFocus}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={placeholder || defaultPlaceholder}
             className={styles.input}
             aria-label="Search products"
             aria-expanded={showDropdown}
@@ -226,7 +229,7 @@ export function SearchBar({
         <div className={styles.dropdown} role="listbox">
           {isFetching ? (
             <div className={styles.loadingState}>
-              <span>Searching...</span>
+              <span>{t('common.searching') || 'Searching...'}</span>
             </div>
           ) : (
             <>
@@ -272,7 +275,7 @@ export function SearchBar({
                   setIsExpanded(false);
                 }}
               >
-                View all results for "{debouncedQuery}"
+                {t('common.viewAllResults', { query: debouncedQuery }) || `View all results for "${debouncedQuery}"`}
               </Link>
             </>
           )}

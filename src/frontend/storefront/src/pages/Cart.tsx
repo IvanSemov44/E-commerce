@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../hooks';
 import Button from '../components/ui/Button';
 import PageHeader from '../components/PageHeader';
@@ -9,12 +10,13 @@ import { FREE_SHIPPING_THRESHOLD } from '../utils/constants';
 import styles from './Cart.module.css';
 
 export default function Cart() {
+  const { t } = useTranslation();
   const { displayItems, totals, isLoading, handleUpdateQuantity, handleRemove } = useCart();
 
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <PageHeader title="Shopping Cart" />
+        <PageHeader title={t('cart.title')} />
 
         {isLoading ? (
           <CartSkeleton />
@@ -30,10 +32,10 @@ export default function Cart() {
                 />
               </svg>
             }
-            title="Your cart is empty"
+            title={t('cart.emptyCart')}
             action={
               <Link to="/products">
-                <Button size="lg">Continue Shopping</Button>
+                <Button size="lg">{t('cart.continueShopping')}</Button>
               </Link>
             }
           />

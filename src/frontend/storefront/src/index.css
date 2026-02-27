@@ -725,3 +725,39 @@ a:focus-visible {
     page-break-after: avoid;
   }
 }
+
+/* =============================================================================
+   8. UTILITY CLASSES
+   ============================================================================= */
+
+/* Layout */
+.page-note {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  background: var(--surface-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+}
+
+.page-note-text {
+  margin-bottom: var(--space-4);
+}
+
+/* Spacing utilities */
+.mt-4 { margin-top: var(--space-4); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
+.mb-6 { margin-bottom: var(--space-6); }
+
+/* Text utilities */
+.text-center { text-align: center; }
+.text-success { color: var(--color-success-500); }
+.text-error { color: var(--color-error-500); }
+
+/* Display utilities */
+.flex { display: flex; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }

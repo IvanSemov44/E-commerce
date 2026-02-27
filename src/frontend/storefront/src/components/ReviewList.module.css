@@ -1,5 +1,5 @@
 .loading {
-  color: #666;
+  color: var(--text-muted);
 }
 
 .grid {
@@ -33,26 +33,26 @@
 }
 
 .ratingText {
-  font-size: 0.875rem;
-  color: #666;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 .comment {
-  margin: 1rem 0 0.5rem 0;
-  color: #333;
-  line-height: 1.6;
+  margin: var(--space-4) 0 var(--space-2) 0;
+  color: var(--text-primary);
+  line-height: var(--leading-relaxed);
   white-space: pre-wrap;
 }
 
 .footer {
   display: flex;
-  gap: 1rem;
-  font-size: 0.875rem;
-  color: #666;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 .emptyState {
-  color: #666;
+  color: var(--text-muted);
   text-align: center;
-  padding: 2rem;
+  padding: var(--space-8);
 }

@@ -23,8 +23,7 @@ export function useApiErrorHandler(): UseApiErrorHandlerReturn {
     if (
       typeof error === 'object' &&
       error !== null &&
-      'status' in error &&
-      'data' in error
+      'status' in error
     ) {
       const apiError = error as any;
 
@@ -50,7 +49,7 @@ export function useApiErrorHandler(): UseApiErrorHandlerReturn {
         case 403:
           return 'Forbidden. You do not have permission.';
         case 404:
-          return 'The requested resource was not found.';
+          return 'Resource not found.';
         case 409:
           return 'Conflict. The resource may have been modified.';
         case 500:

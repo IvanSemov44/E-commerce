@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import Button from '../../../components/ui/Button';
 import styles from './WishlistCard.module.css';
 
 interface Product {

@@ -43,7 +43,7 @@ export default function Careers() {
             <li>Customer Success Specialist</li>
             <li>Marketing Coordinator</li>
           </ul>
-          <p style={{ marginTop: '1rem' }}>
+          <p className="mt-4">
             Don't see a position that fits? We're always interested in hearing from 
             talented individuals. Send your resume and cover letter to careers@ecommerce.com
           </p>

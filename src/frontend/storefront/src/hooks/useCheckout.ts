@@ -138,12 +138,12 @@ export function useCheckout(): UseCheckoutReturn {
   const user = useAppSelector(selectUser);
 
   // Backend cart query (only used when authenticated)
-  const { data: backendCart, isLoading: isCartLoading } = useGetCartQuery(undefined, {
+  const { data: backendCart } = useGetCartQuery(undefined, {
     skip: !isAuthenticated
   });
 
   // Sync local cart with backend on login
-  const { isLoading: isSyncLoading } = useCartSync({
+  useCartSync({
     enabled: isAuthenticated
   });
 

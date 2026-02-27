@@ -32,7 +32,7 @@ function shouldLog(level: LogLevel): boolean {
   return config.enabled && levelPriority[level] >= levelPriority[config.level];
 }
 
-function formatMessage(level: LogLevel, context: string, message: string, ...args: unknown[]): string {
+function formatMessage(level: LogLevel, context: string, message: string, ..._args: unknown[]): string {
   const timestamp = new Date().toISOString();
   return `${config.prefix} [${timestamp}] [${level.toUpperCase()}] [${context}] ${message}`;
 }

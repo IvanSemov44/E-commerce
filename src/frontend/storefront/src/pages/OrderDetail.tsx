@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '../store/api/ordersApi';
 import Button from '../components/ui/Button';
@@ -8,6 +9,7 @@ import { OrderHeader, OrderItemsList, OrderTotals, ShippingAddress } from './com
 import styles from './OrderDetail.module.css';
 
 export default function OrderDetail() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const { data: order, isLoading, error } = useGetOrderByIdQuery(orderId || '', {
@@ -19,7 +21,7 @@ export default function OrderDetail() {
   if (!orderId) {
     return (
       <div className={styles.container}>
-        <ErrorAlert message="Order not found" />
+        <ErrorAlert message={t('orders.orderNotFound')} />
       </div>
     );
   }
@@ -27,14 +29,14 @@ export default function OrderDetail() {
   const handleCancel = async () => {
     if (
       window.confirm(
-        'Are you sure you want to cancel this order? This action cannot be undone.'
+        t('orders.cancelConfirmMessage')
       )
     ) {
       try {
         await cancelOrder(orderId).unwrap();
         navigate('/orders');
       } catch (err) {
-        toast.error('Failed to cancel order');
+        toast.error(t('orders.failedToCancel'));
       }
     }
   };
@@ -45,12 +47,12 @@ export default function OrderDetail() {
     <div className={styles.container}>
       <div className={styles.backButton}>
         <Link to="/orders" className={styles.backLink}>
-          <Button variant="secondary">← Back to Orders</Button>
+          <Button variant="secondary">{t('orders.backToOrders')}</Button>
         </Link>
       </div>
 
       {error ? (
-        <ErrorAlert message="Failed to load order details. Please try again later." />
+        <ErrorAlert message={t('orders.failedToLoadOrder')} />
       ) : isLoading ? (
         <LoadingSkeleton count={1} type="card" />
       ) : order ? (

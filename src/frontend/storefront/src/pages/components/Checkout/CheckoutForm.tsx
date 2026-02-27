@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import styles from './CheckoutForm.module.css';
@@ -29,6 +30,8 @@ export default function CheckoutForm({
   onSubmit,
   isAuthenticated = false 
 }: CheckoutFormProps) {
+  const { t } = useTranslation();
+  
   const handleFieldChange = (field: keyof FormData, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
   };
@@ -38,12 +41,12 @@ export default function CheckoutForm({
       {/* Guest Email Section - Prominent for guests */}
       {!isAuthenticated && (
         <div className={styles.guestEmailSection}>
-          <h3 className={styles.sectionTitle}>Contact Information</h3>
+          <h3 className={styles.sectionTitle}>{t('checkout.contactInfo')}</h3>
           <p className={styles.sectionDescription}>
-            We'll send your order confirmation to this email
+            {t('checkout.emailConfirmation')}
           </p>
           <Input
-            label="Email Address"
+            label={t('checkout.email')}
             type="email"
             value={formData.email}
             onChange={(e) => handleFieldChange('email', e.target.value)}
@@ -57,16 +60,16 @@ export default function CheckoutForm({
       {/* Authenticated user email display */}
       {isAuthenticated && formData.email && (
         <div className={styles.authenticatedEmail}>
-          <span className={styles.emailLabel}>Order confirmation sent to:</span>
+          <span className={styles.emailLabel}>{t('checkout.emailSentTo')}:</span>
           <span className={styles.emailValue}>{formData.email}</span>
         </div>
       )}
 
-      <h3 className={styles.sectionTitle}>Shipping Address</h3>
+      <h3 className={styles.sectionTitle}>{t('checkout.shippingAddress')}</h3>
       
       <div className={styles.formGroup}>
         <Input
-          label="First Name"
+          label={t('checkout.firstName')}
           type="text"
           value={formData.firstName}
           onChange={(e) => handleFieldChange('firstName', e.target.value)}
@@ -75,7 +78,7 @@ export default function CheckoutForm({
           required
         />
         <Input
-          label="Last Name"
+          label={t('checkout.lastName')}
           type="text"
           value={formData.lastName}
           onChange={(e) => handleFieldChange('lastName', e.target.value)}
@@ -88,7 +91,7 @@ export default function CheckoutForm({
       {/* Email field for authenticated users (hidden but editable) */}
       {isAuthenticated && (
         <Input
-          label="Email Address"
+          label={t('checkout.email')}
           type="email"
           value={formData.email}
           onChange={(e) => handleFieldChange('email', e.target.value)}
@@ -99,7 +102,7 @@ export default function CheckoutForm({
       )}
 
       <Input
-        label="Phone"
+        label={t('checkout.phone')}
         type="tel"
         value={formData.phone}
         onChange={(e) => handleFieldChange('phone', e.target.value)}
@@ -109,7 +112,7 @@ export default function CheckoutForm({
       />
 
       <Input
-        label="Street Address"
+        label={t('checkout.address')}
         type="text"
         value={formData.streetLine1}
         onChange={(e) => handleFieldChange('streetLine1', e.target.value)}
@@ -120,7 +123,7 @@ export default function CheckoutForm({
 
       <div className={styles.formGroup}>
         <Input
-          label="City"
+          label={t('checkout.city')}
           type="text"
           value={formData.city}
           onChange={(e) => handleFieldChange('city', e.target.value)}
@@ -129,7 +132,7 @@ export default function CheckoutForm({
           required
         />
         <Input
-          label="State"
+          label={t('checkout.state')}
           type="text"
           value={formData.state}
           onChange={(e) => handleFieldChange('state', e.target.value)}
@@ -141,7 +144,7 @@ export default function CheckoutForm({
 
       <div className={styles.formGroup}>
         <Input
-          label="Zip Code"
+          label={t('checkout.postalCode')}
           type="text"
           value={formData.postalCode}
           onChange={(e) => handleFieldChange('postalCode', e.target.value)}
@@ -150,7 +153,7 @@ export default function CheckoutForm({
           required
         />
         <Input
-          label="Country"
+          label={t('checkout.country')}
           type="text"
           value={formData.country}
           onChange={(e) => handleFieldChange('country', e.target.value)}
@@ -161,7 +164,7 @@ export default function CheckoutForm({
       </div>
 
       <Button type="submit" size="lg" className={styles.actionButton}>
-        Place Order
+        {t('checkout.placeOrder')}
       </Button>
     </form>
   );

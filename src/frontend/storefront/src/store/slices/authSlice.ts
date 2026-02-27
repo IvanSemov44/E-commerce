@@ -39,6 +39,7 @@ export const authSlice = createSlice({
       state.isAuthenticated = true;
       state.user = action.payload;
       state.loading = false;
+      state.error = null;
       state.initialized = true;
     },
     loginFailure: (state, action: PayloadAction<string>) => {
@@ -49,6 +50,7 @@ export const authSlice = createSlice({
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
+      state.loading = false;
       state.error = null;
       state.initialized = true;
     },

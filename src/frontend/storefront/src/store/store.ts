@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from './slices/authSlice';
 import { cartReducer } from './slices/cartSlice';
+import { languageReducer } from './slices/languageSlice';
 import toastReducer from './slices/toastSlice';
 import { baseApi } from './api/baseApi';
 import { cartPersistenceMiddleware } from './middleware/cartPersistence';
@@ -20,6 +21,7 @@ import './api/inventoryApi';
 const rootReducer = {
   auth: authReducer,
   cart: cartReducer,
+  language: languageReducer,
   toast: toastReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 };

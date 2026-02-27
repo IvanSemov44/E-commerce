@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useForgotPasswordMutation } from '../store/api/authApi';
 import { useToast } from '../hooks';
 import Button from '../components/ui/Button';
@@ -8,6 +9,7 @@ import Card from '../components/ui/Card';
 import styles from './Login.module.css';
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -19,41 +21,41 @@ export default function ForgotPassword() {
     try {
       await forgotPassword({ email }).unwrap();
       setSuccess(true);
-      toast.success('Password reset link sent! Check your email.');
+      toast.success(t('forgotPassword.resetLinkSent'));
     } catch (err: any) {
-      toast.error(err?.data?.message || 'An error occurred. Please try again.');
+      toast.error(err?.data?.message || t('common.error'));
     }
   };
 
   return (
     <div className={styles.container}>
       <Card variant="elevated" padding="lg" className={styles.card}>
-        <h1 className={styles.title}>Forgot Password</h1>
+        <h1 className={styles.title}>{t('forgotPassword.title')}</h1>
 
         {success ? (
           <div className={styles.centered}>
             <div className={styles.successBox}>
-              <p className={styles.successTitle}>Check your email!</p>
-              <p>If an account exists with that email, we've sent you a password reset link.</p>
+              <p className={styles.successTitle}>{t('forgotPassword.checkEmail')}</p>
+              <p>{t('forgotPassword.resetLinkSent')}</p>
             </div>
             <Link to="/login" className={styles.footerLink}>
-              Back to Login
+              {t('forgotPassword.backToLogin')}
             </Link>
           </div>
         ) : (
           <>
             <p className={styles.description}>
-              Enter your email address and we'll send you a link to reset your password.
+              {t('forgotPassword.subtitle')}
             </p>
 
             <form onSubmit={handleSubmit} className={styles.form}>
               <Input
-                label="Email"
+                label={t('forgotPassword.emailLabel')}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Enter your email address"
+                placeholder={t('forgotPassword.emailPlaceholder')}
               />
 
               <Button
@@ -61,15 +63,15 @@ export default function ForgotPassword() {
                 disabled={isLoading}
                 size="lg"
               >
-                {isLoading ? 'Sending...' : 'Send Reset Link'}
+                {isLoading ? t('forgotPassword.sending') : t('forgotPassword.sendResetLink')}
               </Button>
             </form>
 
             <div className={styles.footer}>
               <p className={styles.footerText}>
-                Remember your password?{' '}
+                {t('auth.rememberMe')}{' '}
                 <Link to="/login" className={styles.footerLink}>
-                  Back to Login
+                  {t('forgotPassword.backToLogin')}
                 </Link>
               </p>
             </div>

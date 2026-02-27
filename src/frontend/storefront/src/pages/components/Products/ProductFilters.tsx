@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import styles from './ProductFilters.module.css';
 
 interface ProductFiltersProps {
@@ -21,22 +22,24 @@ export default function ProductFilters({
   onMinRatingChange,
   onIsFeaturedChange,
 }: ProductFiltersProps) {
+  const { t } = useTranslation();
+  
   return (
     <div className={styles.filters}>
       {/* Price Filter */}
       <div className={styles.filterSection}>
-        <h3 className={styles.filterTitle}>Price Range</h3>
+        <h3 className={styles.filterTitle}>{t('products.priceRange')}</h3>
         <div className={styles.priceInputs}>
           <input
             type="number"
-            placeholder="Min"
+            placeholder={t('products.priceMin')}
             value={minPrice || ''}
             onChange={(e) => onMinPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)}
             className={styles.priceInput}
           />
           <input
             type="number"
-            placeholder="Max"
+            placeholder={t('products.priceMax')}
             value={maxPrice || ''}
             onChange={(e) => onMaxPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)}
             className={styles.priceInput}
@@ -46,16 +49,16 @@ export default function ProductFilters({
 
       {/* Rating Filter */}
       <div className={styles.filterSection}>
-        <h3 className={styles.filterTitle}>Minimum Rating</h3>
+        <h3 className={styles.filterTitle}>{t('products.minimumRating')}</h3>
         <select
           value={minRating || ''}
           onChange={(e) => onMinRatingChange(e.target.value ? parseFloat(e.target.value) : undefined)}
           className={styles.filterSelect}
         >
-          <option value="">All Ratings</option>
-          <option value="4">4+ Stars</option>
-          <option value="4.5">4.5+ Stars</option>
-          <option value="5">5 Stars</option>
+          <option value="">{t('products.allRatings')}</option>
+          <option value="4">{t('products.rating4Plus')}</option>
+          <option value="4.5">{t('products.rating45Plus')}</option>
+          <option value="5">{t('products.rating5')}</option>
         </select>
       </div>
 
@@ -68,7 +71,7 @@ export default function ProductFilters({
             onChange={(e) => onIsFeaturedChange(e.target.checked ? true : undefined)}
             className={styles.checkbox}
           />
-          <span className={styles.checkboxText}>Featured Products Only</span>
+          <span className={styles.checkboxText}>{t('products.featuredOnly')}</span>
         </label>
       </div>
     </div>

@@ -8,11 +8,13 @@ import EmptyState from '../components/EmptyState';
 import ReviewForm from '../components/ReviewForm';
 import ReviewList from '../components/ReviewList';
 import { ProductImageGallery, ProductInfo, ProductActions } from './components/ProductDetail';
+import { useTranslation } from 'react-i18next';
 
 import styles from './ProductDetail.module.css';
 
 export default function ProductDetail() {
   const { slug = '' } = useParams();
+  const { t } = useTranslation();
 
   const {
     product,
@@ -106,7 +108,7 @@ export default function ProductDetail() {
 
           {/* Reviews */}
           <div className={styles.reviewsSection}>
-            <h2 className={styles.reviewsTitle}>Customer Reviews</h2>
+            <h2 className={styles.reviewsTitle}>{t('products.customerReviews')}</h2>
 
             {isAuthenticated && (
               <div className={styles.reviewFormSection}>

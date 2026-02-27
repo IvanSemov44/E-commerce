@@ -40,7 +40,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={combinedClassName}
         ref={ref}
         disabled={isDisabled}
-        style={isDisabled ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : undefined}
         {...props}
       >
         {isLoading && (

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import styles from './PromoCodeSection.module.css';
@@ -25,15 +26,17 @@ export default function PromoCodeSection({
   onApply,
   onRemove,
 }: PromoCodeSectionProps) {
+  const { t } = useTranslation();
+  
   return (
     <div className={styles.promoSection}>
       {!promoCodeValidation?.isValid ? (
         <div className={styles.promoInput}>
           <Input
-            placeholder="Enter promo code"
+            placeholder={t('cart.enterPromoCode')}
             value={promoCode}
             onChange={(e) => onPromoCodeChange(e.target.value.toUpperCase())}
-            style={{ flex: 1 }}
+            className={styles.promoInputField}
           />
           <Button
             onClick={onApply}
@@ -41,7 +44,7 @@ export default function PromoCodeSection({
             variant="secondary"
             size="sm"
           >
-            {validatingPromoCode ? 'Validating...' : 'Apply'}
+            {validatingPromoCode ? t('cart.validating') : t('cart.applyCode')}
           </Button>
         </div>
       ) : null}
@@ -55,7 +58,7 @@ export default function PromoCodeSection({
           {promoCodeValidation.message}
           {promoCodeValidation.isValid && (
             <button onClick={onRemove} className={styles.promoRemove} type="button">
-              Remove
+              {t('common.remove')}
             </button>
           )}
         </div>

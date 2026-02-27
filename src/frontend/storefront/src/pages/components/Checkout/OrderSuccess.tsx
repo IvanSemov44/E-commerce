@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
 import { CheckIcon } from '../../../components/icons';
@@ -11,6 +12,8 @@ interface OrderSuccessProps {
 }
 
 export default function OrderSuccess({ orderNumber, email, isGuestOrder }: OrderSuccessProps) {
+  const { t } = useTranslation();
+  
   return (
     <div className={styles.container}>
       <div className={styles.successContent}>
@@ -18,23 +21,22 @@ export default function OrderSuccess({ orderNumber, email, isGuestOrder }: Order
           <div className={styles.successIcon}>
             <CheckIcon className={styles.successIconSvg} />
           </div>
-          <h1 className={styles.successTitle}>Order Placed Successfully!</h1>
-          <p className={styles.successMessage}>Thank you for your purchase.</p>
-          <p className={styles.successOrderNumber}>Order Number: {orderNumber}</p>
+          <h1 className={styles.successTitle}>{t('checkout.orderSuccess')}</h1>
+          <p className={styles.successMessage}>{t('checkout.thankYou')}</p>
+          <p className={styles.successOrderNumber}>{t('checkout.orderNumber')}: {orderNumber}</p>
           <p className={styles.successEmail}>
-            A confirmation email has been sent to {email || 'your email'}
+            {t('checkout.confirmationEmailSent', { email: email || 'your email' })}
           </p>
           
           {isGuestOrder && (
             <div className={styles.guestPrompt}>
-              <h3 className={styles.guestPromptTitle}>Create an Account</h3>
+              <h3 className={styles.guestPromptTitle}>{t('checkout.createAccount')}</h3>
               <p className={styles.guestPromptText}>
-                Create an account to track your orders, save your information for faster checkout, 
-                and receive exclusive offers.
+                {t('checkout.registerToTrack')}
               </p>
               <Link to="/register" className={styles.guestPromptLink}>
                 <Button variant="primary" size="md">
-                  Create Account
+                  {t('auth.register')}
                 </Button>
               </Link>
             </div>
@@ -42,11 +44,11 @@ export default function OrderSuccess({ orderNumber, email, isGuestOrder }: Order
           
           <div className={styles.successActions}>
             <Link to="/products" className={styles.successActionLink}>
-              <Button size="lg">Continue Shopping</Button>
+              <Button size="lg">{t('checkout.continueShopping')}</Button>
             </Link>
             <Link to="/" className={styles.successActionLink}>
               <Button variant="secondary" size="lg">
-                Return Home
+                {t('nav.home')}
               </Button>
             </Link>
           </div>

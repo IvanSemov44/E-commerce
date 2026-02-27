@@ -90,7 +90,7 @@ export default function ProductActions({
       </div>
 
       {cartError && (
-        <div style={{ marginBottom: '16px' }}>
+        <div className={styles.errorContainer}>
           <ErrorAlert message={cartError} onDismiss={onDismissError} />
         </div>
       )}

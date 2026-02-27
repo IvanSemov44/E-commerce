@@ -5,13 +5,16 @@ import { logout } from '../store/slices/authSlice';
 import { selectCartItemCount } from '../store/slices/cartSlice';
 import { useGetCartQuery } from '../store/api/cartApi';
 import { useGetWishlistQuery } from '../store/api/wishlistApi';
+import { useTranslation } from '../hooks/useTranslation';
 import { HeartIcon, ShoppingCartIcon } from './icons';
 import Button from './ui/Button';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { SearchBar } from './SearchBar';
 import styles from './Header.module.css';
 
 export default function Header() {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const localCartItemCount = useAppSelector(selectCartItemCount);
   const dispatch = useAppDispatch();
@@ -88,11 +91,11 @@ export default function Header() {
           {/* Desktop Navigation */}
           <div className={styles.desktopNav}>
             <Link to="/products" className={styles.navLink}>
-              Products
+              {t('nav.products')}
             </Link>
             {isAuthenticated && (
               <Link to="/orders" className={styles.navLink}>
-                Orders
+                {t('nav.orders')}
               </Link>
             )}
           </div>
@@ -106,7 +109,7 @@ export default function Header() {
           <div className={styles.desktopRight}>
             {/* Wishlist */}
             {isAuthenticated && (
-              <Link to="/wishlist" className={styles.cartLink} aria-label="Wishlist">
+              <Link to="/wishlist" className={styles.cartLink} aria-label={t('nav.wishlist')}>
                 <HeartIcon className={styles.cartIcon} />
                 {wishlistItemCount > 0 && (
                   <span className={styles.cartBadge}>
@@ -117,7 +120,7 @@ export default function Header() {
             )}
 
             {/* Cart */}
-            <Link to="/cart" className={styles.cartLink} aria-label="Shopping cart">
+            <Link to="/cart" className={styles.cartLink} aria-label={t('nav.cart')}>
               <ShoppingCartIcon className={styles.cartIcon} />
               {cartItemCount > 0 && (
                 <span className={styles.cartBadge}>
@@ -128,6 +131,9 @@ export default function Header() {
 
             {/* Theme Toggle */}
             <ThemeToggle size="sm" />
+
+            {/* Language Switcher */}
+            <LanguageSwitcher size="sm" />
 
             {/* Auth */}
             {isAuthenticated ? (
@@ -183,8 +189,8 @@ export default function Header() {
               <div className={styles.authButtons}>
                 <Link to="/login">
                   <Button variant="ghost" size="sm">
-                    Sign In
-                  </Button>
+                      {t('nav.signIn')}
+                    </Button>
                 </Link>
                 <Link to="/register">
                   <Button size="sm">
@@ -297,7 +303,7 @@ export default function Header() {
 
             {/* Theme Toggle for Mobile */}
             <div className={styles.mobileThemeToggle}>
-              <span className={styles.mobileThemeLabel}>Appearance</span>
+              <span className={styles.mobileThemeLabel}>{t('nav.appearance')}</span>
               <ThemeToggle size="md" />
             </div>
 

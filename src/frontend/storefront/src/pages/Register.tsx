@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../store/api/authApi';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess } from '../store/slices/authSlice';
@@ -10,6 +11,7 @@ import Card from '../components/ui/Card';
 import styles from './Register.module.css';
 
 export default function Register() {
+  const { t } = useTranslation();
   const [register, { isLoading }] = useRegisterMutation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -25,13 +27,13 @@ export default function Register() {
     },
     validate: (values) => {
       const errors: any = {};
-      if (!values.firstName) errors.firstName = 'First name is required';
-      if (!values.lastName) errors.lastName = 'Last name is required';
-      if (!values.email) errors.email = 'Email is required';
-      if (!values.password) errors.password = 'Password is required';
-      if (!values.confirmPassword) errors.confirmPassword = 'Please confirm password';
+      if (!values.firstName) errors.firstName = t('profile.firstName') + ' ' + t('common.required').toLowerCase();
+      if (!values.lastName) errors.lastName = t('profile.lastName') + ' ' + t('common.required').toLowerCase();
+      if (!values.email) errors.email = t('auth.emailRequired');
+      if (!values.password) errors.password = t('auth.passwordRequired');
+      if (!values.confirmPassword) errors.confirmPassword = t('auth.confirmPassword') + ' ' + t('common.required').toLowerCase();
       if (values.password && values.confirmPassword && values.password !== values.confirmPassword) {
-        errors.confirmPassword = 'Passwords do not match';
+        errors.confirmPassword = t('auth.passwordsDoNotMatch');
       }
       return errors;
     },
@@ -41,13 +43,13 @@ export default function Register() {
         const response = await register(registerData).unwrap();
         if (response.success && response.user) {
           dispatch(loginSuccess(response.user));
-          toast.success('Registration successful!');
+          toast.success(t('auth.registrationSuccess'));
           navigate('/');
         } else {
-          toast.error(response.message || 'Registration failed');
+          toast.error(response.message || t('auth.registrationFailed'));
         }
       } catch (err: any) {
-        toast.error(err?.data?.message || 'An error occurred during registration');
+        toast.error(err?.data?.message || t('auth.registrationError'));
       }
     },
   });
@@ -55,12 +57,12 @@ export default function Register() {
   return (
     <div className={styles.container}>
       <Card variant="elevated" padding="lg" className={styles.card}>
-        <h1 className={styles.title}>Register</h1>
+        <h1 className={styles.title}>{t('auth.register')}</h1>
 
         <form onSubmit={form.handleSubmit} className={styles.form}>
           <div className={styles.nameFields}>
             <Input
-              label="First Name"
+              label={t('profile.firstName')}
               type="text"
               name="firstName"
               value={form.values.firstName}
@@ -69,7 +71,7 @@ export default function Register() {
               required
             />
             <Input
-              label="Last Name"
+              label={t('profile.lastName')}
               type="text"
               name="lastName"
               value={form.values.lastName}
@@ -80,7 +82,7 @@ export default function Register() {
           </div>
 
           <Input
-            label="Email"
+            label={t('auth.email')}
             type="email"
             name="email"
             value={form.values.email}
@@ -90,7 +92,7 @@ export default function Register() {
           />
 
           <Input
-            label="Password"
+            label={t('auth.password')}
             type="password"
             name="password"
             value={form.values.password}
@@ -100,7 +102,7 @@ export default function Register() {
           />
 
           <Input
-            label="Confirm Password"
+            label={t('auth.confirmPassword')}
             type="password"
             name="confirmPassword"
             value={form.values.confirmPassword}
@@ -114,15 +116,15 @@ export default function Register() {
             disabled={isLoading || form.isSubmitting}
             size="lg"
           >
-            {isLoading || form.isSubmitting ? 'Registering...' : 'Register'}
+            {isLoading || form.isSubmitting ? t('auth.registering') : t('auth.register')}
           </Button>
         </form>
 
         <div className={styles.footer}>
           <p className={styles.footerText}>
-            Already have an account?{' '}
+            {t('auth.alreadyHaveAccount')}{' '}
             <Link to="/login" className={styles.footerLink}>
-              Login here
+              {t('auth.loginHere')}
             </Link>
           </p>
         </div>

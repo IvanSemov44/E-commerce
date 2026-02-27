@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGetProductsQuery } from '../store/api/productApi';
 import { useProductFilters } from '../hooks';
 import Button from '../components/ui/Button';
@@ -21,6 +22,7 @@ const GridIcon = () => (
 );
 
 export default function Products() {
+  const { t } = useTranslation();
   const {
     page,
     selectedCategoryId,
@@ -58,10 +60,10 @@ export default function Products() {
   return (
     <div className={styles.container}>
       <PageHeader 
-        title="Discover Our Products" 
-        subtitle="Explore our curated collection of premium products. Find exactly what you're looking for with our powerful filters and search."
+        title={t('products.discoverProducts')} 
+        subtitle={t('products.exploreCollection')}
         icon={<GridIcon />}
-        badge="Premium Selection"
+        badge={t('products.allProducts')}
       />
 
       <div className={styles.layout}>
@@ -111,7 +113,7 @@ export default function Products() {
             isLoading={isLoading}
             error={error}
             data={result}
-            errorMessage="Failed to load products. Please try again later."
+            errorMessage={t('products.failedToLoadProducts')}
             isEmpty={(data) => !data || data.items.length === 0}
             loadingSkeleton={{ custom: <ProductsGridSkeleton count={12} /> }}
             emptyState={{
@@ -120,9 +122,9 @@ export default function Products() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
               ),
-              title: hasActiveFilters ? "No products match your filters" : "No products available",
-              description: hasActiveFilters ? "Try adjusting your search or category filter" : undefined,
-              action: hasActiveFilters ? <Button onClick={handleClearFilters}>Clear Filters</Button> : undefined,
+              title: hasActiveFilters ? t('products.noProductsMatchFilters') : t('products.noProducts'),
+              description: hasActiveFilters ? t('products.tryAdjustingSearch') : undefined,
+              action: hasActiveFilters ? <Button onClick={handleClearFilters}>{t('common.clear')}</Button> : undefined,
             }}
           >
             {(data) => (

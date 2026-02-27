@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCheckout } from '../hooks';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import ErrorAlert from '../components/ErrorAlert';
 import TrustSignals from '../components/TrustSignals';
@@ -10,6 +10,7 @@ import { CheckoutForm, OrderSummary, OrderSuccess } from './components/Checkout'
 import styles from './Checkout.module.css';
 
 export default function Checkout() {
+  const { t } = useTranslation();
   const {
     formData,
     setFormData,
@@ -40,11 +41,11 @@ export default function Checkout() {
       <div className={styles.container}>
         <div className={styles.successContent}>
           <EmptyState
-            title="Your cart is empty"
-            description="Add items to your cart before checking out."
+            title={t('cart.emptyCart')}
+            description={t('checkout.addItemsBeforeCheckout')}
             action={
               <Link to="/products">
-                <Button size="lg">Browse Products</Button>
+                <Button size="lg">{t('products.browseProducts')}</Button>
               </Link>
             }
           />
@@ -70,8 +71,8 @@ export default function Checkout() {
       <div className={styles.content}>
         {/* Page Header with Progress */}
         <div className={styles.checkoutHeader}>
-          <h1 className={styles.checkoutTitle}>Secure Checkout</h1>
-          <p className={styles.checkoutSubtitle}>Complete your order safely and quickly</p>
+          <h1 className={styles.checkoutTitle}>{t('checkout.secureCheckout')}</h1>
+          <p className={styles.checkoutSubtitle}>{t('checkout.completeOrderSubtitle')}</p>
         </div>
 
         {/* Trust Signals Bar */}
@@ -88,7 +89,7 @@ export default function Checkout() {
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
-                Delivery Address
+                {t('checkout.deliveryAddress')}
               </h2>
               {error && <ErrorAlert message={error} />}
               <CheckoutForm

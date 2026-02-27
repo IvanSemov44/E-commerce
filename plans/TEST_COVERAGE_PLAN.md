@@ -38,15 +38,15 @@ The backend has comprehensive test coverage:
 ### Frontend Storefront Current Coverage
 Comprehensive test coverage implemented:
 
-| Category | Files | Tests Present |
-|----------|-------|---------------|
-| Components | 25+ | 15+ tests |
-| Hooks | 13 | 10+ tests |
-| Pages | 14 | 6+ tests |
-| Store/Slices | 4 | 2 tests |
-| Store/API | 10 | 0 |
-| Utils | 1 | 0 |
-| E2E Tests | 10+ | 100+ tests |
+| Category | Files | Tests Present | Status |
+|----------|-------|---------------|--------|
+| Components | 43 | 43 test files | ✅ Complete |
+| Hooks | 13 | 8 test files | ⚠️ Partial (8/13) |
+| Pages | 14 | 3 test files | ⚠️ Partial (3/14) |
+| Store/Slices | 4 | 2 test files | ⚠️ Partial (2/4) |
+| Store/API | 10 | 0 | ❌ Not started |
+| Utils | 1 | 1 | ✅ Complete |
+| E2E Tests | 10+ | 100+ tests | ✅ Complete |
 
 ### Frontend Admin Current Coverage
 Good test coverage present:

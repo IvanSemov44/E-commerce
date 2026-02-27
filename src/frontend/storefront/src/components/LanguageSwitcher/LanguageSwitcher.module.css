@@ -1,0 +1,447 @@
+/**
+ * LanguageSwitcher Component Styles
+ * 
+ * Professional dropdown language selector matching ThemeToggle style with:
+ * - GitHub/VS Code inspired design
+ * - Smooth animations and transitions
+ * - Clear visual hierarchy
+ * - Accessible keyboard navigation
+ */
+
+/* =============================================================================
+   Wrapper
+   ============================================================================= */
+
+.wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+/* =============================================================================
+   Toggle Button
+   ============================================================================= */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--duration-200) var(--ease-out);
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+.toggle:hover {
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.toggle:active {
+  transform: scale(0.98);
+}
+
+/* =============================================================================
+   Size Variants
+   ============================================================================= */
+
+.sm {
+  padding: var(--space-1-5) var(--space-2);
+}
+
+.sm .iconWrapper,
+.sm .iconPlaceholder {
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.625rem;
+}
+
+.sm .label {
+  font-size: var(--text-xs);
+}
+
+.md {
+  padding: var(--space-2) var(--space-2-5);
+}
+
+.md .iconWrapper,
+.md .iconPlaceholder {
+  width: 1.125rem;
+  height: 1.125rem;
+  font-size: 0.75rem;
+}
+
+.md .label {
+  font-size: var(--text-sm);
+}
+
+.lg {
+  padding: var(--space-2-5) var(--space-3);
+}
+
+.lg .iconWrapper,
+.lg .iconPlaceholder {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.lg .label {
+  font-size: var(--text-base);
+}
+
+/* =============================================================================
+   Icon Wrapper
+   ============================================================================= */
+
+.iconWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-bold);
+  color: var(--color-brand);
+}
+
+/* =============================================================================
+   Label
+   ============================================================================= */
+
+.label {
+  font-weight: var(--font-medium);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+/* Hide label on small screens */
+@media (max-width: 768px) {
+  .label {
+    display: none;
+  }
+}
+
+/* =============================================================================
+   Chevron
+   ============================================================================= */
+
+.chevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  transition: transform var(--duration-200) var(--ease-out);
+  opacity: 0.6;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Hide chevron on very small screens */
+@media (max-width: 480px) {
+  .chevron {
+    display: none;
+  }
+}
+
+/* =============================================================================
+   Dropdown Menu
+   ============================================================================= */
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 200px;
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: 
+    0 10px 40px -10px rgba(0, 0, 0, 0.15),
+    0 4px 16px -4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: var(--z-dropdown);
+  animation: dropdownEnter var(--duration-200) var(--ease-out);
+  backdrop-filter: blur(12px);
+}
+
+@keyframes dropdownEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =============================================================================
+   Dropdown Header
+   ============================================================================= */
+
+.dropdownHeader {
+  padding: var(--space-2-5) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background-color: var(--surface-secondary);
+}
+
+/* =============================================================================
+   Dropdown Options
+   ============================================================================= */
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--duration-150) var(--ease-out);
+  color: var(--text-secondary);
+  position: relative;
+}
+
+.option:hover {
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
+}
+
+.option:focus-visible {
+  outline: none;
+  background-color: var(--surface-tertiary);
+}
+
+.optionActive {
+  background-color: var(--color-brand-light);
+  color: var(--color-brand-dark);
+}
+
+.optionActive:hover {
+  background-color: var(--color-brand-light);
+}
+
+/* Option Icon */
+.optionIcon {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-bold);
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  background-color: var(--surface-tertiary);
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-150) var(--ease-out);
+}
+
+.option:hover .optionIcon {
+  color: var(--text-secondary);
+}
+
+.optionActive .optionIcon {
+  color: var(--color-brand);
+  background-color: var(--color-brand);
+  color: white;
+}
+
+/* Option Content */
+.optionContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.optionLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  line-height: 1.2;
+}
+
+.optionDescription {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.optionActive .optionDescription {
+  color: var(--color-brand);
+  opacity: 0.8;
+}
+
+/* Check Icon */
+.checkIcon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-brand);
+  animation: checkEnter var(--duration-200) var(--ease-out);
+}
+
+.checkIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes checkEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* =============================================================================
+   Icon Placeholder (for SSR)
+   ============================================================================= */
+
+.iconPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-tertiary);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-bold);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* =============================================================================
+   Dark Mode Adjustments
+   ============================================================================= */
+
+[data-theme="dark"] .toggle:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .dropdown {
+  background-color: var(--color-neutral-900);
+  border-color: var(--color-neutral-700);
+  box-shadow: 
+    0 10px 40px -10px rgba(0, 0, 0, 0.5),
+    0 4px 16px -4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .dropdownHeader {
+  background-color: var(--color-neutral-800);
+  border-color: var(--color-neutral-700);
+}
+
+[data-theme="dark"] .option:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .optionActive {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--color-brand-light);
+}
+
+[data-theme="dark"] .optionActive:hover {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+[data-theme="dark"] .optionIcon {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .optionActive .optionIcon {
+  background-color: var(--color-brand);
+  color: white;
+}
+
+[data-theme="dark"] .optionActive .optionDescription {
+  color: var(--color-brand-light);
+}
+
+[data-theme="dark"] .checkIcon {
+  color: var(--color-brand-light);
+}
+
+/* =============================================================================
+   Reduced Motion
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .dropdown,
+  .checkIcon,
+  .chevron,
+  .toggle,
+  .option,
+  .iconPlaceholder {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* =============================================================================
+   Mobile Optimizations
+   ============================================================================= */
+
+@media (max-width: 480px) {
+  .dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: auto;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    animation: slideUp var(--duration-300) var(--ease-out);
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .option {
+    padding: var(--space-4);
+  }
+
+  .optionIcon {
+    width: 2rem;
+    height: 1.5rem;
+    font-size: 0.75rem;
+  }
+
+  .optionLabel {
+    font-size: var(--text-base);
+  }
+
+  .optionDescription {
+    font-size: var(--text-sm);
+  }
+}

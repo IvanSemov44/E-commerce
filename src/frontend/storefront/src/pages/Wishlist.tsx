@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGetWishlistQuery, useRemoveFromWishlistMutation } from '../store/api/wishlistApi';
 import { useGetProductsQuery } from '../store/api/productApi';
 import Button from '../components/ui/Button';
@@ -15,6 +16,7 @@ const HeartIcon = () => (
 );
 
 export default function Wishlist() {
+  const { t } = useTranslation();
   const { data: wishlist, isLoading: wishlistLoading, error: wishlistError } =
     useGetWishlistQuery();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
@@ -43,17 +45,17 @@ export default function Wishlist() {
   return (
     <div className={styles.container}>
       <PageHeader 
-        title="My Saved Favorites" 
-        subtitle="Your personal collection of products you love. Keep track of items you want to purchase later."
+        title={t('wishlist.title')} 
+        subtitle={t('wishlist.subtitle')}
         icon={<HeartIcon />}
-        badge="Your Collection"
+        badge={t('account.myWishlist')}
       />
 
       <QueryRenderer
         isLoading={isLoading}
         error={wishlistError}
         data={wishlistProducts}
-        errorMessage="Failed to load wishlist. Please try again later."
+        errorMessage={t('wishlist.failedToLoad')}
         emptyState={{
           icon: (
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,11 +67,11 @@ export default function Wishlist() {
               />
             </svg>
           ),
-          title: "Your wishlist is empty",
-          description: "Start adding products you love to your wishlist",
+          title: t('wishlist.emptyWishlist'),
+          description: t('wishlist.emptyWishlistSubtitle'),
           action: (
             <Link to="/products">
-              <Button>Browse Products</Button>
+              <Button>{t('wishlist.browseProducts')}</Button>
             </Link>
           ),
         }}

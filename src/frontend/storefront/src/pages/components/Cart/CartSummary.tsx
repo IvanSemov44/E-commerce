@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Card from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
 import styles from './CartSummary.module.css';
@@ -18,23 +19,24 @@ export default function CartSummary({
   total,
   freeShippingThreshold,
 }: CartSummaryProps) {
+  const { t } = useTranslation();
   const freeShippingRemaining = freeShippingThreshold - subtotal;
-  const showFreeShippingMessage = subtotal > 50 && freeShippingRemaining > 0;
+  const showFreeShippingMessage = subtotal > 0 && freeShippingRemaining > 0;
 
   return (
     <Card variant="elevated" padding="lg">
-      <h2 className={styles.title}>Order Summary</h2>
+      <h2 className={styles.title}>{t('checkout.orderSummary')}</h2>
       
       <div className={styles.totalsSection}>
         <div className={styles.totalLine}>
-          <span>Subtotal:</span>
+          <span>{t('cart.subtotal')}:</span>
           <span className={styles.totalValue}>${subtotal.toFixed(2)}</span>
         </div>
         
         <div className={styles.totalLine}>
-          <span>Shipping:</span>
+          <span>{t('cart.shipping')}:</span>
           <span className={styles.totalValue}>
-            {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+            {shipping === 0 ? t('common.free') : `$${shipping.toFixed(2)}`}
           </span>
         </div>
         
@@ -45,22 +47,22 @@ export default function CartSummary({
         )}
         
         <div className={styles.totalLine}>
-          <span>Tax (8%):</span>
+          <span>{t('cart.tax')} (8%):</span>
           <span className={styles.totalValue}>${tax.toFixed(2)}</span>
         </div>
       </div>
       
       <div className={styles.grandTotal}>
-        <span>Total:</span>
+        <span>{t('cart.total')}:</span>
         <span className={styles.grandTotalAmount}>${total.toFixed(2)}</span>
       </div>
       
       <div className={styles.actions}>
         <Link to="/checkout" className={styles.actionLink}>
-          <Button size="lg">Proceed to Checkout</Button>
+          <Button size="lg">{t('cart.proceedToCheckout')}</Button>
         </Link>
         <Link to="/products" className={styles.actionLink}>
-          <Button variant="secondary" size="lg">Continue Shopping</Button>
+          <Button variant="secondary" size="lg">{t('cart.continueShopping')}</Button>
         </Link>
       </div>
     </Card>

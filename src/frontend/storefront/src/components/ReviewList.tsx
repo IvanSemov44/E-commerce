@@ -1,6 +1,7 @@
 import Card from './ui/Card';
 import ErrorAlert from './ErrorAlert';
 import StarRating from './StarRating';
+import { useTranslation } from 'react-i18next';
 
 import styles from './ReviewList.module.css';
 
@@ -21,16 +22,18 @@ interface ReviewListProps {
 }
 
 export default function ReviewList({ reviews, isLoading, error }: ReviewListProps) {
+  const { t } = useTranslation();
+  
   if (isLoading) {
-    return <div className={styles.loading}>Loading reviews...</div>;
+    return <div className={styles.loading}>{t('products.loadingReviews')}</div>;
   }
 
   if (error) {
-    return <ErrorAlert message="Failed to load reviews." />;
+    return <ErrorAlert message={t('products.failedToLoadReviews')} />;
   }
 
   if (reviews.length === 0) {
-    return <div className={styles.emptyState}>No reviews yet</div>;
+    return <div className={styles.emptyState}>{t('products.noReviewsYet')}</div>;
   }
 
   return (
@@ -60,7 +63,7 @@ export default function ReviewList({ reviews, isLoading, error }: ReviewListProp
           </p>
 
           <div className={styles.footer}>
-            <span>By {review.userName || 'Anonymous'}</span>
+            <span>{t('products.by')} {review.userName || t('products.anonymous')}</span>
             <span>{new Date(review.createdAt).toLocaleDateString()}</span>
           </div>
         </Card>
