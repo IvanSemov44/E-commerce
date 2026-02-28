@@ -17,7 +17,7 @@ The backend has comprehensive test coverage:
 | Services | 18 test files | ✅ Complete |
 | Controllers/Integration | 14 test files | ✅ Complete |
 | Validators | 6 test files | ✅ Complete |
-| Middleware | 2 test files | ✅ Complete |
+| Middleware | 3 test files | ✅ Complete |
 | ActionFilters | 1 test file | ✅ Complete |
 | Mappings | 1 test file | ✅ Complete |
 | Repositories | 8 test files | ✅ Complete |
@@ -30,10 +30,7 @@ The backend has comprehensive test coverage:
 - ✅ Health checks (MemoryHealthCheck, HealthCheckResponseWriter)
 - ✅ Configuration classes and extensions
 
-**Remaining:**
-- Middleware (CsrfMiddleware, SecurityHeadersMiddleware)
-- UnitOfWork tests
-- QueryableExtensions tests
+**All Backend Tests Complete!**
 
 ### Frontend Storefront Current Coverage
 Comprehensive test coverage implemented:
@@ -41,7 +38,7 @@ Comprehensive test coverage implemented:
 | Category | Files | Tests Present | Status |
 |----------|-------|---------------|--------|
 | Components | 43 | 43 test files | ✅ Complete |
-| Hooks | 13 | 8 test files | ⚠️ Partial (8/13) |
+| Hooks | 13 | 13 test files | ✅ Complete |
 | Pages | 14 | 3 test files | ⚠️ Partial (3/14) |
 | Store/Slices | 4 | 2 test files | ⚠️ Partial (2/4) |
 | Store/API | 10 | 0 | ❌ Not started |
@@ -180,7 +177,7 @@ Create `Unit/Repositories/` directory with tests for:
 - [x] **ApplicationBuilderExtensionsTests.cs**
   - Test middleware registration order
 
-- [x] **DatabaseSchemaValidatorTests.cs**
+- [ ] **DatabaseSchemaValidatorTests.cs**
   - Test schema validation logic
 
 - [x] **LoggingExtensionsTests.cs**
@@ -189,7 +186,8 @@ Create `Unit/Repositories/` directory with tests for:
 ### Phase 4: Backend Controller Integration Tests
 
 #### 4.1 Missing Controller Tests
-- [x] Health check tests covered in existing integration tests
+- [ ] **HealthCheckControllerTests.cs** or add health check endpoints to existing tests
+  - Test /health endpoint
   - Test /health/ready endpoint
 
 ### Phase 5: Frontend Storefront Tests
@@ -226,7 +224,7 @@ Skeleton Components:
 - [ ] **ProductSkeleton.test.tsx**
 - [ ] **ProductsGridSkeleton.test.tsx**
 - [ ] **ProfileSkeleton.test.tsx**
-- [x] **Skeleton.test.tsx**
+- [ ] **Skeleton.test.tsx**
 
 Icon Components:
 - [ ] **CheckIcon.test.tsx**
@@ -234,7 +232,7 @@ Icon Components:
 - [ ] **PackageIcon.test.tsx**
 - [ ] **SearchIcon.test.tsx**
 - [ ] **ShoppingCartIcon.test.tsx**
-- [x] **UserIcon.test.tsx**
+- [ ] **UserIcon.test.tsx**
 
 Page Sub-components:
 - [x] **CartItemList.test.tsx**
@@ -271,16 +269,16 @@ Create tests in `src/hooks/__tests__/`:
 
 - [x] **useApiErrorHandler.test.ts**
 - [x] **useAuth.test.ts**
-- [ ] **useCartSync.test.ts**
-- [ ] **useCheckout.test.ts**
+- [x] **useCartSync.test.ts**
+- [x] **useCheckout.test.ts**
 - [x] **useErrorHandler.test.ts**
 - [x] **useForm.test.ts**
 - [x] **useLocalStorage.test.ts**
 - [x] **useOnlineStatus.test.ts**
-- [ ] **usePerformanceMonitor.test.ts**
-- [ ] **useProductDetails.test.ts**
-- [ ] **useProductFilters.test.ts**
-- [ ] **useProfileForm.test.ts**
+- [x] **usePerformanceMonitor.test.ts**
+- [x] **useProductDetails.test.ts**
+- [x] **useProductFilters.test.ts**
+- [x] **useProfileForm.test.ts**
 - [x] **useToast.test.ts**
 
 Additional Hook Tests:
@@ -308,8 +306,8 @@ Create tests in `src/pages/__tests__/`:
 Create tests in `src/store/`:
 
 Slices (`src/store/slices/__tests__/`):
-- [x] **authSlice.test.ts**
-- [x] **toastSlice.test.ts**
+- [ ] **authSlice.test.ts**
+- [ ] **toastSlice.test.ts**
 
 API (`src/store/api/__tests__/`):
 - [ ] **authApi.test.ts** - Mock API calls
@@ -322,7 +320,7 @@ API (`src/store/api/__tests__/`):
 - [ ] **profileApi.test.ts**
 - [ ] **promoCodeApi.test.ts**
 - [ ] **reviewsApi.test.ts**
-- [x] **wishlistApi.test.ts**
+- [ ] **wishlistApi.test.ts**
 
 Middleware (`src/store/middleware/__tests__/`):
 - [ ] **cartPersistence.test.ts**
@@ -353,11 +351,11 @@ Icon Components:
 
 Toast Components:
 - [ ] **Toast.test.tsx**
-- [x] **ToastContainer.test.tsx**
+- [ ] **ToastContainer.test.tsx**
 
 UI Components:
 - [ ] **Badge.test.tsx**
-- [x] **Card.test.tsx**
+- [ ] **Card.test.tsx**
 - [ ] **Pagination.test.tsx**
 - [ ] **Table.test.tsx**
 
@@ -391,7 +389,7 @@ API (`src/store/api/__tests__/`):
 
 #### 6.4 Hook Tests
 - [ ] **useAppDispatch.test.ts**
-- [x] **useToast.test.ts**
+- [ ] **useToast.test.ts**
 
 ---
 

@@ -53,7 +53,7 @@ builder.Services.AddCorsConfiguration(builder.Environment.IsDevelopment(), build
 builder.Services.AddRateLimitingConfiguration();
 
 // CSRF Protection
-builder.Services.AddCsrfProtection();
+builder.Services.AddCsrfProtection(builder.Environment);
 
 // Application Services
 builder.Services.AddApplicationServices(builder.Configuration);

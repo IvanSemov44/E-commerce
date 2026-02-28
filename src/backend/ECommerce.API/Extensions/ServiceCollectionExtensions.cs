@@ -102,9 +102,12 @@ public static class ServiceCollectionExtensions
     /// Uses the X-XSRF-TOKEN header pattern for SPA compatibility.
     /// </summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="environment">The host environment to determine cookie settings.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddCsrfProtection(this IServiceCollection services)
+    public static IServiceCollection AddCsrfProtection(this IServiceCollection services, IHostEnvironment environment)
     {
+        var isProduction = !environment.IsDevelopment();
+        
         services.AddAntiforgery(options =>
         {
             // Use standard XSRF header name that SPAs expect
@@ -113,7 +116,9 @@ public static class ServiceCollectionExtensions
             // We'll set the request token in a separate cookie via middleware
             options.Cookie.HttpOnly = true; // The internal cookie should be httpOnly
             options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-            options.Cookie.SameSite = SameSiteMode.Strict;
+            // Use SameSite=None in production for cross-origin support (required for Render deployment)
+            // Use SameSite=Lax in development for local testing
+            options.Cookie.SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax;
         });
         return services;
     }
