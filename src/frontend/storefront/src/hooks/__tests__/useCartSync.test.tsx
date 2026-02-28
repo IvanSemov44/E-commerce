@@ -89,7 +89,7 @@ describe('useCartSync', () => {
           lastUpdated: Date.now(),
         },
         auth: {
-          user: { id: '1', email: 'test@test.com', firstName: 'Test', lastName: 'User' },
+          user: { id: '1', email: 'test@test.com', firstName: 'Test', lastName: 'User', role: 'customer' },
           isAuthenticated: true,
           loading: false,
           error: null,
