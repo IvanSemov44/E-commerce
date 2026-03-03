@@ -5,13 +5,13 @@ const categoriesApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCategories: builder.query<Category[], void>({
       query: () => '/categories',
-      transformResponse: (response: ApiResponse<Category[]>) => response.data || [],
+      transformResponse: (response: ApiResponse<{ items: Category[] }>) => response.data?.items || [],
       providesTags: ['Categories'],
     }),
 
     getTopLevelCategories: builder.query<Category[], void>({
       query: () => '/categories/top-level',
-      transformResponse: (response: ApiResponse<Category[]>) => response.data || [],
+      transformResponse: (response: ApiResponse<{ items: Category[] }>) => response.data?.items || [],
       providesTags: ['Categories'],
     }),
 
