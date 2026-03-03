@@ -47,7 +47,7 @@ const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove
           <div className={styles.quantityContainer}>
             <button
               onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-              className={styles.button}
+              className={styles.quantityButton}
             >
               −
             </button>
@@ -55,7 +55,7 @@ const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove
             <button
               onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
               disabled={item.quantity >= item.maxStock}
-              className={styles.button}
+              className={styles.quantityButton}
             >
               +
             </button>
