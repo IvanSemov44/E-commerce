@@ -70,23 +70,65 @@
   color: var(--text-muted);
 }
 
+.productImage {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  background: var(--surface-secondary);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .productName {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
-  margin-bottom: var(--space-2);
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .price {
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
   color: var(--color-primary-600);
-  margin-bottom: var(--space-4);
+}
+
+[data-theme="dark"] .price {
+  color: var(--color-primary-400);
+}
+
+.comparePrice {
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.outOfStock {
+  font-size: var(--text-sm);
+  color: var(--color-error-600);
+  font-weight: var(--font-medium);
+  margin: 0;
+}
+
+[data-theme="dark"] .outOfStock {
+  color: var(--color-error-400);
 }
 
 .actions {
@@ -113,6 +155,17 @@
   color: var(--color-primary-600);
 }
 
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--surface-secondary);
+}
+
+.actionButton:disabled:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
 .removeButton {
   padding: var(--space-2);
   border: 1px solid var(--border-default);
@@ -120,11 +173,24 @@
   background: var(--surface-primary);
   color: var(--text-muted);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all var(--duration-200) var(--ease-in-out);
+}
+
+.removeButton svg {
+  display: block;
 }
 
 .removeButton:hover {
   background: var(--color-error-50);
   border-color: var(--color-error-600);
   color: var(--color-error-600);
+}
+
+[data-theme="dark"] .removeButton:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--color-error-500);
+  color: var(--color-error-400);
 }
