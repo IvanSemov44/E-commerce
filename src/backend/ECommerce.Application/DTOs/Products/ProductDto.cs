@@ -1,60 +1,72 @@
 namespace ECommerce.Application.DTOs.Products;
 
-public class ProductDto
+public record ProductDto
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; } = null!;
-    public string Slug { get; set; } = null!;
-    public string? ShortDescription { get; set; }
-    public decimal Price { get; set; }
-    public decimal? CompareAtPrice { get; set; }
-    public int StockQuantity { get; set; }
-    public bool IsFeatured { get; set; }
-    public List<ProductImageDto> Images { get; set; } = new();
-    public ProductCategoryDto? Category { get; set; }
-    public decimal AverageRating { get; set; }
-    public int ReviewCount { get; set; }
+    public Guid Id { get; init; }
+    public string Name { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? ShortDescription { get; init; }
+    public decimal Price { get; init; }
+    public decimal? CompareAtPrice { get; init; }
+    public int StockQuantity { get; init; }
+    public bool IsFeatured { get; init; }
+    public List<ProductImageDto> Images { get; init; } = new();
+    public ProductCategoryDto? Category { get; init; }
+    public decimal AverageRating { get; init; }
+    public int ReviewCount { get; init; }
 }
 
-public class ProductDetailDto : ProductDto
+public record ProductDetailDto
 {
-    public string? Description { get; set; }
-    public string? Sku { get; set; }
-    public int LowStockThreshold { get; set; }
-    public bool IsActive { get; set; }
-    public List<ProductReviewDto> Reviews { get; set; } = new();
+    public Guid Id { get; init; }
+    public string Name { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? ShortDescription { get; init; }
+    public decimal Price { get; init; }
+    public decimal? CompareAtPrice { get; init; }
+    public int StockQuantity { get; init; }
+    public bool IsFeatured { get; init; }
+    public List<ProductImageDto> Images { get; init; } = new();
+    public ProductCategoryDto? Category { get; init; }
+    public decimal AverageRating { get; init; }
+    public int ReviewCount { get; init; }
+    public string? Description { get; init; }
+    public string? Sku { get; init; }
+    public int LowStockThreshold { get; init; }
+    public bool IsActive { get; init; }
+    public List<ProductReviewDto> Reviews { get; init; } = new();
 }
 
-public class ProductImageDto
+public record ProductImageDto
 {
-    public Guid Id { get; set; }
-    public string Url { get; set; } = null!;
-    public string? AltText { get; set; }
-    public bool IsPrimary { get; set; }
+    public Guid Id { get; init; }
+    public string Url { get; init; } = null!;
+    public string? AltText { get; init; }
+    public bool IsPrimary { get; init; }
 }
 
 /// <summary>
 /// Simplified category DTO for embedding in product responses.
 /// For full category details, use DTOs.CategoryDto.
 /// </summary>
-public class ProductCategoryDto
+public record ProductCategoryDto
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; } = null!;
-    public string Slug { get; set; } = null!;
-    public string? ImageUrl { get; set; }
+    public Guid Id { get; init; }
+    public string Name { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? ImageUrl { get; init; }
 }
 
 /// <summary>
 /// Simplified review DTO for embedding in product detail responses.
 /// For full review operations, use DTOs.Reviews.ReviewDetailDto.
 /// </summary>
-public class ProductReviewDto
+public record ProductReviewDto
 {
-    public Guid Id { get; set; }
-    public string? Title { get; set; }
-    public string? Comment { get; set; }
-    public int Rating { get; set; }
-    public string? UserName { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public Guid Id { get; init; }
+    public string? Title { get; init; }
+    public string? Comment { get; init; }
+    public int Rating { get; init; }
+    public string? UserName { get; init; }
+    public DateTime CreatedAt { get; init; }
 }

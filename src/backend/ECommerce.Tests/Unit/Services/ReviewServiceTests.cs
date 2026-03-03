@@ -6,6 +6,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ECommerce.Tests.Unit.Services;
@@ -18,6 +19,7 @@ public class ReviewServiceTests
     private Mock<IUserRepository> _mockUserRepository = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IMapper> _mockMapper = null!;
+    private Mock<ILogger<ReviewService>> _mockLogger = null!;
     private ReviewService _service = null!;
 
     [TestInitialize]
@@ -28,6 +30,7 @@ public class ReviewServiceTests
         _mockUserRepository = new Mock<IUserRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockMapper = MockHelpers.CreateMockMapper();
+        _mockLogger = new Mock<ILogger<ReviewService>>();
 
         _mockUnitOfWork.Setup(u => u.Reviews).Returns(_mockReviewRepository.Object);
         _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
@@ -35,7 +38,8 @@ public class ReviewServiceTests
 
         _service = new ReviewService(
             _mockUnitOfWork.Object,
-            _mockMapper.Object);
+            _mockMapper.Object,
+            _mockLogger.Object);
     }
 
     [TestMethod]

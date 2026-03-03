@@ -108,6 +108,7 @@ public class CartRepositoryTests
 
         _context.CartItems.AddRange(cartItems);
         _context.SaveChanges();
+        _context.ChangeTracker.Clear();
     }
 
     #region GetByUserIdAsync Tests
@@ -300,7 +301,7 @@ public class CartRepositoryTests
     public async Task GetCartWithItemsAsync_WithoutTracking_DoesNotTrackEntity()
     {
         // Arrange
-        var cart = await _context.Carts.FirstAsync(c => c.SessionId == null);
+        var cart = await _context.Carts.AsNoTracking().FirstAsync(c => c.SessionId == null);
 
         // Act
         var result = await _repository.GetCartWithItemsAsync(cart.Id, trackChanges: false);

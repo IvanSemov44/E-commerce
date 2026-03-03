@@ -51,4 +51,12 @@ public interface ICategoryRepository : IRepository<Category>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The count of products in the category.</returns>
     Task<int> GetProductCountAsync(Guid categoryId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets product counts for multiple categories in a single query (avoids N+1).
+    /// </summary>
+    /// <param name="categoryIds">The category IDs.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Dictionary of category ID to product count.</returns>
+    Task<Dictionary<Guid, int>> GetProductCountsAsync(IEnumerable<Guid> categoryIds, CancellationToken cancellationToken = default);
 }

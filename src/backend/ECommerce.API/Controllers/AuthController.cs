@@ -207,7 +207,7 @@ public class AuthController : ControllerBase
         var refreshToken = GetRefreshTokenFromCookie();
         if (string.IsNullOrEmpty(refreshToken))
         {
-            return Unauthorized(ApiResponse<object>.Error("Refresh token not found"));
+            return Unauthorized(ApiResponse<object>.Failure("Refresh token not found", "REFRESH_TOKEN_NOT_FOUND"));
         }
 
         var result = await _authService.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
@@ -249,13 +249,13 @@ public class AuthController : ControllerBase
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            return Unauthorized(ApiResponse<object>.Error("Invalid token"));
+            return Unauthorized(ApiResponse<object>.Failure("Invalid token", "INVALID_TOKEN"));
         }
 
         var user = await _authService.GetUserByIdAsync(userId, cancellationToken);
         if (user == null)
         {
-            return Unauthorized(ApiResponse<object>.Error("User not found"));
+            return Unauthorized(ApiResponse<object>.Failure("User not found", "USER_NOT_FOUND"));
         }
 
         return Ok(ApiResponse<UserDto>.Ok(user, "User profile retrieved successfully"));

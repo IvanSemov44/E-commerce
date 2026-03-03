@@ -204,7 +204,21 @@ public static class TestDataFactory
             Id = Guid.NewGuid(),
             UserId = userId,
             ProductId = productId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            // Product navigation property is not set by default
+            // Tests that need Product should set it explicitly or use the overload below
+        };
+    }
+
+    public static Wishlist CreateWishlistItem(Guid userId, Guid productId, Product product)
+    {
+        return new Wishlist
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            ProductId = productId,
+            CreatedAt = DateTime.UtcNow,
+            Product = product
         };
     }
 

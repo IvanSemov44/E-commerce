@@ -141,7 +141,7 @@ public class AuthService : IAuthService
         storedToken.IsRevoked = true;
 
         // Get user and generate new tokens
-        var user = await _unitOfWork.Users.GetByIdAsync(storedToken.UserId, cancellationToken: cancellationToken)
+        var user = await _unitOfWork.Users.GetByIdAsync(storedToken.UserId, trackChanges: false, cancellationToken: cancellationToken)
             ?? throw new UserNotFoundException(storedToken.UserId);
 
         var userDto = _mapper.Map<UserDto>(user);
@@ -330,7 +330,7 @@ public class AuthService : IAuthService
 
     public async Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
         {
             return null;

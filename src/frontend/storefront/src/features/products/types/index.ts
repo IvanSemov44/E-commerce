@@ -1,0 +1,27 @@
+/**
+ * Product Types
+ * Centralized type definitions for the Products feature
+ */
+
+import type { ApiResponse, PaginatedResult, Product, ProductDetail } from '@/shared/types';
+
+export interface GetProductsQueryParams {
+  page?: number;
+  pageSize?: number;
+  categoryId?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  isFeatured?: boolean;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+export interface GetProductsResponse extends ApiResponse<PaginatedResult<Product>> {}
+
+export interface GetProductBySlugResponse extends ApiResponse<ProductDetail> {}
+
+export interface GetProductByIdResponse extends ApiResponse<ProductDetail> {}
+
+export interface GetFeaturedProductsResponse extends ApiResponse<Product[]> {}

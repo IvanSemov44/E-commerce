@@ -99,6 +99,95 @@ public class InventoryService : IInventoryService
         }
     }
 
+    /// <summary>
+    /// Batch reduces stock for multiple products in a single transaction (prevents N+1 queries and transactions).
+    /// PERFORMANCE FIX: Single transaction for all items instead of N individual transactions.
+    /// </summary>
+    public async Task ReduceStockBatchAsync(List<(Guid ProductId, int Quantity, string Reason, Guid? ReferenceId, Guid? UserId)> items, CancellationToken cancellationToken = default)
+    {
+        if (!items.Any())
+            return;
+
+        IAsyncTransaction? transaction = null;
+        var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
+
+        try
+        {
+            if (useOwnTransaction)
+                transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            // Batch load all products to avoid N+1
+            var productIds = items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await _unitOfWork.Products.GetByIdsAsync(productIds, trackChanges: true, cancellationToken);
+            var productDict = products.ToDictionary(p => p.Id);
+
+            var logsToAdd = new List<InventoryLog>();
+            var productsToCheck = new HashSet<Guid>();
+
+            // Process all items
+            foreach (var (productId, quantity, reason, referenceId, userId) in items)
+            {
+                if (!productDict.TryGetValue(productId, out var product))
+                    throw new ProductNotFoundException(productId);
+
+                if (product.StockQuantity < quantity)
+                    throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
+
+                product.StockQuantity -= quantity;
+                product.UpdatedAt = DateTime.UtcNow;
+
+                logsToAdd.Add(new InventoryLog
+                {
+                    ProductId = productId,
+                    QuantityChange = -quantity,
+                    Reason = reason,
+                    ReferenceId = referenceId,
+                    CreatedByUserId = userId
+                });
+
+                productsToCheck.Add(productId);
+            }
+
+            // Batch update products
+            await _unitOfWork.Products.UpdateRangeAsync(productDict.Values.ToList(), cancellationToken);
+
+            // Batch add logs
+            await _unitOfWork.InventoryLogs.AddRangeAsync(logsToAdd, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            if (useOwnTransaction && transaction != null)
+                await transaction.CommitAsync(cancellationToken);
+
+            _logger.LogInformation("Batch stock reduction completed for {ItemCount} products", items.Count);
+
+            // Check low stock alerts for affected products (best effort - don't fail on error)
+            foreach (var productId in productsToCheck)
+            {
+                try
+                {
+                    await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error checking low stock alert for product {ProductId}", productId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (useOwnTransaction && transaction != null)
+                await transaction.RollbackAsync(cancellationToken);
+            _logger.LogError(ex, "Error in batch stock reduction");
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+                await transaction.DisposeAsync();
+        }
+    }
+
     public async Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
@@ -232,7 +321,7 @@ public class InventoryService : IInventoryService
 
     public async Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items, CancellationToken cancellationToken = default)
     {
-        var response = new StockCheckResponse { IsAvailable = true };
+        var issues = new List<StockIssueDto>();
 
         // Batch-load all products to avoid N+1
         var productIds = items.Select(i => i.ProductId).Distinct().ToList();
@@ -244,8 +333,7 @@ public class InventoryService : IInventoryService
         {
             if (!products.TryGetValue(item.ProductId, out var product))
             {
-                response.IsAvailable = false;
-                response.Issues.Add(new StockIssueDto
+                issues.Add(new StockIssueDto
                 {
                     ProductId = item.ProductId,
                     ProductName = "Unknown Product",
@@ -258,8 +346,7 @@ public class InventoryService : IInventoryService
 
             if (product.StockQuantity < item.Quantity)
             {
-                response.IsAvailable = false;
-                response.Issues.Add(new StockIssueDto
+                issues.Add(new StockIssueDto
                 {
                     ProductId = item.ProductId,
                     ProductName = product.Name,
@@ -272,7 +359,7 @@ public class InventoryService : IInventoryService
             }
         }
 
-        return response;
+        return new StockCheckResponse { IsAvailable = issues.Count == 0, Issues = issues };
     }
 
     public async Task<bool> IsStockAvailableAsync(Guid productId, int quantity, CancellationToken cancellationToken = default)
@@ -287,9 +374,9 @@ public class InventoryService : IInventoryService
 
         if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
-            var searchLower = parameters.Search.ToLower();
-            query = query.Where(p => p.Name.ToLower().Contains(searchLower) ||
-                                   (p.Sku != null && p.Sku.ToLower().Contains(searchLower)));
+            var searchPattern = $"%{parameters.Search}%";
+            query = query.Where(p => EF.Functions.Like(p.Name, searchPattern) ||
+                                   (p.Sku != null && EF.Functions.Like(p.Sku, searchPattern)));
         }
 
         if (parameters.LowStockOnly == true)
@@ -361,13 +448,18 @@ public class InventoryService : IInventoryService
         foreach (var log in logs)
         {
             var dto = _mapper.Map<InventoryLogDto>(log);
-            dto.ProductName = productName;
-            dto.StockAfterChange = currentStock;
-            dto.CreatedByUserName = log.CreatedByUserId.HasValue && users.ContainsKey(log.CreatedByUserId.Value)
+            var createdByUserName = log.CreatedByUserId.HasValue && users.ContainsKey(log.CreatedByUserId.Value)
                 ? users[log.CreatedByUserId.Value]
                 : null;
 
-            result.Add(dto);
+            var finalDto = dto with
+            {
+                ProductName = productName,
+                StockAfterChange = currentStock,
+                CreatedByUserName = createdByUserName
+            };
+
+            result.Add(finalDto);
 
             currentStock -= log.QuantityChange;
         }
@@ -413,5 +505,14 @@ public class InventoryService : IInventoryService
             _logger.LogError(ex, "Error sending low stock alert for product {ProductId}", productId);
             // Don't throw - this is a background task
         }
+    }
+
+    public async Task<InventoryDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
+    {
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken);
+        if (product == null)
+            return null;
+
+        return _mapper.Map<InventoryDto>(product);
     }
 }

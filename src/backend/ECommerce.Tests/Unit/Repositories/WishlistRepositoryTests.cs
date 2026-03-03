@@ -99,6 +99,7 @@ public class WishlistRepositoryTests
 
         _context.Wishlists.AddRange(wishlistItems);
         _context.SaveChanges();
+        _context.ChangeTracker.Clear();
     }
 
     #region GetByUserIdAsync Tests

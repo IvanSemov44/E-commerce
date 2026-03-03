@@ -5,6 +5,11 @@ namespace ECommerce.Application.Validators.PromoCodes;
 
 public class CreatePromoCodeDtoValidator : AbstractValidator<CreatePromoCodeDto>
 {
+    private static readonly HashSet<string> ValidDiscountTypes = new(StringComparer.Ordinal)
+    {
+        "percentage", "fixed"
+    };
+
     public CreatePromoCodeDtoValidator()
     {
         RuleFor(x => x.Code)
@@ -14,7 +19,7 @@ public class CreatePromoCodeDtoValidator : AbstractValidator<CreatePromoCodeDto>
 
         RuleFor(x => x.DiscountType)
             .NotEmpty().WithMessage("Discount type is required")
-            .Must(x => x == "percentage" || x == "fixed")
+            .Must(x => ValidDiscountTypes.Contains(x))
             .WithMessage("Discount type must be 'percentage' or 'fixed'");
 
         RuleFor(x => x.DiscountValue)
@@ -22,7 +27,7 @@ public class CreatePromoCodeDtoValidator : AbstractValidator<CreatePromoCodeDto>
 
         RuleFor(x => x.DiscountValue)
             .LessThanOrEqualTo(100)
-            .When(x => x.DiscountType == "percentage")
+            .When(x => string.Equals(x.DiscountType, "percentage", StringComparison.Ordinal))
             .WithMessage("Percentage discount cannot exceed 100%");
 
         RuleFor(x => x.MinOrderAmount)

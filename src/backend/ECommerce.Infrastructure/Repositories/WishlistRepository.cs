@@ -35,6 +35,9 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
         return await query
             .Where(w => w.UserId == userId)
             .Include(w => w.Product)
+                .ThenInclude(p => p.Images)
+            .Include(w => w.Product)
+                .ThenInclude(p => p.Category)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -54,5 +57,37 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
         return await DbSet
             .Where(w => w.UserId == userId)
             .CountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets all wishlist entries for a user with product details.
+    /// FIX: Uses database-level filtering instead of loading ALL entries into memory.
+    /// </summary>
+    public async Task<IEnumerable<Wishlist>> GetAllByUserIdAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Where(w => w.UserId == userId)
+            .Include(w => w.Product)
+                .ThenInclude(p => p.Images)
+            .Include(w => w.Product)
+                .ThenInclude(p => p.Category)
+            .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Deletes a wishlist entry by user ID and product ID.
+    /// FIX: Efficient deletion without loading all entries.
+    /// </summary>
+    public async Task DeleteByUserIdAndProductIdAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
+    {
+        var entry = await DbSet
+            .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId, cancellationToken);
+        
+        if (entry != null)
+        {
+            DbSet.Remove(entry);
+        }
     }
 }

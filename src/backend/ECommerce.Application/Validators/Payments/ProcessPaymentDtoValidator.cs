@@ -10,7 +10,10 @@ public class ProcessPaymentDtoValidator : AbstractValidator<ProcessPaymentDto>
         "stripe",
         "paypal",
         "credit_card",
-        "card"
+        "card",
+        "debit_card",
+        "apple_pay",
+        "google_pay"
     };
 
     public ProcessPaymentDtoValidator()

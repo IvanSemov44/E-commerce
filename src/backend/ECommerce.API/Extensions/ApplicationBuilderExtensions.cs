@@ -1,3 +1,4 @@
+using ECommerce.API.Configuration;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Middleware;
 using ECommerce.Infrastructure.Data;
@@ -43,6 +44,9 @@ public static class ApplicationBuilderExtensions
         // Security headers - must be first in pipeline
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
+        // Correlation ID for distributed tracing - enriches all logs with unique request ID
+        app.UseCorrelationId();
+
         // Global exception handler - catches unhandled exceptions
         app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -61,8 +65,8 @@ public static class ApplicationBuilderExtensions
 
         // CORS - use environment-appropriate policy
         var corsPolicy = app.Environment.IsDevelopment()
-            ? ServiceCollectionExtensions.CorsPolicyNames.Development
-            : ServiceCollectionExtensions.CorsPolicyNames.Production;
+            ? CorsPolicyNames.Development
+            : CorsPolicyNames.Production;
         app.UseCors(corsPolicy);
 
         // Rate limiting - before authentication

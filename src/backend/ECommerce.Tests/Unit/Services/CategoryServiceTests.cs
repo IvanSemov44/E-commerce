@@ -5,6 +5,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ECommerce.Tests.Unit.Services;
@@ -15,6 +16,7 @@ public class CategoryServiceTests
     private Mock<ICategoryRepository> _mockCategoryRepository = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IMapper> _mockMapper = null!;
+    private Mock<ILogger<CategoryService>> _mockLogger = null!;
     private CategoryService _service = null!;
 
     [TestInitialize]
@@ -23,10 +25,11 @@ public class CategoryServiceTests
         _mockCategoryRepository = new Mock<ICategoryRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockMapper = MockHelpers.CreateMockMapper();
+        _mockLogger = new Mock<ILogger<CategoryService>>();
 
         _mockUnitOfWork.Setup(u => u.Categories).Returns(_mockCategoryRepository.Object);
 
-        _service = new CategoryService(_mockUnitOfWork.Object, _mockMapper.Object);
+        _service = new CategoryService(_mockUnitOfWork.Object, _mockMapper.Object, _mockLogger.Object);
     }
 
     [TestMethod]
@@ -39,7 +42,7 @@ public class CategoryServiceTests
             TestDataFactory.CreateCategory("Cat2")
         };
 
-        _mockCategoryRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(categories);
+        _mockCategoryRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(categories);
         _mockMapper.Setup(m => m.Map<IEnumerable<CategoryDto>>(It.IsAny<IEnumerable<Category>>()))
             .Returns((IEnumerable<Category> src) => src.Select(c => new CategoryDto { Id = c.Id, Name = c.Name }).ToList());
 
@@ -48,7 +51,8 @@ public class CategoryServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(2);
+        result.Items.Should().HaveCount(2);
+        result.TotalCount.Should().Be(2);
     }
 
     [TestMethod]

@@ -63,19 +63,19 @@ public class CartRepository : Repository<Cart>, ICartRepository
     }
 
     /// <summary>
-    /// Calculates the total value of all items in a cart.
+    /// Calculates the total value of all items in a cart using SQL aggregation (efficient).
+    /// PERFORMANCE FIX: Include Products before SelectMany to prevent lazy loading.
     /// </summary>
     public async Task<decimal> CalculateTotalAsync(Guid cartId, CancellationToken cancellationToken = default)
     {
-        var cart = await DbSet
+        var total = await DbSet
+            .Where(c => c.Id == cartId)
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
-                .ThenInclude(p => p.Images)
-            .FirstOrDefaultAsync(c => c.Id == cartId, cancellationToken);
+            .SelectMany(c => c.Items)
+            .SumAsync(ci => ci.Quantity * ci.Product.Price, cancellationToken);
 
-        if (cart == null) return 0;
-
-        return cart.Items.Sum(item => item.Quantity * item.Product.Price);
+        return total;
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public class CartRepository : Repository<Cart>, ICartRepository
     {
         return await DbSet
             .Where(c => c.Id == cartId)
-            .SelectMany(c => c.Items)
-            .CountAsync(cancellationToken);
+            .Select(c => c.Items.Count)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

@@ -135,7 +135,7 @@ public class ProfileController : ControllerBase
         // Validate that new passwords match
         if (dto.NewPassword != dto.ConfirmPassword)
         {
-            return BadRequest(ApiResponse<object>.Error("New password and confirmation do not match"));
+            return BadRequest(ApiResponse<object>.Failure("New password and confirmation do not match", "PASSWORD_MISMATCH"));
         }
 
         await _userService.ChangePasswordAsync(userId, dto.OldPassword, dto.NewPassword, cancellationToken: cancellationToken);

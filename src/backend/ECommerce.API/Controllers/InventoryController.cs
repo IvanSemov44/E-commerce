@@ -84,7 +84,7 @@ public class InventoryController : ControllerBase
             cancellationToken);
 
         if (stockCheck.Issues.Any(i => i.Message == "Product not found"))
-            return NotFound(ApiResponse<object>.Error("Product not found"));
+            return NotFound(ApiResponse<object>.Failure("Product not found", "PRODUCT_NOT_FOUND"));
 
         var isAvailable = await _inventoryService.IsStockAvailableAsync(productId, 1, cancellationToken);
         var result = new { ProductId = productId, IsAvailable = isAvailable };
@@ -161,11 +161,20 @@ public class InventoryController : ControllerBase
             cancellationToken: cancellationToken
         );
 
+        // Get the product to calculate actual quantity change
+        var product = await _inventoryService.GetProductByIdAsync(productId, cancellationToken);
+        if (product == null)
+        {
+            return NotFound(ApiResponse<object>.Failure($"Product with ID {productId} not found", "PRODUCT_NOT_FOUND"));
+        }
+
+        var quantityChanged = request.Quantity - product.StockQuantity;
+
         var response = new StockAdjustmentResponseDto
         {
             ProductId = productId,
             NewQuantity = request.Quantity,
-            QuantityChanged = request.Quantity, // Note: This is the target quantity, not the delta
+            QuantityChanged = quantityChanged, // Actual delta change
             AdjustedAt = DateTime.UtcNow
         };
 

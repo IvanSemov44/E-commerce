@@ -412,7 +412,7 @@ public class QueryableExtensionsTests
         var result = query.GreaterThan(p => p.StockQuantity, 20).ToList();
 
         // Assert
-        result.Should().HaveCount(1); // Only Headphones (50)
+        result.Should().HaveCount(2); // Smartwatch (30) and Headphones (50)
         result.Should().NotContain(p => p.StockQuantity == 20);
     }
 
@@ -443,7 +443,7 @@ public class QueryableExtensionsTests
         var result = query.LessThan(p => p.Price, 300m).ToList();
 
         // Assert
-        result.Should().HaveCount(1); // Headphones (149.99)
+        result.Should().HaveCount(2); // Smartwatch (299.99) and Headphones (149.99)
         result.All(p => p.Price < 300m).Should().BeTrue();
     }
 

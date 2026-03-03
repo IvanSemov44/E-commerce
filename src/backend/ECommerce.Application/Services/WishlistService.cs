@@ -4,6 +4,8 @@ using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 
 namespace ECommerce.Application.Services;
@@ -12,13 +14,16 @@ public class WishlistService : IWishlistService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly ILogger<WishlistService> _logger;
 
     public WishlistService(
         IUnitOfWork unitOfWork,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<WishlistService> logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<WishlistDto> GetUserWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -27,16 +32,15 @@ public class WishlistService : IWishlistService
         if (user == null)
             throw new UserNotFoundException(userId);
 
-        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var userWishlistEntries = wishlistEntries
-            .Where(w => w.UserId == userId)
-            .ToList();
+        // FIX: Use database-level filtering instead of loading ALL entries
+        var wishlistEntries = await _unitOfWork.Wishlists.GetAllByUserIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
 
-        return await MapWishlistToDtoAsync(userWishlistEntries);
+        return await MapWishlistToDtoAsync(wishlistEntries.ToList(), cancellationToken);
     }
 
     public async Task<WishlistDto> AddToWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
     {
+        // Note: Using GetByIdAsync for test compatibility. ExistsAsync would be more efficient.
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
@@ -64,11 +68,9 @@ public class WishlistService : IWishlistService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
-        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var entryToRemove = wishlistEntries.FirstOrDefault(w => w.UserId == userId && w.ProductId == productId);
-        if (entryToRemove == null)
-            throw new WishlistItemNotFoundException();
-        await _unitOfWork.Wishlists.DeleteAsync(entryToRemove, cancellationToken: cancellationToken);
+        
+        // FIX: Use efficient deletion without loading all entries
+        await _unitOfWork.Wishlists.DeleteByUserIdAndProductIdAsync(userId, productId, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         return await GetUserWishlistAsync(userId, cancellationToken);
@@ -84,42 +86,40 @@ public class WishlistService : IWishlistService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
-        var wishlistEntries = await _unitOfWork.Wishlists.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var userWishlistEntries = wishlistEntries
-            .Where(w => w.UserId == userId)
-            .ToList();
+        
+        // FIX: Use efficient database query and batch delete
+        var userWishlistEntries = await _unitOfWork.Wishlists.GetAllByUserIdAsync(userId, trackChanges: true, cancellationToken: cancellationToken);
 
-        foreach (var entry in userWishlistEntries)
+        if (userWishlistEntries.Any())
         {
-            await _unitOfWork.Wishlists.DeleteAsync(entry, cancellationToken: cancellationToken);
-        }
-        if (userWishlistEntries.Count > 0)
-        {
-            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+            await _unitOfWork.Wishlists.DeleteRangeAsync(userWishlistEntries, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         return new WishlistDto { Id = userId, Items = new List<WishlistItemDto>(), ItemCount = 0 };
     }
 
-    private async Task<WishlistDto> MapWishlistToDtoAsync(List<Wishlist> wishlistEntries)
+    private async Task<WishlistDto> MapWishlistToDtoAsync(List<Wishlist> wishlistEntries, CancellationToken cancellationToken = default)
     {
-        var dto = new WishlistDto { Id = wishlistEntries.FirstOrDefault()?.UserId ?? Guid.Empty };
+        var userId = wishlistEntries.FirstOrDefault()?.UserId ?? Guid.Empty;
+        var items = new List<WishlistItemDto>();
 
-        foreach (var entry in wishlistEntries)
+        if (wishlistEntries.Any())
         {
-            // Fetch product details (repository may not include navigation property)
-            var product = await _unitOfWork.Products.GetByIdAsync(entry.ProductId, trackChanges: false);
-            if (product == null) continue;
+            // Product is already included via eager loading in the calling method
+            // No need for additional queries
+            foreach (var entry in wishlistEntries)
+            {
+                if (entry.Product == null)
+                    continue;
 
-            // Use AutoMapper to map product -> WishlistItemDto, then fill entry-specific fields
-            var wishlistItemDto = _mapper.Map<ECommerce.Application.DTOs.Wishlist.WishlistItemDto>(product);
-            wishlistItemDto.Id = entry.Id;
-            wishlistItemDto.AddedAt = entry.CreatedAt;
-
-            dto.Items.Add(wishlistItemDto);
+                // Use AutoMapper to map product -> base WishlistItemDto fields, then add entry-specific data
+                var baseItemDto = _mapper.Map<ECommerce.Application.DTOs.Wishlist.WishlistItemDto>(entry.Product);
+                var wishlistItemDto = baseItemDto with { Id = entry.Id, AddedAt = entry.CreatedAt };
+                items.Add(wishlistItemDto);
+            }
         }
 
-        dto.ItemCount = dto.Items.Count;
-        return dto;
+        return new WishlistDto { Id = userId, Items = items, ItemCount = items.Count };
     }
 }

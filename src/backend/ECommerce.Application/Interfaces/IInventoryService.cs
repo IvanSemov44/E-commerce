@@ -10,6 +10,7 @@ public interface IInventoryService
 {
     // Stock Management
     Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default);
+    Task ReduceStockBatchAsync(List<(Guid ProductId, int Quantity, string Reason, Guid? ReferenceId, Guid? UserId)> items, CancellationToken cancellationToken = default);
     Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default);
     Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null, CancellationToken cancellationToken = default);
 
@@ -17,11 +18,12 @@ public interface IInventoryService
     Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items, CancellationToken cancellationToken = default);
     Task<bool> IsStockAvailableAsync(Guid productId, int quantity, CancellationToken cancellationToken = default);
 
+    // Low Stock Alerts
+    Task CheckAndSendLowStockAlertsAsync(Guid productId, CancellationToken cancellationToken = default);
+
     // Inventory Queries
     Task<PaginatedResult<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default);
     Task<List<LowStockAlertDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default);
     Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default);
-
-    // Low Stock Alerts
-    Task CheckAndSendLowStockAlertsAsync(Guid productId, CancellationToken cancellationToken = default);
+    Task<InventoryDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default);
 }

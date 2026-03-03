@@ -6,7 +6,7 @@ import type {
   UpdateProductRequest,
   PaginatedResult,
   ApiResponse,
-} from '../../types';
+} from '@shared/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 

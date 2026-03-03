@@ -1,6 +1,7 @@
 using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,33 +25,51 @@ public class CategoriesController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves all categories in a hierarchical structure.
+    /// Retrieves all categories in a hierarchical structure with pagination.
     /// </summary>
+    /// <param name="pageNumber">The page number (default: 1).</param>
+    /// <param name="pageSize">The page size (default: 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A list of all categories including parent and child relationships.</returns>
+    /// <returns>A paginated list of categories including parent and child relationships.</returns>
     /// <response code="200">Categories retrieved successfully.</response>
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllCategories(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllCategories(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 100,
+        CancellationToken cancellationToken = default)
     {
-        var categories = await _categoryService.GetAllCategoriesAsync(cancellationToken: cancellationToken);
-        return Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(categories, "Categories retrieved successfully"));
+        // Enforce bounds to prevent malicious requests
+        if (pageNumber < PaginationConstants.MinPageNumber) pageNumber = PaginationConstants.MinPageNumber;
+        if (pageSize < PaginationConstants.MinPageSize || pageSize > PaginationConstants.MaxPageSize) pageSize = PaginationConstants.MaxPageSize;
+        
+        var categories = await _categoryService.GetAllCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<PaginatedResult<CategoryDto>>.Ok(categories, "Categories retrieved successfully"));
     }
 
     /// <summary>
-    /// Retrieves all top-level categories (categories without a parent).
+    /// Retrieves all top-level categories (categories without a parent) with pagination.
     /// </summary>
+    /// <param name="pageNumber">The page number (default: 1).</param>
+    /// <param name="pageSize">The page size (default: 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A list of root-level categories.</returns>
+    /// <returns>A paginated list of root-level categories.</returns>
     /// <response code="200">Top-level categories retrieved successfully.</response>
     [HttpGet("top-level")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetTopLevelCategories(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTopLevelCategories(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 100,
+        CancellationToken cancellationToken = default)
     {
-        var categories = await _categoryService.GetTopLevelCategoriesAsync(cancellationToken: cancellationToken);
-        return Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(categories, "Top-level categories retrieved successfully"));
+        // Enforce bounds to prevent malicious requests
+        if (pageNumber < PaginationConstants.MinPageNumber) pageNumber = PaginationConstants.MinPageNumber;
+        if (pageSize < PaginationConstants.MinPageSize || pageSize > PaginationConstants.MaxPageSize) pageSize = PaginationConstants.MaxPageSize;
+        
+        var categories = await _categoryService.GetTopLevelCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<PaginatedResult<CategoryDto>>.Ok(categories, "Top-level categories retrieved successfully"));
     }
 
     /// <summary>

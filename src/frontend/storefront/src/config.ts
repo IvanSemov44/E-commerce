@@ -3,7 +3,7 @@
  * Centralized config for all environment-specific settings
  */
 
-import { logger } from './utils/logger';
+import { logger } from './shared/lib/utils/logger';
 
 const isDevelopment = import.meta.env.MODE === 'development';
 const isProduction = import.meta.env.MODE === 'production';

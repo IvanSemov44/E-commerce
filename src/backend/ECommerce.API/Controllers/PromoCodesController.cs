@@ -80,7 +80,7 @@ public class PromoCodesController : ControllerBase
         var promoCode = await _promoCodeService.GetByIdAsync(id, cancellationToken: cancellationToken);
         if (promoCode == null)
         {
-            return NotFound(ApiResponse<string>.Error("Promo code not found"));
+            return NotFound(ApiResponse<string>.Failure("Promo code not found", "PROMO_CODE_NOT_FOUND"));
         }
 
         return Ok(ApiResponse<PromoCodeDetailDto>.Ok(promoCode, "Promo code retrieved successfully"));

@@ -38,6 +38,16 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     }
 
     /// <summary>
+    /// Gets multiple entities by their IDs asynchronously (prevents N+1 queries).
+    /// </summary>
+    public virtual async Task<IEnumerable<T>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        var idsList = ids.ToList();
+        return await query.Where(x => idsList.Contains(x.Id)).ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Gets all entities asynchronously.
     /// </summary>
     public virtual async Task<IEnumerable<T>> GetAllAsync(bool trackChanges = true, CancellationToken cancellationToken = default)
@@ -98,6 +108,23 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     public virtual async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
     {
         await DbSet.AddRangeAsync(entities, cancellationToken);
+    }
+
+    /// <summary>
+    /// Updates multiple entities (does not save to database).
+    /// </summary>
+    public virtual void UpdateRange(IEnumerable<T> entities)
+    {
+        DbSet.UpdateRange(entities);
+    }
+
+    /// <summary>
+    /// Updates multiple entities asynchronously (does not save to database).
+    /// </summary>
+    public virtual Task UpdateRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+    {
+        UpdateRange(entities);
+        return Task.CompletedTask;
     }
 
     /// <summary>

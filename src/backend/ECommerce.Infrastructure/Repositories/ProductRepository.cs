@@ -16,13 +16,24 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
     }
 
-    public async Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public override async Task<Product?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         return await query
             .Include(p => p.Category)
             .Include(p => p.Images)
-            .Include(p => p.Reviews)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public async Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        
+        // FIX: Don't load ALL reviews here - it's a performance killer for popular products
+        // Reviews can be fetched separately via ReviewRepository if needed
+        return await query
+            .Include(p => p.Category)
+            .Include(p => p.Images)
             .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive, cancellationToken);
     }
 
@@ -38,12 +49,26 @@ public class ProductRepository : Repository<Product>, IProductRepository
 
     public async Task<IEnumerable<Product>> GetFeaturedAsync(int count, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
+        return await GetFeaturedInternalAsync(skip: 0, count: count, trackChanges, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets featured products with pagination support.
+    /// </summary>
+    public async Task<IEnumerable<Product>> GetFeaturedAsync(int skip, int count, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        return await GetFeaturedInternalAsync(skip, count, trackChanges, cancellationToken);
+    }
+
+    private async Task<IEnumerable<Product>> GetFeaturedInternalAsync(int skip, int count, bool trackChanges, CancellationToken cancellationToken)
+    {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         return await query
             .Where(p => p.IsFeatured && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)
             .OrderByDescending(p => p.CreatedAt)
+            .Skip(skip)
             .Take(count)
             .ToListAsync(cancellationToken);
     }
@@ -66,6 +91,15 @@ public class ProductRepository : Repository<Product>, IProductRepository
         return await DbSet.CountAsync(p => p.IsActive, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets the count of featured products.
+    /// FIX: Added to fix wrong pagination total in GetFeaturedProductsAsync.
+    /// </summary>
+    public async Task<int> GetFeaturedProductsCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await DbSet.CountAsync(p => p.IsFeatured && p.IsActive, cancellationToken);
+    }
+
     public async Task UpdateStockAsync(Guid productId, int quantity, CancellationToken cancellationToken = default)
     {
         var product = await DbSet.FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
@@ -73,7 +107,6 @@ public class ProductRepository : Repository<Product>, IProductRepository
         {
             product.StockQuantity = quantity;
             product.UpdatedAt = DateTime.UtcNow;
-            // Don't call SaveChangesAsync - let UnitOfWork handle it
         }
     }
 
@@ -103,7 +136,6 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .Where(p => p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Images)
-            .Include(p => p.Reviews)
             .AsQueryable();
 
         // Apply category filter if provided
@@ -115,11 +147,11 @@ public class ProductRepository : Repository<Product>, IProductRepository
         // Apply search filter if provided
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
-            var searchTerm = searchQuery.ToLower();
+            var searchPattern = $"%{searchQuery}%";
             query = query.Where(p =>
-                p.Name.ToLower().Contains(searchTerm) ||
-                (p.Description != null && p.Description.ToLower().Contains(searchTerm)) ||
-                (p.Sku != null && p.Sku.ToLower().Contains(searchTerm)));
+                EF.Functions.Like(p.Name, searchPattern) ||
+                (p.Description != null && EF.Functions.Like(p.Description, searchPattern)) ||
+                (p.Sku != null && EF.Functions.Like(p.Sku, searchPattern)));
         }
 
         // Apply price range filters
@@ -133,6 +165,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
         }
 
         // Apply rating filter (only approved reviews)
+        // FIX: Use subquery instead of loading all reviews
         if (minRating.HasValue)
         {
             query = query.Where(p =>
@@ -176,10 +209,6 @@ public class ProductRepository : Repository<Product>, IProductRepository
     /// Atomically reduces stock quantity for a product using optimistic concurrency.
     /// Uses raw SQL to ensure atomic stock reduction and prevent race conditions.
     /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <param name="quantity">The quantity to reduce (must be positive).</param>
-    /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>True if stock was successfully reduced; false if insufficient stock available.</returns>
     public async Task<bool> TryReduceStockAsync(Guid productId, int quantity, CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)

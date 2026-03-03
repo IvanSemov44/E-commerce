@@ -2,41 +2,49 @@ using ECommerce.Application.DTOs.Common;
 
 namespace ECommerce.Application.DTOs.Orders;
 
-public class OrderDto
+public record OrderDto
 {
-    public Guid Id { get; set; }
-    public Guid? UserId { get; set; }
-    public string OrderNumber { get; set; } = null!;
-    public string Status { get; set; } = null!;
-    public string PaymentStatus { get; set; } = null!;
-    public decimal TotalAmount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public List<OrderItemDto> Items { get; set; } = new();
+    public Guid Id { get; init; }
+    public Guid? UserId { get; init; }
+    public string OrderNumber { get; init; } = null!;
+    public string Status { get; init; } = null!;
+    public string PaymentStatus { get; init; } = null!;
+    public decimal TotalAmount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public List<OrderItemDto> Items { get; init; } = new();
 }
 
-public class OrderDetailDto : OrderDto
+public record OrderDetailDto
 {
-    public string? PaymentMethod { get; set; }
-    public decimal Subtotal { get; set; }
-    public decimal DiscountAmount { get; set; }
-    public decimal ShippingAmount { get; set; }
-    public decimal TaxAmount { get; set; }
-    public AddressDto? ShippingAddress { get; set; }
-    public AddressDto? BillingAddress { get; set; }
-    public string? Notes { get; set; }
-    public DateTime? ShippedAt { get; set; }
-    public DateTime? DeliveredAt { get; set; }
+    public Guid Id { get; init; }
+    public Guid? UserId { get; init; }
+    public string OrderNumber { get; init; } = null!;
+    public string Status { get; init; } = null!;
+    public string PaymentStatus { get; init; } = null!;
+    public decimal TotalAmount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public List<OrderItemDto> Items { get; init; } = new();
+    public string? PaymentMethod { get; init; }
+    public decimal Subtotal { get; init; }
+    public decimal DiscountAmount { get; init; }
+    public decimal ShippingAmount { get; init; }
+    public decimal TaxAmount { get; init; }
+    public AddressDto? ShippingAddress { get; init; }
+    public AddressDto? BillingAddress { get; init; }
+    public string? Notes { get; init; }
+    public DateTime? ShippedAt { get; init; }
+    public DateTime? DeliveredAt { get; init; }
 }
 
-public class OrderItemDto
+public record OrderItemDto
 {
-    public Guid Id { get; set; }
-    public string ProductName { get; set; } = null!;
-    public string? ProductSku { get; set; }
-    public string? ProductImageUrl { get; set; }
-    public int Quantity { get; set; }
-    public decimal UnitPrice { get; set; }
-    public decimal TotalPrice { get; set; }
+    public Guid Id { get; init; }
+    public string ProductName { get; init; } = null!;
+    public string? ProductSku { get; init; }
+    public string? ProductImageUrl { get; init; }
+    public int Quantity { get; init; }
+    public decimal UnitPrice { get; init; }
+    public decimal TotalPrice { get; init; }
 }
 
 public class CreateOrderDto

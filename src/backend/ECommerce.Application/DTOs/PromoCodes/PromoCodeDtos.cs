@@ -2,25 +2,35 @@ using System.Text.Json.Serialization;
 
 namespace ECommerce.Application.DTOs.PromoCodes;
 
-public class PromoCodeDto
+public record PromoCodeDto
 {
-    public Guid Id { get; set; }
-    public string Code { get; set; } = null!;
-    public string DiscountType { get; set; } = null!;
-    public decimal DiscountValue { get; set; }
-    public decimal? MinOrderAmount { get; set; }
-    public int? MaxUses { get; set; }
-    public int UsedCount { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
+    public Guid Id { get; init; }
+    public string Code { get; init; } = null!;
+    public string DiscountType { get; init; } = null!;
+    public decimal DiscountValue { get; init; }
+    public decimal? MinOrderAmount { get; init; }
+    public int? MaxUses { get; init; }
+    public int UsedCount { get; init; }
+    public bool IsActive { get; init; }
+    public DateTime? StartDate { get; init; }
+    public DateTime? EndDate { get; init; }
 }
 
-public class PromoCodeDetailDto : PromoCodeDto
+public record PromoCodeDetailDto
 {
-    public decimal? MaxDiscountAmount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public Guid Id { get; init; }
+    public string Code { get; init; } = null!;
+    public string DiscountType { get; init; } = null!;
+    public decimal DiscountValue { get; init; }
+    public decimal? MinOrderAmount { get; init; }
+    public int? MaxUses { get; init; }
+    public int UsedCount { get; init; }
+    public bool IsActive { get; init; }
+    public DateTime? StartDate { get; init; }
+    public DateTime? EndDate { get; init; }
+    public decimal? MaxDiscountAmount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
 }
 
 public class CreatePromoCodeDto

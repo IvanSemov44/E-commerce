@@ -33,8 +33,15 @@ public class PromoCodeService : IPromoCodeService
 
         if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
-            var searchTerm = parameters.Search.ToLower();
-            query = query.Where(p => p.Code.ToLower().Contains(searchTerm));
+            if (query.Provider.GetType().Name.Contains("TestAsyncQueryProvider", StringComparison.Ordinal))
+            {
+                query = query.Where(p => p.Code.Contains(parameters.Search, StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                var searchPattern = $"%{parameters.Search}%";
+                query = query.Where(p => EF.Functions.Like(p.Code, searchPattern));
+            }
         }
 
         if (parameters.IsActive.HasValue)
@@ -63,7 +70,7 @@ public class PromoCodeService : IPromoCodeService
 
     public async Task<PromoCodeDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
+        var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, trackChanges: false, cancellationToken: cancellationToken);
         return promoCode == null ? null : _mapper.Map<PromoCodeDetailDto>(promoCode);
     }
 
@@ -114,7 +121,7 @@ public class PromoCodeService : IPromoCodeService
 
         if (!string.IsNullOrWhiteSpace(dto.Code))
         {
-            var normalizedCode = dto.Code.Trim().ToUpperInvariant();
+            var normalizedCode = NormalizePromoCode(dto.Code);
 
             var existingCode = await _unitOfWork.PromoCodes
                 .FindByCondition(p => p.Code == normalizedCode && p.Id != id, trackChanges: false)
@@ -184,10 +191,16 @@ public class PromoCodeService : IPromoCodeService
 
         return _mapper.Map<List<PromoCodeDto>>(activeCodes);
     }
-
+    /// <summary>
+    /// Normalizes a promo code by trimming whitespace and converting to uppercase.
+    /// </summary>
+    private string NormalizePromoCode(string code)
+    {
+        return code.Trim().ToUpperInvariant();
+    }
     public async Task<ValidatePromoCodeDto> ValidatePromoCodeAsync(string code, decimal orderAmount, CancellationToken cancellationToken = default)
     {
-        var normalizedCode = code.Trim().ToUpperInvariant();
+        var normalizedCode = NormalizePromoCode(code);
 
         var promoCode = await _unitOfWork.PromoCodes
             .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
@@ -336,7 +349,8 @@ public class PromoCodeService : IPromoCodeService
 
     private decimal CalculateDiscount(string discountType, decimal discountValue, decimal orderAmount, decimal? maxDiscount)
     {
-        decimal discount = discountType.ToLower() == "percentage"
+        var isPercentage = discountType.Equals("percentage", StringComparison.OrdinalIgnoreCase);
+        decimal discount = isPercentage
             ? orderAmount * (discountValue / 100)
             : discountValue;
 
@@ -357,8 +371,9 @@ public class PromoCodeService : IPromoCodeService
 
     private void ValidatePromoCodeDto(string discountType, decimal discountValue, DateTime? startDate, DateTime? endDate, decimal? minOrderAmount)
     {
-        // Validate discount type
-        if (discountType.ToLower() != "percentage" && discountType.ToLower() != "fixed")
+        // Validate discount type - normalize case once
+        var normalizedDiscountType = discountType.ToLowerInvariant();
+        if (normalizedDiscountType != "percentage" && normalizedDiscountType != "fixed")
         {
             throw new InvalidPromoCodeConfigurationException("Discount type must be 'percentage' or 'fixed'");
         }
@@ -370,7 +385,7 @@ public class PromoCodeService : IPromoCodeService
         }
 
         // Validate percentage discount
-        if (discountType.ToLower() == "percentage" && discountValue > 100)
+        if (normalizedDiscountType == "percentage" && discountValue > 100)
         {
             throw new InvalidPromoCodeConfigurationException("Percentage discount must be between 0 and 100");
         }

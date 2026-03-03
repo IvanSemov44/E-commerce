@@ -30,7 +30,7 @@ public class ValidationFilterAttribute : ActionFilterAttribute
         if (param is null)
         {
             var error = $"Object is null. Controller: {controller}, action: {action}";
-            var errorResponse = ApiResponse<object>.Error(error, new List<string> { error });
+            var errorResponse = ApiResponse<object>.Failure(error, "NULL_PARAMETER");
             context.Result = new BadRequestObjectResult(errorResponse);
             return;
         }
@@ -38,13 +38,14 @@ public class ValidationFilterAttribute : ActionFilterAttribute
         // Validate ModelState
         if (!context.ModelState.IsValid)
         {
-            var errors = context.ModelState
+            var validationErrors = context.ModelState
                 .Where(ms => ms.Value?.Errors.Count > 0)
-                .SelectMany(x => x.Value!.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
 
-            var errorResponse = ApiResponse<object>.Error("Validation failed", errors);
+            var errorResponse = ApiResponse<object>.Failure("Validation failed", "VALIDATION_FAILED", validationErrors);
             context.Result = new UnprocessableEntityObjectResult(errorResponse);
         }
     }

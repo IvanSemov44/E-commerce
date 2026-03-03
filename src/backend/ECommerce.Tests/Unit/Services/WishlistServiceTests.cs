@@ -5,6 +5,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ECommerce.Tests.Unit.Services;
@@ -17,6 +18,7 @@ public class WishlistServiceTests
     private Mock<IUserRepository> _mockUserRepository = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IMapper> _mockMapper = null!;
+    private Mock<ILogger<WishlistService>> _mockLogger = null!;
     private WishlistService _service = null!;
 
     [TestInitialize]
@@ -28,6 +30,7 @@ public class WishlistServiceTests
         _mockUserRepository = new Mock<IUserRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockMapper = MockHelpers.CreateMockMapper();
+        _mockLogger = new Mock<ILogger<WishlistService>>();
 
         _mockUnitOfWork.Setup(u => u.Wishlists).Returns(_mockWishlistRepository.Object);
         _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
@@ -35,7 +38,8 @@ public class WishlistServiceTests
 
         _service = new WishlistService(
             _mockUnitOfWork.Object,
-            _mockMapper.Object);
+            _mockMapper.Object,
+            _mockLogger.Object);
     }
 
     [TestMethod]
@@ -44,12 +48,11 @@ public class WishlistServiceTests
         // Arrange
         var user = TestDataFactory.CreateUser();
         var product = TestDataFactory.CreateProduct();
-        var entry = TestDataFactory.CreateWishlistItem(user.Id, product.Id);
+        var entry = TestDataFactory.CreateWishlistItem(user.Id, product.Id, product);
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
             var entries = new List<Wishlist> { entry };
             _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(() => entries.ToList());
-        _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
 
         // Act
         var result = await _service.GetUserWishlistAsync(user.Id);
@@ -88,7 +91,7 @@ public class WishlistServiceTests
             .Callback<Wishlist, CancellationToken>((w, _) => { if (w.Id == Guid.Empty) w.Id = Guid.NewGuid(); })
             .Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(new List<Wishlist> { TestDataFactory.CreateWishlistItem(user.Id, product.Id) });
+        _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(new List<Wishlist> { TestDataFactory.CreateWishlistItem(user.Id, product.Id, product) });
 
         // Act
         var result = await _service.AddToWishlistAsync(user.Id, product.Id);

@@ -16,6 +16,19 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     {
     }
 
+    public override async Task<Order?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Include(o => o.Items)
+                .ThenInclude(oi => oi.Product)
+            .Include(o => o.ShippingAddress)
+            .Include(o => o.BillingAddress)
+            .Include(o => o.User)
+            // NOTE: PromoCode not included - it's never exposed in DTOs. Only DiscountAmount is returned.
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
     /// <summary>
     /// Retrieves a complete order by order number with all related entities.
     /// </summary>
@@ -28,7 +41,7 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Include(o => o.BillingAddress)
             .Include(o => o.Items)
                 .ThenInclude(oi => oi.Product)
-            .Include(o => o.PromoCode)
+            // NOTE: PromoCode not included - it's never exposed in DTOs. Only DiscountAmount is returned.
             .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
     }
 

@@ -5,17 +5,17 @@ namespace ECommerce.Application.DTOs.Users;
 /// <summary>
 /// User profile response DTO with full profile information.
 /// </summary>
-public class UserProfileDto
+public record UserProfileDto
 {
-    public Guid Id { get; set; }
-    public string Email { get; set; } = null!;
-    public string FirstName { get; set; } = null!;
-    public string LastName { get; set; } = null!;
-    public string? Phone { get; set; }
-    public string Role { get; set; } = null!;
-    public string? AvatarUrl { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public Guid Id { get; init; }
+    public string Email { get; init; } = null!;
+    public string FirstName { get; init; } = null!;
+    public string LastName { get; init; } = null!;
+    public string? Phone { get; init; }
+    public string Role { get; init; } = null!;
+    public string? AvatarUrl { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
 }
 
 /// <summary>
@@ -43,15 +43,21 @@ public class UpdateProfileDto
 /// <summary>
 /// DTO for user preferences.
 /// </summary>
-public class UserPreferencesDto
+public record UserPreferencesDto
 {
-    public Guid UserId { get; set; }
-    public bool EmailNotifications { get; set; } = true;
-    public bool SmsNotifications { get; set; } = false;
-    public bool PushNotifications { get; set; } = true;
-    public string Language { get; set; } = "en";
-    public string Currency { get; set; } = "USD";
-    public bool NewsletterSubscribed { get; set; } = false;
+    public Guid UserId { get; init; }
+    public bool EmailNotifications { get; init; } = true;
+    public bool SmsNotifications { get; init; } = false;
+    public bool PushNotifications { get; init; } = true;
+    public string Language { get; init; } = "en";
+    public string Currency { get; init; } = "USD";
+    public bool NewsletterSubscribed { get; init; } = false;
+}
+
+public static class UserPreferencesDtoExtensions
+{
+    public static UserPreferencesDto GetDefaultPreferences(Guid userId) =>
+        new() { UserId = userId };
 }
 
 /// <summary>

@@ -31,7 +31,7 @@ public class UserService : IUserService
     {
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
 
@@ -64,7 +64,7 @@ public class UserService : IUserService
     {
         _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
 
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
 
@@ -85,7 +85,7 @@ public class UserService : IUserService
     {
         _logger.LogInformation("Updating preferences for user {UserId}", userId);
 
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
 
@@ -106,7 +106,7 @@ public class UserService : IUserService
     {
         _logger.LogInformation("Changing password for user {UserId}", userId);
 
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             throw new UserNotFoundException(userId);
 

@@ -28,7 +28,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
+    setupFiles: './src/shared/lib/test/setup.ts',
     css: true,
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: [
@@ -42,7 +42,7 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',
-        'src/test/',
+        'src/shared/lib/test/',
         '**/*.d.ts',
         '**/*.config.*',
         '**/mockData/**',
@@ -60,15 +60,7 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-redux': ['@reduxjs/toolkit', 'react-redux'],
           'vendor-axios': ['axios'],
-
-          // Split pages into separate chunks for lazy loading
-          'page-home': ['./src/pages/Home.tsx'],
-          'page-products': ['./src/pages/Products.tsx'],
-          'page-product-detail': ['./src/pages/ProductDetail.tsx'],
-          'page-cart': ['./src/pages/Cart.tsx'],
-          'page-checkout': ['./src/pages/Checkout.tsx'],
-          'page-auth': ['./src/pages/Login.tsx', './src/pages/Register.tsx'],
-          'page-account': ['./src/pages/Profile.tsx', './src/pages/OrderHistory.tsx'],
+          // Note: Page chunking is handled by lazy loading at the component level
         },
       },
     },

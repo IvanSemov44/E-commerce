@@ -71,9 +71,9 @@ public class ValidationFilterAttributeTests
         // Assert
         var badRequestResult = (BadRequestObjectResult)context.Result!;
         var errorResponse = badRequestResult.Value as ApiResponse<object>;
-        errorResponse?.Message.Should().Contain("Object is null");
-        errorResponse?.Message.Should().Contain("TestController");
-        errorResponse?.Message.Should().Contain("TestAction");
+        errorResponse?.ErrorDetails?.Message.Should().Contain("Object is null");
+        errorResponse?.ErrorDetails?.Message.Should().Contain("TestController");
+        errorResponse?.ErrorDetails?.Message.Should().Contain("TestAction");
     }
 
     [TestMethod]
@@ -131,10 +131,11 @@ public class ValidationFilterAttributeTests
         // Assert
         var result = (UnprocessableEntityObjectResult)context.Result!;
         var errorResponse = result.Value as ApiResponse<object>;
-        errorResponse?.Errors.Should().HaveCount(3);
-        errorResponse?.Errors.Should().Contain("Name is required");
-        errorResponse?.Errors.Should().Contain("Price must be greater than 0");
-        errorResponse?.Errors.Should().Contain("Category is required");
+        var errors = errorResponse?.ErrorDetails?.Errors?.Values.SelectMany(e => e).ToList();
+        errors.Should().HaveCount(3);
+        errors.Should().Contain("Name is required");
+        errors.Should().Contain("Price must be greater than 0");
+        errors.Should().Contain("Category is required");
     }
 
     [TestMethod]
@@ -247,8 +248,9 @@ public class ValidationFilterAttributeTests
         // Assert
         var result = (UnprocessableEntityObjectResult)context.Result!;
         var errorResponse = result.Value as ApiResponse<object>;
-        errorResponse?.Errors.Should().Contain("Price is required");
-        errorResponse?.Errors.Should().Contain("Price must be positive");
+        var errors = errorResponse?.ErrorDetails?.Errors?.Values.SelectMany(e => e).ToList();
+        errors.Should().Contain("Price is required");
+        errors.Should().Contain("Price must be positive");
     }
 
     [TestMethod]

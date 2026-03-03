@@ -11,30 +11,55 @@ public class PaginatedResult<T>
     public bool HasNext => Page < TotalPages;
 }
 
-public class ApiResponse<T>
+/// <summary>
+/// Standard API response wrapper for all endpoints.
+/// Success responses contain Data, failures contain Error.
+/// </summary>
+public record ApiResponse<T>
 {
-    public bool Success { get; set; }
-    public string? Message { get; set; }
-    public T? Data { get; set; }
-    public List<string>? Errors { get; set; }
+    /// <summary>True if request succeeded, false otherwise</summary>
+    public required bool Success { get; init; }
+    
+    /// <summary>Response data (populated on success)</summary>
+    public T? Data { get; init; }
+    
+    /// <summary>Error details (populated on failure)</summary>
+    public ErrorResponse? ErrorDetails { get; init; }
+    
+    /// <summary>Trace ID for correlating with logs and support tickets</summary>
+    public string? TraceId { get; init; }
 
-    public static ApiResponse<T> Ok(T data, string? message = null)
-    {
-        return new ApiResponse<T>
-        {
-            Success = true,
-            Data = data,
-            Message = message ?? "Success"
-        };
-    }
+    /// <summary>Creates a successful response</summary>
+    public static ApiResponse<T> Ok(T data, string? message = null) =>
+        new() { Success = true, Data = data };
 
-    public static ApiResponse<T> Error(string message, List<string>? errors = null)
-    {
-        return new ApiResponse<T>
-        {
-            Success = false,
-            Message = message,
-            Errors = errors
-        };
-    }
+    /// <summary>Creates a failed response with semantic error code and message</summary>
+    public static ApiResponse<T> Failure(string message, string? code = null, Dictionary<string, string[]>? errors = null) =>
+        new() { Success = false, ErrorDetails = new ErrorResponse { Message = message, Code = code, Errors = errors } };
+
+    /// <summary>Creates a failed response with ErrorResponse object</summary>
+    public static ApiResponse<T> Failure(ErrorResponse errorResponse) =>
+        new() { Success = false, ErrorDetails = errorResponse };
+
+    /// <summary>Creates a failed response (backward compatibility)</summary>
+    public static ApiResponse<T> Error(string message, List<string>? errors = null) =>
+        Failure(message, errors: errors?.Any() == true ? new Dictionary<string, string[]> { ["general"] = errors.ToArray() } : null);
+}
+
+/// <summary>
+/// Standard error response with semantic codes for client error handling.
+/// </summary>
+public record ErrorResponse
+{
+    /// <summary>User-friendly error message (never expose internals)</summary>
+    public required string Message { get; init; }
+    
+    /// <summary>Semantic error code for client logic: "PRODUCT_NOT_FOUND", "INSUFFICIENT_INVENTORY", etc.</summary>
+    public string? Code { get; init; }
+    
+    /// <summary>Validation errors by field: { "Email": ["Invalid format"], "Name": ["Required"] }</summary>
+    public Dictionary<string, string[]>? Errors { get; init; }
+    
+    /// <summary>Trace ID for support tickets (correlate with logs)</summary>
+    public string? TraceId { get; init; }
 }

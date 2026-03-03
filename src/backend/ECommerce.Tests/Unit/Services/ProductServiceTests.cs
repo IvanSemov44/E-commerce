@@ -5,6 +5,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ECommerce.Tests.Unit.Services;
@@ -15,6 +16,7 @@ public class ProductServiceTests
     private Mock<IProductRepository> _mockProductRepository = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
     private Mock<IMapper> _mockMapper = null!;
+    private Mock<ILogger<ProductService>> _mockLogger = null!;
     private ProductService _service = null!;
 
     [TestInitialize]
@@ -23,10 +25,11 @@ public class ProductServiceTests
         _mockProductRepository = new Mock<IProductRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockMapper = MockHelpers.CreateMockMapper();
+        _mockLogger = new Mock<ILogger<ProductService>>();
 
         _mockUnitOfWork.Setup(u => u.Products).Returns(_mockProductRepository.Object);
 
-        _service = new ProductService(_mockUnitOfWork.Object, _mockMapper.Object);
+        _service = new ProductService(_mockUnitOfWork.Object, _mockMapper.Object, _mockLogger.Object);
     }
 
     [TestMethod]

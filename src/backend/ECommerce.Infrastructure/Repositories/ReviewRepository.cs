@@ -15,6 +15,15 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
     {
     }
 
+    public override async Task<Review?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+    }
+
     /// <summary>
     /// Retrieves reviews for a specific product, optionally filtering by approval status.
     /// </summary>
@@ -31,6 +40,28 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
         return await query
             .Include(r => r.User)
             .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Retrieves paginated reviews for a specific product.
+    /// FIX: Added pagination to prevent loading all reviews for popular products.
+    /// </summary>
+    public async Task<IEnumerable<Review>> GetByProductIdAsync(Guid productId, int skip, int take, bool onlyApproved = true, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var baseQuery = trackChanges ? DbSet : DbSet.AsNoTracking();
+        var query = baseQuery.Where(r => r.ProductId == productId);
+
+        if (onlyApproved)
+        {
+            query = query.Where(r => r.IsApproved);
+        }
+
+        return await query
+            .Include(r => r.User)
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip(skip)
+            .Take(take)
             .ToListAsync(cancellationToken);
     }
 
@@ -74,13 +105,11 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
     /// </summary>
     public async Task<decimal> GetAverageRatingAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        var reviews = await DbSet
+        var average = await DbSet
             .Where(r => r.ProductId == productId && r.IsApproved)
-            .Select(r => r.Rating)
-            .ToListAsync(cancellationToken);
-
-        if (reviews.Count == 0) return 0;
-        return (decimal)reviews.Average();
+            .AverageAsync(r => (decimal?)r.Rating, cancellationToken);
+        
+        return average ?? 0;
     }
 
     /// <summary>

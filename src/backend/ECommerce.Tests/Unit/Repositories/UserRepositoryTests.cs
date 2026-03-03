@@ -124,6 +124,7 @@ public class UserRepositoryTests
 
         _context.Addresses.AddRange(addresses);
         _context.SaveChanges();
+        _context.ChangeTracker.Clear();
     }
 
     #region GetByEmailAsync Tests
@@ -245,7 +246,7 @@ public class UserRepositoryTests
     public async Task GetWithAddressesAsync_WithoutTracking_DoesNotTrackEntity()
     {
         // Arrange
-        var customer = await _context.Users.FirstAsync(u => u.Email == "customer@test.com");
+        var customer = await _context.Users.AsNoTracking().FirstAsync(u => u.Email == "customer@test.com");
 
         // Act
         var result = await _repository.GetWithAddressesAsync(customer.Id, trackChanges: false);

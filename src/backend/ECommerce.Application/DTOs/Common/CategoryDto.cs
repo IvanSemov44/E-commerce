@@ -1,21 +1,21 @@
 namespace ECommerce.Application.DTOs.Common;
 
-public class CategoryDto
+public record CategoryDto
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; } = null!;
-    public string Slug { get; set; } = null!;
-    public string? Description { get; set; }
-    public string? ImageUrl { get; set; }
-    public Guid? ParentId { get; set; }
-    public int ProductCount { get; set; }
-    public bool IsActive { get; set; }
+    public Guid Id { get; init; }
+    public string Name { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? Description { get; init; }
+    public string? ImageUrl { get; init; }
+    public Guid? ParentId { get; init; }
+    public int ProductCount { get; init; }
+    public bool IsActive { get; init; }
 }
 
-public class CategoryDetailDto : CategoryDto
+public record CategoryDetailDto : CategoryDto
 {
-    public CategoryDto? Parent { get; set; }
-    public List<CategoryDto> Children { get; set; } = new();
+    public CategoryDto? Parent { get; init; }
+    public List<CategoryDto> Children { get; init; } = new();
 }
 
 public class CreateCategoryDto

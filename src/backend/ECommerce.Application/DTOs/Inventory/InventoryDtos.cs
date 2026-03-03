@@ -1,30 +1,30 @@
 namespace ECommerce.Application.DTOs.Inventory;
 
-public class InventoryDto
+public record InventoryDto
 {
-    public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = null!;
-    public string? Sku { get; set; }
-    public int StockQuantity { get; set; }
-    public int LowStockThreshold { get; set; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public int StockQuantity { get; init; }
+    public int LowStockThreshold { get; init; }
+    public string? ImageUrl { get; init; }
+    public decimal Price { get; init; }
     public bool IsLowStock => StockQuantity <= LowStockThreshold;
     public bool IsOutOfStock => StockQuantity <= 0;
-    public string? ImageUrl { get; set; }
-    public decimal Price { get; set; }
 }
 
-public class InventoryLogDto
+public record InventoryLogDto
 {
-    public Guid Id { get; set; }
-    public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = null!;
-    public int QuantityChange { get; set; }
-    public int StockAfterChange { get; set; }
-    public string Reason { get; set; } = null!;
-    public Guid? ReferenceId { get; set; }
-    public string? Notes { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string? CreatedByUserName { get; set; }
+    public Guid Id { get; init; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = null!;
+    public int QuantityChange { get; init; }
+    public int StockAfterChange { get; init; }
+    public string Reason { get; init; } = null!;
+    public Guid? ReferenceId { get; init; }
+    public string? Notes { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public string? CreatedByUserName { get; init; }
 }
 
 public class AdjustStockRequest
@@ -45,36 +45,36 @@ public class StockCheckItemDto
     public int Quantity { get; set; }
 }
 
-public class StockCheckResponse
+public record StockCheckResponse
 {
-    public bool IsAvailable { get; set; }
-    public List<StockIssueDto> Issues { get; set; } = new();
+    public bool IsAvailable { get; init; }
+    public List<StockIssueDto> Issues { get; init; } = new();
 }
 
-public class StockIssueDto
+public record StockIssueDto
 {
-    public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = null!;
-    public int RequestedQuantity { get; set; }
-    public int AvailableQuantity { get; set; }
-    public string Message { get; set; } = null!;
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = null!;
+    public int RequestedQuantity { get; init; }
+    public int AvailableQuantity { get; init; }
+    public string Message { get; init; } = null!;
 }
 
-public class LowStockAlertDto
+public record LowStockAlertDto
 {
-    public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = null!;
-    public string? Sku { get; set; }
-    public int CurrentStock { get; set; }
-    public int LowStockThreshold { get; set; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public int CurrentStock { get; init; }
+    public int LowStockThreshold { get; init; }
 }
 
-public class StockAdjustmentResponseDto
+public record StockAdjustmentResponseDto
 {
-    public Guid ProductId { get; set; }
-    public int NewQuantity { get; set; }
-    public int QuantityChanged { get; set; }
-    public DateTime AdjustedAt { get; set; }
+    public Guid ProductId { get; init; }
+    public int NewQuantity { get; init; }
+    public int QuantityChanged { get; init; }
+    public DateTime AdjustedAt { get; init; }
 }
 
 public class BulkStockUpdateRequest

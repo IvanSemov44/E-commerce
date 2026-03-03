@@ -5,6 +5,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ECommerce.Tests.Unit.Services;
@@ -17,6 +18,7 @@ public class CartServiceTests
     private Mock<IProductRepository> _mockProductRepository = null!;
     private Mock<IMapper> _mockMapper = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
+    private Mock<ILogger<CartService>> _mockLogger = null!;
     private CartService _service = null!;
 
     [TestInitialize]
@@ -27,6 +29,7 @@ public class CartServiceTests
         _mockProductRepository = new Mock<IProductRepository>();
         _mockMapper = MockHelpers.CreateMockMapper();
         _mockUnitOfWork = MockHelpers.CreateMockUnitOfWork();
+        _mockLogger = new Mock<ILogger<CartService>>();
 
         _mockUnitOfWork.Setup(u => u.Carts).Returns(_mockCartRepository.Object);
         _mockUnitOfWork.Setup(u => u.CartItems).Returns(_mockCartItemRepository.Object);
@@ -34,7 +37,8 @@ public class CartServiceTests
 
         _service = new CartService(
             _mockUnitOfWork.Object,
-            _mockMapper.Object);
+            _mockMapper.Object,
+            _mockLogger.Object);
 
             // Sanity check: ensure unit of work is wired to product repo
             _mockUnitOfWork.Object.Products.Should().BeSameAs(_mockProductRepository.Object);

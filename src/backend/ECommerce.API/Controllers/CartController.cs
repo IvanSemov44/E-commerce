@@ -40,7 +40,7 @@ public class CartController : ControllerBase
     {
         var userId = _currentUser.UserIdOrNull;
         if (!userId.HasValue)
-            return Unauthorized(ApiResponse<CartDto>.Error("User not authenticated"));
+            return Unauthorized(ApiResponse<CartDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var cart = await _cartService.GetOrCreateCartAsync(userId, sessionId: null, cancellationToken: cancellationToken);
         return Ok(ApiResponse<CartDto>.Ok(cart, "Cart retrieved successfully"));
@@ -182,7 +182,7 @@ public class CartController : ControllerBase
         var cart = await _cartService.GetCartByIdAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
         {
-            return NotFound(ApiResponse<object>.Error("Cart not found"));
+            return NotFound(ApiResponse<object>.Failure("Cart not found", "CART_NOT_FOUND"));
         }
 
         // Check ownership: if cart belongs to a user, verify the current user owns it or is admin
@@ -196,7 +196,7 @@ public class CartController : ControllerBase
             {
                 _logger.LogWarning("User {UserId} attempted to validate cart {CartId} belonging to {CartOwnerId}",
                     currentUserId, cartId, cart.UserId);
-                return StatusCode(403, ApiResponse<object>.Error("You do not have permission to validate this cart"));
+                return StatusCode(403, ApiResponse<object>.Failure("You do not have permission to validate this cart", "INSUFFICIENT_PERMISSIONS"));
             }
         }
 

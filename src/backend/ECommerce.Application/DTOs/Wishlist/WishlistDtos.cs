@@ -1,23 +1,23 @@
 namespace ECommerce.Application.DTOs.Wishlist;
 
-public class WishlistItemDto
+public record WishlistItemDto
 {
-    public Guid Id { get; set; }
-    public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = null!;
-    public string? ProductImage { get; set; }
-    public decimal Price { get; set; }
-    public decimal? CompareAtPrice { get; set; }
-    public int StockQuantity { get; set; }
-    public bool IsAvailable { get; set; }
-    public DateTime AddedAt { get; set; }
+    public Guid Id { get; init; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = null!;
+    public string? ProductImage { get; init; }
+    public decimal Price { get; init; }
+    public decimal? CompareAtPrice { get; init; }
+    public int StockQuantity { get; init; }
+    public bool IsAvailable { get; init; }
+    public DateTime AddedAt { get; init; }
 }
 
-public class WishlistDto
+public record WishlistDto
 {
-    public Guid Id { get; set; }
-    public List<WishlistItemDto> Items { get; set; } = new();
-    public int ItemCount { get; set; }
+    public Guid Id { get; init; }
+    public List<WishlistItemDto> Items { get; init; } = new();
+    public int ItemCount { get; init; }
 }
 
 public class AddToWishlistDto

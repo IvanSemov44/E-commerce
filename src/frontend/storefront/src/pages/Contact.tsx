@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import Card from '../components/ui/Card';
+import Card from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';
 
 export default function Contact() {
@@ -61,3 +61,4 @@ export default function Contact() {
     </div>
   );
 }
+

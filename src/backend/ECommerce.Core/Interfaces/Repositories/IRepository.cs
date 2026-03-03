@@ -22,6 +22,15 @@ public interface IRepository<T> where T : BaseEntity
     Task<T?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets multiple entities by their IDs asynchronously (prevents N+1 queries).
+    /// </summary>
+    /// <param name="ids">The entity IDs to retrieve.</param>
+    /// <param name="trackChanges">Whether to track changes for retrieved entities.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Entities matching the provided IDs.</returns>
+    Task<IEnumerable<T>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets all entities asynchronously.
     /// </summary>
     /// <param name="trackChanges">Whether to track changes for retrieved entities.</param>
@@ -75,6 +84,12 @@ public interface IRepository<T> where T : BaseEntity
     Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Updates an entity (synchronous - does not save to database).
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    void Update(T entity);
+
+    /// <summary>
     /// Updates an entity asynchronously (does not save to database).
     /// </summary>
     /// <param name="entity">The entity to update.</param>
@@ -82,17 +97,24 @@ public interface IRepository<T> where T : BaseEntity
     Task UpdateAsync(T entity, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Updates multiple entities (synchronous - does not save to database).
+    /// </summary>
+    /// <param name="entities">The entities to update.</param>
+    void UpdateRange(IEnumerable<T> entities);
+
+    /// <summary>
+    /// Updates multiple entities asynchronously (does not save to database).
+    /// </summary>
+    /// <param name="entities">The entities to update.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    Task UpdateRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes an entity asynchronously (does not save to database).
     /// </summary>
     /// <param name="entity">The entity to delete.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Updates an entity (synchronous - does not save to database).
-    /// </summary>
-    /// <param name="entity">The entity to update.</param>
-    void Update(T entity);
 
     /// <summary>
     /// Deletes an entity (synchronous - does not save to database).

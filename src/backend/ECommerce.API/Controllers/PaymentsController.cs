@@ -72,7 +72,7 @@ public class PaymentsController : ControllerBase
         {
             _logger.LogWarning("Payment failed for order {OrderId}. Reason: {Message}",
                 dto.OrderId, result.Message);
-            return UnprocessableEntity(ApiResponse<PaymentResponseDto>.Error(result.Message));
+            return UnprocessableEntity(ApiResponse<PaymentResponseDto>.Failure(result.Message, "PAYMENT_FAILED"));
         }
     }
 
@@ -102,7 +102,7 @@ public class PaymentsController : ControllerBase
         var order = await _orderService.GetOrderByIdAsync(orderId, cancellationToken: cancellationToken);
         if (order == null)
         {
-            return NotFound(ApiResponse<object>.Error("Order not found"));
+            return NotFound(ApiResponse<object>.Failure("Order not found", "ORDER_NOT_FOUND"));
         }
 
         // Check if user owns the order or is admin
@@ -114,7 +114,7 @@ public class PaymentsController : ControllerBase
         {
             _logger.LogWarning("User {UserId} attempted to access payment details for order {OrderId} belonging to {OrderOwnerId}",
                 currentUserId, orderId, order.UserId);
-            return StatusCode(403, ApiResponse<object>.Error("You do not have permission to view payment details for this order"));
+            return StatusCode(403, ApiResponse<object>.Failure("You do not have permission to view payment details for this order", "INSUFFICIENT_PERMISSIONS"));
         }
 
         var paymentDetails = await _paymentService.GetPaymentDetailsAsync(orderId, cancellationToken: cancellationToken);
@@ -190,7 +190,7 @@ public class PaymentsController : ControllerBase
         if (paymentDetails == null)
         {
             _logger.LogWarning("Payment intent {PaymentIntentId} not found", paymentIntentId);
-            return NotFound(ApiResponse<string>.Error("Payment intent not found"));
+            return NotFound(ApiResponse<string>.Failure("Payment intent not found", "PAYMENT_INTENT_NOT_FOUND"));
         }
 
         return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment intent retrieved successfully"));
@@ -275,7 +275,7 @@ public class PaymentsController : ControllerBase
         {
             _logger.LogWarning("Webhook signature verification failed from IP {IP}",
                 HttpContext.Connection.RemoteIpAddress);
-            return Unauthorized(ApiResponse<object>.Error("Invalid webhook signature"));
+            return Unauthorized(ApiResponse<object>.Failure("Invalid webhook signature", "INVALID_WEBHOOK_SIGNATURE"));
         }
 
         // Deserialize after verification
@@ -286,7 +286,7 @@ public class PaymentsController : ControllerBase
         if (webhookPayload == null)
         {
             _logger.LogWarning("Invalid webhook payload received");
-            return BadRequest(ApiResponse<string>.Error("Invalid webhook payload"));
+            return BadRequest(ApiResponse<string>.Failure("Invalid webhook payload", "INVALID_WEBHOOK_PAYLOAD"));
         }
 
         _logger.LogInformation("Verified webhook received for event type: {EventType}",

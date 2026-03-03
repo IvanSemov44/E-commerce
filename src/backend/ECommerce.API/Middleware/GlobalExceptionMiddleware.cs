@@ -68,37 +68,37 @@ public class GlobalExceptionMiddleware
         {
             // Not Found (404)
             NotFoundException => (StatusCodes.Status404NotFound,
-                ApiResponse<object>.Error(exception.Message, new List<string> { exception.Message })),
+                ApiResponse<object>.Failure(exception.Message, "NOT_FOUND")),
 
             // Unauthorized (401)
             UnauthorizedException => (StatusCodes.Status401Unauthorized,
-                ApiResponse<object>.Error(exception.Message, new List<string> { exception.Message })),
+                ApiResponse<object>.Failure(exception.Message, "UNAUTHORIZED")),
 
             // Bad Request (400)
             BadRequestException => (StatusCodes.Status400BadRequest,
-                ApiResponse<object>.Error(exception.Message, new List<string> { exception.Message })),
+                ApiResponse<object>.Failure(exception.Message, "BAD_REQUEST")),
 
             // Argument validation errors (400)
             ArgumentNullException argNullEx => (StatusCodes.Status400BadRequest,
-                ApiResponse<object>.Error($"Missing required parameter: {argNullEx.ParamName}")),
+                ApiResponse<object>.Failure($"Missing required parameter: {argNullEx.ParamName}", "MISSING_PARAMETER")),
 
             ArgumentException argEx => (StatusCodes.Status400BadRequest,
-                ApiResponse<object>.Error(argEx.Message)),
+                ApiResponse<object>.Failure(argEx.Message, "INVALID_ARGUMENT")),
 
             // Invalid operation (409)
             InvalidOperationException => (StatusCodes.Status409Conflict,
-                ApiResponse<object>.Error("The requested operation could not be completed due to a conflict.")),
+                ApiResponse<object>.Failure("The requested operation could not be completed due to a conflict.", "INVALID_OPERATION")),
 
             // Conflict (409)
             ConflictException => (StatusCodes.Status409Conflict,
-                ApiResponse<object>.Error(exception.Message, new List<string> { exception.Message })),
+                ApiResponse<object>.Failure(exception.Message, "CONFLICT")),
 
             // Generic exception - Internal Server Error (500)
             // Note: exception.Message is logged but NOT exposed to client for security
             _ => (StatusCodes.Status500InternalServerError,
-                ApiResponse<object>.Error(
+                ApiResponse<object>.Failure(
                     "An internal server error occurred. Please try again later.",
-                    new List<string>()))
+                    "INTERNAL_SERVER_ERROR"))
         };
     }
 }

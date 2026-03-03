@@ -43,9 +43,17 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Register JwtOptions for DI
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        
+        // Get JWT settings from configuration
         var jwtSettings = configuration.GetSection("Jwt");
-        var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] 
-            ?? throw new InvalidOperationException("JWT SecretKey is not configured."));
+        var jwtOptions = jwtSettings.Get<JwtOptions>() ?? new JwtOptions();
+        
+        // Validate JWT configuration
+        jwtOptions.Validate();
+        
+        var secretKey = Encoding.UTF8.GetBytes(jwtOptions.SecretKey);
 
         services.AddAuthentication(options =>
         {
@@ -60,10 +68,10 @@ public static class ServiceCollectionExtensions
                 IssuerSigningKey = new SymmetricSecurityKey(secretKey),
                 ValidateIssuer = true,
                 ValidateAudience = true,
-                ValidIssuer = jwtSettings["Issuer"],
-                ValidAudience = jwtSettings["Audience"],
+                ValidIssuer = jwtOptions.Issuer,
+                ValidAudience = jwtOptions.Audience,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.FromSeconds(jwtOptions.ClockSkewSeconds)
             };
 
             // 🔒 SECURITY: Support reading JWT from httpOnly cookie
@@ -140,22 +148,6 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// CORS policy names used throughout the application.
-    /// </summary>
-    public static class CorsPolicyNames
-    {
-        /// <summary>
-        /// Development policy - allows specific development origins.
-        /// </summary>
-        public const string Development = "Development";
-
-        /// <summary>
-        /// Production policy - restricts to configured allowed origins.
-        /// </summary>
-        public const string Production = "Production";
-    }
-
-    /// <summary>
     /// Configures CORS policies based on the hosting environment.
     /// Uses distinct policy names for development and production environments.
     /// </summary>
@@ -222,19 +214,28 @@ public static class ServiceCollectionExtensions
     /// Configures rate limiting policies for API protection.
     /// </summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The application configuration.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddRateLimitingConfiguration(this IServiceCollection services)
+    public static IServiceCollection AddRateLimitingConfiguration(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        // Register rate limiting options for DI
+        services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
+        
+        var rateLimitOptions = configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()
+            ?? new RateLimitingOptions();
+
         services.AddRateLimiter(options =>
         {
-            // Global rate limit: 100 requests per minute per IP
+            // Global rate limit: configured requests per IP per window
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 100,
-                        Window = TimeSpan.FromMinutes(1),
+                        PermitLimit = rateLimitOptions.GlobalLimit,
+                        Window = TimeSpan.FromSeconds(rateLimitOptions.GlobalWindowSeconds),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
                     }));
@@ -245,8 +246,8 @@ public static class ServiceCollectionExtensions
                     partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 5,
-                        Window = TimeSpan.FromMinutes(1),
+                        PermitLimit = rateLimitOptions.AuthLimit,
+                        Window = TimeSpan.FromSeconds(rateLimitOptions.AuthWindowSeconds),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
                     }));
@@ -257,13 +258,13 @@ public static class ServiceCollectionExtensions
                     partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 3,
-                        Window = TimeSpan.FromMinutes(15),
+                        PermitLimit = rateLimitOptions.PasswordResetLimit,
+                        Window = TimeSpan.FromMinutes(rateLimitOptions.PasswordResetWindowMinutes),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
                     }));
 
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.RejectionStatusCode = rateLimitOptions.RejectionStatusCode;
             options.OnRejected = async (context, cancellationToken) =>
             {
                 context.HttpContext.Response.ContentType = "application/json";

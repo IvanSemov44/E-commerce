@@ -133,6 +133,7 @@ public class ReviewRepositoryTests
 
         _context.Reviews.AddRange(reviews);
         _context.SaveChanges();
+        _context.ChangeTracker.Clear();
     }
 
     #region GetByProductIdAsync Tests
@@ -369,7 +370,7 @@ public class ReviewRepositoryTests
     public async Task GetByIdWithDetailsAsync_WithoutTracking_DoesNotTrackEntity()
     {
         // Arrange
-        var review = await _context.Reviews.FirstAsync();
+        var review = await _context.Reviews.AsNoTracking().FirstAsync();
 
         // Act
         var result = await _repository.GetByIdWithDetailsAsync(review.Id, trackChanges: false);
@@ -483,7 +484,7 @@ public class ReviewRepositoryTests
     public async Task UserHasReviewedAsync_UserHasNotReviewed_ReturnsFalse()
     {
         // Arrange
-        var user2 = await _context.Users.FirstAsync(u => u.Email == "user2@test.com");
+        var user2 = await _context.Users.FirstAsync(u => u.Email == "user3@test.com");
         var phone = await _context.Products.FirstAsync(p => p.Slug == "phone");
 
         // Act

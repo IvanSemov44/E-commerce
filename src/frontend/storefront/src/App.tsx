@@ -1,55 +1,51 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { useAppDispatch, useAppSelector } from './store/hooks';
-import { setUser } from './store/slices/authSlice';
-import { useGetProfileQuery } from './store/api/profileApi';
-import { useCartSync, useErrorHandler } from './hooks';
-import ToastContainer from './components/Toast/ToastContainer';
-import ErrorBoundary from './components/ErrorBoundary';
+import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
+import { setUser } from '@/features/auth/slices/authSlice';
+import { useGetProfileQuery } from './features/profile/api/profileApi';
+import { useCartSync } from './features/cart/hooks';
+import { useErrorHandler } from '@/shared/hooks/useErrorHandler';
+import ToastContainer from './shared/components/Toast/ToastContainer';
+import ErrorBoundary from './shared/components/ErrorBoundary';
 
 // Eagerly load critical pages (home, login, register)
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Home from './pages/HomePage/HomePage';
+import Login from './features/auth/pages/LoginPage';
+import Register from './features/auth/pages/RegisterPage';
 
 // Lazy load non-critical pages for code splitting
-const Products = lazy(() => import('./pages/Products'));
-const ProductDetail = lazy(() => import('./pages/ProductDetail'));
-const Cart = lazy(() => import('./pages/Cart'));
-const Checkout = lazy(() => import('./pages/Checkout'));
-const OrderHistory = lazy(() => import('./pages/OrderHistory'));
-const OrderDetail = lazy(() => import('./pages/OrderDetail'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Wishlist = lazy(() => import('./pages/Wishlist'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Products = lazy(() => import('./features/products/pages/ProductsPage/ProductsPage'));
+const ProductDetail = lazy(() => import('./features/products/pages/ProductDetailPage/ProductDetailPage'));
+const Cart = lazy(() => import('./features/cart/pages/CartPage/CartPage'));
+const Checkout = lazy(() => import('./pages/CheckoutPage/CheckoutPage'));
+const OrderHistory = lazy(() => import('./features/orders/pages/OrderHistoryPage/OrderHistoryPage'));
+const OrderDetail = lazy(() => import('./features/orders/pages/OrderDetailPage/OrderDetailPage'));
+const Profile = lazy(() => import('./features/profile/pages/ProfilePage/ProfilePage'));
+const Wishlist = lazy(() => import('./features/wishlist/pages/WishlistPage/WishlistPage'));
+const ForgotPassword = lazy(() => import('./features/auth/pages/ForgotPasswordPage'));
+const ResetPassword = lazy(() => import('./features/auth/pages/ResetPasswordPage'));
 
-// Legal pages
+// Content pages
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const ReturnsPolicy = lazy(() => import('./pages/ReturnsPolicy'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const Security = lazy(() => import('./pages/Security'));
-
-// Company pages
 const AboutUs = lazy(() => import('./pages/AboutUs'));
 const Careers = lazy(() => import('./pages/Careers'));
 const Press = lazy(() => import('./pages/Press'));
 const Blog = lazy(() => import('./pages/Blog'));
-
-// Support pages
 const HelpCenter = lazy(() => import('./pages/HelpCenter'));
 const Contact = lazy(() => import('./pages/Contact'));
 const TrackOrder = lazy(() => import('./pages/TrackOrder'));
 
 // Components
-import Header from './components/Header';
-import Footer from './components/Footer';
-import ProtectedRoute from './components/ProtectedRoute';
-import CookieConsent from './components/CookieConsent';
-import AnnouncementBar from './components/AnnouncementBar';
-import LoadingFallback from './components/LoadingFallback';
+import { Header, Footer } from './shared/components/layouts';
+import ProtectedRoute from './shared/components/ProtectedRoute';
+import CookieConsent from './shared/components/CookieConsent';
+import AnnouncementBar from './shared/components/AnnouncementBar';
+import LoadingFallback from './shared/components/LoadingFallback';
 
 function AppContent() {
   const dispatch = useAppDispatch();

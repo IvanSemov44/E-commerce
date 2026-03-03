@@ -8,6 +8,11 @@ namespace ECommerce.Application.Validators.Inventory;
 /// </summary>
 public class AdjustStockRequestValidator : AbstractValidator<AdjustStockRequest>
 {
+    private static readonly HashSet<string> ValidReasons = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "restock", "adjustment", "damage", "correction", "return", "sample"
+    };
+
     public AdjustStockRequestValidator()
     {
         RuleFor(x => x.Quantity)
@@ -16,7 +21,7 @@ public class AdjustStockRequestValidator : AbstractValidator<AdjustStockRequest>
 
         RuleFor(x => x.Reason)
             .NotEmpty().WithMessage("Reason is required")
-            .Must(r => new[] { "restock", "adjustment", "damage", "correction", "return", "sample" }.Contains(r.ToLower()))
+            .Must(r => ValidReasons.Contains(r))
             .WithMessage("Reason must be one of: restock, adjustment, damage, correction, return, sample");
 
         RuleFor(x => x.Notes)

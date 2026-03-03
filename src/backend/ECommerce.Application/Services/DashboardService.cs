@@ -2,6 +2,7 @@ using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Dashboard;
 using ECommerce.Core.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 
 namespace ECommerce.Application.Services;
@@ -10,11 +11,13 @@ public class DashboardService : IDashboardService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly ILogger<DashboardService> _logger;
 
-    public DashboardService(IUnitOfWork unitOfWork, IMapper mapper)
+    public DashboardService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<DashboardService> logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<DashboardStatsDto> GetDashboardStatsAsync(CancellationToken cancellationToken = default)

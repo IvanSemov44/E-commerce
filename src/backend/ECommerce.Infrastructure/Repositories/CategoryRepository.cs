@@ -24,7 +24,7 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
         return await query
             .Include(c => c.Parent)
             .Include(c => c.Children)
-            .Include(c => c.Products)
+            // FIX: Removed .Include(c => c.Products) - was loading all products unnecessarily
             .FirstOrDefaultAsync(c => c.Slug == slug && c.IsActive, cancellationToken);
     }
 
@@ -62,13 +62,36 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     }
 
     /// <summary>
-    /// Gets the product count for a specific category.
+    /// Gets the product count for a specific category using SQL COUNT (efficient).
     /// </summary>
     public async Task<int> GetProductCountAsync(Guid categoryId, CancellationToken cancellationToken = default)
     {
-        var category = await DbSet
-            .Include(c => c.Products)
-            .FirstOrDefaultAsync(c => c.Id == categoryId, cancellationToken);
-        return category?.Products.Count ?? 0;
+        // FIX: Use SQL COUNT instead of loading all products
+        return await Context.Products
+            .CountAsync(p => p.CategoryId == categoryId && p.IsActive, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets product counts for multiple categories in a single query (avoids N+1).
+    /// </summary>
+    public async Task<Dictionary<Guid, int>> GetProductCountsAsync(IEnumerable<Guid> categoryIds, CancellationToken cancellationToken = default)
+    {
+        var ids = categoryIds.ToList();
+        if (!ids.Any())
+            return new Dictionary<Guid, int>();
+
+        // Single query to get all counts - handle nullable CategoryId
+        var counts = await Context.Products
+            .Where(p => p.IsActive && p.CategoryId.HasValue && ids.Contains(p.CategoryId.Value))
+            .GroupBy(p => p.CategoryId!.Value)
+            .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        // Build dictionary with all requested IDs (default to 0 if not found)
+        var countDict = counts.ToDictionary(c => c.CategoryId, c => c.Count);
+        return ids.ToDictionary(
+            id => id,
+            id => countDict.TryGetValue(id, out var count) ? count : 0
+        );
     }
 }

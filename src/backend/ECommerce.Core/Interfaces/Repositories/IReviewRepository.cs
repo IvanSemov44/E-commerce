@@ -20,6 +20,19 @@ public interface IReviewRepository : IRepository<Review>
     Task<IEnumerable<Review>> GetByProductIdAsync(Guid productId, bool onlyApproved = true, bool trackChanges = false, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets paginated reviews for a product asynchronously.
+    /// FIX: Added pagination to prevent loading all reviews for popular products.
+    /// </summary>
+    /// <param name="productId">The product ID.</param>
+    /// <param name="skip">Number of reviews to skip.</param>
+    /// <param name="take">Number of reviews to take.</param>
+    /// <param name="onlyApproved">Whether to retrieve only approved reviews.</param>
+    /// <param name="trackChanges">Whether to track changes for the entities.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Paginated reviews for the product.</returns>
+    Task<IEnumerable<Review>> GetByProductIdAsync(Guid productId, int skip, int take, bool onlyApproved = true, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets reviews written by a user asynchronously.
     /// </summary>
     /// <param name="userId">The user ID.</param>

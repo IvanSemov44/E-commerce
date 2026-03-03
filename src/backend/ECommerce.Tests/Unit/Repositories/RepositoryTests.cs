@@ -39,7 +39,7 @@ namespace ECommerce.Tests.Unit.Repositories
         public async Task GetByIdAsync_ExistingId_ReturnsEntity()
         {
             // Arrange
-            var product = new Product { Id = Guid.NewGuid(), Name = "Test Product", Price = 10.0m, IsActive = true };
+            var product = new Product { Id = Guid.NewGuid(), Name = "Test Product", Slug = "test-product", Price = 10.0m, IsActive = true };
             await _context.Products.AddAsync(product);
             await _context.SaveChangesAsync();
 
@@ -66,7 +66,7 @@ namespace ECommerce.Tests.Unit.Repositories
         public async Task AddAsync_ValidEntity_AddsToDatabase()
         {
             // Arrange
-            var product = new Product { Id = Guid.NewGuid(), Name = "New Product", Price = 20.0m, IsActive = true };
+            var product = new Product { Id = Guid.NewGuid(), Name = "New Product", Slug = "new-product", Price = 20.0m, IsActive = true };
 
             // Act
             await _sut.AddAsync(product);
@@ -82,7 +82,7 @@ namespace ECommerce.Tests.Unit.Repositories
         public async Task UpdateAsync_ExistingEntity_UpdatesDatabase()
         {
             // Arrange
-            var product = new Product { Id = Guid.NewGuid(), Name = "Original Name", Price = 10.0m, IsActive = true };
+            var product = new Product { Id = Guid.NewGuid(), Name = "Original Name", Slug = "original-name", Price = 10.0m, IsActive = true };
             await _context.Products.AddAsync(product);
             await _context.SaveChangesAsync();
 
@@ -100,7 +100,7 @@ namespace ECommerce.Tests.Unit.Repositories
         public async Task DeleteAsync_ExistingEntity_RemovesFromDatabase()
         {
             // Arrange
-            var product = new Product { Id = Guid.NewGuid(), Name = "To Delete", Price = 10.0m, IsActive = true };
+            var product = new Product { Id = Guid.NewGuid(), Name = "To Delete", Slug = "to-delete", Price = 10.0m, IsActive = true };
             await _context.Products.AddAsync(product);
             await _context.SaveChangesAsync();
 
@@ -118,8 +118,8 @@ namespace ECommerce.Tests.Unit.Repositories
         {
             // Arrange
             await _context.Products.AddRangeAsync(
-                new Product { Id = Guid.NewGuid(), Name = "P1", Price = 10, IsActive = true },
-                new Product { Id = Guid.NewGuid(), Name = "P2", Price = 20, IsActive = true }
+                new Product { Id = Guid.NewGuid(), Name = "P1", Slug = "p1", Price = 10, IsActive = true },
+                new Product { Id = Guid.NewGuid(), Name = "P2", Slug = "p2", Price = 20, IsActive = true }
             );
             await _context.SaveChangesAsync();
 

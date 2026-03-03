@@ -43,4 +43,19 @@ public interface IWishlistRepository : IRepository<Wishlist>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The count of items in the wishlist.</returns>
     Task<int> GetWishlistItemCountAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all wishlist entries for a user with product details.
+    /// FIX: Previously loaded ALL wishlist entries then filtered in memory.
+    /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="trackChanges">Whether to track changes.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>All wishlist entries for the user.</returns>
+    Task<IEnumerable<Wishlist>> GetAllByUserIdAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a wishlist entry by user ID and product ID.
+    /// </summary>
+    Task DeleteByUserIdAndProductIdAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
 }

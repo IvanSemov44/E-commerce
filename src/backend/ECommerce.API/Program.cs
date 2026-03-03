@@ -1,5 +1,6 @@
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Extensions;
+using ECommerce.Application.Interfaces;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -50,10 +51,13 @@ builder.Services.AddStrictJsonSerialization();
 builder.Services.AddCorsConfiguration(builder.Environment.IsDevelopment(), builder.Configuration);
 
 // Rate Limiting
-builder.Services.AddRateLimitingConfiguration();
+builder.Services.AddRateLimitingConfiguration(builder.Configuration);
 
 // CSRF Protection
 builder.Services.AddCsrfProtection(builder.Environment);
+
+// Resilience Policies (Polly - Retry, Circuit Breaker, Bulkhead, Timeout)
+builder.Services.AddResiliencePolicies();
 
 // Application Services
 builder.Services.AddApplicationServices(builder.Configuration);
@@ -70,6 +74,29 @@ builder.Services.AddSwaggerDocumentation();
 // ============================================================================
 
 var app = builder.Build();
+
+// ============================================================================
+// DI Validation - Ensure all critical services are resolvable
+// ============================================================================
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        // Validate each critical service can be instantiated
+        // This catches missing dependencies and circular references early
+        _ = scope.ServiceProvider.GetRequiredService<IOrderService>();
+        _ = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        _ = scope.ServiceProvider.GetRequiredService<IProductService>();
+        _ = scope.ServiceProvider.GetRequiredService<ICartService>();
+        _ = scope.ServiceProvider.GetRequiredService<IPaymentService>();
+    }
+    Serilog.Log.Information("✓ Dependency injection validation passed. All critical services are resolvable.");
+}
+catch (Exception ex)
+{
+    Serilog.Log.Fatal(ex, "✗ Dependency injection validation failed - missing or circular dependencies");
+    throw;
+}
 
 // Apply migrations and seed database
 await app.ApplyMigrationsAndSeedAsync();

@@ -5,6 +5,7 @@ using ECommerce.Application.DTOs.Products;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 
 namespace ECommerce.Application.Services;
@@ -13,13 +14,16 @@ public class ReviewService : IReviewService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly ILogger<ReviewService> _logger;
 
     public ReviewService(
         IUnitOfWork unitOfWork,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<ReviewService> logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<ReviewDto>> GetProductReviewsAsync(Guid productId, CancellationToken cancellationToken = default)

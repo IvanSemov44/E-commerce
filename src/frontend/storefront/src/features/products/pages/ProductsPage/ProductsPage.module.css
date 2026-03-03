@@ -1,0 +1,209 @@
+/**
+ * Products Page Styles
+ * 
+   Modern product listing page with:
+ * - Sidebar filters
+ * - Responsive grid layout
+ * - Search and sort functionality
+ * - Loading and empty states
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
+.container {
+  min-height: 100vh;
+  background-color: var(--surface-secondary);
+  padding: var(--space-6) 0;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: var(--space-8) 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: var(--space-10) 0;
+  }
+}
+
+/* =============================================================================
+   Layout
+   ============================================================================= */
+
+.layout {
+  display: flex;
+  gap: var(--space-8);
+  max-width: var(--container-2xl);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .layout {
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    padding: 0 var(--space-8);
+  }
+}
+
+/* =============================================================================
+   Sidebar
+   ============================================================================= */
+
+.sidebar {
+  display: none;
+  width: 280px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    display: block;
+  }
+}
+
+.filtersSection {
+  position: sticky;
+  top: calc(72px + var(--space-4));
+}
+
+/* Mobile Filter Toggle */
+.mobileFilterToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+  background-color: var(--surface-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+@media (min-width: 1024px) {
+  .mobileFilterToggle {
+    display: none;
+  }
+}
+
+.mobileFilterToggle:hover {
+  background-color: var(--surface-secondary);
+  border-color: var(--border-hover);
+}
+
+.mobileFilterToggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* =============================================================================
+   Content Area
+   ============================================================================= */
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* =============================================================================
+   Page Header
+   ============================================================================= */
+
+.pageHeader {
+  margin-bottom: var(--space-6);
+}
+
+.pageTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .pageTitle {
+    font-size: var(--text-3xl);
+  }
+}
+
+.resultsCount {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   Search Section
+   ============================================================================= */
+
+.searchSection {
+  margin-bottom: var(--space-6);
+}
+
+.searchBar {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.searchInput {
+  flex: 1;
+}
+
+.sortSelect {
+  min-width: 160px;
+}
+
+/* =============================================================================
+   Active Filters
+   ============================================================================= */
+
+.activeFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.activeFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
+  background-color: var(--color-brand-light);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--color-brand);
+}
+
+.activeFilter button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+}
+
+.activeFilter button:hover {
+  color: var(--color-primary-700);
+}

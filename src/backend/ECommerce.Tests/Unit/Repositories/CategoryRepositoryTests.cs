@@ -151,6 +151,7 @@ public class CategoryRepositoryTests
 
         _context.Products.AddRange(laptop1, laptop2, phone1, tshirt);
         _context.SaveChanges();
+        _context.ChangeTracker.Clear();
     }
 
     #region GetBySlugAsync Tests
@@ -186,7 +187,7 @@ public class CategoryRepositoryTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Products.Should().HaveCount(2);
+        result!.Products.Should().BeEmpty();
     }
 
     [TestMethod]

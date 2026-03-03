@@ -5,6 +5,7 @@ using ECommerce.Application.DTOs.Cart;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 
 namespace ECommerce.Application.Services;
@@ -13,13 +14,16 @@ public class CartService : ICartService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CartService> _logger;
 
     public CartService(
         IUnitOfWork unitOfWork,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<CartService> logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _logger = logger;
     }
 
     private async Task<Cart> GetOrCreateCartEntityAsync(Guid? userId, string? sessionId, CancellationToken cancellationToken = default)
@@ -113,9 +117,10 @@ public class CartService : ICartService
                 _unitOfWork.DetachEntity(cartItem);
                 
                 // Reload the cart and update the existing item's quantity instead
-                cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cart.Id, cancellationToken: cancellationToken);
+                var existingCartId = cart.Id;
+                cart = await _unitOfWork.Carts.GetCartWithItemsAsync(existingCartId, cancellationToken: cancellationToken);
                 if (cart == null)
-                    throw new CartNotFoundException(cart.Id);
+                    throw new CartNotFoundException(existingCartId);
                     
                 existingItem = cart.Items.FirstOrDefault(x => x.ProductId == productId);
                 if (existingItem != null)
@@ -191,11 +196,11 @@ public class CartService : ICartService
     {
         var cart = await GetOrCreateCartEntityAsync(userId, sessionId, cancellationToken);
 
-        foreach (var item in cart.Items.ToList())
+        if (cart.Items.Count > 0)
         {
-            await _unitOfWork.CartItems.DeleteAsync(item, cancellationToken: cancellationToken);
+            await _unitOfWork.CartItems.DeleteRangeAsync(cart.Items.ToList(), cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
         }
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         // Reload cart to get fresh data
         var cartId = cart.Id;

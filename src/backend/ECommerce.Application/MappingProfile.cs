@@ -22,8 +22,7 @@ public class MappingProfile : Profile
     public MappingProfile()
     {
         // User mappings
-        CreateMap<User, UserDto>()
-            .ReverseMap();
+        CreateMap<User, UserDto>();
 
         // User Profile mappings
         CreateMap<User, UserProfileDto>()
@@ -40,25 +39,23 @@ public class MappingProfile : Profile
         // Product mappings
         CreateMap<Product, ProductDto>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
-            .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src =>
-                src.Reviews.Any() ? src.Reviews.Average(r => (decimal)r.Rating) : 0))
-            .ForMember(dest => dest.ReviewCount, opt => opt.MapFrom(src => src.Reviews.Count))
-            .ReverseMap();
+            // FIX: AverageRating and ReviewCount should be calculated at DB level, not during mapping
+            // These require Reviews to be loaded which causes performance issues
+            .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
+            .ForMember(dest => dest.ReviewCount, opt => opt.Ignore());
 
         CreateMap<Product, ProductDetailDto>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
             .ForMember(dest => dest.Reviews, opt => opt.MapFrom(src => src.Reviews))
-            .ForMember(dest => dest.AverageRating, opt => opt.MapFrom(src =>
-                src.Reviews.Any() ? src.Reviews.Average(r => (decimal)r.Rating) : 0))
-            .ForMember(dest => dest.ReviewCount, opt => opt.MapFrom(src => src.Reviews.Count))
-            .ReverseMap();
+            // FIX: AverageRating and ReviewCount should be calculated at DB level
+            .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
+            .ForMember(dest => dest.ReviewCount, opt => opt.Ignore());
 
         CreateMap<CreateProductDto, Product>();
         CreateMap<UpdateProductDto, Product>();
 
         // Category mappings (from Products folder)
-        CreateMap<Category, ProductCategoryDto>()
-            .ReverseMap();
+        CreateMap<Category, ProductCategoryDto>();
 
         // Category mappings (from new DTOs folder)
         // Category -> DTO (centralized)
@@ -75,14 +72,12 @@ public class MappingProfile : Profile
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // ProductImage mappings
-        CreateMap<ProductImage, ProductImageDto>()
-            .ReverseMap();
+        CreateMap<ProductImage, ProductImageDto>();
 
         // Review mappings (product-embedded simplified DTOs)
         CreateMap<Review, ProductReviewDto>()
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src =>
-                src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : "Anonymous"))
-            .ReverseMap();
+                src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : "Anonymous"));
 
         CreateMap<Review, ReviewDetailDto>()
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src =>
@@ -93,19 +88,15 @@ public class MappingProfile : Profile
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // Order mappings
-        CreateMap<Order, OrderDto>()
-            .ReverseMap();
+        CreateMap<Order, OrderDto>();
 
-        CreateMap<Order, OrderDetailDto>()
-            .ReverseMap();
+        CreateMap<Order, OrderDetailDto>();
 
-        CreateMap<OrderItem, OrderItemDto>()
-            .ReverseMap();
+        CreateMap<OrderItem, OrderItemDto>();
 
         // Cart mappings
         CreateMap<Cart, CartDto>()
-            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
-            .ReverseMap();
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
 
         CreateMap<CartItem, CartItemDto>()
             .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Product != null ? src.Product.Id : src.ProductId))
@@ -122,12 +113,10 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Total, opt => opt.MapFrom(src => (src.Product != null ? src.Product.Price : 0m) * src.Quantity));
 
         // Address mappings
-        CreateMap<Address, AddressDto>()
-            .ReverseMap();
+        CreateMap<Address, AddressDto>();
 
         // Wishlist mappings
-        CreateMap<Wishlist, WishlistDto>()
-            .ReverseMap();
+        CreateMap<Wishlist, WishlistDto>();
 
         CreateMap<Product, ECommerce.Application.DTOs.Wishlist.WishlistItemDto>()
             .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))

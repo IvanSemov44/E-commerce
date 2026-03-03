@@ -126,6 +126,7 @@ public class ProductRepositoryTests
         );
 
         _context.SaveChanges();
+        _context.ChangeTracker.Clear();
     }
 
     #region GetBySlugAsync Tests
@@ -171,7 +172,8 @@ public class ProductRepositoryTests
         // Assert
         result.Should().NotBeNull();
         result!.Category.Should().NotBeNull();
-        result.Reviews.Should().NotBeEmpty();
+        result.Images.Should().NotBeNull();
+        result.Reviews.Should().BeEmpty();
     }
 
     [TestMethod]

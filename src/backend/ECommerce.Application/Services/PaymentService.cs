@@ -15,6 +15,11 @@ namespace ECommerce.Application.Services;
 /// </summary>
 public class PaymentService : IPaymentService
 {
+    private static readonly HashSet<string> SupportedPaymentMethods = new(StringComparer.Ordinal)
+    {
+        "stripe", "paypal", "credit_card", "debit_card", "apple_pay", "google_pay"
+    };
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PaymentService> _logger;
     private readonly IConfiguration _configuration;
@@ -134,11 +139,8 @@ public class PaymentService : IPaymentService
     {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, cancellationToken: cancellationToken);
-        if (order == null)
-        {
-            throw new OrderNotFoundException(orderId);
-        }
+        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, trackChanges: false, cancellationToken: cancellationToken)
+            ?? throw new OrderNotFoundException(orderId);
 
         if (string.IsNullOrEmpty(order.PaymentIntentId))
         {
@@ -168,11 +170,8 @@ public class PaymentService : IPaymentService
     {
         _logger.LogInformation("Processing refund for order {OrderId}", dto.OrderId);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId, cancellationToken: cancellationToken);
-        if (order == null)
-        {
-            throw new OrderNotFoundException(dto.OrderId);
-        }
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId, cancellationToken: cancellationToken)
+            ?? throw new OrderNotFoundException(dto.OrderId);
 
         if (order.PaymentStatus != PaymentStatus.Paid)
         {
@@ -210,13 +209,14 @@ public class PaymentService : IPaymentService
 
     public async Task<bool> IsPaymentMethodSupportedAsync(string paymentMethod, CancellationToken cancellationToken = default)
     {
-        var supportedMethods = new[] { "stripe", "paypal", "credit_card", "debit_card", "apple_pay", "google_pay" };
-        return supportedMethods.Contains(paymentMethod.ToLower());
+        var normalizedMethod = NormalizePaymentMethod(paymentMethod);
+        return SupportedPaymentMethods.Contains(normalizedMethod);
     }
 
     private string GenerateMockPaymentIntentId(string paymentMethod)
     {
-        var prefix = paymentMethod.ToLower() switch
+        var normalizedMethod = NormalizePaymentMethod(paymentMethod);
+        var prefix = normalizedMethod switch
         {
             "stripe" => "pi_",
             "paypal" => "ppi_",
@@ -230,7 +230,8 @@ public class PaymentService : IPaymentService
 
     private string GetPaymentProviderName(string paymentMethod)
     {
-        return paymentMethod.ToLower() switch
+        var normalizedMethod = NormalizePaymentMethod(paymentMethod);
+        return normalizedMethod switch
         {
             "stripe" => "Stripe",
             "paypal" => "PayPal",
@@ -240,6 +241,12 @@ public class PaymentService : IPaymentService
             "debit_card" => "Debit Card",
             _ => "Unknown"
         };
+    }
+
+    private static string NormalizePaymentMethod(string paymentMethod)
+    {
+        var normalizedMethod = paymentMethod.ToLowerInvariant();
+        return normalizedMethod == "card" ? "credit_card" : normalizedMethod;
     }
 
     private bool ShouldSimulatePaymentFailure()

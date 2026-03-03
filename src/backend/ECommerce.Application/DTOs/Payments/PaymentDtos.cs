@@ -17,33 +17,33 @@ public class ProcessPaymentDto
 /// <summary>
 /// DTO for payment response after processing.
 /// </summary>
-public class PaymentResponseDto
+public record PaymentResponseDto
 {
-    public bool Success { get; set; }
-    public string? PaymentIntentId { get; set; }
-    public string Message { get; set; } = null!;
-    public string? TransactionId { get; set; }
-    public DateTime ProcessedAt { get; set; }
-    public string PaymentMethod { get; set; } = null!;
-    public decimal Amount { get; set; }
-    public string Status { get; set; } = null!; // "pending", "processing", "completed", "failed"
-    public Dictionary<string, string>? Metadata { get; set; }
+    public bool Success { get; init; }
+    public string? PaymentIntentId { get; init; }
+    public string Message { get; init; } = null!;
+    public string? TransactionId { get; init; }
+    public DateTime ProcessedAt { get; init; }
+    public string PaymentMethod { get; init; } = null!;
+    public decimal Amount { get; init; }
+    public string Status { get; init; } = null!;
+    public Dictionary<string, string>? Metadata { get; init; }
 }
 
 /// <summary>
 /// DTO for retrieving payment details.
 /// </summary>
-public class PaymentDetailsDto
+public record PaymentDetailsDto
 {
-    public Guid OrderId { get; set; }
-    public string PaymentIntentId { get; set; } = null!;
-    public string Status { get; set; } = null!;
-    public string PaymentMethod { get; set; } = null!;
-    public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
-    public DateTime CreatedAt { get; set; }
-    public DateTime? ProcessedAt { get; set; }
-    public string? ErrorMessage { get; set; }
+    public Guid OrderId { get; init; }
+    public string PaymentIntentId { get; init; } = null!;
+    public string Status { get; init; } = null!;
+    public string PaymentMethod { get; init; } = null!;
+    public decimal Amount { get; init; }
+    public string Currency { get; init; } = "USD";
+    public DateTime CreatedAt { get; init; }
+    public DateTime? ProcessedAt { get; init; }
+    public string? ErrorMessage { get; init; }
 }
 
 /// <summary>
@@ -60,14 +60,14 @@ public class RefundPaymentDto
 /// <summary>
 /// DTO for refund response.
 /// </summary>
-public class RefundResponseDto
+public record RefundResponseDto
 {
-    public bool Success { get; set; }
-    public string? RefundId { get; set; }
-    public decimal Amount { get; set; }
-    public string Status { get; set; } = null!;
-    public string Message { get; set; } = null!;
-    public DateTime ProcessedAt { get; set; }
+    public bool Success { get; init; }
+    public string? RefundId { get; init; }
+    public decimal Amount { get; init; }
+    public string Status { get; init; } = null!;
+    public string Message { get; init; } = null!;
+    public DateTime ProcessedAt { get; init; }
 }
 
 /// <summary>

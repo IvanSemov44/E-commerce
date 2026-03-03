@@ -72,7 +72,11 @@ public class OrdersController : ControllerBase
         var order = await _orderService.GetOrderByIdAsync(id, cancellationToken: cancellationToken);
         if (order == null)
         {
-            return NotFound(ApiResponse<OrderDetailDto>.Error("Order not found"));
+            return NotFound(ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
+            {
+                Message = "Order not found",
+                Code = "ORDER_NOT_FOUND"
+            }));
         }
 
         // Ownership check: only order owner or admin can view
@@ -108,7 +112,11 @@ public class OrdersController : ControllerBase
         var order = await _orderService.GetOrderByNumberAsync(orderNumber, cancellationToken: cancellationToken);
         if (order == null)
         {
-            return NotFound(ApiResponse<OrderDetailDto>.Error("Order not found"));
+            return NotFound(ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
+            {
+                Message = "Order not found",
+                Code = "ORDER_NOT_FOUND"
+            }));
         }
 
         // Ownership check: only order owner or admin can view
@@ -214,7 +222,7 @@ public class OrdersController : ControllerBase
         var order = await _orderService.GetOrderByIdAsync(id, cancellationToken: cancellationToken);
         if (order == null)
         {
-            return NotFound(ApiResponse<object>.Error("Order not found"));
+            return NotFound(ApiResponse<object>.Failure("Order not found", "ORDER_NOT_FOUND"));
         }
 
         // Check if user owns the order or is admin
@@ -226,7 +234,7 @@ public class OrdersController : ControllerBase
         {
             _logger.LogWarning("User {UserId} attempted to cancel order {OrderId} belonging to {OrderOwnerId}",
                 currentUserId, id, order.UserId);
-            return StatusCode(403, ApiResponse<object>.Error("You do not have permission to cancel this order"));
+            return StatusCode(403, ApiResponse<object>.Failure("You do not have permission to cancel this order", "INSUFFICIENT_PERMISSIONS"));
         }
 
         var result = await _orderService.CancelOrderAsync(id, cancellationToken: cancellationToken);

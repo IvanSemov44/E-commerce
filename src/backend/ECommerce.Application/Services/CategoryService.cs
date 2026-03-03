@@ -4,6 +4,8 @@ using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Constants;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 
 namespace ECommerce.Application.Services;
@@ -12,31 +14,81 @@ public class CategoryService : ICategoryService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(IUnitOfWork unitOfWork, IMapper mapper)
+    public CategoryService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<CategoryService> logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _logger = logger;
     }
 
-    public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<CategoryDto>> GetAllCategoriesAsync(
+        int pageNumber = 1,
+        int pageSize = 100,
+        CancellationToken cancellationToken = default)
     {
+        if (pageNumber <= 0)
+            throw new InvalidPaginationException(pageNumber);
+        
+        // Enforce max page size to prevent DoS attacks
+        pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
+
         var categories = await _unitOfWork.Categories.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
-        return _mapper.Map<IEnumerable<CategoryDto>>(categories);
+        var totalCount = categories.Count();
+        
+        var paginatedCategories = categories
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        var dtos = _mapper.Map<List<CategoryDto>>(paginatedCategories);
+        
+        return new PaginatedResult<CategoryDto>
+        {
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = pageNumber,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<IEnumerable<CategoryDto>> GetTopLevelCategoriesAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<CategoryDto>> GetTopLevelCategoriesAsync(
+        int pageNumber = 1,
+        int pageSize = 100,
+        CancellationToken cancellationToken = default)
     {
+        if (pageNumber <= 0)
+            throw new InvalidPaginationException(pageNumber);
+        
+        // Enforce max page size to prevent DoS attacks
+        pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
+
         var categories = await _unitOfWork.Categories.GetTopLevelCategoriesAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var dtos = _mapper.Map<IEnumerable<CategoryDto>>(categories);
+        var totalCount = categories.Count();
 
-        // Populate product counts
-        foreach (var dto in dtos)
+        var paginatedCategories = categories
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        var dtos = _mapper.Map<List<CategoryDto>>(paginatedCategories).ToList();
+
+        // FIX: Use batch query instead of N+1 loop
+        var categoryIds = dtos.Select(d => d.Id).ToList();
+        var productCounts = await _unitOfWork.Categories.GetProductCountsAsync(categoryIds, cancellationToken);
+
+        dtos = dtos
+            .Select(dto => dto with { ProductCount = productCounts.GetValueOrDefault(dto.Id, 0) })
+            .ToList();
+
+        return new PaginatedResult<CategoryDto>
         {
-            dto.ProductCount = await _unitOfWork.Categories.GetProductCountAsync(dto.Id, cancellationToken: cancellationToken);
-        }
-
-        return dtos;
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     public async Task<CategoryDetailDto> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -46,8 +98,8 @@ public class CategoryService : ICategoryService
             throw new CategoryNotFoundException(id);
 
         var dto = _mapper.Map<CategoryDetailDto>(category);
-        dto.ProductCount = await _unitOfWork.Categories.GetProductCountAsync(id, cancellationToken: cancellationToken);
-        return dto;
+        var productCount = await _unitOfWork.Categories.GetProductCountAsync(id, cancellationToken: cancellationToken);
+        return dto with { ProductCount = productCount };
     }
 
     public async Task<CategoryDetailDto> GetCategoryBySlugAsync(string slug, CancellationToken cancellationToken = default)
@@ -57,8 +109,8 @@ public class CategoryService : ICategoryService
             throw new CategoryNotFoundException($"Category with slug '{slug}' not found");
 
         var dto = _mapper.Map<CategoryDetailDto>(category);
-        dto.ProductCount = await _unitOfWork.Categories.GetProductCountAsync(category.Id, cancellationToken: cancellationToken);
-        return dto;
+        var productCount = await _unitOfWork.Categories.GetProductCountAsync(category.Id, cancellationToken: cancellationToken);
+        return dto with { ProductCount = productCount };
     }
 
     public async Task<CategoryDetailDto> CreateCategoryAsync(CreateCategoryDto dto, CancellationToken cancellationToken = default)

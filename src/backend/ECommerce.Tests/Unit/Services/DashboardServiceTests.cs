@@ -5,6 +5,7 @@ using ECommerce.Application.Services;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Application.DTOs.Dashboard;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using ECommerce.Tests.Helpers;
@@ -51,7 +52,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(revenueTrend);
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();
@@ -94,7 +96,8 @@ namespace ECommerce.Tests.Unit.Services
             mockUnitOfWork.Setup(u => u.Products).Returns(productRepo.Object);
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();
@@ -140,7 +143,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(revenueTrend);
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();
@@ -192,7 +196,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(revenueTrend);
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();
@@ -226,7 +231,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30, It.IsAny<CancellationToken>())).ReturnsAsync(new Dictionary<DateTime, decimal>());
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             var cts = new CancellationTokenSource();
 
@@ -260,7 +266,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(new Dictionary<DateTime, decimal>());
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             // Act
             var result1 = await service.GetDashboardStatsAsync();
@@ -295,7 +302,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(new Dictionary<DateTime, decimal>());
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             // Act
             await service.GetDashboardStatsAsync();
@@ -340,7 +348,8 @@ namespace ECommerce.Tests.Unit.Services
             orderRepo.Setup(r => r.GetRevenueTrendAsync(30)).ReturnsAsync(revenueTrend);
 
             var mockMapper = MockHelpers.CreateMockMapper();
-            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object);
+            var mockLogger = new Mock<ILogger<DashboardService>>();
+            var service = new DashboardService(mockUnitOfWork.Object, mockMapper.Object, mockLogger.Object);
 
             // Act
             var result = await service.GetDashboardStatsAsync();

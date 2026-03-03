@@ -80,7 +80,7 @@ public static class QueryableExtensions
         this IQueryable<T> source,
         Expression<Func<T, bool>>? predicate)
     {
-        return predicate != null ? source.Where(predicate) : source;
+        return predicate != null ? System.Linq.Queryable.Where(source, predicate) : source;
     }
 
     /// <summary>
@@ -192,7 +192,7 @@ public static class QueryableExtensions
         this IQueryable<T> source,
         CancellationToken cancellationToken = default)
     {
-        return await source.CountAsync(cancellationToken);
+        return await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(source, cancellationToken);
     }
 }
 

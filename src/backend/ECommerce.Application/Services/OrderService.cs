@@ -198,6 +198,7 @@ public class OrderService : IOrderService
     /// <summary>
     /// Processes order items, calculates subtotal, and creates stock check list.
     /// SECURITY: Uses server-side product lookup to prevent price manipulation attacks.
+    /// PERFORMANCE: Batch-loads all products to prevent N+1 queries.
     /// </summary>
     private async Task<(List<OrderItem> items, decimal subtotal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems)> 
         ProcessOrderItemsAsync(IEnumerable<CreateOrderItemDto>? itemDtos, CancellationToken cancellationToken)
@@ -208,14 +209,26 @@ public class OrderService : IOrderService
 
         if (itemDtos != null && itemDtos.Any())
         {
+            // PERFORMANCE FIX: Batch load all products at once instead of looping with individual queries
+            var productIds = itemDtos
+                .Select(i => 
+                {
+                    if (Guid.TryParse(i.ProductId, out var id))
+                        return id;
+                    throw new ProductNotFoundException(i.ProductId);
+                })
+                .ToList();
+
+            var products = await _unitOfWork.Products.GetByIdsAsync(productIds, trackChanges: false, cancellationToken);
+            var productDict = products.ToDictionary(p => p.Id);
+
             foreach (var itemDto in itemDtos)
             {
                 if (!Guid.TryParse(itemDto.ProductId, out var productId))
                     throw new ProductNotFoundException(itemDto.ProductId);
 
-                // 🔒 SECURITY FIX: Look up product from database to get authoritative price
-                var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken);
-                if (product == null)
+                // Look up from pre-loaded products
+                if (!productDict.TryGetValue(productId, out var product))
                     throw new ProductNotFoundException(productId);
 
                 // Validate product is available for purchase
@@ -262,7 +275,7 @@ public class OrderService : IOrderService
     {
         if (stockCheckItems.Any())
         {
-            var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
+            var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems, cancellationToken);
             if (!stockCheck.IsAvailable)
             {
                 var firstIssue = stockCheck.Issues.First();
@@ -278,7 +291,7 @@ public class OrderService : IOrderService
     {
         if (!string.IsNullOrWhiteSpace(promoCode))
         {
-            var promoValidation = await _promoCodeService.ValidatePromoCodeAsync(promoCode, subtotal);
+            var promoValidation = await _promoCodeService.ValidatePromoCodeAsync(promoCode, subtotal, cancellationToken);
             if (promoValidation.IsValid && promoValidation.PromoCode != null)
             {
                 order.DiscountAmount = promoValidation.DiscountAmount;
@@ -311,25 +324,22 @@ public class OrderService : IOrderService
     }
 
     /// <summary>
-    /// Reduces stock for all products in the order.
+    /// Reduces stock for all products in the order using batch operation.
+    /// PERFORMANCE FIX: Single transaction for all items instead of N individual transactions.
     /// Throws exception on failure to trigger transaction rollback.
     /// </summary>
     private async Task ReduceProductStockAsync(List<OrderItem> items, Order order, Guid? userId, CancellationToken cancellationToken)
     {
-        foreach (var item in items)
+        var itemsToReduce = items
+            .Where(i => i.ProductId.HasValue)
+            .Select(i => (i.ProductId!.Value, i.Quantity, "sale", (Guid?)order.Id, userId))
+            .ToList();
+
+        if (itemsToReduce.Any())
         {
-            if (item.ProductId.HasValue)
-            {
-                await _inventoryService.ReduceStockAsync(
-                    item.ProductId.Value,
-                    item.Quantity,
-                    "sale",
-                    order.Id,
-                    userId
-                );
-                _logger.LogInformation("Stock reduced for product {ProductId}: {Quantity} units for order {OrderNumber}",
-                    item.ProductId.Value, item.Quantity, order.OrderNumber);
-            }
+            await _inventoryService.ReduceStockBatchAsync(itemsToReduce, cancellationToken);
+            _logger.LogInformation("Batch stock reduction completed for {ItemCount} products in order {OrderNumber}",
+                itemsToReduce.Count, order.OrderNumber);
         }
     }
 
@@ -342,7 +352,7 @@ public class OrderService : IOrderService
         {
             try
             {
-                await _promoCodeService.IncrementUsedCountAsync(promoCodeId.Value);
+                await _promoCodeService.IncrementUsedCountAsync(promoCodeId.Value, cancellationToken);
             }
             catch (Exception promoEx)
             {
@@ -518,15 +528,17 @@ public class OrderService : IOrderService
         if (string.IsNullOrEmpty(country))
             return "US";
 
+        var countryUpper = country.ToUpperInvariant();
+
         // If already 2 characters, assume it's a code
-        if (country.Length == 2)
-            return country.ToUpper();
+        if (countryUpper.Length == 2)
+            return countryUpper;
 
         if (CountryCodeMap.TryGetValue(country, out var code))
             return code;
 
         // Default: take first 2 characters
-        return country.Substring(0, Math.Min(2, country.Length)).ToUpper();
+        return countryUpper.Substring(0, Math.Min(2, countryUpper.Length));
     }
 
     private async Task<string?> GetUserEmailAsync(Guid userId, CancellationToken cancellationToken = default)

@@ -37,6 +37,16 @@ public interface IProductRepository : IRepository<Product>
     Task<IEnumerable<Product>> GetFeaturedAsync(int count, bool trackChanges = false, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets featured products with pagination asynchronously.
+    /// </summary>
+    /// <param name="skip">Number of products to skip.</param>
+    /// <param name="count">The number of featured products to retrieve.</param>
+    /// <param name="trackChanges">Whether to track changes for the entities.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Featured products.</returns>
+    Task<IEnumerable<Product>> GetFeaturedAsync(int skip, int count, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets active products with pagination asynchronously.
     /// </summary>
     /// <param name="skip">Number of products to skip.</param>
@@ -52,6 +62,14 @@ public interface IProductRepository : IRepository<Product>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The count of active products.</returns>
     Task<int> GetActiveProductsCountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the count of featured products asynchronously.
+    /// FIX: Added to fix wrong pagination total in GetFeaturedProductsAsync.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The count of featured products.</returns>
+    Task<int> GetFeaturedProductsCountAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets products with applied filters asynchronously.

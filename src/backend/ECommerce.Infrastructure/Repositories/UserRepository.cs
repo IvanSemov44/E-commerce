@@ -16,6 +16,14 @@ public class UserRepository : Repository<User>, IUserRepository
     {
     }
 
+    public override async Task<User?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Include(u => u.Addresses)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
     /// <summary>
     /// Retrieves a user by email address.
     /// </summary>

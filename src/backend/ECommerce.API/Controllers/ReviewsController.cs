@@ -157,7 +157,7 @@ public class ReviewsController : ControllerBase
         var existingReview = await _reviewService.GetReviewByIdAsync(reviewId, cancellationToken: cancellationToken);
         if (existingReview == null)
         {
-            return NotFound(ApiResponse<ReviewDetailDto>.Error("Review not found"));
+            return NotFound(ApiResponse<ReviewDetailDto>.Failure("Review not found", "REVIEW_NOT_FOUND"));
         }
 
         // Ownership check: only review owner or admin can update
@@ -195,7 +195,7 @@ public class ReviewsController : ControllerBase
         var existingReview = await _reviewService.GetReviewByIdAsync(reviewId, cancellationToken: cancellationToken);
         if (existingReview == null)
         {
-            return NotFound(ApiResponse<object>.Error("Review not found"));
+            return NotFound(ApiResponse<object>.Failure("Review not found", "REVIEW_NOT_FOUND"));
         }
 
         // Ownership check: only review owner or admin can delete
