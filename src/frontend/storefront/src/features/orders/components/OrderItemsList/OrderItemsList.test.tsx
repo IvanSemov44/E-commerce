@@ -10,6 +10,7 @@ describe('OrderItemsList', () => {
       productImageUrl: 'image1.jpg',
       quantity: 2,
       unitPrice: 29.99,
+      totalPrice: 59.98,
     },
     {
       id: '2',
@@ -17,6 +18,7 @@ describe('OrderItemsList', () => {
       productImageUrl: 'image2.jpg',
       quantity: 1,
       unitPrice: 49.99,
+      totalPrice: 49.99,
     },
   ];
 
@@ -55,6 +57,7 @@ describe('OrderItemsList', () => {
         productImageUrl: '',
         quantity: 2,
         unitPrice: 29.99,
+        totalPrice: 59.98,
       },
     ];
 

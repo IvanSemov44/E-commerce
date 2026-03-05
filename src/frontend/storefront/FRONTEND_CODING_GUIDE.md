@@ -258,6 +258,10 @@ src/features/products/
    export { usePriceFilters } from './usePriceFilters';
    export { useRatingFilter } from './useRatingFilter';
    export { useFeaturedFilter } from './useFeaturedFilter';
+   
+   // Note: This hooks/index.ts is for internal organization within the component.
+   // These hooks should NOT be re-exported through the component's main index.ts
+   // unless they're intentionally designed for reuse across features.
    ```
 
 3. **Separate `utils/` folder** (5+ utility functions):
@@ -273,33 +277,70 @@ src/features/products/
    // utils/index.ts
    export * from './calculations.utils';
    export * from './formatting.utils';
+   
+   // Note: This utils/index.ts is for internal organization within the component.
+   // These utilities should NOT be re-exported through the component's main index.ts
+   // unless they're intentionally designed for reuse across features.
    ```
 
 **Main component barrel export (`index.ts`):**
+
+⚠️ **IMPORTANT: Minimal Public API Pattern**
+
+The `index.ts` file should **only export the component itself** (the public API). Types, hooks, and utilities are **internal implementation details** and should NOT be exported unless they're intentionally meant to be reused by other components.
+
+**✅ CORRECT - Minimal export (most common):**
 ```typescript
+// ComponentName/index.ts
 export { default } from './ComponentName';
-export type { ComponentNameProps, RelatedTypes } from './ComponentName.types';
-export { useCustomHook, anotherHook } from './hooks'; // or './ComponentName.hooks'
-export { utilFunction1, utilFunction2 } from './utils'; // or './ComponentName.utils'
 ```
 
-**Benefits:**
-- ✅ **Encapsulation**: All component-related code in one folder
-- ✅ **Scalability**: Easy to add tests, hooks, utils without cluttering files
-- ✅ **Reusability**: Clear barrel exports make it easy to import what you need
-- ✅ **Maintainability**: Each file has a single responsibility
-- ✅ **Type safety**: Centralized types in `.types.ts` files
-- ✅ **Discoverability**: Test files live next to components, not in separate `/tests` folder
+**❌ WRONG - Exporting internals:**
+```typescript
+// Don't do this unless types/hooks are intentionally shared
+export { default } from './ComponentName';
+export type { ComponentNameProps } from './ComponentName.types';  // ❌ Internal detail
+export { useCustomHook } from './ComponentName.hooks';            // ❌ Internal detail
+export { formatPrice } from './ComponentName.utils';              // ❌ Internal detail
+```
+
+**When to export from index.ts:**
+- ✅ The component itself (always)
+- ✅ Types/utilities **intentionally designed for reuse** across features (e.g., shared `ButtonProps`, `formatCurrency`)
+- ❌ Component-specific types used only in tests (import directly: `import type { Props } from './Component.types'`)
+- ❌ Internal hooks/utils not meant for external use
+
+**Example - Shared utility that SHOULD be exported:**
+```typescript
+// Button/index.ts (UI library component)
+export { default } from './Button';
+export type { ButtonProps, ButtonVariant } from './Button.types';  // ✅ Meant for consumers
+```
+
+**Benefits of minimal exports:**
+- ✅ **Clear public API**: Consumers know exactly what's meant to be used externally
+- ✅ **Prevents accidental coupling**: Other components can't depend on internal implementation details
+- ✅ **Easier refactoring**: Internal files (types, utils, hooks) can be changed/renamed without affecting consumers
+- ✅ **Encapsulation**: Component internals stay truly internal
+- ✅ **Code organization**: Tests and component-specific code import directly from `.types.ts` or `.hooks.ts`
+- ✅ **Follows colocation principle**: Keep related files close, expose minimal interface
 
 **Import examples:**
 ```typescript
-// Import from colocated component with hooks
+// ✅ Import component (using index.ts)
 import ProductFilters from '@/features/products/components/ProductFilters';
-import { usePriceFilters, useRatingFilter } from '@/features/products/components/ProductFilters';
 
-// Or with explicit path when needed
-import { ProductFilters } from '@/features/products/components';
-import { usePriceFilters } from '@/features/products/components/ProductFilters/hooks';
+// ✅ Import types directly in tests (NOT through index.ts)
+import type { ProductFiltersProps } from './ProductFilters.types';
+
+// ✅ Import hooks directly in component (NOT through index.ts)
+import { usePriceFilters } from './hooks/usePriceFilters';
+// Or if using single .hooks.ts file:
+import { usePriceFilters } from './ProductFilters.hooks';
+
+// ❌ WRONG - Don't import internal types/hooks from other components
+import { ProductFiltersProps } from '@/features/products/components/ProductFilters';  // ❌ Won't work
+import { usePriceFilters } from '@/features/products/components/ProductFilters';      // ❌ Won't work
 ```
 
 **Reference templates:**

@@ -103,7 +103,7 @@ public class ProfileController : ControllerBase
         if (result is Result<UserPreferencesDto>.Failure failure)
             return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
         
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ public class ProfileController : ControllerBase
         if (result is Result<UserPreferencesDto>.Failure failure)
             return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
         
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
