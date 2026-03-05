@@ -1,3 +1,4 @@
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.Interfaces;
@@ -139,6 +140,7 @@ public class InventoryController : ControllerBase
     /// <param name="request">Stock adjustment request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("{productId}/adjust")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -188,6 +190,7 @@ public class InventoryController : ControllerBase
     /// <param name="request">Restock request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("{productId}/restock")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -228,6 +231,7 @@ public class InventoryController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("check-availability")]
     [AllowAnonymous]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<StockCheckResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CheckStockAvailability([FromBody] StockCheckRequest request, CancellationToken cancellationToken)
@@ -247,6 +251,7 @@ public class InventoryController : ControllerBase
     /// <param name="request">The stock update request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("{productId:guid}")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -281,6 +286,7 @@ public class InventoryController : ControllerBase
     /// <param name="request">Bulk update request containing list of updates.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("bulk-update")]
+    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<List<StockAdjustmentResponseDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
