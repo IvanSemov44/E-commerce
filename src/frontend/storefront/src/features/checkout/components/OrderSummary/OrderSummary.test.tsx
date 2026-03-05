@@ -8,15 +8,19 @@ describe('OrderSummary', () => {
     {
       id: '1',
       name: 'Product 1',
+      slug: 'product-1',
       price: 29.99,
       quantity: 2,
+      maxStock: 10,
       image: 'image1.jpg',
     },
     {
       id: '2',
       name: 'Product 2',
+      slug: 'product-2',
       price: 49.99,
       quantity: 1,
+      maxStock: 5,
       image: 'image2.jpg',
     },
   ];
