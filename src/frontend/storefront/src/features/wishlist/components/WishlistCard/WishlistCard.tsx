@@ -1,38 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { useRemoveFromWishlistMutation } from '../api/wishlistApi';
-import { useAddToCartMutation } from '@/features/cart/api/cartApi';
-import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '@/shared/components/ui/Button';
+import type { WishlistCardProps } from './WishlistCard.types';
+import { useWishlistRemove, useWishlistAddToCart } from './WishlistCard.hooks';
 import styles from './WishlistCard.module.css';
-
-interface WishlistCardProps {
-  productId: string;
-  productName: string;
-  price: number;
-  image?: string;
-}
 
 export default function WishlistCard({ productId, productName, image }: Omit<WishlistCardProps, 'price'>) {
   const { t } = useTranslation();
-  const [removeFromWishlist] = useRemoveFromWishlistMutation();
-  const [addToCart] = useAddToCartMutation();
-  const { handleError } = useApiErrorHandler();
-
-  const handleRemove = async () => {
-    try {
-      await removeFromWishlist(productId).unwrap();
-    } catch (err) {
-      handleError(err, t('common.errorOccurred'));
-    }
-  };
-
-  const handleAddToCart = async () => {
-    try {
-      await addToCart({ productId, quantity: 1 }).unwrap();
-    } catch (err) {
-      handleError(err, t('common.errorOccurred'));
-    }
-  };
+  const handleRemove = useWishlistRemove(productId);
+  const handleAddToCart = useWishlistAddToCart(productId);
 
   return (
     <div className={styles.card}>
