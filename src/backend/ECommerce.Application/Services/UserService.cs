@@ -3,6 +3,8 @@ using AutoMapper;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -27,24 +29,24 @@ public class UserService : IUserService
         _logger = logger;
     }
 
-    public async Task<UserProfileDto> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<UserProfileDto>> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<UserProfileDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
-        return _mapper.Map<UserProfileDto>(user);
+        return Result<UserProfileDto>.Ok(_mapper.Map<UserProfileDto>(user));
     }
 
-    public async Task<UserProfileDto> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<UserProfileDto>> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating profile for user {UserId}", userId);
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<UserProfileDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
         user.FirstName = dto.FirstName;
         user.LastName = dto.LastName;
@@ -57,19 +59,19 @@ public class UserService : IUserService
 
         _logger.LogInformation("Profile updated successfully for user {UserId}", userId);
 
-        return _mapper.Map<UserProfileDto>(user);
+        return Result<UserProfileDto>.Ok(_mapper.Map<UserProfileDto>(user));
     }
 
-    public async Task<UserPreferencesDto> GetUserPreferencesAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<UserPreferencesDto>> GetUserPreferencesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<UserPreferencesDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
         // Return default preferences for now
-        return new UserPreferencesDto
+        var preferences = new UserPreferencesDto
         {
             UserId = userId,
             EmailNotifications = true,
@@ -79,18 +81,20 @@ public class UserService : IUserService
             Currency = "USD",
             NewsletterSubscribed = false
         };
+        
+        return Result<UserPreferencesDto>.Ok(preferences);
     }
 
-    public async Task<UserPreferencesDto> UpdateUserPreferencesAsync(Guid userId, UserPreferencesDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<UserPreferencesDto>> UpdateUserPreferencesAsync(Guid userId, UserPreferencesDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating preferences for user {UserId}", userId);
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<UserPreferencesDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
         // Return updated preferences
-        return new UserPreferencesDto
+        var preferences = new UserPreferencesDto
         {
             UserId = userId,
             EmailNotifications = dto.EmailNotifications,
@@ -100,18 +104,21 @@ public class UserService : IUserService
             Currency = dto.Currency,
             NewsletterSubscribed = dto.NewsletterSubscribed
         };
+        
+        return Result<UserPreferencesDto>.Ok(preferences);
     }
 
-    public async Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Changing password for user {UserId}", userId);
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<Unit>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
         // Password change successful (in test environment, just return)
         await Task.CompletedTask;
+        return Result<Unit>.Ok(new Unit());
     }
 }
 

@@ -38,7 +38,7 @@ export default function Orders() {
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
       toast.success('Order status updated successfully');
-    } catch (err) {
+    } catch {
       toast.error('Failed to update order status');
     }
   };

@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { Provider } from 'react-redux'
-import { configureStore } from '@reduxjs/toolkit'
+import { act } from '@testing-library/react'
+import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
 import { useProfileForm } from '../useProfileForm'
-import { authReducer } from '@/features/auth/slices/authSlice'
-import type { ReactNode } from 'react'
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
@@ -19,7 +16,7 @@ vi.mock('react-hot-toast', () => ({
 }))
 
 // Mock API
-vi.mock('../../store/api/profileApi', () => ({
+vi.mock('../../api/profileApi', () => ({
   useGetProfileQuery: vi.fn(() => ({
     data: {
       id: '1',
@@ -42,39 +39,29 @@ vi.mock('../../store/api/profileApi', () => ({
 }))
 
 describe('useProfileForm', () => {
-  let store: ReturnType<typeof configureStore>
-
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
-  )
+  const defaultPreloadedState = {
+    auth: {
+      isAuthenticated: true,
+      user: {
+        id: '1',
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        phone: '1234567890',
+        role: 'customer' as const,
+      },
+      loading: false,
+      error: null,
+      initialized: true,
+    },
+  }
 
   beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        auth: authReducer,
-      },
-      preloadedState: {
-        auth: {
-          user: {
-            id: '1',
-            email: 'test@example.com',
-            firstName: 'John',
-            lastName: 'Doe',
-            phone: '1234567890',
-            role: 'customer',
-          },
-          isAuthenticated: true,
-          loading: false,
-          error: null,
-          initialized: true,
-        },
-      },
-    })
     vi.clearAllMocks()
   })
 
   it('should initialize with formData', () => {
-    const { result } = renderHook(() => useProfileForm(), { wrapper })
+    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
     
     expect(result.current.formData.firstName).toBeDefined()
     expect(result.current.isEditMode).toBe(false)
@@ -82,34 +69,38 @@ describe('useProfileForm', () => {
   })
 
   it('should have handleSubmit function', () => {
-    const { result } = renderHook(() => useProfileForm(), { wrapper })
+    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
     
     expect(typeof result.current.handleSubmit).toBe('function')
   })
 
   it('should have handleCancel function', () => {
-    const { result } = renderHook(() => useProfileForm(), { wrapper })
+    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
     
     expect(typeof result.current.handleCancel).toBe('function')
   })
 
   it('should set edit mode', () => {
-    const { result } = renderHook(() => useProfileForm(), { wrapper })
+    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
     
-    result.current.setIsEditMode(true)
+    act(() => {
+      result.current.setIsEditMode(true)
+    })
     
     expect(result.current.isEditMode).toBe(true)
   })
 
   it('should set form data', () => {
-    const { result } = renderHook(() => useProfileForm(), { wrapper })
+    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
     
-    result.current.setFormData({
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane@example.com',
-      phone: '9876543210',
-      avatarUrl: '',
+    act(() => {
+      result.current.setFormData({
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane@example.com',
+        phone: '9876543210',
+        avatarUrl: '',
+      })
     })
     
     expect(result.current.formData.firstName).toBe('Jane')

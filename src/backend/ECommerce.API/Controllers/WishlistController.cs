@@ -2,6 +2,7 @@ using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,8 +44,12 @@ public class WishlistController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving wishlist for user {UserId}", userId);
 
-        var wishlist = await _wishlistService.GetUserWishlistAsync(userId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist retrieved successfully"));
+        var result = await _wishlistService.GetUserWishlistAsync(userId, cancellationToken: cancellationToken);
+        return result is Result<WishlistDto>.Success success
+            ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist retrieved successfully"))
+            : result is Result<WishlistDto>.Failure failure
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -67,8 +72,12 @@ public class WishlistController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", dto.ProductId, userId);
 
-        var wishlist = await _wishlistService.AddToWishlistAsync(userId, dto.ProductId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product added to wishlist successfully"));
+        var result = await _wishlistService.AddToWishlistAsync(userId, dto.ProductId, cancellationToken: cancellationToken);
+        return result is Result<WishlistDto>.Success success
+            ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product added to wishlist successfully"))
+            : result is Result<WishlistDto>.Failure failure
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -88,8 +97,12 @@ public class WishlistController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", productId, userId);
 
-        var wishlist = await _wishlistService.RemoveFromWishlistAsync(userId, productId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Product removed from wishlist successfully"));
+        var result = await _wishlistService.RemoveFromWishlistAsync(userId, productId, cancellationToken: cancellationToken);
+        return result is Result<WishlistDto>.Success success
+            ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product removed from wishlist successfully"))
+            : result is Result<WishlistDto>.Failure failure
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -127,8 +140,12 @@ public class WishlistController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Clearing wishlist for user {UserId}", userId);
 
-        var wishlist = await _wishlistService.ClearWishlistAsync(userId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<WishlistDto>.Ok(wishlist, "Wishlist cleared successfully"));
+        var result = await _wishlistService.ClearWishlistAsync(userId, cancellationToken: cancellationToken);
+        return result is Result<WishlistDto>.Success success
+            ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist cleared successfully"))
+            : result is Result<WishlistDto>.Failure failure
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 }
 

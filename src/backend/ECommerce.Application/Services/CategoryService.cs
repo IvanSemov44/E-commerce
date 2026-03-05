@@ -24,13 +24,13 @@ public class CategoryService : ICategoryService
         _logger = logger;
     }
 
-    public async Task<PaginatedResult<CategoryDto>> GetAllCategoriesAsync(
+    public async Task<Result<PaginatedResult<CategoryDto>>> GetAllCategoriesAsync(
         int pageNumber = 1,
         int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
         if (pageNumber <= 0)
-            throw new InvalidPaginationException(pageNumber);
+            return Result<PaginatedResult<CategoryDto>>.Fail(ErrorCodes.InvalidPagination, "Page number must be greater than 0");
         
         // Enforce max page size to prevent DoS attacks
         pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
@@ -45,22 +45,24 @@ public class CategoryService : ICategoryService
 
         var dtos = _mapper.Map<List<CategoryDto>>(paginatedCategories);
         
-        return new PaginatedResult<CategoryDto>
+        var result = new PaginatedResult<CategoryDto>
         {
             Items = dtos,
             TotalCount = totalCount,
             Page = pageNumber,
             PageSize = pageSize
         };
+        
+        return Result<PaginatedResult<CategoryDto>>.Ok(result);
     }
 
-    public async Task<PaginatedResult<CategoryDto>> GetTopLevelCategoriesAsync(
+    public async Task<Result<PaginatedResult<CategoryDto>>> GetTopLevelCategoriesAsync(
         int pageNumber = 1,
         int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
         if (pageNumber <= 0)
-            throw new InvalidPaginationException(pageNumber);
+            return Result<PaginatedResult<CategoryDto>>.Fail(ErrorCodes.InvalidPagination, "Page number must be greater than 0");
         
         // Enforce max page size to prevent DoS attacks
         pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
@@ -83,13 +85,15 @@ public class CategoryService : ICategoryService
             .Select(dto => dto with { ProductCount = productCounts.GetValueOrDefault(dto.Id, 0) })
             .ToList();
 
-        return new PaginatedResult<CategoryDto>
+        var result = new PaginatedResult<CategoryDto>
         {
             Items = dtos,
             TotalCount = totalCount,
             Page = pageNumber,
             PageSize = pageSize
         };
+        
+        return Result<PaginatedResult<CategoryDto>>.Ok(result);
     }
 
     public async Task<Result<CategoryDetailDto>> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)

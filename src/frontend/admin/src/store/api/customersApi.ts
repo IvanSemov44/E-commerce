@@ -58,7 +58,7 @@ export const customersApi = createApi({
       void
     >({
       query: () => '/customers/stats',
-      transformResponse: (response: ApiResponse<any>) =>
+      transformResponse: (response: ApiResponse<Record<string, unknown>>) =>
         response.data || {
           totalCustomers: 0,
           activeCustomers: 0,

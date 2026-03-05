@@ -56,7 +56,7 @@ export default function Products() {
     try {
       await deleteProduct(productId).unwrap();
       toast.success('Product deleted successfully');
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete product');
     }
   };
@@ -71,8 +71,8 @@ export default function Products() {
         toast.success('Product created successfully');
       }
       setModalOpen(false);
-    } catch (err) {
-      throw err; // Let form handle error display
+    } catch {
+      // Error handling is delegated to the form component
     }
   };
 

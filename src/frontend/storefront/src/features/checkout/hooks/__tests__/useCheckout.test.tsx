@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
-import { Provider } from 'react-redux'
-import { configureStore } from '@reduxjs/toolkit'
+import { act } from '@testing-library/react'
+import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
 import { useCheckout } from '../useCheckout'
-import { cartReducer } from '@/features/cart/slices/cartSlice'
-import { authReducer } from '@/features/auth/slices/authSlice'
-import type { ReactNode } from 'react'
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
@@ -74,47 +70,36 @@ vi.mock('../../utils/validation', () => ({
 }))
 
 describe('useCheckout', () => {
-  let store: ReturnType<typeof configureStore>
-
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
-  )
+  const defaultPreloadedState = {
+    cart: {
+      items: [
+        {
+          id: '1',
+          name: 'Test Product',
+          slug: 'test-product',
+          price: 50,
+          quantity: 2,
+          maxStock: 10,
+          image: '/test.jpg',
+        },
+      ],
+      lastUpdated: Date.now(),
+    },
+    auth: {
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+      error: null,
+      initialized: true,
+    },
+  }
 
   beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
-        cart: {
-          items: [
-            {
-              id: '1',
-              name: 'Test Product',
-              slug: 'test-product',
-              price: 50,
-              quantity: 2,
-              maxStock: 10,
-              image: '/test.jpg',
-            },
-          ],
-          lastUpdated: Date.now(),
-        },
-        auth: {
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-          error: null,
-          initialized: true,
-        },
-      },
-    })
     vi.clearAllMocks()
   })
 
   it('should initialize with default values', () => {
-    const { result } = renderHook(() => useCheckout(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
 
     expect(result.current.promoCode).toBe('')
     expect(result.current.orderComplete).toBe(false)
@@ -123,7 +108,7 @@ describe('useCheckout', () => {
   })
 
   it('should set promo code', async () => {
-    const { result } = renderHook(() => useCheckout(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
 
     await act(async () => {
       result.current.setPromoCode('SAVE10')
@@ -133,26 +118,26 @@ describe('useCheckout', () => {
   })
 
   it('should have cart items from local state', () => {
-    const { result } = renderHook(() => useCheckout(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
 
     expect(result.current.cartItems.length).toBe(1)
     expect(result.current.cartItems[0].name).toBe('Test Product')
   })
 
   it('should calculate subtotal', () => {
-    const { result } = renderHook(() => useCheckout(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
 
     expect(result.current.subtotal).toBe(100) // 50 * 2
   })
 
   it('should have handleSubmit function', () => {
-    const { result } = renderHook(() => useCheckout(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
 
     expect(typeof result.current.handleSubmit).toBe('function')
   })
 
   it('should have setFormData function', () => {
-    const { result } = renderHook(() => useCheckout(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
 
     expect(typeof result.current.setFormData).toBe('function')
   })

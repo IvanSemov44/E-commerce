@@ -3,9 +3,11 @@ using AutoMapper;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Services;
+using ECommerce.Core.Constants;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -229,8 +231,15 @@ public class PromoCodeServiceTests
         var result = await _service.CreateAsync(dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Code.Should().Be("NEWCODE");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PromoCodeDetailDto>.Success success)
+        {
+            success.Data.Code.Should().Be("NEWCODE");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PromoCodeDetailDto>.Success");
+        }
         _mockPromoCodeRepository.Verify(r => r.AddAsync(It.IsAny<PromoCode>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -252,10 +261,19 @@ public class PromoCodeServiceTests
         };
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(dto);
+        var result = await _service.CreateAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<PromoCodeAlreadyExistsException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PromoCodeDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.DuplicatePromoCode);
+            failure.Message.Should().Contain("DUPLICATE");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PromoCodeDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -272,10 +290,19 @@ public class PromoCodeServiceTests
         SetupFindByCondition(new List<PromoCode>());
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(dto);
+        var result = await _service.CreateAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidPromoCodeConfigurationException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PromoCodeDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidPromoCode);
+            failure.Message.Should().Contain("percentage");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PromoCodeDetailDto>.Failure");
+        }
     }
 
     #endregion
@@ -415,10 +442,19 @@ public class PromoCodeServiceTests
             .ReturnsAsync(promoCode);
 
         // Act
-        Func<Task> act = async () => await _service.IncrementUsedCountAsync(promoCode.Id);
+        var result = await _service.IncrementUsedCountAsync(promoCode.Id);
 
         // Assert
-        await act.Should().ThrowAsync<PromoCodeUsageLimitReachedException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.PromoCodeUsageLimitReached);
+            failure.Message.Should().Contain("usage limit");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     #endregion

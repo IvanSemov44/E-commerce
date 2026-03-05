@@ -125,6 +125,82 @@ import { useGetOrdersQuery } from '../../api/ordersApi';
 
 The `@` alias is configured in `tsconfig.json` and works in all `.ts` and `.tsx` files. Always prefer it over relative imports.
 
+#### Frontend Component Colocation Architecture
+
+Components follow a **colocation pattern** where a component and its related files are organized together in a dedicated folder structure. This improves code organization, reusability, and maintainability.
+
+**Basic colocation structure (single hook/utility):**
+```
+ComponentName/
+├── ComponentName.tsx         # Main component
+├── ComponentName.types.ts    # TypeScript interfaces/types
+├── ComponentName.module.css  # Scoped styles
+├── ComponentName.hooks.ts    # Custom hooks (if ≤2 hooks)
+├── ComponentName.utils.ts    # Utility functions
+├── ComponentName.test.tsx    # Component tests
+└── index.ts                  # Barrel export
+```
+
+**Advanced colocation structure (multiple hooks):**
+```
+ComponentName/
+├── ComponentName.tsx         # Main component
+├── ComponentName.types.ts    # TypeScript interfaces/types
+├── ComponentName.module.css  # Scoped styles
+├── ComponentName.test.tsx    # Component tests
+├── hooks/                    # Separate folder for 3+ hooks
+│   ├── useFirstHook.ts      # Individual hook file
+│   ├── useSecondHook.ts     # Individual hook file
+│   ├── useThirdHook.ts      # Individual hook file
+│   └── index.ts             # Barrel export
+├── utils/                    # Optional: separate utils folder if 5+ functions
+│   ├── helper1.utils.ts
+│   ├── helper2.utils.ts
+│   └── index.ts
+└── index.ts                  # Main barrel export
+```
+
+**When to use each pattern:**
+
+1. **Single `.hooks.ts` file** (1-2 tightly-coupled hooks):
+   ```tsx
+   // ProductCard.hooks.ts
+   export function useProductCardHandlers(...) { ... }
+   export function useProductValidation(...) { ... }
+   ```
+
+2. **`hooks/` folder with separate files** (3+ hooks OR hooks used elsewhere):
+   ```tsx
+   // hooks/usePriceFilters.ts
+   export function usePriceFilters(...) { ... }
+
+   // hooks/useRatingFilter.ts
+   export function useRatingFilter(...) { ... }
+
+   // hooks/useFeaturedFilter.ts
+   export function useFeaturedFilter(...) { ... }
+
+   // hooks/index.ts
+   export { usePriceFilters } from './usePriceFilters';
+   export { useRatingFilter } from './useRatingFilter';
+   export { useFeaturedFilter } from './useFeaturedFilter';
+   ```
+
+**Main component barrel export (`index.ts`):**
+```typescript
+export { default } from './ComponentName';
+export type { ComponentNameProps, RelatedTypes } from './ComponentName.types';
+export { useCustomHook, anotherHook } from './hooks'; // or './ComponentName.hooks'
+export { utilFunction1, utilFunction2 } from './utils'; // or './ComponentName.utils'
+```
+
+**Benefits:**
+- ✅ Encapsulation: All component-related code in one folder
+- ✅ Scalability: Easy to add tests, hooks, utils without cluttering files
+- ✅ Reusability: Clear barrel exports make it easy to import what you need
+- ✅ Maintainability: Each file has a single responsibility
+- ✅ Type safety: Centralized types in `.types.ts` files
+
 ## Pull Request Process
 
 1.  Ensure your code adheres to the **Coding Conventions**.

@@ -2,6 +2,7 @@ using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -104,11 +105,15 @@ public class PromoCodesController : ControllerBase
     {
         _logger.LogInformation("Creating promo code: {Code}", dto.Code);
 
-        var promoCode = await _promoCodeService.CreateAsync(dto, cancellationToken: cancellationToken);
-        return CreatedAtAction(
-            nameof(GetPromoCodeById),
-            new { id = promoCode.Id },
-            ApiResponse<PromoCodeDetailDto>.Ok(promoCode, "Promo code created successfully"));
+        var result = await _promoCodeService.CreateAsync(dto, cancellationToken: cancellationToken);
+        return result is Result<PromoCodeDetailDto>.Success success
+            ? CreatedAtAction(
+                nameof(GetPromoCodeById),
+                new { id = success.Data.Id },
+                ApiResponse<PromoCodeDetailDto>.Ok(success.Data, "Promo code created successfully"))
+            : result is Result<PromoCodeDetailDto>.Failure failure
+                ? BadRequest(ApiResponse<PromoCodeDetailDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<PromoCodeDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -131,8 +136,12 @@ public class PromoCodesController : ControllerBase
     {
         _logger.LogInformation("Updating promo code {Id}", id);
 
-        var promoCode = await _promoCodeService.UpdateAsync(id, dto, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<PromoCodeDetailDto>.Ok(promoCode, "Promo code updated successfully"));
+        var result = await _promoCodeService.UpdateAsync(id, dto, cancellationToken: cancellationToken);
+        return result is Result<PromoCodeDetailDto>.Success success
+            ? Ok(ApiResponse<PromoCodeDetailDto>.Ok(success.Data, "Promo code updated successfully"))
+            : result is Result<PromoCodeDetailDto>.Failure failure
+                ? BadRequest(ApiResponse<PromoCodeDetailDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<PromoCodeDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>

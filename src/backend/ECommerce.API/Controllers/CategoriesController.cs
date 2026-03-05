@@ -2,9 +2,9 @@ using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using ECommerce.Core.Constants;
+using ECommerce.Core.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ECommerce.Core.Results;
 
 namespace ECommerce.API.Controllers;
 
@@ -45,8 +45,12 @@ public class CategoriesController : ControllerBase
         if (pageNumber < PaginationConstants.MinPageNumber) pageNumber = PaginationConstants.MinPageNumber;
         if (pageSize < PaginationConstants.MinPageSize || pageSize > PaginationConstants.MaxPageSize) pageSize = PaginationConstants.MaxPageSize;
         
-        var categories = await _categoryService.GetAllCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<PaginatedResult<CategoryDto>>.Ok(categories, "Categories retrieved successfully"));
+        var result = await _categoryService.GetAllCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
+        return result is Result<PaginatedResult<CategoryDto>>.Success success
+            ? Ok(ApiResponse<PaginatedResult<CategoryDto>>.Ok(success.Data, "Categories retrieved successfully"))
+            : result is Result<PaginatedResult<CategoryDto>>.Failure failure
+                ? BadRequest(ApiResponse<PaginatedResult<CategoryDto>>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<PaginatedResult<CategoryDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -69,8 +73,12 @@ public class CategoriesController : ControllerBase
         if (pageNumber < PaginationConstants.MinPageNumber) pageNumber = PaginationConstants.MinPageNumber;
         if (pageSize < PaginationConstants.MinPageSize || pageSize > PaginationConstants.MaxPageSize) pageSize = PaginationConstants.MaxPageSize;
         
-        var categories = await _categoryService.GetTopLevelCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<PaginatedResult<CategoryDto>>.Ok(categories, "Top-level categories retrieved successfully"));
+        var result = await _categoryService.GetTopLevelCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
+        return result is Result<PaginatedResult<CategoryDto>>.Success success
+            ? Ok(ApiResponse<PaginatedResult<CategoryDto>>.Ok(success.Data, "Top-level categories retrieved successfully"))
+            : result is Result<PaginatedResult<CategoryDto>>.Failure failure
+                ? BadRequest(ApiResponse<PaginatedResult<CategoryDto>>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<PaginatedResult<CategoryDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -90,9 +98,9 @@ public class CategoriesController : ControllerBase
         var result = await _categoryService.GetCategoryByIdAsync(id, cancellationToken: cancellationToken);
         if (result is Result<CategoryDetailDto>.Success success)
             return Ok(ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category retrieved successfully"));
-        if (result is Result<CategoryDetailDto>.Failure)
-            return NotFound(ApiResponse<object>.Error("Category not found"));
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        if (result is Result<CategoryDetailDto>.Failure failure)
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -112,9 +120,9 @@ public class CategoriesController : ControllerBase
         var result = await _categoryService.GetCategoryBySlugAsync(slug, cancellationToken: cancellationToken);
         if (result is Result<CategoryDetailDto>.Success success)
             return Ok(ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category retrieved successfully"));
-        if (result is Result<CategoryDetailDto>.Failure)
-            return NotFound(ApiResponse<object>.Error("Category not found"));
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        if (result is Result<CategoryDetailDto>.Failure failure)
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -143,8 +151,8 @@ public class CategoriesController : ControllerBase
                 ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category created successfully"));
         }
         if (result is Result<CategoryDetailDto>.Failure failure)
-            return Conflict(ApiResponse<object>.Error(failure.Message));
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+            return Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -182,9 +190,9 @@ public class CategoriesController : ControllerBase
                 "CATEGORY_NOT_FOUND" => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status400BadRequest
             };
-            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -219,11 +227,9 @@ public class CategoriesController : ControllerBase
                 "CATEGORY_NOT_FOUND" => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status400BadRequest
             };
-            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
-        _logger.LogInformation("Category deleted: {CategoryId}", id);
-        return Ok(ApiResponse<object>.Ok(new object(), "Category deleted successfully"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 }
 

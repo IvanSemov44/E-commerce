@@ -14,7 +14,7 @@ export default function Reviews() {
     try {
       await approveReview(reviewId).unwrap();
       toast.success('Review approved successfully');
-    } catch (err) {
+    } catch {
       toast.error('Failed to approve review');
     }
   };
@@ -25,7 +25,7 @@ export default function Reviews() {
     try {
       await rejectReview(reviewId).unwrap();
       toast.success('Review rejected successfully');
-    } catch (err) {
+    } catch {
       toast.error('Failed to reject review');
     }
   };

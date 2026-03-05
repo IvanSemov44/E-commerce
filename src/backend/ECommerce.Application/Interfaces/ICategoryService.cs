@@ -8,12 +8,12 @@ namespace ECommerce.Application.Interfaces;
 /// </summary>
 public interface ICategoryService
 {
-    Task<PaginatedResult<CategoryDto>> GetAllCategoriesAsync(
+    Task<Result<PaginatedResult<CategoryDto>>> GetAllCategoriesAsync(
         int pageNumber = 1,
         int pageSize = 100,
         CancellationToken cancellationToken = default);
     
-    Task<PaginatedResult<CategoryDto>> GetTopLevelCategoriesAsync(
+    Task<Result<PaginatedResult<CategoryDto>>> GetTopLevelCategoriesAsync(
         int pageNumber = 1,
         int pageSize = 100,
         CancellationToken cancellationToken = default);

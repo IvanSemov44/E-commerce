@@ -1,9 +1,11 @@
 using AutoMapper;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.Services;
+using ECommerce.Core.Constants;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -52,15 +54,22 @@ public class WishlistServiceTests
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
             var entries = new List<Wishlist> { entry };
-            _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(() => entries.ToList());
+            _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => entries.ToList());
 
         // Act
         var result = await _service.GetUserWishlistAsync(user.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ItemCount.Should().Be(1);
-        result.Items.First().ProductId.Should().Be(product.Id);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<WishlistDto>.Success success)
+        {
+            success.Data.ItemCount.Should().Be(1);
+            success.Data.Items.First().ProductId.Should().Be(product.Id);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<WishlistDto>.Success");
+        }
     }
 
     [TestMethod]
@@ -71,10 +80,18 @@ public class WishlistServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((User?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetUserWishlistAsync(id);
+        var result = await _service.GetUserWishlistAsync(id);
 
         // Assert
-        await act.Should().ThrowAsync<UserNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<WishlistDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.UserNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<WishlistDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -91,14 +108,21 @@ public class WishlistServiceTests
             .Callback<Wishlist, CancellationToken>((w, _) => { if (w.Id == Guid.Empty) w.Id = Guid.NewGuid(); })
             .Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(new List<Wishlist> { TestDataFactory.CreateWishlistItem(user.Id, product.Id, product) });
+        _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<Wishlist> { TestDataFactory.CreateWishlistItem(user.Id, product.Id, product) });
 
         // Act
         var result = await _service.AddToWishlistAsync(user.Id, product.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ItemCount.Should().Be(1);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<WishlistDto>.Success success)
+        {
+            success.Data.ItemCount.Should().Be(1);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<WishlistDto>.Success");
+        }
         _mockWishlistRepository.Verify(r => r.AddAsync(It.IsAny<Wishlist>()), Times.Once);
     }
 
@@ -113,10 +137,18 @@ public class WishlistServiceTests
         _mockWishlistRepository.Setup(r => r.IsProductInWishlistAsync(user.Id, product.Id)).ReturnsAsync(true);
 
         // Act
-        Func<Task> act = async () => await _service.AddToWishlistAsync(user.Id, product.Id);
+        var result = await _service.AddToWishlistAsync(user.Id, product.Id);
 
         // Assert
-        await act.Should().ThrowAsync<DuplicateWishlistItemException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<WishlistDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.DuplicateWishlistItem);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<WishlistDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -129,7 +161,7 @@ public class WishlistServiceTests
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         var entries = new List<Wishlist> { entry };
-        _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(() => entries.ToList());
+        _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => entries.ToList());
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
             _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>(), It.IsAny<CancellationToken>()))
                 .Callback<Wishlist, CancellationToken>((w, _) => entries.RemoveAll(x => x.Id == w.Id))
@@ -141,8 +173,15 @@ public class WishlistServiceTests
         var result = await _service.RemoveFromWishlistAsync(user.Id, product.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ItemCount.Should().Be(0);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<WishlistDto>.Success success)
+        {
+            success.Data.ItemCount.Should().Be(0);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<WishlistDto>.Success");
+        }
         _mockWishlistRepository.Verify(r => r.DeleteAsync(It.IsAny<Wishlist>()), Times.Once);
     }
 
@@ -153,13 +192,22 @@ public class WishlistServiceTests
         var user = TestDataFactory.CreateUser();
         var productId = Guid.NewGuid();
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
-        _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(new List<Wishlist>());
+        _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<Wishlist>());
 
         // Act
-        Func<Task> act = async () => await _service.RemoveFromWishlistAsync(user.Id, productId);
+        var result = await _service.RemoveFromWishlistAsync(user.Id, productId);
 
         // Assert
-        await act.Should().ThrowAsync<WishlistItemNotFoundException>();
+        // Note: RemoveFromWishlistAsync is idempotent - it succeeds even if the item wasn't in the wishlist
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<WishlistDto>.Success success)
+        {
+            success.Data.ItemCount.Should().Be(0);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<WishlistDto>.Success");
+        }
     }
 
     [TestMethod]
@@ -191,7 +239,7 @@ public class WishlistServiceTests
         };
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
-        _mockWishlistRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>())).ReturnsAsync(entries);
+        _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(entries);
         _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -199,8 +247,15 @@ public class WishlistServiceTests
         var result = await _service.ClearWishlistAsync(user.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ItemCount.Should().Be(0);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<WishlistDto>.Success success)
+        {
+            success.Data.ItemCount.Should().Be(0);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<WishlistDto>.Success");
+        }
         _mockWishlistRepository.Verify(r => r.DeleteAsync(It.IsAny<Wishlist>()), Times.Exactly(2));
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }

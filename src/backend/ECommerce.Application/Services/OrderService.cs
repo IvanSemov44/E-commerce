@@ -144,24 +144,6 @@ public class OrderService : IOrderService
             // Step 3: Process order items and calculate subtotal
             var (items, subtotal, stockCheckItems) = await ProcessOrderItemsAsync(dto.Items, cancellationToken);
 
-            // Step 4: Validate products exist and are active
-            foreach (var item in stockCheckItems)
-            {
-                // ProductId is already a Guid from ProcessOrderItemsAsync
-                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, false, cancellationToken);
-                if (product == null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<OrderDetailDto>.Fail(ErrorCodes.ProductNotFound, $"Product not found");
-                }
-
-                if (!product.IsActive)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<OrderDetailDto>.Fail(ErrorCodes.ProductNotAvailable, $"Product '{product.Name}' is not available");
-                }
-            }
-
             var stockCheckResponse = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
             if (!stockCheckResponse.IsAvailable)
             {

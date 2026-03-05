@@ -1,4 +1,5 @@
 using ECommerce.Application.DTOs.Payments;
+using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
 
@@ -10,17 +11,17 @@ public interface IPaymentService
     /// <summary>
     /// Process a payment for an order.
     /// </summary>
-    Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto, CancellationToken cancellationToken = default);
+    Task<Result<PaymentResponseDto>> ProcessPaymentAsync(ProcessPaymentDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Verify payment status from payment provider.
     /// </summary>
-    Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default);
+    Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Refund a payment.
     /// </summary>
-    Task<RefundResponseDto> RefundPaymentAsync(RefundPaymentDto dto, CancellationToken cancellationToken = default);
+    Task<Result<RefundResponseDto>> RefundPaymentAsync(RefundPaymentDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Check if a payment intent exists and its status.

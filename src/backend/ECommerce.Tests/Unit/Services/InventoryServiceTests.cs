@@ -85,30 +85,44 @@ public class InventoryServiceTests
     }
 
     [TestMethod]
-    public async Task ReduceStockAsync_ZeroQuantity_ThrowsInvalidQuantityException()
+    public async Task ReduceStockAsync_ZeroQuantity_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
 
-        // Act & Assert
-        await _service.Invoking(s => s.ReduceStockAsync(productId, 0, "test"))
-            .Should().ThrowAsync<InvalidQuantityException>()
-            .WithMessage("*Quantity must be positive*");
+        // Act
+        var result = await _service.ReduceStockAsync(productId, 0, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidQuantity);
+            failure.Message.Should().Contain("Quantity must be positive");
+        }
     }
 
     [TestMethod]
-    public async Task ReduceStockAsync_NegativeQuantity_ThrowsInvalidQuantityException()
+    public async Task ReduceStockAsync_NegativeQuantity_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
 
-        // Act & Assert
-        await _service.Invoking(s => s.ReduceStockAsync(productId, -10, "test"))
-            .Should().ThrowAsync<InvalidQuantityException>();
+        // Act
+        var result = await _service.ReduceStockAsync(productId, -10, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidQuantity);
+        }
     }
 
     [TestMethod]
-    public async Task ReduceStockAsync_ProductNotFound_ThrowsProductNotFoundException()
+    public async Task ReduceStockAsync_ProductNotFound_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -116,13 +130,20 @@ public class InventoryServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(productId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
-        // Act & Assert
-        await _service.Invoking(s => s.ReduceStockAsync(productId, 10, "test"))
-            .Should().ThrowAsync<ProductNotFoundException>();
+        // Act
+        var result = await _service.ReduceStockAsync(productId, 10, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
     }
 
     [TestMethod]
-    public async Task ReduceStockAsync_InsufficientStock_ThrowsInsufficientStockException()
+    public async Task ReduceStockAsync_InsufficientStock_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -132,9 +153,16 @@ public class InventoryServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(productId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
-        // Act & Assert
-        await _service.Invoking(s => s.ReduceStockAsync(productId, 10, "test"))
-            .Should().ThrowAsync<InsufficientStockException>();
+        // Act
+        var result = await _service.ReduceStockAsync(productId, 10, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InsufficientStock);
+        }
     }
 
     [TestMethod]
@@ -195,18 +223,25 @@ public class InventoryServiceTests
     }
 
     [TestMethod]
-    public async Task IncreaseStockAsync_ZeroQuantity_ThrowsInvalidQuantityException()
+    public async Task IncreaseStockAsync_ZeroQuantity_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
 
-        // Act & Assert
-        await _service.Invoking(s => s.IncreaseStockAsync(productId, 0, "test"))
-            .Should().ThrowAsync<InvalidQuantityException>();
+        // Act
+        var result = await _service.IncreaseStockAsync(productId, 0, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidQuantity);
+        }
     }
 
     [TestMethod]
-    public async Task IncreaseStockAsync_ProductNotFound_ThrowsProductNotFoundException()
+    public async Task IncreaseStockAsync_ProductNotFound_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -214,9 +249,16 @@ public class InventoryServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(productId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
-        // Act & Assert
-        await _service.Invoking(s => s.IncreaseStockAsync(productId, 10, "test"))
-            .Should().ThrowAsync<ProductNotFoundException>();
+        // Act
+        var result = await _service.IncreaseStockAsync(productId, 10, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
     }
 
     [TestMethod]
@@ -272,19 +314,26 @@ public class InventoryServiceTests
     }
 
     [TestMethod]
-    public async Task AdjustStockAsync_NegativeQuantity_ThrowsInvalidQuantityException()
+    public async Task AdjustStockAsync_NegativeQuantity_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
 
-        // Act & Assert
-        await _service.Invoking(s => s.AdjustStockAsync(productId, -10, "test"))
-            .Should().ThrowAsync<InvalidQuantityException>()
-            .WithMessage("*Quantity cannot be negative*");
+        // Act
+        var result = await _service.AdjustStockAsync(productId, -10, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidQuantity);
+            failure.Message.Should().Contain("Quantity cannot be negative");
+        }
     }
 
     [TestMethod]
-    public async Task AdjustStockAsync_ProductNotFound_ThrowsProductNotFoundException()
+    public async Task AdjustStockAsync_ProductNotFound_ReturnsFailureResult()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -292,9 +341,16 @@ public class InventoryServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(productId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
-        // Act & Assert
-        await _service.Invoking(s => s.AdjustStockAsync(productId, 100, "test"))
-            .Should().ThrowAsync<ProductNotFoundException>();
+        // Act
+        var result = await _service.AdjustStockAsync(productId, 100, "test");
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Should().BeOfType<Result<ECommerce.Core.Results.Unit>.Failure>();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
     }
 
     [TestMethod]

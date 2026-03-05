@@ -2,6 +2,7 @@ using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,8 +44,12 @@ public class ProfileController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving profile for user {UserId}", userId);
 
-        var profile = await _userService.GetUserProfileAsync(userId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Profile retrieved successfully"));
+        var result = await _userService.GetUserProfileAsync(userId, cancellationToken: cancellationToken);
+        return result is Result<UserProfileDto>.Success success
+            ? Ok(ApiResponse<UserProfileDto>.Ok(success.Data, "Profile retrieved successfully"))
+            : result is Result<UserProfileDto>.Failure failure
+                ? BadRequest(ApiResponse<UserProfileDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<UserProfileDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -66,8 +71,12 @@ public class ProfileController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Updating profile for user {UserId}", userId);
 
-        var profile = await _userService.UpdateUserProfileAsync(userId, updateProfileDto, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Profile updated successfully"));
+        var result = await _userService.UpdateUserProfileAsync(userId, updateProfileDto, cancellationToken: cancellationToken);
+        return result is Result<UserProfileDto>.Success success
+            ? Ok(ApiResponse<UserProfileDto>.Ok(success.Data, "Profile updated successfully"))
+            : result is Result<UserProfileDto>.Failure failure
+                ? BadRequest(ApiResponse<UserProfileDto>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<UserProfileDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -86,8 +95,15 @@ public class ProfileController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
 
-        var preferences = await _userService.GetUserPreferencesAsync(userId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<UserPreferencesDto>.Ok(preferences, "Preferences retrieved successfully"));
+        var result = await _userService.GetUserPreferencesAsync(userId, cancellationToken: cancellationToken);
+        
+        if (result is Result<UserPreferencesDto>.Success success)
+            return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences retrieved successfully"));
+        
+        if (result is Result<UserPreferencesDto>.Failure failure)
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
+        
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred"));
     }
 
     /// <summary>
@@ -108,8 +124,15 @@ public class ProfileController : ControllerBase
         var userId = _currentUser.UserId;
         _logger.LogInformation("Updating preferences for user {UserId}", userId);
 
-        var preferences = await _userService.UpdateUserPreferencesAsync(userId, dto, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<UserPreferencesDto>.Ok(preferences, "Preferences updated successfully"));
+        var result = await _userService.UpdateUserPreferencesAsync(userId, dto, cancellationToken: cancellationToken);
+        
+        if (result is Result<UserPreferencesDto>.Success success)
+            return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences updated successfully"));
+        
+        if (result is Result<UserPreferencesDto>.Failure failure)
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
+        
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred"));
     }
 
     /// <summary>

@@ -1,21 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { OrderCardProps } from './OrderCard.types';
+import { formatOrderDate, getStatusClassName } from './OrderCard.utils';
 import styles from './OrderCard.module.css';
-
-interface OrderItemSummary {
-  productName: string;
-}
-
-interface OrderCardProps {
-  order: {
-    id: string;
-    orderNumber: string;
-    status: string;
-    totalAmount: number;
-    createdAt: string;
-    items: OrderItemSummary[];
-  };
-}
 
 /**
  * OrderCard Component
@@ -26,17 +13,8 @@ interface OrderCardProps {
 export default function OrderCard({ order }: OrderCardProps) {
   const { t } = useTranslation();
 
-  const orderDate = new Date(order.createdAt);
-  const formattedDate = orderDate.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-
-  const getStatusClass = (status: string) => {
-    const statusLower = status.toLowerCase();
-    return styles[`status${status[0].toUpperCase() + statusLower.slice(1)}`] || styles.statusPending;
-  };
+  const formattedDate = formatOrderDate(order.createdAt);
+  const statusClassName = getStatusClassName(order.status, styles);
 
   const itemCount = order.items.length;
   const itemsLabel = itemCount === 1
@@ -52,7 +30,7 @@ export default function OrderCard({ order }: OrderCardProps) {
           </h3>
           <p className={styles.date}>{formattedDate}</p>
         </div>
-        <div className={`${styles.status} ${getStatusClass(order.status)}`}>
+        <div className={`${styles.status} ${statusClassName}`}>
           {t(`orders.status.${order.status.toLowerCase()}`) || order.status}
         </div>
       </div>

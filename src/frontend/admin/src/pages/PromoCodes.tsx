@@ -51,7 +51,7 @@ export default function PromoCodes() {
     try {
       await deactivatePromoCode(promoCodeId).unwrap();
       toast.success('Promo code deactivated successfully');
-    } catch (err) {
+    } catch {
       toast.error('Failed to deactivate promo code');
     }
   };
@@ -66,8 +66,8 @@ export default function PromoCodes() {
         toast.success('Promo code created successfully');
       }
       setModalOpen(false);
-    } catch (err) {
-      throw err;
+    } catch {
+      // Error handling is delegated to the form component
     }
   };
 

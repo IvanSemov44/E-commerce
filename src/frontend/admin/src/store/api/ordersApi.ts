@@ -71,7 +71,7 @@ export const ordersApi = createApi({
       void
     >({
       query: () => '/orders/stats',
-      transformResponse: (response: ApiResponse<any>) =>
+      transformResponse: (response: ApiResponse<Record<string, unknown>>) =>
         response.data || {
           totalOrders: 0,
           totalRevenue: 0,

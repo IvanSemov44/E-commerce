@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useAppDispatch } from '../store/hooks';
 import { setInitialized, setUser } from '../store/slices/authSlice';
-import { authApi } from '../store/api/authApi';
 
 interface AuthInitializerProps {
   children: React.ReactNode;

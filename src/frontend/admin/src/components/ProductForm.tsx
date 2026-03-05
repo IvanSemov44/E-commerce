@@ -76,8 +76,9 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
         compareAtPrice: values.compareAtPrice ? parseFloat(values.compareAtPrice) : undefined,
         stockQuantity: parseInt(values.stockQuantity, 10),
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to save product');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save product';
+      setError(message);
     }
   };
 

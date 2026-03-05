@@ -17,6 +17,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
 
   if (endPage - startPage + 1 < maxVisible) {
     startPage = Math.max(1, endPage - maxVisible + 1);
+    endPage = Math.min(totalPages, startPage + maxVisible - 1);
   }
 
   for (let i = startPage; i <= endPage; i++) {

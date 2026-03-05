@@ -35,10 +35,32 @@ public static class ErrorCodes
     
     // Promo Code errors
     public const string InvalidPromoCode = "INVALID_PROMO_CODE";
+    public const string DuplicatePromoCode = "DUPLICATE_PROMO_CODE";
+    public const string PromoCodeNotFound = "PROMO_CODE_NOT_FOUND";
+    public const string PromoCodeUsageLimitReached = "PROMO_CODE_USAGE_LIMIT_REACHED";
+    
+    // Review errors
+    public const string ReviewNotFound = "REVIEW_NOT_FOUND";
+    public const string InvalidRating = "INVALID_RATING";
+    public const string EmptyReviewComment = "EMPTY_REVIEW_COMMENT";
+    public const string DuplicateReview = "DUPLICATE_REVIEW";
+    public const string ReviewUpdateExpired = "REVIEW_UPDATE_EXPIRED";
+    
+    // Wishlist errors
+    public const string DuplicateWishlistItem = "DUPLICATE_WISHLIST_ITEM";
+    
+    // Pagination errors
+    public const string InvalidPagination = "INVALID_PAGINATION";
     
     // User errors
     public const string UserNotFound = "USER_NOT_FOUND";
     
+    // Payment errors
+    public const string UnsupportedPaymentMethod = "UNSUPPORTED_PAYMENT_METHOD";
+    public const string PaymentAmountMismatch = "PAYMENT_AMOUNT_MISMATCH";
+    public const string NoPaymentFound = "NO_PAYMENT_FOUND";
+    public const string InvalidRefund = "INVALID_REFUND";
+
     // Authentication/Authorization errors
     public const string Unauthorized = "UNAUTHORIZED";
     public const string Forbidden = "FORBIDDEN";

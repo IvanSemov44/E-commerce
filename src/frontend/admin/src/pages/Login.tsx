@@ -38,9 +38,20 @@ export default function Login() {
       } else {
         toast.error(response.message || 'Login failed');
       }
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'An error occurred during login');
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'An error occurred during login');
+      toast.error(message);
     }
+  };
+
+  const getErrorMessage = (err: unknown, fallback: string): string => {
+    if (err instanceof Object && 'data' in err) {
+      const data = (err as Record<string, unknown>).data;
+      if (data instanceof Object && 'message' in data) {
+        return (data as Record<string, unknown>).message as string;
+      }
+    }
+    return fallback;
   };
 
   return (

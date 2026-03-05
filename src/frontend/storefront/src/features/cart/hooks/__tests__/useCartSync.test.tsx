@@ -1,11 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { Provider } from 'react-redux'
-import { configureStore } from '@reduxjs/toolkit'
+import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
 import { useCartSync } from '../useCartSync'
-import { cartReducer } from '@/features/cart/slices/cartSlice'
-import { authReducer } from '@/features/auth/slices/authSlice'
-import type { ReactNode } from 'react'
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
@@ -43,62 +38,45 @@ vi.mock('../../utils/logger', () => ({
 }))
 
 describe('useCartSync', () => {
-  let store: ReturnType<typeof configureStore>
+  const defaultPreloadedState = {
+    cart: {
+      items: [],
+      lastUpdated: Date.now(),
+    },
+    auth: {
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+      error: null,
+      initialized: true,
+    },
+  }
 
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
-  )
+  const authenticatedState = {
+    cart: {
+      items: [],
+      lastUpdated: Date.now(),
+    },
+    auth: {
+      isAuthenticated: true,
+      user: { id: '1', email: 'test@test.com', firstName: 'Test', lastName: 'User', role: 'customer' as const },
+      loading: false,
+      error: null,
+      initialized: true,
+    },
+  }
 
   beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
-        cart: {
-          items: [],
-          lastUpdated: Date.now(),
-        },
-        auth: {
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-          error: null,
-          initialized: true,
-        },
-      },
-    })
     vi.clearAllMocks()
   })
 
   it('should not sync when not authenticated', () => {
-    const { result } = renderHook(() => useCartSync(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCartSync(), { preloadedState: defaultPreloadedState })
     expect(result.current).toBeDefined()
   })
 
   it('should skip sync when disabled', () => {
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
-        cart: {
-          items: [],
-          lastUpdated: Date.now(),
-        },
-        auth: {
-          user: { id: '1', email: 'test@test.com', firstName: 'Test', lastName: 'User', role: 'customer' },
-          isAuthenticated: true,
-          loading: false,
-          error: null,
-          initialized: true,
-        },
-      },
-    })
-
-    const { result } = renderHook(() => useCartSync({ enabled: false }), { wrapper })
+    const { result } = renderHookWithProviders(() => useCartSync({ enabled: false }), { preloadedState: authenticatedState })
     expect(result.current).toBeDefined()
   })
 })

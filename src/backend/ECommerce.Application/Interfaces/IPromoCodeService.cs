@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
+using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
 
@@ -12,10 +13,10 @@ public interface IPromoCodeService
     Task<PromoCodeDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PromoCodeDetailDto?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
     Task<List<PromoCodeDto>> GetActiveCodesAsync(CancellationToken cancellationToken = default);
-    Task<PromoCodeDetailDto> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default);
-    Task<PromoCodeDetailDto> UpdateAsync(Guid id, UpdatePromoCodeDto dto, CancellationToken cancellationToken = default);
-    Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<PromoCodeDetailDto>> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default);
+    Task<Result<PromoCodeDetailDto>> UpdateAsync(Guid id, UpdatePromoCodeDto dto, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ValidatePromoCodeDto> ValidatePromoCodeAsync(string code, decimal orderAmount, CancellationToken cancellationToken = default);
-    Task IncrementUsedCountAsync(Guid promoCodeId, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> IncrementUsedCountAsync(Guid promoCodeId, CancellationToken cancellationToken = default);
 }

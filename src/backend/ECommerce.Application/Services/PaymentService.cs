@@ -3,6 +3,8 @@ using ECommerce.Application.DTOs.Payments;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading;
@@ -37,7 +39,7 @@ public class PaymentService : IPaymentService
         _paymentStore = paymentStore;
     }
 
-    public async Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<PaymentResponseDto>> ProcessPaymentAsync(ProcessPaymentDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Processing payment for order {OrderId} via {PaymentMethod}", dto.OrderId, dto.PaymentMethod);
 
@@ -45,19 +47,19 @@ public class PaymentService : IPaymentService
         if (order == null)
         {
             _logger.LogWarning("Order {OrderId} not found for payment processing", dto.OrderId);
-            throw new OrderNotFoundException(dto.OrderId);
+            return Result<PaymentResponseDto>.Fail(ErrorCodes.OrderNotFound, $"Order {dto.OrderId} not found");
         }
 
         if (!await IsPaymentMethodSupportedAsync(dto.PaymentMethod))
         {
             _logger.LogWarning("Unsupported payment method: {PaymentMethod}", dto.PaymentMethod);
-            throw new UnsupportedPaymentMethodException(dto.PaymentMethod);
+            return Result<PaymentResponseDto>.Fail("UNSUPPORTED_PAYMENT_METHOD", $"Payment method '{dto.PaymentMethod}' is not supported");
         }
 
         if (dto.Amount != order.TotalAmount)
         {
             _logger.LogWarning("Payment amount {Amount} does not match order total {OrderTotal}", dto.Amount, order.TotalAmount);
-            throw new PaymentAmountMismatchException(order.TotalAmount, dto.Amount);
+            return Result<PaymentResponseDto>.Fail("PAYMENT_AMOUNT_MISMATCH", $"Payment amount does not match order total");
         }
 
         var paymentIntentId = GenerateMockPaymentIntentId(dto.PaymentMethod);
@@ -91,7 +93,7 @@ public class PaymentService : IPaymentService
 
             _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}", dto.OrderId, paymentIntentId);
 
-            return new PaymentResponseDto
+            var response = new PaymentResponseDto
             {
                 Success = true,
                 PaymentIntentId = paymentIntentId,
@@ -107,6 +109,7 @@ public class PaymentService : IPaymentService
                     { "Provider", GetPaymentProviderName(dto.PaymentMethod) }
                 }
             };
+            return Result<PaymentResponseDto>.Ok(response);
         }
         else
         {
@@ -118,7 +121,7 @@ public class PaymentService : IPaymentService
 
             _logger.LogWarning("Payment failed for order {OrderId}. Simulated failure.", dto.OrderId);
 
-            return new PaymentResponseDto
+            var response = new PaymentResponseDto
             {
                 Success = false,
                 PaymentIntentId = paymentIntentId,
@@ -132,28 +135,32 @@ public class PaymentService : IPaymentService
                     { "OrderNumber", order.OrderNumber }
                 }
             };
+            return Result<PaymentResponseDto>.Ok(response);
         }
     }
 
-    public async Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, trackChanges: false, cancellationToken: cancellationToken)
-            ?? throw new OrderNotFoundException(orderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, trackChanges: false, cancellationToken: cancellationToken);
+        if (order == null)
+        {
+            return Result<PaymentDetailsDto>.Fail(ErrorCodes.OrderNotFound, $"Order {orderId} not found");
+        }
 
         if (string.IsNullOrEmpty(order.PaymentIntentId))
         {
-            throw new NoPaymentFoundException(orderId);
+            return Result<PaymentDetailsDto>.Fail("NO_PAYMENT_FOUND", $"No payment found for order {orderId}");
         }
 
         var paymentDetails = await _paymentStore.GetPaymentAsync(order.PaymentIntentId);
         if (paymentDetails != null)
         {
-            return paymentDetails;
+            return Result<PaymentDetailsDto>.Ok(paymentDetails);
         }
 
-        return new PaymentDetailsDto
+        var details = new PaymentDetailsDto
         {
             OrderId = orderId,
             PaymentIntentId = order.PaymentIntentId,
@@ -164,18 +171,22 @@ public class PaymentService : IPaymentService
             CreatedAt = order.CreatedAt,
             ProcessedAt = order.PaymentStatus == PaymentStatus.Paid ? order.UpdatedAt : null
         };
+        return Result<PaymentDetailsDto>.Ok(details);
     }
 
-    public async Task<RefundResponseDto> RefundPaymentAsync(RefundPaymentDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<RefundResponseDto>> RefundPaymentAsync(RefundPaymentDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Processing refund for order {OrderId}", dto.OrderId);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId, cancellationToken: cancellationToken)
-            ?? throw new OrderNotFoundException(dto.OrderId);
+        var order = await _unitOfWork.Orders.GetByIdAsync(dto.OrderId, cancellationToken: cancellationToken);
+        if (order == null)
+        {
+            return Result<RefundResponseDto>.Fail(ErrorCodes.OrderNotFound, $"Order {dto.OrderId} not found");
+        }
 
         if (order.PaymentStatus != PaymentStatus.Paid)
         {
-            throw new InvalidRefundException($"Cannot refund order with payment status: {order.PaymentStatus}");
+            return Result<RefundResponseDto>.Fail("INVALID_REFUND", $"Cannot refund order with payment status: {order.PaymentStatus}");
         }
 
         var refundAmount = dto.Amount ?? order.TotalAmount;
@@ -188,7 +199,7 @@ public class PaymentService : IPaymentService
 
         _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}", dto.OrderId, refundId);
 
-        return new RefundResponseDto
+        var response = new RefundResponseDto
         {
             Success = true,
             RefundId = refundId,
@@ -197,6 +208,7 @@ public class PaymentService : IPaymentService
             Message = "Refund processed successfully",
             ProcessedAt = DateTime.UtcNow
         };
+        return Result<RefundResponseDto>.Ok(response);
     }
 
     public async Task<PaymentDetailsDto?> GetPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken = default)

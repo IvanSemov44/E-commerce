@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Payments;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Results;
 
 namespace ECommerce.API.Controllers;
 
@@ -62,18 +63,34 @@ public class PaymentsController : ControllerBase
 
         var result = await _paymentService.ProcessPaymentAsync(dto, cancellationToken: cancellationToken);
 
-        if (result.Success)
+        if (result is Result<PaymentResponseDto>.Success success)
         {
-            _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}",
-                dto.OrderId, result.PaymentIntentId);
-            return Ok(ApiResponse<PaymentResponseDto>.Ok(result, "Payment processed successfully"));
+            _logger.LogInformation("Payment result for order {OrderId}. PaymentIntentId: {PaymentIntentId}",
+                dto.OrderId, success.Data.PaymentIntentId);
+            
+            if (success.Data.Success)
+            {
+                return Ok(ApiResponse<PaymentResponseDto>.Ok(success.Data, "Payment processed successfully"));
+            }
+            else
+            {
+                return UnprocessableEntity(ApiResponse<PaymentResponseDto>.Failure(success.Data.Message, "PAYMENT_DECLINED"));
+            }
         }
-        else
+
+        if (result is Result<PaymentResponseDto>.Failure failure)
         {
-            _logger.LogWarning("Payment failed for order {OrderId}. Reason: {Message}",
-                dto.OrderId, result.Message);
-            return UnprocessableEntity(ApiResponse<PaymentResponseDto>.Failure(result.Message, "PAYMENT_FAILED"));
+            var statusCode = failure.Code switch
+            {
+                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "UNSUPPORTED_PAYMENT_METHOD" => StatusCodes.Status422UnprocessableEntity,
+                "PAYMENT_AMOUNT_MISMATCH" => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<PaymentResponseDto>.Failure(failure.Message, failure.Code));
         }
+
+        return StatusCode(500, ApiResponse<PaymentResponseDto>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -117,8 +134,25 @@ public class PaymentsController : ControllerBase
             return StatusCode(403, ApiResponse<object>.Failure("You do not have permission to view payment details for this order", "INSUFFICIENT_PERMISSIONS"));
         }
 
-        var paymentDetails = await _paymentService.GetPaymentDetailsAsync(orderId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment details retrieved successfully"));
+        var result = await _paymentService.GetPaymentDetailsAsync(orderId, cancellationToken: cancellationToken);
+        
+        if (result is Result<PaymentDetailsDto>.Success success)
+        {
+            return Ok(ApiResponse<PaymentDetailsDto>.Ok(success.Data, "Payment details retrieved successfully"));
+        }
+
+        if (result is Result<PaymentDetailsDto>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "NO_PAYMENT_FOUND" => StatusCodes.Status404NotFound,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<PaymentDetailsDto>.Failure(failure.Message, failure.Code));
+        }
+
+        return StatusCode(500, ApiResponse<PaymentDetailsDto>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -151,18 +185,25 @@ public class PaymentsController : ControllerBase
 
         var result = await _paymentService.RefundPaymentAsync(dto, cancellationToken: cancellationToken);
 
-        if (result.Success)
+        if (result is Result<RefundResponseDto>.Success success)
         {
-            _logger.LogInformation("Refund successful for order {OrderId}. RefundId: {RefundId}",
-                orderId, result.RefundId);
-            return Ok(ApiResponse<RefundResponseDto>.Ok(result, "Refund processed successfully"));
+            _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}",
+                orderId, success.Data.RefundId);
+            return Ok(ApiResponse<RefundResponseDto>.Ok(success.Data, "Refund processed successfully"));
         }
-        else
+
+        if (result is Result<RefundResponseDto>.Failure failure)
         {
-            _logger.LogWarning("Refund failed for order {OrderId}. Reason: {Message}",
-                orderId, result.Message);
-            return Ok(ApiResponse<RefundResponseDto>.Ok(result, "Refund processing failed"));
+            var statusCode = failure.Code switch
+            {
+                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "INVALID_REFUND" => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<RefundResponseDto>.Failure(failure.Message, failure.Code));
         }
+
+        return StatusCode(500, ApiResponse<RefundResponseDto>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -301,7 +342,7 @@ public class PaymentsController : ControllerBase
         _logger.LogInformation("Webhook processed successfully for PaymentIntentId: {PaymentIntentId}",
             webhookPayload.PaymentIntentId ?? "unknown");
 
-        return Ok(new { status = "received", message = "Webhook processed successfully" });
+        return Ok(ApiResponse<object>.Ok(new { status = "received" }, "Webhook processed successfully"));
     }
 }
 

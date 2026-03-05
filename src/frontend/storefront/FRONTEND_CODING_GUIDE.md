@@ -153,17 +153,47 @@ interface ApiResponse<T> {
 }
 ```
 
-#### **8. Component Colocation**
-Keep related files together in feature directories:
+#### **8. Component Colocation Architecture**
 
-Starter template with copy-paste file contents: `COMPONENT_COLOCATION_TEMPLATE.md`.
-One-by-one rollout tracker and policy: `COLOCATION_ADOPTION_TRACKER.md`.
+Components follow a **colocation pattern** where a component and its related files are organized together in a dedicated folder structure. This improves code organization, reusability, and maintainability.
 
-Incremental adoption rule:
-- If a PR touches a component, migrate that component to the co-location structure in the same PR.
+**Incremental adoption rule:**
+- If a PR touches a component, migrate that component to the colocation structure in the same PR.
 - Keep migration PRs small (1-3 components) and avoid behavior changes.
-- Use the tracker to prioritize high-traffic and high-churn components first.
+- Use the tracker (`COLOCATION_ADOPTION_TRACKER.md`) to prioritize high-traffic and high-churn components first.
 
+**Basic colocation structure (1-2 hooks or utilities):**
+```
+ComponentName/
+├── ComponentName.tsx         # Main component
+├── ComponentName.types.ts    # TypeScript interfaces/types
+├── ComponentName.module.css  # Scoped styles
+├── ComponentName.hooks.ts    # Custom hooks (if ≤2 hooks)
+├── ComponentName.utils.ts    # Utility functions
+├── ComponentName.test.tsx    # Component tests
+└── index.ts                  # Barrel export
+```
+
+**Advanced colocation structure (3+ hooks):**
+```
+ComponentName/
+├── ComponentName.tsx         # Main component
+├── ComponentName.types.ts    # TypeScript interfaces/types
+├── ComponentName.module.css  # Scoped styles
+├── ComponentName.test.tsx    # Component tests
+├── hooks/                    # Separate folder for 3+ hooks
+│   ├── useFirstHook.ts      # Individual hook file
+│   ├── useSecondHook.ts     # Individual hook file
+│   ├── useThirdHook.ts      # Individual hook file
+│   └── index.ts             # Barrel export for hooks
+├── utils/                    # Optional: separate folder if 5+ functions
+│   ├── helper1.utils.ts
+│   ├── helper2.utils.ts
+│   └── index.ts
+└── index.ts                  # Main barrel export
+```
+
+**Feature-level structure (reference example):**
 ```
 src/features/products/
 ├── api/
@@ -171,11 +201,29 @@ src/features/products/
 │   ├── categoriesApi.ts
 │   └── reviewsApi.ts
 ├── components/
-│   ├── ProductCard/
+│   ├── ProductCard/           ← Colocated component
 │   │   ├── ProductCard.tsx
+│   │   ├── ProductCard.types.ts
 │   │   ├── ProductCard.module.css
-│   │   └── ProductCard.test.tsx
-│   └── ProductGrid/
+│   │   ├── ProductCard.hooks.ts
+│   │   ├── ProductCard.test.tsx
+│   │   └── index.ts
+│   ├── ProductGrid/
+│   │   ├── ProductGrid.tsx
+│   │   ├── ProductGrid.types.ts
+│   │   ├── ProductGrid.test.tsx
+│   │   └── index.ts
+│   └── ProductFilters/        ← Component with multiple hooks (folder structure)
+│       ├── ProductFilters.tsx
+│       ├── ProductFilters.types.ts
+│       ├── ProductFilters.module.css
+│       ├── ProductFilters.test.tsx
+│       ├── hooks/
+│       │   ├── usePriceFilters.ts
+│       │   ├── useRatingFilter.ts
+│       │   ├── useFeaturedFilter.ts
+│       │   └── index.ts
+│       └── index.ts
 ├── hooks/
 │   ├── useProductFilters.ts
 │   └── useProductDetails.ts
@@ -185,6 +233,78 @@ src/features/products/
 └── types/
     └── index.ts
 ```
+
+**When to use each pattern:**
+
+1. **Single `.hooks.ts` file** (1-2 tightly-coupled hooks):
+   ```typescript
+   // ProductCard.hooks.ts
+   export function useProductCardHandlers(...) { ... }
+   export function useProductValidation(...) { ... }
+   ```
+
+2. **`hooks/` folder with separate files** (3+ hooks OR hooks potentially reused elsewhere):
+   ```typescript
+   // hooks/usePriceFilters.ts
+   export function usePriceFilters(...) { ... }
+
+   // hooks/useRatingFilter.ts
+   export function useRatingFilter(...) { ... }
+
+   // hooks/useFeaturedFilter.ts
+   export function useFeaturedFilter(...) { ... }
+
+   // hooks/index.ts
+   export { usePriceFilters } from './usePriceFilters';
+   export { useRatingFilter } from './useRatingFilter';
+   export { useFeaturedFilter } from './useFeaturedFilter';
+   ```
+
+3. **Separate `utils/` folder** (5+ utility functions):
+   ```typescript
+   // utils/calculations.utils.ts
+   export function calculateTotal(...) { ... }
+   export function calculateTax(...) { ... }
+
+   // utils/formatting.utils.ts
+   export function formatPrice(...) { ... }
+   export function formatCurrency(...) { ... }
+
+   // utils/index.ts
+   export * from './calculations.utils';
+   export * from './formatting.utils';
+   ```
+
+**Main component barrel export (`index.ts`):**
+```typescript
+export { default } from './ComponentName';
+export type { ComponentNameProps, RelatedTypes } from './ComponentName.types';
+export { useCustomHook, anotherHook } from './hooks'; // or './ComponentName.hooks'
+export { utilFunction1, utilFunction2 } from './utils'; // or './ComponentName.utils'
+```
+
+**Benefits:**
+- ✅ **Encapsulation**: All component-related code in one folder
+- ✅ **Scalability**: Easy to add tests, hooks, utils without cluttering files
+- ✅ **Reusability**: Clear barrel exports make it easy to import what you need
+- ✅ **Maintainability**: Each file has a single responsibility
+- ✅ **Type safety**: Centralized types in `.types.ts` files
+- ✅ **Discoverability**: Test files live next to components, not in separate `/tests` folder
+
+**Import examples:**
+```typescript
+// Import from colocated component with hooks
+import ProductFilters from '@/features/products/components/ProductFilters';
+import { usePriceFilters, useRatingFilter } from '@/features/products/components/ProductFilters';
+
+// Or with explicit path when needed
+import { ProductFilters } from '@/features/products/components';
+import { usePriceFilters } from '@/features/products/components/ProductFilters/hooks';
+```
+
+**Reference templates:**
+- Starter template with copy-paste file contents: `COMPONENT_COLOCATION_TEMPLATE.md`
+- Rollout tracker and adoption status: `COLOCATION_ADOPTION_TRACKER.md`
 
 #### **9. Form Validation with Zod**
 Validate before sending to API.

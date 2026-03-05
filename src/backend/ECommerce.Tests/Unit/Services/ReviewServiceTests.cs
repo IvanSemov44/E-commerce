@@ -2,9 +2,11 @@ using AutoMapper;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Services;
+using ECommerce.Core.Constants;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -62,8 +64,15 @@ public class ReviewServiceTests
         var result = await _service.GetProductReviewsAsync(product.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(2);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<IEnumerable<ReviewDto>>.Success success)
+        {
+            success.Data.Should().HaveCount(2);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<IEnumerable<ReviewDto>>.Success");
+        }
     }
 
     [TestMethod]
@@ -74,10 +83,18 @@ public class ReviewServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetProductReviewsAsync(id);
+        var result = await _service.GetProductReviewsAsync(id);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<IEnumerable<ReviewDto>>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<IEnumerable<ReviewDto>>.Failure");
+        }
     }
 
     [TestMethod]
@@ -93,8 +110,15 @@ public class ReviewServiceTests
         var result = await _service.GetReviewByIdAsync(review.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().Be(review.Id);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<ReviewDetailDto>.Success success)
+        {
+            success.Data.Id.Should().Be(review.Id);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Success");
+        }
     }
 
     [TestMethod]
@@ -105,10 +129,18 @@ public class ReviewServiceTests
         _mockReviewRepository.Setup(r => r.GetByIdWithDetailsAsync(id)).ReturnsAsync((Review?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetReviewByIdAsync(id);
+        var result = await _service.GetReviewByIdAsync(id);
 
         // Assert
-        await act.Should().ThrowAsync<ReviewNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ReviewDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ReviewNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -133,8 +165,15 @@ public class ReviewServiceTests
         var result = await _service.CreateReviewAsync(user.Id, dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Rating.Should().Be(5);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<ReviewDetailDto>.Success success)
+        {
+            success.Data.Rating.Should().Be(5);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Success");
+        }
         _mockReviewRepository.Verify(r => r.AddAsync(It.IsAny<Review>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
@@ -152,10 +191,18 @@ public class ReviewServiceTests
         _mockReviewRepository.Setup(r => r.UserHasReviewedAsync(user.Id, product.Id)).ReturnsAsync(true);
 
         // Act
-        Func<Task> act = async () => await _service.CreateReviewAsync(user.Id, dto);
+        var result = await _service.CreateReviewAsync(user.Id, dto);
 
         // Assert
-        await act.Should().ThrowAsync<DuplicateReviewException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ReviewDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.DuplicateReview);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -166,10 +213,18 @@ public class ReviewServiceTests
         var dto = new CreateReviewDto { ProductId = Guid.NewGuid(), Rating = 10, Comment = "bad" };
 
         // Act
-        Func<Task> act = async () => await _service.CreateReviewAsync(user.Id, dto);
+        var result = await _service.CreateReviewAsync(user.Id, dto);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidRatingException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ReviewDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidRating);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -180,10 +235,18 @@ public class ReviewServiceTests
         var dto = new CreateReviewDto { ProductId = Guid.NewGuid(), Rating = 4, Comment = "   " };
 
         // Act
-        Func<Task> act = async () => await _service.CreateReviewAsync(user.Id, dto);
+        var result = await _service.CreateReviewAsync(user.Id, dto);
 
         // Assert
-        await act.Should().ThrowAsync<EmptyReviewCommentException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ReviewDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.EmptyReviewComment);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -204,8 +267,15 @@ public class ReviewServiceTests
         var result = await _service.UpdateReviewAsync(user.Id, review.Id, dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Rating.Should().Be(4);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<ReviewDetailDto>.Success success)
+        {
+            success.Data.Rating.Should().Be(4);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Success");
+        }
         _mockReviewRepository.Verify(r => r.UpdateAsync(It.IsAny<Review>()), Times.Once);
     }
 
@@ -220,10 +290,18 @@ public class ReviewServiceTests
         _mockReviewRepository.Setup(r => r.GetByIdWithDetailsAsync(review.Id)).ReturnsAsync(review);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateReviewAsync(other.Id, review.Id, new UpdateReviewDto { Comment = "x" });
+        var result = await _service.UpdateReviewAsync(other.Id, review.Id, new UpdateReviewDto { Comment = "x" });
 
         // Assert
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ReviewDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.Unauthorized);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -237,10 +315,18 @@ public class ReviewServiceTests
         _mockReviewRepository.Setup(r => r.GetByIdWithDetailsAsync(review.Id)).ReturnsAsync(review);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateReviewAsync(user.Id, review.Id, new UpdateReviewDto { Comment = "x" });
+        var result = await _service.UpdateReviewAsync(user.Id, review.Id, new UpdateReviewDto { Comment = "x" });
 
         // Assert
-        await act.Should().ThrowAsync<ReviewUpdateTimeExpiredException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ReviewDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ReviewUpdateExpired);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ReviewDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -273,10 +359,18 @@ public class ReviewServiceTests
         _mockReviewRepository.Setup(r => r.GetByIdAsync(review.Id, It.IsAny<bool>())).ReturnsAsync(review);
 
         // Act
-        Func<Task> act = async () => await _service.DeleteReviewAsync(other.Id, review.Id);
+        var result = await _service.DeleteReviewAsync(other.Id, review.Id);
 
         // Assert
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.Unauthorized);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     [TestMethod]

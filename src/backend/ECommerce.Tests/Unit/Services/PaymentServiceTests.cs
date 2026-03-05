@@ -5,6 +5,8 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -71,30 +73,21 @@ public class PaymentServiceTests
         var result = await _service.ProcessPaymentAsync(dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Amount.Should().Be(100m);
-        result.PaymentMethod.Should().Be("stripe");
-        result.PaymentIntentId.Should().NotBeNullOrEmpty();
-
-        // Note: Result may be success or failure due to random simulation (5% failure rate)
-        // Both are valid outcomes, so we verify based on the result
-        result.Status.Should().BeOneOf("completed", "failed");
-        result.ProcessedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-        result.Metadata.Should().NotBeNull();
-
-        if (result.Success)
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentResponseDto>.Success success)
         {
-            result.TransactionId.Should().NotBeNullOrEmpty();
-            result.Status.Should().Be("completed");
-        }
-        else
-        {
-            result.Status.Should().Be("failed");
+            success.Data.Amount.Should().Be(100m);
+            success.Data.PaymentMethod.Should().Be("stripe");
+            success.Data.PaymentIntentId.Should().NotBeNullOrEmpty();
+            success.Data.Status.Should().Be("completed");
+            success.Data.ProcessedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+            success.Data.Metadata.Should().NotBeNull();
+            success.Data.TransactionId.Should().NotBeNullOrEmpty();
         }
     }
 
     [TestMethod]
-    public async Task ProcessPaymentAsync_OrderNotFound_ThrowsOrderNotFoundException()
+    public async Task ProcessPaymentAsync_OrderNotFound_ReturnsFailureResult()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -108,13 +101,23 @@ public class PaymentServiceTests
             Amount = 100m
         };
 
-        // Act & Assert
-        await _service.Invoking(s => s.ProcessPaymentAsync(dto))
-            .Should().ThrowAsync<OrderNotFoundException>();
+        // Act
+        var result = await _service.ProcessPaymentAsync(dto);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PaymentResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.OrderNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PaymentResponseDto>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task ProcessPaymentAsync_UnsupportedPaymentMethod_ThrowsUnsupportedPaymentMethodException()
+    public async Task ProcessPaymentAsync_UnsupportedPaymentMethod_ReturnsFailureResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -131,13 +134,23 @@ public class PaymentServiceTests
             Amount = 100m
         };
 
-        // Act & Assert
-        await _service.Invoking(s => s.ProcessPaymentAsync(dto))
-            .Should().ThrowAsync<UnsupportedPaymentMethodException>();
+        // Act
+        var result = await _service.ProcessPaymentAsync(dto);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PaymentResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be("UNSUPPORTED_PAYMENT_METHOD");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PaymentResponseDto>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task ProcessPaymentAsync_AmountMismatch_ThrowsPaymentAmountMismatchException()
+    public async Task ProcessPaymentAsync_AmountMismatch_ReturnsFailureResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -154,9 +167,19 @@ public class PaymentServiceTests
             Amount = 200m // Mismatched amount
         };
 
-        // Act & Assert
-        await _service.Invoking(s => s.ProcessPaymentAsync(dto))
-            .Should().ThrowAsync<PaymentAmountMismatchException>();
+        // Act
+        var result = await _service.ProcessPaymentAsync(dto);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PaymentResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be("PAYMENT_AMOUNT_MISMATCH");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PaymentResponseDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -185,7 +208,11 @@ public class PaymentServiceTests
         var result = await _service.ProcessPaymentAsync(dto);
 
         // Assert
-        result.PaymentIntentId.Should().StartWith("pi_");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentResponseDto>.Success success)
+        {
+            success.Data.PaymentIntentId.Should().StartWith("pi_");
+        }
     }
 
     [TestMethod]
@@ -214,7 +241,11 @@ public class PaymentServiceTests
         var result = await _service.ProcessPaymentAsync(dto);
 
         // Assert
-        result.PaymentIntentId.Should().StartWith("ppi_");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentResponseDto>.Success success)
+        {
+            success.Data.PaymentIntentId.Should().StartWith("ppi_");
+        }
     }
 
     [TestMethod]
@@ -243,7 +274,11 @@ public class PaymentServiceTests
         var result = await _service.ProcessPaymentAsync(dto);
 
         // Assert
-        result.PaymentIntentId.Should().StartWith("ap_");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentResponseDto>.Success success)
+        {
+            success.Data.PaymentIntentId.Should().StartWith("ap_");
+        }
     }
 
     [TestMethod]
@@ -272,7 +307,11 @@ public class PaymentServiceTests
         var result = await _service.ProcessPaymentAsync(dto);
 
         // Assert
-        result.PaymentIntentId.Should().StartWith("gp_");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentResponseDto>.Success success)
+        {
+            success.Data.PaymentIntentId.Should().StartWith("gp_");
+        }
     }
 
     [TestMethod]
@@ -302,22 +341,14 @@ public class PaymentServiceTests
         var result = await _service.ProcessPaymentAsync(dto);
 
         // Assert - Verify order is updated based on payment result
-        // Note: Payment result is random (5% failure rate) due to simulation
-        result.Should().NotBeNull();
-
-        if (result.Success)
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentResponseDto>.Success success)
         {
             order.PaymentStatus.Should().Be(PaymentStatus.Paid);
             order.Status.Should().Be(OrderStatus.Confirmed);
             order.PaymentMethod.Should().Be("stripe");
             order.PaymentIntentId.Should().NotBeNullOrEmpty();
-            result.Status.Should().Be("completed");
-        }
-        else
-        {
-            order.PaymentStatus.Should().Be(PaymentStatus.Failed);
-            order.PaymentIntentId.Should().NotBeNullOrEmpty();
-            result.Status.Should().Be("failed");
+            success.Data.Status.Should().Be("completed");
         }
 
         _mockOrderRepository.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
@@ -350,22 +381,15 @@ public class PaymentServiceTests
         var result = await _service.ProcessPaymentAsync(dto);
 
         // Assert
-        // Note: Payment result is random (5% failure rate) due to simulation
-        result.Should().NotBeNull();
-        result.Metadata.Should().NotBeNull();
-        result.Metadata.Should().ContainKey("OrderNumber");
-        result.Metadata!["OrderNumber"].Should().Be("ORD-12345");
-
-        // Provider metadata is only included on success
-        if (result.Success)
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentResponseDto>.Success success)
         {
-            result.Metadata.Should().ContainKey("Provider");
-            result.Metadata["Provider"].Should().Be("Stripe");
-            result.Status.Should().Be("completed");
-        }
-        else
-        {
-            result.Status.Should().Be("failed");
+            success.Data.Metadata.Should().NotBeNull();
+            success.Data.Metadata.Should().ContainKey("OrderNumber");
+            success.Data.Metadata!["OrderNumber"].Should().Be("ORD-12345");
+            success.Data.Metadata.Should().ContainKey("Provider");
+            success.Data.Metadata["Provider"].Should().Be("Stripe");
+            success.Data.Status.Should().Be("completed");
         }
     }
 
@@ -374,20 +398,30 @@ public class PaymentServiceTests
     #region GetPaymentDetailsAsync Tests
 
     [TestMethod]
-    public async Task GetPaymentDetailsAsync_OrderNotFound_ThrowsOrderNotFoundException()
+    public async Task GetPaymentDetailsAsync_OrderNotFound_ReturnsFailureResult()
     {
         // Arrange
         var orderId = Guid.NewGuid();
         _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
-        // Act & Assert
-        await _service.Invoking(s => s.GetPaymentDetailsAsync(orderId))
-            .Should().ThrowAsync<OrderNotFoundException>();
+        // Act
+        var result = await _service.GetPaymentDetailsAsync(orderId);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PaymentDetailsDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.OrderNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PaymentDetailsDto>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task GetPaymentDetailsAsync_NoPaymentIntentId_ThrowsNoPaymentFoundException()
+    public async Task GetPaymentDetailsAsync_NoPaymentIntentId_ReturnsFailureResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -398,9 +432,19 @@ public class PaymentServiceTests
         _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
-        // Act & Assert
-        await _service.Invoking(s => s.GetPaymentDetailsAsync(orderId))
-            .Should().ThrowAsync<NoPaymentFoundException>();
+        // Act
+        var result = await _service.GetPaymentDetailsAsync(orderId);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PaymentDetailsDto>.Failure failure)
+        {
+            failure.Code.Should().Be("NO_PAYMENT_FOUND");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PaymentDetailsDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -421,12 +465,15 @@ public class PaymentServiceTests
         var result = await _service.GetPaymentDetailsAsync(orderId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.OrderId.Should().Be(orderId);
-        result.PaymentIntentId.Should().Be("pi_test123");
-        result.PaymentMethod.Should().Be("stripe");
-        result.Amount.Should().Be(100m);
-        result.Status.Should().Be("paid");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentDetailsDto>.Success success)
+        {
+            success.Data.OrderId.Should().Be(orderId);
+            success.Data.PaymentIntentId.Should().Be("pi_test123");
+            success.Data.PaymentMethod.Should().Be("stripe");
+            success.Data.Amount.Should().Be(100m);
+            success.Data.Status.Should().Be("paid");
+        }
     }
 
     [TestMethod]
@@ -446,7 +493,11 @@ public class PaymentServiceTests
         var result = await _service.GetPaymentDetailsAsync(orderId);
 
         // Assert
-        result.ProcessedAt.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentDetailsDto>.Success success)
+        {
+            success.Data.ProcessedAt.Should().NotBeNull();
+        }
     }
 
     [TestMethod]
@@ -466,7 +517,11 @@ public class PaymentServiceTests
         var result = await _service.GetPaymentDetailsAsync(orderId);
 
         // Assert
-        result.ProcessedAt.Should().BeNull();
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaymentDetailsDto>.Success success)
+        {
+            success.Data.ProcessedAt.Should().BeNull();
+        }
     }
 
     #endregion
@@ -499,17 +554,19 @@ public class PaymentServiceTests
         var result = await _service.RefundPaymentAsync(dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RefundId.Should().NotBeNullOrEmpty();
-        result.Amount.Should().Be(100m);
-        result.Status.Should().Be("completed");
-        result.Message.Should().Be("Refund processed successfully");
-        result.ProcessedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<RefundResponseDto>.Success success)
+        {
+            success.Data.RefundId.Should().NotBeNullOrEmpty();
+            success.Data.Amount.Should().Be(100m);
+            success.Data.Status.Should().Be("completed");
+            success.Data.Message.Should().Be("Refund processed successfully");
+            success.Data.ProcessedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        }
     }
 
     [TestMethod]
-    public async Task RefundPaymentAsync_OrderNotFound_ThrowsOrderNotFoundException()
+    public async Task RefundPaymentAsync_OrderNotFound_ReturnsFailureResult()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -522,13 +579,23 @@ public class PaymentServiceTests
             Amount = 100m
         };
 
-        // Act & Assert
-        await _service.Invoking(s => s.RefundPaymentAsync(dto))
-            .Should().ThrowAsync<OrderNotFoundException>();
+        // Act
+        var result = await _service.RefundPaymentAsync(dto);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<RefundResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.OrderNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<RefundResponseDto>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task RefundPaymentAsync_UnpaidOrder_ThrowsInvalidRefundException()
+    public async Task RefundPaymentAsync_UnpaidOrder_ReturnsFailureResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -545,14 +612,24 @@ public class PaymentServiceTests
             Amount = 100m
         };
 
-        // Act & Assert
-        await _service.Invoking(s => s.RefundPaymentAsync(dto))
-            .Should().ThrowAsync<InvalidRefundException>()
-            .WithMessage("*Cannot refund order with payment status: Pending*");
+        // Act
+        var result = await _service.RefundPaymentAsync(dto);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<RefundResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_REFUND");
+            failure.Message.Should().Contain("Cannot refund order with payment status");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<RefundResponseDto>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task RefundPaymentAsync_FailedPayment_ThrowsInvalidRefundException()
+    public async Task RefundPaymentAsync_FailedPayment_ReturnsFailureResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -569,10 +646,20 @@ public class PaymentServiceTests
             Amount = 50m
         };
 
-        // Act & Assert
-        await _service.Invoking(s => s.RefundPaymentAsync(dto))
-            .Should().ThrowAsync<InvalidRefundException>()
-            .WithMessage("*Cannot refund order with payment status: Failed*");
+        // Act
+        var result = await _service.RefundPaymentAsync(dto);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<RefundResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_REFUND");
+            failure.Message.Should().Contain("Cannot refund order with payment status");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<RefundResponseDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -600,7 +687,11 @@ public class PaymentServiceTests
         var result = await _service.RefundPaymentAsync(dto);
 
         // Assert
-        result.Amount.Should().Be(150m);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<RefundResponseDto>.Success success)
+        {
+            success.Data.Amount.Should().Be(150m);
+        }
     }
 
     [TestMethod]
@@ -628,7 +719,11 @@ public class PaymentServiceTests
         var result = await _service.RefundPaymentAsync(dto);
 
         // Assert
-        result.Amount.Should().Be(50m);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<RefundResponseDto>.Success success)
+        {
+            success.Data.Amount.Should().Be(50m);
+        }
     }
 
     [TestMethod]
@@ -653,9 +748,10 @@ public class PaymentServiceTests
         };
 
         // Act
-        await _service.RefundPaymentAsync(dto);
+        var result = await _service.RefundPaymentAsync(dto);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         order.PaymentStatus.Should().Be(PaymentStatus.Refunded);
         _mockOrderRepository.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);

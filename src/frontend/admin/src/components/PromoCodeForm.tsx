@@ -75,7 +75,7 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
     setError('');
 
     try {
-      const data: any = {
+      const data: Record<string, unknown> = {
         code: values.code.trim(),
         discountType: values.discountType,
         discountValue: parseFloat(values.discountValue),
@@ -103,8 +103,9 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
       }
 
       await onSubmit(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save promo code');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save promo code';
+      setError(message);
     }
   };
 

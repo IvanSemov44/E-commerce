@@ -74,9 +74,20 @@ export default function Inventory() {
       }
       handleCloseAdjustModal();
       refetch();
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to adjust stock');
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Failed to adjust stock');
+      toast.error(message);
     }
+  };
+
+  const getErrorMessage = (err: unknown, fallback: string): string => {
+    if (err instanceof Object && 'data' in err) {
+      const data = (err as Record<string, unknown>).data;
+      if (data instanceof Object && 'message' in data) {
+        return (data as Record<string, unknown>).message as string;
+      }
+    }
+    return fallback;
   };
 
   const getStockStatusClass = (item: InventoryItem) => {

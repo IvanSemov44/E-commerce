@@ -1,4 +1,5 @@
 using ECommerce.Application.DTOs.Users;
+using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
 
@@ -13,7 +14,7 @@ public interface IUserService
     /// <param name="userId">The user ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>User profile DTO.</returns>
-    Task<UserProfileDto> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<UserProfileDto>> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates a user's profile information.
@@ -22,7 +23,7 @@ public interface IUserService
     /// <param name="dto">Updated profile information.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated user profile DTO.</returns>
-    Task<UserProfileDto> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken cancellationToken = default);
+    Task<Result<UserProfileDto>> UpdateUserProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves a user's preferences.
@@ -30,7 +31,7 @@ public interface IUserService
     /// <param name="userId">The user ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>User preferences DTO.</returns>
-    Task<UserPreferencesDto> GetUserPreferencesAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<UserPreferencesDto>> GetUserPreferencesAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates a user's preferences.
@@ -39,7 +40,7 @@ public interface IUserService
     /// <param name="dto">Updated preferences.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated user preferences DTO.</returns>
-    Task<UserPreferencesDto> UpdateUserPreferencesAsync(Guid userId, UserPreferencesDto dto, CancellationToken cancellationToken = default);
+    Task<Result<UserPreferencesDto>> UpdateUserPreferencesAsync(Guid userId, UserPreferencesDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Changes a user's password.
@@ -49,5 +50,5 @@ public interface IUserService
     /// <param name="newPassword">The new password.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Task completed.</returns>
-    Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default);
 }

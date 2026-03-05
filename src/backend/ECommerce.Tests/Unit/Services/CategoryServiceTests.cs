@@ -52,9 +52,16 @@ public class CategoryServiceTests
         var result = await _service.GetAllCategoriesAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Items.Should().HaveCount(2);
-        result.TotalCount.Should().Be(2);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<PaginatedResult<CategoryDto>>.Success success)
+        {
+            success.Data.Items.Should().HaveCount(2);
+            success.Data.TotalCount.Should().Be(2);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PaginatedResult<CategoryDto>>.Success");
+        }
     }
 
     [TestMethod]

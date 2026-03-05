@@ -1,11 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { Provider } from 'react-redux'
-import { configureStore } from '@reduxjs/toolkit'
+import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
 import { useCart } from '../useCart'
-import { cartReducer } from '@/features/cart/slices/cartSlice'
-import { authReducer } from '@/features/auth/slices/authSlice'
-import type { ReactNode } from 'react'
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
@@ -45,46 +40,32 @@ vi.mock('../useCartSync', () => ({
 }))
 
 describe('useCart', () => {
-  let store: ReturnType<typeof configureStore>
-
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
-  )
-
-  beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
-        cart: {
-          items: [
-            {
-              id: '1',
-              name: 'Test Product',
-              slug: 'test-product',
-              price: 29.99,
-              quantity: 2,
-              maxStock: 10,
-              image: '/test.jpg',
-            },
-          ],
-          lastUpdated: Date.now(),
+  const defaultPreloadedState = {
+    cart: {
+      items: [
+        {
+          id: '1',
+          name: 'Test Product',
+          slug: 'test-product',
+          price: 29.99,
+          quantity: 2,
+          maxStock: 10,
+          image: '/test.jpg',
         },
-        auth: {
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-          error: null,
-          initialized: true,
-        },
-      },
-    })
-  })
+      ],
+      lastUpdated: Date.now(),
+    },
+    auth: {
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+      error: null,
+      initialized: true,
+    },
+  }
 
   it('should calculate totals correctly', () => {
-    const { result } = renderHook(() => useCart(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
 
     expect(result.current.totals.subtotal).toBe(59.98) // 29.99 * 2
     expect(result.current.totals.shipping).toBeGreaterThan(0)
@@ -93,7 +74,7 @@ describe('useCart', () => {
   })
 
   it('should provide display items from local cart when not authenticated', () => {
-    const { result } = renderHook(() => useCart(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
 
     expect(result.current.displayItems).toHaveLength(1)
     expect(result.current.displayItems[0].id).toBe('1')
@@ -102,13 +83,7 @@ describe('useCart', () => {
   })
 
   it('should calculate free shipping when threshold is met', () => {
-    // Create store with high-value items to meet free shipping threshold
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
+    const highValueState = {
         cart: {
           items: [
             {
@@ -130,10 +105,9 @@ describe('useCart', () => {
           error: null,
           initialized: true,
         },
-      },
-    })
+    }
 
-    const { result } = renderHook(() => useCart(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: highValueState })
 
     // Assuming FREE_SHIPPING_THRESHOLD is 100
     expect(result.current.totals.subtotal).toBe(150.00)
@@ -141,12 +115,7 @@ describe('useCart', () => {
   })
 
   it('should have zero shipping for empty cart', () => {
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
+    const emptyState = {
         cart: {
           items: [],
           lastUpdated: Date.now(),
@@ -158,10 +127,9 @@ describe('useCart', () => {
           error: null,
           initialized: true,
         },
-      },
-    })
+    }
 
-    const { result } = renderHook(() => useCart(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: emptyState })
 
     expect(result.current.totals.subtotal).toBe(0)
     expect(result.current.totals.shipping).toBe(0)
@@ -170,7 +138,7 @@ describe('useCart', () => {
   })
 
   it('should provide update and remove handlers', () => {
-    const { result } = renderHook(() => useCart(), { wrapper })
+    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
 
     expect(typeof result.current.handleUpdateQuantity).toBe('function')
     expect(typeof result.current.handleRemove).toBe('function')

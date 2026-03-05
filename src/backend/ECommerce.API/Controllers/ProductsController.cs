@@ -59,6 +59,10 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetFeaturedProducts([FromQuery] int count = 10, CancellationToken cancellationToken = default)
     {
+        // Enforce pagination bounds per coding guide (max 100)
+        if (count < 1) count = 10;
+        if (count > 100) count = 100;
+        
         var result = await _productService.GetFeaturedProductsAsync(count, cancellationToken: cancellationToken);
         return Ok(ApiResponse<List<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
     }
@@ -84,10 +88,10 @@ public class ProductsController : ControllerBase
         if (result is Result<ProductDetailDto>.Success success)
             return Ok(ApiResponse<ProductDetailDto>.Ok(success.Data, "Product retrieved successfully"));
         
-        if (result is Result<ProductDetailDto>.Failure)
-            return NotFound(ApiResponse<object>.Error("Product not found"));
+        if (result is Result<ProductDetailDto>.Failure failure)
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
         
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -111,10 +115,10 @@ public class ProductsController : ControllerBase
         if (result is Result<ProductDetailDto>.Success success)
             return Ok(ApiResponse<ProductDetailDto>.Ok(success.Data, "Product retrieved successfully"));
         
-        if (result is Result<ProductDetailDto>.Failure)
-            return NotFound(ApiResponse<object>.Error("Product not found"));
+        if (result is Result<ProductDetailDto>.Failure failure)
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
         
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
 
@@ -157,10 +161,10 @@ public class ProductsController : ControllerBase
                 "DUPLICATE_PRODUCT_SLUG" => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest
             };
-            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -205,10 +209,10 @@ public class ProductsController : ControllerBase
                 "PRODUCT_NOT_FOUND" => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status400BadRequest
             };
-            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -246,10 +250,10 @@ public class ProductsController : ControllerBase
                 "PRODUCT_NOT_FOUND" => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status400BadRequest
             };
-            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 }
 

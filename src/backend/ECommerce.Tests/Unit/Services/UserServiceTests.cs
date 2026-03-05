@@ -1,9 +1,11 @@
 using AutoMapper;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.Services;
+using ECommerce.Core.Constants;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -68,11 +70,18 @@ public class UserServiceTests
         var result = await _service.GetUserProfileAsync(userId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().Be(userId);
-        result.Email.Should().Be(user.Email);
-        result.FirstName.Should().Be(user.FirstName);
-        result.LastName.Should().Be(user.LastName);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<UserProfileDto>.Success success)
+        {
+            success.Data.Id.Should().Be(userId);
+            success.Data.Email.Should().Be(user.Email);
+            success.Data.FirstName.Should().Be(user.FirstName);
+            success.Data.LastName.Should().Be(user.LastName);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<UserProfileDto>.Success");
+        }
     }
 
     [TestMethod]
@@ -84,9 +93,19 @@ public class UserServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        // Act & Assert
-        await _service.Invoking(s => s.GetUserProfileAsync(userId))
-            .Should().ThrowAsync<UserNotFoundException>();
+        // Act
+        var result = await _service.GetUserProfileAsync(userId);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<UserProfileDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.UserNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<UserProfileDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -177,11 +196,18 @@ public class UserServiceTests
         var result = await _service.UpdateUserProfileAsync(userId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.FirstName.Should().Be("NewFirst");
-        result.LastName.Should().Be("NewLast");
-        result.Phone.Should().Be("0987654321");
-        result.AvatarUrl.Should().Be("new-avatar.jpg");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<UserProfileDto>.Success success)
+        {
+            success.Data.FirstName.Should().Be("NewFirst");
+            success.Data.LastName.Should().Be("NewLast");
+            success.Data.Phone.Should().Be("0987654321");
+            success.Data.AvatarUrl.Should().Be("new-avatar.jpg");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<UserProfileDto>.Success");
+        }
     }
 
     [TestMethod]
@@ -198,9 +224,19 @@ public class UserServiceTests
         _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        // Act & Assert
-        await _service.Invoking(s => s.UpdateUserProfileAsync(userId, updateDto))
-            .Should().ThrowAsync<UserNotFoundException>();
+        // Act
+        var result = await _service.UpdateUserProfileAsync(userId, updateDto);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<UserProfileDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.UserNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<UserProfileDto>.Failure");
+        }
     }
 
     [TestMethod]

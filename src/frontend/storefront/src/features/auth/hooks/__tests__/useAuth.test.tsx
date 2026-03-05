@@ -7,9 +7,11 @@ import { authSlice } from '@/features/auth/slices/authSlice';
 import type { AuthUser } from '@/shared/types';
 
 // Mock useErrorHandler
-vi.mock('../useErrorHandler', () => ({
+vi.mock('@/shared/hooks/useErrorHandler', () => ({
   useErrorHandler: () => ({
-    handleError: vi.fn((error) => ({ message: String(error) })),
+    handleError: vi.fn((error) => ({
+      message: typeof error === 'string' ? error : 'An unknown error occurred',
+    })),
     clearError: vi.fn(),
   }),
 }));

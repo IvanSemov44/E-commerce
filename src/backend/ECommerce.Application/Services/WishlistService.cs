@@ -4,6 +4,8 @@ using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading;
@@ -26,29 +28,32 @@ public class WishlistService : IWishlistService
         _logger = logger;
     }
 
-    public async Task<WishlistDto> GetUserWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<WishlistDto>> GetUserWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
         // FIX: Use database-level filtering instead of loading ALL entries
         var wishlistEntries = await _unitOfWork.Wishlists.GetAllByUserIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
 
-        return await MapWishlistToDtoAsync(wishlistEntries.ToList(), cancellationToken);
+        var wishlistDto = await MapWishlistToDtoAsync(wishlistEntries.ToList(), cancellationToken);
+        return Result<WishlistDto>.Ok(wishlistDto);
     }
 
-    public async Task<WishlistDto> AddToWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
+    public async Task<Result<WishlistDto>> AddToWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
     {
         // Note: Using GetByIdAsync for test compatibility. ExistsAsync would be more efficient.
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
+        
         var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken: cancellationToken);
         if (product == null)
-            throw new ProductNotFoundException(productId);
+            return Result<WishlistDto>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
+        
         if (await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken))
-            throw new DuplicateWishlistItemException();
+            return Result<WishlistDto>.Fail(ErrorCodes.DuplicateWishlistItem, "This product is already in your wishlist");
 
         var wishlistEntry = new Wishlist
         {
@@ -63,11 +68,11 @@ public class WishlistService : IWishlistService
         return await GetUserWishlistAsync(userId, cancellationToken);
     }
 
-    public async Task<WishlistDto> RemoveFromWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
+    public async Task<Result<WishlistDto>> RemoveFromWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
         
         // FIX: Use efficient deletion without loading all entries
         await _unitOfWork.Wishlists.DeleteByUserIdAndProductIdAsync(userId, productId, cancellationToken: cancellationToken);
@@ -81,11 +86,11 @@ public class WishlistService : IWishlistService
         return await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken);
     }
 
-    public async Task<WishlistDto> ClearWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<WishlistDto>> ClearWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
-            throw new UserNotFoundException(userId);
+            return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
         
         // FIX: Use efficient database query and batch delete
         var userWishlistEntries = await _unitOfWork.Wishlists.GetAllByUserIdAsync(userId, trackChanges: true, cancellationToken: cancellationToken);
@@ -96,7 +101,8 @@ public class WishlistService : IWishlistService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return new WishlistDto { Id = userId, Items = new List<WishlistItemDto>(), ItemCount = 0 };
+        var result = new WishlistDto { Id = userId, Items = new List<WishlistItemDto>(), ItemCount = 0 };
+        return Result<WishlistDto>.Ok(result);
     }
 
     private async Task<WishlistDto> MapWishlistToDtoAsync(List<Wishlist> wishlistEntries, CancellationToken cancellationToken = default)

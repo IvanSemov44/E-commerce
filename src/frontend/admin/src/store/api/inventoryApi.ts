@@ -107,7 +107,7 @@ export const inventoryApi = createApi({
     }),
 
     adjustStock: builder.mutation<
-      { success: boolean; message: string; data: any },
+      { success: boolean; message: string; data: Record<string, unknown> },
       { productId: string; request: AdjustStockRequest }
     >({
       query: ({ productId, request }) => ({
@@ -119,7 +119,7 @@ export const inventoryApi = createApi({
     }),
 
     restockProduct: builder.mutation<
-      { success: boolean; message: string; data: any },
+      { success: boolean; message: string; data: Record<string, unknown> },
       { productId: string; request: AdjustStockRequest }
     >({
       query: ({ productId, request }) => ({

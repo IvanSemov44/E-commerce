@@ -82,7 +82,7 @@ export const promoCodesApi = createApi({
         url: `/promo-codes/${id}/deactivate`,
         method: 'PUT',
       }),
-      transformResponse: (response: ApiResponse<any>) => ({ success: response.success }),
+      transformResponse: (response: ApiResponse<unknown>) => ({ success: response.success }),
       invalidatesTags: ['PromoCode'],
     }),
   }),

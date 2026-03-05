@@ -7,7 +7,7 @@ interface UseFormOptions<T> {
   onSubmit: (values: T) => void | Promise<void>;
 }
 
-export default function useForm<T extends Record<string, any>>({
+export default function useForm<T extends Record<string, unknown>>({
   initialValues,
   validate,
   onSubmit,
@@ -56,7 +56,7 @@ export default function useForm<T extends Record<string, any>>({
     setIsSubmitting(false);
   };
 
-  const setFieldValue = (name: keyof T, value: any) => {
+  const setFieldValue = (name: keyof T, value: T[keyof T]) => {
     setValues((prev) => ({ ...prev, [name]: value }));
   };
 

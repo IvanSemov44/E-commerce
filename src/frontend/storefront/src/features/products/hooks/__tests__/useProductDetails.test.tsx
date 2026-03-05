@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
-import { Provider } from 'react-redux'
-import { configureStore } from '@reduxjs/toolkit'
+import { act } from '@testing-library/react'
+import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
 import useProductDetails from '../useProductDetails'
-import { cartReducer } from '@/features/cart/slices/cartSlice'
-import { authReducer } from '@/features/auth/slices/authSlice'
-import type { ReactNode } from 'react'
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
@@ -68,37 +64,26 @@ vi.mock('../../utils/logger', () => ({
 }))
 
 describe('useProductDetails', () => {
-  let store: ReturnType<typeof configureStore>
-
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
-  )
+  const defaultPreloadedState = {
+    cart: {
+      items: [],
+      lastUpdated: Date.now(),
+    },
+    auth: {
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+      error: null,
+      initialized: true,
+    },
+  }
 
   beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authReducer,
-      },
-      preloadedState: {
-        cart: {
-          items: [],
-          lastUpdated: Date.now(),
-        },
-        auth: {
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-          error: null,
-          initialized: true,
-        },
-      },
-    })
     vi.clearAllMocks()
   })
 
   it('should initialize with default values', () => {
-    const { result } = renderHook(() => useProductDetails('test-product'), { wrapper })
+    const { result } = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
     
     expect(result.current.quantity).toBe(1)
     expect(result.current.addedToCart).toBe(false)
@@ -106,7 +91,7 @@ describe('useProductDetails', () => {
   })
 
   it('should set quantity', async () => {
-    const { result } = renderHook(() => useProductDetails('test-product'), { wrapper })
+    const { result } = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
     
     await act(async () => {
       result.current.setQuantity(5)
@@ -116,7 +101,7 @@ describe('useProductDetails', () => {
   })
 
   it('should reset addedToCart state', () => {
-    const { result } = renderHook(() => useProductDetails('test-product'), { wrapper })
+    const { result } = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
     
     // addedToCart starts as false
     expect(result.current.addedToCart).toBe(false)

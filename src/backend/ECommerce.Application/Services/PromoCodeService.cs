@@ -5,6 +5,8 @@ using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading;
@@ -84,11 +86,13 @@ public class PromoCodeService : IPromoCodeService
         return promoCode == null ? null : _mapper.Map<PromoCodeDetailDto>(promoCode);
     }
 
-    public async Task<PromoCodeDetailDto> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<PromoCodeDetailDto>> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default)
     {
         var normalizedCode = dto.Code.Trim().ToUpperInvariant();
 
-        ValidatePromoCodeDto(dto.DiscountType, dto.DiscountValue, dto.StartDate, dto.EndDate, dto.MinOrderAmount);
+        var validationResult = ValidatePromoCodeDto(dto.DiscountType, dto.DiscountValue, dto.StartDate, dto.EndDate, dto.MinOrderAmount);
+        if (!validationResult.IsSuccess)
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.InvalidPromoCode, validationResult.ErrorMessage);
 
         var existingCode = await _unitOfWork.PromoCodes
             .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
@@ -96,7 +100,7 @@ public class PromoCodeService : IPromoCodeService
 
         if (existingCode)
         {
-            throw new PromoCodeAlreadyExistsException(dto.Code);
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.DuplicatePromoCode, $"Promo code '{dto.Code}' already exists");
         }
 
         var promoCode = _mapper.Map<PromoCode>(dto);
@@ -108,15 +112,15 @@ public class PromoCodeService : IPromoCodeService
 
         _logger.LogInformation("Promo code created: {Code}", promoCode.Code);
 
-        return _mapper.Map<PromoCodeDetailDto>(promoCode);
+        return Result<PromoCodeDetailDto>.Ok(_mapper.Map<PromoCodeDetailDto>(promoCode));
     }
 
-    public async Task<PromoCodeDetailDto> UpdateAsync(Guid id, UpdatePromoCodeDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<PromoCodeDetailDto>> UpdateAsync(Guid id, UpdatePromoCodeDto dto, CancellationToken cancellationToken = default)
     {
         var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
         if (promoCode == null)
         {
-            throw new PromoCodeNotFoundException(id);
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
         }
 
         if (!string.IsNullOrWhiteSpace(dto.Code))
@@ -129,7 +133,7 @@ public class PromoCodeService : IPromoCodeService
 
             if (existingCode)
             {
-                throw new PromoCodeAlreadyExistsException(dto.Code);
+                return Result<PromoCodeDetailDto>.Fail(ErrorCodes.DuplicatePromoCode, $"Promo code '{dto.Code}' already exists");
             }
 
             promoCode.Code = normalizedCode;
@@ -144,22 +148,24 @@ public class PromoCodeService : IPromoCodeService
         if (dto.EndDate.HasValue) promoCode.EndDate = dto.EndDate;
         if (dto.IsActive.HasValue) promoCode.IsActive = dto.IsActive.Value;
 
-        ValidatePromoCodeDto(promoCode.DiscountType, promoCode.DiscountValue, promoCode.StartDate, promoCode.EndDate, promoCode.MinOrderAmount);
+        var validationResult = ValidatePromoCodeDto(promoCode.DiscountType, promoCode.DiscountValue, promoCode.StartDate, promoCode.EndDate, promoCode.MinOrderAmount);
+        if (!validationResult.IsSuccess)
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.InvalidPromoCode, validationResult.ErrorMessage);
 
         await _unitOfWork.PromoCodes.UpdateAsync(promoCode, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         _logger.LogInformation("Promo code updated: {Code}", promoCode.Code);
 
-        return _mapper.Map<PromoCodeDetailDto>(promoCode);
+        return Result<PromoCodeDetailDto>.Ok(_mapper.Map<PromoCodeDetailDto>(promoCode));
     }
 
-    public async Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
         if (promoCode == null)
         {
-            throw new PromoCodeNotFoundException(id);
+            return Result<Unit>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
         }
 
         promoCode.IsActive = false;
@@ -167,20 +173,22 @@ public class PromoCodeService : IPromoCodeService
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         _logger.LogInformation("Promo code deactivated: {Code}", promoCode.Code);
+        return Result<Unit>.Ok(new Unit());
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
         if (promoCode == null)
         {
-            throw new PromoCodeNotFoundException(id);
+            return Result<Unit>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
         }
 
         await _unitOfWork.PromoCodes.DeleteAsync(promoCode, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
         _logger.LogInformation("Promo code deleted: {Code}", promoCode.Code);
+        return Result<Unit>.Ok(new Unit());
     }
 
     public async Task<List<PromoCodeDto>> GetActiveCodesAsync(CancellationToken cancellationToken = default)
@@ -295,7 +303,7 @@ public class PromoCodeService : IPromoCodeService
         };
     }
 
-    public async Task IncrementUsedCountAsync(Guid promoCodeId, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> IncrementUsedCountAsync(Guid promoCodeId, CancellationToken cancellationToken = default)
     {
         var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
 
@@ -310,13 +318,13 @@ public class PromoCodeService : IPromoCodeService
             var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(promoCodeId, cancellationToken: cancellationToken);
             if (promoCode == null)
             {
-                throw new PromoCodeNotFoundException(promoCodeId);
+                return Result<Unit>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{promoCodeId}' not found");
             }
 
             // Re-check max uses to prevent race condition
             if (promoCode.MaxUses.HasValue && promoCode.UsedCount >= promoCode.MaxUses.Value)
             {
-                throw new PromoCodeUsageLimitReachedException(promoCode.Code);
+                return Result<Unit>.Fail(ErrorCodes.PromoCodeUsageLimitReached, $"Promo code '{promoCode.Code}' has reached its usage limit");
             }
 
             promoCode.UsedCount++;
@@ -329,6 +337,7 @@ public class PromoCodeService : IPromoCodeService
             }
 
             _logger.LogInformation("Promo code usage incremented: {Code}, New count: {Count}", promoCode.Code, promoCode.UsedCount);
+            return Result<Unit>.Ok(new Unit());
         }
         catch
         {
@@ -369,37 +378,39 @@ public class PromoCodeService : IPromoCodeService
         return Math.Round(discount, 2);
     }
 
-    private void ValidatePromoCodeDto(string discountType, decimal discountValue, DateTime? startDate, DateTime? endDate, decimal? minOrderAmount)
+    private (bool IsSuccess, string ErrorMessage) ValidatePromoCodeDto(string discountType, decimal discountValue, DateTime? startDate, DateTime? endDate, decimal? minOrderAmount)
     {
         // Validate discount type - normalize case once
         var normalizedDiscountType = discountType.ToLowerInvariant();
         if (normalizedDiscountType != "percentage" && normalizedDiscountType != "fixed")
         {
-            throw new InvalidPromoCodeConfigurationException("Discount type must be 'percentage' or 'fixed'");
+            return (false, "Discount type must be 'percentage' or 'fixed'");
         }
 
         // Validate discount value
         if (discountValue <= 0)
         {
-            throw new InvalidPromoCodeConfigurationException("Discount value must be greater than 0");
+            return (false, "Discount value must be greater than 0");
         }
 
         // Validate percentage discount
         if (normalizedDiscountType == "percentage" && discountValue > 100)
         {
-            throw new InvalidPromoCodeConfigurationException("Percentage discount must be between 0 and 100");
+            return (false, "Percentage discount must be between 0 and 100");
         }
 
         // Validate date range
         if (startDate.HasValue && endDate.HasValue && startDate.Value >= endDate.Value)
         {
-            throw new InvalidPromoCodeConfigurationException("Start date must be before end date");
+            return (false, "Start date must be before end date");
         }
 
         // Validate min order amount
         if (minOrderAmount.HasValue && minOrderAmount.Value < 0)
         {
-            throw new InvalidPromoCodeConfigurationException("Minimum order amount cannot be negative");
+            return (false, "Minimum order amount cannot be negative");
         }
+
+        return (true, string.Empty);
     }
 }
