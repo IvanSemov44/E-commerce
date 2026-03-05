@@ -2,6 +2,8 @@
 
 **Last Updated**: March 2026 | **Status**: Production-Ready | **Stack**: React 19 + Redux Toolkit + RTK Query + Vitest
 
+**Compiler**: React Compiler is enabled (Vite + `babel-plugin-react-compiler`)
+
 ---
 
 ## Quick Start: Rules by Priority
@@ -98,14 +100,43 @@ const cartSlice = createSlice({
 
 ### P1 - Expected (Flag in code review)
 
-#### **5. Data Flow Architecture**
+#### **5. Import Path Conventions: Use `@` Alias**
+Use the `@` alias for all imports instead of relative paths (`../../../`). This improves readability, makes refactoring easier, and is configured in `tsconfig.json`.
+
+**Alias mappings:**
+- `@/features/*` → `src/features/*` (feature modules)
+- `@/shared/*` → `src/shared/*` (shared components, hooks, utils, types)
+- `@/` → `src/` (root level)
+
+**Examples:**
+
+```typescript
+// ✅ GOOD - Use @ alias (always preferred)
+import Button from '@/shared/components/ui/Button';
+import { useGetOrdersQuery } from '@/features/orders/api/ordersApi';
+import { useForm } from '@/shared/hooks/useForm';
+import type { Product } from '@/shared/types';
+import { ProductCard } from '@/features/products/components';
+
+// ❌ AVOID - Relative paths
+import Button from '../../../../shared/components/ui/Button';
+import { useGetOrdersQuery } from '../../api/ordersApi';
+import { useForm } from '@/shared/hooks/useForm';  // Inconsistent mix!
+```
+
+**Rules:**
+- Use `@` for ALL imports (features, shared, even same-feature imports when from other directories)
+- Never mix relative and `@` paths in the same file
+- Relative imports (like `./Button`) are acceptable ONLY for same-directory imports (e.g., `./sibling.tsx`)
+
+#### **6. Data Flow Architecture**
 Follow this sequence for every feature:
 1. **API Layer** — `baseApi.injectEndpoints()` + exported hooks
 2. **Redux Slice** — Only if non-API state needed (UI state, local cart)
 3. **Components** — Consume hooks, handle loading/error/empty states
 4. **Pages** — Orchestrate components, wrap in ErrorBoundary
 
-#### **6. API Response Envelope**
+#### **7. API Response Envelope**
 All API calls return this envelope. Use `transformResponse` to unwrap it.
 
 ```typescript
@@ -122,8 +153,16 @@ interface ApiResponse<T> {
 }
 ```
 
-#### **7. Component Colocation**
+#### **8. Component Colocation**
 Keep related files together in feature directories:
+
+Starter template with copy-paste file contents: `COMPONENT_COLOCATION_TEMPLATE.md`.
+One-by-one rollout tracker and policy: `COLOCATION_ADOPTION_TRACKER.md`.
+
+Incremental adoption rule:
+- If a PR touches a component, migrate that component to the co-location structure in the same PR.
+- Keep migration PRs small (1-3 components) and avoid behavior changes.
+- Use the tracker to prioritize high-traffic and high-churn components first.
 
 ```
 src/features/products/
@@ -147,7 +186,7 @@ src/features/products/
     └── index.ts
 ```
 
-#### **8. Form Validation with Zod**
+#### **9. Form Validation with Zod**
 Validate before sending to API.
 
 ```typescript
@@ -163,7 +202,7 @@ type CheckoutDto = z.infer<typeof CheckoutSchema>;
 
 ### P2 - Recommended (Nice to have)
 
-#### **9. URL Persistence for Filters**
+#### **10. URL Persistence for Filters**
 Sync filters to query params so users can share/bookmark URLs.
 
 ```typescript
@@ -182,7 +221,7 @@ export function useFilterSync() {
 }
 ```
 
-#### **10. Suspense for Route-Level Code Splitting**
+#### **11. Suspense for Route-Level Code Splitting**
 Use `React.lazy()` + `<Suspense>` for non-critical routes. This is already configured in `App.tsx`.
 
 ```typescript
@@ -207,7 +246,7 @@ function App() {
 
 **Note:** Suspense works for `React.lazy()` code splitting. It does NOT work with RTK Query hooks (`useGetProductQuery` returns `{ data, isLoading }` — it doesn't throw promises). For data fetching, use the `QueryRenderer` pattern or conditional `isLoading`/`isError` checks.
 
-### **ErrorBoundary vs RTK Query Errors**
+### ErrorBoundary vs RTK Query Errors
 
 `ErrorBoundary` handles render/runtime errors, but RTK Query request failures are returned via hook state (`error`) and must be handled in component logic.
 
@@ -237,7 +276,7 @@ function ProductsPage() {
 }
 ```
 
-#### **11. Error Recovery for Mutations**
+#### **12. Error Recovery for Mutations**
 Implement retry and user-friendly error messages for mutations. Offline queue and conflict resolution are optional, add them only where the UX demands it (e.g., cart updates).
 
 ```typescript
@@ -400,7 +439,7 @@ Set `VITE_API_URL` in `.env` per environment. The config is consumed by `baseApi
 
 ---
 
-## 🏗️ AsyncData Pattern (Type-Safe Loading States)
+## AsyncData Pattern (Type-Safe Loading States)
 
 Instead of separate `isLoading`, `error`, `data` flags, use a **discriminated union** for explicit state constraints:
 
@@ -452,7 +491,7 @@ function useAsyncProductList(filters: Filters): AsyncState<Product[]> {
 
 ---
 
-## 🔄 Optimistic Updates for Ecommerce
+## Optimistic Updates for Ecommerce
 
 Update the UI immediately while the API request is in flight. Rollback on error:
 
@@ -513,7 +552,7 @@ export function CartItem({ item }: { item: CartItem }) {
 
 ---
 
-## 🔐 Race Condition Prevention for Mutations
+## Race Condition Prevention for Mutations
 
 Prevent double-submission and handle concurrent requests:
 
@@ -569,7 +608,7 @@ export function CheckoutForm() {
 
 ---
 
-## ✅ Field-Level Validation Error Mapping
+## Field-Level Validation Error Mapping
 
 Map Zod and API validation errors to form fields:
 
@@ -640,7 +679,7 @@ export function CheckoutForm() {
 
 ---
 
-## 💾 Offline-First with LocalStorage Sync
+## Offline-First with LocalStorage Sync
 
 Queue mutations while offline, sync when connection returns:
 
@@ -700,7 +739,7 @@ export function usePersistentCart() {
 
 ---
 
-## 📊 State Domain Matrix
+## State Domain Matrix
 
 Clear guidance on WHERE to store each piece of state:
 
@@ -719,7 +758,7 @@ Clear guidance on WHERE to store each piece of state:
 
 ---
 
-## 🎯 Testing Pyramid: Unit vs Integration vs E2E
+## Testing Pyramid: Unit vs Integration vs E2E
 
 ```
         E2E (5%)
@@ -730,7 +769,7 @@ Clear guidance on WHERE to store each piece of state:
    / Unit Tests     \    (75%)
 ```
 
-### **Unit Tests (75% of effort)**
+### Unit Tests (75% of effort)
 Test components in isolation with mocked API hooks:
 
 ```typescript
@@ -757,7 +796,7 @@ describe('ProductCard', () => {
 });
 ```
 
-### **Integration Tests (20% of effort)**
+### Integration Tests (20% of effort)
 Test multiple components + Redux state together:
 
 ```typescript
@@ -791,7 +830,7 @@ it('user adds product and sees cart total update', async () => {
 });
 ```
 
-### **E2E Tests (5% of effort)**
+### E2E Tests (5% of effort)
 Test full user journeys in real browser:
 
 ```typescript
@@ -881,9 +920,52 @@ if (error) return <ErrorAlert message="..." />;  // Error — show message
 if (isFetching) return <RefreshIndicator />;    // Background refetch — subtle indicator
 ```
 
-### Memoization for Expensive List Items
+### Render Optimization with React Compiler
 
-Use `memo` for components rendered in lists where re-renders are costly:
+React Compiler is enabled in this project, so default to plain components/functions first. Add manual `memo`/`useCallback` only when profiling shows a measurable benefit or when referential stability is required by integration boundaries.
+
+```typescript
+// Preferred default with React Compiler enabled
+export default function ProductCard({
+  id, name, slug, price, imageUrl,
+}: ProductCardProps) {
+  const { handleError } = useApiErrorHandler();
+  const [addToCart] = useAddToCartMutation();
+
+  const handleAddToCart = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    try {
+      await addToCart({ productId: id, quantity: 1 }).unwrap();
+      toast.success('Added to cart!');
+    } catch (error) {
+      handleError(error, 'Failed to add to cart');
+    }
+  };
+
+  return (
+    <article className={styles.card}>
+      <Link to={`/products/${slug}`}>
+        <img src={imageUrl} alt={name} loading="lazy" />
+        <h3>{name}</h3>
+        <span>${price.toFixed(2)}</span>
+      </Link>
+      <button onClick={handleAddToCart}>Add to Cart</button>
+    </article>
+  );
+}
+```
+
+Use manual `memo`/`useCallback` when:
+- Profiling shows avoidable re-renders and a measurable win
+- A child component or third-party API depends on stable callback/prop identity
+- A hot path still regresses after compiler optimization
+
+Avoid manual `memo`/`useCallback` when:
+- The component is simple and renders infrequently
+- There is no measured performance issue
+- The wrapper makes code harder to read without clear benefit
+
+If manual memoization is needed, this pattern is still acceptable:
 
 ```typescript
 // src/features/products/components/ProductCard/ProductCard.tsx — actual pattern
@@ -918,19 +1000,9 @@ const ProductCard = memo(function ProductCard({
 export default ProductCard;
 ```
 
-Use `memo` and `useCallback` when:
-- Component renders in a list with 10+ items
-- Component has expensive render logic (images, complex calculations)
-- Profiling shows unnecessary re-renders
-
-Don't bother with `memo`/`useCallback` for:
-- Page-level components (render once)
-- Components with few instances
-- Simple components with cheap renders
-
 ### Custom Hooks
 
-Keep hooks simple — plain functions, no unnecessary `useCallback` wrapping.
+Keep hooks simple — plain functions first; add `useCallback` only when a stable function reference is actually required.
 
 ```typescript
 // src/features/products/hooks/useProductFilters.ts
@@ -980,19 +1052,7 @@ export const selectActiveFilters = createSelector(
 ## Data Contracts
 
 ### API Response Envelope
-```typescript
-interface ApiResponse<T> {
-  success: boolean;
-  data: T | null;
-  error: {
-    message: string;
-    code: string;
-    errors?: Record<string, string[]>;
-    traceId: string;
-  } | null;
-  traceId: string;
-}
-```
+Use the same `ApiResponse<T>` envelope defined earlier in **Quick Start → 6. API Response Envelope**.
 
 ### Pagination Response
 ```typescript
@@ -1032,7 +1092,7 @@ interface PaginatedResult<T> {
 
 ### Mocking RTK Query Hooks
 
-Use `vi.mock()` for unit tests and MSW for integration tests. Pick one approach per test file to keep tests deterministic.
+Pick one approach per test file (`vi.mock()` for unit tests or MSW for integration tests) to keep tests deterministic.
 
 ```typescript
 // src/features/products/components/ProductCard/ProductCard.test.tsx
@@ -1242,6 +1302,7 @@ Use this for every feature PR:
 - [ ] **Code Quality**
   - [ ] Build passes: `npm run build`
   - [ ] Linter passes: `npm run lint`
+  - [ ] All imports use `@` alias (no relative `../../../` paths)
   - [ ] No `any` types (use `useApiErrorHandler` instead of `as any` casts)
   - [ ] No console errors/warnings in dev/prod
   - [ ] No N+1 selectors (memoize derived state with `createSelector`)
@@ -1262,8 +1323,9 @@ Use this for every feature PR:
   - [ ] Error states shown (via `useApiErrorHandler` or `QueryRenderer`)
   - [ ] Strings use i18n (`useTranslation()`)
   - [ ] Styles use CSS Modules (no inline styles for colors/sizing)
+  - [ ] **All SVG icons imported from `@/shared/components/icons/` (never inline SVGs or icon components in feature files)**
   - [ ] Accessibility gates pass (keyboard, labels, focus, contrast)
-  - [ ] `memo()` used only for list items or expensive components
+  - [ ] With React Compiler enabled, manual `memo()`/`useCallback` is used only for measured wins or identity-sensitive integrations
 
 - [ ] **Forms**
   - [ ] Validation with Zod before API call
@@ -1283,9 +1345,54 @@ Use this for every feature PR:
   - [ ] Critical user flows emit telemetry (route, API, funnel milestones)
   - [ ] Frontend-backend correlation IDs are captured for error triage
   - [ ] New feature flags include owner, expiry, rollout plan, cleanup task
+
 ---
 
 ## Anti-Patterns to Avoid
+
+#### Using Relative Paths Instead of `@` Alias
+```typescript
+// BAD — relative paths are hard to refactor
+import Button from '../../../../shared/components/ui/Button';
+import { useGetOrdersQuery } from '../../api/ordersApi';
+import useForm from '../../../hooks/useForm';
+
+// GOOD — use @ alias everywhere (consistent and easy to refactor)
+import Button from '@/shared/components/ui/Button';
+import { useGetOrdersQuery } from '@/features/orders/api/ordersApi';
+import useForm from '@/shared/hooks/useForm';
+
+// Exception: same-directory relative imports are acceptable
+import { sibling } from './sibling.tsx';  // OK — same folder
+```
+
+#### Mixing Icons with Other Components
+```typescript
+// BAD — icons in component files
+// src/features/products/components/ProductCard.tsx
+const StarIcon = () => (
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    {/* ... */}
+  </svg>
+);
+
+export function ProductCard() {
+  return <StarIcon />;  // Scattered, hard to reuse
+}
+
+// GOOD — icons in centralized library, imported as needed
+// src/shared/components/icons/StarIcon.tsx
+export default function StarIcon(props: SVGProps<SVGSVGElement>) { ... }
+
+// src/features/products/components/ProductCard.tsx
+import { StarIcon } from '@/shared/components/icons';
+
+export function ProductCard() {
+  return <StarIcon />;  // Centralized, reusable everywhere
+}
+```
+
+**Rule:** Every icon goes in `src/shared/components/icons/` in its own file. Never embed SVG or icon components in feature files.
 
 #### Selecting Entire State
 ```typescript
@@ -1431,7 +1538,7 @@ src/
 - **Question?** Check the rules by priority (P0 → P1 → P2)
 - **Implementing a feature?** Follow the **PR Checklist** (critical for passing review)
 - **Design pattern?** See **AsyncData**, **Optimistic Updates**, **Race Conditions**, **Testing Pyramid** sections
-- **Performance issue?** Check **Memoization**, **Selector Optimization**, **State Domain Matrix** sections
+- **Performance issue?** Check **Render Optimization with React Compiler**, **Selector Optimization**, **State Domain Matrix** sections
 - **Architecture decision?** Consult **Data Flow Architecture** and **State Domain Matrix**
 - **Inconsistency found?** Update this guide in the same PR — it's a living document
 

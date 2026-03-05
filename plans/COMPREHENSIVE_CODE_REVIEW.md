@@ -481,6 +481,11 @@ flowchart TD
 - `InvalidPromoCodeException`
 - And 15+ more domain-specific exceptions
 
+**Current Policy Alignment:**
+- Use `Result<T>` for predictable business failure outcomes (validation/state/ownership/inventory)
+- Use typed exceptions + middleware for unexpected or infrastructure failures
+- Keep one style consistent per endpoint/service flow (do not mix both in the same business method)
+
 **Error Response Format:**
 ```csharp
 public class ErrorDetails
@@ -501,6 +506,14 @@ public class ErrorDetails
 - Proper error state management in Redux
 
 ### 7.3 Error Handling Recommendations
+
+**Decision Matrix (Reviewer Rule):**
+
+| Scenario | Preferred Pattern | Why |
+|---|---|---|
+| Predictable business outcome (not found, invalid state, ownership, inventory) | `Result<T>` | Explicit control flow and easier failure-path testing |
+| Unexpected/infrastructure failure (DB/network/external provider) | Typed exception + middleware | Centralized HTTP mapping, logging, and retries |
+| Mixed styles in one business method | ❌ Avoid | Inconsistent API behavior and harder maintenance |
 
 | Priority | Issue | Recommendation |
 |----------|-------|----------------|

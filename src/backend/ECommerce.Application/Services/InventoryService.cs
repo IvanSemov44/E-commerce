@@ -7,6 +7,8 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -32,10 +34,10 @@ public class InventoryService : IInventoryService
         _mapper = mapper;
     }
 
-    public async Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
-            throw new InvalidQuantityException("Quantity must be positive");
+            return Result<Unit>.Fail(ErrorCodes.InvalidQuantity, "Quantity must be positive");
 
         var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
 
@@ -49,10 +51,10 @@ public class InventoryService : IInventoryService
         {
             var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
             if (product == null)
-                throw new ProductNotFoundException(productId);
+                return Result<Unit>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
 
             if (product.StockQuantity < quantity)
-                throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
+                return Result<Unit>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for product '{product.Name}'. Requested: {quantity}, Available: {product.StockQuantity}");
 
             var previousStock = product.StockQuantity;
             product.StockQuantity -= quantity;
@@ -81,13 +83,15 @@ public class InventoryService : IInventoryService
                 productId, quantity, product.StockQuantity);
 
             await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
+            return Result<Unit>.Ok(new Unit());
         }
-        catch
+        catch (Exception ex)
         {
             if (useOwnTransaction && transaction != null)
             {
                 await transaction.RollbackAsync(cancellationToken);
             }
+            _logger.LogError(ex, "Error reducing stock for product {ProductId}", productId);
             throw;
         }
         finally
@@ -103,10 +107,10 @@ public class InventoryService : IInventoryService
     /// Batch reduces stock for multiple products in a single transaction (prevents N+1 queries and transactions).
     /// PERFORMANCE FIX: Single transaction for all items instead of N individual transactions.
     /// </summary>
-    public async Task ReduceStockBatchAsync(List<(Guid ProductId, int Quantity, string Reason, Guid? ReferenceId, Guid? UserId)> items, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> ReduceStockBatchAsync(List<(Guid ProductId, int Quantity, string Reason, Guid? ReferenceId, Guid? UserId)> items, CancellationToken cancellationToken = default)
     {
         if (!items.Any())
-            return;
+            return Result<Unit>.Ok(new Unit());
 
         IAsyncTransaction? transaction = null;
         var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
@@ -128,10 +132,10 @@ public class InventoryService : IInventoryService
             foreach (var (productId, quantity, reason, referenceId, userId) in items)
             {
                 if (!productDict.TryGetValue(productId, out var product))
-                    throw new ProductNotFoundException(productId);
+                    return Result<Unit>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
 
                 if (product.StockQuantity < quantity)
-                    throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
+                    return Result<Unit>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for product '{product.Name}'. Requested: {quantity}, Available: {product.StockQuantity}");
 
                 product.StockQuantity -= quantity;
                 product.UpdatedAt = DateTime.UtcNow;
@@ -173,6 +177,7 @@ public class InventoryService : IInventoryService
                     _logger.LogError(ex, "Error checking low stock alert for product {ProductId}", productId);
                 }
             }
+            return Result<Unit>.Ok(new Unit());
         }
         catch (Exception ex)
         {
@@ -188,10 +193,10 @@ public class InventoryService : IInventoryService
         }
     }
 
-    public async Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
-            throw new InvalidQuantityException("Quantity must be positive");
+            return Result<Unit>.Fail(ErrorCodes.InvalidQuantity, "Quantity must be positive");
 
         var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
 
@@ -205,7 +210,7 @@ public class InventoryService : IInventoryService
         {
             var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
             if (product == null)
-                throw new ProductNotFoundException(productId);
+                return Result<Unit>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
 
             var previousStock = product.StockQuantity;
             product.StockQuantity += quantity;
@@ -237,13 +242,15 @@ public class InventoryService : IInventoryService
             {
                 _lowStockAlertsSent.Remove(productId);
             }
+            return Result<Unit>.Ok(new Unit());
         }
-        catch
+        catch (Exception ex)
         {
             if (useOwnTransaction && transaction != null)
             {
                 await transaction.RollbackAsync(cancellationToken);
             }
+            _logger.LogError(ex, "Error increasing stock for product {ProductId}", productId);
             throw;
         }
         finally
@@ -255,10 +262,10 @@ public class InventoryService : IInventoryService
         }
     }
 
-    public async Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         if (newQuantity < 0)
-            throw new InvalidQuantityException("Quantity cannot be negative");
+            return Result<Unit>.Fail(ErrorCodes.InvalidQuantity, "Quantity cannot be negative");
 
         var useOwnTransaction = !_unitOfWork.HasActiveTransaction;
 
@@ -272,7 +279,7 @@ public class InventoryService : IInventoryService
         {
             var product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken: cancellationToken);
             if (product == null)
-                throw new ProductNotFoundException(productId);
+                return Result<Unit>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
 
             var previousStock = product.StockQuantity;
             var quantityChange = newQuantity - previousStock;
@@ -301,6 +308,7 @@ public class InventoryService : IInventoryService
                 productId, previousStock, newQuantity);
 
             await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
+            return Result<Unit>.Ok(new Unit());
         }
         catch
         {

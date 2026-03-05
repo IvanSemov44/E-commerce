@@ -4,6 +4,8 @@ using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -69,23 +71,38 @@ public class CategoryServiceTests
         var result = await _service.GetCategoryByIdAsync(category.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().Be(category.Id);
-        result.ProductCount.Should().Be(5);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CategoryDetailDto>.Success success)
+        {
+            success.Data.Id.Should().Be(category.Id);
+            success.Data.ProductCount.Should().Be(5);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Success");
+        }
     }
 
     [TestMethod]
-    public async Task GetCategoryByIdAsync_NonExistentId_ThrowsCategoryNotFoundException()
+    public async Task GetCategoryByIdAsync_NonExistentId_ReturnsCategoryNotFoundFailure()
     {
         // Arrange
         var id = Guid.NewGuid();
         _mockCategoryRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Category?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetCategoryByIdAsync(id);
+        var result = await _service.GetCategoryByIdAsync(id);
 
         // Assert
-        await act.Should().ThrowAsync<CategoryNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CategoryDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CategoryNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -102,22 +119,37 @@ public class CategoryServiceTests
         var result = await _service.GetCategoryBySlugAsync("slug-cat");
 
         // Assert
-        result.Should().NotBeNull();
-        result.Slug.Should().Be("slug-cat");
-        result.ProductCount.Should().Be(2);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CategoryDetailDto>.Success success)
+        {
+            success.Data.Slug.Should().Be("slug-cat");
+            success.Data.ProductCount.Should().Be(2);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Success");
+        }
     }
 
     [TestMethod]
-    public async Task GetCategoryBySlugAsync_NonExistentSlug_ThrowsCategoryNotFoundException()
+    public async Task GetCategoryBySlugAsync_NonExistentSlug_ReturnsCategoryNotFoundFailure()
     {
         // Arrange
         _mockCategoryRepository.Setup(r => r.GetBySlugAsync("missing")).ReturnsAsync((Category?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetCategoryBySlugAsync("missing");
+        var result = await _service.GetCategoryBySlugAsync("missing");
 
         // Assert
-        await act.Should().ThrowAsync<CategoryNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CategoryDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CategoryNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -139,24 +171,39 @@ public class CategoryServiceTests
         var result = await _service.CreateCategoryAsync(dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Slug.Should().Be(dto.Slug);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CategoryDetailDto>.Success success)
+        {
+            success.Data.Slug.Should().Be(dto.Slug);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Success");
+        }
         _mockCategoryRepository.Verify(r => r.AddAsync(It.IsAny<Category>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
-    public async Task CreateCategoryAsync_DuplicateSlug_ThrowsDuplicateCategorySlugException()
+    public async Task CreateCategoryAsync_DuplicateSlug_ReturnsDuplicateCategorySlugFailure()
     {
         // Arrange
         var dto = new CreateCategoryDto { Name = "Dup", Slug = "dup" };
         _mockCategoryRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug)).ReturnsAsync(false);
 
         // Act
-        Func<Task> act = async () => await _service.CreateCategoryAsync(dto);
+        var result = await _service.CreateCategoryAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<DuplicateCategorySlugException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CategoryDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.DuplicateCategorySlug);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -181,13 +228,20 @@ public class CategoryServiceTests
         var result = await _service.UpdateCategoryAsync(existing.Id, dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("Updated");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CategoryDetailDto>.Success success)
+        {
+            success.Data.Name.Should().Be("Updated");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Success");
+        }
         _mockCategoryRepository.Verify(r => r.Update(It.IsAny<Category>()), Times.Once);
     }
 
     [TestMethod]
-    public async Task UpdateCategoryAsync_NonExistentId_ThrowsCategoryNotFoundException()
+    public async Task UpdateCategoryAsync_NonExistentId_ReturnsCategoryNotFoundFailure()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -195,10 +249,18 @@ public class CategoryServiceTests
         _mockCategoryRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Category?)null);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateCategoryAsync(id, dto);
+        var result = await _service.UpdateCategoryAsync(id, dto);
 
         // Assert
-        await act.Should().ThrowAsync<CategoryNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CategoryDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CategoryNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<CategoryDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -212,29 +274,38 @@ public class CategoryServiceTests
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
-        await _service.DeleteCategoryAsync(category.Id);
+        var result = await _service.DeleteCategoryAsync(category.Id);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         _mockCategoryRepository.Verify(r => r.Delete(It.IsAny<Category>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
-    public async Task DeleteCategoryAsync_NonExistentId_ThrowsCategoryNotFoundException()
+    public async Task DeleteCategoryAsync_NonExistentId_ReturnsCategoryNotFoundFailure()
     {
         // Arrange
         var id = Guid.NewGuid();
         _mockCategoryRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Category?)null);
 
         // Act
-        Func<Task> act = async () => await _service.DeleteCategoryAsync(id);
+        var result = await _service.DeleteCategoryAsync(id);
 
         // Assert
-        await act.Should().ThrowAsync<CategoryNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CategoryNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task DeleteCategoryAsync_CategoryWithProducts_ThrowsCategoryHasProductsException()
+    public async Task DeleteCategoryAsync_CategoryWithProducts_ReturnsCategoryHasProductsFailure()
     {
         // Arrange
         var category = TestDataFactory.CreateCategory();
@@ -242,9 +313,17 @@ public class CategoryServiceTests
         _mockCategoryRepository.Setup(r => r.GetProductCountAsync(category.Id)).ReturnsAsync(3);
 
         // Act
-        Func<Task> act = async () => await _service.DeleteCategoryAsync(category.Id);
+        var result = await _service.DeleteCategoryAsync(category.Id);
 
         // Assert
-        await act.Should().ThrowAsync<CategoryHasProductsException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CategoryHasProducts);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 }

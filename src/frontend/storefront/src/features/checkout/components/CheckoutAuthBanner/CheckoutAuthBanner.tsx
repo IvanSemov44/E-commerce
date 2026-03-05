@@ -8,7 +8,7 @@
 import { Link } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import { logout } from '@/features/auth/slices/authSlice';
-import Button from '../../../shared/components/ui/Button';
+import Button from '@/shared/components/ui/Button';
 import styles from './CheckoutAuthBanner.module.css';
 
 interface CheckoutAuthBannerProps {

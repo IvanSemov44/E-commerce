@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
+using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
 
@@ -17,12 +18,12 @@ public interface IProductService
     /// <summary>
     /// Gets a product by its slug (URL-friendly identifier).
     /// </summary>
-    Task<ProductDetailDto> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default);
+    Task<Result<ProductDetailDto>> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a product by its ID.
     /// </summary>
-    Task<ProductDetailDto> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<ProductDetailDto>> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets featured products limited to the specified count.
@@ -32,17 +33,17 @@ public interface IProductService
     /// <summary>
     /// Creates a new product.
     /// </summary>
-    Task<ProductDetailDto> CreateProductAsync(CreateProductDto dto, CancellationToken cancellationToken = default);
+    Task<Result<ProductDetailDto>> CreateProductAsync(CreateProductDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates an existing product.
     /// </summary>
-    Task<ProductDetailDto> UpdateProductAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default);
+    Task<Result<ProductDetailDto>> UpdateProductAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a product.
     /// </summary>
-    Task DeleteProductAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> DeleteProductAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all active products with pagination.

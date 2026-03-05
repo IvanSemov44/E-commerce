@@ -19,7 +19,7 @@ const ordersApiSlice = baseApi.injectEndpoints({
         response.data || {} as OrderResponse,
       invalidatesTags: ['Order'],
     }),
-    getOrders: builder.query<any[], void>({
+    getOrders: builder.query<Order[], void>({
       query: () => '/orders/my-orders',
       transformResponse: (response: ApiResponse<PaginatedResult<Order>>) => {
         return response.data?.items || [];

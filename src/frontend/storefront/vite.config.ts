@@ -1,14 +1,18 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-// @ts-ignore - Type definitions not available for rollup-plugin-visualizer
+// @ts-expect-error - Type definitions not available for rollup-plugin-visualizer
 import visualizer from 'rollup-plugin-visualizer'
 import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: ['babel-plugin-react-compiler'],
+      },
+    }),
     // Bundle analysis visualization
     visualizer({
       open: false, // Don't open in browser automatically

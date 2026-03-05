@@ -91,17 +91,47 @@ export const useProductFilters = (): UseProductFiltersReturn => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchInput);
+      // Reset to page 1 when search changes
+      if (searchInput !== debouncedSearch) {
+        setPage(1);
+      }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, debouncedSearch]);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
+  // Wrapped setters that reset page to 1
+  const handleSetSelectedCategoryId = (id: string | undefined) => {
+    setSelectedCategoryId(id);
     setPage(1);
-  }, [selectedCategoryId, debouncedSearch, minPrice, maxPrice, minRating, sortBy, isFeatured]);
+  };
 
-  // Sync URL when filters change
+  const handleSetMinPrice = (price: number | undefined) => {
+    setMinPrice(price);
+    setPage(1);
+  };
+
+  const handleSetMaxPrice = (price: number | undefined) => {
+    setMaxPrice(price);
+    setPage(1);
+  };
+
+  const handleSetMinRating = (rating: number | undefined) => {
+    setMinRating(rating);
+    setPage(1);
+  };
+
+  const handleSetSortBy = (sort: string) => {
+    setSortBy(sort);
+    setPage(1);
+  };
+
+  const handleSetIsFeatured = (featured: boolean | undefined) => {
+    setIsFeatured(featured);
+    setPage(1);
+  };
+
+  // Sync URL when filters change (page resets to 1 when filters change)
   useEffect(() => {
     const params = new URLSearchParams();
 
@@ -151,13 +181,13 @@ export const useProductFilters = (): UseProductFiltersReturn => {
     isFeatured,
     hasActiveFilters,
     setPage,
-    setSelectedCategoryId,
+    setSelectedCategoryId: handleSetSelectedCategoryId,
     setSearchInput,
-    setMinPrice,
-    setMaxPrice,
-    setMinRating,
-    setSortBy,
-    setIsFeatured,
+    setMinPrice: handleSetMinPrice,
+    setMaxPrice: handleSetMaxPrice,
+    setMinRating: handleSetMinRating,
+    setSortBy: handleSetSortBy,
+    setIsFeatured: handleSetIsFeatured,
     handleClearFilters,
   };
 };

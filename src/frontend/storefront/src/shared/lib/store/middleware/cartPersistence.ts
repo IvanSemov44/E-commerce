@@ -1,3 +1,4 @@
+import type { Middleware } from '@reduxjs/toolkit';
 import type { CartItem } from '@/features/cart/slices/cartSlice';
 import { logger } from '@/shared/lib/utils/logger';
 
@@ -17,10 +18,11 @@ export const saveCartToLocalStorage = (items: CartItem[]): void => {
   }
 };
 
-export const cartPersistenceMiddleware = (store: any) => (next: any) => (action: any) => {
+export const cartPersistenceMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);
 
-  if (CART_ACTIONS.includes(action.type)) {
+  const actionObj = action as { type: string };
+  if (CART_ACTIONS.includes(actionObj.type)) {
     const state = store.getState();
     saveCartToLocalStorage(state.cart.items);
   }

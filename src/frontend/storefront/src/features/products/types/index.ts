@@ -18,10 +18,10 @@ export interface GetProductsQueryParams {
   sortOrder?: string;
 }
 
-export interface GetProductsResponse extends ApiResponse<PaginatedResult<Product>> {}
+export type GetProductsResponse = ApiResponse<PaginatedResult<Product>>;
 
-export interface GetProductBySlugResponse extends ApiResponse<ProductDetail> {}
+export type GetProductBySlugResponse = ApiResponse<ProductDetail>;
 
-export interface GetProductByIdResponse extends ApiResponse<ProductDetail> {}
+export type GetProductByIdResponse = ApiResponse<ProductDetail>;
 
-export interface GetFeaturedProductsResponse extends ApiResponse<Product[]> {}
+export type GetFeaturedProductsResponse = ApiResponse<Product[]>;

@@ -5,7 +5,7 @@ import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '../slices/authSlice';
 import useForm from '@/shared/hooks/useForm';
 import { useToast } from '@/shared/hooks/useToast';
-import { Button, Input, Card } from '../../../shared/components/ui';
+import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './Login.module.css';
 
 export default function Login() {
@@ -18,7 +18,7 @@ export default function Login() {
   const form = useForm({
     initialValues: { email: '', password: '' },
     validate: (values) => {
-      const errors: any = {};
+      const errors: Record<string, string> = {};
       if (!values.email) errors.email = t('auth.emailRequired');
       if (!values.password) errors.password = t('auth.passwordRequired');
       return errors;
@@ -33,8 +33,9 @@ export default function Login() {
         } else {
           toast.error(response.message || t('auth.loginError'));
         }
-      } catch (err: any) {
-        toast.error(err?.data?.message || t('auth.loginError'));
+      } catch (err: unknown) {
+        const error = err as { data?: { message?: string } };
+        toast.error(error?.data?.message || t('auth.loginError'));
       }
     },
   });

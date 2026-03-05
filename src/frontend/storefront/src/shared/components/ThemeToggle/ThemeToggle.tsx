@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './ThemeToggle.module.css';
 
@@ -37,7 +37,15 @@ export function ThemeToggle({
   variant = 'dropdown'
 }: ThemeToggleProps) {
   const { t } = useTranslation();
-  const [theme, setTheme] = useState<Theme>('system');
+  
+  // Initialize theme from localStorage with lazy initializer
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') as Theme) || 'system';
+    }
+    return 'system';
+  });
+  
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -90,27 +98,31 @@ export function ThemeToggle({
   ];
 
   // Get the actual theme based on system preference
-  const getResolvedTheme = (themeValue: Theme): 'light' | 'dark' => {
+  const getResolvedTheme = useCallback((themeValue: Theme): 'light' | 'dark' => {
     if (themeValue === 'system') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     return themeValue;
-  };
+  }, []);
 
   // Apply theme to document
-  const applyTheme = (themeValue: Theme) => {
+  const applyTheme = useCallback((themeValue: Theme) => {
     const resolved = getResolvedTheme(themeValue);
     document.documentElement.setAttribute('data-theme', resolved);
-  };
+  }, [getResolvedTheme]);
 
   // Initialize theme from localStorage or system preference
+  // Using state initializer to avoid setState in effect
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
-    const initialTheme = savedTheme || 'system';
-    setTheme(initialTheme);
-    applyTheme(initialTheme);
-    setMounted(true);
-  }, []);
+    // This only runs once on mount with the already-initialized theme
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []); // Empty deps - theme is already initialized via useState
+
+  // Apply theme when it changes
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme, applyTheme]);
 
   // Listen for system preference changes
   useEffect(() => {
@@ -124,7 +136,7 @@ export function ThemeToggle({
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  }, [theme, applyTheme]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

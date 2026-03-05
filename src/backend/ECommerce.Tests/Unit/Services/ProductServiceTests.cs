@@ -4,6 +4,8 @@ using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -72,22 +74,37 @@ public class ProductServiceTests
         var result = await _service.GetProductBySlugAsync("test-product");
 
         // Assert
-        result.Should().NotBeNull();
-        result.Slug.Should().Be("test-product");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<ProductDetailDto>.Success success)
+        {
+            success.Data.Slug.Should().Be("test-product");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Success");
+        }
     }
 
     [TestMethod]
-    public async Task GetProductBySlugAsync_NonExistentSlug_ThrowsProductNotFoundException()
+    public async Task GetProductBySlugAsync_NonExistentSlug_ReturnsProductNotFoundFailure()
     {
         // Arrange
         _mockProductRepository.Setup(r => r.GetBySlugAsync("missing"))
             .ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetProductBySlugAsync("missing");
+        var result = await _service.GetProductBySlugAsync("missing");
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ProductDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -122,19 +139,27 @@ public class ProductServiceTests
     }
 
     [TestMethod]
-    public async Task CreateProductAsync_DuplicateSlug_ThrowsDuplicateProductSlugException()
+    public async Task CreateProductAsync_DuplicateSlug_ReturnsDuplicateProductSlugFailure()
     {
         // Arrange
         var dto = new CreateProductDto { Name = "Dup", Slug = "dup", Price = 5 };
 
-        _mockProductRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, It.IsAny<Guid?>()))
+        _mockProductRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, It.IsAny<Guid?())
             .ReturnsAsync(false);
 
         // Act
-        Func<Task> act = async () => await _service.CreateProductAsync(dto);
+        var result = await _service.CreateProductAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<DuplicateProductSlugException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ProductDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.DuplicateProductSlug);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -161,13 +186,20 @@ public class ProductServiceTests
         var result = await _service.UpdateProductAsync(existing.Id, dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("Updated");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<ProductDetailDto>.Success success)
+        {
+            success.Data.Name.Should().Be("Updated");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Success");
+        }
         _mockProductRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Once);
     }
 
     [TestMethod]
-    public async Task UpdateProductAsync_NonExistentId_ThrowsProductNotFoundException()
+    public async Task UpdateProductAsync_NonExistentId_ReturnsProductNotFoundFailure()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -175,10 +207,18 @@ public class ProductServiceTests
         _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateProductAsync(id, dto);
+        var result = await _service.UpdateProductAsync(id, dto);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ProductDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -191,25 +231,34 @@ public class ProductServiceTests
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
-        await _service.DeleteProductAsync(product.Id);
+        var result = await _service.DeleteProductAsync(product.Id);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         _mockProductRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
-    public async Task DeleteProductAsync_NonExistentId_ThrowsProductNotFoundException()
+    public async Task DeleteProductAsync_NonExistentId_ReturnsProductNotFoundFailure()
     {
         // Arrange
         var id = Guid.NewGuid();
         _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.DeleteProductAsync(id);
+        var result = await _service.DeleteProductAsync(id);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     [TestMethod]
@@ -226,22 +275,37 @@ public class ProductServiceTests
         var result = await _service.GetProductByIdAsync(product.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().Be(product.Id);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<ProductDetailDto>.Success success)
+        {
+            success.Data.Id.Should().Be(product.Id);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Success");
+        }
     }
 
     [TestMethod]
-    public async Task GetProductByIdAsync_NonExistent_ThrowsProductNotFoundException()
+    public async Task GetProductByIdAsync_NonExistent_ReturnsProductNotFoundFailure()
     {
         // Arrange
         var id = Guid.NewGuid();
         _mockProductRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<bool>())).ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetProductByIdAsync(id);
+        var result = await _service.GetProductByIdAsync(id);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ProductDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Failure");
+        }
     }
 
     [TestMethod]
@@ -370,7 +434,7 @@ public class ProductServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateProductAsync_DuplicateSlug_ThrowsDuplicateProductSlugException()
+    public async Task UpdateProductAsync_DuplicateSlug_ReturnsDuplicateProductSlugFailure()
     {
         // Arrange
         var existing = TestDataFactory.CreateProduct(name: "Old", slug: "old-slug");
@@ -380,9 +444,17 @@ public class ProductServiceTests
         _mockProductRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, existing.Id)).ReturnsAsync(false);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateProductAsync(existing.Id, dto);
+        var result = await _service.UpdateProductAsync(existing.Id, dto);
 
         // Assert
-        await act.Should().ThrowAsync<DuplicateProductSlugException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ProductDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.DuplicateProductSlug);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<ProductDetailDto>.Failure");
+        }
     }
 }

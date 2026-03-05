@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useResetPasswordMutation } from '../api/authApi';
 import { useToast } from '@/shared/hooks/useToast';
-import { Button, Input, Card } from '../../../shared/components/ui';
+import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './ResetPassword.module.css';
 
 export default function ResetPassword() {
@@ -46,8 +46,9 @@ export default function ResetPassword() {
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-    } catch (err: any) {
-      toast.error(err?.data?.message || t('resetPassword.failed'));
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || t('resetPassword.failed'));
     }
   };
 

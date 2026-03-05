@@ -176,7 +176,7 @@ export class CheckoutPage extends BasePage {
     await this.page.waitForURL(/\/(confirmation|success|thank-you)/, { timeout: 30000 });
   }
 
-  async completeCheckout(address: any, payment: any): Promise<void> {
+  async completeCheckout(address: Record<string, string>, payment: Record<string, string>): Promise<void> {
     await this.fillShippingAddress(address);
     await this.fillCreditCardDetails(payment);
     await this.placeOrder();

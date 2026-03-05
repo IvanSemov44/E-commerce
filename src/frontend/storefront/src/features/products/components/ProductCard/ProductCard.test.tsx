@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
@@ -21,7 +21,7 @@ const mockAddToCartBackend = vi.fn();
 const mockCheckInWishlist = vi.fn();
 
 vi.mock('../../../../features/wishlist/api/wishlistApi', () => ({
-  useCheckInWishlistQuery: (...args: any[]) => {
+  useCheckInWishlistQuery: (...args: unknown[]) => {
     const result = mockCheckInWishlist(...args);
     return { data: result, refetch: vi.fn() };
   },

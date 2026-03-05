@@ -1,11 +1,11 @@
 // WishlistPage - User's wishlist page
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { useGetWishlistQuery, useRemoveFromWishlistMutation } from '../../api/wishlistApi';
-import { useAddToCartMutation } from '../../../cart/api/cartApi';
-import Button from '../../../../shared/components/ui/Button';
-import EmptyState from '../../../../shared/components/EmptyState';
-import QueryRenderer from '../../../../shared/components/QueryRenderer';
+import { useGetWishlistQuery, useRemoveFromWishlistMutation } from '@/features/wishlist/api/wishlistApi';
+import { useAddToCartMutation } from '@/features/cart/api/cartApi';
+import Button from '@/shared/components/ui/Button';
+import EmptyState from '@/shared/components/EmptyState';
+import QueryRenderer from '@/shared/components/QueryRenderer';
 import styles from './WishlistPage.module.css';
 
 export default function WishlistPage() {

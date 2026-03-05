@@ -71,8 +71,6 @@ test.describe('Guest Checkout', () => {
 
     // Verify shipping address fields are present
     const emailInput = page.locator('input[type="email"], input[name*="email"]');
-    const nameInput = page.locator('input[name*="name"], input[placeholder*="name"]').first();
-    const addressInput = page.locator('input[name*="address"], input[placeholder*="address"]').first();
 
     // At least email should be present for guest checkout
     if (await emailInput.count() > 0) {

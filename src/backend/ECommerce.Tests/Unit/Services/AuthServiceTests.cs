@@ -6,6 +6,7 @@ using AutoMapper;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -93,21 +94,29 @@ public class AuthServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.Message.Should().Be("Registration successful");
-        result.User.Should().NotBeNull();
-        result.User!.Email.Should().Be(dto.Email);
-        result.User.FirstName.Should().Be(dto.FirstName);
-        result.User.LastName.Should().Be(dto.LastName);
-        result.User.Role.Should().Be(UserRole.Customer.ToString());
-        result.Token.Should().NotBeNullOrEmpty();
+        result.IsSuccess.Should().BeTrue();
+        
+        if (result is Result<AuthResponseDto>.Success success)
+        {
+            success.Data.Should().NotBeNull();
+            success.Data.User.Should().NotBeNull();
+            success.Data.User!.Email.Should().Be(dto.Email);
+            success.Data.User.FirstName.Should().Be(dto.FirstName);
+            success.Data.User.LastName.Should().Be(dto.LastName);
+            success.Data.User.Role.Should().Be(UserRole.Customer.ToString());
+            success.Data.Token.Should().NotBeNullOrEmpty();
+        }
+        else
+        {
+            Assert.Fail("Expected Result<AuthResponseDto>.Success");
+        }
 
         _mockUserRepository.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Exactly(2)); // Once for user, once for refresh token
     }
 
     [TestMethod]
-    public async Task RegisterAsync_DuplicateEmail_ThrowsDuplicateEmailException()
+    public async Task RegisterAsync_DuplicateEmail_ReturnsDuplicateEmailFailure()
     {
         // Arrange
         var dto = new RegisterDto
@@ -122,10 +131,21 @@ public class AuthServiceTests
             .ReturnsAsync(true);
 
         // Act
-        Func<Task> act = async () => await _service.RegisterAsync(dto);
+        var result = await _service.RegisterAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<DuplicateEmailException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<AuthResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be("DUPLICATE_EMAIL");
+            failure.Message.Should().Contain("already registered");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<AuthResponseDto>.Failure");
+        }
+
         _mockUserRepository.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Never);
     }
 
@@ -194,15 +214,23 @@ public class AuthServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.Message.Should().Be("Login successful");
-        result.User.Should().NotBeNull();
-        result.User!.Email.Should().Be(user.Email);
-        result.Token.Should().NotBeNullOrEmpty();
+        result.IsSuccess.Should().BeTrue();
+        
+        if (result is Result<AuthResponseDto>.Success success)
+        {
+            success.Data.Should().NotBeNull();
+            success.Data.User.Should().NotBeNull();
+            success.Data.User!.Email.Should().Be(user.Email);
+            success.Data.Token.Should().NotBeNullOrEmpty();
+        }
+        else
+        {
+            Assert.Fail("Expected Result<AuthResponseDto>.Success");
+        }
     }
 
     [TestMethod]
-    public async Task LoginAsync_InvalidPassword_ThrowsInvalidCredentialsException()
+    public async Task LoginAsync_InvalidPassword_ReturnsInvalidCredentialsFailure()
     {
         // Arrange
         var user = TestDataFactory.CreateUser(email: "test@example.com");
@@ -218,14 +246,23 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act
-        Func<Task> act = async () => await _service.LoginAsync(dto);
+        var result = await _service.LoginAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidCredentialsException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<AuthResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_CREDENTIALS");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<AuthResponseDto>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task LoginAsync_UserNotFound_ThrowsInvalidCredentialsException()
+    public async Task LoginAsync_UserNotFound_ReturnsInvalidCredentialsFailure()
     {
         // Arrange
         var dto = new LoginDto
@@ -238,10 +275,19 @@ public class AuthServiceTests
             .ReturnsAsync((User?)null);
 
         // Act
-        Func<Task> act = async () => await _service.LoginAsync(dto);
+        var result = await _service.LoginAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidCredentialsException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<AuthResponseDto>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_CREDENTIALS");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<AuthResponseDto>.Failure");
+        }
     }
 
     #endregion
@@ -380,9 +426,10 @@ public class AuthServiceTests
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
-        await _service.VerifyEmailAsync(user.Id, token);
+        var result = await _service.VerifyEmailAsync(user.Id, token);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         user.IsEmailVerified.Should().BeTrue();
         user.EmailVerificationToken.Should().BeNull();
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Once);
@@ -390,7 +437,7 @@ public class AuthServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyEmailAsync_InvalidToken_ThrowsInvalidTokenException()
+    public async Task VerifyEmailAsync_InvalidToken_ReturnsInvalidTokenFailure()
     {
         // Arrange
         var user = TestDataFactory.CreateUser();
@@ -400,15 +447,25 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act
-        Func<Task> act = async () => await _service.VerifyEmailAsync(user.Id, "wrong-token");
+        var result = await _service.VerifyEmailAsync(user.Id, "wrong-token");
 
         // Assert
-        await act.Should().ThrowAsync<InvalidTokenException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_TOKEN");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
+        
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
     [TestMethod]
-    public async Task VerifyEmailAsync_UserNotFound_ThrowsUserNotFoundException()
+    public async Task VerifyEmailAsync_UserNotFound_ReturnsUserNotFoundFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -416,10 +473,19 @@ public class AuthServiceTests
             .ReturnsAsync((User?)null);
 
         // Act
-        Func<Task> act = async () => await _service.VerifyEmailAsync(userId, "some-token");
+        var result = await _service.VerifyEmailAsync(userId, "some-token");
 
         // Assert
-        await act.Should().ThrowAsync<UserNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be("USER_NOT_FOUND");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     #endregion
@@ -444,8 +510,9 @@ public class AuthServiceTests
         var token = await _service.GeneratePasswordResetTokenAsync(user.Email);
 
         // Assert
-        token.Should().NotBeNullOrEmpty();
-        user.PasswordResetToken.Should().NotBeNullOrEmpty();
+        token.Should().NotBeNull();
+        token.Should().NotBe(string.Empty);
+        user.PasswordResetToken.Should().NotBeNull();
         user.PasswordResetExpires.Should().NotBeNull();
         user.PasswordResetExpires.Should().BeAfter(DateTime.UtcNow);
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Once);
@@ -464,7 +531,8 @@ public class AuthServiceTests
         var token = await _service.GeneratePasswordResetTokenAsync(email);
 
         // Assert
-        token.Should().NotBeNullOrEmpty();
+        token.Should().NotBeNull();
+        token.Should().NotBe(string.Empty);
         // Should NOT update or save anything for security (prevents email enumeration)
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
@@ -489,9 +557,10 @@ public class AuthServiceTests
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
-        await _service.ResetPasswordAsync(user.Email, token, "NewSecurePassword123!");
+        var result = await _service.ResetPasswordAsync(user.Email, token, "NewSecurePassword123!");
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         user.PasswordHash.Should().NotBe(oldPasswordHash);
         user.PasswordResetToken.Should().BeNull();
         user.PasswordResetExpires.Should().BeNull();
@@ -499,7 +568,7 @@ public class AuthServiceTests
     }
 
     [TestMethod]
-    public async Task ResetPasswordAsync_InvalidToken_ThrowsInvalidTokenException()
+    public async Task ResetPasswordAsync_InvalidToken_ReturnsInvalidTokenFailure()
     {
         // Arrange
         var user = TestDataFactory.CreateUser(email: "test@example.com");
@@ -510,15 +579,25 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act
-        Func<Task> act = async () => await _service.ResetPasswordAsync(user.Email, "wrong-token", "NewPassword123!");
+        var result = await _service.ResetPasswordAsync(user.Email, "wrong-token", "NewPassword123!");
 
         // Assert
-        await act.Should().ThrowAsync<InvalidTokenException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_TOKEN");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
+        
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
     [TestMethod]
-    public async Task ResetPasswordAsync_ExpiredToken_ThrowsInvalidTokenException()
+    public async Task ResetPasswordAsync_ExpiredToken_ReturnsInvalidTokenFailure()
     {
         // Arrange
         var user = TestDataFactory.CreateUser(email: "test@example.com");
@@ -530,14 +609,23 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act
-        Func<Task> act = async () => await _service.ResetPasswordAsync(user.Email, token, "NewPassword123!");
+        var result = await _service.ResetPasswordAsync(user.Email, token, "NewPassword123!");
 
         // Assert
-        await act.Should().ThrowAsync<InvalidTokenException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_TOKEN");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     [TestMethod]
-    public async Task ResetPasswordAsync_UserNotFound_ThrowsUserNotFoundException()
+    public async Task ResetPasswordAsync_UserNotFound_ReturnsUserNotFoundFailure()
     {
         // Arrange
         var email = "nonexistent@example.com";
@@ -545,10 +633,19 @@ public class AuthServiceTests
             .ReturnsAsync((User?)null);
 
         // Act
-        Func<Task> act = async () => await _service.ResetPasswordAsync(email, "some-token", "NewPassword123!");
+        var result = await _service.ResetPasswordAsync(email, "some-token", "NewPassword123!");
 
         // Assert
-        await act.Should().ThrowAsync<UserNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be("USER_NOT_FOUND");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     #endregion
@@ -574,16 +671,17 @@ public class AuthServiceTests
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
-        await _service.ChangePasswordAsync(user.Id, oldPassword, newPassword);
+        var result = await _service.ChangePasswordAsync(user.Id, oldPassword, newPassword);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         user.PasswordHash.Should().NotBe(oldHash);
         _service.VerifyPassword(newPassword, user.PasswordHash!).Should().BeTrue();
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Once);
     }
 
     [TestMethod]
-    public async Task ChangePasswordAsync_InvalidOldPassword_ThrowsInvalidCredentialsException()
+    public async Task ChangePasswordAsync_InvalidOldPassword_ReturnsInvalidCredentialsFailure()
     {
         // Arrange
         var correctPassword = "CorrectPassword123!";
@@ -596,15 +694,25 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act
-        Func<Task> act = async () => await _service.ChangePasswordAsync(user.Id, wrongOldPassword, newPassword);
+        var result = await _service.ChangePasswordAsync(user.Id, wrongOldPassword, newPassword);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidCredentialsException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be("INVALID_CREDENTIALS");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
+        
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
     [TestMethod]
-    public async Task ChangePasswordAsync_UserNotFound_ThrowsUserNotFoundException()
+    public async Task ChangePasswordAsync_UserNotFound_ReturnsUserNotFoundFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -612,10 +720,19 @@ public class AuthServiceTests
             .ReturnsAsync((User?)null);
 
         // Act
-        Func<Task> act = async () => await _service.ChangePasswordAsync(userId, "OldPassword123!", "NewPassword123!");
+        var result = await _service.ChangePasswordAsync(userId, "OldPassword123!", "NewPassword123!");
 
         // Assert
-        await act.Should().ThrowAsync<UserNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be("USER_NOT_FOUND");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<Unit>.Failure");
+        }
     }
 
     #endregion

@@ -86,8 +86,10 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryById(Guid id, CancellationToken cancellationToken)
     {
-        var category = await _categoryService.GetCategoryByIdAsync(id, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category retrieved successfully"));
+        var result = await _categoryService.GetCategoryByIdAsync(id, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+            return NotFound(ApiResponse<object>.Error(result.Message));
+        return Ok(ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category retrieved successfully"));
     }
 
     /// <summary>
@@ -104,8 +106,10 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryBySlug(string slug, CancellationToken cancellationToken)
     {
-        var category = await _categoryService.GetCategoryBySlugAsync(slug, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category retrieved successfully"));
+        var result = await _categoryService.GetCategoryBySlugAsync(slug, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+            return NotFound(ApiResponse<object>.Error(result.Message));
+        return Ok(ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category retrieved successfully"));
     }
 
     /// <summary>
@@ -126,10 +130,12 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto, CancellationToken cancellationToken)
     {
-        var category = await _categoryService.CreateCategoryAsync(dto, cancellationToken: cancellationToken);
-        _logger.LogInformation("Category created: {CategoryId}", category.Id);
-        return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id },
-            ApiResponse<CategoryDetailDto>.Ok(category, "Category created successfully"));
+        var result = await _categoryService.CreateCategoryAsync(dto, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+            return Conflict(ApiResponse<object>.Error(result.Message));
+        _logger.LogInformation("Category created: {CategoryId}", result.Data.Id);
+        return CreatedAtAction(nameof(GetCategoryById), new { id = result.Data.Id },
+            ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category created successfully"));
     }
 
     /// <summary>
@@ -153,9 +159,15 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryDto dto, CancellationToken cancellationToken)
     {
-        var category = await _categoryService.UpdateCategoryAsync(id, dto, cancellationToken: cancellationToken);
+        var result = await _categoryService.UpdateCategoryAsync(id, dto, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+        {
+            if (result.Code == "DUPLICATE_CATEGORY_SLUG")
+                return Conflict(ApiResponse<object>.Error(result.Message));
+            return NotFound(ApiResponse<object>.Error(result.Message));
+        }
         _logger.LogInformation("Category updated: {CategoryId}", id);
-        return Ok(ApiResponse<CategoryDetailDto>.Ok(category, "Category updated successfully"));
+        return Ok(ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category updated successfully"));
     }
 
     /// <summary>
@@ -176,7 +188,13 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken cancellationToken)
     {
-        await _categoryService.DeleteCategoryAsync(id, cancellationToken: cancellationToken);
+        var result = await _categoryService.DeleteCategoryAsync(id, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+        {
+            if (result.Code == "CATEGORY_HAS_PRODUCTS")
+                return BadRequest(ApiResponse<object>.Error(result.Message));
+            return NotFound(ApiResponse<object>.Error(result.Message));
+        }
         _logger.LogInformation("Category deleted: {CategoryId}", id);
         return Ok(ApiResponse<object>.Ok(new object(), "Category deleted successfully"));
     }

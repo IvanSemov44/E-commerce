@@ -78,8 +78,10 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var product = await _productService.GetProductByIdAsync(id, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
+        var result = await _productService.GetProductByIdAsync(id, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+            return NotFound(ApiResponse<object>.Error(result.Message));
+        return Ok(ApiResponse<ProductDetailDto>.Ok(result.Data, "Product retrieved successfully"));
     }
 
     /// <summary>
@@ -98,8 +100,10 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductBySlug([FromRoute] string slug, CancellationToken cancellationToken)
     {
-        var product = await _productService.GetProductBySlugAsync(slug, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product retrieved successfully"));
+        var result = await _productService.GetProductBySlugAsync(slug, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+            return NotFound(ApiResponse<object>.Error(result.Message));
+        return Ok(ApiResponse<ProductDetailDto>.Ok(result.Data, "Product retrieved successfully"));
     }
 
 
@@ -126,11 +130,13 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto, CancellationToken cancellationToken)
     {
-        var product = await _productService.CreateProductAsync(createProductDto, cancellationToken: cancellationToken);
-        _logger.LogInformation("Product created: {ProductId}", product.Id);
+        var result = await _productService.CreateProductAsync(createProductDto, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+            return Conflict(ApiResponse<object>.Error(result.Message));
+        _logger.LogInformation("Product created: {ProductId}", result.Data.Id);
 
-        return CreatedAtAction(nameof(GetProductById), new { id = product.Id },
-            ApiResponse<ProductDetailDto>.Ok(product, "Product created successfully"));
+        return CreatedAtAction(nameof(GetProductById), new { id = result.Data.Id },
+            ApiResponse<ProductDetailDto>.Ok(result.Data, "Product created successfully"));
     }
 
     /// <summary>
@@ -159,10 +165,16 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto, CancellationToken cancellationToken)
     {
-        var product = await _productService.UpdateProductAsync(id, updateProductDto, cancellationToken: cancellationToken);
+        var result = await _productService.UpdateProductAsync(id, updateProductDto, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+        {
+            if (result.Code == "DUPLICATE_PRODUCT_SLUG")
+                return Conflict(ApiResponse<object>.Error(result.Message));
+            return NotFound(ApiResponse<object>.Error(result.Message));
+        }
         _logger.LogInformation("Product updated: {ProductId}", id);
 
-        return Ok(ApiResponse<ProductDetailDto>.Ok(product, "Product updated successfully"));
+        return Ok(ApiResponse<ProductDetailDto>.Ok(result.Data, "Product updated successfully"));
     }
 
     /// <summary>
@@ -185,7 +197,9 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteProduct([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        await _productService.DeleteProductAsync(id, cancellationToken: cancellationToken);
+        var result = await _productService.DeleteProductAsync(id, cancellationToken: cancellationToken);
+        if (!result.IsSuccess)
+            return NotFound(ApiResponse<object>.Error(result.Message));
         _logger.LogInformation("Product deleted: {ProductId}", id);
 
         return Ok(ApiResponse<object>.Ok(new object(), "Product deleted successfully"));

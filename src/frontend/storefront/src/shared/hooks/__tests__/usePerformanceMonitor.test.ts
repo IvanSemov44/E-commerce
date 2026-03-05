@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 import { usePerformanceMonitor } from '../usePerformanceMonitor'
 
 // Mock PerformanceObserver
@@ -11,9 +11,6 @@ class MockPerformanceObserver {
   observe() {}
   disconnect() {}
 }
-
-const mockObserve = vi.fn()
-const mockDisconnect = vi.fn()
 
 // Mock logger
 vi.mock('../utils/logger', () => ({

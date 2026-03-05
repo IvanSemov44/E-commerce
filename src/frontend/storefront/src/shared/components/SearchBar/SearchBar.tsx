@@ -63,11 +63,6 @@ export function SearchBar({
 
   const showDropdown = isFocused && debouncedQuery.length >= 2 && (results.length > 0 || isFetching);
 
-  // Reset selected index when results change
-  useEffect(() => {
-    setSelectedIndex(-1);
-  }, [results]);
-
   // Handle click outside to collapse
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -18,6 +18,21 @@ interface PerformanceMetric {
   timestamp: number;
 }
 
+interface LayoutShift extends PerformanceEntry {
+  value: number;
+  hadRecentInput: boolean;
+}
+
+interface LargestContentfulPaint extends PerformanceEntry {
+  renderTime: number;
+  loadTime: number;
+}
+
+interface FirstInputDelay extends PerformanceEntry {
+  processingStart: number;
+  processingDuration: number;
+}
+
 interface PerformanceCallback {
   (metric: PerformanceMetric): void;
 }
@@ -49,7 +64,7 @@ export function usePerformanceMonitor(
       try {
         const observer = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          const lastEntry = entries[entries.length - 1] as any; // LCP entry type
+          const lastEntry = entries[entries.length - 1] as LargestContentfulPaint;
           const value = lastEntry.renderTime || lastEntry.loadTime;
 
           const metric: PerformanceMetric = {
@@ -64,7 +79,7 @@ export function usePerformanceMonitor(
 
         observer.observe({ entryTypes: ['largest-contentful-paint'], buffered: true });
         return () => observer.disconnect();
-      } catch (e) {
+      } catch {
         logger.warn('usePerformanceMonitor', 'LCP monitoring not supported');
         return () => {};
       }
@@ -75,7 +90,7 @@ export function usePerformanceMonitor(
       try {
         const observer = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
-            const fidEntry = entry as any; // FID entry type
+            const fidEntry = entry as FirstInputDelay;
             const metric: PerformanceMetric = {
               name: 'First Input Delay (FID)',
               value: fidEntry.processingDuration,
@@ -89,7 +104,7 @@ export function usePerformanceMonitor(
 
         observer.observe({ entryTypes: ['first-input'], buffered: true });
         return () => observer.disconnect();
-      } catch (e) {
+      } catch {
         logger.warn('usePerformanceMonitor', 'FID monitoring not supported');
         return () => {};
       }
@@ -101,8 +116,9 @@ export function usePerformanceMonitor(
         let clsValue = 0;
         const observer = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
-            if (!(entry as any).hadRecentInput) {
-              clsValue += (entry as any).value;
+            const layoutShiftEntry = entry as LayoutShift;
+            if (!layoutShiftEntry.hadRecentInput) {
+              clsValue += layoutShiftEntry.value;
 
               const metric: PerformanceMetric = {
                 name: 'Cumulative Layout Shift (CLS)',
@@ -118,7 +134,7 @@ export function usePerformanceMonitor(
 
         observer.observe({ entryTypes: ['layout-shift'], buffered: true });
         return () => observer.disconnect();
-      } catch (e) {
+      } catch {
         logger.warn('usePerformanceMonitor', 'CLS monitoring not supported');
         return () => {};
       }
@@ -145,7 +161,7 @@ export function usePerformanceMonitor(
 
         observer.observe({ entryTypes: ['paint'], buffered: true });
         return () => observer.disconnect();
-      } catch (e) {
+      } catch {
         logger.warn('usePerformanceMonitor', 'FCP monitoring not supported');
         return () => {};
       }

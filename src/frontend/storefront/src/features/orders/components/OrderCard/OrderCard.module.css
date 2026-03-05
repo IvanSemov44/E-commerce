@@ -1,6 +1,6 @@
 /**
  * OrderCard Component Styles
- * 
+ *
  * Card layout for order summary display in order history list.
  * Includes status badges, item preview, and total amount.
  */
@@ -33,10 +33,6 @@
   }
 }
 
-/* =============================================================================
-   Header - Order Number and Status
-   ============================================================================= */
-
 .header {
   display: flex;
   justify-content: space-between;
@@ -64,10 +60,6 @@
   margin: 0;
 }
 
-/* =============================================================================
-   Status Badge
-   ============================================================================= */
-
 .status {
   display: inline-flex;
   align-items: center;
@@ -78,8 +70,6 @@
   text-transform: capitalize;
   white-space: nowrap;
   flex-shrink: 0;
-
-  /* Default (Pending) */
   background-color: var(--color-warning-light);
   color: var(--color-warning-dark);
 }
@@ -109,10 +99,6 @@
   color: var(--color-error-dark);
 }
 
-/* =============================================================================
-   Content - Items and Total
-   ============================================================================= */
-
 .content {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -121,7 +107,6 @@
   align-items: center;
 }
 
-/* Items Section */
 .items {
   flex: 1;
 }
@@ -140,7 +125,6 @@
   line-height: 1.4;
 }
 
-/* Total Amount */
 .total {
   text-align: right;
 }
@@ -159,10 +143,6 @@
   color: var(--text-primary);
   margin: 0;
 }
-
-/* =============================================================================
-   Footer - View Details Link
-   ============================================================================= */
 
 .footer {
   display: flex;
@@ -184,10 +164,6 @@
 .card:hover .viewButton {
   gap: var(--space-2);
 }
-
-/* =============================================================================
-   Responsive Design
-   ============================================================================= */
 
 @media (max-width: 640px) {
   .card {

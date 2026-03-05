@@ -1,7 +1,6 @@
-import { test, expect, Page, Route, Request } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { CartPage } from '../pages/CartPage';
-import { testUsers } from '../data/test-data';
 
 /**
  * Error Handling E2E Tests

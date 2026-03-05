@@ -4,6 +4,8 @@ using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -65,8 +67,11 @@ public class CartServiceTests
         var result = await _service.GetOrCreateCartAsync(userId, null);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().NotBeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CartDto>.Success success)
+        {
+            success.Data.Id.Should().NotBeEmpty();
+        }
         _mockCartRepository.Verify(r => r.AddAsync(It.Is<Cart>(c => c.UserId == userId)), Times.Once);
     }
 
@@ -89,8 +94,11 @@ public class CartServiceTests
         var result = await _service.GetOrCreateCartAsync(null, sessionId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().NotBeEmpty();
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CartDto>.Success success)
+        {
+            success.Data.Id.Should().NotBeEmpty();
+        }
         _mockCartRepository.Verify(r => r.AddAsync(It.Is<Cart>(c => c.SessionId == sessionId)), Times.Once);
     }
 
@@ -108,7 +116,7 @@ public class CartServiceTests
         var result = await _service.GetOrCreateCartAsync(userId, null);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         _mockCartRepository.Verify(r => r.AddAsync(It.IsAny<Cart>()), Times.Never);
     }
 
@@ -130,12 +138,15 @@ public class CartServiceTests
         var result = await _service.GetCartAsync(userId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().Be(cart.Id);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CartDto>.Success success)
+        {
+            success.Data.Id.Should().Be(cart.Id);
+        }
     }
 
     [TestMethod]
-    public async Task GetCartAsync_CartNotFound_ThrowsCartNotFoundException()
+    public async Task GetCartAsync_CartNotFound_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -144,10 +155,14 @@ public class CartServiceTests
             .ReturnsAsync((Cart?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetCartAsync(userId);
+        var result = await _service.GetCartAsync(userId);
 
         // Assert
-        await act.Should().ThrowAsync<CartNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CartNotFound);
+        }
     }
 
     #endregion
@@ -175,7 +190,7 @@ public class CartServiceTests
         var result = await _service.AddToCartAsync(userId, null, product.Id, 2);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         _mockCartItemRepository.Verify(r => r.AddAsync(It.Is<CartItem>(
             ci => ci.ProductId == product.Id && ci.Quantity == 2), It.IsAny<CancellationToken>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -204,13 +219,14 @@ public class CartServiceTests
         var result = await _service.AddToCartAsync(userId, null, product.Id, 3);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         existingCartItem.Quantity.Should().Be(5); // 2 + 3
         _mockCartItemRepository.Verify(r => r.AddAsync(It.IsAny<CartItem>(), It.IsAny<CancellationToken>()), Times.Never);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [TestMethod]
-    public async Task AddToCartAsync_InsufficientStock_ThrowsInsufficientStockException()
+    public async Task AddToCartAsync_InsufficientStock_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -224,28 +240,36 @@ public class CartServiceTests
             .ReturnsAsync((Guid id, bool _, CancellationToken __) => id == product.Id ? product : null);
 
         // Act
-        Func<Task> act = async () => await _service.AddToCartAsync(userId, null, product.Id, 10);
+        var result = await _service.AddToCartAsync(userId, null, product.Id, 10);
 
         // Assert
-        await act.Should().ThrowAsync<InsufficientStockException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InsufficientStock);
+        }
     }
 
     [TestMethod]
-    public async Task AddToCartAsync_InvalidQuantity_ThrowsInvalidQuantityException()
+    public async Task AddToCartAsync_InvalidQuantity_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
         var productId = Guid.NewGuid();
 
         // Act
-        Func<Task> act = async () => await _service.AddToCartAsync(userId, null, productId, 0);
+        var result = await _service.AddToCartAsync(userId, null, productId, 0);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidQuantityException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidQuantity);
+        }
     }
 
     [TestMethod]
-    public async Task AddToCartAsync_ProductNotFound_ThrowsProductNotFoundException()
+    public async Task AddToCartAsync_ProductNotFound_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -259,10 +283,14 @@ public class CartServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.AddToCartAsync(userId, null, productId, 1);
+        var result = await _service.AddToCartAsync(userId, null, productId, 1);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
     }
 
     #endregion
@@ -291,6 +319,7 @@ public class CartServiceTests
         var result = await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 5);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         cartItem.Quantity.Should().Be(5);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
@@ -317,12 +346,13 @@ public class CartServiceTests
         var result = await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 0);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         cart.Items.Should().NotContain(cartItem);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
-    public async Task UpdateCartItemAsync_InsufficientStock_ThrowsInsufficientStockException()
+    public async Task UpdateCartItemAsync_InsufficientStock_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -338,28 +368,36 @@ public class CartServiceTests
             .ReturnsAsync(product);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 10);
+        var result = await _service.UpdateCartItemAsync(userId, null, cartItem.Id, 10);
 
         // Assert
-        await act.Should().ThrowAsync<InsufficientStockException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InsufficientStock);
+        }
     }
 
     [TestMethod]
-    public async Task UpdateCartItemAsync_NegativeQuantity_ThrowsInvalidQuantityException()
+    public async Task UpdateCartItemAsync_NegativeQuantity_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
         var cartItemId = Guid.NewGuid();
 
         // Act
-        Func<Task> act = async () => await _service.UpdateCartItemAsync(userId, null, cartItemId, -1);
+        var result = await _service.UpdateCartItemAsync(userId, null, cartItemId, -1);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidQuantityException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidQuantity);
+        }
     }
 
     [TestMethod]
-    public async Task UpdateCartItemAsync_ItemNotFound_ThrowsCartItemNotFoundException()
+    public async Task UpdateCartItemAsync_ItemNotFound_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -370,10 +408,14 @@ public class CartServiceTests
             .ReturnsAsync(cart);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateCartItemAsync(userId, null, nonExistentItemId, 5);
+        var result = await _service.UpdateCartItemAsync(userId, null, nonExistentItemId, 5);
 
         // Assert
-        await act.Should().ThrowAsync<CartItemNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CartItemNotFound);
+        }
     }
 
     #endregion
@@ -400,12 +442,13 @@ public class CartServiceTests
         var result = await _service.RemoveFromCartAsync(userId, null, cartItem.Id);
 
         // Assert
+        result.IsSuccess.Should().BeTrue();
         _mockCartItemRepository.Verify(r => r.DeleteAsync(cartItem, It.IsAny<CancellationToken>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [TestMethod]
-    public async Task RemoveFromCartAsync_ItemNotFound_ThrowsCartItemNotFoundException()
+    public async Task RemoveFromCartAsync_ItemNotFound_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -416,10 +459,14 @@ public class CartServiceTests
             .ReturnsAsync(cart);
 
         // Act
-        Func<Task> act = async () => await _service.RemoveFromCartAsync(userId, null, nonExistentItemId);
+        var result = await _service.RemoveFromCartAsync(userId, null, nonExistentItemId);
 
         // Assert
-        await act.Should().ThrowAsync<CartItemNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CartItemNotFound);
+        }
     }
 
     #endregion
@@ -449,7 +496,8 @@ public class CartServiceTests
         var result = await _service.ClearCartAsync(userId, null);
 
         // Assert
-        _mockCartItemRepository.Verify(r => r.DeleteAsync(It.IsAny<CartItem>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        result.IsSuccess.Should().BeTrue();
+        _mockCartItemRepository.Verify(r => r.DeleteRangeAsync(It.IsAny<List<CartItem>>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -470,12 +518,15 @@ public class CartServiceTests
         var result = await _service.GetCartByIdAsync(cart.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().Be(cart.Id);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<CartDto>.Success success)
+        {
+            success.Data.Id.Should().Be(cart.Id);
+        }
     }
 
     [TestMethod]
-    public async Task GetCartByIdAsync_CartNotFound_ThrowsCartNotFoundException()
+    public async Task GetCartByIdAsync_CartNotFound_ReturnsFailure()
     {
         // Arrange
         var cartId = Guid.NewGuid();
@@ -484,10 +535,14 @@ public class CartServiceTests
             .ReturnsAsync((Cart?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetCartByIdAsync(cartId);
+        var result = await _service.GetCartByIdAsync(cartId);
 
         // Assert
-        await act.Should().ThrowAsync<CartNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<CartDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CartNotFound);
+        }
     }
 
     #endregion
@@ -511,14 +566,14 @@ public class CartServiceTests
             .Returns(products);
 
         // Act
-        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+        var result = await _service.ValidateCartAsync(cart.Id);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        result.IsSuccess.Should().BeTrue();
     }
 
     [TestMethod]
-    public async Task ValidateCartAsync_CartNotFound_ThrowsCartNotFoundException()
+    public async Task ValidateCartAsync_CartNotFound_ReturnsFailure()
     {
         // Arrange
         var cartId = Guid.NewGuid();
@@ -527,14 +582,18 @@ public class CartServiceTests
             .ReturnsAsync((Cart?)null);
 
         // Act
-        Func<Task> act = async () => await _service.ValidateCartAsync(cartId);
+        var result = await _service.ValidateCartAsync(cartId);
 
         // Assert
-        await act.Should().ThrowAsync<CartNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.CartNotFound);
+        }
     }
 
     [TestMethod]
-    public async Task ValidateCartAsync_ProductNotFound_ThrowsProductNotFoundException()
+    public async Task ValidateCartAsync_ProductNotFound_ReturnsFailure()
     {
         // Arrange
         var cart = TestDataFactory.CreateCart();
@@ -550,14 +609,18 @@ public class CartServiceTests
             .Returns(products);
 
         // Act
-        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+        var result = await _service.ValidateCartAsync(cart.Id);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
     }
 
     [TestMethod]
-    public async Task ValidateCartAsync_InsufficientStock_ThrowsInsufficientStockException()
+    public async Task ValidateCartAsync_InsufficientStock_ReturnsFailure()
     {
         // Arrange
         var cart = TestDataFactory.CreateCart();
@@ -573,14 +636,18 @@ public class CartServiceTests
             .Returns(products);
 
         // Act
-        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+        var result = await _service.ValidateCartAsync(cart.Id);
 
         // Assert
-        await act.Should().ThrowAsync<InsufficientStockException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InsufficientStock);
+        }
     }
 
     [TestMethod]
-    public async Task ValidateCartAsync_InactiveProduct_ThrowsProductNotAvailableException()
+    public async Task ValidateCartAsync_InactiveProduct_ReturnsFailure()
     {
         // Arrange
         var cart = TestDataFactory.CreateCart();
@@ -596,10 +663,14 @@ public class CartServiceTests
             .Returns(products);
 
         // Act
-        Func<Task> act = async () => await _service.ValidateCartAsync(cart.Id);
+        var result = await _service.ValidateCartAsync(cart.Id);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotAvailableException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotAvailable);
+        }
     }
 
     #endregion

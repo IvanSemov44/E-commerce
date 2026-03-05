@@ -16,7 +16,7 @@ test.describe('Wishlist', () => {
     await page.waitForTimeout(1000);
 
     // Check for wishlist container
-    const wishlistContainer = page.locator('[class*="wishlist"], [data-testid="wishlist"]');
+    page.locator('[class*="wishlist"], [data-testid="wishlist"]');
     
     // Page should load without errors
     expect(page.url()).toContain('wishlist');

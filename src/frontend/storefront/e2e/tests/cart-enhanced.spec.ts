@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { ProductsPage, CartPage } from '../pages';
-import { testProducts, testPromoCodes } from '../data/test-data';
-import { mockProductsApi, mockCartApi, mockAuthApi } from '../utils/api-mocking';
+import { testPromoCodes } from '../data/test-data';
+import { mockProductsApi, mockCartApi } from '../utils/api-mocking';
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
  * Enhanced Cart E2E Tests

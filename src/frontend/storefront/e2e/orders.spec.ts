@@ -16,7 +16,7 @@ test.describe('Orders', () => {
     await page.waitForTimeout(1000);
 
     // Check for orders container
-    const ordersContainer = page.locator('[class*="orders"], [data-testid="orders"]');
+    page.locator('[class*="orders"], [data-testid="orders"]');
     
     // Page should load
     expect(page.url()).toContain('order');

@@ -15,7 +15,7 @@ test.describe('Checkout - Authenticated', () => {
     await page.waitForTimeout(1000);
 
     // Check for checkout container
-    const checkoutContainer = page.locator('[class*="checkout"], [data-testid="checkout"]');
+    page.locator('[class*="checkout"], [data-testid="checkout"]');
     expect(page.url()).toContain('checkout');
   });
 
@@ -55,7 +55,6 @@ test.describe('Checkout - Authenticated', () => {
     if (await addressForm.count() > 0) {
       const streetInput = page.locator('input[name*="street"], input[name*="address"]');
       const cityInput = page.locator('input[name*="city"]');
-      const zipInput = page.locator('input[name*="zip"], input[name*="postal"]');
       
       expect(await streetInput.count() >= 0 || await cityInput.count() >= 0).toBeTruthy();
     } else {

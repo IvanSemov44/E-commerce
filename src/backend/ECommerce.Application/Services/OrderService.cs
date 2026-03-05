@@ -7,6 +7,8 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Threading;
@@ -63,7 +65,7 @@ public class OrderService : IOrderService
         _businessRules = businessRulesOptions.Value;
     }
 
-    public async Task<OrderDetailDto> CreateOrderAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<OrderDetailDto>> CreateOrderAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken = default)
     {
         var isGuest = userId == null;
         _logger.LogInformation("Creating order. UserId: {UserId}, IsGuest: {IsGuest}", userId, isGuest);
@@ -74,19 +76,112 @@ public class OrderService : IOrderService
         try
         {
             // Step 1: Validate user or guest
-            await ValidateUserOrGuestAsync(userId, dto.GuestEmail, cancellationToken);
+            if (userId.HasValue)
+            {
+                var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, trackChanges: false, cancellationToken);
+                if (user == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<OrderDetailDto>.Fail(ErrorCodes.UserNotFound, "User not found");
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(dto.GuestEmail))
+                {
+                    _logger.LogWarning("Guest checkout attempted without email");
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, "Email is required for guest checkout");
+                }
+            }
 
             // Step 2: Create order entity with addresses
-            var order = await CreateOrderEntityAsync(userId, dto, cancellationToken);
+            var order = new Order
+            {
+                OrderNumber = GenerateOrderNumber(),
+                UserId = userId,
+                Status = OrderStatus.Pending,
+                PaymentStatus = PaymentStatus.Pending,
+                PaymentMethod = dto.PaymentMethod,
+                Currency = "USD"
+            };
+
+            // Map shipping address
+            if (dto.ShippingAddress != null)
+            {
+                var shippingAddress = _mapper.Map<Address>(dto.ShippingAddress);
+                if (userId.HasValue)
+                    shippingAddress.UserId = userId.Value;
+                shippingAddress.Type = "Shipping";
+                shippingAddress.IsDefault = false;
+                shippingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
+                order.ShippingAddress = shippingAddress;
+            }
+
+            // Map billing address (or copy from shipping if not provided)
+            if (dto.BillingAddress != null)
+            {
+                var billingAddress = _mapper.Map<Address>(dto.BillingAddress);
+                if (userId.HasValue)
+                    billingAddress.UserId = userId.Value;
+                billingAddress.Type = "Billing";
+                billingAddress.IsDefault = false;
+                billingAddress.Country = NormalizeCountryCode(dto.BillingAddress.Country);
+                order.BillingAddress = billingAddress;
+            }
+            else if (dto.ShippingAddress != null)
+            {
+                // Copy shipping address to billing if not provided
+                var billingAddress = _mapper.Map<Address>(dto.ShippingAddress);
+                if (userId.HasValue)
+                    billingAddress.UserId = userId.Value;
+                billingAddress.Type = "Billing";
+                billingAddress.IsDefault = false;
+                billingAddress.Country = NormalizeCountryCode(dto.ShippingAddress.Country);
+                order.BillingAddress = billingAddress;
+            }
 
             // Step 3: Process order items and calculate subtotal
             var (items, subtotal, stockCheckItems) = await ProcessOrderItemsAsync(dto.Items, cancellationToken);
 
-            // Step 4: Validate stock availability (with pessimistic locking to prevent race conditions)
-            await ValidateStockAvailabilityAsync(stockCheckItems, cancellationToken);
+            // Step 4: Validate products exist and are active
+            foreach (var item in stockCheckItems)
+            {
+                // ProductId is already a Guid from ProcessOrderItemsAsync
+                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, false, cancellationToken);
+                if (product == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<OrderDetailDto>.Fail(ErrorCodes.ProductNotFound, $"Product not found");
+                }
+
+                if (!product.IsActive)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<OrderDetailDto>.Fail(ErrorCodes.ProductNotAvailable, $"Product '{product.Name}' is not available");
+                }
+            }
+
+            var stockCheckResponse = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
+            if (!stockCheckResponse.IsAvailable)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<OrderDetailDto>.Fail(ErrorCodes.InsufficientStock, "Insufficient stock for one or more items");
+            }
 
             // Step 5: Apply promo code if provided
-            await ApplyPromoCodeAsync(order, dto.PromoCode, subtotal, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(dto.PromoCode))
+            {
+                var promoValidationResult = await _promoCodeService.ValidatePromoCodeAsync(dto.PromoCode, subtotal);
+                if (!promoValidationResult.IsValid)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<OrderDetailDto>.Fail(ErrorCodes.InvalidPromoCode, $"Promo code '{dto.PromoCode}' is invalid");
+                }
+
+                order.DiscountAmount = promoValidationResult.DiscountAmount;
+                order.PromoCodeId = promoValidationResult.PromoCode?.Id;
+            }
 
             // Step 6: Calculate final totals with business rules
             CalculateOrderTotals(order, subtotal);
@@ -110,13 +205,13 @@ public class OrderService : IOrderService
             // Post-transaction operations (best effort - errors logged but don't fail order)
             await SendOrderConfirmationAsync(dto.GuestEmail, userId, order, cancellationToken);
 
-            return _mapper.Map<OrderDetailDto>(order);
+            return Result<OrderDetailDto>.Ok(_mapper.Map<OrderDetailDto>(order));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating order. Transaction will be rolled back.");
             await transaction.RollbackAsync(cancellationToken);
-            throw;
+            return Result<OrderDetailDto>.Fail("ORDER_CREATION_FAILED", ex.Message);
         }
     }
 
@@ -422,20 +517,20 @@ public class OrderService : IOrderService
         };
     }
 
-    public async Task<OrderDetailDto> UpdateOrderStatusAsync(Guid id, string status, CancellationToken cancellationToken = default)
+    public async Task<Result<OrderDetailDto>> UpdateOrderStatusAsync(Guid id, string status, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating order {OrderId} status to {Status}", id, status);
 
         var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (order == null)
         {
-            throw new OrderNotFoundException(id);
+            return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, $"Order {id} not found");
         }
 
         // Validate status
         if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var orderStatus))
         {
-            throw new InvalidOrderStatusException(order.Status.ToString(), status);
+            return Result<OrderDetailDto>.Fail(ErrorCodes.InvalidOrderStatus, $"Invalid order status: {status}");
         }
 
         order.Status = orderStatus;
@@ -460,23 +555,23 @@ public class OrderService : IOrderService
 
         _logger.LogInformation("Order {OrderId} status updated to {Status}", id, status);
 
-        return _mapper.Map<OrderDetailDto>(order);
+        return Result<OrderDetailDto>.Ok(_mapper.Map<OrderDetailDto>(order));
     }
 
-    public async Task<bool> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
 
         var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (order == null)
         {
-            return false;
+            return Result<Unit>.Fail(ErrorCodes.OrderNotFound, $"Order {id} not found");
         }
 
         // Can't cancel if already shipped or delivered
         if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
         {
-            throw new InvalidOrderStatusException(order.Status.ToString(), "Cancelled");
+            return Result<Unit>.Fail(ErrorCodes.InvalidOrderStatus, $"Cannot cancel order with status {order.Status}");
         }
 
         order.Status = OrderStatus.Cancelled;
@@ -488,7 +583,7 @@ public class OrderService : IOrderService
 
         _logger.LogInformation("Order {OrderId} cancelled successfully", id);
 
-        return true;
+        return Result<Unit>.Ok(new Unit());
     }
 
     public async Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(OrderQueryParameters parameters, CancellationToken cancellationToken = default)

@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Orders;
+using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
 
@@ -14,7 +15,7 @@ public interface IOrderService
     /// <param name="userId">User ID if authenticated, null for guest checkout.</param>
     /// <param name="dto">Order creation DTO. GuestEmail is required if userId is null.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task<OrderDetailDto> CreateOrderAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken = default);
+    Task<Result<OrderDetailDto>> CreateOrderAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get order details by ID.
@@ -34,12 +35,12 @@ public interface IOrderService
     /// <summary>
     /// Update order status.
     /// </summary>
-    Task<OrderDetailDto> UpdateOrderStatusAsync(Guid id, string status, CancellationToken cancellationToken = default);
+    Task<Result<OrderDetailDto>> UpdateOrderStatusAsync(Guid id, string status, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancel an order (if not already shipped).
     /// </summary>
-    Task<bool> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get all orders (admin only).

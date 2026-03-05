@@ -19,13 +19,13 @@ interface OrderCardProps {
 
 /**
  * OrderCard Component
- * 
+ *
  * Displays a summary card for a single order in the order history.
  * Shows order number, status, total amount, and a preview of items.
  */
 export default function OrderCard({ order }: OrderCardProps) {
   const { t } = useTranslation();
-  
+
   const orderDate = new Date(order.createdAt);
   const formattedDate = orderDate.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -33,16 +33,14 @@ export default function OrderCard({ order }: OrderCardProps) {
     day: 'numeric',
   });
 
-  // Status styling
   const getStatusClass = (status: string) => {
     const statusLower = status.toLowerCase();
     return styles[`status${status[0].toUpperCase() + statusLower.slice(1)}`] || styles.statusPending;
   };
 
-  // Item count formatting
   const itemCount = order.items.length;
-  const itemsLabel = itemCount === 1 
-    ? t('orders.oneItem') || '1 item' 
+  const itemsLabel = itemCount === 1
+    ? t('orders.oneItem') || '1 item'
     : t('orders.multipleItems', { count: itemCount }) || `${itemCount} items`;
 
   return (

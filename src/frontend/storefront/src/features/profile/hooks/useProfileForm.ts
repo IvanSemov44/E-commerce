@@ -9,24 +9,25 @@ import { useAppDispatch } from '@/shared/lib/store';
 import { updateUser } from '@/features/auth/slices/authSlice';
 import useForm from '@/shared/hooks/useForm';
 import { validators } from '@/shared/lib/utils/validation';
+import type { UserProfile } from '@/shared/types';
 
 export interface ProfileFormData {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
-  avatarUrl: string;
+  phone?: string;
+  avatarUrl?: string;
 }
 
 export interface UseProfileFormReturn {
-  profile: any; // typing from API
+  profile: UserProfile | undefined;
   formData: ProfileFormData;
   isEditMode: boolean;
   successMessage: string;
   errorMessage: string;
   isLoading: boolean;
   isUpdating: boolean;
-  error: any;
+  error: unknown;
   errors: Partial<Record<keyof ProfileFormData, string>>;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   setFormData: (data: ProfileFormData) => void;
@@ -103,8 +104,9 @@ export const useProfileForm = (): UseProfileFormReturn => {
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
-    } catch (err: any) {
-      setErrorMessage(err.data?.message || 'Failed to update profile');
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setErrorMessage(error.data?.message || 'Failed to update profile');
     }
   };
 
@@ -132,7 +134,7 @@ export const useProfileForm = (): UseProfileFormReturn => {
         avatarUrl: profile.avatarUrl || '',
       });
     }
-  }, [profile]);
+  }, [profile, form]);
 
   // Handle form cancel
   const handleCancel = () => {

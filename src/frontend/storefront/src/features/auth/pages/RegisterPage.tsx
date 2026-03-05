@@ -5,7 +5,7 @@ import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '../slices/authSlice';
 import useForm from '@/shared/hooks/useForm';
 import { useToast } from '@/shared/hooks/useToast';
-import { Button, Input, Card } from '../../../shared/components/ui';
+import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './Register.module.css';
 
 export default function Register() {
@@ -24,7 +24,7 @@ export default function Register() {
       confirmPassword: '',
     },
     validate: (values) => {
-      const errors: any = {};
+      const errors: Record<string, string> = {};
       if (!values.firstName) errors.firstName = t('profile.firstName') + ' ' + t('common.required').toLowerCase();
       if (!values.lastName) errors.lastName = t('profile.lastName') + ' ' + t('common.required').toLowerCase();
       if (!values.email) errors.email = t('auth.emailRequired');
@@ -37,6 +37,7 @@ export default function Register() {
     },
     onSubmit: async (values) => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirmPassword, ...registerData } = values;
         const response = await register(registerData).unwrap();
         if (response.success && response.user) {
@@ -46,8 +47,9 @@ export default function Register() {
         } else {
           toast.error(response.message || t('auth.registrationFailed'));
         }
-      } catch (err: any) {
-        toast.error(err?.data?.message || t('auth.registrationError'));
+      } catch (err: unknown) {
+        const error = err as { data?: { message?: string } };
+        toast.error(error?.data?.message || t('auth.registrationError'));
       }
     },
   });

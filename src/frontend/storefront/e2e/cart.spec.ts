@@ -110,7 +110,6 @@ test.describe('Shopping Cart', () => {
     const incrementButton = page.locator('[data-testid="increment"], button:has-text("+")').first();
 
     if (await quantityInput.count() > 0) {
-      const initialValue = await quantityInput.inputValue();
       await quantityInput.fill('2');
       await page.waitForTimeout(500);
       

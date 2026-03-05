@@ -1,4 +1,5 @@
 import Card from '../ui/Card';
+import { CloseIcon } from '../icons';
 
 interface ErrorAlertProps {
   message: string;
@@ -15,9 +16,7 @@ export default function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
             onClick={onDismiss}
             aria-label="Dismiss error"
           >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <CloseIcon width={20} height={20} />
           </button>
         )}
       </div>

@@ -30,6 +30,7 @@ export const test = base.extend<AuthFixtures>({
     // Wait for successful login (redirect away from login page)
     await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10000 });
     
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 
@@ -44,12 +45,14 @@ export const test = base.extend<AuthFixtures>({
       timeout: 10000 
     });
     
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 
   // Login page instance
   loginPage: async ({ page }, use) => {
     const loginPage = new LoginPage(page);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(loginPage);
   },
 });

@@ -1,7 +1,8 @@
 import { test, expect } from '../fixtures/auth.fixture';
 import { LoginPage } from '../pages';
-import { testUsers } from '../data/test-data';
 import { mockAuthApi } from '../utils/api-mocking';
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
  * Enhanced Authentication E2E Tests

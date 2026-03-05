@@ -7,6 +7,8 @@ using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Services;
@@ -57,22 +59,22 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<ProductDetailDto> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDetailDto>> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var product = await _unitOfWork.Products.GetBySlugAsync(slug, cancellationToken: cancellationToken);
         if (product == null)
-            throw new ProductNotFoundException(slug);
+            return Result<ProductDetailDto>.Fail(ErrorCodes.ProductNotFound, $"Product with slug '{slug}' not found");
 
-        return _mapper.Map<ProductDetailDto>(product);
+        return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }
 
-    public async Task<ProductDetailDto> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDetailDto>> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(id, trackChanges: false, cancellationToken: cancellationToken);
         if (product == null)
-            throw new ProductNotFoundException(id);
+            return Result<ProductDetailDto>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{id}' not found");
 
-        return _mapper.Map<ProductDetailDto>(product);
+        return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }
 
     public async Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10, CancellationToken cancellationToken = default)
@@ -81,10 +83,10 @@ public class ProductService : IProductService
         return products.Select(p => _mapper.Map<ProductDto>(p)).ToList();
     }
 
-    public async Task<ProductDetailDto> CreateProductAsync(CreateProductDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDetailDto>> CreateProductAsync(CreateProductDto dto, CancellationToken cancellationToken = default)
     {
         if (!await _unitOfWork.Products.IsSlugUniqueAsync(dto.Slug, cancellationToken: cancellationToken))
-            throw new DuplicateProductSlugException(dto.Slug);
+            return Result<ProductDetailDto>.Fail(ErrorCodes.DuplicateProductSlug, $"Slug '{dto.Slug}' already exists");
 
         var product = _mapper.Map<Product>(dto);
         product.IsActive = true;
@@ -92,19 +94,19 @@ public class ProductService : IProductService
         await _unitOfWork.Products.AddAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<ProductDetailDto>(product);
+        return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }
 
-    public async Task<ProductDetailDto> UpdateProductAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDetailDto>> UpdateProductAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (product == null)
-            throw new ProductNotFoundException(id);
+            return Result<ProductDetailDto>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{id}' not found");
 
         if (!string.IsNullOrEmpty(dto.Slug) && dto.Slug != product.Slug)
         {
             if (!await _unitOfWork.Products.IsSlugUniqueAsync(dto.Slug, id, cancellationToken))
-                throw new DuplicateProductSlugException(dto.Slug);
+                return Result<ProductDetailDto>.Fail(ErrorCodes.DuplicateProductSlug, $"Slug '{dto.Slug}' already exists");
         }
 
         _mapper.Map(dto, product);
@@ -113,7 +115,7 @@ public class ProductService : IProductService
         await _unitOfWork.Products.UpdateAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<ProductDetailDto>(product);
+        return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }
 
     public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
@@ -237,13 +239,14 @@ public class ProductService : IProductService
         return lowStockProducts.Select(p => _mapper.Map<ProductDto>(p)).ToList();
     }
 
-    public async Task DeleteProductAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> DeleteProductAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (product == null)
-            throw new ProductNotFoundException(id);
+            return Result<Unit>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{id}' not found");
 
         await _unitOfWork.Products.DeleteAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result<Unit>.Ok(new Unit());
     }
 }

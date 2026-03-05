@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForgotPasswordMutation } from '../api/authApi';
 import { useToast } from '@/shared/hooks/useToast';
-import { Button, Input, Card } from '../../../shared/components/ui';
+import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './ForgotPassword.module.css';
 
 export default function ForgotPassword() {
@@ -20,8 +20,9 @@ export default function ForgotPassword() {
       await forgotPassword({ email }).unwrap();
       setSuccess(true);
       toast.success(t('forgotPassword.resetLinkSent'));
-    } catch (err: any) {
-      toast.error(err?.data?.message || t('common.error'));
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || t('common.error'));
     }
   };
 

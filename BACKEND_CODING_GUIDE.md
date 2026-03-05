@@ -39,7 +39,7 @@ public record ErrorResponse
 }
 ```
 
-**All endpoints return this shape. No exceptions.**
+**All endpoints return this shape (success and error). No response-shape exceptions.**
 
 ### **3. Pagination (MUST)**
 Every list endpoint **must** paginate. Hard caps: default 20, max 100.
@@ -115,7 +115,20 @@ _logger.LogInformation($"Order {order.Id} created");  // Lost structure
 **Never log**: passwords, tokens, credit cards, emails (as plaintext), API keys.
 
 ### **7. Error Handling (MUST)**
-Throw typed exceptions in services, catch in `GlobalExceptionMiddleware`, map to HTTP status codes.
+Use one pattern per endpoint/service flow and keep it consistent:
+- **Typed exceptions + middleware mapping** for unexpected/infrastructure failures and cross-cutting HTTP mapping
+- **`Result<T>`** for predictable business failure paths (validation/state/ownership decisions)
+
+Do not mix both styles in the same method for business outcomes.
+
+Quick decision matrix:
+
+| Scenario | Preferred Pattern | Why |
+|---|---|---|
+| Domain/business rule failed (invalid transition, insufficient inventory, ownership decision) | `Result<T>` | Expected outcome; keeps flow explicit and test-friendly |
+| Resource absent in exception-based feature flow (`OrderNotFoundException`) | Typed exception | Centralized HTTP mapping through middleware |
+| Infrastructure/transient failure (DB/network/gateway unavailable) | Typed exception | Exceptional path; middleware + retries/logging handle consistently |
+
 ```csharp
 // Service
 if (order == null) throw new OrderNotFoundException(orderId);
@@ -207,7 +220,7 @@ Use this for every feature PR. Check off before pushing:
   - [ ] Feature follows 1→5 delivery order (Domain → Contracts → Persistence → Service → Controller)
   - [ ] All list endpoints paginate with bounds (max 100 items)
   - [ ] Response shape is `ApiResponse<T>` with `Success`, `Data`, `Error`, `TraceId`
-  - [ ] Error handling uses typed exceptions + middleware mapping
+    - [ ] Error handling strategy is consistent per feature (`Result<T>` or typed exceptions)
   - [ ] `[Authorize]` or `[AllowAnonymous]` explicitly set on all endpoints
   - [ ] Ownership checks in service layer (not controller)
 
@@ -227,7 +240,7 @@ Use this for every feature PR. Check off before pushing:
   - [ ] Retry policies configured for transient failures (HttpClient, Polly)
 
 - [ ] **Testing**
-  - [ ] Service unit tests for happy path + all exception cases
+    - [ ] Service unit tests for happy path + all failure cases (exceptions and/or `Result<T>` failures)
   - [ ] Repository tests with in-memory database
   - [ ] Test naming: `MethodName_Scenario_ExpectedResult`
   - [ ] All validators tested (100% coverage)
@@ -309,7 +322,7 @@ public record PaginatedResponse<T>
 
 ## 🏗️ Result Pattern (Functional Error Handling)
 
-Instead of throwing exceptions for business logic failures, use a **Result<T>** pattern for explicit control flow. This is especially powerful for:
+For predictable business logic outcomes, prefer a **Result<T>** pattern for explicit control flow. Keep typed exceptions for unexpected/infrastructure failures. This is especially powerful for:
 - API endpoints with multiple failure paths
 - Saga patterns and distributed transactions
 - Testability (no exception setup needed)

@@ -1,5 +1,7 @@
 # E-Commerce Storefront Co-location Architecture Migration
 
+> Execution model for ongoing one-by-one migration: `COLOCATION_ADOPTION_TRACKER.md`
+
 ## ✅ Completed Work
 
 ### Phase 1: API Slice Migration (100% Complete)

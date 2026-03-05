@@ -8,7 +8,7 @@ const defaultIsEmpty = <T,>(data: T): boolean =>
 
 interface QueryRendererProps<T> {
   isLoading: boolean;
-  error: any;
+  error: unknown;
   data: T | undefined;
   isEmpty?: (data: T) => boolean;
   loadingSkeleton?: {

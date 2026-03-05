@@ -11,6 +11,8 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using ECommerce.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -147,7 +149,11 @@ public class OrderServiceTests
         var result = await _service.CreateOrderAsync(userId, dto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<OrderDetailDto>.Success success)
+        {
+            success.Data.Should().NotBeNull();
+        }
         _mockOrderRepository.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
@@ -167,10 +173,14 @@ public class OrderServiceTests
             .ReturnsAsync((User?)null);
 
         // Act
-        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+        var result = await _service.CreateOrderAsync(userId, dto);
 
         // Assert
-        await act.Should().ThrowAsync<UserNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.UserNotFound);
+        }
     }
 
     [TestMethod]
@@ -330,10 +340,14 @@ public class OrderServiceTests
             });
 
         // Act
-        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+        var result = await _service.CreateOrderAsync(userId, dto);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidPromoCodeException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidPromoCode);
+        }
     }
 
     [TestMethod]
@@ -396,10 +410,14 @@ public class OrderServiceTests
             });
 
         // Act
-        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+        var result = await _service.CreateOrderAsync(userId, dto);
 
         // Assert
-        await act.Should().ThrowAsync<InsufficientStockException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InsufficientStock);
+        }
     }
 
     #endregion
@@ -521,10 +539,14 @@ public class OrderServiceTests
             .ReturnsAsync((Order?)null);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateOrderStatusAsync(orderId, "Processing");
+        var result = await _service.UpdateOrderStatusAsync(orderId, "Processing");
 
         // Assert
-        await act.Should().ThrowAsync<OrderNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.OrderNotFound);
+        }
     }
 
     [TestMethod]
@@ -537,10 +559,14 @@ public class OrderServiceTests
             .ReturnsAsync(order);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateOrderStatusAsync(order.Id, "InvalidStatus");
+        var result = await _service.UpdateOrderStatusAsync(order.Id, "InvalidStatus");
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOrderStatusException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidOrderStatus);
+        }
     }
 
     [TestMethod]
@@ -591,7 +617,7 @@ public class OrderServiceTests
         var result = await _service.CancelOrderAsync(order.Id);
 
         // Assert
-        result.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
         order.Status.Should().Be(OrderStatus.Cancelled);
         order.CancelledAt.Should().NotBeNull();
         _mockOrderRepository.Verify(r => r.UpdateAsync(It.IsAny<Order>()), Times.Once);
@@ -610,7 +636,7 @@ public class OrderServiceTests
         var result = await _service.CancelOrderAsync(orderId);
 
         // Assert
-        result.Should().BeFalse();
+        result.IsSuccess.Should().BeFalse();
     }
 
     [TestMethod]
@@ -623,10 +649,14 @@ public class OrderServiceTests
             .ReturnsAsync(order);
 
         // Act
-        Func<Task> act = async () => await _service.CancelOrderAsync(order.Id);
+        var result = await _service.CancelOrderAsync(order.Id);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOrderStatusException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidOrderStatus);
+        }
     }
 
     [TestMethod]
@@ -639,10 +669,14 @@ public class OrderServiceTests
             .ReturnsAsync(order);
 
         // Act
-        Func<Task> act = async () => await _service.CancelOrderAsync(order.Id);
+        var result = await _service.CancelOrderAsync(order.Id);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOrderStatusException>();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.InvalidOrderStatus);
+        }
     }
 
     #endregion
@@ -1021,12 +1055,14 @@ public class OrderServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+        var result = await _service.CreateOrderAsync(userId, dto);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>()
-            .WithMessage($"*{nonExistentProductId}*", 
-                "because ordering a non-existent product should be rejected");
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
     }
 
     /// <summary>
@@ -1084,12 +1120,14 @@ public class OrderServiceTests
             .ReturnsAsync(inactiveProduct);
 
         // Act
-        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+        var result = await _service.CreateOrderAsync(userId, dto);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotAvailableException>()
-            .WithMessage("*Discontinued Product*", 
-                "because ordering an inactive product should be rejected");
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotAvailable);
+        }
     }
 
     /// <summary>
@@ -1239,12 +1277,14 @@ public class OrderServiceTests
             .ReturnsAsync(user);
 
         // Act
-        Func<Task> act = async () => await _service.CreateOrderAsync(userId, dto);
+        var result = await _service.CreateOrderAsync(userId, dto);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>()
-            .WithMessage("*not-a-valid-guid*",
-                "because invalid product ID format should be rejected");
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.ProductNotFound);
+        }
     }
 
     #endregion

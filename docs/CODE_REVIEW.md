@@ -342,10 +342,18 @@ private static readonly Dictionary<string, string> CountryCodeMap = ...
 
 **Issue**: Some methods check for null and throw exceptions, others return null or default. Creates unpredictable API behavior.
 
-**Recommendation**: Establish consistent null-handling policy:
+**Recommendation**: Establish a consistent failure-handling policy per feature/flow:
 - Repository methods: Return null for not found (standard pattern)
-- Service methods: Throw specific exceptions for not found
+- Service methods: Use one style consistently in a flow (either `Result<T>` or typed exceptions)
 - Use `ArgumentNullException.ThrowIfNull()` for parameter validation
+
+**Reviewer decision matrix**:
+
+| Scenario | Preferred Pattern | Why |
+|---|---|---|
+| Predictable business outcome (not found, invalid state, ownership, inventory) | `Result<T>` | Explicit control flow; easier failure-path testing |
+| Unexpected/infrastructure failure (DB/network/external provider) | Typed exception + middleware | Centralized HTTP mapping and observability |
+| Mixed in same method for business outcomes | ❌ Avoid | Creates inconsistent API behavior |
 
 ---
 

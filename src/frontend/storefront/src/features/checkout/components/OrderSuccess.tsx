@@ -10,7 +10,7 @@ interface OrderSuccessProps {
   isGuestOrder: boolean;
 }
 
-export default function OrderSuccess({ orderNumber, email, isGuestOrder: _isGuestOrder }: OrderSuccessProps) {
+export default function OrderSuccess({ orderNumber, email }: OrderSuccessProps) {
   const { t } = useTranslation();
 
   return (

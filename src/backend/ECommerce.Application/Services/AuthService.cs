@@ -8,6 +8,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -33,12 +34,12 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
     {
         // Check if email already exists
         if (await _unitOfWork.Users.EmailExistsAsync(dto.Email, cancellationToken: cancellationToken))
         {
-            throw new DuplicateEmailException(dto.Email);
+            return Result<AuthResponseDto>.Fail("DUPLICATE_EMAIL", $"Email '{dto.Email}' is already registered");
         }
 
         var user = new User
@@ -84,23 +85,25 @@ public class AuthService : IAuthService
         }, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new AuthResponseDto
+        _logger.LogInformation("New user registered: {Email} (ID: {UserId})", user.Email, user.Id);
+
+        return Result<AuthResponseDto>.Ok(new AuthResponseDto
         {
             Success = true,
             Message = "Registration successful",
             User = userDto,
             Token = token,
             RefreshToken = refreshToken
-        };
+        });
     }
 
-    public async Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email, cancellationToken: cancellationToken);
         if (user == null || !VerifyPassword(dto.Password, user.PasswordHash!))
         {
             _logger.LogWarning("Failed login attempt for {Email}: Invalid credentials", dto.Email);
-            throw new InvalidCredentialsException();
+            return Result<AuthResponseDto>.Fail("INVALID_CREDENTIALS", "Email or password is incorrect");
         }
 
         var userDto = _mapper.Map<UserDto>(user);
@@ -118,31 +121,36 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("Successful login for user {Email} (ID: {UserId})", user.Email, user.Id);
 
-        return new AuthResponseDto
+        return Result<AuthResponseDto>.Ok(new AuthResponseDto
         {
             Success = true,
             Message = "Login successful",
             User = userDto,
             Token = token,
             RefreshToken = refreshToken
-        };
+        });
     }
 
-    public async Task<AuthResponseDto> RefreshTokenAsync(string token, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDto>> RefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         var storedToken = await _unitOfWork.RefreshTokens
             .FindByCondition(rt => rt.Token == token && !rt.IsRevoked)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (storedToken == null || storedToken.ExpiresAt < DateTime.UtcNow)
-            throw new InvalidTokenException();
+        {
+            return Result<AuthResponseDto>.Fail("INVALID_TOKEN", "The refresh token is invalid or expired");
+        }
 
         // Revoke old refresh token (rotation)
         storedToken.IsRevoked = true;
 
         // Get user and generate new tokens
-        var user = await _unitOfWork.Users.GetByIdAsync(storedToken.UserId, trackChanges: false, cancellationToken: cancellationToken)
-            ?? throw new UserNotFoundException(storedToken.UserId);
+        var user = await _unitOfWork.Users.GetByIdAsync(storedToken.UserId, trackChanges: false, cancellationToken: cancellationToken);
+        if (user == null)
+        {
+            return Result<AuthResponseDto>.Fail("USER_NOT_FOUND", "The user associated with this token no longer exists");
+        }
 
         var userDto = _mapper.Map<UserDto>(user);
         var newAccessToken = GenerateJwtToken(userDto);
@@ -159,14 +167,14 @@ public class AuthService : IAuthService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new AuthResponseDto
+        return Result<AuthResponseDto>.Ok(new AuthResponseDto
         {
             Success = true,
             Message = "Token refreshed",
             User = userDto,
             Token = newAccessToken,
             RefreshToken = newRefreshToken
-        };
+        });
     }
 
     private static string GenerateRefreshToken()
@@ -236,34 +244,39 @@ public class AuthService : IAuthService
         return BCrypt.Net.BCrypt.Verify(password, hash);
     }
 
-    public async Task VerifyEmailAsync(Guid userId, string token, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> VerifyEmailAsync(Guid userId, string token, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
         {
-            throw new UserNotFoundException(userId);
+            return Result<Unit>.Fail("USER_NOT_FOUND", "User not found");
         }
 
         if (user.EmailVerificationToken != token)
         {
-            throw new InvalidTokenException();
+            return Result<Unit>.Fail("INVALID_TOKEN", "The email verification token is invalid or expired");
         }
 
         user.IsEmailVerified = true;
         user.EmailVerificationToken = null;
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Email verified for user {UserId}", userId);
+
+        return Result<Unit>.Ok(Unit.Value);
     }
 
-    public async Task<string> GeneratePasswordResetTokenAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<Result<string>> GeneratePasswordResetTokenAsync(string email, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(email, cancellationToken: cancellationToken);
         if (user == null)
         {
-            // For security reasons, we don't throw an exception here
+            // For security reasons, we don't fail explicitly here
             // Instead, we return a dummy token that won't work
             // This prevents email enumeration attacks
-            return Guid.NewGuid().ToString();
+            _logger.LogWarning("Password reset requested for non-existent email {Email}", email);
+            return Result<string>.Ok(Guid.NewGuid().ToString());
         }
 
         user.PasswordResetToken = Guid.NewGuid().ToString();
@@ -271,7 +284,7 @@ public class AuthService : IAuthService
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        _logger.LogInformation("Password reset requested for {Email}", email);
+        _logger.LogInformation("Password reset token generated for {Email}", email);
 
         // Send password reset email (fire and forget)
         var resetLink = $"{_configuration["AppUrl"]}/reset-password?email={email}&token={user.PasswordResetToken}";
@@ -287,20 +300,20 @@ public class AuthService : IAuthService
             }
         });
 
-        return user.PasswordResetToken;
+        return Result<string>.Ok(user.PasswordResetToken);
     }
 
-    public async Task ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(email, cancellationToken: cancellationToken);
         if (user == null)
         {
-            throw new UserNotFoundException($"User with email {email} not found");
+            return Result<Unit>.Fail("USER_NOT_FOUND", "User not found");
         }
 
         if (user.PasswordResetToken != token || user.PasswordResetExpires < DateTime.UtcNow)
         {
-            throw new InvalidTokenException();
+            return Result<Unit>.Fail("INVALID_TOKEN", "The password reset token is invalid or expired");
         }
 
         user.PasswordHash = HashPassword(newPassword);
@@ -308,24 +321,32 @@ public class AuthService : IAuthService
         user.PasswordResetExpires = null;
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Password reset for user {Email}", email);
+
+        return Result<Unit>.Ok(Unit.Value);
     }
 
-    public async Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
         {
-            throw new UserNotFoundException(userId);
+            return Result<Unit>.Fail("USER_NOT_FOUND", "User not found");
         }
 
         if (!VerifyPassword(oldPassword, user.PasswordHash!))
         {
-            throw new InvalidCredentialsException();
+            return Result<Unit>.Fail("INVALID_CREDENTIALS", "The current password is incorrect");
         }
 
         user.PasswordHash = HashPassword(newPassword);
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Password changed for user {UserId}", userId);
+
+        return Result<Unit>.Ok(Unit.Value);
     }
 
     public async Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)

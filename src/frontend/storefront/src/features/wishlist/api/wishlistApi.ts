@@ -6,7 +6,7 @@ const wishlistApiSlice = baseApi.injectEndpoints({
     getWishlist: builder.query<WishlistResponse, void>({
       query: () => '/wishlist',
       transformResponse: (response: ApiResponse<WishlistResponse>) =>
-        response.data || { items: [] },
+        response.data || { id: '', items: [], itemCount: 0 },
       providesTags: ['Wishlist'],
     }),
 
@@ -23,7 +23,7 @@ const wishlistApiSlice = baseApi.injectEndpoints({
         body: { productId },
       }),
       transformResponse: (response: ApiResponse<WishlistResponse>) =>
-        response.data || { items: [] },
+        response.data || { id: '', items: [], itemCount: 0 },
       invalidatesTags: (_result, _error, productId) => [
         'Wishlist',
         { type: 'WishlistCheck', id: productId },
@@ -36,7 +36,7 @@ const wishlistApiSlice = baseApi.injectEndpoints({
         method: 'DELETE',
       }),
       transformResponse: (response: ApiResponse<WishlistResponse>) =>
-        response.data || { items: [] },
+        response.data || { id: '', items: [], itemCount: 0 },
       invalidatesTags: (_result, _error, productId) => [
         'Wishlist',
         { type: 'WishlistCheck', id: productId },

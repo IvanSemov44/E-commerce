@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
+using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
 
@@ -9,10 +10,10 @@ namespace ECommerce.Application.Interfaces;
 public interface IInventoryService
 {
     // Stock Management
-    Task ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default);
-    Task ReduceStockBatchAsync(List<(Guid ProductId, int Quantity, string Reason, Guid? ReferenceId, Guid? UserId)> items, CancellationToken cancellationToken = default);
-    Task IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default);
-    Task AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> ReduceStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> ReduceStockBatchAsync(List<(Guid ProductId, int Quantity, string Reason, Guid? ReferenceId, Guid? UserId)> items, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> IncreaseStockAsync(Guid productId, int quantity, string reason, Guid? referenceId = null, Guid? userId = null, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> AdjustStockAsync(Guid productId, int newQuantity, string reason, string? notes = null, Guid? userId = null, CancellationToken cancellationToken = default);
 
     // Stock Validation
     Task<StockCheckResponse> CheckStockAvailabilityAsync(List<StockCheckItemDto> items, CancellationToken cancellationToken = default);

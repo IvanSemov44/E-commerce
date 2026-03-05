@@ -35,7 +35,7 @@ export default function OrderDetailPage() {
       try {
         await cancelOrder(orderId).unwrap();
         navigate('/orders');
-      } catch (err) {
+      } catch {
         toast.error(t('orders.failedToCancel'));
       }
     }

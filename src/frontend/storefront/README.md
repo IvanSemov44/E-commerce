@@ -9,7 +9,7 @@ Currently, two official plugins are available:
 
 ## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+React Compiler is enabled in this project via `babel-plugin-react-compiler` configured in `vite.config.ts`.
 
 ## Expanding the ESLint configuration
 

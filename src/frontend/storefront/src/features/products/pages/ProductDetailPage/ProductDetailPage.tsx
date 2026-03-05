@@ -1,12 +1,12 @@
 import { useParams } from 'react-router-dom';
 
 import useProductDetails from '../../hooks/useProductDetails';
-import Card from '../../../../shared/components/ui/Card';
-import ErrorAlert from '../../../../shared/components/ErrorAlert';
-import { ProductSkeleton } from '../../../../shared/components/Skeletons';
-import EmptyState from '../../../../shared/components/EmptyState';
-import ReviewForm from '../../../../shared/components/ReviewForm';
-import ReviewList from '../../../../shared/components/ReviewList';
+import Card from '@/shared/components/ui/Card';
+import ErrorAlert from '@/shared/components/ErrorAlert';
+import { ProductSkeleton } from '@/shared/components/Skeletons';
+import EmptyState from '@/shared/components/EmptyState';
+import ReviewForm from '@/shared/components/ReviewForm';
+import ReviewList from '@/shared/components/ReviewList';
 import { ProductImageGallery, ProductInfo, ProductActions } from '../../components';
 import { useTranslation } from 'react-i18next';
 

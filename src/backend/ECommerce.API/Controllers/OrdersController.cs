@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Results;
 
 namespace ECommerce.API.Controllers;
 
@@ -48,10 +49,34 @@ public class OrdersController : ControllerBase
         var userId = _currentUser.UserIdOrNull;
         _logger.LogInformation("Creating order for user {UserId}. Guest: {IsGuest}", userId, userId == null);
 
-        var order = await _orderService.CreateOrderAsync(userId, dto, cancellationToken: cancellationToken);
+        var result = await _orderService.CreateOrderAsync(userId, dto, cancellationToken: cancellationToken);
 
-        return CreatedAtAction(nameof(GetOrderById), new { id = order.Id },
-            ApiResponse<OrderDetailDto>.Ok(order, "Order created successfully"));
+        if (result is Result<OrderDetailDto>.Success success)
+        {
+            return CreatedAtAction(nameof(GetOrderById), new { id = success.Data.Id },
+                ApiResponse<OrderDetailDto>.Ok(success.Data, "Order created successfully"));
+        }
+
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "USER_NOT_FOUND" or "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "INSUFFICIENT_STOCK" or "INVALID_QUANTITY" or "PRODUCT_NOT_AVAILABLE" => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
+            {
+                Message = failure.Message,
+                Code = failure.Code
+            }));
+        }
+
+        return StatusCode(500, ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
+        {
+            Message = "Unknown error occurred",
+            Code = "INTERNAL_ERROR"
+        }));
     }
 
     /// <summary>
@@ -194,8 +219,33 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateOrderStatusDto statusUpdate, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Updating order {OrderId} status to {Status}", id, statusUpdate.Status);
-        var order = await _orderService.UpdateOrderStatusAsync(id, statusUpdate.Status, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order status updated successfully"));
+        var result = await _orderService.UpdateOrderStatusAsync(id, statusUpdate.Status, cancellationToken: cancellationToken);
+
+        if (result is Result<OrderDetailDto>.Success success)
+        {
+            return Ok(ApiResponse<OrderDetailDto>.Ok(success.Data, "Order status updated successfully"));
+        }
+
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "INVALID_ORDER_STATUS" => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
+            {
+                Message = failure.Message,
+                Code = failure.Code
+            }));
+        }
+
+        return StatusCode(500, ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
+        {
+            Message = "Unknown error occurred",
+            Code = "INTERNAL_ERROR"
+        }));
     }
 
     /// <summary>

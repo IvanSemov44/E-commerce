@@ -4,3 +4,8 @@ export { default as UserIcon } from './UserIcon';
 export { default as SearchIcon } from './SearchIcon';
 export { default as PackageIcon } from './PackageIcon';
 export { default as CheckIcon } from './CheckIcon';
+export { default as DocumentIcon } from './DocumentIcon';
+export { default as ErrorIcon } from './ErrorIcon';
+export { default as CloseIcon } from './CloseIcon';
+export { default as MenuIcon } from './MenuIcon';
+export { default as ChevronDownIcon } from './ChevronDownIcon';

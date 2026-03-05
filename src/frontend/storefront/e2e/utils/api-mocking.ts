@@ -1,17 +1,10 @@
-import { Page, Route } from '@playwright/test';
-import { mockApiResponses, testProducts, testUsers } from '../data/test-data';
+import { Page } from '@playwright/test';
+import { mockApiResponses, testProducts } from '../data/test-data';
 
 /**
  * API Mocking Utilities
  * Provides functions to mock API responses for reliable testing
  */
-
-// Types for mock responses
-type MockResponse = any;
-type MockHandler = (route: Route) => Promise<void>;
-
-// Base API URL (adjust based on environment)
-const API_BASE_URL = process.env.API_URL || 'http://localhost:5000/api';
 
 /**
  * Mock all product-related API calls

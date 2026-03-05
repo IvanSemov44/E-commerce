@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { useGetProductsQuery } from '../../api/productApi';
 import { useProductFilters } from '../../hooks/useProductFilters';
-import Button from '../../../../shared/components/ui/Button';
-import CategoryFilter from '../../../../shared/components/CategoryFilter';
-import PageHeader from '../../../../shared/components/PageHeader';
-import QueryRenderer from '../../../../shared/components/QueryRenderer';
-import { ProductsGridSkeleton } from '../../../../shared/components/Skeletons';
+import Button from '@/shared/components/ui/Button';
+import CategoryFilter from '@/shared/components/CategoryFilter';
+import PageHeader from '@/shared/components/PageHeader';
+import QueryRenderer from '@/shared/components/QueryRenderer';
+import { ProductsGridSkeleton } from '@/shared/components/Skeletons';
 import {
   ProductFilters,
   ProductSearchBar,

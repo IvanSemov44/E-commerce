@@ -64,6 +64,67 @@ We use a branching model based on GitFlow. All development happens in feature br
 -   **C#/Backend:** Please follow the standard .NET/C# coding conventions. Most rules are enforced by modern IDEs like Visual Studio and JetBrains Rider.
 -   **Commit Messages:** Write clear and concise commit messages. The first line should be a short summary (50 characters or less), followed by a blank line and a more detailed explanation if necessary.
 
+#### Frontend Icon Components
+
+All SVG icons must be imported from the centralized icons library (`src/shared/components/icons/`) rather than embedded as inline SVG elements.
+
+**Creating a new icon:**
+
+1. Create a new component file in `src/shared/components/icons/` (e.g., `MyIcon.tsx`):
+   ```tsx
+   import type { SVGProps } from 'react';
+
+   export default function MyIcon(props: SVGProps<SVGSVGElement>) {
+     return (
+       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" {...props}>
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M..." />
+       </svg>
+     );
+   }
+   ```
+
+2. Export the icon in `src/shared/components/icons/index.ts`:
+   ```ts
+   export { default as MyIcon } from './MyIcon';
+   ```
+
+3. Use it anywhere in the app:
+   ```tsx
+   import { MyIcon } from '@/shared/components/icons';
+
+   export function MyComponent() {
+     return <MyIcon width={20} height={20} className="my-icon" />;
+   }
+   ```
+
+**Available icons:** HeartIcon, ShoppingCartIcon, UserIcon, SearchIcon, PackageIcon, CheckIcon, DocumentIcon, ErrorIcon, CloseIcon, MenuIcon, ChevronDownIcon
+
+**Never:** Create inline `<svg>` elements in components. Always use the icons library.
+
+#### Frontend Import Path Conventions
+
+Use the `@` alias for imports in the frontend instead of relative paths (`../../../`). This improves readability and makes refactoring easier.
+
+**Alias mappings:**
+- `@/features/*` → `src/features/*` (feature modules)
+- `@/shared/*` → `src/shared/*` (shared components, hooks, utils)
+- `@/` → `src/` (root level)
+
+**Examples:**
+
+```tsx
+// ✅ GOOD - Use @ alias
+import Button from '@/shared/components/ui/Button';
+import { useGetOrdersQuery } from '@/features/orders/api/ordersApi';
+import { useForm } from '@/shared/hooks/useForm';
+
+// ❌ AVOID - Relative paths
+import Button from '../../../../shared/components/ui/Button';
+import { useGetOrdersQuery } from '../../api/ordersApi';
+```
+
+The `@` alias is configured in `tsconfig.json` and works in all `.ts` and `.tsx` files. Always prefer it over relative imports.
+
 ## Pull Request Process
 
 1.  Ensure your code adheres to the **Coding Conventions**.

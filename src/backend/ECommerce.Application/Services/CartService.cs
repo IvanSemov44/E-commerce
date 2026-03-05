@@ -5,6 +5,8 @@ using ECommerce.Application.DTOs.Cart;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -55,32 +57,34 @@ public class CartService : ICartService
         return cart;
     }
 
-    public async Task<CartDto> GetOrCreateCartAsync(Guid? userId, string? sessionId, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> GetOrCreateCartAsync(Guid? userId, string? sessionId, CancellationToken cancellationToken = default)
     {
         var cart = await GetOrCreateCartEntityAsync(userId, sessionId, cancellationToken);
-        return await MapCartToDtoAsync(cart, cancellationToken);
+        var dto = await MapCartToDtoAsync(cart, cancellationToken);
+        return Result<CartDto>.Ok(dto);
     }
 
-    public async Task<CartDto> GetCartAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> GetCartAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var cart = await _unitOfWork.Carts.GetByUserIdAsync(userId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(userId);
+            return Result<CartDto>.Fail(ErrorCodes.CartNotFound, $"Cart not found for user {userId}");
 
-        return await MapCartToDtoAsync(cart, cancellationToken);
+        var dto = await MapCartToDtoAsync(cart, cancellationToken);
+        return Result<CartDto>.Ok(dto);
     }
 
-    public async Task<CartDto> AddToCartAsync(Guid? userId, string? sessionId, Guid productId, int quantity, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> AddToCartAsync(Guid? userId, string? sessionId, Guid productId, int quantity, CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
-            throw new InvalidQuantityException("Quantity must be greater than 0");
+            return Result<CartDto>.Fail(ErrorCodes.InvalidQuantity, "Quantity must be greater than 0");
 
         var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken: cancellationToken);
         if (product == null)
-            throw new ProductNotFoundException(productId);
+            return Result<CartDto>.Fail(ErrorCodes.ProductNotFound, $"Product {productId} not found");
 
         if (product.StockQuantity < quantity)
-            throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
+            return Result<CartDto>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, Requested: {quantity}");
 
         var cart = await GetOrCreateCartEntityAsync(userId, sessionId, cancellationToken);
 
@@ -90,7 +94,7 @@ public class CartService : ICartService
         {
             // Check if adding more quantity exceeds stock
             if (existingItem.Quantity + quantity > product.StockQuantity)
-                throw new InsufficientStockException(product.Name, existingItem.Quantity + quantity, product.StockQuantity);
+                return Result<CartDto>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, Requested: {existingItem.Quantity + quantity}");
 
             existingItem.Quantity += quantity;
             await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
@@ -120,13 +124,13 @@ public class CartService : ICartService
                 var existingCartId = cart.Id;
                 cart = await _unitOfWork.Carts.GetCartWithItemsAsync(existingCartId, cancellationToken: cancellationToken);
                 if (cart == null)
-                    throw new CartNotFoundException(existingCartId);
+                    return Result<CartDto>.Fail(ErrorCodes.CartNotFound, $"Cart {existingCartId} not found");
                     
                 existingItem = cart.Items.FirstOrDefault(x => x.ProductId == productId);
                 if (existingItem != null)
                 {
                     if (existingItem.Quantity + quantity > product.StockQuantity)
-                        throw new InsufficientStockException(product.Name, existingItem.Quantity + quantity, product.StockQuantity);
+                        return Result<CartDto>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, Requested: {existingItem.Quantity + quantity}");
                     
                     existingItem.Quantity += quantity;
                     await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
@@ -138,27 +142,28 @@ public class CartService : ICartService
         var cartId = cart.Id;
         cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cartId);
+            return Result<CartDto>.Fail(ErrorCodes.CartNotFound, $"Cart {cartId} not found");
 
-        return await MapCartToDtoAsync(cart, cancellationToken);
+        var resultDto = await MapCartToDtoAsync(cart, cancellationToken);
+        return Result<CartDto>.Ok(resultDto);
     }
 
-    public async Task<CartDto> UpdateCartItemAsync(Guid? userId, string? sessionId, Guid cartItemId, int quantity, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> UpdateCartItemAsync(Guid? userId, string? sessionId, Guid cartItemId, int quantity, CancellationToken cancellationToken = default)
     {
         if (quantity < 0)
-            throw new InvalidQuantityException("Quantity cannot be negative");
+            return Result<CartDto>.Fail(ErrorCodes.InvalidQuantity, "Quantity cannot be negative");
 
         var cart = await GetOrCreateCartEntityAsync(userId, sessionId, cancellationToken);
         var cartItem = cart.Items.FirstOrDefault(x => x.Id == cartItemId);
         if (cartItem == null)
-            throw new CartItemNotFoundException(cartItemId);
+            return Result<CartDto>.Fail(ErrorCodes.CartItemNotFound, $"Cart item {cartItemId} not found");
 
         var product = await _unitOfWork.Products.GetByIdAsync(cartItem.ProductId, trackChanges: false, cancellationToken: cancellationToken);
         if (product == null)
-            throw new ProductNotFoundException(cartItem.ProductId);
+            return Result<CartDto>.Fail(ErrorCodes.ProductNotFound, $"Product {cartItem.ProductId} not found");
 
         if (quantity > product.StockQuantity)
-            throw new InsufficientStockException(product.Name, quantity, product.StockQuantity);
+            return Result<CartDto>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, Requested: {quantity}");
 
         if (quantity == 0)
         {
@@ -170,15 +175,16 @@ public class CartService : ICartService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-        return await MapCartToDtoAsync(cart, cancellationToken);
+        var dto = await MapCartToDtoAsync(cart, cancellationToken);
+        return Result<CartDto>.Ok(dto);
     }
 
-    public async Task<CartDto> RemoveFromCartAsync(Guid? userId, string? sessionId, Guid cartItemId, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> RemoveFromCartAsync(Guid? userId, string? sessionId, Guid cartItemId, CancellationToken cancellationToken = default)
     {
         var cart = await GetOrCreateCartEntityAsync(userId, sessionId, cancellationToken);
         var cartItem = cart.Items.FirstOrDefault(x => x.Id == cartItemId);
         if (cartItem == null)
-            throw new CartItemNotFoundException(cartItemId);
+            return Result<CartDto>.Fail(ErrorCodes.CartItemNotFound, $"Cart item {cartItemId} not found");
 
         await _unitOfWork.CartItems.DeleteAsync(cartItem, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
@@ -187,12 +193,13 @@ public class CartService : ICartService
         var cartId = cart.Id;
         cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cartId);
+            return Result<CartDto>.Fail(ErrorCodes.CartNotFound, $"Cart {cartId} not found");
 
-        return await MapCartToDtoAsync(cart, cancellationToken);
+        var dto = await MapCartToDtoAsync(cart, cancellationToken);
+        return Result<CartDto>.Ok(dto);
     }
 
-    public async Task<CartDto> ClearCartAsync(Guid? userId, string? sessionId, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> ClearCartAsync(Guid? userId, string? sessionId, CancellationToken cancellationToken = default)
     {
         var cart = await GetOrCreateCartEntityAsync(userId, sessionId, cancellationToken);
 
@@ -206,25 +213,27 @@ public class CartService : ICartService
         var cartId = cart.Id;
         cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cartId);
+            return Result<CartDto>.Fail(ErrorCodes.CartNotFound, $"Cart {cartId} not found");
 
-        return await MapCartToDtoAsync(cart, cancellationToken);
+        var dto = await MapCartToDtoAsync(cart, cancellationToken);
+        return Result<CartDto>.Ok(dto);
     }
 
-    public async Task<CartDto> GetCartByIdAsync(Guid cartId, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> GetCartByIdAsync(Guid cartId, CancellationToken cancellationToken = default)
     {
         var cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cartId);
+            return Result<CartDto>.Fail(ErrorCodes.CartNotFound, $"Cart {cartId} not found");
 
-        return await MapCartToDtoAsync(cart, cancellationToken);
+        var dto = await MapCartToDtoAsync(cart, cancellationToken);
+        return Result<CartDto>.Ok(dto);
     }
 
-    public async Task ValidateCartAsync(Guid cartId, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> ValidateCartAsync(Guid cartId, CancellationToken cancellationToken = default)
     {
         var cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
-            throw new CartNotFoundException(cartId);
+            return Result<Unit>.Fail(ErrorCodes.CartNotFound, $"Cart {cartId} not found");
 
         // Batch query: Get all products for cart items in single query
         var productIds = cart.Items.Select(i => i.ProductId).ToList();
@@ -237,14 +246,16 @@ public class CartService : ICartService
         foreach (var item in cart.Items)
         {
             if (!productMap.TryGetValue(item.ProductId, out var product))
-                throw new ProductNotFoundException(item.ProductId);
+                return Result<Unit>.Fail(ErrorCodes.ProductNotFound, $"Product {item.ProductId} not found");
 
             if (product.StockQuantity < item.Quantity)
-                throw new InsufficientStockException(product.Name, item.Quantity, product.StockQuantity);
+                return Result<Unit>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, Required: {item.Quantity}");
 
             if (!product.IsActive)
-                throw new ProductNotAvailableException(product.Name);
+                return Result<Unit>.Fail(ErrorCodes.ProductNotAvailable, $"Product {product.Name} is not available");
         }
+
+        return Result<Unit>.Ok(Unit.Value);
     }
 
     private async Task<CartDto> MapCartToDtoAsync(Cart cart, CancellationToken cancellationToken = default)

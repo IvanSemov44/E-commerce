@@ -2,6 +2,8 @@ using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Results;
+using ECommerce.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,8 +44,19 @@ public class CartController : ControllerBase
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<CartDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var cart = await _cartService.GetOrCreateCartAsync(userId, sessionId: null, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<CartDto>.Ok(cart, "Cart retrieved successfully"));
+        var result = await _cartService.GetOrCreateCartAsync(userId, sessionId: null, cancellationToken: cancellationToken);
+        
+        if (result is Result<CartDto>.Success success)
+        {
+            return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart retrieved successfully"));
+        }
+        
+        if (result is Result<CartDto>.Failure failure)
+        {
+            return MapFailureToResponse<CartDto>(failure);
+        }
+
+        return BadRequest(ApiResponse<CartDto>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -60,8 +73,19 @@ public class CartController : ControllerBase
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
-        var cart = await _cartService.GetOrCreateCartAsync(userId, sessionId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<CartDto>.Ok(cart, "Cart retrieved or created successfully"));
+        var result = await _cartService.GetOrCreateCartAsync(userId, sessionId, cancellationToken: cancellationToken);
+        
+        if (result is Result<CartDto>.Success success)
+        {
+            return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart retrieved or created successfully"));
+        }
+        
+        if (result is Result<CartDto>.Failure failure)
+        {
+            return MapFailureToResponse<CartDto>(failure);
+        }
+
+        return BadRequest(ApiResponse<CartDto>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -84,9 +108,20 @@ public class CartController : ControllerBase
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
-        var cart = await _cartService.AddToCartAsync(userId, sessionId, dto.ProductId, dto.Quantity, cancellationToken: cancellationToken);
-        _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
-        return Ok(ApiResponse<CartDto>.Ok(cart, "Item added to cart successfully"));
+        var result = await _cartService.AddToCartAsync(userId, sessionId, dto.ProductId, dto.Quantity, cancellationToken: cancellationToken);
+        
+        if (result is Result<CartDto>.Success success)
+        {
+            _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
+            return Ok(ApiResponse<CartDto>.Ok(success.Data, "Item added to cart successfully"));
+        }
+        
+        if (result is Result<CartDto>.Failure failure)
+        {
+            return MapFailureToResponse<CartDto>(failure);
+        }
+
+        return BadRequest(ApiResponse<CartDto>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -111,9 +146,20 @@ public class CartController : ControllerBase
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
-        var cart = await _cartService.UpdateCartItemAsync(userId, sessionId, cartItemId, dto.Quantity, cancellationToken: cancellationToken);
-        _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
-        return Ok(ApiResponse<CartDto>.Ok(cart, "Cart item updated successfully"));
+        var result = await _cartService.UpdateCartItemAsync(userId, sessionId, cartItemId, dto.Quantity, cancellationToken: cancellationToken);
+        
+        if (result is Result<CartDto>.Success success)
+        {
+            _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
+            return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart item updated successfully"));
+        }
+        
+        if (result is Result<CartDto>.Failure failure)
+        {
+            return MapFailureToResponse<CartDto>(failure);
+        }
+
+        return BadRequest(ApiResponse<CartDto>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -136,9 +182,20 @@ public class CartController : ControllerBase
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
-        var cart = await _cartService.RemoveFromCartAsync(userId, sessionId, cartItemId, cancellationToken: cancellationToken);
-        _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
-        return Ok(ApiResponse<CartDto>.Ok(cart, "Item removed from cart successfully"));
+        var result = await _cartService.RemoveFromCartAsync(userId, sessionId, cartItemId, cancellationToken: cancellationToken);
+        
+        if (result is Result<CartDto>.Success success)
+        {
+            _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
+            return Ok(ApiResponse<CartDto>.Ok(success.Data, "Item removed from cart successfully"));
+        }
+        
+        if (result is Result<CartDto>.Failure failure)
+        {
+            return MapFailureToResponse<CartDto>(failure);
+        }
+
+        return BadRequest(ApiResponse<CartDto>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -156,9 +213,20 @@ public class CartController : ControllerBase
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
-        var cart = await _cartService.ClearCartAsync(userId, sessionId, cancellationToken: cancellationToken);
-        _logger.LogInformation("Cart cleared");
-        return Ok(ApiResponse<CartDto>.Ok(cart, "Cart cleared successfully"));
+        var result = await _cartService.ClearCartAsync(userId, sessionId, cancellationToken: cancellationToken);
+        
+        if (result is Result<CartDto>.Success success)
+        {
+            _logger.LogInformation("Cart cleared");
+            return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart cleared successfully"));
+        }
+        
+        if (result is Result<CartDto>.Failure failure)
+        {
+            return MapFailureToResponse<CartDto>(failure);
+        }
+
+        return BadRequest(ApiResponse<CartDto>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -179,11 +247,18 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> ValidateCart(Guid cartId, CancellationToken cancellationToken)
     {
-        var cart = await _cartService.GetCartByIdAsync(cartId, cancellationToken: cancellationToken);
-        if (cart == null)
+        var cartResult = await _cartService.GetCartByIdAsync(cartId, cancellationToken: cancellationToken);
+        
+        if (cartResult is not Result<CartDto>.Success cartSuccess)
         {
-            return NotFound(ApiResponse<object>.Failure("Cart not found", "CART_NOT_FOUND"));
+            if (cartResult is Result<CartDto>.Failure cartFailure)
+            {
+                return MapCartFailureToResponse(cartFailure);
+            }
+            return BadRequest(ApiResponse<object>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
         }
+
+        var cart = cartSuccess.Data;
 
         // Check ownership: if cart belongs to a user, verify the current user owns it or is admin
         if (cart.UserId.HasValue)
@@ -200,8 +275,68 @@ public class CartController : ControllerBase
             }
         }
 
-        await _cartService.ValidateCartAsync(cartId, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<object>.Ok(new object(), "Cart is valid"));
+        var validateResult = await _cartService.ValidateCartAsync(cartId, cancellationToken: cancellationToken);
+        
+        if (validateResult is Result<Unit>.Success)
+        {
+            return Ok(ApiResponse<object>.Ok(new object(), "Cart is valid"));
+        }
+        
+        if (validateResult is Result<Unit>.Failure validateFailure)
+        {
+            return MapValidateFailureToResponse(validateFailure);
+        }
+
+        return BadRequest(ApiResponse<object>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
+    }
+
+    /// <summary>
+    /// Maps failure results to appropriate HTTP responses for CartDto operations.
+    /// </summary>
+    private ActionResult<ApiResponse<T>> MapFailureToResponse<T>(Result<T>.Failure failure)
+    {
+        return failure.Code switch
+        {
+            ErrorCodes.CartNotFound => NotFound(ApiResponse<T>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.CartItemNotFound => NotFound(ApiResponse<T>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.ProductNotFound => NotFound(ApiResponse<T>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.ProductNotAvailable => BadRequest(ApiResponse<T>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.InsufficientStock => BadRequest(ApiResponse<T>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.InvalidQuantity => BadRequest(ApiResponse<T>.Failure(failure.Message, failure.Code)),
+            _ => BadRequest(ApiResponse<T>.Failure(failure.Message, failure.Code))
+        };
+    }
+
+    /// <summary>
+    /// Maps failure results to appropriate HTTP responses for CartDto failures.
+    /// </summary>
+    private ActionResult<ApiResponse<object>> MapCartFailureToResponse(Result<CartDto>.Failure failure)
+    {
+        return failure.Code switch
+        {
+            ErrorCodes.CartNotFound => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.CartItemNotFound => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.ProductNotFound => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.ProductNotAvailable => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.InsufficientStock => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.InvalidQuantity => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            _ => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code))
+        };
+    }
+
+    /// <summary>
+    /// Maps failure results to appropriate HTTP responses for validation failures.
+    /// </summary>
+    private ActionResult<ApiResponse<object>> MapValidateFailureToResponse(Result<Unit>.Failure failure)
+    {
+        return failure.Code switch
+        {
+            ErrorCodes.CartNotFound => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.ProductNotFound => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.ProductNotAvailable => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.InsufficientStock => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            _ => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code))
+        };
     }
 }
 

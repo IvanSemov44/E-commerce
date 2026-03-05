@@ -5,6 +5,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Constants;
+using ECommerce.Core.Results;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -91,34 +92,34 @@ public class CategoryService : ICategoryService
         };
     }
 
-    public async Task<CategoryDetailDto> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<CategoryDetailDto>> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var category = await _unitOfWork.Categories.GetByIdAsync(id, trackChanges: false, cancellationToken: cancellationToken);
         if (category == null)
-            throw new CategoryNotFoundException(id);
+            return Result<CategoryDetailDto>.Fail(ErrorCodes.CategoryNotFound, $"Category with id '{id}' not found");
 
         var dto = _mapper.Map<CategoryDetailDto>(category);
         var productCount = await _unitOfWork.Categories.GetProductCountAsync(id, cancellationToken: cancellationToken);
-        return dto with { ProductCount = productCount };
+        return Result<CategoryDetailDto>.Ok(dto with { ProductCount = productCount });
     }
 
-    public async Task<CategoryDetailDto> GetCategoryBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    public async Task<Result<CategoryDetailDto>> GetCategoryBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var category = await _unitOfWork.Categories.GetBySlugAsync(slug, trackChanges: false, cancellationToken: cancellationToken);
         if (category == null)
-            throw new CategoryNotFoundException($"Category with slug '{slug}' not found");
+            return Result<CategoryDetailDto>.Fail(ErrorCodes.CategoryNotFound, $"Category with slug '{slug}' not found");
 
         var dto = _mapper.Map<CategoryDetailDto>(category);
         var productCount = await _unitOfWork.Categories.GetProductCountAsync(category.Id, cancellationToken: cancellationToken);
-        return dto with { ProductCount = productCount };
+        return Result<CategoryDetailDto>.Ok(dto with { ProductCount = productCount });
     }
 
-    public async Task<CategoryDetailDto> CreateCategoryAsync(CreateCategoryDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<CategoryDetailDto>> CreateCategoryAsync(CreateCategoryDto dto, CancellationToken cancellationToken = default)
     {
         // Validate slug uniqueness
         if (!await _unitOfWork.Categories.IsSlugUniqueAsync(dto.Slug, cancellationToken: cancellationToken))
         {
-            throw new DuplicateCategorySlugException(dto.Slug);
+            return Result<CategoryDetailDto>.Fail(ErrorCodes.DuplicateCategorySlug, $"Slug '{dto.Slug}' already exists");
         }
 
         var category = _mapper.Map<Category>(dto);
@@ -127,15 +128,15 @@ public class CategoryService : ICategoryService
         await _unitOfWork.Categories.AddAsync(category, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        return _mapper.Map<CategoryDetailDto>(category);
+        return Result<CategoryDetailDto>.Ok(_mapper.Map<CategoryDetailDto>(category));
     }
 
-    public async Task<CategoryDetailDto> UpdateCategoryAsync(Guid id, UpdateCategoryDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<CategoryDetailDto>> UpdateCategoryAsync(Guid id, UpdateCategoryDto dto, CancellationToken cancellationToken = default)
     {
         var category = await _unitOfWork.Categories.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (category == null)
         {
-            throw new CategoryNotFoundException(id);
+            return Result<CategoryDetailDto>.Fail(ErrorCodes.CategoryNotFound, $"Category with id '{id}' not found");
         }
 
         // Validate slug uniqueness if changed
@@ -143,7 +144,7 @@ public class CategoryService : ICategoryService
         {
             if (!await _unitOfWork.Categories.IsSlugUniqueAsync(dto.Slug, id, cancellationToken: cancellationToken))
             {
-                throw new DuplicateCategorySlugException(dto.Slug);
+                return Result<CategoryDetailDto>.Fail(ErrorCodes.DuplicateCategorySlug, $"Slug '{dto.Slug}' already exists");
             }
         }
 
@@ -153,23 +154,24 @@ public class CategoryService : ICategoryService
         _unitOfWork.Categories.Update(category);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        return _mapper.Map<CategoryDetailDto>(category);
+        return Result<CategoryDetailDto>.Ok(_mapper.Map<CategoryDetailDto>(category));
     }
 
-    public async Task DeleteCategoryAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> DeleteCategoryAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var category = await _unitOfWork.Categories.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (category == null)
-            throw new CategoryNotFoundException(id);
+            return Result<Unit>.Fail(ErrorCodes.CategoryNotFound, $"Category with id '{id}' not found");
 
         // Check if category has products
         var productCount = await _unitOfWork.Categories.GetProductCountAsync(id, cancellationToken: cancellationToken);
         if (productCount > 0)
         {
-            throw new CategoryHasProductsException(id);
+            return Result<Unit>.Fail(ErrorCodes.CategoryHasProducts, $"Category has {productCount} product(s) and cannot be deleted");
         }
 
         _unitOfWork.Categories.Delete(category);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        return Result<Unit>.Ok(new Unit());
     }
 }

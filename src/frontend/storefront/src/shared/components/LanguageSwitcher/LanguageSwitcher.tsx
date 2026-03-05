@@ -29,9 +29,11 @@ export function LanguageSwitcher({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Initialize mounted state
+  // Initialize mounted state (runs only once on mount)
   useEffect(() => {
-    setMounted(true);
+    // Using a flag to track mounting is acceptable for client-only hydration
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Close dropdown when clicking outside

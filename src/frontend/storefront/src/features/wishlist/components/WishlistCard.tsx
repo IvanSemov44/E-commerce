@@ -11,7 +11,7 @@ interface WishlistCardProps {
   image?: string;
 }
 
-export default function WishlistCard({ productId, productName, price: _price, image }: WishlistCardProps) {
+export default function WishlistCard({ productId, productName, image }: Omit<WishlistCardProps, 'price'>) {
   const { t } = useTranslation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const [addToCart] = useAddToCartMutation();

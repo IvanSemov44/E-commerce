@@ -25,7 +25,7 @@ export function useApiErrorHandler(): UseApiErrorHandlerReturn {
       error !== null &&
       'status' in error
     ) {
-      const apiError = error as any;
+      const apiError = error as FetchBaseQueryError & { data?: { message?: string; errors?: Record<string, unknown> } };
 
       // API response with message
       if (apiError.data?.message) {
