@@ -4,6 +4,7 @@ using ECommerce.Application.Interfaces;
 using ECommerce.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ECommerce.Core.Results;
 
 namespace ECommerce.API.Controllers;
 
@@ -87,9 +88,11 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> GetCategoryById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _categoryService.GetCategoryByIdAsync(id, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
-            return NotFound(ApiResponse<object>.Error(result.Message));
-        return Ok(ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category retrieved successfully"));
+        if (result is Result<CategoryDetailDto>.Success success)
+            return Ok(ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category retrieved successfully"));
+        if (result is Result<CategoryDetailDto>.Failure)
+            return NotFound(ApiResponse<object>.Error("Category not found"));
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
     /// <summary>
@@ -107,9 +110,11 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> GetCategoryBySlug(string slug, CancellationToken cancellationToken)
     {
         var result = await _categoryService.GetCategoryBySlugAsync(slug, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
-            return NotFound(ApiResponse<object>.Error(result.Message));
-        return Ok(ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category retrieved successfully"));
+        if (result is Result<CategoryDetailDto>.Success success)
+            return Ok(ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category retrieved successfully"));
+        if (result is Result<CategoryDetailDto>.Failure)
+            return NotFound(ApiResponse<object>.Error("Category not found"));
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
     /// <summary>
@@ -131,11 +136,15 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto, CancellationToken cancellationToken)
     {
         var result = await _categoryService.CreateCategoryAsync(dto, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
-            return Conflict(ApiResponse<object>.Error(result.Message));
-        _logger.LogInformation("Category created: {CategoryId}", result.Data.Id);
-        return CreatedAtAction(nameof(GetCategoryById), new { id = result.Data.Id },
-            ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category created successfully"));
+        if (result is Result<CategoryDetailDto>.Success success)
+        {
+            _logger.LogInformation("Category created: {CategoryId}", success.Data.Id);
+            return CreatedAtAction(nameof(GetCategoryById), new { id = success.Data.Id },
+                ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category created successfully"));
+        }
+        if (result is Result<CategoryDetailDto>.Failure failure)
+            return Conflict(ApiResponse<object>.Error(failure.Message));
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
     /// <summary>
@@ -160,14 +169,22 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryDto dto, CancellationToken cancellationToken)
     {
         var result = await _categoryService.UpdateCategoryAsync(id, dto, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
+        if (result is Result<CategoryDetailDto>.Success success)
         {
-            if (result.Code == "DUPLICATE_CATEGORY_SLUG")
-                return Conflict(ApiResponse<object>.Error(result.Message));
-            return NotFound(ApiResponse<object>.Error(result.Message));
+            _logger.LogInformation("Category updated: {CategoryId}", id);
+            return Ok(ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category updated successfully"));
         }
-        _logger.LogInformation("Category updated: {CategoryId}", id);
-        return Ok(ApiResponse<CategoryDetailDto>.Ok(result.Data, "Category updated successfully"));
+        if (result is Result<CategoryDetailDto>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "DUPLICATE_CATEGORY_SLUG" => StatusCodes.Status409Conflict,
+                "CATEGORY_NOT_FOUND" => StatusCodes.Status404NotFound,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+        }
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
     /// <summary>
@@ -189,12 +206,22 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken cancellationToken)
     {
         var result = await _categoryService.DeleteCategoryAsync(id, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
+        if (result is Result<ECommerce.Core.Results.Unit>.Success)
         {
-            if (result.Code == "CATEGORY_HAS_PRODUCTS")
-                return BadRequest(ApiResponse<object>.Error(result.Message));
-            return NotFound(ApiResponse<object>.Error(result.Message));
+            _logger.LogInformation("Category deleted: {CategoryId}", id);
+            return Ok(ApiResponse<object>.Ok(new object(), "Category deleted successfully"));
         }
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "CATEGORY_HAS_PRODUCTS" => StatusCodes.Status400BadRequest,
+                "CATEGORY_NOT_FOUND" => StatusCodes.Status404NotFound,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+        }
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
         _logger.LogInformation("Category deleted: {CategoryId}", id);
         return Ok(ApiResponse<object>.Ok(new object(), "Category deleted successfully"));
     }

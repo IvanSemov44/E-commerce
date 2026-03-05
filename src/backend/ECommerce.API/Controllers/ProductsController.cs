@@ -5,6 +5,7 @@ using ECommerce.Application.Services;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ECommerce.Core.Results;
 
 namespace ECommerce.API.Controllers;
 
@@ -79,9 +80,14 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var result = await _productService.GetProductByIdAsync(id, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
-            return NotFound(ApiResponse<object>.Error(result.Message));
-        return Ok(ApiResponse<ProductDetailDto>.Ok(result.Data, "Product retrieved successfully"));
+        
+        if (result is Result<ProductDetailDto>.Success success)
+            return Ok(ApiResponse<ProductDetailDto>.Ok(success.Data, "Product retrieved successfully"));
+        
+        if (result is Result<ProductDetailDto>.Failure)
+            return NotFound(ApiResponse<object>.Error("Product not found"));
+        
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
     /// <summary>
@@ -101,9 +107,14 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductBySlug([FromRoute] string slug, CancellationToken cancellationToken)
     {
         var result = await _productService.GetProductBySlugAsync(slug, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
-            return NotFound(ApiResponse<object>.Error(result.Message));
-        return Ok(ApiResponse<ProductDetailDto>.Ok(result.Data, "Product retrieved successfully"));
+        
+        if (result is Result<ProductDetailDto>.Success success)
+            return Ok(ApiResponse<ProductDetailDto>.Ok(success.Data, "Product retrieved successfully"));
+        
+        if (result is Result<ProductDetailDto>.Failure)
+            return NotFound(ApiResponse<object>.Error("Product not found"));
+        
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
 
@@ -131,12 +142,25 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto, CancellationToken cancellationToken)
     {
         var result = await _productService.CreateProductAsync(createProductDto, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
-            return Conflict(ApiResponse<object>.Error(result.Message));
-        _logger.LogInformation("Product created: {ProductId}", result.Data.Id);
+        
+        if (result is Result<ProductDetailDto>.Success success)
+        {
+            _logger.LogInformation("Product created: {ProductId}", success.Data.Id);
+            return CreatedAtAction(nameof(GetProductById), new { id = success.Data.Id },
+                ApiResponse<ProductDetailDto>.Ok(success.Data, "Product created successfully"));
+        }
 
-        return CreatedAtAction(nameof(GetProductById), new { id = result.Data.Id },
-            ApiResponse<ProductDetailDto>.Ok(result.Data, "Product created successfully"));
+        if (result is Result<ProductDetailDto>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "DUPLICATE_PRODUCT_SLUG" => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+        }
+
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
     /// <summary>
@@ -166,15 +190,25 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto, CancellationToken cancellationToken)
     {
         var result = await _productService.UpdateProductAsync(id, updateProductDto, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
+        
+        if (result is Result<ProductDetailDto>.Success success)
         {
-            if (result.Code == "DUPLICATE_PRODUCT_SLUG")
-                return Conflict(ApiResponse<object>.Error(result.Message));
-            return NotFound(ApiResponse<object>.Error(result.Message));
+            _logger.LogInformation("Product updated: {ProductId}", id);
+            return Ok(ApiResponse<ProductDetailDto>.Ok(success.Data, "Product updated successfully"));
         }
-        _logger.LogInformation("Product updated: {ProductId}", id);
 
-        return Ok(ApiResponse<ProductDetailDto>.Ok(result.Data, "Product updated successfully"));
+        if (result is Result<ProductDetailDto>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "DUPLICATE_PRODUCT_SLUG" => StatusCodes.Status409Conflict,
+                "PRODUCT_NOT_FOUND" => StatusCodes.Status404NotFound,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+        }
+
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 
     /// <summary>
@@ -198,11 +232,24 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> DeleteProduct([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var result = await _productService.DeleteProductAsync(id, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
-            return NotFound(ApiResponse<object>.Error(result.Message));
-        _logger.LogInformation("Product deleted: {ProductId}", id);
+        
+        if (result is Result<ECommerce.Core.Results.Unit>.Success)
+        {
+            _logger.LogInformation("Product deleted: {ProductId}", id);
+            return Ok(ApiResponse<object>.Ok(new object(), "Product deleted successfully"));
+        }
 
-        return Ok(ApiResponse<object>.Ok(new object(), "Product deleted successfully"));
+        if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "PRODUCT_NOT_FOUND" => StatusCodes.Status404NotFound,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Error(failure.Message));
+        }
+
+        return StatusCode(500, ApiResponse<object>.Error("Unknown error occurred"));
     }
 }
 

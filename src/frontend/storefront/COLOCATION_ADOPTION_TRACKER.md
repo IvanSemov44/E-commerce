@@ -54,6 +54,9 @@ Initial status is inferred from folder contents:
 | CartItemList | `src/features/cart/components/CartItemList` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | CartSummary | `src/features/cart/components/CartSummary` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | CheckoutAuthBanner | `src/features/checkout/components/CheckoutAuthBanner` | High | In Progress | - | tsx:1 css:1 test:0 idx:True |
+| CheckoutForm | `src/features/checkout/components/CheckoutForm` | High | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
+| OrderSuccess | `src/features/checkout/components/OrderSuccess` | High | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
+| OrderSummary | `src/features/checkout/components/OrderSummary` | High | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
 | ProductActions | `src/features/products/components/ProductActions` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | ProductCard | `src/features/products/components/ProductCard` | High | Not Started | - | tsx:2 css:1 test:1 idx:False |
 | ProductFilters | `src/features/products/components/ProductFilters` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
@@ -62,6 +65,14 @@ Initial status is inferred from folder contents:
 | ProductInfo | `src/features/products/components/ProductInfo` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | ProductSearchBar | `src/features/products/components/ProductSearchBar` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | OrderCard | `src/features/orders/components/OrderCard` | Medium | In Progress | - | tsx:1 css:1 test:0 idx:True |
+| OrderHeader | `src/features/orders/components/OrderHeader` | Medium | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
+| OrderItemsList | `src/features/orders/components/OrderItemsList` | Medium | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
+| OrderTotals | `src/features/orders/components/OrderTotals` | Medium | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
+| ShippingAddress | `src/features/orders/components/ShippingAddress` | Medium | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
+| AccountDetails | `src/features/profile/components/AccountDetails` | Medium | **Migrated** | ✅ | tsx:1 css:1 test:0 idx:True types:True |
+| ProfileForm | `src/features/profile/components/ProfileForm` | Medium | **Migrated** | ✅ | tsx:1 css:1 test:0 idx:True types:True |
+| ProfileHeader | `src/features/profile/components/ProfileHeader` | Medium | **Migrated** | ✅ | tsx:1 css:1 test:0 idx:True types:True |
+| ProfileMessages | `src/features/profile/components/ProfileMessages` | Medium | **Migrated** | ✅ | tsx:1 css:1 test:0 idx:True types:True |
 
 ## Flat Components to Split into Folders
 
@@ -69,15 +80,15 @@ These files are currently directly under feature `components/` roots and should 
 
 | Component | Current Location | Priority | Target Status |
 |---|---|---:|---|
-| CheckoutForm | `src/features/checkout/components/CheckoutForm.tsx` | High | Move to folder |
-| OrderSuccess | `src/features/checkout/components/OrderSuccess.tsx` | High | Move to folder |
-| OrderSummary | `src/features/checkout/components/OrderSummary.tsx` | High | Move to folder |
-| OrderHeader | `src/features/orders/components/OrderHeader.tsx` | Medium | Move to folder |
-| OrderItemsList | `src/features/orders/components/OrderItemsList.tsx` | Medium | Move to folder |
-| OrderTotals | `src/features/orders/components/OrderTotals.tsx` | Medium | Move to folder |
-| ShippingAddress | `src/features/orders/components/ShippingAddress.tsx` | Medium | Move to folder |
-| AccountDetails | `src/features/profile/components/AccountDetails.tsx` | Medium | Move to folder |
-| ProfileForm | `src/features/profile/components/ProfileForm.tsx` | Medium | Move to folder |
+| CartItem | `src/features/cart/components/CartItem.tsx` | High | Move to folder ✅ **DONE** |
+| OrderSuccess | `src/features/checkout/components/OrderSuccess.tsx` | High | Move to folder ✅ **DONE** |
+| OrderSummary | `src/features/checkout/components/OrderSummary.tsx` | High | Move to folder ✅ **DONE** |
+| OrderHeader | `src/features/orders/components/OrderHeader.tsx` | Medium | Move to folder ✅ **DONE** |
+| OrderItemsList | `src/features/orders/components/OrderItemsList.tsx` | Medium | Move to folder ✅ **DONE** |
+| OrderTotals | `src/features/orders/components/OrderTotals.tsx` | Medium | Move to folder ✅ **DONE** |
+| ShippingAddress | `src/features/orders/components/ShippingAddress.tsx` | Medium | Move to folder ✅ **DONE** |
+| AccountDetails | `src/features/profile/components/AccountDetails.tsx` | Medium | Move to folder ✅ **DONE** |
+| ProfileForm | `src/features/profile/components/ProfileForm.tsx` | Medium | Move to folder ✅ **DONE** |
 | ProfileHeader | `src/features/profile/components/ProfileHeader.tsx` | Medium | Move to folder |
 | ProfileMessages | `src/features/profile/components/ProfileMessages.tsx` | Medium | Move to folder |
 | WishlistCard | `src/features/wishlist/components/WishlistCard.tsx` | Medium | Move to folder |

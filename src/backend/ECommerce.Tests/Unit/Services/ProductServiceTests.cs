@@ -132,8 +132,11 @@ public class ProductServiceTests
         var result = await _service.CreateProductAsync(dto);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Slug.Should().Be(dto.Slug);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<ProductDetailDto>.Success success)
+        {
+            success.Data.Slug.Should().Be(dto.Slug);
+        }
         _mockProductRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
@@ -144,7 +147,7 @@ public class ProductServiceTests
         // Arrange
         var dto = new CreateProductDto { Name = "Dup", Slug = "dup", Price = 5 };
 
-        _mockProductRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, It.IsAny<Guid?())
+        _mockProductRepository.Setup(r => r.IsSlugUniqueAsync(dto.Slug, It.IsAny<Guid?>()))
             .ReturnsAsync(false);
 
         // Act

@@ -1,9 +1,7 @@
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
-import Button from '@/shared/components/ui/Button';
 import Card from '@/shared/components/ui/Card';
-import EmptyState from '@/shared/components/EmptyState';
+import EmptyState from '@/shared/components/ui/EmptyState';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import TrustSignals from '@/shared/components/TrustSignals';
 import CheckoutForm from '@/features/checkout/components/CheckoutForm';
@@ -43,13 +41,11 @@ export default function CheckoutPage() {
       <div className={styles.container}>
         <div className={styles.successContent}>
           <EmptyState
+            icon="cart"
             title={t('cart.emptyCart')}
             description={t('checkout.addItemsBeforeCheckout')}
-            action={
-              <Link to="/products">
-                <Button size="lg">{t('products.browseProducts')}</Button>
-              </Link>
-            }
+            actionLabel={t('products.browseProducts')}
+            onAction={() => window.location.href = '/products'}
           />
         </div>
       </div>
