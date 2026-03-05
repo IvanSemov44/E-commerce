@@ -42,18 +42,22 @@ const productApiSlice = baseApi.injectEndpoints({
       },
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>
         response.data || { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0, hasNext: false, hasPrevious: false },
+      providesTags: ['Products'],
     }),
     getProductBySlug: builder.query<ProductDetail, string>({
       query: (slug) => `/products/slug/${slug}`,
       transformResponse: (response: ApiResponse<ProductDetail>) => response.data || {} as ProductDetail,
+      providesTags: ['Products'],
     }),
     getProductById: builder.query<ProductDetail, string>({
       query: (id) => `/products/${id}`,
       transformResponse: (response: ApiResponse<ProductDetail>) => response.data || {} as ProductDetail,
+      providesTags: ['Products'],
     }),
     getFeaturedProducts: builder.query<Product[], number>({
       query: (count = 10) => `/products/featured?count=${count}`,
       transformResponse: (response: ApiResponse<Product[]>) => response.data || [],
+      providesTags: ['Products'],
     }),
   }),
 });

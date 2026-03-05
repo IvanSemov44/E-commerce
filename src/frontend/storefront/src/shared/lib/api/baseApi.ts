@@ -54,6 +54,6 @@ export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
   keepUnusedDataFor: 60,
-  tagTypes: ['Cart', 'Order', 'Profile', 'Review', 'Wishlist', 'WishlistCheck', 'Categories'],
+  tagTypes: ['Cart', 'Order', 'Profile', 'Review', 'Wishlist', 'WishlistCheck', 'Categories', 'Products', 'User', 'Auth'],
   endpoints: () => ({}),
 });
