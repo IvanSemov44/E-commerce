@@ -4,11 +4,11 @@ using ECommerce.Application.DTOs.Auth;
 namespace ECommerce.Application.Validators.Auth;
 
 /// <summary>
-/// Validator for ForgotPasswordRequest - initiates password recovery flow.
+/// Validator for ForgotPasswordDto - initiates password recovery flow.
 /// </summary>
-public class ForgotPasswordRequestValidator : AbstractValidator<ForgotPasswordRequest>
+public class ForgotPasswordDtoValidator : AbstractValidator<ForgotPasswordDto>
 {
-    public ForgotPasswordRequestValidator()
+    public ForgotPasswordDtoValidator()
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")

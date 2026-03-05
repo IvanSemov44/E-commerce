@@ -1,33 +1,12 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
-import { useApiErrorHandler } from '@/shared/hooks';
-import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
-import {
-  useAddToWishlistMutation,
-  useRemoveFromWishlistMutation,
-  useCheckInWishlistQuery,
-} from '@/features/wishlist/api';
-import { useAddToCartMutation } from '@/features/cart/api';
+import { useAppSelector } from '@/shared/lib/store';
+import { useCheckInWishlistQuery } from '@/features/wishlist/api';
+import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
+import type { ProductCardProps } from './ProductCard.types';
+import { DEFAULT_PRODUCT_IMAGE } from './ProductCard.types';
+import { useWishlistToggle, useAddToCart, useImageError } from './ProductCard.hooks';
 import styles from './ProductCard.module.css';
-
-/**
- * ProductCard Props Interface
- */
-interface ProductCardProps {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  compareAtPrice?: number;
-  imageUrl: string;
-  rating?: number;
-  reviewCount?: number;
-  stockQuantity?: number;
-}
-
-const DEFAULT_PRODUCT_IMAGE = 'https://placehold.co/400x400/f1f5f9/64748b?text=Product';
 
 /**
  * ProductCard Component
@@ -51,8 +30,6 @@ const ProductCard = memo(function ProductCard({
   stockQuantity = 99,
 }: ProductCardProps) {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const dispatch = useAppDispatch();
-  const { handleError } = useApiErrorHandler();
   
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -64,9 +41,8 @@ const ProductCard = memo(function ProductCard({
     refetchOnMountOrArgChange: false,
   });
   
-  const [addToWishlist, { isLoading: isAddingToWishlist }] = useAddToWishlistMutation();
-  const [removeFromWishlist, { isLoading: isRemovingFromWishlist }] = useRemoveFromWishlistMutation();
-  const [addToCartBackend] = useAddToCartMutation();
+  const [, { isLoading: isAddingToWishlist }] = useAddToWishlistMutation();
+  const [, { isLoading: isRemovingFromWishlist }] = useRemoveFromWishlistMutation();
   
   const isWishlistLoading = isAddingToWishlist || isRemovingFromWishlist;
 
@@ -78,67 +54,28 @@ const ProductCard = memo(function ProductCard({
   const showDiscountBadge = discountPercentage >= 10;
   const isInStock = stockQuantity > 0;
 
-  // Handlers
-  const handleWishlistToggle = useCallback(async (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
+  // Custom hooks
+  const { handleWishlistToggle } = useWishlistToggle({
+    id,
+    isAuthenticated,
+    isInWishlist,
+    isWishlistLoading,
+    refetchWishlist,
+  });
 
-    if (!isAuthenticated) {
-      toast.error('Please sign in to add items to your wishlist');
-      return;
-    }
+  const { handleAddToCart } = useAddToCart({
+    id,
+    name,
+    slug,
+    price,
+    imageUrl,
+    stockQuantity,
+    isInStock,
+    isAuthenticated,
+    setIsAddingToCart,
+  });
 
-    if (isWishlistLoading) return;
-
-    try {
-      if (isInWishlist) {
-        await removeFromWishlist(id).unwrap();
-        toast.success('Removed from wishlist');
-      } else {
-        await addToWishlist(id).unwrap();
-        toast.success('Added to wishlist');
-      }
-      refetchWishlist();
-    } catch (err) {
-      handleError(err, 'Failed to update wishlist');
-    }
-  }, [id, isAuthenticated, isInWishlist, isWishlistLoading, addToWishlist, removeFromWishlist, refetchWishlist]);
-
-  const handleAddToCart = useCallback(async (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!isInStock) {
-      toast.error('This item is out of stock');
-      return;
-    }
-
-    setIsAddingToCart(true);
-
-    try {
-      if (isAuthenticated) {
-        await addToCartBackend({ productId: id, quantity: 1 }).unwrap();
-      } else {
-        const cartItem: CartItem = {
-          id,
-          name,
-          slug,
-          price,
-          quantity: 1,
-          maxStock: stockQuantity,
-          image: imageUrl || DEFAULT_PRODUCT_IMAGE,
-        };
-        dispatch(addItem(cartItem));
-      }
-      toast.success('Added to cart!', { icon: '🛒' });
-    } catch (err) {
-      handleError(err, 'Failed to add to cart');
-    } finally {
-      setTimeout(() => setIsAddingToCart(false), 300);
-    }
-  }, [id, name, slug, price, imageUrl, stockQuantity, isInStock, isAuthenticated, addToCartBackend, dispatch]);
-
-  const handleImageError = useCallback(() => setImageError(true), []);
+  const { handleImageError } = useImageError(setImageError);
 
   const imageSrc = imageError ? DEFAULT_PRODUCT_IMAGE : (imageUrl || DEFAULT_PRODUCT_IMAGE);
 

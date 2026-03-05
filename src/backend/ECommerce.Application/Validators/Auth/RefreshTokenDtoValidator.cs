@@ -4,11 +4,11 @@ using ECommerce.Application.DTOs.Auth;
 namespace ECommerce.Application.Validators.Auth;
 
 /// <summary>
-/// Validator for RefreshTokenRequest - ensures valid token is provided.
+/// Validator for RefreshTokenDto - ensures valid token is provided.
 /// </summary>
-public class RefreshTokenRequestValidator : AbstractValidator<RefreshTokenRequest>
+public class RefreshTokenDtoValidator : AbstractValidator<RefreshTokenDto>
 {
-    public RefreshTokenRequestValidator()
+    public RefreshTokenDtoValidator()
     {
         // Token is REQUIRED - must be provided (not null)
         // If null, it means the property was missing from the JSON

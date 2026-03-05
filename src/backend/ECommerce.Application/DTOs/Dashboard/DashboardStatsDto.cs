@@ -9,15 +9,3 @@ public record DashboardStatsDto
     public List<OrderTrendDto> OrdersTrend { get; init; } = new();
     public List<RevenueTrendDto> RevenueTrend { get; init; } = new();
 }
-
-public record OrderTrendDto
-{
-    public string Date { get; init; } = null!;
-    public int Count { get; init; }
-}
-
-public record RevenueTrendDto
-{
-    public string Date { get; init; } = null!;
-    public decimal Amount { get; init; }
-}

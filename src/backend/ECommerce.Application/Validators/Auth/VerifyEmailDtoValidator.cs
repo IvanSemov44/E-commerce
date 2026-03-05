@@ -4,11 +4,11 @@ using ECommerce.Application.DTOs.Auth;
 namespace ECommerce.Application.Validators.Auth;
 
 /// <summary>
-/// Validator for VerifyEmailRequest - validates email verification tokens.
+/// Validator for VerifyEmailDto - validates email verification tokens.
 /// </summary>
-public class VerifyEmailRequestValidator : AbstractValidator<VerifyEmailRequest>
+public class VerifyEmailDtoValidator : AbstractValidator<VerifyEmailDto>
 {
-    public VerifyEmailRequestValidator()
+    public VerifyEmailDtoValidator()
     {
         RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("User ID is required");

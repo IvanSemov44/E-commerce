@@ -4,11 +4,11 @@ using ECommerce.Application.DTOs.Auth;
 namespace ECommerce.Application.Validators.Auth;
 
 /// <summary>
-/// Validator for ChangePasswordRequest - validates authenticated password changes.
+/// Validator for ChangePasswordDto - validates authenticated password changes.
 /// </summary>
-public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequest>
+public class ChangePasswordDtoValidator : AbstractValidator<ChangePasswordDto>
 {
-    public ChangePasswordRequestValidator()
+    public ChangePasswordDtoValidator()
     {
         RuleFor(x => x.OldPassword)
             .NotEmpty().WithMessage("Current password is required");

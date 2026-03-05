@@ -134,6 +134,11 @@ All DTOs must follow these structure rules:
     - Query params: `{Entity}QueryParameters`
     - Special request payloads: `{Action}{Entity}RequestDto`
 
+5. **Class vs record usage (direction-based)**
+    - **Request/Write DTOs** should be `class` (model binding + validation-friendly)
+    - **Response/Read DTOs** should be `record` (immutable/value-style contract)
+    - Apply consistently per feature unless there is a documented exception.
+
 Why this is mandatory:
 - Prevents over-posting/mass assignment vulnerabilities
 - Keeps API contracts explicit and versionable

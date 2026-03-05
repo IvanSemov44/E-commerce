@@ -4,11 +4,11 @@ using ECommerce.Application.DTOs.Auth;
 namespace ECommerce.Application.Validators.Auth;
 
 /// <summary>
-/// Validator for ResetPasswordRequest - validates password reset with token.
+/// Validator for ResetPasswordDto - validates password reset with token.
 /// </summary>
-public class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
+public class ResetPasswordDtoValidator : AbstractValidator<ResetPasswordDto>
 {
-    public ResetPasswordRequestValidator()
+    public ResetPasswordDtoValidator()
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")

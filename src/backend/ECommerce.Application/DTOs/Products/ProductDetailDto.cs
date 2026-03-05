@@ -1,6 +1,6 @@
 namespace ECommerce.Application.DTOs.Products;
 
-public record ProductDto
+public record ProductDetailDto
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = null!;
@@ -14,4 +14,9 @@ public record ProductDto
     public ProductCategoryDto? Category { get; init; }
     public decimal AverageRating { get; init; }
     public int ReviewCount { get; init; }
+    public string? Description { get; init; }
+    public string? Sku { get; init; }
+    public int LowStockThreshold { get; init; }
+    public bool IsActive { get; init; }
+    public List<ProductReviewDto> Reviews { get; init; } = new();
 }

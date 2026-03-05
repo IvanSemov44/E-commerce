@@ -320,7 +320,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailDto request, CancellationToken cancellationToken)
     {
         var result = await _authService.VerifyEmailAsync(request.UserId, request.Token, cancellationToken: cancellationToken);
         
@@ -360,7 +360,7 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("PasswordResetLimit")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordDto request, CancellationToken cancellationToken)
     {
         var result = await _authService.GeneratePasswordResetTokenAsync(request.Email, cancellationToken: cancellationToken);
 
@@ -385,7 +385,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordDto request, CancellationToken cancellationToken)
     {
         var result = await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword, cancellationToken: cancellationToken);
         
