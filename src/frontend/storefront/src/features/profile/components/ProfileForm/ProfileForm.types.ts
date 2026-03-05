@@ -2,8 +2,8 @@ export interface ProfileFormData {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
-  avatarUrl: string;
+  phone?: string;
+  avatarUrl?: string;
 }
 
 export interface ProfileFormProps {
