@@ -4,7 +4,7 @@ import { useLoginMutation } from '../api/authApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '../slices/authSlice';
 import useForm from '@/shared/hooks/useForm';
-import { useToast } from '@/shared/hooks/useToast';
+import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './Login.module.css';
 
@@ -14,6 +14,7 @@ export default function Login() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { handleError } = useApiErrorHandler();
 
   const form = useForm({
     initialValues: { email: '', password: '' },
@@ -33,9 +34,8 @@ export default function Login() {
         } else {
           toast.error(response.message || t('auth.loginError'));
         }
-      } catch (err: unknown) {
-        const error = err as { data?: { message?: string } };
-        toast.error(error?.data?.message || t('auth.loginError'));
+      } catch (err) {
+        handleError(err, t('auth.loginError'));
       }
     },
   });

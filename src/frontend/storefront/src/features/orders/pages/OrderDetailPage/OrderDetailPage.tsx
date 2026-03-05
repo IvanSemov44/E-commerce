@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import toast from 'react-hot-toast';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/features/orders/api/ordersApi';
+import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import LoadingSkeleton from '@/shared/components/LoadingSkeleton';
@@ -15,6 +15,7 @@ export default function OrderDetailPage() {
   const { data: order, isLoading, error } = useGetOrderByIdQuery(orderId || '', {
     skip: !orderId,
   });
+  const { handleError } = useApiErrorHandler();
 
   const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
 
@@ -35,8 +36,8 @@ export default function OrderDetailPage() {
       try {
         await cancelOrder(orderId).unwrap();
         navigate('/orders');
-      } catch {
-        toast.error(t('orders.failedToCancel'));
+      } catch (err) {
+        handleError(err, t('orders.failedToCancel'));
       }
     }
   };

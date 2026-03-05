@@ -12,15 +12,3 @@ public record WishlistItemDto
     public bool IsAvailable { get; init; }
     public DateTime AddedAt { get; init; }
 }
-
-public record WishlistDto
-{
-    public Guid Id { get; init; }
-    public List<WishlistItemDto> Items { get; init; } = new();
-    public int ItemCount { get; init; }
-}
-
-public class AddToWishlistDto
-{
-    public Guid ProductId { get; set; }
-}

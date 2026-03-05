@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useResetPasswordMutation } from '../api/authApi';
-import { useToast } from '@/shared/hooks/useToast';
+import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './ResetPassword.module.css';
 
@@ -15,6 +15,7 @@ export default function ResetPassword() {
   const [success, setSuccess] = useState(false);
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
   const { toast } = useToast();
+  const { handleError } = useApiErrorHandler();
 
   const email = searchParams.get('email') || '';
   const token = searchParams.get('token') || '';
@@ -46,9 +47,8 @@ export default function ResetPassword() {
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-    } catch (err: unknown) {
-      const error = err as { data?: { message?: string } };
-      toast.error(error?.data?.message || t('resetPassword.failed'));
+    } catch (err) {
+      handleError(err, t('resetPassword.failed'));
     }
   };
 

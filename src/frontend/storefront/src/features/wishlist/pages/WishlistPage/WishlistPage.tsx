@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useGetWishlistQuery, useRemoveFromWishlistMutation } from '@/features/wishlist/api/wishlistApi';
 import { useAddToCartMutation } from '@/features/cart/api/cartApi';
+import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '@/shared/components/ui/Button';
 import EmptyState from '@/shared/components/EmptyState';
 import QueryRenderer from '@/shared/components/QueryRenderer';
@@ -13,12 +14,13 @@ export default function WishlistPage() {
   const { data: wishlist, isLoading, error } = useGetWishlistQuery();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const [addToCart] = useAddToCartMutation();
+  const { handleError } = useApiErrorHandler();
 
   const handleRemove = async (productId: string) => {
     try {
       await removeFromWishlist(productId).unwrap();
     } catch (err) {
-      console.error('Failed to remove from wishlist:', err);
+      handleError(err, t('common.errorOccurred'));
     }
   };
 
@@ -26,7 +28,7 @@ export default function WishlistPage() {
     try {
       await addToCart({ productId, quantity }).unwrap();
     } catch (err) {
-      console.error('Failed to add to cart:', err);
+      handleError(err, t('common.errorOccurred'));
     }
   };
 

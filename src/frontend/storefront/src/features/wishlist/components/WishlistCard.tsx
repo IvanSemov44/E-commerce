@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useRemoveFromWishlistMutation } from '../api/wishlistApi';
 import { useAddToCartMutation } from '@/features/cart/api/cartApi';
+import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '@/shared/components/ui/Button';
 import styles from './WishlistCard.module.css';
 
@@ -15,12 +16,13 @@ export default function WishlistCard({ productId, productName, image }: Omit<Wis
   const { t } = useTranslation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const [addToCart] = useAddToCartMutation();
+  const { handleError } = useApiErrorHandler();
 
   const handleRemove = async () => {
     try {
       await removeFromWishlist(productId).unwrap();
     } catch (err) {
-      console.error('Failed to remove from wishlist:', err);
+      handleError(err, t('common.errorOccurred'));
     }
   };
 
@@ -28,7 +30,7 @@ export default function WishlistCard({ productId, productName, image }: Omit<Wis
     try {
       await addToCart({ productId, quantity: 1 }).unwrap();
     } catch (err) {
-      console.error('Failed to add to cart:', err);
+      handleError(err, t('common.errorOccurred'));
     }
   };
 

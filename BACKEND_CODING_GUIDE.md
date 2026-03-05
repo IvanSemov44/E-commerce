@@ -4,9 +4,9 @@
 
 ---
 
-## 🚀 Quick Start: 10 Mandatory Rules (Read This First)
+## 🚀 Quick Start: 11 Mandatory Rules (Read This First)
 
-Every backend contribution **MUST** follow these 10 rules. When in doubt, reference the detailed sections below.
+Every backend contribution **MUST** follow these 11 rules. When in doubt, reference the detailed sections below.
 
 ### **1. Feature Delivery Order (MUST)**
 Follow this sequence **always**:
@@ -101,7 +101,46 @@ var existingProduct = await _unitOfWork.Products.GetBySlugAsync(dto.Slug, ct);
 if (existingProduct != null) throw new DuplicateProductSlugException(dto.Slug);
 ```
 
-### **6. Structured Logging (MUST)**
+### **6. DTO Organization & Direction Separation (MUST)**
+All DTOs must follow these structure rules:
+
+1. **One DTO per file**
+    - Do not place multiple unrelated DTO classes in one file.
+    - File name must match DTO name exactly.
+
+2. **One feature folder for all related DTOs**
+    - Place DTOs under `Application/DTOs/{Feature}/`.
+    - Example:
+    ```
+    DTOs/
+      Products/
+         ProductDto.cs
+         ProductDetailDto.cs
+         CreateProductDto.cs
+         UpdateProductDto.cs
+         ProductQueryParameters.cs
+    ```
+
+3. **Separate DTOs by direction (request vs response)**
+    - **Request/Write DTOs**: input from client (`CreateProductDto`, `UpdateProductDto`, `ValidatePromoCodeRequestDto`)
+    - **Response/Read DTOs**: output to client (`ProductDto`, `ProductDetailDto`, `ValidatePromoCodeDto`)
+    - Never reuse the same DTO type for both directions except in rare, documented cases.
+
+4. **Naming conventions**
+    - List/read: `{Entity}Dto`
+    - Detail/read: `{Entity}DetailDto`
+    - Create/write: `Create{Entity}Dto`
+    - Update/write: `Update{Entity}Dto`
+    - Query params: `{Entity}QueryParameters`
+    - Special request payloads: `{Action}{Entity}RequestDto`
+
+Why this is mandatory:
+- Prevents over-posting/mass assignment vulnerabilities
+- Keeps API contracts explicit and versionable
+- Enables independent validation for input vs output
+- Reduces accidental breaking changes
+
+### **7. Structured Logging (MUST)**
 Use named placeholders, never string interpolation. Log semantic context.
 ```csharp
 // ✅ GOOD
@@ -114,7 +153,7 @@ _logger.LogInformation($"Order {order.Id} created");  // Lost structure
 
 **Never log**: passwords, tokens, credit cards, emails (as plaintext), API keys.
 
-### **7. Error Handling (MUST)**
+### **8. Error Handling (MUST)**
 Use one pattern per endpoint/service flow and keep it consistent:
 - **Typed exceptions + middleware mapping** for unexpected/infrastructure failures and cross-cutting HTTP mapping
 - **`Result<T>`** for predictable business failure paths (validation/state/ownership decisions)
@@ -141,7 +180,7 @@ if (order.UserId != _currentUser.UserId) throw new ForbiddenException("Not your 
 // 422 for ValidationException
 ```
 
-### **8. Authorization (MUST)**
+### **9. Authorization (MUST)**
 - Class-level `[Authorize]` with `[AllowAnonymous]` overrides
 - Role checks: `[Authorize(Roles = "Admin,SuperAdmin")]`
 - Ownership checks in service layer (never controller)
@@ -163,7 +202,7 @@ public class OrdersController : ControllerBase
 }
 ```
 
-### **9. Concurrency Safety (MUST for frequently-updated entities)**
+### **10. Concurrency Safety (MUST for frequently-updated entities)**
 Add `[Timestamp]` to Order, Cart, and similar entities. Catch `DbUpdateConcurrencyException`:
 ```csharp
 public class Order
@@ -192,7 +231,7 @@ catch (OrderConcurrencyException ex)
 }
 ```
 
-### **10. Migrations are Immutable (MUST)**
+### **11. Migrations are Immutable (MUST)**
 After `dotnet ef migrations add` and push, **never edit** the migration file. Always create a new one.
 ```csharp
 // ✅ DO THIS

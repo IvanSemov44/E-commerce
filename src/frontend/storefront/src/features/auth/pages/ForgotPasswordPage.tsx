@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForgotPasswordMutation } from '../api/authApi';
-import { useToast } from '@/shared/hooks/useToast';
+import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './ForgotPassword.module.css';
 
@@ -12,6 +12,7 @@ export default function ForgotPassword() {
   const [success, setSuccess] = useState(false);
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const { toast } = useToast();
+  const { handleError } = useApiErrorHandler();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,9 +21,8 @@ export default function ForgotPassword() {
       await forgotPassword({ email }).unwrap();
       setSuccess(true);
       toast.success(t('forgotPassword.resetLinkSent'));
-    } catch (err: unknown) {
-      const error = err as { data?: { message?: string } };
-      toast.error(error?.data?.message || t('common.error'));
+    } catch (err) {
+      handleError(err, t('common.error'));
     }
   };
 

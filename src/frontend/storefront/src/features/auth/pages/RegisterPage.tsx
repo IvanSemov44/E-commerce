@@ -4,7 +4,7 @@ import { useRegisterMutation } from '../api/authApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '../slices/authSlice';
 import useForm from '@/shared/hooks/useForm';
-import { useToast } from '@/shared/hooks/useToast';
+import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './Register.module.css';
 
@@ -14,6 +14,7 @@ export default function Register() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { handleError } = useApiErrorHandler();
 
   const form = useForm({
     initialValues: {
@@ -47,9 +48,8 @@ export default function Register() {
         } else {
           toast.error(response.message || t('auth.registrationFailed'));
         }
-      } catch (err: unknown) {
-        const error = err as { data?: { message?: string } };
-        toast.error(error?.data?.message || t('auth.registrationError'));
+      } catch (err) {
+        handleError(err, t('auth.registrationError'));
       }
     },
   });

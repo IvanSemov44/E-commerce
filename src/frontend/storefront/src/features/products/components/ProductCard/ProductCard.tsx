@@ -2,6 +2,7 @@ import { memo, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
+import { useApiErrorHandler } from '@/shared/hooks';
 import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
 import {
   useAddToWishlistMutation,
@@ -51,6 +52,7 @@ const ProductCard = memo(function ProductCard({
 }: ProductCardProps) {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
+  const { handleError } = useApiErrorHandler();
   
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -97,8 +99,8 @@ const ProductCard = memo(function ProductCard({
         toast.success('Added to wishlist');
       }
       refetchWishlist();
-    } catch {
-      toast.error('Failed to update wishlist');
+    } catch (err) {
+      handleError(err, 'Failed to update wishlist');
     }
   }, [id, isAuthenticated, isInWishlist, isWishlistLoading, addToWishlist, removeFromWishlist, refetchWishlist]);
 
@@ -129,8 +131,8 @@ const ProductCard = memo(function ProductCard({
         dispatch(addItem(cartItem));
       }
       toast.success('Added to cart!', { icon: '🛒' });
-    } catch {
-      toast.error('Failed to add to cart');
+    } catch (err) {
+      handleError(err, 'Failed to add to cart');
     } finally {
       setTimeout(() => setIsAddingToCart(false), 300);
     }

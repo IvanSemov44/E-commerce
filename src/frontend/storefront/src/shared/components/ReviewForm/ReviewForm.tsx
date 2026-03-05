@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useCreateReviewMutation } from '@/features/products/api/reviewsApi';
 import { useTranslation } from 'react-i18next';
+import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import ErrorAlert from '../ErrorAlert';
 import StarRating from '../StarRating';
 
 import styles from './ReviewForm.module.css';
@@ -17,8 +17,9 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
-  const [createReview, { isLoading, error }] = useCreateReviewMutation();
+  const [createReview, { isLoading }] = useCreateReviewMutation();
   const { t } = useTranslation();
+  const { handleError } = useApiErrorHandler();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,16 +41,14 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
       setComment('');
 
       onSuccess?.();
-    } catch {
-      // Error handled by error state
+    } catch (err) {
+      handleError(err, t('common.errorOccurred'));
     }
   };
 
   return (
     <Card variant="bordered" padding="lg">
       <h3 className={styles.title}>{t('products.writeReview')}</h3>
-
-      {error && <ErrorAlert message={t('products.failedToSubmitReview')} />}
 
       <form onSubmit={handleSubmit}>
         <div className={styles.formGroup}>
