@@ -1,7 +1,7 @@
 // CheckoutForm component - migrated from pages/components/Checkout/CheckoutForm.tsx
 
 import { useTranslation } from 'react-i18next';
-import Button from '../../../shared/components/ui/Button';
+import Button from '@/shared/components/ui/Button';
 
 interface ShippingFormData {
   firstName: string;

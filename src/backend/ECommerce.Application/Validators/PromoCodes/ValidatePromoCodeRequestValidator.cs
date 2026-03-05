@@ -4,11 +4,11 @@ using ECommerce.Application.DTOs.PromoCodes;
 namespace ECommerce.Application.Validators.PromoCodes;
 
 /// <summary>
-/// Validator for ValidatePromoCodeRequest - validates promo code verification requests.
+/// Validator for ValidatePromoCodeRequestDto - validates promo code verification requests.
 /// </summary>
-public class ValidatePromoCodeRequestValidator : AbstractValidator<ValidatePromoCodeRequest>
+public class ValidatePromoCodeRequestDtoValidator : AbstractValidator<ValidatePromoCodeRequestDto>
 {
-    public ValidatePromoCodeRequestValidator()
+    public ValidatePromoCodeRequestDtoValidator()
     {
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("Promo code is required")

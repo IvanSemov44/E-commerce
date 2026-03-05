@@ -195,7 +195,7 @@ public class PromoCodesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ValidatePromoCodeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ValidatePromoCode([FromBody] ValidatePromoCodeRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ValidatePromoCode([FromBody] ValidatePromoCodeRequestDto request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Validating promo code: {Code}", request.Code);
 

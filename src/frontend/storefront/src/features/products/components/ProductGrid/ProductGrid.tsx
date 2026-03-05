@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import ProductCard from '../ProductCard/ProductCard';
-import PaginatedView from '../../../../shared/components/PaginatedView';
+import PaginatedView from '@/shared/components/PaginatedView';
 import type { Product } from '@/shared/types';
 import styles from './ProductGrid.module.css';
 

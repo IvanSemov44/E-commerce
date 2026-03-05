@@ -34,7 +34,7 @@ public class PromoCodesControllerTests
 
     /// <summary>
     /// Tests JSON deserialization with camelCase property names (frontend format).
-    /// Verifies the fix for ValidatePromoCodeRequest [JsonPropertyName] attributes.
+    /// Verifies the fix for ValidatePromoCodeRequestDto [JsonPropertyName] attributes.
     /// </summary>
     [TestMethod]
     public async Task ValidatePromoCode_WithValidCodeAndAmount_DeserializesCamelCase_ReturnsOk()

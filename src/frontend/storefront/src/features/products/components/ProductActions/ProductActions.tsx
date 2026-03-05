@@ -1,5 +1,5 @@
-import Button from '../../../../shared/components/ui/Button';
-import ErrorAlert from '../../../../shared/components/ErrorAlert';
+import Button from '@/shared/components/ui/Button';
+import ErrorAlert from '@/shared/components/ErrorAlert';
 import styles from './ProductActions.module.css';
 
 interface CartItem {

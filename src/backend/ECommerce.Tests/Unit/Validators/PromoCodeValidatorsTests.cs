@@ -452,18 +452,18 @@ public class PromoCodeValidatorsTests
 
     #endregion
 
-    #region ValidatePromoCodeRequest Tests
+    #region ValidatePromoCodeRequestDto Tests
 
     /// <summary>
-    /// Tests for ValidatePromoCodeRequest validator.
+    /// Tests for ValidatePromoCodeRequestDto validator.
     /// Focuses on the JSON deserialization with camelCase property names.
     /// </summary>
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Accept_ZeroOrderAmount()
+    public void ValidatePromoCodeRequestDto_Should_Accept_ZeroOrderAmount()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = "SAVE20", OrderAmount = 0m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = "SAVE20", OrderAmount = 0m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -474,11 +474,11 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Accept_PositiveOrderAmount()
+    public void ValidatePromoCodeRequestDto_Should_Accept_PositiveOrderAmount()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = "SAVE20", OrderAmount = 100m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = "SAVE20", OrderAmount = 100m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -488,11 +488,11 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Fail_With_NegativeOrderAmount()
+    public void ValidatePromoCodeRequestDto_Should_Fail_With_NegativeOrderAmount()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = "SAVE20", OrderAmount = -10m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = "SAVE20", OrderAmount = -10m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -502,11 +502,11 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Empty()
+    public void ValidatePromoCodeRequestDto_Should_Fail_When_Code_Empty()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = "", OrderAmount = 100m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = "", OrderAmount = 100m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -516,11 +516,11 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Exceeds_MaxLength()
+    public void ValidatePromoCodeRequestDto_Should_Fail_When_Code_Exceeds_MaxLength()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = new string('A', 51), OrderAmount = 100m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = new string('A', 51), OrderAmount = 100m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -530,11 +530,11 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Contains_Lowercase()
+    public void ValidatePromoCodeRequestDto_Should_Fail_When_Code_Contains_Lowercase()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = "save20", OrderAmount = 100m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = "save20", OrderAmount = 100m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -544,11 +544,11 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Fail_When_Code_Contains_Special_Chars()
+    public void ValidatePromoCodeRequestDto_Should_Fail_When_Code_Contains_Special_Chars()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = "SAVE@20", OrderAmount = 100m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = "SAVE@20", OrderAmount = 100m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -562,11 +562,11 @@ public class PromoCodeValidatorsTests
     [DataRow("CODE-2024")]
     [DataRow("PROMO100")]
     [DataRow("ABC123")]
-    public void ValidatePromoCodeRequest_Should_Accept_Valid_Code(string code)
+    public void ValidatePromoCodeRequestDto_Should_Accept_Valid_Code(string code)
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = code, OrderAmount = 100m };
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = code, OrderAmount = 100m };
 
         // Act
         var result = validator.TestValidate(request);
@@ -576,11 +576,11 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Use_Default_OrderAmount_When_Omitted()
+    public void ValidatePromoCodeRequestDto_Should_Use_Default_OrderAmount_When_Omitted()
     {
         // Arrange
-        var validator = new ValidatePromoCodeRequestValidator();
-        var request = new ValidatePromoCodeRequest { Code = "SAVE20" }; // OrderAmount defaults to 0m
+        var validator = new ValidatePromoCodeRequestDtoValidator();
+        var request = new ValidatePromoCodeRequestDto { Code = "SAVE20" }; // OrderAmount defaults to 0m
 
         // Act
         var result = validator.TestValidate(request);
@@ -599,14 +599,14 @@ public class PromoCodeValidatorsTests
     /// Verifies the fix for frontend camelCase JSON compatibility.
     /// </summary>
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Deserialize_CamelCaseJson()
+    public void ValidatePromoCodeRequestDto_Should_Deserialize_CamelCaseJson()
     {
         // Arrange
         var jsonString = "{\"code\":\"SAVE20\",\"orderAmount\":100}";
         var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = false };
 
         // Act
-        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequest>(jsonString, options);
+        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequestDto>(jsonString, options);
 
         // Assert
         Assert.IsNotNull(deserialized, "Should deserialize camelCase JSON successfully");
@@ -615,14 +615,14 @@ public class PromoCodeValidatorsTests
     }
 
     [TestMethod]
-    public void ValidatePromoCodeRequest_Should_Deserialize_PartialJson()
+    public void ValidatePromoCodeRequestDto_Should_Deserialize_PartialJson()
     {
         // Arrange
         var jsonString = "{\"code\":\"SAVE20\"}";
         var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = false };
 
         // Act
-        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequest>(jsonString, options);
+        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequestDto>(jsonString, options);
 
         // Assert
         Assert.IsNotNull(deserialized, "Should deserialize partial JSON");

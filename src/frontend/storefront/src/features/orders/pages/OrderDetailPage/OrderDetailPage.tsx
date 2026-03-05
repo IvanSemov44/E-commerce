@@ -1,10 +1,10 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { useGetOrderByIdQuery, useCancelOrderMutation } from '../../api/ordersApi';
-import Button from '../../../../shared/components/ui/Button';
-import ErrorAlert from '../../../../shared/components/ErrorAlert';
-import LoadingSkeleton from '../../../../shared/components/LoadingSkeleton';
+import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/features/orders/api/ordersApi';
+import Button from '@/shared/components/ui/Button';
+import ErrorAlert from '@/shared/components/ErrorAlert';
+import LoadingSkeleton from '@/shared/components/LoadingSkeleton';
 import { OrderHeader, OrderItemsList, OrderTotals, ShippingAddress } from '../../components';
 import styles from './OrderDetailPage.module.css';
 

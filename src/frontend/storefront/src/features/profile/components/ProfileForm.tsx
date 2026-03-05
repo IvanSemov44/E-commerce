@@ -1,4 +1,4 @@
-import Button from '../../../shared/components/ui/Button';
+import Button from '@/shared/components/ui/Button';
 import type { ProfileFormData } from '../hooks/useProfileForm';
 import styles from './ProfileForm.module.css';
 

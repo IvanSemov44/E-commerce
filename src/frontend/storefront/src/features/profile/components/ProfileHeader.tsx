@@ -1,4 +1,4 @@
-import Button from '../../../shared/components/ui/Button';
+import Button from '@/shared/components/ui/Button';
 import styles from './ProfileHeader.module.css';
 
 interface ProfileHeaderProps {

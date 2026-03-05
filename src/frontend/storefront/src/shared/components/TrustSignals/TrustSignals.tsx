@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { ShieldIcon, TruckIcon, RefreshIcon, LockIcon, CheckIcon } from '@/shared/components/icons';
 import styles from './TrustSignals.module.css';
 
 interface TrustSignal {
@@ -11,44 +12,6 @@ interface TrustSignal {
 interface TrustSignalsProps {
   variant?: 'full' | 'compact';
 }
-
-// Modern SVG icons for trust signals
-const ShieldIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    <path d="M9 12l2 2 4-4"/>
-  </svg>
-);
-
-const TruckIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="3" width="15" height="13"/>
-    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-    <circle cx="5.5" cy="18.5" r="2.5"/>
-    <circle cx="18.5" cy="18.5" r="2.5"/>
-  </svg>
-);
-
-const RefreshIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10"/>
-    <polyline points="1 20 1 14 7 14"/>
-    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-  </svg>
-);
-
-const LockIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
 
 export default function TrustSignals({ variant = 'full' }: TrustSignalsProps) {
   const { t } = useTranslation();

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useRemoveFromWishlistMutation } from '../api/wishlistApi';
-import { useAddToCartMutation } from '../../cart/api/cartApi';
-import Button from '../../../shared/components/ui/Button';
+import { useAddToCartMutation } from '@/features/cart/api/cartApi';
+import Button from '@/shared/components/ui/Button';
 import styles from './WishlistCard.module.css';
 
 interface WishlistCardProps {

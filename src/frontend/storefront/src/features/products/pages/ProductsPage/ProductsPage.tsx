@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { useGetProductsQuery } from '../../api/productApi';
-import { useProductFilters } from '../../hooks/useProductFilters';
+import { useGetProductsQuery } from '@/features/products/api/productApi';
+import { useProductFilters } from '@/features/products/hooks/useProductFilters';
 import Button from '@/shared/components/ui/Button';
 import CategoryFilter from '@/shared/components/CategoryFilter';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { ProductsGridSkeleton } from '@/shared/components/Skeletons';
+import { GridIcon } from '@/shared/components/icons';
 import {
   ProductFilters,
   ProductSearchBar,
@@ -13,13 +14,6 @@ import {
   ProductGrid,
 } from '../../components';
 import styles from './ProductsPage.module.css';
-
-// Icons
-const GridIcon = () => (
-  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-  </svg>
-);
 
 export default function ProductsPage() {
   const { t } = useTranslation();

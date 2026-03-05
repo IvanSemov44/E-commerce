@@ -59,7 +59,7 @@ public class UpdatePromoCodeDto
     public bool? IsActive { get; set; }
 }
 
-public class ValidatePromoCodeRequest
+public class ValidatePromoCodeRequestDto
 {
     [JsonPropertyName("code")]
     public string Code { get; set; } = null!;
