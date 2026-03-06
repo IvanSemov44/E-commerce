@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act } from '@testing-library/react'
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
+import { baseApi } from '@/shared/lib/api/baseApi'
 import { useProfileForm } from '../useProfileForm'
 
 // Mock react-hot-toast
@@ -39,6 +40,12 @@ vi.mock('../../api/profileApi', () => ({
 }))
 
 describe('useProfileForm', () => {
+  let store: ReturnType<typeof renderHookWithProviders>['store']
+
+  afterEach(() => {
+    store?.dispatch(baseApi.util.resetApiState())
+  })
+
   const defaultPreloadedState = {
     auth: {
       isAuthenticated: true,
@@ -61,40 +68,45 @@ describe('useProfileForm', () => {
   })
 
   it('should initialize with formData', () => {
-    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
-    expect(result.current.formData.firstName).toBeDefined()
-    expect(result.current.isEditMode).toBe(false)
-    expect(result.current.isLoading).toBe(false)
+    expect(rendered.result.current.formData.firstName).toBeDefined()
+    expect(rendered.result.current.isEditMode).toBe(false)
+    expect(rendered.result.current.isLoading).toBe(false)
   })
 
   it('should have handleSubmit function', () => {
-    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
-    expect(typeof result.current.handleSubmit).toBe('function')
+    expect(typeof rendered.result.current.handleSubmit).toBe('function')
   })
 
   it('should have handleCancel function', () => {
-    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
-    expect(typeof result.current.handleCancel).toBe('function')
+    expect(typeof rendered.result.current.handleCancel).toBe('function')
   })
 
   it('should set edit mode', () => {
-    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
     act(() => {
-      result.current.setIsEditMode(true)
+      rendered.result.current.setIsEditMode(true)
     })
     
-    expect(result.current.isEditMode).toBe(true)
+    expect(rendered.result.current.isEditMode).toBe(true)
   })
 
   it('should set form data', () => {
-    const { result } = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProfileForm(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
     act(() => {
-      result.current.setFormData({
+      rendered.result.current.setFormData({
         firstName: 'Jane',
         lastName: 'Smith',
         email: 'jane@example.com',
@@ -103,7 +115,7 @@ describe('useProfileForm', () => {
       })
     })
     
-    expect(result.current.formData.firstName).toBe('Jane')
-    expect(result.current.formData.lastName).toBe('Smith')
+    expect(rendered.result.current.formData.firstName).toBe('Jane')
+    expect(rendered.result.current.formData.lastName).toBe('Smith')
   })
 })

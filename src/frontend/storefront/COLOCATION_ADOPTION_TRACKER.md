@@ -51,16 +51,16 @@ Initial status is inferred from folder contents:
 |---|---|---:|---|---|---|
 | ActiveFilters | `src/features/products/components/ActiveFilters` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | CartItem | `src/features/cart/components/CartItem` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
-| CartItemList | `src/features/cart/components/CartItemList` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
-| CartSummary | `src/features/cart/components/CartSummary` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
+| CartItemList | `src/features/cart/components/CartItemList` | High | **Migrated** | ✅ | tests moved to `__tests__/`, 5/5 passing |
+| CartSummary | `src/features/cart/components/CartSummary` | High | **Migrated** | ✅ | tests moved to `__tests__/`, 11/11 passing |
 | CheckoutAuthBanner | `src/features/checkout/components/CheckoutAuthBanner` | High | In Progress | - | tsx:1 css:1 test:0 idx:True |
 | CheckoutForm | `src/features/checkout/components/CheckoutForm` | High | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
 | OrderSuccess | `src/features/checkout/components/OrderSuccess` | High | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
 | OrderSummary | `src/features/checkout/components/OrderSummary` | High | **Migrated** | ✅ | tsx:1 css:0 test:0 idx:True types:True |
 | ProductActions | `src/features/products/components/ProductActions` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
-| ProductCard | `src/features/products/components/ProductCard` | High | Not Started | - | tsx:2 css:1 test:1 idx:False |
+| ProductCard | `src/features/products/components/ProductCard` | High | **Migrated** | ✅ | tests moved to `__tests__/`, 9/9 passing |
 | ProductFilters | `src/features/products/components/ProductFilters` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
-| ProductGrid | `src/features/products/components/ProductGrid` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
+| ProductGrid | `src/features/products/components/ProductGrid` | High | **Migrated** | ✅ | tests moved to `__tests__/`, 5/5 passing |
 | ProductImageGallery | `src/features/products/components/ProductImageGallery` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | ProductInfo | `src/features/products/components/ProductInfo` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |
 | ProductSearchBar | `src/features/products/components/ProductSearchBar` | High | Not Started | - | tsx:1 css:1 test:0 idx:False |

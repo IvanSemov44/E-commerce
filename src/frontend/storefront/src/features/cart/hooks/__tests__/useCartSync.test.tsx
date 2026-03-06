@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
+import { baseApi } from '@/shared/lib/api/baseApi'
 import { useCartSync } from '../useCartSync'
 
 // Mock react-hot-toast
@@ -38,6 +39,12 @@ vi.mock('../../utils/logger', () => ({
 }))
 
 describe('useCartSync', () => {
+  let store: ReturnType<typeof renderHookWithProviders>['store']
+
+  afterEach(() => {
+    store?.dispatch(baseApi.util.resetApiState())
+  })
+
   const defaultPreloadedState = {
     cart: {
       items: [],
@@ -71,12 +78,14 @@ describe('useCartSync', () => {
   })
 
   it('should not sync when not authenticated', () => {
-    const { result } = renderHookWithProviders(() => useCartSync(), { preloadedState: defaultPreloadedState })
-    expect(result.current).toBeDefined()
+    const rendered = renderHookWithProviders(() => useCartSync(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
+    expect(rendered.result.current).toBeDefined()
   })
 
   it('should skip sync when disabled', () => {
-    const { result } = renderHookWithProviders(() => useCartSync({ enabled: false }), { preloadedState: authenticatedState })
-    expect(result.current).toBeDefined()
+    const rendered = renderHookWithProviders(() => useCartSync({ enabled: false }), { preloadedState: authenticatedState })
+    store = rendered.store
+    expect(rendered.result.current).toBeDefined()
   })
 })

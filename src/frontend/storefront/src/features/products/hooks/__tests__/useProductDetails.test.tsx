@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act } from '@testing-library/react'
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
+import { baseApi } from '@/shared/lib/api/baseApi'
 import useProductDetails from '../useProductDetails'
 
 // Mock react-hot-toast
@@ -64,6 +65,12 @@ vi.mock('../../utils/logger', () => ({
 }))
 
 describe('useProductDetails', () => {
+  let store: ReturnType<typeof renderHookWithProviders>['store']
+
+  afterEach(() => {
+    store?.dispatch(baseApi.util.resetApiState())
+  })
+
   const defaultPreloadedState = {
     cart: {
       items: [],
@@ -83,27 +90,30 @@ describe('useProductDetails', () => {
   })
 
   it('should initialize with default values', () => {
-    const { result } = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
-    expect(result.current.quantity).toBe(1)
-    expect(result.current.addedToCart).toBe(false)
-    expect(result.current.cartError).toBeNull()
+    expect(rendered.result.current.quantity).toBe(1)
+    expect(rendered.result.current.addedToCart).toBe(false)
+    expect(rendered.result.current.cartError).toBeNull()
   })
 
   it('should set quantity', async () => {
-    const { result } = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
     await act(async () => {
-      result.current.setQuantity(5)
+      rendered.result.current.setQuantity(5)
     })
     
-    expect(result.current.quantity).toBe(5)
+    expect(rendered.result.current.quantity).toBe(5)
   })
 
   it('should reset addedToCart state', () => {
-    const { result } = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useProductDetails('test-product'), { preloadedState: defaultPreloadedState })
+    store = rendered.store
     
     // addedToCart starts as false
-    expect(result.current.addedToCart).toBe(false)
+    expect(rendered.result.current.addedToCart).toBe(false)
   })
 })

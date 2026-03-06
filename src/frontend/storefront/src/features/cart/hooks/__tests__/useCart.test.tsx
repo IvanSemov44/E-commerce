@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
+import { baseApi } from '@/shared/lib/api/baseApi'
 import { useCart } from '../useCart'
 
 // Mock react-hot-toast
@@ -40,6 +41,12 @@ vi.mock('../useCartSync', () => ({
 }))
 
 describe('useCart', () => {
+  let store: ReturnType<typeof renderHookWithProviders>['store']
+
+  afterEach(() => {
+    store?.dispatch(baseApi.util.resetApiState())
+  })
+
   const defaultPreloadedState = {
     cart: {
       items: [
@@ -65,21 +72,23 @@ describe('useCart', () => {
   }
 
   it('should calculate totals correctly', () => {
-    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(result.current.totals.subtotal).toBe(59.98) // 29.99 * 2
-    expect(result.current.totals.shipping).toBeGreaterThan(0)
-    expect(result.current.totals.tax).toBeGreaterThan(0)
-    expect(result.current.totals.total).toBeGreaterThan(59.98)
+    expect(rendered.result.current.totals.subtotal).toBe(59.98) // 29.99 * 2
+    expect(rendered.result.current.totals.shipping).toBeGreaterThan(0)
+    expect(rendered.result.current.totals.tax).toBeGreaterThan(0)
+    expect(rendered.result.current.totals.total).toBeGreaterThan(59.98)
   })
 
   it('should provide display items from local cart when not authenticated', () => {
-    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(result.current.displayItems).toHaveLength(1)
-    expect(result.current.displayItems[0].id).toBe('1')
-    expect(result.current.displayItems[0].name).toBe('Test Product')
-    expect(result.current.isAuthenticated).toBe(false)
+    expect(rendered.result.current.displayItems).toHaveLength(1)
+    expect(rendered.result.current.displayItems[0].id).toBe('1')
+    expect(rendered.result.current.displayItems[0].name).toBe('Test Product')
+    expect(rendered.result.current.isAuthenticated).toBe(false)
   })
 
   it('should calculate free shipping when threshold is met', () => {
@@ -107,11 +116,12 @@ describe('useCart', () => {
         },
     }
 
-    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: highValueState })
+    const rendered = renderHookWithProviders(() => useCart(), { preloadedState: highValueState })
+    store = rendered.store
 
     // Assuming FREE_SHIPPING_THRESHOLD is 100
-    expect(result.current.totals.subtotal).toBe(150.00)
-    expect(result.current.totals.shipping).toBe(0) // Free shipping
+    expect(rendered.result.current.totals.subtotal).toBe(150.00)
+    expect(rendered.result.current.totals.shipping).toBe(0) // Free shipping
   })
 
   it('should have zero shipping for empty cart', () => {
@@ -129,18 +139,20 @@ describe('useCart', () => {
         },
     }
 
-    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: emptyState })
+    const rendered = renderHookWithProviders(() => useCart(), { preloadedState: emptyState })
+    store = rendered.store
 
-    expect(result.current.totals.subtotal).toBe(0)
-    expect(result.current.totals.shipping).toBe(0)
-    expect(result.current.totals.tax).toBe(0)
-    expect(result.current.totals.total).toBe(0)
+    expect(rendered.result.current.totals.subtotal).toBe(0)
+    expect(rendered.result.current.totals.shipping).toBe(0)
+    expect(rendered.result.current.totals.tax).toBe(0)
+    expect(rendered.result.current.totals.total).toBe(0)
   })
 
   it('should provide update and remove handlers', () => {
-    const { result } = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCart(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(typeof result.current.handleUpdateQuantity).toBe('function')
-    expect(typeof result.current.handleRemove).toBe('function')
+    expect(typeof rendered.result.current.handleUpdateQuantity).toBe('function')
+    expect(typeof rendered.result.current.handleRemove).toBe('function')
   })
 })

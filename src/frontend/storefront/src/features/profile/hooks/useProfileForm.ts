@@ -3,7 +3,7 @@
  * Manages profile form state and submission logic
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../api/profileApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { updateUser } from '@/features/auth/slices/authSlice';
@@ -74,7 +74,7 @@ export const useProfileForm = (): UseProfileFormReturn => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-
+  const syncedProfileIdRef = useRef<string | undefined>(undefined);
   // Handle form submission
   const handleFormSubmit = async (values: ProfileFormData) => {
     setErrorMessage('');
@@ -123,9 +123,10 @@ export const useProfileForm = (): UseProfileFormReturn => {
     onSubmit: handleFormSubmit,
   });
 
-  // Sync profile data to form when profile loads
+  // Sync profile data to form when profile first loads (guard against infinite loop)
   useEffect(() => {
-    if (profile) {
+    if (profile && profile.id !== syncedProfileIdRef.current) {
+      syncedProfileIdRef.current = profile.id;
       form.setValues({
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
@@ -134,7 +135,8 @@ export const useProfileForm = (): UseProfileFormReturn => {
         avatarUrl: profile.avatarUrl || '',
       });
     }
-  }, [profile, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
 
   // Handle form cancel
   const handleCancel = () => {

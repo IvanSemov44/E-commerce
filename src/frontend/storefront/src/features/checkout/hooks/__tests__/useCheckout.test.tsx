@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act } from '@testing-library/react'
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils'
+import { baseApi } from '@/shared/lib/api/baseApi'
 import { useCheckout } from '../useCheckout'
 
 // Mock react-hot-toast
@@ -70,6 +71,12 @@ vi.mock('../../utils/validation', () => ({
 }))
 
 describe('useCheckout', () => {
+  let store: ReturnType<typeof renderHookWithProviders>['store']
+
+  afterEach(() => {
+    store?.dispatch(baseApi.util.resetApiState())
+  })
+
   const defaultPreloadedState = {
     cart: {
       items: [
@@ -99,46 +106,52 @@ describe('useCheckout', () => {
   })
 
   it('should initialize with default values', () => {
-    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(result.current.promoCode).toBe('')
-    expect(result.current.orderComplete).toBe(false)
-    expect(result.current.error).toBeNull()
-    expect(result.current.isGuestOrder).toBe(false)
+    expect(rendered.result.current.promoCode).toBe('')
+    expect(rendered.result.current.orderComplete).toBe(false)
+    expect(rendered.result.current.error).toBeNull()
+    expect(rendered.result.current.isGuestOrder).toBe(false)
   })
 
   it('should set promo code', async () => {
-    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
     await act(async () => {
-      result.current.setPromoCode('SAVE10')
+      rendered.result.current.setPromoCode('SAVE10')
     })
 
-    expect(result.current.promoCode).toBe('SAVE10')
+    expect(rendered.result.current.promoCode).toBe('SAVE10')
   })
 
   it('should have cart items from local state', () => {
-    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(result.current.cartItems.length).toBe(1)
-    expect(result.current.cartItems[0].name).toBe('Test Product')
+    expect(rendered.result.current.cartItems.length).toBe(1)
+    expect(rendered.result.current.cartItems[0].name).toBe('Test Product')
   })
 
   it('should calculate subtotal', () => {
-    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(result.current.subtotal).toBe(100) // 50 * 2
+    expect(rendered.result.current.subtotal).toBe(100) // 50 * 2
   })
 
   it('should have handleSubmit function', () => {
-    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(typeof result.current.handleSubmit).toBe('function')
+    expect(typeof rendered.result.current.handleSubmit).toBe('function')
   })
 
   it('should have setFormData function', () => {
-    const { result } = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    const rendered = renderHookWithProviders(() => useCheckout(), { preloadedState: defaultPreloadedState })
+    store = rendered.store
 
-    expect(typeof result.current.setFormData).toBe('function')
+    expect(typeof rendered.result.current.setFormData).toBe('function')
   })
 })
