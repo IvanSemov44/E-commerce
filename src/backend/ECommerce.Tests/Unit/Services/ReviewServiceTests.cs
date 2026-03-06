@@ -206,7 +206,7 @@ public class ReviewServiceTests
     }
 
     [TestMethod]
-    public async Task CreateReviewAsync_InvalidRating_ThrowsInvalidRatingException()
+    public async Task CreateReviewAsync_InvalidRating_ReturnsFailure()
     {
         // Arrange
         var user = TestDataFactory.CreateUser();
@@ -305,7 +305,7 @@ public class ReviewServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateReviewAsync_ExpiredTime_ThrowsReviewUpdateTimeExpiredException()
+    public async Task UpdateReviewAsync_ExpiredTime_ReturnsFailure()
     {
         // Arrange
         var user = TestDataFactory.CreateUser();
