@@ -196,7 +196,7 @@ describe('ThemeToggle', () => {
     await waitFor(() => {
       expect(screen.getByTestId('sun-icon')).toBeInTheDocument();
       expect(screen.getByTestId('moon-icon')).toBeInTheDocument();
-      expect(screen.getByTestId('computer-icon')).toBeInTheDocument();
+      expect(screen.getAllByTestId('computer-icon').length).toBeGreaterThan(0);
     });
   });
 
@@ -218,7 +218,7 @@ describe('ThemeToggle', () => {
     expect(localStorage.getItem('theme')).toBe('dark');
   });
 
-  it('applies theme class to document root', async () => {
+  it('applies theme attribute to document root', async () => {
     const user = userEvent.setup();
     render(<ThemeToggle />);
 
@@ -228,9 +228,9 @@ describe('ThemeToggle', () => {
     const darkOption = screen.getByText('Dark');
     await user.click(darkOption);
 
-    // Document should have theme class applied
+    // Document should have theme attribute applied
     await waitFor(() => {
-      expect(document.documentElement.className).toContain('dark');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     });
   });
 

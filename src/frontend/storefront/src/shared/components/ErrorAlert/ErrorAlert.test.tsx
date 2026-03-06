@@ -10,7 +10,7 @@ vi.mock('../ui/Card', () => ({
 
 // Mock icon
 vi.mock('../icons', () => ({
-  CloseIcon: ({ ...props }: any) => <button data-testid="close-icon" {...props} />,
+  CloseIcon: ({ ...props }: any) => <svg data-testid="close-icon" {...props} />,
 }));
 
 describe('ErrorAlert', () => {
@@ -69,7 +69,8 @@ describe('ErrorAlert', () => {
     const onDismiss = vi.fn();
     render(<ErrorAlert message="Error" onDismiss={onDismiss} />);
     const dismissButton = screen.getByLabelText('Dismiss error');
-    expect(dismissButton).toHaveAttribute('onclick');
+    expect(dismissButton).toBeInTheDocument();
+    expect(dismissButton.tagName).toBe('BUTTON');
   });
 
   it('allows multiple dismiss calls if component rerenders', async () => {

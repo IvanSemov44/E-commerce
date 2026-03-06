@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import OptimizedImage from './OptimizedImage';
 
 // Mock IntersectionObserver
@@ -63,7 +63,7 @@ describe('OptimizedImage', () => {
       />
     );
     const img = screen.getByAltText('Lazy loaded image') as HTMLImageElement;
-    expect(img.loading).toBe('lazy');
+    expect(img).toHaveAttribute('loading', 'lazy');
   });
 
   it('eagerly loads image when requested', () => {
@@ -75,7 +75,7 @@ describe('OptimizedImage', () => {
       />
     );
     const img = screen.getByAltText('Eager loaded image') as HTMLImageElement;
-    expect(img.loading).toBe('eager');
+    expect(img).toHaveAttribute('loading', 'eager');
   });
 
   it('calls onLoad callback when image loads', async () => {
@@ -91,7 +91,7 @@ describe('OptimizedImage', () => {
     const img = screen.getByAltText('Test') as HTMLImageElement;
 
     // Simulate image load
-    img.dispatchEvent(new Event('load'));
+    fireEvent.load(img);
 
     await waitFor(() => {
       expect(onLoad).toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('OptimizedImage', () => {
     const img = screen.getByAltText('Broken image') as HTMLImageElement;
 
     // Simulate image load error
-    img.dispatchEvent(new Event('error'));
+    fireEvent.error(img);
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe('OptimizedImage', () => {
     const img = screen.getByAltText('Test') as HTMLImageElement;
 
     // Simulate load
-    img.dispatchEvent(new Event('load'));
+    fireEvent.load(img);
 
     await waitFor(() => {
       expect(img).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe('OptimizedImage', () => {
     );
 
     const img = screen.getByAltText('Error image') as HTMLImageElement;
-    img.dispatchEvent(new Event('error'));
+    fireEvent.error(img);
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalled();

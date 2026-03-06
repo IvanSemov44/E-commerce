@@ -99,7 +99,7 @@ describe('ProtectedRoute', () => {
       store
     );
 
-    const spinner = screen.getByRole('img', { hidden: true });
+    const spinner = document.querySelector('.animate-spin');
     expect(spinner).toBeInTheDocument();
   });
 
@@ -246,7 +246,7 @@ describe('ProtectedRoute', () => {
     );
 
     // Initially loading
-    let spinner = screen.getByRole('img', { hidden: true });
+    const spinner = document.querySelector('.animate-spin');
     expect(spinner).toBeInTheDocument();
 
     // Update to authenticated
@@ -278,7 +278,23 @@ describe('ProtectedRoute', () => {
   });
 
   it('transitions from loading to unauthenticated', () => {
-    render(
+    vi.mocked(useAppSelector)
+      .mockReturnValueOnce({
+        isAuthenticated: false,
+        loading: true,
+        user: null,
+        error: null,
+        initialized: false,
+      })
+      .mockReturnValue({
+        isAuthenticated: false,
+        loading: false,
+        user: null,
+        error: null,
+        initialized: true,
+      });
+
+    const { rerender } = render(
       <Provider store={createMockStore({
         isAuthenticated: false,
         loading: true,
@@ -302,9 +318,32 @@ describe('ProtectedRoute', () => {
       </Provider>
     );
 
-    // Initially loading
-    const spinner = screen.getByRole('img', { hidden: true });
-    expect(spinner).toBeInTheDocument();
+    // Re-render unauthenticated state
+    rerender(
+      <Provider store={createMockStore({
+        isAuthenticated: false,
+        loading: false,
+        user: null,
+        error: null,
+        initialized: true,
+      })}>
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <div>Protected Content</div>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/login" element={<div>Login Page</div>} />
+          </Routes>
+        </BrowserRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText('Login Page')).toBeInTheDocument();
   });
 
   it('has correct spinner styling', () => {
