@@ -96,8 +96,9 @@ public class OrdersController : ControllerBase
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
         var currentUserId = _currentUser.UserIdOrNull;
+        var role = _currentUser.RoleOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
-                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+                     (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
         var result = await _orderService.GetOrderByIdForUserAsync(id, currentUserId, isAdmin, cancellationToken: cancellationToken);
 
         if (result is Result<OrderDetailDto>.Success success)
@@ -133,8 +134,9 @@ public class OrdersController : ControllerBase
     {
         _logger.LogInformation("Retrieving order by number {OrderNumber}", orderNumber);
         var currentUserId = _currentUser.UserIdOrNull;
+        var role = _currentUser.RoleOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
-                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+                     (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
         var result = await _orderService.GetOrderByNumberForUserAsync(orderNumber, currentUserId, isAdmin, cancellationToken: cancellationToken);
 
         if (result is Result<OrderDetailDto>.Success success)
@@ -166,10 +168,13 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyOrders([FromQuery] OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId, parameters.Page);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _orderService.GetUserOrdersAsync(userId, parameters, cancellationToken: cancellationToken);
+        _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId.Value, parameters.Page);
+
+        var result = await _orderService.GetUserOrdersAsync(userId.Value, parameters, cancellationToken: cancellationToken);
 
         return Ok(ApiResponse<PaginatedResult<OrderDto>>.Ok(result, "Orders retrieved successfully"));
     }
@@ -263,8 +268,9 @@ public class OrdersController : ControllerBase
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
         var currentUserId = _currentUser.UserIdOrNull;
+        var role = _currentUser.RoleOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
-                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+                     (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
         var result = await _orderService.CancelOrderAsync(id, currentUserId, isAdmin, cancellationToken: cancellationToken);
 
         if (result is Result<Unit>.Failure failure)

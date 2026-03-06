@@ -321,9 +321,8 @@ public class PromoCodesControllerTests
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.OK ||
             response.StatusCode == HttpStatusCode.NotFound ||
-            response.StatusCode == HttpStatusCode.Forbidden ||
             response.StatusCode == HttpStatusCode.BadRequest,
-            "UpdatePromoCode should return OK, NotFound, Forbidden, or BadRequest");
+            "UpdatePromoCode should return OK, NotFound, or BadRequest");
     }
 
     #endregion
@@ -341,7 +340,7 @@ public class PromoCodesControllerTests
         var response = await client.DeleteAsync($"/api/promo-codes/{codeId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.NotFound,
             "DeletePromoCode should return OK, NoContent, or NotFound");
     }
 

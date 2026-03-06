@@ -116,8 +116,9 @@ public class PaymentsController : ControllerBase
     {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
         var currentUserId = _currentUser.UserIdOrNull;
+        var role = _currentUser.RoleOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
-                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+                     (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
         var result = await _paymentService.GetPaymentDetailsAsync(orderId, currentUserId, isAdmin, cancellationToken: cancellationToken);
         
         if (result is Result<PaymentDetailsDto>.Success success)

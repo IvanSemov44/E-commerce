@@ -56,7 +56,7 @@ public class WishlistControllerTests
         var response = await client.GetAsync("/api/wishlist");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated should return Unauthorized");
     }
 
@@ -119,7 +119,7 @@ public class WishlistControllerTests
         var response = await client.PostAsync("/api/wishlist/add", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated cannot add to wishlist");
     }
 
@@ -153,7 +153,7 @@ public class WishlistControllerTests
         var response = await client.DeleteAsync($"/api/wishlist/remove/{productId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated cannot remove from wishlist");
     }
 

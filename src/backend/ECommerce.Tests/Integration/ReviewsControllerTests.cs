@@ -153,8 +153,8 @@ public class ReviewsControllerTests
         var response = await client.PostAsync("/api/reviews", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest,
-            "CreateReview should return Created, OK, or BadRequest");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
+            "CreateReview should return Created or BadRequest");
     }
 
     [TestMethod]
@@ -176,7 +176,7 @@ public class ReviewsControllerTests
         var response = await client.PostAsync("/api/reviews", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity,
             "Invalid rating should return BadRequest");
     }
 
@@ -199,7 +199,7 @@ public class ReviewsControllerTests
         var response = await client.PostAsync("/api/reviews", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated should not create review");
     }
 
@@ -243,8 +243,8 @@ public class ReviewsControllerTests
         var response = await client.PutAsync($"/api/reviews/{reviewId}", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
-            "UpdateReview should return OK, NotFound, or Forbidden");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
+            "UpdateReview should return NotFound or Forbidden");
     }
 
     #endregion
@@ -262,8 +262,8 @@ public class ReviewsControllerTests
         var response = await client.DeleteAsync($"/api/reviews/{reviewId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Forbidden,
-            "Delete nonexistent should return NotFound or similar");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
+            "Delete nonexistent should return NotFound or Forbidden");
     }
 
     [TestMethod]
@@ -277,7 +277,7 @@ public class ReviewsControllerTests
         var response = await client.DeleteAsync($"/api/reviews/{reviewId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated cannot delete review");
     }
 

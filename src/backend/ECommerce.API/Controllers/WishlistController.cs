@@ -42,10 +42,13 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWishlist(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Retrieving wishlist for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _wishlistService.GetUserWishlistAsync(userId, cancellationToken: cancellationToken);
+        _logger.LogInformation("Retrieving wishlist for user {UserId}", userId.Value);
+
+        var result = await _wishlistService.GetUserWishlistAsync(userId.Value, cancellationToken: cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist retrieved successfully"))
             : result is Result<WishlistDto>.Failure failure
@@ -70,10 +73,13 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AddToWishlist([FromBody] AddToWishlistDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", dto.ProductId, userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _wishlistService.AddToWishlistAsync(userId, dto.ProductId, cancellationToken: cancellationToken);
+        _logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", dto.ProductId, userId.Value);
+
+        var result = await _wishlistService.AddToWishlistAsync(userId.Value, dto.ProductId, cancellationToken: cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product added to wishlist successfully"))
             : result is Result<WishlistDto>.Failure failure
@@ -95,10 +101,13 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", productId, userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _wishlistService.RemoveFromWishlistAsync(userId, productId, cancellationToken: cancellationToken);
+        _logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", productId, userId.Value);
+
+        var result = await _wishlistService.RemoveFromWishlistAsync(userId.Value, productId, cancellationToken: cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product removed from wishlist successfully"))
             : result is Result<WishlistDto>.Failure failure
@@ -118,10 +127,13 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> IsProductInWishlist(Guid productId, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Checking if product {ProductId} is in wishlist for user {UserId}", productId, userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<bool>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var isInWishlist = await _wishlistService.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken);
+        _logger.LogInformation("Checking if product {ProductId} is in wishlist for user {UserId}", productId, userId.Value);
+
+        var isInWishlist = await _wishlistService.IsProductInWishlistAsync(userId.Value, productId, cancellationToken: cancellationToken);
         return Ok(ApiResponse<bool>.Ok(isInWishlist, "Check completed successfully"));
     }
 
@@ -138,10 +150,13 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearWishlist(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Clearing wishlist for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _wishlistService.ClearWishlistAsync(userId, cancellationToken: cancellationToken);
+        _logger.LogInformation("Clearing wishlist for user {UserId}", userId.Value);
+
+        var result = await _wishlistService.ClearWishlistAsync(userId.Value, cancellationToken: cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist cleared successfully"))
             : result is Result<WishlistDto>.Failure failure

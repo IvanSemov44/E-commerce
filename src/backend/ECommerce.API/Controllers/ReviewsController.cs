@@ -111,9 +111,12 @@ public class ReviewsController : ControllerBase
     {
         (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Retrieving reviews for user {UserId}", userId);
-        var result = await _reviewService.GetUserReviewsAsync(userId, cancellationToken: cancellationToken);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<PaginatedResult<ReviewDetailDto>>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+
+        _logger.LogInformation("Retrieving reviews for user {UserId}", userId.Value);
+        var result = await _reviewService.GetUserReviewsAsync(userId.Value, cancellationToken: cancellationToken);
         return result is Result<IEnumerable<ReviewDetailDto>>.Success success
             ? Ok(ApiResponse<PaginatedResult<ReviewDetailDto>>.Ok(
                 new PaginatedResult<ReviewDetailDto>
@@ -174,10 +177,13 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateReview([FromBody] CreateReviewDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Creating review for product {ProductId} by user {UserId}", dto.ProductId, userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<ReviewDetailDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _reviewService.CreateReviewAsync(userId, dto, cancellationToken: cancellationToken);
+        _logger.LogInformation("Creating review for product {ProductId} by user {UserId}", dto.ProductId, userId.Value);
+
+        var result = await _reviewService.CreateReviewAsync(userId.Value, dto, cancellationToken: cancellationToken);
         return result is Result<ReviewDetailDto>.Success success
             ? CreatedAtAction(
                 nameof(GetReviewById),
@@ -207,11 +213,15 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReview(Guid reviewId, [FromBody] UpdateReviewDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
-        _logger.LogInformation("Updating review {ReviewId} by user {UserId}", reviewId, userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<ReviewDetailDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var updateResult = await _reviewService.UpdateReviewAsync(userId, reviewId, dto, isAdmin, cancellationToken: cancellationToken);
+        var role = _currentUser.RoleOrNull;
+        var isAdmin = role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin;
+        _logger.LogInformation("Updating review {ReviewId} by user {UserId}", reviewId, userId.Value);
+
+        var updateResult = await _reviewService.UpdateReviewAsync(userId.Value, reviewId, dto, isAdmin, cancellationToken: cancellationToken);
         return updateResult is Result<ReviewDetailDto>.Success success
             ? (IActionResult)Ok(ApiResponse<ReviewDetailDto>.Ok(success.Data, "Review updated successfully"))
             : updateResult is Result<ReviewDetailDto>.Failure failure
@@ -239,11 +249,15 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteReview(Guid reviewId, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
-        _logger.LogInformation("Deleting review {ReviewId} by user {UserId}", reviewId, userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var deleteResult = await _reviewService.DeleteReviewAsync(userId, reviewId, isAdmin, cancellationToken: cancellationToken);
+        var role = _currentUser.RoleOrNull;
+        var isAdmin = role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin;
+        _logger.LogInformation("Deleting review {ReviewId} by user {UserId}", reviewId, userId.Value);
+
+        var deleteResult = await _reviewService.DeleteReviewAsync(userId.Value, reviewId, isAdmin, cancellationToken: cancellationToken);
         return deleteResult is Result<Unit>.Success
             ? (IActionResult)Ok(ApiResponse<object>.Ok(new object(), "Review deleted successfully"))
             : deleteResult is Result<Unit>.Failure failure

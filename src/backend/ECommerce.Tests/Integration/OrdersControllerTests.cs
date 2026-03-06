@@ -249,8 +249,8 @@ public class OrdersControllerTests
         var response = await client.PutAsync($"/api/orders/{orderId}/status", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.BadRequest,
-            "Update should return OK, NotFound, or BadRequest");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
+            "Update should return OK or NotFound");
     }
 
     [TestMethod]

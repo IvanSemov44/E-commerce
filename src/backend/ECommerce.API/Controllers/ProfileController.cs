@@ -42,10 +42,13 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Retrieving profile for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<UserProfileDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _userService.GetUserProfileAsync(userId, cancellationToken: cancellationToken);
+        _logger.LogInformation("Retrieving profile for user {UserId}", userId.Value);
+
+        var result = await _userService.GetUserProfileAsync(userId.Value, cancellationToken: cancellationToken);
         return result is Result<UserProfileDto>.Success success
             ? Ok(ApiResponse<UserProfileDto>.Ok(success.Data, "Profile retrieved successfully"))
             : result is Result<UserProfileDto>.Failure failure
@@ -69,10 +72,13 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Updating profile for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<UserProfileDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _userService.UpdateUserProfileAsync(userId, updateProfileDto, cancellationToken: cancellationToken);
+        _logger.LogInformation("Updating profile for user {UserId}", userId.Value);
+
+        var result = await _userService.UpdateUserProfileAsync(userId.Value, updateProfileDto, cancellationToken: cancellationToken);
         return result is Result<UserProfileDto>.Success success
             ? Ok(ApiResponse<UserProfileDto>.Ok(success.Data, "Profile updated successfully"))
             : result is Result<UserProfileDto>.Failure failure
@@ -93,10 +99,13 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPreferences(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<UserPreferencesDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _userService.GetUserPreferencesAsync(userId, cancellationToken: cancellationToken);
+        _logger.LogInformation("Retrieving preferences for user {UserId}", userId.Value);
+
+        var result = await _userService.GetUserPreferencesAsync(userId.Value, cancellationToken: cancellationToken);
         
         if (result is Result<UserPreferencesDto>.Success success)
             return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences retrieved successfully"));
@@ -122,10 +131,13 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdatePreferences([FromBody] UserPreferencesDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Updating preferences for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<UserPreferencesDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        var result = await _userService.UpdateUserPreferencesAsync(userId, dto, cancellationToken: cancellationToken);
+        _logger.LogInformation("Updating preferences for user {UserId}", userId.Value);
+
+        var result = await _userService.UpdateUserPreferencesAsync(userId.Value, dto, cancellationToken: cancellationToken);
         
         if (result is Result<UserPreferencesDto>.Success success)
             return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences updated successfully"));
@@ -153,8 +165,11 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId;
-        _logger.LogInformation("Changing password for user {UserId}", userId);
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+
+        _logger.LogInformation("Changing password for user {UserId}", userId.Value);
 
         // Validate that new passwords match
         if (dto.NewPassword != dto.ConfirmPassword)
@@ -162,7 +177,7 @@ public class ProfileController : ControllerBase
             return BadRequest(ApiResponse<object>.Failure("New password and confirmation do not match", "PASSWORD_MISMATCH"));
         }
 
-        await _userService.ChangePasswordAsync(userId, dto.OldPassword, dto.NewPassword, cancellationToken: cancellationToken);
+        await _userService.ChangePasswordAsync(userId.Value, dto.OldPassword, dto.NewPassword, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Password changed successfully"));
     }
 }

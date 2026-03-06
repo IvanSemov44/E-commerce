@@ -100,8 +100,8 @@ public class CartControllerTests
         var response = await client.PostAsync("/api/cart/add-item", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
-            "AddItem should return OK, Created, or BadRequest");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest,
+            "AddItem should return OK or BadRequest");
     }
 
     [TestMethod]
@@ -121,7 +121,7 @@ public class CartControllerTests
         var response = await client.PostAsync("/api/cart/add-item", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity,
             "Invalid quantity should return BadRequest or similar");
     }
 
@@ -182,7 +182,7 @@ public class CartControllerTests
         var response = await client.PutAsync($"/api/cart/items/{itemId}", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity,
             "Zero quantity should return BadRequest");
     }
 

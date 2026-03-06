@@ -101,7 +101,7 @@ public class WishlistService : IWishlistService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        var result = new WishlistDto { Id = userId, Items = new List<WishlistItemDto>(), ItemCount = 0 };
+        var result = CreateWishlistDto(userId, new List<WishlistItemDto>());
         return Result<WishlistDto>.Ok(result);
     }
 
@@ -126,6 +126,17 @@ public class WishlistService : IWishlistService
             }
         }
 
-        return new WishlistDto { Id = userId, Items = items, ItemCount = items.Count };
+        return CreateWishlistDto(userId, items);
+    }
+
+    private WishlistDto CreateWishlistDto(Guid userId, List<WishlistItemDto> items)
+    {
+        var wishlistProjection = new Wishlist { UserId = userId };
+        var mappedDto = _mapper.Map<WishlistDto>(wishlistProjection) ?? new() { Id = userId };
+
+        if (mappedDto.Id == Guid.Empty)
+            mappedDto = mappedDto with { Id = userId };
+
+        return mappedDto with { Items = items, ItemCount = items.Count };
     }
 }

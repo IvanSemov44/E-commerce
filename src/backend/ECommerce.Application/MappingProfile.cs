@@ -117,7 +117,10 @@ public class MappingProfile : Profile
         CreateMap<Address, AddressDto>();
 
         // Wishlist mappings
-        CreateMap<Wishlist, WishlistDto>();
+        CreateMap<Wishlist, WishlistDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
+            .ForMember(dest => dest.Items, opt => opt.Ignore())
+            .ForMember(dest => dest.ItemCount, opt => opt.Ignore());
 
         CreateMap<Product, ECommerce.Application.DTOs.Wishlist.WishlistItemDto>()
             .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
