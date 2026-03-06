@@ -16,4 +16,5 @@ public interface ICartService
     Task<Result<CartDto>> ClearCartAsync(Guid? userId, string? sessionId, CancellationToken cancellationToken = default);
     Task<Result<CartDto>> GetCartByIdAsync(Guid cartId, CancellationToken cancellationToken = default);
     Task<Result<Unit>> ValidateCartAsync(Guid cartId, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> ValidateCartAsync(Guid cartId, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default);
 }

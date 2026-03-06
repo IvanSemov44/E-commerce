@@ -19,6 +19,11 @@ public interface IPaymentService
     Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Verify payment status from payment provider with ownership enforcement.
+    /// </summary>
+    Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Refund a payment.
     /// </summary>
     Task<Result<RefundResponseDto>> RefundPaymentAsync(RefundPaymentDto dto, CancellationToken cancellationToken = default);

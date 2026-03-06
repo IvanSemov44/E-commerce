@@ -141,12 +141,22 @@ public class PaymentService : IPaymentService
 
     public async Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
+        return await GetPaymentDetailsAsync(orderId, userId: null, isAdmin: true, cancellationToken);
+    }
+
+    public async Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
 
         var order = await _unitOfWork.Orders.GetByIdAsync(orderId, trackChanges: false, cancellationToken: cancellationToken);
         if (order == null)
         {
             return Result<PaymentDetailsDto>.Fail(ErrorCodes.OrderNotFound, $"Order {orderId} not found");
+        }
+
+        if (!isAdmin && order.UserId != userId)
+        {
+            return Result<PaymentDetailsDto>.Fail(ErrorCodes.Forbidden, "You do not have permission to view payment details for this order");
         }
 
         if (string.IsNullOrEmpty(order.PaymentIntentId))

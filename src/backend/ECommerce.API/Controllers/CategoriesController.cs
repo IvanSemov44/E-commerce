@@ -14,6 +14,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Categories")]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;

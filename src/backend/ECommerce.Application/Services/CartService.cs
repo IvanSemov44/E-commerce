@@ -231,9 +231,17 @@ public class CartService : ICartService
 
     public async Task<Result<Unit>> ValidateCartAsync(Guid cartId, CancellationToken cancellationToken = default)
     {
+        return await ValidateCartAsync(cartId, userId: null, isAdmin: true, cancellationToken);
+    }
+
+    public async Task<Result<Unit>> ValidateCartAsync(Guid cartId, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
         var cart = await _unitOfWork.Carts.GetCartWithItemsAsync(cartId, cancellationToken: cancellationToken);
         if (cart == null)
             return Result<Unit>.Fail(ErrorCodes.CartNotFound, $"Cart {cartId} not found");
+
+        if (!isAdmin && cart.UserId.HasValue && cart.UserId != userId)
+            return Result<Unit>.Fail(ErrorCodes.Forbidden, "You do not have permission to validate this cart");
 
         // Batch query: Get all products for cart items in single query
         var productIds = cart.Items.Select(i => i.ProductId).ToList();

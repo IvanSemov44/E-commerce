@@ -16,6 +16,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Products")]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;

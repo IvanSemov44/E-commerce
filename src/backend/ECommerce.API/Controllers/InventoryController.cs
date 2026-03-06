@@ -13,6 +13,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Inventory")]
 [Authorize(Roles = "Admin,SuperAdmin")]
 public class InventoryController : ControllerBase
 {

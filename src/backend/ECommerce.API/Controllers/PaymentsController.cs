@@ -14,6 +14,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Payments")]
 public class PaymentsController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
@@ -114,27 +115,10 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> GetPaymentDetails(Guid orderId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving payment details for order {OrderId}", orderId);
-
-        // Ownership check: retrieve order first
-        var order = await _orderService.GetOrderByIdAsync(orderId, cancellationToken: cancellationToken);
-        if (order == null)
-        {
-            return NotFound(ApiResponse<object>.Failure("Order not found", "ORDER_NOT_FOUND"));
-        }
-
-        // Check if user owns the order or is admin
         var currentUserId = _currentUser.UserIdOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
                      (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
-
-        if (!isAdmin && order.UserId != currentUserId)
-        {
-            _logger.LogWarning("User {UserId} attempted to access payment details for order {OrderId} belonging to {OrderOwnerId}",
-                currentUserId, orderId, order.UserId);
-            return StatusCode(403, ApiResponse<object>.Failure("You do not have permission to view payment details for this order", "INSUFFICIENT_PERMISSIONS"));
-        }
-
-        var result = await _paymentService.GetPaymentDetailsAsync(orderId, cancellationToken: cancellationToken);
+        var result = await _paymentService.GetPaymentDetailsAsync(orderId, currentUserId, isAdmin, cancellationToken: cancellationToken);
         
         if (result is Result<PaymentDetailsDto>.Success success)
         {
@@ -147,6 +131,7 @@ public class PaymentsController : ControllerBase
             {
                 "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
                 "NO_PAYMENT_FOUND" => StatusCodes.Status404NotFound,
+                "FORBIDDEN" => StatusCodes.Status403Forbidden,
                 _ => StatusCodes.Status400BadRequest
             };
             return StatusCode(statusCode, ApiResponse<PaymentDetailsDto>.Failure(failure.Message, failure.Code));

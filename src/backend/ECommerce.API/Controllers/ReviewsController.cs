@@ -15,6 +15,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Reviews")]
 public class ReviewsController : ControllerBase
 {
     private readonly IReviewService _reviewService;
@@ -169,30 +170,20 @@ public class ReviewsController : ControllerBase
     public async Task<IActionResult> UpdateReview(Guid reviewId, [FromBody] UpdateReviewDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
+        var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
         _logger.LogInformation("Updating review {ReviewId} by user {UserId}", reviewId, userId);
 
-        // Get review to check ownership
-        var existingResult = await _reviewService.GetReviewByIdAsync(reviewId, cancellationToken: cancellationToken);
-        return await existingResult.Match(
-            async existingReview =>
-            {
-                // Ownership check: only review owner or admin can update
-                var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
-                if (!isAdmin && existingReview.UserId != userId)
+        var updateResult = await _reviewService.UpdateReviewAsync(userId, reviewId, dto, isAdmin, cancellationToken: cancellationToken);
+        return updateResult is Result<ReviewDetailDto>.Success success
+            ? (IActionResult)Ok(ApiResponse<ReviewDetailDto>.Ok(success.Data, "Review updated successfully"))
+            : updateResult is Result<ReviewDetailDto>.Failure failure
+                ? failure.Code switch
                 {
-                    _logger.LogWarning("User {UserId} attempted to update review {ReviewId} belonging to {ReviewOwnerId}",
-                        userId, reviewId, existingReview.UserId);
-                    return Forbid();
+                    "REVIEW_NOT_FOUND" => NotFound(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code)),
+                    "UNAUTHORIZED" => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code)),
+                    _ => BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
                 }
-
-                var updateResult = await _reviewService.UpdateReviewAsync(userId, reviewId, dto, cancellationToken: cancellationToken);
-                return updateResult is Result<ReviewDetailDto>.Success success
-                    ? (IActionResult)Ok(ApiResponse<ReviewDetailDto>.Ok(success.Data, "Review updated successfully"))
-                    : updateResult is Result<ReviewDetailDto>.Failure failure
-                        ? (IActionResult)BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
-                        : (IActionResult)BadRequest(ApiResponse<ReviewDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
-            },
-            _ => Task.FromResult((IActionResult)NotFound(ApiResponse<ReviewDetailDto>.Failure("Review not found", "REVIEW_NOT_FOUND"))));
+                : (IActionResult)BadRequest(ApiResponse<ReviewDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -211,30 +202,20 @@ public class ReviewsController : ControllerBase
     public async Task<IActionResult> DeleteReview(Guid reviewId, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId;
+        var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
         _logger.LogInformation("Deleting review {ReviewId} by user {UserId}", reviewId, userId);
 
-        // Get review to check ownership
-        var existingResult = await _reviewService.GetReviewByIdAsync(reviewId, cancellationToken: cancellationToken);
-        return await existingResult.Match(
-            async existingReview =>
-            {
-                // Ownership check: only review owner or admin can delete
-                var isAdmin = _currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin;
-                if (!isAdmin && existingReview.UserId != userId)
+        var deleteResult = await _reviewService.DeleteReviewAsync(userId, reviewId, isAdmin, cancellationToken: cancellationToken);
+        return deleteResult is Result<Unit>.Success
+            ? (IActionResult)Ok(ApiResponse<object>.Ok(new object(), "Review deleted successfully"))
+            : deleteResult is Result<Unit>.Failure failure
+                ? failure.Code switch
                 {
-                    _logger.LogWarning("User {UserId} attempted to delete review {ReviewId} belonging to {ReviewOwnerId}",
-                        userId, reviewId, existingReview.UserId);
-                    return Forbid();
+                    "REVIEW_NOT_FOUND" => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    "UNAUTHORIZED" => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    _ => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code))
                 }
-
-                var deleteResult = await _reviewService.DeleteReviewAsync(userId, reviewId, cancellationToken: cancellationToken);
-                return deleteResult is Result<Unit>.Success
-                    ? (IActionResult)Ok(ApiResponse<object>.Ok(new object(), "Review deleted successfully"))
-                    : deleteResult is Result<Unit>.Failure failure
-                        ? (IActionResult)BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code))
-                        : (IActionResult)BadRequest(ApiResponse<object>.Failure("An error occurred", "UNKNOWN_ERROR"));
-            },
-            _ => Task.FromResult((IActionResult)NotFound(ApiResponse<object>.Failure("Review not found", "REVIEW_NOT_FOUND"))));
+                : (IActionResult)BadRequest(ApiResponse<object>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>

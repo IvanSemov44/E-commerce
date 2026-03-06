@@ -14,6 +14,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/promo-codes")]
 [Produces("application/json")]
+[Tags("PromoCodes")]
 public class PromoCodesController : ControllerBase
 {
     private readonly IPromoCodeService _promoCodeService;

@@ -14,6 +14,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Profile")]
 [Authorize]
 public class ProfileController : ControllerBase
 {

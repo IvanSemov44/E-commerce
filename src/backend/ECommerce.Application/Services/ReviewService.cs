@@ -95,11 +95,16 @@ public class ReviewService : IReviewService
 
     public async Task<Result<ReviewDetailDto>> UpdateReviewAsync(Guid userId, Guid reviewId, UpdateReviewDto dto, CancellationToken cancellationToken = default)
     {
+        return await UpdateReviewAsync(userId, reviewId, dto, isAdmin: false, cancellationToken);
+    }
+
+    public async Task<Result<ReviewDetailDto>> UpdateReviewAsync(Guid userId, Guid reviewId, UpdateReviewDto dto, bool isAdmin, CancellationToken cancellationToken = default)
+    {
         var review = await _unitOfWork.Reviews.GetByIdWithDetailsAsync(reviewId, cancellationToken: cancellationToken);
         if (review == null)
             return Result<ReviewDetailDto>.Fail(ErrorCodes.ReviewNotFound, $"Review with id '{reviewId}' not found");
 
-        if (review.UserId != userId)
+        if (!isAdmin && review.UserId != userId)
             return Result<ReviewDetailDto>.Fail(ErrorCodes.Unauthorized, "You can only update your own reviews");
 
         if (DateTime.UtcNow - review.CreatedAt > TimeSpan.FromHours(24))
@@ -128,11 +133,16 @@ public class ReviewService : IReviewService
 
     public async Task<Result<Unit>> DeleteReviewAsync(Guid userId, Guid reviewId, CancellationToken cancellationToken = default)
     {
+        return await DeleteReviewAsync(userId, reviewId, isAdmin: false, cancellationToken);
+    }
+
+    public async Task<Result<Unit>> DeleteReviewAsync(Guid userId, Guid reviewId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
         var review = await _unitOfWork.Reviews.GetByIdAsync(reviewId, trackChanges: false, cancellationToken: cancellationToken);
         if (review == null)
             return Result<Unit>.Fail(ErrorCodes.ReviewNotFound, $"Review with id '{reviewId}' not found");
 
-        if (review.UserId != userId)
+        if (!isAdmin && review.UserId != userId)
             return Result<Unit>.Fail(ErrorCodes.Unauthorized, "You can only delete your own reviews");
 
         await _unitOfWork.Reviews.DeleteAsync(review, cancellationToken: cancellationToken);

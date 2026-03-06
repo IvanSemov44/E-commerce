@@ -23,9 +23,19 @@ public interface IOrderService
     Task<OrderDetailDto?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Get order details by ID with ownership enforcement.
+    /// </summary>
+    Task<Result<OrderDetailDto>> GetOrderByIdForUserAsync(Guid id, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get order details by order number.
     /// </summary>
     Task<OrderDetailDto?> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get order details by order number with ownership enforcement.
+    /// </summary>
+    Task<Result<OrderDetailDto>> GetOrderByNumberForUserAsync(string orderNumber, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get user's orders with pagination.
@@ -41,6 +51,11 @@ public interface IOrderService
     /// Cancel an order (if not already shipped).
     /// </summary>
     Task<Result<Unit>> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cancel an order with ownership enforcement (if not already shipped).
+    /// </summary>
+    Task<Result<Unit>> CancelOrderAsync(Guid id, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get all orders (admin only).

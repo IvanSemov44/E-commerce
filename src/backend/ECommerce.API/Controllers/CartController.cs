@@ -15,6 +15,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Cart")]
 public class CartController : ControllerBase
 {
     private readonly ICartService _cartService;
@@ -255,35 +256,11 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> ValidateCart(Guid cartId, CancellationToken cancellationToken)
     {
-        var cartResult = await _cartService.GetCartByIdAsync(cartId, cancellationToken: cancellationToken);
-        
-        if (cartResult is not Result<CartDto>.Success cartSuccess)
-        {
-            if (cartResult is Result<CartDto>.Failure cartFailure)
-            {
-                return MapCartFailureToResponse(cartFailure);
-            }
-            return BadRequest(ApiResponse<object>.Failure("Unknown error occurred", "UNKNOWN_ERROR"));
-        }
+        var currentUserId = _currentUser.UserIdOrNull;
+        var isAdmin = _currentUser.IsAuthenticated &&
+                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
 
-        var cart = cartSuccess.Data;
-
-        // Check ownership: if cart belongs to a user, verify the current user owns it or is admin
-        if (cart.UserId.HasValue)
-        {
-            var currentUserId = _currentUser.UserIdOrNull;
-            var isAdmin = _currentUser.IsAuthenticated &&
-                         (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
-
-            if (!isAdmin && cart.UserId != currentUserId)
-            {
-                _logger.LogWarning("User {UserId} attempted to validate cart {CartId} belonging to {CartOwnerId}",
-                    currentUserId, cartId, cart.UserId);
-                return StatusCode(403, ApiResponse<object>.Failure("You do not have permission to validate this cart", "INSUFFICIENT_PERMISSIONS"));
-            }
-        }
-
-        var validateResult = await _cartService.ValidateCartAsync(cartId, cancellationToken: cancellationToken);
+        var validateResult = await _cartService.ValidateCartAsync(cartId, currentUserId, isAdmin, cancellationToken: cancellationToken);
         
         if (validateResult is Result<Unit>.Success)
         {
@@ -343,6 +320,7 @@ public class CartController : ControllerBase
             ErrorCodes.ProductNotFound => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
             ErrorCodes.ProductNotAvailable => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code)),
             ErrorCodes.InsufficientStock => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+            ErrorCodes.Forbidden => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(failure.Message, failure.Code)),
             _ => BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code))
         };
     }

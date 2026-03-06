@@ -14,6 +14,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Orders")]
 [Authorize]
 public class OrdersController : ControllerBase
 {
@@ -94,29 +95,26 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
-        var order = await _orderService.GetOrderByIdAsync(id, cancellationToken: cancellationToken);
-        if (order == null)
-        {
-            return NotFound(ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
-            {
-                Message = "Order not found",
-                Code = "ORDER_NOT_FOUND"
-            }));
-        }
-
-        // Ownership check: only order owner or admin can view
         var currentUserId = _currentUser.UserIdOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
                      (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+        var result = await _orderService.GetOrderByIdForUserAsync(id, currentUserId, isAdmin, cancellationToken: cancellationToken);
 
-        if (!isAdmin && order.UserId != currentUserId)
+        if (result is Result<OrderDetailDto>.Success success)
+            return Ok(ApiResponse<OrderDetailDto>.Ok(success.Data, "Order retrieved successfully"));
+
+        if (result is Result<OrderDetailDto>.Failure failure)
         {
-            _logger.LogWarning("User {UserId} attempted to access order {OrderId} belonging to {OrderOwnerId}",
-                currentUserId, id, order.UserId);
-            return Forbid();
+            var statusCode = failure.Code switch
+            {
+                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "FORBIDDEN" => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -134,29 +132,26 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> GetOrderByNumber(string orderNumber, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving order by number {OrderNumber}", orderNumber);
-        var order = await _orderService.GetOrderByNumberAsync(orderNumber, cancellationToken: cancellationToken);
-        if (order == null)
-        {
-            return NotFound(ApiResponse<OrderDetailDto>.Failure(new ErrorResponse
-            {
-                Message = "Order not found",
-                Code = "ORDER_NOT_FOUND"
-            }));
-        }
-
-        // Ownership check: only order owner or admin can view
         var currentUserId = _currentUser.UserIdOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
                      (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+        var result = await _orderService.GetOrderByNumberForUserAsync(orderNumber, currentUserId, isAdmin, cancellationToken: cancellationToken);
 
-        if (!isAdmin && order.UserId != currentUserId)
+        if (result is Result<OrderDetailDto>.Success success)
+            return Ok(ApiResponse<OrderDetailDto>.Ok(success.Data, "Order retrieved successfully"));
+
+        if (result is Result<OrderDetailDto>.Failure failure)
         {
-            _logger.LogWarning("User {UserId} attempted to access order {OrderNumber} belonging to {OrderOwnerId}",
-                currentUserId, orderNumber, order.UserId);
-            return Forbid();
+            var statusCode = failure.Code switch
+            {
+                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "FORBIDDEN" => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return Ok(ApiResponse<OrderDetailDto>.Ok(order, "Order retrieved successfully"));
+        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
     /// <summary>
@@ -267,27 +262,23 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> CancelOrder(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
-
-        // Ownership check: retrieve order first
-        var order = await _orderService.GetOrderByIdAsync(id, cancellationToken: cancellationToken);
-        if (order == null)
-        {
-            return NotFound(ApiResponse<object>.Failure("Order not found", "ORDER_NOT_FOUND"));
-        }
-
-        // Check if user owns the order or is admin
         var currentUserId = _currentUser.UserIdOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
                      (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+        var result = await _orderService.CancelOrderAsync(id, currentUserId, isAdmin, cancellationToken: cancellationToken);
 
-        if (!isAdmin && order.UserId != currentUserId)
+        if (result is Result<Unit>.Failure failure)
         {
-            _logger.LogWarning("User {UserId} attempted to cancel order {OrderId} belonging to {OrderOwnerId}",
-                currentUserId, id, order.UserId);
-            return StatusCode(403, ApiResponse<object>.Failure("You do not have permission to cancel this order", "INSUFFICIENT_PERMISSIONS"));
+            var statusCode = failure.Code switch
+            {
+                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "FORBIDDEN" => StatusCodes.Status403Forbidden,
+                "INVALID_ORDER_STATUS" => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status400BadRequest
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        var result = await _orderService.CancelOrderAsync(id, cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(new object(), "Order cancelled successfully"));
     }
 }

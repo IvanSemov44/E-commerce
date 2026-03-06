@@ -15,6 +15,7 @@ namespace ECommerce.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Tags("Auth")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

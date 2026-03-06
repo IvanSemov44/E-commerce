@@ -474,12 +474,44 @@ public class OrderService : IOrderService
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
     }
 
+    public async Task<Result<OrderDetailDto>> GetOrderByIdForUserAsync(Guid id, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
+        var order = await GetOrderByIdAsync(id, cancellationToken);
+        if (order == null)
+        {
+            return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, "Order not found");
+        }
+
+        if (!isAdmin && order.UserId != userId)
+        {
+            return Result<OrderDetailDto>.Fail(ErrorCodes.Forbidden, "You do not have permission to access this order");
+        }
+
+        return Result<OrderDetailDto>.Ok(order);
+    }
+
     public async Task<OrderDetailDto?> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving order {OrderNumber}", orderNumber);
 
         var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber, cancellationToken: cancellationToken);
         return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
+    }
+
+    public async Task<Result<OrderDetailDto>> GetOrderByNumberForUserAsync(string orderNumber, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
+        var order = await GetOrderByNumberAsync(orderNumber, cancellationToken);
+        if (order == null)
+        {
+            return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, "Order not found");
+        }
+
+        if (!isAdmin && order.UserId != userId)
+        {
+            return Result<OrderDetailDto>.Fail(ErrorCodes.Forbidden, "You do not have permission to access this order");
+        }
+
+        return Result<OrderDetailDto>.Ok(order);
     }
 
     public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, OrderQueryParameters parameters, CancellationToken cancellationToken = default)
@@ -542,12 +574,22 @@ public class OrderService : IOrderService
 
     public async Task<Result<Unit>> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        return await CancelOrderAsync(id, userId: null, isAdmin: true, cancellationToken);
+    }
+
+    public async Task<Result<Unit>> CancelOrderAsync(Guid id, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
         _logger.LogInformation("Cancelling order {OrderId}", id);
 
         var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
         if (order == null)
         {
             return Result<Unit>.Fail(ErrorCodes.OrderNotFound, $"Order {id} not found");
+        }
+
+        if (!isAdmin && order.UserId != userId)
+        {
+            return Result<Unit>.Fail(ErrorCodes.Forbidden, "You do not have permission to cancel this order");
         }
 
         // Can't cancel if already shipped or delivered
