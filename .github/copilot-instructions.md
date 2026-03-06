@@ -66,7 +66,7 @@ Infrastructure  →  Core
 #### Services (Application/Services/ + Interfaces/)
 - Inject dependencies explicitly (no service locator pattern)
 - Inject `IUnitOfWork`, `IMapper`, `ILogger<T>`, other services — never repos directly
-- **Throw typed domain exceptions** (never generic): `throw new OrderNotFoundException(id)`
+- **Use Result<T> for business logic** (never throw exceptions): `return Result<T>.Fail(ErrorCodes.OrderNotFound, message)`
 - **Use `_mapper.Map<DTO>(entity)`** for conversions (never manual construction)
 - **Fire-and-forget for side effects**: `_ = Task.Run(async () => { await _emailService.Send(...); })`
 
@@ -78,11 +78,12 @@ Infrastructure  →  Core
 - Add `[Authorize]` at class level if most endpoints need auth (override with `[AllowAnonymous]`)
 - Responses: `Ok()`, `CreatedAtAction()`, `NotFound()` wrapped in `ApiResponse<T>.Ok()` or `.Error()`
 
-#### Exception Handling (Core/Exceptions/)
-- Typed hierarchy maps to HTTP status: `NotFoundException` → 404, `BadRequestException` → 400, `ConflictException` → 409, `UnauthorizedException` → 401
-- C# 12 primary constructors: `public sealed class OrderNotFound(Guid id) : NotFoundException($"Order {id} not found") { }`
-- **GlobalExceptionMiddleware** catches all domain exceptions → serialize to ApiResponse
-- Let exceptions bubble up — don't catch just to re-throw
+#### Error Handling (Result<T> Pattern)
+- **Business logic**: Return `Result<T>` with error codes: `Result<T>.Fail(ErrorCodes.OrderNotFound, message)`
+- **Infrastructure failures**: Base exception types remain (NotFoundException, BadRequestException, ConflictException, UnauthorizedException) for framework exceptions only
+- **GlobalExceptionMiddleware** catches unexpected infrastructure exceptions → serialize to ApiResponse
+- **Controllers**: Pattern match on Result<T>.Success / Result<T>.Failure, never throw in services
+- **Error codes**: Use `ErrorCodes` constants (ORDER_NOT_FOUND, PRODUCT_NOT_FOUND, INSUFFICIENT_STOCK, etc.)
 
 #### Logging (all services/controllers)
 - Inject `ILogger<T>`
@@ -185,7 +186,7 @@ dotnet ef database update -p ECommerce.Infrastructure -s ECommerce.API
 - ❌ Calling `SaveChangesAsync()` inside repositories (UnitOfWork's job)
 - ❌ Block-scoped namespaces (use file-scoped)
 - ❌ Manually constructing DTOs instead of using AutoMapper
-- ❌ Throwing generic exceptions instead of typed domain exceptions
+- ❌ Throwing exceptions for business logic (use Result<T> pattern)
 - ❌ Lazy-loading navigation properties (explicitly `.Include()`)
 - ❌ Validation logic in services (FluentValidation handles it)
 - ❌ Monolithic API files (separate per feature)
