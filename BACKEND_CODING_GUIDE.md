@@ -112,7 +112,8 @@ public class CreateProductDtoValidator : AbstractValidator<CreateProductDto>
 
 // Service: Business rules
 var existingProduct = await _unitOfWork.Products.GetBySlugAsync(dto.Slug, ct);
-if (existingProduct != null) throw new DuplicateProductSlugException(dto.Slug);
+if (existingProduct != null)
+    return Result<ProductDto>.Fail(ErrorCodes.DuplicateProductSlug, $"Product slug '{dto.Slug}' already exists");
 ```
 
 ### **6. DTO Organization & Direction Separation (MUST)**
@@ -184,17 +185,18 @@ Quick decision matrix:
 | Scenario | Preferred Pattern | Why |
 |---|---|---|
 | Domain/business rule failed (invalid transition, insufficient inventory, ownership decision) | `Result<T>` | Expected outcome; keeps flow explicit and test-friendly |
-| Resource absent in exception-based feature flow (`OrderNotFoundException`) | Typed exception | Centralized HTTP mapping through middleware |
+| Resource absent in business flow (`orderId` not found) | `Result<T>` | Predictable outcome; explicit and pattern-matchable in controller |
 | Infrastructure/transient failure (DB/network/gateway unavailable) | Typed exception | Exceptional path; middleware + retries/logging handle consistently |
 
 ```csharp
 // Service
-if (order == null) throw new OrderNotFoundException(orderId);
-if (order.UserId != _currentUser.UserId) throw new ForbiddenException("Not your order");
+if (order == null)
+    return Result<OrderDto>.Fail(ErrorCodes.OrderNotFound, $"Order {orderId} not found");
+if (order.UserId != _currentUser.UserId)
+    return Result<OrderDto>.Fail(ErrorCodes.Forbidden, "Not your order");
 
 // Middleware catches and returns:
-// 404 for NotFoundException
-// 403 for ForbiddenException
+// 500 for unexpected exceptions
 // 409 for DbUpdateConcurrencyException
 // 422 for ValidationException
 ```
@@ -240,13 +242,15 @@ catch (DbUpdateConcurrencyException)
 {
     _unitOfWork.Orders.Detach(order);
     var current = await _unitOfWork.Orders.GetByIdAsync(orderId, ct);
-    throw new OrderConcurrencyException($"Modified by another user. Status: {current?.Status}");
+    return Result<OrderDto>.Fail(
+        ErrorCodes.ConcurrencyConflict,
+        $"Modified by another user. Status: {current?.Status}");
 }
 
 // Controller
-catch (OrderConcurrencyException ex)
+if (result is Result<OrderDto>.Failure failure && failure.ErrorCode == ErrorCodes.ConcurrencyConflict)
 {
-    return Conflict(new { error = ex.Message, TraceId = HttpContext.TraceIdentifier });
+    return Conflict(new { error = failure.Message, TraceId = HttpContext.TraceIdentifier });
 }
 ```
 
@@ -505,7 +509,7 @@ public class OrderService
     {
         // Load current state
         var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct)
-            ?? throw new OrderNotFoundException(orderId);
+            ?? return Result<OrderDto>.Fail(ErrorCodes.OrderNotFound, $"Order {orderId} not found");
 
         // If client provided RowVersion (from earlier GET), verify not stale
         if (expectedRowVersion != null && !AreRowVersionsEqual(order.RowVersion, expectedRowVersion))
@@ -1080,13 +1084,13 @@ public class ProductService : IProductService
         _logger = logger;
     }
 
-    public async Task<ProductDto> GetProductByIdAsync(Guid productId, CancellationToken ct = default)
+    public async Task<Result<ProductDto>> GetProductByIdAsync(Guid productId, CancellationToken ct = default)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(productId, ct)
-            ?? throw new ProductNotFoundException(productId);
+            ?? return Result<ProductDto>.Fail(ErrorCodes.ProductNotFound, $"Product {productId} not found");
 
         _logger.LogInformation("Product {ProductId} retrieved", productId);
-        return _mapper.Map<ProductDto>(product);
+        return Result<ProductDto>.Ok(_mapper.Map<ProductDto>(product));
     }
 
     public async Task<PaginatedResponse<ProductDto>> GetProductsAsync(
@@ -1121,12 +1125,12 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<ProductDto> CreateProductAsync(CreateProductDto dto, CancellationToken ct = default)
+    public async Task<Result<ProductDto>> CreateProductAsync(CreateProductDto dto, CancellationToken ct = default)
     {
         // Business rule: slug must be unique
         var existingProduct = await _unitOfWork.Products.GetBySlugAsync(dto.Slug, ct);
         if (existingProduct != null)
-            throw new DuplicateProductSlugException(dto.Slug);
+            return Result<ProductDto>.Fail(ErrorCodes.DuplicateProductSlug, $"Product slug '{dto.Slug}' already exists");
 
         var product = new Product
         {
@@ -1343,7 +1347,7 @@ public class ProductServiceTests
     }
 
     [TestMethod]
-    public async Task GetProductByIdAsync_NonExistingProduct_ThrowsNotFoundException()
+    public async Task GetProductByIdAsync_NonExistingProduct_ReturnsFailure()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -1352,14 +1356,15 @@ public class ProductServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        Func<Task> act = async () => await _service.GetProductByIdAsync(productId);
+        var result = await _service.GetProductByIdAsync(productId);
 
         // Assert
-        await act.Should().ThrowAsync<ProductNotFoundException>();
+        result.IsSuccess.Should().BeFalse();
+        result.GetFailureOrNull()?.ErrorCode.Should().Be(ErrorCodes.ProductNotFound);
     }
 
     [TestMethod]
-    public async Task CreateProductAsync_DuplicateSlug_ThrowsException()
+    public async Task CreateProductAsync_DuplicateSlug_ReturnsFailure()
     {
         // Arrange
         var dto = new CreateProductDto { Name = "Laptop", Slug = "laptop", Price = 999.99m };
@@ -1370,10 +1375,11 @@ public class ProductServiceTests
             .ReturnsAsync(existingProduct);
 
         // Act
-        Func<Task> act = async () => await _service.CreateProductAsync(dto);
+        var result = await _service.CreateProductAsync(dto);
 
         // Assert
-        await act.Should().ThrowAsync<DuplicateProductSlugException>();
+        result.IsSuccess.Should().BeFalse();
+        result.GetFailureOrNull()?.ErrorCode.Should().Be(ErrorCodes.DuplicateProductSlug);
     }
 }
 ```
