@@ -12,7 +12,7 @@ import styles from './HomePage.module.css';
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const { data: featured, isLoading, error } = useGetFeaturedProductsQuery(10);
+  const { data: featured, isLoading, error } = useGetFeaturedProductsQuery({ page: 1, pageSize: 10 });
   const { data: categories } = useGetTopLevelCategoriesQuery();
   
   // Bestsellers - products sorted by review count (popularity)
@@ -89,16 +89,16 @@ export default function HomePage() {
         <QueryRenderer
           isLoading={isLoading}
           error={error}
-          data={featured}
+          data={featured?.items}
           errorMessage={t('products.failedToLoadProducts')}
           emptyState={{
             icon: <GridIcon />,
             title: t('products.noProducts')
           }}
         >
-          {(featured) => (
+          {(featuredItems) => (
             <div className={styles.grid}>
-              {featured.map((product) => (
+              {featuredItems.map((product) => (
                 <ProductCard
                   key={product.id}
                   id={product.id}

@@ -24,4 +24,4 @@ export type GetProductBySlugResponse = ApiResponse<ProductDetail>;
 
 export type GetProductByIdResponse = ApiResponse<ProductDetail>;
 
-export type GetFeaturedProductsResponse = ApiResponse<Product[]>;
+export type GetFeaturedProductsResponse = ApiResponse<PaginatedResult<Product>>;
