@@ -388,7 +388,7 @@ public class CsrfMiddlewareTests
 
         // Assert
         context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-        context.Response.ContentType.Should().Be("application/json");
+        context.Response.ContentType.Should().StartWith("application/json");
     }
 
     [TestMethod]

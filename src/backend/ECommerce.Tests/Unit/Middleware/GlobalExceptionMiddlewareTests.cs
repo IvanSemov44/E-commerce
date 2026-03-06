@@ -64,7 +64,8 @@ public class GlobalExceptionMiddlewareTests
         // Assert
         response.Should().NotBeNull();
         response!.Success.Should().BeFalse();
-        response.Message.Should().Contain(productId.ToString());
+        response.ErrorDetails.Should().NotBeNull();
+        response.ErrorDetails!.Message.Should().Contain(productId.ToString());
     }
 
     #endregion
@@ -270,8 +271,9 @@ public class GlobalExceptionMiddlewareTests
 
         // Assert
         response.Should().NotBeNull();
-        response!.Message.Should().NotContain("Sensitive internal error message");
-        response.Message.Should().Be("An internal server error occurred. Please try again later.");
+        response!.ErrorDetails.Should().NotBeNull();
+        response.ErrorDetails!.Message.Should().NotContain("Sensitive internal error message");
+        response.ErrorDetails.Message.Should().Be("An internal server error occurred. Please try again later.");
     }
 
     #endregion
@@ -369,7 +371,13 @@ public class GlobalExceptionMiddlewareTests
     private class ErrorResponse
     {
         public bool Success { get; set; }
+        public ErrorDetails? ErrorDetails { get; set; }
+    }
+
+    private class ErrorDetails
+    {
         public string Message { get; set; } = null!;
+        public string? Code { get; set; }
     }
 
     #endregion

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 namespace ECommerce.Tests.Unit.HealthChecks;
 
@@ -15,33 +14,15 @@ namespace ECommerce.Tests.Unit.HealthChecks;
 [TestClass]
 public class HealthCheckResponseWriterTests
 {
-    private Mock<HttpContext> _mockHttpContext = null!;
-    private Mock<HttpResponse> _mockHttpResponse = null!;
-    private Mock<IResponseCookies> _mockCookies = null!;
-    private HeaderDictionary _headers = null!;
+    private DefaultHttpContext _httpContext = null!;
     private MemoryStream _responseBody = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _mockHttpContext = new Mock<HttpContext>();
-        _mockHttpResponse = new Mock<HttpResponse>();
-        _mockCookies = new Mock<IResponseCookies>();
-        _headers = new HeaderDictionary();
+        _httpContext = new DefaultHttpContext();
         _responseBody = new MemoryStream();
-
-        _mockHttpResponse.SetupGet(r => r.Headers).Returns(_headers);
-        _mockHttpResponse.SetupGet(r => r.Body).Returns(_responseBody);
-        _mockHttpResponse.Setup(r => r.WriteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns<string, CancellationToken>((s, ct) =>
-            {
-                var writer = new StreamWriter(_responseBody, leaveOpen: true);
-                writer.Write(s);
-                writer.Flush();
-                return Task.CompletedTask;
-            });
-
-        _mockHttpContext.SetupGet(c => c.Response).Returns(_mockHttpResponse.Object);
+        _httpContext.Response.Body = _responseBody;
     }
 
     [TestCleanup]
@@ -59,10 +40,10 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _mockHttpResponse.VerifySet(r => r.StatusCode = StatusCodes.Status200OK);
+        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
     }
 
     [TestMethod]
@@ -72,10 +53,10 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Degraded);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _mockHttpResponse.VerifySet(r => r.StatusCode = StatusCodes.Status200OK);
+        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
     }
 
     [TestMethod]
@@ -85,10 +66,10 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Unhealthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _mockHttpResponse.VerifySet(r => r.StatusCode = StatusCodes.Status503ServiceUnavailable);
+        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
     }
 
     [TestMethod]
@@ -98,10 +79,10 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _mockHttpResponse.VerifySet(r => r.ContentType = "application/json");
+        _httpContext.Response.ContentType.Should().Be("application/json");
     }
 
     [TestMethod]
@@ -111,7 +92,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -127,7 +108,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -143,7 +124,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -159,7 +140,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -180,7 +161,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = new HealthReport(entries, TimeSpan.FromMilliseconds(60));
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -202,7 +183,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = new HealthReport(entries, TimeSpan.FromMilliseconds(10));
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -223,7 +204,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = new HealthReport(entries, TimeSpan.FromMilliseconds(10));
 
         // Act
-        await HealthCheckResponseWriter.WriteHealthCheckResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -243,10 +224,10 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteLivenessResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteLivenessResponse(_httpContext, healthReport);
 
         // Assert
-        _mockHttpResponse.VerifySet(r => r.StatusCode = StatusCodes.Status200OK);
+        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
     }
 
     [TestMethod]
@@ -256,10 +237,10 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteLivenessResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteLivenessResponse(_httpContext, healthReport);
 
         // Assert
-        _mockHttpResponse.VerifySet(r => r.ContentType = "application/json");
+        _httpContext.Response.ContentType.Should().Be("application/json");
     }
 
     [TestMethod]
@@ -269,7 +250,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteLivenessResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteLivenessResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -285,7 +266,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteLivenessResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteLivenessResponse(_httpContext, healthReport);
 
         // Assert
         _responseBody.Position = 0;
@@ -301,7 +282,7 @@ public class HealthCheckResponseWriterTests
         var healthReport = CreateHealthReport(HealthStatus.Healthy);
 
         // Act
-        await HealthCheckResponseWriter.WriteLivenessResponse(_mockHttpContext.Object, healthReport);
+        await HealthCheckResponseWriter.WriteLivenessResponse(_httpContext, healthReport);
 
         // Assert - Verify it's a simple response (no checks array)
         _responseBody.Position = 0;

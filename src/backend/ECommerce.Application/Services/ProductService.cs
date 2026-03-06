@@ -124,7 +124,7 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20)
     {
         // FIX: Validate and cap page size to prevent DoS
-        var effectivePageSize = Math.Min(pageSize, MaxPageSize);
+        var effectivePageSize = Math.Min(pageSize, PaginationConstants.MaxPageSize);
         
         // FIX: Get total count of featured products (not all active products)
         var totalCount = await _unitOfWork.Products.GetFeaturedProductsCountAsync();
@@ -146,7 +146,7 @@ public class ProductService : IProductService
     public async Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         // FIX: Validate and cap page size to prevent DoS
-        var effectivePageSize = Math.Min(pageSize, MaxPageSize);
+        var effectivePageSize = Math.Min(pageSize, PaginationConstants.MaxPageSize);
         var skip = (page - 1) * effectivePageSize;
 
         // PERFORMANCE FIX: Use LIKE instead of ToLower().Contains() for better index utilization

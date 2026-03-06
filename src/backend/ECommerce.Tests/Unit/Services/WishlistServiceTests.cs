@@ -163,10 +163,10 @@ public class WishlistServiceTests
         var entries = new List<Wishlist> { entry };
         _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => entries.ToList());
         _mockProductRepository.Setup(r => r.GetByIdAsync(product.Id, It.IsAny<bool>())).ReturnsAsync(product);
-            _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>(), It.IsAny<CancellationToken>()))
-                .Callback<Wishlist, CancellationToken>((w, _) => entries.RemoveAll(x => x.Id == w.Id))
-                .Returns(Task.CompletedTask);
-            _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _mockWishlistRepository.Setup(r => r.DeleteByUserIdAndProductIdAsync(user.Id, product.Id, It.IsAny<CancellationToken>()))
+            .Callback<Guid, Guid, CancellationToken>((u, p, _) => entries.RemoveAll(x => x.UserId == u && x.ProductId == p))
+            .Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         // (after deletion, repository will return empty list) - handled by sequence above
 
         // Act
@@ -182,7 +182,7 @@ public class WishlistServiceTests
         {
             Assert.Fail("Expected Result<WishlistDto>.Success");
         }
-        _mockWishlistRepository.Verify(r => r.DeleteAsync(It.IsAny<Wishlist>()), Times.Once);
+        _mockWishlistRepository.Verify(r => r.DeleteByUserIdAndProductIdAsync(user.Id, product.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [TestMethod]
@@ -240,7 +240,7 @@ public class WishlistServiceTests
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
         _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(entries);
-        _mockWishlistRepository.Setup(r => r.DeleteAsync(It.IsAny<Wishlist>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _mockWishlistRepository.Setup(r => r.DeleteRangeAsync(It.IsAny<IEnumerable<Wishlist>>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
@@ -256,7 +256,7 @@ public class WishlistServiceTests
         {
             Assert.Fail("Expected Result<WishlistDto>.Success");
         }
-        _mockWishlistRepository.Verify(r => r.DeleteAsync(It.IsAny<Wishlist>()), Times.Exactly(2));
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        _mockWishlistRepository.Verify(r => r.DeleteRangeAsync(It.IsAny<IEnumerable<Wishlist>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

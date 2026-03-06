@@ -56,6 +56,7 @@ public class AddToCartCreateOrderTests
         orderResponse.EnsureSuccessStatusCode();
 
         var content = await orderResponse.Content.ReadAsStringAsync();
-        Assert.IsTrue(content.Contains("Order created successfully") || content.Contains("order created"), "Order creation response did not indicate success");
+        Assert.IsTrue(content.Contains("\"success\": true") || content.Contains("\"success\":true"),
+            "Order creation response should indicate success");
     }
 }

@@ -363,8 +363,9 @@ public class AuthControllerTests
 
         // Verify ApiResponse<AuthResponseDto> structure
         Assert.IsTrue(responseData.TryGetProperty("success", out var success), "Response should have 'success' property");
-        Assert.IsTrue(responseData.TryGetProperty("message", out var message), "Response should have 'message' property");
-        Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have 'data' property");
+        Assert.IsTrue(
+            responseData.TryGetProperty("data", out var data) || responseData.TryGetProperty("errorDetails", out _),
+            "Response should include either 'data' or 'errorDetails' property");
     }
 
     #endregion

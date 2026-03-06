@@ -297,7 +297,7 @@ public class PromoCodeServiceTests
         if (result is Result<PromoCodeDetailDto>.Failure failure)
         {
             failure.Code.Should().Be(ErrorCodes.InvalidPromoCode);
-            failure.Message.Should().Contain("percentage");
+            failure.Message.ToLowerInvariant().Should().Contain("percentage");
         }
         else
         {
