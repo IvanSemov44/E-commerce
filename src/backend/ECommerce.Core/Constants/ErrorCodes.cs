@@ -64,4 +64,7 @@ public static class ErrorCodes
     // Authentication/Authorization errors
     public const string Unauthorized = "UNAUTHORIZED";
     public const string Forbidden = "FORBIDDEN";
+    
+    // Concurrency errors
+    public const string ConcurrencyConflict = "CONCURRENCY_CONFLICT";
 }

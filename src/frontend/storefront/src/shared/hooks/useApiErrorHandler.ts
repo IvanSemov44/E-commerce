@@ -4,7 +4,7 @@
  * Extracts error messages and displays consistent notifications
  */
 
-import { useToast } from './useToast';
+import { useToast } from '@/shared/components/Toast';
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { SerializedError } from '@reduxjs/toolkit';
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '@/shared/hooks/useToast';
+import { useToast } from '@/shared/components/Toast';
 import { FacebookIcon, TwitterIcon, InstagramIcon, LinkedInIcon, YouTubeIcon } from '@/shared/components/icons';
 import styles from './Footer.module.css';
 

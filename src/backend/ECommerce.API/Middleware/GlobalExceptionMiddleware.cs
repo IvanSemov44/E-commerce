@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using ECommerce.Application.DTOs.Common;
-using ECommerce.Core.Exceptions;
 using ECommerce.Core.Exceptions.Base;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -10,8 +9,10 @@ namespace ECommerce.API.Middleware;
 
 /// <summary>
 /// Global exception middleware for handling all unhandled exceptions.
-/// Catches exceptions from the entire pipeline and returns standardized ApiResponse.
-/// Implements CodeMaze best practices for centralized exception handling.
+/// Catches unexpected exceptions from the entire pipeline and returns standardized ApiResponse.
+/// 
+/// NOTE: Business logic failures are handled via Result<T> pattern - exceptions are reserved for
+/// unexpected infrastructure failures only (database conflicts, network issues, etc.).
 /// </summary>
 public class GlobalExceptionMiddleware
 {
@@ -62,43 +63,44 @@ public class GlobalExceptionMiddleware
 
     /// <summary>
     /// Maps different exception types to appropriate HTTP status codes and error messages.
+    /// Only handles unexpected infrastructure failures - business logic uses Result<T>.
     /// </summary>
     private (int StatusCode, ApiResponse<object> ApiResponse) MapExceptionToResponse(Exception exception)
     {
         return exception switch
         {
-            // Not Found (404)
+            // Not Found (404) - Base exception type for infrastructure resource lookup failures
             NotFoundException => (StatusCodes.Status404NotFound,
                 ApiResponse<object>.Failure(exception.Message, "NOT_FOUND")),
 
-            // Unauthorized (401)
+            // Unauthorized (401) - Base exception type for authentication failures
             UnauthorizedException => (StatusCodes.Status401Unauthorized,
                 ApiResponse<object>.Failure(exception.Message, "UNAUTHORIZED")),
 
-            // Bad Request (400)
+            // Bad Request (400) - Base exception type for malformed requests
             BadRequestException => (StatusCodes.Status400BadRequest,
                 ApiResponse<object>.Failure(exception.Message, "BAD_REQUEST")),
 
-            // Argument validation errors (400)
+            // Argument validation errors (400) - Framework exceptions
             ArgumentNullException argNullEx => (StatusCodes.Status400BadRequest,
                 ApiResponse<object>.Failure($"Missing required parameter: {argNullEx.ParamName}", "MISSING_PARAMETER")),
 
             ArgumentException argEx => (StatusCodes.Status400BadRequest,
                 ApiResponse<object>.Failure(argEx.Message, "INVALID_ARGUMENT")),
 
-            // Invalid operation (409)
-            InvalidOperationException => (StatusCodes.Status409Conflict,
-                ApiResponse<object>.Failure("The requested operation could not be completed due to a conflict.", "INVALID_OPERATION")),
-
-            // Conflict (409)
+            // Conflict (409) - Base exception type for conflict scenarios
             ConflictException => (StatusCodes.Status409Conflict,
                 ApiResponse<object>.Failure(exception.Message, "CONFLICT")),
 
-            // Concurrency conflict - DbUpdateConcurrencyException (409)
+            // Concurrency conflict - EF Core optimistic locking violations (409)
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
                 ApiResponse<object>.Failure(
                     "The resource was modified by another user. Please refresh and try again.",
                     "CONCURRENCY_CONFLICT")),
+
+            // Invalid operation - Framework exceptions (409)
+            InvalidOperationException => (StatusCodes.Status409Conflict,
+                ApiResponse<object>.Failure("The requested operation could not be completed due to a conflict.", "INVALID_OPERATION")),
 
             // Generic exception - Internal Server Error (500)
             // Note: exception.Message is logged but NOT exposed to client for security

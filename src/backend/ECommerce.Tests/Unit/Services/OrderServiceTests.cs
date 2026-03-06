@@ -190,7 +190,7 @@ public class OrderServiceTests
     }
 
     [TestMethod]
-    public async Task CreateOrderAsync_UserNotFound_ThrowsUserNotFoundException()
+    public async Task CreateOrderAsync_UserNotFound_ReturnsFailure()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -200,7 +200,7 @@ public class OrderServiceTests
             Items = new List<CreateOrderItemDto>()
         };
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -639,12 +639,12 @@ public class OrderServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateOrderStatusAsync_OrderNotFound_ThrowsOrderNotFoundException()
+    public async Task UpdateOrderStatusAsync_OrderNotFound_ReturnsFailure()
     {
         // Arrange
         var orderId = Guid.NewGuid();
 
-        _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId, It.IsAny<bool>()))
+        _mockOrderRepository.Setup(r => r.GetByIdAsync(orderId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
         // Act

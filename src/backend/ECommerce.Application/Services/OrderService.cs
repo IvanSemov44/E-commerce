@@ -77,23 +77,12 @@ public class OrderService : IOrderService
         try
         {
             // Step 1: Validate user or guest
-            if (userId.HasValue)
+            var validationResult = await ValidateUserOrGuestAsync(userId, dto.GuestEmail, cancellationToken);
+            if (!validationResult.IsSuccess)
             {
-                var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, trackChanges: false, cancellationToken);
-                if (user == null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<OrderDetailDto>.Fail(ErrorCodes.UserNotFound, "User not found");
-                }
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(dto.GuestEmail))
-                {
-                    _logger.LogWarning("Guest checkout attempted without email");
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, "Email is required for guest checkout");
-                }
+                await transaction.RollbackAsync(cancellationToken);
+                var failure = validationResult.GetFailureOrNull();
+                return Result<OrderDetailDto>.Fail(failure!.Value.Code, failure.Value.Message);
             }
 
             // Step 2: Create order entity with addresses
@@ -143,27 +132,32 @@ public class OrderService : IOrderService
             }
 
             // Step 3: Process order items and calculate subtotal
-            var (items, subtotal, stockCheckItems) = await ProcessOrderItemsAsync(dto.Items, cancellationToken);
-
-            var stockCheckResponse = await _inventoryService.CheckStockAvailabilityAsync(stockCheckItems);
-            if (!stockCheckResponse.IsAvailable)
+            var itemsResult = await ProcessOrderItemsAsync(dto.Items, cancellationToken);
+            if (!itemsResult.IsSuccess)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return Result<OrderDetailDto>.Fail(ErrorCodes.InsufficientStock, "Insufficient stock for one or more items");
+                var failure = itemsResult.GetFailureOrNull();
+                return Result<OrderDetailDto>.Fail(failure!.Value.Code, failure.Value.Message);
+            }
+
+            var (items, subtotal, stockCheckItems) = itemsResult.GetDataOrThrow();
+
+            // Step 4: Validate stock availability
+            var stockResult = await ValidateStockAvailabilityAsync(stockCheckItems, cancellationToken);
+            if (!stockResult.IsSuccess)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                var failure = stockResult.GetFailureOrNull();
+                return Result<OrderDetailDto>.Fail(failure!.Value.Code, failure.Value.Message);
             }
 
             // Step 5: Apply promo code if provided
-            if (!string.IsNullOrWhiteSpace(dto.PromoCode))
+            var promoResult = await ApplyPromoCodeAsync(order, dto.PromoCode, subtotal, cancellationToken);
+            if (!promoResult.IsSuccess)
             {
-                var promoValidationResult = await _promoCodeService.ValidatePromoCodeAsync(dto.PromoCode, subtotal);
-                if (!promoValidationResult.IsValid)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Result<OrderDetailDto>.Fail(ErrorCodes.InvalidPromoCode, $"Promo code '{dto.PromoCode}' is invalid");
-                }
-
-                order.DiscountAmount = promoValidationResult.DiscountAmount;
-                order.PromoCodeId = promoValidationResult.PromoCode?.Id;
+                await transaction.RollbackAsync(cancellationToken);
+                var failure = promoResult.GetFailureOrNull();
+                return Result<OrderDetailDto>.Fail(failure!.Value.Code, failure.Value.Message);
             }
 
             // Step 6: Calculate final totals with business rules
@@ -203,22 +197,24 @@ public class OrderService : IOrderService
     /// <summary>
     /// Validates that the user exists or guest email is provided.
     /// </summary>
-    private async Task ValidateUserOrGuestAsync(Guid? userId, string? guestEmail, CancellationToken cancellationToken)
+    private async Task<Result<Core.Results.Unit>> ValidateUserOrGuestAsync(Guid? userId, string? guestEmail, CancellationToken cancellationToken)
     {
         if (userId.HasValue)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, trackChanges: false, cancellationToken);
             if (user == null)
-                throw new UserNotFoundException(userId.Value);
+                return Result<Core.Results.Unit>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId.Value}' not found");
         }
         else
         {
             if (string.IsNullOrWhiteSpace(guestEmail))
             {
                 _logger.LogWarning("Guest checkout attempted without email");
-                throw new GuestEmailRequiredException();
+                return Result<Core.Results.Unit>.Fail(ErrorCodes.OrderNotFound, "Email is required for guest checkout");
             }
         }
+
+        return Result<Core.Results.Unit>.Ok(new Core.Results.Unit());
     }
 
     /// <summary>
@@ -278,7 +274,7 @@ public class OrderService : IOrderService
     /// SECURITY: Uses server-side product lookup to prevent price manipulation attacks.
     /// PERFORMANCE: Batch-loads all products to prevent N+1 queries.
     /// </summary>
-    private async Task<(List<OrderItem> items, decimal subtotal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems)> 
+    private async Task<Result<(List<OrderItem> items, decimal subtotal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems)>> 
         ProcessOrderItemsAsync(IEnumerable<CreateOrderItemDto>? itemDtos, CancellationToken cancellationToken)
     {
         var items = new List<OrderItem>();
@@ -288,14 +284,14 @@ public class OrderService : IOrderService
         if (itemDtos != null && itemDtos.Any())
         {
             // PERFORMANCE FIX: Batch load all products at once instead of looping with individual queries
-            var productIds = itemDtos
-                .Select(i => 
-                {
-                    if (Guid.TryParse(i.ProductId, out var id))
-                        return id;
-                    throw new ProductNotFoundException(i.ProductId);
-                })
-                .ToList();
+            var productIds = new List<Guid>();
+            foreach (var i in itemDtos)
+            {
+                if (!Guid.TryParse(i.ProductId, out var id))
+                    return Result<(List<OrderItem>, decimal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>)>.Fail(
+                        ErrorCodes.ProductNotFound, $"Invalid product ID: {i.ProductId}");
+                productIds.Add(id);
+            }
 
             var products = await _unitOfWork.Products.GetByIdsAsync(productIds, trackChanges: false, cancellationToken);
             var productDict = products.ToDictionary(p => p.Id);
@@ -303,15 +299,18 @@ public class OrderService : IOrderService
             foreach (var itemDto in itemDtos)
             {
                 if (!Guid.TryParse(itemDto.ProductId, out var productId))
-                    throw new ProductNotFoundException(itemDto.ProductId);
+                    return Result<(List<OrderItem>, decimal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>)>.Fail(
+                        ErrorCodes.ProductNotFound, $"Invalid product ID: {itemDto.ProductId}");
 
                 // Look up from pre-loaded products
                 if (!productDict.TryGetValue(productId, out var product))
-                    throw new ProductNotFoundException(productId);
+                    return Result<(List<OrderItem>, decimal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>)>.Fail(
+                        ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
 
                 // Validate product is available for purchase
                 if (!product.IsActive)
-                    throw new ProductNotAvailableException(product.Name);
+                    return Result<(List<OrderItem>, decimal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>)>.Fail(
+                        ErrorCodes.ProductNotAvailable, $"Product '{product.Name}' is not available for purchase");
 
                 // 🔒 Use database price, not client-provided price
                 var orderItem = new OrderItem
@@ -339,7 +338,7 @@ public class OrderService : IOrderService
             }
         }
 
-        return (items, subtotal, stockCheckItems);
+        return Result<(List<OrderItem>, decimal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto>)>.Ok((items, subtotal, stockCheckItems));
     }
 
     /// <summary>
@@ -347,7 +346,7 @@ public class OrderService : IOrderService
     /// Note: Within transaction context, this provides race condition protection.
     /// Future enhancement: Add pessimistic locking with SELECT FOR UPDATE (requires raw SQL).
     /// </summary>
-    private async Task ValidateStockAvailabilityAsync(
+    private async Task<Result<Core.Results.Unit>> ValidateStockAvailabilityAsync(
         List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems, 
         CancellationToken cancellationToken)
     {
@@ -357,15 +356,18 @@ public class OrderService : IOrderService
             if (!stockCheck.IsAvailable)
             {
                 var firstIssue = stockCheck.Issues.First();
-                throw new InsufficientStockException(firstIssue.ProductName, firstIssue.RequestedQuantity, firstIssue.AvailableQuantity);
+                return Result<Core.Results.Unit>.Fail(ErrorCodes.InsufficientStock, 
+                    $"Insufficient stock for '{firstIssue.ProductName}': requested {firstIssue.RequestedQuantity}, available {firstIssue.AvailableQuantity}");
             }
         }
+
+        return Result<Core.Results.Unit>.Ok(new Core.Results.Unit());
     }
 
     /// <summary>
     /// Applies promo code discount if provided and valid.
     /// </summary>
-    private async Task ApplyPromoCodeAsync(Order order, string? promoCode, decimal subtotal, CancellationToken cancellationToken)
+    private async Task<Result<Core.Results.Unit>> ApplyPromoCodeAsync(Order order, string? promoCode, decimal subtotal, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(promoCode))
         {
@@ -379,13 +381,15 @@ public class OrderService : IOrderService
             }
             else
             {
-                throw new InvalidPromoCodeException(promoCode);
+                return Result<Core.Results.Unit>.Fail(ErrorCodes.InvalidPromoCode, $"Promo code '{promoCode}' is invalid or has expired");
             }
         }
         else
         {
             order.DiscountAmount = 0;
         }
+
+        return Result<Core.Results.Unit>.Ok(new Core.Results.Unit());
     }
 
     /// <summary>
@@ -577,7 +581,8 @@ public class OrderService : IOrderService
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict while updating order {OrderId} status", id);
-            throw new ConcurrencyException("Order", id.ToString());
+            return Result<OrderDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, 
+                $"Order {id} was modified by another user. Please refresh and try again.");
         }
     }
 
@@ -623,7 +628,8 @@ public class OrderService : IOrderService
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict while cancelling order {OrderId}", id);
-            throw new ConcurrencyException("Order", id.ToString());
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, 
+                $"Order {id} was modified by another user. Please refresh and try again.");
         }
     }
 

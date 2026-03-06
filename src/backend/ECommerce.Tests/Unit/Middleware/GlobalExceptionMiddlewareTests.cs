@@ -1,8 +1,8 @@
 using ECommerce.API.Middleware;
-using ECommerce.Core.Exceptions;
 using ECommerce.Core.Exceptions.Base;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.IO;
@@ -13,6 +13,8 @@ namespace ECommerce.Tests.Unit.Middleware;
 /// <summary>
 /// Unit tests for GlobalExceptionMiddleware.
 /// Tests exception handling and mapping to appropriate HTTP responses.
+/// NOTE: With Result<T> pattern, business logic failures are handled via Result - 
+/// exceptions are reserved for unexpected infrastructure failures only.
 /// </summary>
 [TestClass]
 public class GlobalExceptionMiddlewareTests
@@ -30,13 +32,13 @@ public class GlobalExceptionMiddlewareTests
         _loggerMock.Reset();
     }
 
-    #region NotFoundException Tests
+    #region Base Exception Type Tests
 
     [TestMethod]
     public async Task InvokeAsync_WithNotFoundException_Returns404()
     {
         // Arrange
-        var exception = new ProductNotFoundException(Guid.NewGuid());
+        var exception = new TestNotFoundException("Resource not found");
         var context = CreateHttpContext();
         var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
@@ -49,11 +51,74 @@ public class GlobalExceptionMiddlewareTests
     }
 
     [TestMethod]
-    public async Task InvokeAsync_WithNotFoundException_ReturnsCorrectMessage()
+    public async Task InvokeAsync_WithBadRequestException_Returns400()
     {
         // Arrange
-        var productId = Guid.NewGuid();
-        var exception = new ProductNotFoundException(productId);
+        var exception = new TestBadRequestException("Invalid request");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_WithUnauthorizedException_Returns401()
+    {
+        // Arrange
+        var exception = new TestUnauthorizedException("Not authorized");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_WithConflictException_Returns409()
+    {
+        // Arrange
+        var exception = new TestConflictException("Resource conflict");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+    }
+
+    #endregion
+
+    #region EF Core Concurrency Tests
+
+    [TestMethod]
+    public async Task InvokeAsync_WithDbUpdateConcurrencyException_Returns409()
+    {
+        // Arrange
+        var exception = new DbUpdateConcurrencyException("Concurrency conflict");
+        var context = CreateHttpContext();
+        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_WithDbUpdateConcurrencyException_ReturnsCorrectMessage()
+    {
+        // Arrange
+        var exception = new DbUpdateConcurrencyException("Concurrency conflict");
         var context = CreateHttpContext();
         var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
@@ -65,61 +130,8 @@ public class GlobalExceptionMiddlewareTests
         response.Should().NotBeNull();
         response!.Success.Should().BeFalse();
         response.ErrorDetails.Should().NotBeNull();
-        response.ErrorDetails!.Message.Should().Contain(productId.ToString());
-    }
-
-
-    #endregion
-
-    #region BadRequestException Tests
-
-    [TestMethod]
-    public async Task InvokeAsync_WithBadRequestException_Returns400()
-    {
-        // Arrange
-        var exception = new GuestEmailRequiredException();
-        var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WithInsufficientStockException_Returns400()
-    {
-        // Arrange
-        var exception = new InsufficientStockException("Product", 10, 5);
-        var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-    }
-
-    #endregion
-
-    #region ConflictException Tests
-
-    [TestMethod]
-    public async Task InvokeAsync_WithConflictException_Returns409()
-    {
-        // Arrange
-        var exception = new ConcurrencyException("Order", Guid.NewGuid().ToString());
-        var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+        response.ErrorDetails!.Message.Should().Contain("modified by another user");
+        response.ErrorDetails.Code.Should().Be("CONCURRENCY_CONFLICT");
     }
 
     #endregion
@@ -316,6 +328,15 @@ public class GlobalExceptionMiddlewareTests
         public string Message { get; set; } = null!;
         public string? Code { get; set; }
     }
+
+    #endregion
+
+    #region Test Exception Classes
+
+    private class TestNotFoundException(string message) : NotFoundException(message);
+    private class TestBadRequestException(string message) : BadRequestException(message);
+    private class TestUnauthorizedException(string message) : UnauthorizedException(message);
+    private class TestConflictException(string message) : ConflictException(message);
 
     #endregion
 }

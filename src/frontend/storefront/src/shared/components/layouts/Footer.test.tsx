@@ -12,7 +12,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/shared/hooks/useToast', () => ({
+vi.mock('@/shared/components/Toast', () => ({
   useToast: () => ({
     success: successMock,
     error: errorMock,

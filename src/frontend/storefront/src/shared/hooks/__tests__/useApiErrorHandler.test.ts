@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useApiErrorHandler } from '../useApiErrorHandler';
 
 // Mock useToast
-vi.mock('../useToast', () => ({
+vi.mock('@/shared/components/Toast', () => ({
   useToast: () => ({
     error: vi.fn(),
     success: vi.fn(),
