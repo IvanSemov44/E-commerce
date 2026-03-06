@@ -14,7 +14,6 @@
 export { Button, type ButtonProps } from './ui';
 export { Input, type InputProps } from './ui';
 export { Card } from './ui';
-export { Pagination } from './ui';
 export { Skeleton } from './ui';
 
 // Skeletons
@@ -38,7 +37,7 @@ export { default as LoadingFallback } from './LoadingFallback';
 export { default as LoadingSkeleton } from './LoadingSkeleton';
 export { default as OptimizedImage } from './OptimizedImage';
 export { default as PageHeader } from './PageHeader';
-export { default as PaginatedView } from './PaginatedView';
+export { default as PaginatedView } from './Pagination';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as QueryRenderer } from './QueryRenderer';
 export { default as ReviewForm } from './ReviewForm';

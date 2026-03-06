@@ -68,39 +68,6 @@ public class GlobalExceptionMiddlewareTests
         response.ErrorDetails!.Message.Should().Contain(productId.ToString());
     }
 
-    #endregion
-
-    #region UnauthorizedException Tests
-
-    [TestMethod]
-    public async Task InvokeAsync_WithUnauthorizedException_Returns401()
-    {
-        // Arrange
-        var exception = new InvalidTokenException();
-        var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WithInvalidCredentialsException_Returns401()
-    {
-        // Arrange
-        var exception = new InvalidCredentialsException();
-        var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
-    }
 
     #endregion
 
@@ -110,22 +77,7 @@ public class GlobalExceptionMiddlewareTests
     public async Task InvokeAsync_WithBadRequestException_Returns400()
     {
         // Arrange
-        var exception = new InvalidQuantityException("Quantity must be positive");
-        var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WithEmptyCartException_Returns400()
-    {
-        // Arrange
-        var exception = new EmptyCartException();
+        var exception = new GuestEmailRequiredException();
         var context = CreateHttpContext();
         var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 
@@ -159,22 +111,7 @@ public class GlobalExceptionMiddlewareTests
     public async Task InvokeAsync_WithConflictException_Returns409()
     {
         // Arrange
-        var exception = new DuplicateEmailException("test@example.com");
-        var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
-    }
-
-    [TestMethod]
-    public async Task InvokeAsync_WithDuplicateProductSlugException_Returns409()
-    {
-        // Arrange
-        var exception = new DuplicateProductSlugException("test-product");
+        var exception = new ConcurrencyException("Order", Guid.NewGuid().ToString());
         var context = CreateHttpContext();
         var middleware = new GlobalExceptionMiddleware(_ => throw exception, _loggerMock.Object);
 

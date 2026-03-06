@@ -4,7 +4,7 @@ import PaginatedView from './PaginatedView';
 
 const paginationPropsSpy = vi.fn();
 
-vi.mock('../ui/Pagination', () => ({
+vi.mock('./Pagination', () => ({
   default: (props: {
     currentPage: number;
     totalCount: number;
