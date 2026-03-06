@@ -216,7 +216,7 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult> GetOrder(Guid id, CancellationToken ct)
     {
         var result = await _service.GetOrderAsync(id, ct);  // Service checks ownership
-        return Ok(ApiResponse<OrderDto>.Success(result));
+        return Ok(ApiResponse<OrderDto>.Ok(result));
     }
 }
 ```
@@ -469,15 +469,12 @@ public async Task<ActionResult> CreateOrder(
     
     return result.Match(
         onSuccess: order => CreatedAtAction(nameof(GetOrder), new { id = order.Id },
-            ApiResponse<OrderDto>.Success(order)),
+            ApiResponse<OrderDto>.Ok(order)),
         onFailure: error => error switch
         {
-            "PRODUCT_NOT_FOUND" => NotFound(ApiResponse<OrderDto>.Failure(
-                new ErrorResponse { Code = error, Message = "Product not found" }, "")),
-            "INSUFFICIENT_INVENTORY" => BadRequest(ApiResponse<OrderDto>.Failure(
-                new ErrorResponse { Code = error, Message = "Not enough inventory" }, "")),
-            _ => StatusCode(500, ApiResponse<OrderDto>.Failure(
-                new ErrorResponse { Code = "UNKNOWN_ERROR", Message = error }, ""))
+            "PRODUCT_NOT_FOUND" => NotFound(ApiResponse<OrderDto>.Failure("Product not found", error)),
+            "INSUFFICIENT_INVENTORY" => BadRequest(ApiResponse<OrderDto>.Failure("Not enough inventory", error)),
+            _ => StatusCode(500, ApiResponse<OrderDto>.Failure(error, "UNKNOWN_ERROR"))
         }
     );
 }
@@ -894,9 +891,9 @@ public async Task<ActionResult> CreateOrder(
     var result = await _orderSaga.ExecuteAsync(dto, ct);
     return result.Match(
         onSuccess: order => CreatedAtAction(nameof(GetOrder), new { id = order.Id },
-            ApiResponse<OrderDto>.Success(order)),
+            ApiResponse<OrderDto>.Ok(order)),
         onFailure: error => StatusCode(500,
-            ApiResponse<OrderDto>.Failure(new ErrorResponse { Message = error }, ""))
+            ApiResponse<OrderDto>.Failure(error))
     );
 }
 ```
@@ -1185,7 +1182,7 @@ public class ProductsController : ControllerBase
             return BadRequest(new ErrorResponse { Message = "Invalid product ID", Code = "INVALID_ID" });
 
         var result = await _service.GetProductByIdAsync(id, ct);
-        return Ok(ApiResponse<ProductDto>.Success(result));
+        return Ok(ApiResponse<ProductDto>.Ok(result));
     }
 
     /// <summary>Retrieve paginated list of active products</summary>
@@ -1202,7 +1199,7 @@ public class ProductsController : ControllerBase
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
         var result = await _service.GetProductsAsync(pageNumber, pageSize, ct);
-        return Ok(ApiResponse<PaginatedResponse<ProductDto>>.Success(result));
+        return Ok(ApiResponse<PaginatedResponse<ProductDto>>.Ok(result));
     }
 
     /// <summary>Create a new product (Admin only)</summary>
@@ -1221,7 +1218,7 @@ public class ProductsController : ControllerBase
     {
         var result = await _service.CreateProductAsync(dto, ct);
         return CreatedAtAction(nameof(GetProductById), new { id = result.Id },
-            ApiResponse<ProductDto>.Success(result));
+            ApiResponse<ProductDto>.Ok(result));
     }
 }
 ```
@@ -1746,7 +1743,7 @@ public async Task<ActionResult> CreateOrder(
     var result = await _service.CreateOrderAsync(dto, ct);
     await _cache.SetAsync($"idempotent:{idempotencyKey}", result, TimeSpan.FromHours(24), ct);
 
-    return CreatedAtAction(nameof(GetOrder), ApiResponse<OrderDto>.Success(result));
+    return CreatedAtAction(nameof(GetOrder), ApiResponse<OrderDto>.Ok(result));
 }
 ```
 
