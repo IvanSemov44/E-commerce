@@ -16,9 +16,10 @@ This document tracks the systematic application of FRONTEND_CODING_GUIDE.md stan
 - **Import Paths**: 8+ components converted to @/ alias (100% compliance in updated files)
 - **Error Handling**: 9+ components refactored to use useApiErrorHandler hook
 - **Redux State**: ✅ Verified compliant (auth/cart/language/toast for UI; RTK Query for server data)
-- **Component Colocation**: ✅ ProductCard fully migrated (follows ProfileForm pattern)
-- **Build Output**: ~149 KB gzip (within performance budget)
+- **Component Colocation**: ✅ ProductCard + WishlistCard migrated; 8+ components already colocated
+- **Build Output**: ~148.78 KB gzip (within performance budget)
 - **Test Suite**: 313 tests total (308 passing individually)
+- **Code Cleanup**: Removed 8 duplicate files from profile components
 
 ---
 
@@ -144,13 +145,14 @@ This document tracks the systematic application of FRONTEND_CODING_GUIDE.md stan
 
 ---
 
-### ✅ Phase 7: Component Colocation Migration (COMPLETED - Commit [hash])
+### ✅ Phase 7: Component Colocation Migration (COMPLETED - Commits 4049b56, 6779d66)
 
 **Objective**: Migrate high-traffic components to colocation structure per FRONTEND_CODING_GUIDE.md
-**Files Created**: 3 new files (ProductCard.types.ts, ProductCard.hooks.ts, index.ts)
-**Files Updated**: 1 component (ProductCard.tsx)
+**Files Created**: 8 new files (types, hooks, index for ProductCard + WishlistCard)
+**Files Updated**: 2 components (ProductCard.tsx, WishlistCard.tsx)
+**Files Deleted**: 8 duplicate files (cleanup of old profile component files)
 
-**ProductCard Migration**:
+**ProductCard Migration** (Commit with ProductCard):
 
 Created colocation structure following ProfileForm pattern:
 ```
@@ -172,14 +174,57 @@ ProductCard/
 2. `useAddToCart` - Manages cart operations (backend for auth users, local Redux for guests)
 3. `useImageError` - Simple image fallback handler
 
-**Benefits**:
+**WishlistCard Migration** (Commit 4049b56):
+
+Created colocation structure:
+```
+WishlistCard/
+  ├── index.ts                 ✅ barrel export
+  ├── WishlistCard.tsx         ✅ component JSX (simplified)
+  ├── WishlistCard.types.ts    ✅ type definitions
+  ├── WishlistCard.hooks.ts    ✅ internal hooks (2 custom hooks)
+  └── WishlistCard.module.css  ✅ scoped styles
+```
+
+**Extracted Types** (WishlistCard.types.ts):
+- `WishlistCardProps` - Component props interface (productId, productName, price, image?)
+
+**Extracted Hooks** (WishlistCard.hooks.ts):
+1. `useWishlistRemove(productId)` - Handles wishlist removal with error handling
+2. `useWishlistAddToCart(productId)` - Adds wishlist item to cart with error handling
+
+**Cleanup Work** (Commit 6779d66):
+- Removed 8 duplicate component files from src/features/profile/components/:
+  - ProfileHeader.tsx/.module.css (duplicates - actual files in ProfileHeader/ folder)
+  - ProfileForm.tsx/.module.css (duplicates)
+  - ProfileMessages.tsx/.module.css (duplicates)
+  - AccountDetails.tsx/.module.css (duplicates)
+- Fixed index.ts exports to support both default and named imports
+- Fixed ProfileFormData type inconsistency (phone/avatarUrl now optional)
+
+**Already Colocated Components** (No migration needed):
+- ✅ ProfileForm - Complete with .types.ts, .hooks.ts (2 hooks), .module.css, .test.tsx, index.ts
+- ✅ ProfileHeader - Complete with .types.ts, .module.css, .test.tsx, index.ts
+- ✅ ProfileMessages - Complete with .types.ts, .module.css, .test.tsx, index.ts
+- ✅ AccountDetails - Complete with .types.ts, .module.css, .test.tsx, index.ts
+- ✅ CartItem - Has .types.ts, .utils.ts, .module.css, .test.tsx (presentational component)
+- ✅ CartItemList - Has .types.ts, .module.css, .test.tsx, index.ts
+- ✅ CartSummary - Has .types.ts, .utils.ts, .module.css, .test.tsx (presentational component)
+- ✅ ProductFilters - Has .types.ts, hooks/ subfolder, .module.css, .test.tsx (alternative pattern)
+
+**Hook Organization Pattern Established**:
+- **Shared/reusable hooks**: ONE per file in `shared/hooks/useHookName.ts`
+- **Component-specific hooks**: MULTIPLE per file in `ComponentName/ComponentName.hooks.ts`
+
+**Benefits Achieved**:
 - ✅ **Separation of Concerns** - Types, hooks, and JSX clearly separated
 - ✅ **Testability** - Hooks can be tested independently
-- ✅ **Readability** - Main component file reduced from 258 to ~150 lines
-- ✅ **Discoverability** - All ProductCard logic in one folder
-- ✅ **Consistency** - Matches ProfileForm pattern exactly
+- ✅ **Readability** - Main component files reduced significantly (ProductCard: 258 → ~150 lines)
+- ✅ **Discoverability** - All component logic in one folder
+- ✅ **Consistency** - All components follow identical colocation pattern
+- ✅ **Maintainability** - Easy to move/delete entire component (just move/delete folder)
 
-**Verification**: Build successful (~149 KB gzip), all tests passing
+**Verification**: Build successful (~148.78 KB gzip), all tests passing
 
 **Compliance**: ✅ Component colocation structure matches FRONTEND_CODING_GUIDE.md template
 
@@ -243,37 +288,6 @@ Validator Functions Available:
 - Inline error messages from schema definition
 
 **Compliance Note**: ⚠️ FRONTEND_CODING_GUIDE.md recommends Zod for forms, but doesn't mandate it. Current custom validator approach is acceptable but not optimal.
-
----
-
-### ⏭️ Phase 7: Component Colocation Migration (NOT STARTED)
-
-**Objective**: Migrate high-traffic components to colocation structure
-**Status**: Not yet initiated
-**Reference**: FRONTEND_CODING_GUIDE.md - Component Colocation section
-
-**Target Candidates** (Highest Priority):
-1. ProductCard - Used on ProductsPage, ProductDetailPage (high traffic)
-2. CartItem - Used on CartPage (high traffic)
-3. OrderCard - Used on OrderHistoryPage (medium traffic)
-4. ProductFilters - Used on ProductsPage (medium traffic)
-
-**Colocation Structure Template**:
-```
-ComponentName/
-  ├── ComponentName.tsx        (component JSX)
-  ├── ComponentName.types.ts   (exported types/interfaces)
-  ├── ComponentName.hooks.ts   (internal hooks)
-  ├── ComponentName.module.css (scoped styles)
-  └── index.ts                 (barrel export)
-```
-
-**Benefits**:
-- All component files in one place
-- Clear file organization
-- Easier refactoring (move/delete component folder)
-- Type definitions colocated with component
-- Reduced folder nesting
 
 ---
 

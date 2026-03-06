@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { config } from '../../../config';
+import { config } from '@/config';
 import { logout } from '@/features/auth/slices/authSlice';
 
 /**

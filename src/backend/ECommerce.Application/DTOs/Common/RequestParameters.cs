@@ -1,3 +1,5 @@
+using ECommerce.Core.Constants;
+
 namespace ECommerce.Application.DTOs.Common;
 
 /// <summary>
@@ -7,11 +9,8 @@ namespace ECommerce.Application.DTOs.Common;
 /// </summary>
 public abstract class RequestParameters
 {
-    private const int MaxPageSize = 100;
-    private const int DefaultPageSize = 20;
-
     private int _page = 1;
-    private int _pageSize = DefaultPageSize;
+    private int _pageSize = PaginationConstants.DefaultPageSize;
 
     /// <summary>
     /// Page number (1-based). Defaults to 1. Values less than 1 are clamped to 1.
@@ -28,7 +27,7 @@ public abstract class RequestParameters
     public int PageSize
     {
         get => _pageSize;
-        set => _pageSize = value is > 0 and <= MaxPageSize ? value : DefaultPageSize;
+        set => _pageSize = value is > 0 and <= PaginationConstants.MaxPageSize ? value : PaginationConstants.DefaultPageSize;
     }
 
     /// <summary>

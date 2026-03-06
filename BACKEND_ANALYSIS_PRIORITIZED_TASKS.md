@@ -116,27 +116,32 @@ public async Task<ActionResult> GetProducts(...)
 
 ---
 
-#### Task 1.4: Add `[ValidationFilter]` to All Write Endpoints
+#### Task 1.4: Add `[ValidationFilter]` to All Write Endpoints ✅ **COMPLETED**
 **Impact**: DTO validation not enforced; invalid data reaches services  
+**Status**: All violations fixed - InventoryController now has `[ValidationFilter]` on all 5 write endpoints
+**Date Completed**: March 5, 2026
+
 **Rules**:
 - `[ValidationFilter]` on all `[HttpPost]`, `[HttpPut]`, `[HttpPatch]` endpoints
 - Remove `[ValidationFilter]` from GET/DELETE endpoints (no body)
 - Place above method signature
 
-**Files Affected**: ~10 controllers with write operations
+**Files Affected**: InventoryController.cs (5 endpoints)
 
 **Example**:
 ```csharp
 [HttpPost]
 [Authorize]
-[ValidationFilter]  // ← Add here
+[ValidationFilter]  // ← Added
 public async Task<ActionResult> CreateProduct([FromBody] CreateProductDto dto, CancellationToken ct)
 ```
 
 **Acceptance Criteria**:
-- [ ] All write endpoints have `[ValidationFilter]`
-- [ ] GET/DELETE endpoints don't have it
-- [ ] Invalid DTOs return 422 with field errors
+- [x] All write endpoints have `[ValidationFilter]`
+- [x] GET/DELETE endpoints don't have it
+- [x] Invalid DTOs return 422 with field errors
+- [x] BulkStockUpdateRequestValidator created
+- [x] All 40 Inventory tests passing
 
 ---
 

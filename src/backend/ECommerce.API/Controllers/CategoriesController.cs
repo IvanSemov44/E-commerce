@@ -29,7 +29,7 @@ public class CategoriesController : ControllerBase
     /// Retrieves all categories in a hierarchical structure with pagination.
     /// </summary>
     /// <param name="pageNumber">The page number (default: 1).</param>
-    /// <param name="pageSize">The page size (default: 100).</param>
+    /// <param name="pageSize">The page size (default: 20, max: 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A paginated list of categories including parent and child relationships.</returns>
     /// <response code="200">Categories retrieved successfully.</response>
@@ -37,8 +37,8 @@ public class CategoriesController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllCategories(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 100,
+        [FromQuery] int pageNumber = PaginationConstants.MinPageNumber,
+        [FromQuery] int pageSize = PaginationConstants.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
         // Enforce bounds to prevent malicious requests
@@ -57,7 +57,7 @@ public class CategoriesController : ControllerBase
     /// Retrieves all top-level categories (categories without a parent) with pagination.
     /// </summary>
     /// <param name="pageNumber">The page number (default: 1).</param>
-    /// <param name="pageSize">The page size (default: 100).</param>
+    /// <param name="pageSize">The page size (default: 20, max: 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A paginated list of root-level categories.</returns>
     /// <response code="200">Top-level categories retrieved successfully.</response>
@@ -65,8 +65,8 @@ public class CategoriesController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTopLevelCategories(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 100,
+        [FromQuery] int pageNumber = PaginationConstants.MinPageNumber,
+        [FromQuery] int pageSize = PaginationConstants.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
         // Enforce bounds to prevent malicious requests

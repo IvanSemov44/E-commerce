@@ -23,9 +23,6 @@ public class ProductService : IProductService
     private readonly IMapper _mapper;
     private readonly ILogger<ProductService> _logger;
 
-    // FIX: Add max page size limit to prevent DoS attacks
-    private const int MaxPageSize = 100;
-
     public ProductService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<ProductService> logger)
     {
         _unitOfWork = unitOfWork;
@@ -35,8 +32,8 @@ public class ProductService : IProductService
 
     public async Task<PaginatedResult<ProductDto>> GetProductsAsync(ProductQueryParameters parameters, CancellationToken cancellationToken = default)
     {
-        // FIX: Validate and cap page size to prevent DoS
-        var effectivePageSize = Math.Min(parameters.PageSize, MaxPageSize);
+        // Validate and cap page size to prevent DoS
+        var effectivePageSize = Math.Min(parameters.PageSize, PaginationConstants.MaxPageSize);
         
         var (products, totalCount) = await _unitOfWork.Products.GetProductsWithFiltersAsync(
             parameters.GetSkip(),

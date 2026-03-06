@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '../../hooks/useCart';
-import Button from '../../../../shared/components/ui/Button';
-import PageHeader from '../../../../shared/components/PageHeader';
-import EmptyState from '../../../../shared/components/EmptyState';
-import { CartSkeleton } from '../../../../shared/components/Skeletons';
+import Button from '@/shared/components/ui/Button';
+import PageHeader from '@/shared/components/PageHeader';
+import EmptyState from '@/shared/components/EmptyState';
+import { CartSkeleton } from '@/shared/components/Skeletons';
 import { CartItemList, CartSummary } from '../../components';
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/lib/utils/constants';
 import styles from './CartPage.module.css';
