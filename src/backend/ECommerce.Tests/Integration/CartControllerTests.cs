@@ -56,8 +56,8 @@ public class CartControllerTests
         var response = await client.GetAsync("/api/cart");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.OK,
-            "Unauthenticated should return Unauthorized or might be allowed");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized,
+            "Unauthenticated should return Unauthorized");
     }
 
     [TestMethod]
@@ -216,7 +216,7 @@ public class CartControllerTests
         var response = await client.DeleteAsync($"/api/cart/items/{itemId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated remove should return Unauthorized");
     }
 

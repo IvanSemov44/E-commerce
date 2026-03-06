@@ -30,10 +30,20 @@ public interface ICurrentUserService
     string Email { get; }
 
     /// <summary>
+    /// Gets the current user's email or null if not available.
+    /// </summary>
+    string? EmailOrNull { get; }
+
+    /// <summary>
     /// Gets the current authenticated user's role. Throws if not authenticated.
     /// </summary>
     /// <exception cref="UnauthorizedAccessException">Thrown when role is not found in token.</exception>
     UserRole Role { get; }
+
+    /// <summary>
+    /// Gets the current user's role or null if not available.
+    /// </summary>
+    UserRole? RoleOrNull { get; }
 
     /// <summary>
     /// Gets whether the current user is authenticated.

@@ -56,7 +56,7 @@ public class ProfileControllerTests
         var response = await client.GetAsync("/api/profile");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated should return Unauthorized");
     }
 
@@ -143,7 +143,7 @@ public class ProfileControllerTests
         var response = await client.PutAsync("/api/profile", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated cannot update profile");
     }
 
@@ -169,7 +169,7 @@ public class ProfileControllerTests
         var response = await client.PostAsync("/api/profile/change-password", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.Unauthorized,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest,
             "ChangePassword should return OK or BadRequest");
     }
 
@@ -223,7 +223,7 @@ public class ProfileControllerTests
         var response = await client.GetAsync("/api/profile/preferences");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
             "Unauthenticated cannot get preferences");
     }
 

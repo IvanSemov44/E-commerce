@@ -58,6 +58,14 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public string? EmailOrNull
+    {
+        get
+        {
+            return TryGetEmail(out var email) ? email : null;
+        }
+    }
+
     public UserRole Role
     {
         get
@@ -66,6 +74,14 @@ public class CurrentUserService : ICurrentUserService
                 throw new UnauthorizedAccessException("Role not found in token");
 
             return role;
+        }
+    }
+
+    public UserRole? RoleOrNull
+    {
+        get
+        {
+            return TryGetRole(out var role) ? role : null;
         }
     }
 

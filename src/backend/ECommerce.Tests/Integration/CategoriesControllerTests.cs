@@ -170,8 +170,8 @@ public class CategoriesControllerTests
         var response = await client.PutAsync($"/api/categories/{categoryId}", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
-            "Update should return OK, NotFound, or Forbidden");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
+            "Update should return OK or NotFound");
     }
 
     #endregion
@@ -189,8 +189,8 @@ public class CategoriesControllerTests
         var response = await client.DeleteAsync($"/api/categories/{nonexistentId}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
-            "Delete should return NotFound, Forbidden, or OK");
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.OK,
+            "Delete should return NotFound or OK");
     }
 
     [TestMethod]

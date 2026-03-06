@@ -1,4 +1,5 @@
 using ECommerce.API.ActionFilters;
+using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Categories;
 using ECommerce.Application.Interfaces;
@@ -44,9 +45,7 @@ public class CategoriesController : ControllerBase
         [FromQuery] int pageSize = PaginationConstants.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
-        // Enforce bounds to prevent malicious requests
-        if (pageNumber < PaginationConstants.MinPageNumber) pageNumber = PaginationConstants.MinPageNumber;
-        if (pageSize < PaginationConstants.MinPageSize || pageSize > PaginationConstants.MaxPageSize) pageSize = PaginationConstants.MaxPageSize;
+        (pageNumber, pageSize) = PaginationRequestNormalizer.Normalize(pageNumber, pageSize);
         
         var result = await _categoryService.GetAllCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
         return result is Result<PaginatedResult<CategoryDto>>.Success success
@@ -73,9 +72,7 @@ public class CategoriesController : ControllerBase
         [FromQuery] int pageSize = PaginationConstants.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
-        // Enforce bounds to prevent malicious requests
-        if (pageNumber < PaginationConstants.MinPageNumber) pageNumber = PaginationConstants.MinPageNumber;
-        if (pageSize < PaginationConstants.MinPageSize || pageSize > PaginationConstants.MaxPageSize) pageSize = PaginationConstants.MaxPageSize;
+        (pageNumber, pageSize) = PaginationRequestNormalizer.Normalize(pageNumber, pageSize);
         
         var result = await _categoryService.GetTopLevelCategoriesAsync(pageNumber, pageSize, cancellationToken: cancellationToken);
         return result is Result<PaginatedResult<CategoryDto>>.Success success

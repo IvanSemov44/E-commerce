@@ -310,7 +310,7 @@ public class OrdersControllerTests
             var response = await client.PutAsync($"/api/orders/{orderId}/status", content);
 
             // Assert
-            Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden,
+            Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
                 $"Status '{status}' should be accepted");
         }
     }
