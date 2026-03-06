@@ -19,12 +19,14 @@ namespace ECommerce.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ICurrentUserService _currentUser;
     private readonly ILogger<AuthController> _logger;
     private readonly IConfiguration _configuration;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger, IConfiguration configuration)
+    public AuthController(IAuthService authService, ICurrentUserService currentUser, ILogger<AuthController> logger, IConfiguration configuration)
     {
         _authService = authService;
+        _currentUser = currentUser;
         _logger = logger;
         _configuration = configuration;
     }
@@ -290,14 +292,13 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser(CancellationToken cancellationToken)
     {
-        // Get user ID from the JWT token claims
-        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        var userId = _currentUser.UserIdOrNull;
+        if (!userId.HasValue)
         {
             return Unauthorized(ApiResponse<object>.Failure("Invalid token", "INVALID_TOKEN"));
         }
 
-        var user = await _authService.GetUserByIdAsync(userId, cancellationToken);
+        var user = await _authService.GetUserByIdAsync(userId.Value, cancellationToken);
         if (user == null)
         {
             return Unauthorized(ApiResponse<object>.Failure("User not found", "USER_NOT_FOUND"));

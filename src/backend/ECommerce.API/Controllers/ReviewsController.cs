@@ -41,7 +41,7 @@ public class ReviewsController : ControllerBase
     /// <response code="404">Product not found.</response>
     [HttpGet("product/{productId:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ReviewDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductReviews(
@@ -57,14 +57,20 @@ public class ReviewsController : ControllerBase
         _logger.LogInformation("Retrieving reviews for product {ProductId}", productId);
         var result = await _reviewService.GetProductReviewsAsync(productId, cancellationToken: cancellationToken);
         return result is Result<IEnumerable<ReviewDto>>.Success success
-            ? Ok(ApiResponse<IEnumerable<ReviewDto>>.Ok(
-                success.Data.Skip((page - 1) * pageSize).Take(pageSize),
+            ? Ok(ApiResponse<PaginatedResult<ReviewDto>>.Ok(
+                new PaginatedResult<ReviewDto>
+                {
+                    Items = success.Data.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                    TotalCount = success.Data.Count(),
+                    Page = page,
+                    PageSize = pageSize
+                },
                 "Reviews retrieved successfully"))
             : result is Result<IEnumerable<ReviewDto>>.Failure failure
                 ? failure.Code == "PRODUCT_NOT_FOUND"
                     ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
-                    : BadRequest(ApiResponse<IEnumerable<ReviewDto>>.Failure(failure.Message, failure.Code))
-                : BadRequest(ApiResponse<IEnumerable<ReviewDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
+                    : BadRequest(ApiResponse<PaginatedResult<ReviewDto>>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<PaginatedResult<ReviewDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -96,7 +102,7 @@ public class ReviewsController : ControllerBase
     /// <response code="404">User not found.</response>
     [HttpGet("my-reviews")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDetailDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ReviewDetailDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyReviews(
@@ -112,14 +118,20 @@ public class ReviewsController : ControllerBase
         _logger.LogInformation("Retrieving reviews for user {UserId}", userId);
         var result = await _reviewService.GetUserReviewsAsync(userId, cancellationToken: cancellationToken);
         return result is Result<IEnumerable<ReviewDetailDto>>.Success success
-            ? Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(
-                success.Data.Skip((page - 1) * pageSize).Take(pageSize),
+            ? Ok(ApiResponse<PaginatedResult<ReviewDetailDto>>.Ok(
+                new PaginatedResult<ReviewDetailDto>
+                {
+                    Items = success.Data.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                    TotalCount = success.Data.Count(),
+                    Page = page,
+                    PageSize = pageSize
+                },
                 "Your reviews retrieved successfully"))
             : result is Result<IEnumerable<ReviewDetailDto>>.Failure failure
                 ? failure.Code == "USER_NOT_FOUND"
                     ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
-                    : BadRequest(ApiResponse<IEnumerable<ReviewDetailDto>>.Failure(failure.Message, failure.Code))
-                : BadRequest(ApiResponse<IEnumerable<ReviewDetailDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
+                    : BadRequest(ApiResponse<PaginatedResult<ReviewDetailDto>>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<PaginatedResult<ReviewDetailDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -259,7 +271,7 @@ public class ReviewsController : ControllerBase
     /// <response code="403">User does not have permission to view pending reviews.</response>
     [HttpGet("admin/pending")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDetailDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ReviewDetailDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPendingReviews(
         [FromQuery] int page = 1,
@@ -272,11 +284,21 @@ public class ReviewsController : ControllerBase
 
         _logger.LogInformation("Retrieving pending reviews");
         var reviews = await _reviewService.GetPendingReviewsAsync(cancellationToken: cancellationToken);
-        var paginatedReviews = reviews
+        var pendingReviews = reviews.ToList();
+        var paginatedReviews = pendingReviews
             .Skip((page - 1) * pageSize)
-            .Take(pageSize);
+            .Take(pageSize)
+            .ToList();
 
-        return Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(paginatedReviews, "Pending reviews retrieved successfully"));
+        return Ok(ApiResponse<PaginatedResult<ReviewDetailDto>>.Ok(
+            new PaginatedResult<ReviewDetailDto>
+            {
+                Items = paginatedReviews,
+                TotalCount = pendingReviews.Count,
+                Page = page,
+                PageSize = pageSize
+            },
+            "Pending reviews retrieved successfully"));
     }
 
     /// <summary>

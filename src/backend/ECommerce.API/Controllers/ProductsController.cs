@@ -49,23 +49,28 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Retrieves featured products.
     /// </summary>
-    /// <param name="count">The number of featured products to retrieve (default: 10).</param>
+    /// <param name="page">Page number (minimum 1).</param>
+    /// <param name="pageSize">Page size (minimum 1, maximum 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A list of featured products.</returns>
+    /// <returns>A paginated list of featured products.</returns>
     /// <response code="200">Featured products retrieved successfully.</response>
     /// <response code="500">Internal server error.</response>
     [HttpGet("featured")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetFeaturedProducts([FromQuery] int count = 10, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetFeaturedProducts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        // Enforce pagination bounds per coding guide (max 100)
-        if (count < 1) count = 10;
-        if (count > 100) count = 100;
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
         
-        var result = await _productService.GetFeaturedProductsAsync(count, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<List<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
+        var result = await _productService.GetFeaturedProductsAsync(page, pageSize, cancellationToken);
+        return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
     }
 
     /// <summary>

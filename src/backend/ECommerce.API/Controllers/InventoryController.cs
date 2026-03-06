@@ -58,7 +58,7 @@ public class InventoryController : ControllerBase
     /// <param name="pageSize">Page size (minimum 1, maximum 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("low-stock")]
-    [ProducesResponseType(typeof(ApiResponse<List<LowStockAlertDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<LowStockAlertDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -81,7 +81,15 @@ public class InventoryController : ControllerBase
             .Take(pageSize)
             .ToList();
 
-        return Ok(ApiResponse<List<LowStockAlertDto>>.Ok(paginatedLowStockProducts, "Low stock products retrieved successfully"));
+        var result = new PaginatedResult<LowStockAlertDto>
+        {
+            Items = paginatedLowStockProducts,
+            TotalCount = lowStockProducts.Count,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(ApiResponse<PaginatedResult<LowStockAlertDto>>.Ok(result, "Low stock products retrieved successfully"));
     }
 
     /// <summary>
@@ -132,7 +140,7 @@ public class InventoryController : ControllerBase
     /// Get inventory history for a specific product.
     /// </summary>
     [HttpGet("{productId}/history")]
-    [ProducesResponseType(typeof(ApiResponse<List<InventoryLogDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryLogDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -151,7 +159,7 @@ public class InventoryController : ControllerBase
             productId, page, pageSize);
 
         var history = await _inventoryService.GetInventoryHistoryAsync(productId, page, pageSize, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<List<InventoryLogDto>>.Ok(history, "Inventory history retrieved successfully"));
+        return Ok(ApiResponse<PaginatedResult<InventoryLogDto>>.Ok(history, "Inventory history retrieved successfully"));
     }
 
     /// <summary>
@@ -308,7 +316,7 @@ public class InventoryController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("bulk-update")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<List<StockAdjustmentResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<StockAdjustmentResponseDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> BulkUpdateStock([FromBody] BulkStockUpdateRequest request, CancellationToken cancellationToken)
@@ -337,7 +345,15 @@ public class InventoryController : ControllerBase
             });
         }
 
-        return Ok(ApiResponse<List<StockAdjustmentResponseDto>>.Ok(responses, "Stock updated successfully"));
+        var result = new PaginatedResult<StockAdjustmentResponseDto>
+        {
+            Items = responses,
+            TotalCount = responses.Count,
+            Page = 1,
+            PageSize = responses.Count
+        };
+
+        return Ok(ApiResponse<PaginatedResult<StockAdjustmentResponseDto>>.Ok(result, "Stock updated successfully"));
     }
 }
 

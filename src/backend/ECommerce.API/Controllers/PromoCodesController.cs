@@ -33,7 +33,7 @@ public class PromoCodesController : ControllerBase
     /// </summary>
     [HttpGet("active")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<List<PromoCodeDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<PromoCodeDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetActiveCodes(
@@ -53,7 +53,15 @@ public class PromoCodesController : ControllerBase
             .Take(pageSize)
             .ToList();
 
-        return Ok(ApiResponse<List<PromoCodeDto>>.Ok(paginatedActiveCodes, "Active promo codes retrieved successfully"));
+        var result = new PaginatedResult<PromoCodeDto>
+        {
+            Items = paginatedActiveCodes,
+            TotalCount = activeCodes.Count,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(ApiResponse<PaginatedResult<PromoCodeDto>>.Ok(result, "Active promo codes retrieved successfully"));
     }
 
     /// <summary>
