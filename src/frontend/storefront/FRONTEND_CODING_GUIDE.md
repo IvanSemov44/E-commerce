@@ -98,6 +98,33 @@ const cartSlice = createSlice({
 });
 ```
 
+#### **5. SVG Icons: Centralized Library Only**
+Every icon must be a component in `src/shared/components/icons/` — never embed inline SVGs or icon components in feature files. This ensures consistency, reusability, and maintainability.
+
+```typescript
+// ❌ BAD — inline SVG in component (anti-pattern)
+export function ProductCard() {
+  return (
+    <button>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">...</svg>
+    </button>
+  );
+}
+
+// ✅ GOOD — icon from centralized library
+import { StarIcon } from '@/shared/components/icons';
+
+export function ProductCard() {
+  return (
+    <button>
+      <StarIcon />
+    </button>
+  );
+}
+```
+
+**Rule:** Every icon file goes in `src/shared/components/icons/` in its own file with proper TypeScript and accessibility attributes.
+
 ### P1 - Expected (Flag in code review)
 
 #### **5. Import Path Conventions: Use `@` Alias**
@@ -185,13 +212,15 @@ ComponentName/
 │   ├── useFirstHook.ts      # Individual hook file
 │   ├── useSecondHook.ts     # Individual hook file
 │   ├── useThirdHook.ts      # Individual hook file
-│   └── index.ts             # Barrel export for hooks
+│   └── index.ts             # Barrel export (internal org only)
 ├── utils/                    # Optional: separate folder if 5+ functions
 │   ├── helper1.utils.ts
 │   ├── helper2.utils.ts
-│   └── index.ts
+│   └── index.ts             # Barrel export (internal org only)
 └── index.ts                  # Main barrel export
 ```
+
+**Note:** The `hooks/index.ts` and `utils/index.ts` are for internal organization only. They should NOT be re-exported through the component's main `index.ts` unless intentionally designed for reuse across features.
 
 **Feature-level structure (reference example):**
 ```
@@ -285,37 +314,34 @@ src/features/products/
 
 **Main component barrel export (`index.ts`):**
 
-⚠️ **IMPORTANT: Minimal Public API Pattern**
+⚠️ **IMPORTANT: Public API Pattern (Differs by Component Type)**
 
-The `index.ts` file should **only export the component itself** (the public API). Types, hooks, and utilities are **internal implementation details** and should NOT be exported unless they're intentionally meant to be reused by other components.
+The `index.ts` file exports define the public API. Different component types have different export rules:
 
-**✅ CORRECT - Minimal export (most common):**
+**UI Library Components** (Button, Input, Card, etc. in `shared/components/ui/`):
 ```typescript
-// ComponentName/index.ts
-export { default } from './ComponentName';
-```
-
-**❌ WRONG - Exporting internals:**
-```typescript
-// Don't do this unless types/hooks are intentionally shared
-export { default } from './ComponentName';
-export type { ComponentNameProps } from './ComponentName.types';  // ❌ Internal detail
-export { useCustomHook } from './ComponentName.hooks';            // ❌ Internal detail
-export { formatPrice } from './ComponentName.utils';              // ❌ Internal detail
-```
-
-**When to export from index.ts:**
-- ✅ The component itself (always)
-- ✅ Types/utilities **intentionally designed for reuse** across features (e.g., shared `ButtonProps`, `formatCurrency`)
-- ❌ Component-specific types used only in tests (import directly: `import type { Props } from './Component.types'`)
-- ❌ Internal hooks/utils not meant for external use
-
-**Example - Shared utility that SHOULD be exported:**
-```typescript
-// Button/index.ts (UI library component)
+// Button/index.ts — exports component AND types (public API)
 export { default } from './Button';
-export type { ButtonProps, ButtonVariant } from './Button.types';  // ✅ Meant for consumers
+export type { ButtonProps, ButtonVariant } from './Button.types';  // ✅ Meant for external consumers
 ```
+**Rationale:** UI library components are meant to be reused everywhere. Types must be exported so consumers can type their props.
+
+**Feature Components** (Product-specific, Cart-specific, etc. in `features/*/components/`):
+```typescript
+// ProductCard/index.ts — exports component ONLY (minimal public API)
+export { default } from './ProductCard';
+
+// Internal imports in tests or same-component files:
+// import type { ProductCardProps } from './ProductCard.types';
+// import { useProductCardHandlers } from './ProductCard.hooks';
+```
+**Rationale:** Feature components are self-contained. Types, hooks, and utilities are internal implementation details not meant for reuse. Other features shouldn't couple to ProductCard internals.
+
+**Summary:**
+- ✅ The component itself (always)
+- ✅ Types/utilities in **shared/components/ui/** components — exported for external consumers
+- ✅ Types/utilities in **features/*/components/** — NOT exported, kept internal
+- ℹ️ Tests and component-specific code import directly from `.types.ts` or `.hooks.ts` files
 
 **Benefits of minimal exports:**
 - ✅ **Clear public API**: Consumers know exactly what's meant to be used externally
@@ -405,7 +431,12 @@ function App() {
 }
 ```
 
-**Note:** Suspense works for `React.lazy()` code splitting. It does NOT work with RTK Query hooks (`useGetProductQuery` returns `{ data, isLoading }` — it doesn't throw promises). For data fetching, use the `QueryRenderer` pattern or conditional `isLoading`/`isError` checks.
+**Note on Suspense + RTK Query:**
+- Suspense **does** work with `React.lazy()` code splitting ✅
+- Suspense **does NOT** work with regular RTK Query hooks like `useGetProductQuery` (they return `{ data, isLoading, error }`) ❌
+- For RTK Query with Suspense, use `useSuspenseQuery` hook (RTK Query v1.9+) which throws promises
+
+For most cases, use standard hooks with `QueryRenderer` or conditional `isLoading`/`isError` checks.
 
 ### ErrorBoundary vs RTK Query Errors
 
@@ -492,9 +523,12 @@ const baseQueryWithReauth: BaseQueryFn<...> = async (args, api, extraOptions) =>
       { url: '/auth/refresh-token', method: 'POST' }, api, extraOptions
     );
     if (refreshResult.error) {
-      api.dispatch(logout());
+      // Token refresh failed — logout user
+      api.dispatch(authSlice.actions.logout());
+      return refreshResult;  // Return error to component
     } else {
-      return baseQuery(args, api, extraOptions);  // Retry original request
+      // Token refreshed — retry original request
+      return baseQuery(args, api, extraOptions);
     }
   }
   return result;
@@ -1126,67 +1160,57 @@ Avoid manual `memo`/`useCallback` when:
 - There is no measured performance issue
 - The wrapper makes code harder to read without clear benefit
 
-If manual memoization is needed, this pattern is still acceptable:
+When manual memoization IS needed (after profiling confirms regression), use this pattern:
 
 ```typescript
-// src/features/products/components/ProductCard/ProductCard.tsx — actual pattern
+// Only after profiling shows avoidable re-renders
 const ProductCard = memo(function ProductCard({
   id, name, slug, price, imageUrl,
 }: ProductCardProps) {
-  const { handleError } = useApiErrorHandler();
-  const [addToCart] = useAddToCartMutation();
-
-  const handleAddToCart = async (event: React.MouseEvent) => {
-    event.preventDefault();
-    try {
-      await addToCart({ productId: id, quantity: 1 }).unwrap();
-      toast.success('Added to cart!');
-    } catch (error) {
-      handleError(error, 'Failed to add to cart');
-    }
-  };
-
-  return (
-    <article className={styles.card}>
-      <Link to={`/products/${slug}`}>
-        <img src={imageUrl} alt={name} loading="lazy" />
-        <h3>{name}</h3>
-        <span>${price.toFixed(2)}</span>
-      </Link>
-      <button onClick={handleAddToCart}>Add to Cart</button>
-    </article>
-  );
+  // implementation
 });
 
 export default ProductCard;
 ```
 
+**When to actually use memo:**
+- A list renders 100+ items and re-parent causes cascading re-renders
+- A child component's render is computationally expensive
+- A third-party library requires stable prop/callback identity (VirtualList, Canvas)
+
+Unless one of these conditions applies, skip memo and let React Compiler optimize.
+
 ### Custom Hooks
 
-Keep hooks simple — plain functions first; add `useCallback` only when a stable function reference is actually required.
+Keep hooks simple — plain functions first. When the hook returns functions that will be used as event handlers or passed to children, wrap them in `useCallback` to maintain stable references across renders.
 
 ```typescript
 // src/features/products/hooks/useProductFilters.ts
+import { useCallback } from 'react';
+
 export function useProductFilters() {
   const dispatch = useAppDispatch();
   const filters = useAppSelector((state) => state.ui.selectedFilters);
 
-  const updateCategory = (category: string | null) => {
+  // Wrap in useCallback — these functions are returned and used as event handlers
+  const updateCategory = useCallback((category: string | null) => {
     dispatch(setCategory(category));
-  };
+  }, [dispatch]);
 
-  const updatePage = (page: number) => {
+  const updatePage = useCallback((page: number) => {
     dispatch(setPageNumber(page));
-  };
+  }, [dispatch]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     dispatch(setCategory(null));
     dispatch(setPageNumber(1));
-  };
+  }, [dispatch]);
 
   return { filters, updateCategory, updatePage, resetFilters };
 }
 ```
+
+**Why:** Returned functions are dependencies in consumers. Without `useCallback`, every render creates new functions, causing unnecessary re-renders.
 
 ### Selector Memoization
 
