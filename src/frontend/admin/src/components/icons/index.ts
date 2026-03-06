@@ -4,3 +4,7 @@ export { default as OrdersIcon } from './OrdersIcon';
 export { default as ReviewsIcon } from './ReviewsIcon';
 export { default as CustomersIcon } from './CustomersIcon';
 export { default as InventoryIcon } from './InventoryIcon';
+export { default as BellIcon } from './BellIcon';
+export { default as ChevronDownIcon } from './ChevronDownIcon';
+export { default as SettingsIcon } from './SettingsIcon';
+export { default as LogoutIcon } from './LogoutIcon';
