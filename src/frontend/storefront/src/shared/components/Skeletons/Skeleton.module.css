@@ -1,39 +1,88 @@
 /* Skeleton Component Styles */
 
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    #f0f0f0 0%,
-    #e0e0e0 50%,
-    #f0f0f0 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-  border-radius: 0.25rem;
+/* Design Tokens */
+:root {
+  --skeleton-bg: #e5e7eb;
+  --skeleton-highlight: #f3f4f6;
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
+[data-theme="dark"] {
+  --skeleton-bg: #374151;
+  --skeleton-highlight: #4b5563;
+}
 
-  100% {
-    background-position: -200% 0;
-  }
+/* Base Skeleton */
+.skeleton {
+  display: inline-block;
+  background-color: var(--skeleton-bg);
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.25rem;
 }
 
 /* Variants */
-.skeleton.circle {
+.circle {
   border-radius: 50%;
 }
 
-.skeleton.text {
+.text {
   height: 1rem;
-  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
 }
 
-.skeleton.rectangular {
+.rectangular {
   border-radius: 0.25rem;
+}
+
+.rounded {
+  border-radius: 0.5rem;
+}
+
+/* Animations */
+.pulse {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.wave {
+  position: relative;
+}
+
+.wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--skeleton-highlight),
+    transparent
+  );
+  animation: skeletonWave 1.5s ease-in-out infinite;
+}
+
+.none {
+  animation: none;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes skeletonWave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Product Card Skeleton */
