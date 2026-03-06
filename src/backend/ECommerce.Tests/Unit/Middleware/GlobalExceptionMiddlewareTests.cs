@@ -1,5 +1,5 @@
 using ECommerce.API.Middleware;
-using ECommerce.Core.Exceptions.Base;
+using ECommerce.Core.Exceptions;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;

@@ -1,4 +1,4 @@
-namespace ECommerce.Core.Exceptions.Base;
+namespace ECommerce.Core.Exceptions;
 
 /// <summary>
 /// Base exception for all "Bad Request" errors (400).

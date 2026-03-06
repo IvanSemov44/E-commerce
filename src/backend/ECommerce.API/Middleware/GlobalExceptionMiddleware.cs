@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using ECommerce.Application.DTOs.Common;
-using ECommerce.Core.Exceptions.Base;
+using ECommerce.Core.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +11,7 @@ namespace ECommerce.API.Middleware;
 /// Global exception middleware for handling all unhandled exceptions.
 /// Catches unexpected exceptions from the entire pipeline and returns standardized ApiResponse.
 /// 
-/// NOTE: Business logic failures are handled via Result<T> pattern - exceptions are reserved for
+/// NOTE: Business logic failures are handled via Result{T} pattern - exceptions are reserved for
 /// unexpected infrastructure failures only (database conflicts, network issues, etc.).
 /// </summary>
 public class GlobalExceptionMiddleware
@@ -63,7 +63,7 @@ public class GlobalExceptionMiddleware
 
     /// <summary>
     /// Maps different exception types to appropriate HTTP status codes and error messages.
-    /// Only handles unexpected infrastructure failures - business logic uses Result<T>.
+    /// Only handles unexpected infrastructure failures - business logic uses Result{T}.
     /// </summary>
     private (int StatusCode, ApiResponse<object> ApiResponse) MapExceptionToResponse(Exception exception)
     {

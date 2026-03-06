@@ -1,5 +1,5 @@
-import Button from './Button';
-import { HeartIcon, ShoppingCartIcon, PackageIcon, SearchIcon, ErrorIcon } from '../icons';
+import Button from '../Button';
+import { HeartIcon, ShoppingCartIcon, PackageIcon, SearchIcon, ErrorIcon } from '../../icons';
 import styles from './EmptyState.module.css';
 
 interface EmptyStateProps {
