@@ -82,7 +82,7 @@ describe('WishlistCard', () => {
   });
 
   it('renders placeholder SVG when image is not provided', () => {
-    renderComponent({ ...mockProps, image: undefined });
+    renderComponent({ ...mockProps, image: '' });
     // Check that SVG placeholder is rendered
     const svg = document.querySelector('svg');
     expect(svg).toBeInTheDocument();

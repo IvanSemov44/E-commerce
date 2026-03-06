@@ -6,7 +6,17 @@ import { selectCartItemCount } from '@/features/cart/slices/cartSlice';
 import { useGetCartQuery } from '@/features/cart/api/cartApi';
 import { useGetWishlistQuery } from '@/features/wishlist/api/wishlistApi';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { HeartIcon, ShoppingCartIcon } from '../icons';
+import {
+  HeartIcon,
+  ShoppingCartIcon,
+  ChevronDownIcon,
+  UserIcon,
+  LogoutIcon,
+  MenuIcon,
+  CloseIcon,
+  PackageIcon,
+  DocumentIcon,
+} from '../icons';
 import Button from '../ui/Button';
 import { ThemeToggle } from '../ThemeToggle';
 import { LanguageSwitcher } from '../LanguageSwitcher';
@@ -81,9 +91,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className={styles.logo}>
             <div className={styles.logoBadge}>
-              <svg fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1h7.586a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM5 16a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+              <ShoppingCartIcon />
             </div>
             <span>E-Shop</span>
           </Link>
@@ -148,9 +156,7 @@ export default function Header() {
                     {user?.firstName?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className={styles.userName}>{user?.firstName}</span>
-                  <svg className={styles.dropdownIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
+                  <ChevronDownIcon className={styles.dropdownIcon} />
                 </button>
 
                 {/* User Dropdown Menu */}
@@ -167,18 +173,14 @@ export default function Header() {
                         onClick={() => setUserMenuOpen(false)}
                         className={styles.dropdownItem}
                       >
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={styles.dropdownIcon}>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                        <UserIcon className={styles.dropdownIcon} />
                         My Profile
                       </Link>
                       <button
                         onClick={handleLogout}
                         className={styles.dropdownItem}
                       >
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
+                        <LogoutIcon />
                         Logout
                       </button>
                     </div>
@@ -208,14 +210,11 @@ export default function Header() {
             aria-label="Toggle menu"
             aria-expanded={mobileMenuOpen}
           >
-            <svg className={styles.mobileMenuIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
-              />
-            </svg>
+            {mobileMenuOpen ? (
+              <CloseIcon className={styles.mobileMenuIcon} />
+            ) : (
+              <MenuIcon className={styles.mobileMenuIcon} />
+            )}
           </button>
         </nav>
       </div>
@@ -231,9 +230,7 @@ export default function Header() {
               className={styles.mobileNavLink}
             >
               <div className={styles.mobileNavContent}>
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m0 0l8-4m0 0l8 4m0 0v10l-8 4m0-10L4 7v10l8 4" />
-                </svg>
+                <PackageIcon />
                 Products
               </div>
             </Link>
@@ -246,9 +243,7 @@ export default function Header() {
                 className={styles.mobileNavLink}
               >
                 <div className={styles.mobileNavContent}>
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+                  <DocumentIcon />
                   Orders
                 </div>
               </Link>
@@ -262,9 +257,7 @@ export default function Header() {
                 className={styles.mobileNavLink}
               >
                 <div className={styles.mobileNavContent}>
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                  <HeartIcon />
                   Wishlist
                   {wishlistItemCount > 0 && (
                     <span className={styles.badgeWrapper}>
@@ -284,9 +277,7 @@ export default function Header() {
               className={styles.mobileNavLink}
             >
               <div className={styles.mobileNavContent}>
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+                <ShoppingCartIcon />
                 Cart
                 {cartItemCount > 0 && (
                   <span className={styles.badgeWrapper}>
@@ -324,9 +315,7 @@ export default function Header() {
                   className={styles.mobileNavLink}
                 >
                   <div className={styles.mobileNavContent}>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                    <UserIcon />
                     My Profile
                   </div>
                 </Link>
@@ -334,9 +323,7 @@ export default function Header() {
                   onClick={handleMobileLogout}
                   className={styles.mobileLogoutButton}
                 >
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                  <LogoutIcon />
                   Logout
                 </button>
               </>

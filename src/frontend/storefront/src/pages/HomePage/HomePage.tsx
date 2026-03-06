@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { GridIcon } from '@/shared/components/icons';
 import { useGetFeaturedProductsQuery, useGetProductsQuery } from '@/features/products/api/productApi';
 import { useGetTopLevelCategoriesQuery } from '@/features/products/api/categoriesApi';
 import Button from '@/shared/components/ui/Button';
@@ -71,9 +72,7 @@ export default function HomePage() {
                   />
                 ) : (
                   <div className={styles.categoryPlaceholder}>
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                    </svg>
+                    <GridIcon />
                   </div>
                 )}
                 <span className={styles.categoryName}>{category.name}</span>
@@ -93,11 +92,7 @@ export default function HomePage() {
           data={featured}
           errorMessage={t('products.failedToLoadProducts')}
           emptyState={{
-            icon: (
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            ),
+            icon: <GridIcon />,
             title: t('products.noProducts')
           }}
         >

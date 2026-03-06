@@ -2,6 +2,12 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGetProductsQuery } from '@/features/products/api/productApi';
 import { useTranslation } from 'react-i18next';
+import {
+  SearchIcon,
+  SpinnerIcon,
+  CloseIcon,
+  PackageIcon,
+} from '@/shared/components/icons';
 import styles from './SearchBar.module.css';
 
 interface SearchBarProps {
@@ -161,13 +167,7 @@ export function SearchBar({
         <div className={`${styles.searchWrapper} ${isFocused ? styles.focused : ''}`}>
           {/* Search Icon */}
           <span className={styles.searchIcon}>
-            <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" 
-              />
-            </svg>
+            <SearchIcon />
           </span>
 
           {/* Input */}
@@ -189,9 +189,7 @@ export function SearchBar({
           {/* Loading Spinner */}
           {isFetching && (
             <span className={styles.loadingSpinner}>
-              <svg className={styles.spinner} viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
-              </svg>
+              <SpinnerIcon className={styles.spinner} />
             </span>
           )}
 
@@ -211,9 +209,7 @@ export function SearchBar({
               className={styles.clearButton}
               aria-label="Clear search"
             >
-              <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <CloseIcon />
             </button>
           )}
         </div>
@@ -245,9 +241,7 @@ export function SearchBar({
                       <img src={product.images[0].url} alt={product.name} />
                     ) : (
                       <div className={styles.resultPlaceholder}>
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m0 0l8-4m0 0l8 4m0 0v10l-8 4m0-10L4 7v10l8 4" />
-                        </svg>
+                        <PackageIcon />
                       </div>
                     )}
                   </div>

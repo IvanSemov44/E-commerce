@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { languages, type Language } from '@/shared/i18n';
+import { ChevronDownIcon, CheckIcon } from '@/shared/components/icons';
 import styles from './LanguageSwitcher.module.css';
 
 interface LanguageSwitcherProps {
@@ -115,15 +116,7 @@ export function LanguageSwitcher({
           {getCurrentIcon()}
         </span>
         <span className={styles.label}>{currentLang.nativeName}</span>
-        <svg 
-          className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}
-          fill="none" 
-          viewBox="0 0 24 24" 
-          strokeWidth={1.5} 
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-        </svg>
+        <ChevronDownIcon className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`} />
       </button>
 
       {isOpen && (
@@ -152,9 +145,7 @@ export function LanguageSwitcher({
               </span>
               {currentLanguage === lang.code && (
                 <span className={styles.checkIcon}>
-                  <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
+                  <CheckIcon />
                 </span>
               )}
             </button>

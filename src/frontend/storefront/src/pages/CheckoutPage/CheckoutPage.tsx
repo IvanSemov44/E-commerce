@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
+import { LocationIcon } from '@/shared/components/icons';
 import Card from '@/shared/components/ui/Card';
 import EmptyState from '@/shared/components/ui/EmptyState';
 import ErrorAlert from '@/shared/components/ErrorAlert';
@@ -83,10 +84,7 @@ export default function CheckoutPage() {
           <div>
             <Card variant="elevated" padding="lg">
               <h2 className={styles.formTitle}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
+                <LocationIcon />
                 {t('checkout.deliveryAddress')}
               </h2>
               {error && <ErrorAlert message={error} />}
