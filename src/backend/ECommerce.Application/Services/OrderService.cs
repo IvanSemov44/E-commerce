@@ -11,6 +11,7 @@ using ECommerce.Core.Results;
 using ECommerce.Core.Constants;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
 using System.Threading;
 
 namespace ECommerce.Application.Services;
@@ -535,41 +536,49 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Updating order {OrderId} status to {Status}", id, status);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
-        if (order == null)
+        try
         {
-            return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, $"Order {id} not found");
-        }
+            var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
+            if (order == null)
+            {
+                return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, $"Order {id} not found");
+            }
 
-        // Validate status
-        if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var orderStatus))
+            // Validate status
+            if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var orderStatus))
+            {
+                return Result<OrderDetailDto>.Fail(ErrorCodes.InvalidOrderStatus, $"Invalid order status: {status}");
+            }
+
+            order.Status = orderStatus;
+            order.UpdatedAt = DateTime.UtcNow;
+
+            // Update timestamps based on status
+            if (orderStatus == OrderStatus.Shipped)
+            {
+                order.ShippedAt = DateTime.UtcNow;
+            }
+            else if (orderStatus == OrderStatus.Delivered)
+            {
+                order.DeliveredAt = DateTime.UtcNow;
+            }
+            else if (orderStatus == OrderStatus.Cancelled)
+            {
+                order.CancelledAt = DateTime.UtcNow;
+            }
+
+            await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Order {OrderId} status updated to {Status}", id, status);
+
+            return Result<OrderDetailDto>.Ok(_mapper.Map<OrderDetailDto>(order));
+        }
+        catch (DbUpdateConcurrencyException ex)
         {
-            return Result<OrderDetailDto>.Fail(ErrorCodes.InvalidOrderStatus, $"Invalid order status: {status}");
+            _logger.LogWarning(ex, "Concurrency conflict while updating order {OrderId} status", id);
+            throw new ConcurrencyException("Order", id.ToString());
         }
-
-        order.Status = orderStatus;
-        order.UpdatedAt = DateTime.UtcNow;
-
-        // Update timestamps based on status
-        if (orderStatus == OrderStatus.Shipped)
-        {
-            order.ShippedAt = DateTime.UtcNow;
-        }
-        else if (orderStatus == OrderStatus.Delivered)
-        {
-            order.DeliveredAt = DateTime.UtcNow;
-        }
-        else if (orderStatus == OrderStatus.Cancelled)
-        {
-            order.CancelledAt = DateTime.UtcNow;
-        }
-
-        await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-
-        _logger.LogInformation("Order {OrderId} status updated to {Status}", id, status);
-
-        return Result<OrderDetailDto>.Ok(_mapper.Map<OrderDetailDto>(order));
     }
 
     public async Task<Result<Unit>> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default)
@@ -581,33 +590,41 @@ public class OrderService : IOrderService
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
 
-        var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
-        if (order == null)
+        try
         {
-            return Result<Unit>.Fail(ErrorCodes.OrderNotFound, $"Order {id} not found");
-        }
+            var order = await _unitOfWork.Orders.GetByIdAsync(id, trackChanges: true, cancellationToken: cancellationToken);
+            if (order == null)
+            {
+                return Result<Unit>.Fail(ErrorCodes.OrderNotFound, $"Order {id} not found");
+            }
 
-        if (!isAdmin && order.UserId != userId)
+            if (!isAdmin && order.UserId != userId)
+            {
+                return Result<Unit>.Fail(ErrorCodes.Forbidden, "You do not have permission to cancel this order");
+            }
+
+            // Can't cancel if already shipped or delivered
+            if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
+            {
+                return Result<Unit>.Fail(ErrorCodes.InvalidOrderStatus, $"Cannot cancel order with status {order.Status}");
+            }
+
+            order.Status = OrderStatus.Cancelled;
+            order.CancelledAt = DateTime.UtcNow;
+            order.UpdatedAt = DateTime.UtcNow;
+
+            await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Order {OrderId} cancelled successfully", id);
+
+            return Result<Unit>.Ok(new Unit());
+        }
+        catch (DbUpdateConcurrencyException ex)
         {
-            return Result<Unit>.Fail(ErrorCodes.Forbidden, "You do not have permission to cancel this order");
+            _logger.LogWarning(ex, "Concurrency conflict while cancelling order {OrderId}", id);
+            throw new ConcurrencyException("Order", id.ToString());
         }
-
-        // Can't cancel if already shipped or delivered
-        if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
-        {
-            return Result<Unit>.Fail(ErrorCodes.InvalidOrderStatus, $"Cannot cancel order with status {order.Status}");
-        }
-
-        order.Status = OrderStatus.Cancelled;
-        order.CancelledAt = DateTime.UtcNow;
-        order.UpdatedAt = DateTime.UtcNow;
-
-        await _unitOfWork.Orders.UpdateAsync(order, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-
-        _logger.LogInformation("Order {OrderId} cancelled successfully", id);
-
-        return Result<Unit>.Ok(new Unit());
     }
 
     public async Task<PaginatedResult<OrderDto>> GetAllOrdersAsync(OrderQueryParameters parameters, CancellationToken cancellationToken = default)

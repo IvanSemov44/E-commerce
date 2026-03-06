@@ -4,6 +4,7 @@ using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Exceptions.Base;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.API.Middleware;
 
@@ -92,6 +93,12 @@ public class GlobalExceptionMiddleware
             // Conflict (409)
             ConflictException => (StatusCodes.Status409Conflict,
                 ApiResponse<object>.Failure(exception.Message, "CONFLICT")),
+
+            // Concurrency conflict - DbUpdateConcurrencyException (409)
+            DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
+                ApiResponse<object>.Failure(
+                    "The resource was modified by another user. Please refresh and try again.",
+                    "CONCURRENCY_CONFLICT")),
 
             // Generic exception - Internal Server Error (500)
             // Note: exception.Message is logged but NOT exposed to client for security
