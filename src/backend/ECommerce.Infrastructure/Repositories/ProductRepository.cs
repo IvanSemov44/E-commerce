@@ -206,6 +206,21 @@ public class ProductRepository : Repository<Product>, IProductRepository
     }
 
     /// <summary>
+    /// Gets multiple products by their IDs in a single batch query.
+    /// Overrides base implementation to eagerly load Category and Images navigation properties.
+    /// Prevents N+1 query problems when loading multiple products.
+    /// </summary>
+    public override async Task<IEnumerable<Product>> GetByIdsAsync(IEnumerable<Guid> productIds, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Where(p => productIds.Contains(p.Id))
+            .Include(p => p.Category)
+            .Include(p => p.Images)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Atomically reduces stock quantity for a product using optimistic concurrency.
     /// Uses raw SQL to ensure atomic stock reduction and prevent race conditions.
     /// </summary>
