@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo, React } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SearchIcon, SpinnerIcon, CloseIcon, PackageIcon } from '@/shared/components/icons'

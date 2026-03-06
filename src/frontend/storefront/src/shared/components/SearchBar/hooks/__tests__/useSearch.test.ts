@@ -3,14 +3,14 @@ import { renderHook, act } from '@testing-library/react'
 import { useSearch } from '../useSearch'
 
 // Mock the API
-const mockUseGetProductsQuery = vi.fn(() => ({
+const mockUseGetProductsQuery = vi.fn((): any => ({
   data: undefined,
   isFetching: false,
   error: null,
 }))
 
 vi.mock('@/features/products/api/productApi', () => ({
-  useGetProductsQuery: (args: any, options: any) => mockUseGetProductsQuery(args, options),
+  useGetProductsQuery: () => mockUseGetProductsQuery(),
 }))
 
 describe('useSearch', () => {
@@ -84,12 +84,13 @@ describe('useSearch', () => {
   })
 
   it('should memoize results', () => {
+    const mockData = {
+      items: [
+        { id: '1', name: 'Product 1', slug: 'product-1', price: 10 },
+      ],
+    }
     mockUseGetProductsQuery.mockReturnValue({
-      data: {
-        items: [
-          { id: '1', name: 'Product 1', slug: 'product-1', price: 10 },
-        ],
-      },
+      data: mockData,
       isFetching: false,
       error: null,
     })

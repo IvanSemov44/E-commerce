@@ -73,7 +73,7 @@ describe('useClickOutside', () => {
 
   it('should handle null ref gracefully', () => {
     const callback = vi.fn()
-    renderHook(() => {
+    const { result } = renderHook(() => {
       const ref = useRef<HTMLDivElement>(null)
       useClickOutside(ref, callback)
       return ref
