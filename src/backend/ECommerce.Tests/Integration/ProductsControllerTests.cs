@@ -114,22 +114,43 @@ public class ProductsControllerTests
 
         // Act
         var response = await client.GetAsync("/api/products/featured");
+        var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
+
+        Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have data property");
+        Assert.IsTrue(data.TryGetProperty("items", out var items), "Featured response should have items");
+        Assert.AreEqual(JsonValueKind.Array, items.ValueKind);
+        Assert.IsTrue(data.TryGetProperty("totalCount", out _), "Featured response should have totalCount");
+        Assert.IsTrue(data.TryGetProperty("page", out _), "Featured response should have page");
+        Assert.IsTrue(data.TryGetProperty("pageSize", out _), "Featured response should have pageSize");
     }
 
     [TestMethod]
-    public async Task GetFeaturedProducts_WithCustomCount_ReturnsSpecifiedCount()
+    public async Task GetFeaturedProducts_WithCustomPageSize_ReturnsSuccessfulResponse()
     {
         // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
         // Act
-        var response = await client.GetAsync("/api/products/featured?count=5");
+        var response = await client.GetAsync("/api/products/featured?page=1&pageSize=5");
+        var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
+
+        Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have data property");
+        Assert.IsTrue(data.TryGetProperty("items", out var items), "Featured response should have items");
+        Assert.AreEqual(JsonValueKind.Array, items.ValueKind);
+        Assert.IsLessThanOrEqualTo(5, items.GetArrayLength(), "Featured items should not exceed requested pageSize");
+
+        Assert.IsTrue(data.TryGetProperty("pageSize", out var pageSize), "Featured response should have pageSize");
+        Assert.AreEqual(5, pageSize.GetInt32());
     }
 
     #endregion

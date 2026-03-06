@@ -65,9 +65,11 @@ public class ReviewsControllerTests
         if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
         {
             var json = JsonSerializer.Deserialize<JsonElement>(responseContent);
-            if (json.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            if (json.TryGetProperty("data", out var data)
+                && data.TryGetProperty("items", out var items)
+                && items.ValueKind == JsonValueKind.Array)
             {
-                Assert.IsTrue(data.GetArrayLength() <= 100, "Reviews pageSize should be clamped to 100");
+                Assert.IsLessThanOrEqualTo(100, items.GetArrayLength(), "Reviews pageSize should be clamped to 100");
             }
         }
     }

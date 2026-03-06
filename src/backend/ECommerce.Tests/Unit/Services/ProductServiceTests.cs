@@ -312,7 +312,7 @@ public class ProductServiceTests
     }
 
     [TestMethod]
-    public async Task GetFeaturedProductsAsync_ReturnsRequestedCount()
+    public async Task GetFeaturedProductsAsync_ReturnsPaginatedFeaturedProducts()
     {
         // Arrange
         var featured = new List<Product>
@@ -321,15 +321,20 @@ public class ProductServiceTests
             TestDataFactory.CreateProduct(name: "F2")
         };
 
-        _mockProductRepository.Setup(r => r.GetFeaturedAsync(2)).ReturnsAsync(featured);
+        _mockProductRepository.Setup(r => r.GetFeaturedProductsCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
+        _mockProductRepository.Setup(r => r.GetFeaturedAsync(0, 2, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(featured);
         _mockMapper.Setup(m => m.Map<ProductDto>(It.IsAny<Product>()))
             .Returns((Product p) => new ProductDto { Id = p.Id, Name = p.Name });
 
         // Act
-        var result = await _service.GetFeaturedProductsAsync(2, CancellationToken.None);
+        var result = await _service.GetFeaturedProductsAsync(1, 2, CancellationToken.None);
 
         // Assert
-        result.Should().HaveCount(2);
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(2);
+        result.TotalCount.Should().Be(2);
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(2);
     }
 
     [TestMethod]
