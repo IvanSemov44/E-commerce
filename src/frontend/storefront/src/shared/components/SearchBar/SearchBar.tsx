@@ -1,165 +1,132 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useGetProductsQuery } from '@/features/products/api/productApi';
-import { useTranslation } from 'react-i18next';
-import {
-  SearchIcon,
-  SpinnerIcon,
-  CloseIcon,
-  PackageIcon,
-} from '@/shared/components/icons';
-import styles from './SearchBar.module.css';
-
-interface SearchBarProps {
-  /** Placeholder text */
-  placeholder?: string;
-  /** Size variant */
-  size?: 'sm' | 'md' | 'lg';
-  /** Additional CSS class */
-  className?: string;
-  /** Whether to show on mobile */
-  showOnMobile?: boolean;
-}
+import { useState, useRef, useEffect, useCallback, useMemo, React } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { SearchIcon, SpinnerIcon, CloseIcon, PackageIcon } from '@/shared/components/icons'
+import { useSearch } from '@/shared/hooks/useSearch'
+import { useKeyboardNavigation } from '@/shared/hooks/useKeyboardNavigation'
+import { useClickOutside } from '@/shared/hooks/useClickOutside'
+import type { SearchBarProps } from './SearchBar.types'
+import styles from './SearchBar.module.css'
 
 /**
  * SearchBar Component
- * 
+ *
  * A modern, accessible search input with:
- * - Live search with debouncing
- * - Preview dropdown with product results
- * - Keyboard navigation
- * - Clear button
- * - Search icon animation
+ * - Live search with debouncing via useSearch
+ * - Keyboard navigation via useKeyboardNavigation
+ * - Click-outside handling via useClickOutside
+ * - Product results dropdown
  */
-export function SearchBar({ 
-  placeholder, 
+export const SearchBar = function SearchBar({
+  placeholder,
   size = 'md',
   className = '',
-  showOnMobile = false
+  showOnMobile = false,
+  onSearch,
+  onSelectResult,
+  onError,
 }: SearchBarProps) {
-  const { t } = useTranslation();
-  const defaultPlaceholder = t('products.searchProducts');
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+  const { t } = useTranslation()
+  const defaultPlaceholder = t('products.searchProducts')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query.trim());
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [query]);
+  // State
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
 
-  // Live search query - only search when debounced query has at least 2 characters
-  const { data: searchResults, isFetching } = useGetProductsQuery(
-    { search: debouncedQuery, pageSize: 5 },
-    { skip: debouncedQuery.length < 2 }
-  );
+  // Custom hooks
+  const { query, setQuery, results, isFetching, error, handleClear } = useSearch()
+  const { selectedIndex, handleKeyDown: handleKeyboardNav, resetSelection } = useKeyboardNavigation({
+    itemCount: results.length,
+    onEnter: (index) => {
+      const product = results[index]
+      onSelectResult?.(product)
+      navigate(`/products/${product.slug}`)
+      setIsFocused(false)
+      setIsExpanded(false)
+      resetSelection()
+    },
+  })
 
-  // Memoized results
-  const results = useMemo(() => {
-    return searchResults?.items || [];
-  }, [searchResults]);
+  // Click outside handler
+  useClickOutside(containerRef, () => {
+    setIsExpanded(false)
+    setIsFocused(false)
+  })
 
-  const showDropdown = isFocused && debouncedQuery.length >= 2 && (results.length > 0 || isFetching);
-
-  // Handle click outside to collapse
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsExpanded(false);
-        setIsFocused(false);
-      }
-    };
-
-    if (isExpanded) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isExpanded]);
-
-  // Handle keyboard shortcuts
+  // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Cmd/Ctrl + K to focus search
       if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault();
-        inputRef.current?.focus();
-        setIsExpanded(true);
-        setIsFocused(true);
+        event.preventDefault()
+        inputRef.current?.focus()
+        setIsExpanded(true)
+        setIsFocused(true)
       }
-      
+
       // Escape to blur
       if (event.key === 'Escape' && isFocused) {
-        inputRef.current?.blur();
-        setIsExpanded(false);
-        setIsFocused(false);
+        inputRef.current?.blur()
+        setIsExpanded(false)
+        setIsFocused(false)
       }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isFocused]);
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      navigate(`/products?search=${encodeURIComponent(query.trim())}`);
-      inputRef.current?.blur();
-      setIsExpanded(false);
-      setIsFocused(false);
     }
-  }, [query, navigate]);
 
-  const handleClear = useCallback(() => {
-    setQuery('');
-    setDebouncedQuery('');
-    inputRef.current?.focus();
-  }, []);
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isFocused])
+
+  // Notify on search query change
+  useEffect(() => {
+    onSearch?.(query)
+  }, [query, onSearch])
+
+  // Handle errors
+  useEffect(() => {
+    if (error) {
+      onError?.(error)
+    }
+  }, [error, onError])
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault()
+      if (query.trim()) {
+        navigate(`/products?search=${encodeURIComponent(query.trim())}`)
+        inputRef.current?.blur()
+        setIsExpanded(false)
+        setIsFocused(false)
+      }
+    },
+    [query, navigate]
+  )
 
   const handleFocus = useCallback(() => {
-    setIsFocused(true);
-    setIsExpanded(true);
-  }, []);
+    setIsFocused(true)
+    setIsExpanded(true)
+  }, [])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!showDropdown) return;
+  const handleKeyDownWrapper = useCallback(
+    (e: React.KeyboardEvent) => {
+      handleKeyboardNav(e)
+    },
+    [handleKeyboardNav]
+  )
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        if (selectedIndex >= 0 && results[selectedIndex]) {
-          e.preventDefault();
-          navigate(`/products/${results[selectedIndex].slug}`);
-          setIsFocused(false);
-          setIsExpanded(false);
-        }
-        break;
-    }
-  }, [showDropdown, results, selectedIndex, navigate]);
+  const showDropdown = isFocused && query.trim().length >= 2 && (results.length > 0 || isFetching)
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(price);
-  };
+    }).format(price)
+  }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`${styles.container} ${styles[size]} ${isExpanded ? styles.expanded : ''} ${className} ${!showOnMobile ? styles.hideOnMobile : ''}`}
     >
@@ -177,7 +144,7 @@ export function SearchBar({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={handleFocus}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleKeyDownWrapper}
             placeholder={placeholder || defaultPlaceholder}
             className={styles.input}
             aria-label="Search products"
@@ -224,16 +191,18 @@ export function SearchBar({
             </div>
           ) : (
             <>
-              {results.map((product, index) => (
+              {results.length > 0 && results.map((product, index) => (
                 <Link
                   key={product.id}
                   to={`/products/${product.slug}`}
                   className={`${styles.resultItem} ${index === selectedIndex ? styles.selected : ''}`}
                   role="option"
-                  aria-selected={index === selectedIndex}
+                aria-selected={index === selectedIndex}
                   onClick={() => {
-                    setIsFocused(false);
-                    setIsExpanded(false);
+                    onSelectResult?.(product)
+                    setIsFocused(false)
+                    setIsExpanded(false)
+                    resetSelection()
                   }}
                 >
                   <div className={styles.resultImage}>
@@ -257,21 +226,21 @@ export function SearchBar({
                 </Link>
               ))}
               <Link
-                to={`/products?search=${encodeURIComponent(debouncedQuery)}`}
+                to={`/products?search=${encodeURIComponent(query.trim())}`}
                 className={styles.viewAll}
                 onClick={() => {
-                  setIsFocused(false);
-                  setIsExpanded(false);
+                  setIsFocused(false)
+                  setIsExpanded(false)
                 }}
               >
-                {t('common.viewAllResults', { query: debouncedQuery }) || `View all results for "${debouncedQuery}"`}
+                {t('common.viewAllResults', { query: query.trim() }) || `View all results for "${query.trim()}"`}
               </Link>
             </>
           )}
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default SearchBar;
+export default SearchBar
