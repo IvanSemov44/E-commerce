@@ -54,18 +54,34 @@ public class InventoryController : ControllerBase
     /// Get products with low stock.
     /// </summary>
     /// <param name="threshold">Optional threshold value (default from config).</param>
+    /// <param name="page">Page number (minimum 1).</param>
+    /// <param name="pageSize">Page size (minimum 1, maximum 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("low-stock")]
     [ProducesResponseType(typeof(ApiResponse<List<LowStockAlertDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetLowStockProducts([FromQuery] int? threshold = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetLowStockProducts(
+        [FromQuery] int? threshold = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
         _logger.LogInformation("Retrieving low stock products with threshold: {Threshold}", threshold);
 
         var lowStockProducts = await _inventoryService.GetLowStockProductsAsync(cancellationToken: cancellationToken);
-        return Ok(ApiResponse<List<LowStockAlertDto>>.Ok(lowStockProducts, "Low stock products retrieved successfully"));
+        var paginatedLowStockProducts = lowStockProducts
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return Ok(ApiResponse<List<LowStockAlertDto>>.Ok(paginatedLowStockProducts, "Low stock products retrieved successfully"));
     }
 
     /// <summary>
@@ -127,6 +143,10 @@ public class InventoryController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
         _logger.LogInformation("Retrieving inventory history for product {ProductId} (page: {Page}, pageSize: {PageSize})",
             productId, page, pageSize);
 

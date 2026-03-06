@@ -270,10 +270,11 @@ public class CartService : ICartService
     {
         // Use AutoMapper to map cart and its items (CartRepository ensures Product is included)
         var dto = _mapper.Map<CartDto>(cart);
-
-        dto.Subtotal = dto.Items.Sum(x => x.Total);
-        dto.Total = dto.Subtotal; // Could add tax/shipping calculations here
-
-        return dto;
+        var subtotal = dto.Items.Sum(x => x.Total);
+        return dto with
+        {
+            Subtotal = subtotal,
+            Total = subtotal
+        };
     }
 }

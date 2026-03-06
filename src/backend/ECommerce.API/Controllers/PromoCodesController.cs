@@ -34,13 +34,26 @@ public class PromoCodesController : ControllerBase
     [HttpGet("active")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<List<PromoCodeDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetActiveCodes(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetActiveCodes(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
         _logger.LogInformation("Retrieving active promo codes");
 
         var activeCodes = await _promoCodeService.GetActiveCodesAsync(cancellationToken: cancellationToken);
-        return Ok(ApiResponse<List<PromoCodeDto>>.Ok(activeCodes, "Active promo codes retrieved successfully"));
+        var paginatedActiveCodes = activeCodes
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return Ok(ApiResponse<List<PromoCodeDto>>.Ok(paginatedActiveCodes, "Active promo codes retrieved successfully"));
     }
 
     /// <summary>

@@ -1,11 +1,11 @@
 namespace ECommerce.Application.DTOs.Cart;
 
-public class CartDto
+public record CartDto
 {
-    public Guid Id { get; set; }
-    public Guid? UserId { get; set; }
-    public string? SessionId { get; set; }
-    public List<CartItemDto> Items { get; set; } = new();
-    public decimal Subtotal { get; set; }
-    public decimal Total { get; set; }
+    public Guid Id { get; init; }
+    public Guid? UserId { get; init; }
+    public string? SessionId { get; init; }
+    public List<CartItemDto> Items { get; init; } = new();
+    public decimal Subtotal { get; init; }
+    public decimal Total { get; init; }
 }

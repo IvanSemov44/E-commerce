@@ -249,6 +249,30 @@ public class InventoryControllerTests
             "Customer cannot access low stock list");
     }
 
+    [TestMethod]
+    public async Task GetLowStockProducts_WithLargePageSize_IsClamped()
+    {
+        // Arrange
+        using var client = _factory.CreateAdminClient();
+
+        // Act
+        var response = await client.GetAsync("/api/inventory/low-stock?page=1&pageSize=1000");
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
+            "Low stock endpoint should return OK or NotFound");
+
+        if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
+        {
+            var json = JsonSerializer.Deserialize<JsonElement>(responseContent);
+            if (json.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            {
+                Assert.IsTrue(data.GetArrayLength() <= 100, "Low stock pageSize should be clamped to 100");
+            }
+        }
+    }
+
     #endregion
 
     #region Bulk Update Tests

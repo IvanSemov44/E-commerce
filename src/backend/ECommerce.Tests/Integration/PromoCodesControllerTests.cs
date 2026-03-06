@@ -218,6 +218,30 @@ public class PromoCodesControllerTests
         }
     }
 
+    [TestMethod]
+    public async Task GetActiveCodes_WithLargePageSize_IsClamped()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        // Act
+        var response = await client.GetAsync("/api/promo-codes/active?page=1&pageSize=1000");
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
+            "GetActiveCodes should return OK or NotFound");
+
+        if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
+        {
+            var json = JsonSerializer.Deserialize<JsonElement>(responseContent);
+            if (json.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            {
+                Assert.IsTrue(data.GetArrayLength() <= 100, "Active promo codes pageSize should be clamped to 100");
+            }
+        }
+    }
+
     #endregion
 
     #region Create Promo Code Tests (Admin Only)

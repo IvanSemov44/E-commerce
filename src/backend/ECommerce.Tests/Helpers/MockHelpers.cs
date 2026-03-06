@@ -105,23 +105,26 @@ public static class MockHelpers
             var cart = src as ECommerce.Core.Entities.Cart;
             if (cart == null) return null!;
 
+            var items = cart.Items?.Select(i => new ECommerce.Application.DTOs.Cart.CartItemDto
+            {
+                Id = i.Id,
+                ProductId = i.Product != null ? i.Product.Id : i.ProductId,
+                ProductName = i.Product != null ? i.Product.Name : string.Empty,
+                ProductImage = i.Product != null && i.Product.Images.FirstOrDefault() != null ? i.Product.Images.FirstOrDefault()!.Url : null,
+                Price = i.Product != null ? i.Product.Price : 0m,
+                Quantity = i.Quantity,
+                Total = (i.Product != null ? i.Product.Price : 0m) * i.Quantity
+            }).ToList() ?? new List<ECommerce.Application.DTOs.Cart.CartItemDto>();
+
+            var subtotal = items.Sum(x => x.Total);
+
             var dto = new ECommerce.Application.DTOs.Cart.CartDto
             {
                 Id = cart.Id,
-                Items = cart.Items?.Select(i => new ECommerce.Application.DTOs.Cart.CartItemDto
-                {
-                    Id = i.Id,
-                    ProductId = i.Product != null ? i.Product.Id : i.ProductId,
-                    ProductName = i.Product != null ? i.Product.Name : string.Empty,
-                    ProductImage = i.Product != null && i.Product.Images.FirstOrDefault() != null ? i.Product.Images.FirstOrDefault()!.Url : null,
-                    Price = i.Product != null ? i.Product.Price : 0m,
-                    Quantity = i.Quantity,
-                    Total = (i.Product != null ? i.Product.Price : 0m) * i.Quantity
-                }).ToList() ?? new List<ECommerce.Application.DTOs.Cart.CartItemDto>()
+                Items = items,
+                Subtotal = subtotal,
+                Total = subtotal
             };
-
-            dto.Subtotal = dto.Items.Sum(x => x.Total);
-            dto.Total = dto.Subtotal;
             return dto;
         });
 

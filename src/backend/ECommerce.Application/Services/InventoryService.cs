@@ -424,6 +424,10 @@ public class InventoryService : IInventoryService
 
     public async Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
         var logs = await _unitOfWork.InventoryLogs
             .FindByCondition(log => log.ProductId == productId, trackChanges: false)
             .OrderByDescending(log => log.CreatedAt)

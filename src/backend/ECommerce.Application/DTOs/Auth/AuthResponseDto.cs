@@ -1,10 +1,10 @@
 namespace ECommerce.Application.DTOs.Auth;
 
-public class AuthResponseDto
+public record AuthResponseDto
 {
-    public bool Success { get; set; }
-    public string Message { get; set; } = null!;
-    public UserDto? User { get; set; }
-    public string? Token { get; set; }
-    public string? RefreshToken { get; set; }
+    public bool Success { get; init; }
+    public string Message { get; init; } = null!;
+    public UserDto? User { get; init; }
+    public string? Token { get; init; }
+    public string? RefreshToken { get; init; }
 }

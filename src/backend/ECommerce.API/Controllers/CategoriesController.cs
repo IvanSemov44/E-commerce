@@ -37,6 +37,7 @@ public class CategoriesController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetAllCategories(
         [FromQuery] int pageNumber = PaginationConstants.MinPageNumber,
         [FromQuery] int pageSize = PaginationConstants.DefaultPageSize,
@@ -65,6 +66,7 @@ public class CategoriesController : ControllerBase
     [HttpGet("top-level")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetTopLevelCategories(
         [FromQuery] int pageNumber = PaginationConstants.MinPageNumber,
         [FromQuery] int pageSize = PaginationConstants.DefaultPageSize,

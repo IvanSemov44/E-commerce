@@ -33,6 +33,8 @@ public class ReviewsController : ControllerBase
     /// Retrieves all approved reviews for a specific product.
     /// </summary>
     /// <param name="productId">The product ID.</param>
+    /// <param name="page">Page number (minimum 1).</param>
+    /// <param name="pageSize">Page size (minimum 1, maximum 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of approved reviews for the product.</returns>
     /// <response code="200">Reviews retrieved successfully.</response>
@@ -40,15 +42,28 @@ public class ReviewsController : ControllerBase
     [HttpGet("product/{productId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetProductReviews(Guid productId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProductReviews(
+        Guid productId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
         _logger.LogInformation("Retrieving reviews for product {ProductId}", productId);
         var result = await _reviewService.GetProductReviewsAsync(productId, cancellationToken: cancellationToken);
         return result is Result<IEnumerable<ReviewDto>>.Success success
-            ? Ok(ApiResponse<IEnumerable<ReviewDto>>.Ok(success.Data, "Reviews retrieved successfully"))
+            ? Ok(ApiResponse<IEnumerable<ReviewDto>>.Ok(
+                success.Data.Skip((page - 1) * pageSize).Take(pageSize),
+                "Reviews retrieved successfully"))
             : result is Result<IEnumerable<ReviewDto>>.Failure failure
-                ? BadRequest(ApiResponse<IEnumerable<ReviewDto>>.Failure(failure.Message, failure.Code))
+                ? failure.Code == "PRODUCT_NOT_FOUND"
+                    ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
+                    : BadRequest(ApiResponse<IEnumerable<ReviewDto>>.Failure(failure.Message, failure.Code))
                 : BadRequest(ApiResponse<IEnumerable<ReviewDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -72,6 +87,8 @@ public class ReviewsController : ControllerBase
     /// <summary>
     /// Retrieves all reviews created by the authenticated user.
     /// </summary>
+    /// <param name="page">Page number (minimum 1).</param>
+    /// <param name="pageSize">Page size (minimum 1, maximum 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of the user's reviews including pending and approved ones.</returns>
     /// <response code="200">Reviews retrieved successfully.</response>
@@ -80,16 +97,28 @@ public class ReviewsController : ControllerBase
     [HttpGet("my-reviews")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDetailDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetMyReviews(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMyReviews(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
         var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving reviews for user {UserId}", userId);
         var result = await _reviewService.GetUserReviewsAsync(userId, cancellationToken: cancellationToken);
         return result is Result<IEnumerable<ReviewDetailDto>>.Success success
-            ? Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(success.Data, "Your reviews retrieved successfully"))
+            ? Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(
+                success.Data.Skip((page - 1) * pageSize).Take(pageSize),
+                "Your reviews retrieved successfully"))
             : result is Result<IEnumerable<ReviewDetailDto>>.Failure failure
-                ? BadRequest(ApiResponse<IEnumerable<ReviewDetailDto>>.Failure(failure.Message, failure.Code))
+                ? failure.Code == "USER_NOT_FOUND"
+                    ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
+                    : BadRequest(ApiResponse<IEnumerable<ReviewDetailDto>>.Failure(failure.Message, failure.Code))
                 : BadRequest(ApiResponse<IEnumerable<ReviewDetailDto>>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -221,6 +250,8 @@ public class ReviewsController : ControllerBase
     /// <summary>
     /// Retrieves all reviews awaiting admin approval (admin only).
     /// </summary>
+    /// <param name="page">Page number (minimum 1).</param>
+    /// <param name="pageSize">Page size (minimum 1, maximum 100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of pending reviews.</returns>
     /// <response code="200">Pending reviews retrieved successfully.</response>
@@ -229,11 +260,23 @@ public class ReviewsController : ControllerBase
     [HttpGet("admin/pending")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReviewDetailDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPendingReviews(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetPendingReviews(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
         _logger.LogInformation("Retrieving pending reviews");
         var reviews = await _reviewService.GetPendingReviewsAsync(cancellationToken: cancellationToken);
-        return Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(reviews, "Pending reviews retrieved successfully"));
+        var paginatedReviews = reviews
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+
+        return Ok(ApiResponse<IEnumerable<ReviewDetailDto>>.Ok(paginatedReviews, "Pending reviews retrieved successfully"));
     }
 
     /// <summary>

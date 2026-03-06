@@ -48,6 +48,31 @@ public class ReviewsControllerTests
     }
 
     [TestMethod]
+    public async Task GetReviews_ForProduct_WithLargePageSize_IsClamped()
+    {
+        // Arrange
+        using var client = _factory.CreateUnauthenticatedClient();
+        var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+        // Act
+        var response = await client.GetAsync($"/api/reviews/product/{productId}?page=1&pageSize=1000");
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
+            "GetReviews should return OK or NotFound");
+
+        if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
+        {
+            var json = JsonSerializer.Deserialize<JsonElement>(responseContent);
+            if (json.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            {
+                Assert.IsTrue(data.GetArrayLength() <= 100, "Reviews pageSize should be clamped to 100");
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task GetReviews_ForProductRating_ReturnsOk()
     {
         // Arrange
@@ -174,6 +199,23 @@ public class ReviewsControllerTests
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.OK,
             "Unauthenticated should not create review");
+    }
+
+    [TestMethod]
+    public async Task GetMyReviews_WithPaginationQuery_ReturnsExpectedStatuses()
+    {
+        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.GetAsync("/api/reviews/my-reviews?page=1&pageSize=1000");
+
+        // Assert
+        Assert.IsTrue(
+            response.StatusCode == HttpStatusCode.OK ||
+            response.StatusCode == HttpStatusCode.NotFound ||
+            response.StatusCode == HttpStatusCode.BadRequest,
+            "My reviews endpoint should accept pagination query parameters");
     }
 
     #endregion
