@@ -110,7 +110,7 @@ public class InventoryControllerTests
         var response = await client.GetAsync("/api/inventory");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized,
             "Customer cannot access all inventory");
     }
 
@@ -132,9 +132,8 @@ public class InventoryControllerTests
         var response = await client.PutAsync($"/api/inventory/{productId}", content);
 
         // Assert
-        // Accept 2xx success or 4xx expected errors
-        Assert.IsTrue((int)response.StatusCode >= 200 && (int)response.StatusCode < 500,
-            $"UpdateStock should return success or client error, got {response.StatusCode}");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode,
+            $"UpdateStock should return OK for existing product, got {response.StatusCode}");
     }
 
     [TestMethod]
@@ -142,7 +141,7 @@ public class InventoryControllerTests
     {
         // Arrange
         using var client = _factory.CreateAdminClient();
-        var productId = Guid.NewGuid();
+        var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         var updateStockDto = new { Quantity = -50, Reason = "correction", Notes = "Test negative" };
 
         var content = new StringContent(JsonSerializer.Serialize(updateStockDto), Encoding.UTF8, "application/json");
@@ -151,9 +150,8 @@ public class InventoryControllerTests
         var response = await client.PutAsync($"/api/inventory/{productId}", content);
 
         // Assert
-        // Accept 2xx success or 4xx expected errors
-        Assert.IsTrue((int)response.StatusCode >= 200 && (int)response.StatusCode < 500,
-            $"Negative quantity should return client error or success, got {response.StatusCode}");
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.OK,
+            $"Negative quantity should return BadRequest or OK, got {response.StatusCode}");
     }
 
     [TestMethod]
@@ -245,7 +243,7 @@ public class InventoryControllerTests
         var response = await client.GetAsync($"/api/inventory/low-stock?threshold={threshold}");
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.OK,
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized,
             "Customer cannot access low stock list");
     }
 

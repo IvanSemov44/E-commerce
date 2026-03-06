@@ -21,11 +21,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User
-                ?.FindFirst(ClaimTypes.NameIdentifier)
-                ?? _httpContextAccessor.HttpContext?.User?.FindFirst("sub");
-
-            if (userIdClaim?.Value == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+            if (!TryGetUserId(out var userId))
                 throw new UnauthorizedAccessException("User ID not found in token");
 
             return userId;
@@ -36,13 +32,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User
-                ?.FindFirst(ClaimTypes.NameIdentifier)
-                ?? _httpContextAccessor.HttpContext?.User?.FindFirst("sub");
-
-            return userIdClaim?.Value != null && Guid.TryParse(userIdClaim.Value, out var userId)
-                ? userId
-                : null;
+            return TryGetUserId(out var userId) ? userId : null;
         }
     }
 
@@ -61,11 +51,10 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var emailClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email);
-            if (emailClaim?.Value == null)
+            if (!TryGetEmail(out var email))
                 throw new UnauthorizedAccessException("Email not found in token");
 
-            return emailClaim.Value;
+            return email;
         }
     }
 
@@ -73,8 +62,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role);
-            if (roleClaim?.Value == null || !Enum.TryParse<UserRole>(roleClaim.Value, out var role))
+            if (!TryGetRole(out var role))
                 throw new UnauthorizedAccessException("Role not found in token");
 
             return role;
@@ -83,4 +71,26 @@ public class CurrentUserService : ICurrentUserService
 
     public bool IsAuthenticated =>
         _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+
+    private bool TryGetUserId(out Guid userId)
+    {
+        var userIdClaim = _httpContextAccessor.HttpContext?.User
+            ?.FindFirst(ClaimTypes.NameIdentifier)
+            ?? _httpContextAccessor.HttpContext?.User?.FindFirst("sub");
+
+        return Guid.TryParse(userIdClaim?.Value, out userId);
+    }
+
+    private bool TryGetEmail(out string email)
+    {
+        var emailClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email);
+        email = emailClaim?.Value ?? string.Empty;
+        return !string.IsNullOrWhiteSpace(email);
+    }
+
+    private bool TryGetRole(out UserRole role)
+    {
+        var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role);
+        return Enum.TryParse<UserRole>(roleClaim?.Value, out role);
+    }
 }

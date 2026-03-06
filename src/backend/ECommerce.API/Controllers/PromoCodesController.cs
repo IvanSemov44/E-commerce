@@ -2,6 +2,7 @@ using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Interfaces;
+using ECommerce.API.Helpers;
 using ECommerce.Core.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,9 +42,7 @@ public class PromoCodesController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving active promo codes");
 

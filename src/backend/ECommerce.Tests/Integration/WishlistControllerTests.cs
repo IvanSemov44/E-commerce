@@ -187,9 +187,8 @@ public class WishlistControllerTests
         var response = await client.GetAsync($"/api/wishlist/check/{productId}");
 
         // Assert
-        // Accept 2xx/3xx/4xx (not 5xx server errors)
-        Assert.IsTrue((int)response.StatusCode < 500,
-            $"Wishlist endpoint should not return server error, got {response.StatusCode}");
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.NotFound,
+            $"Wishlist endpoint should return Unauthorized, Forbidden, or NotFound for unauthenticated user, got {response.StatusCode}");
     }
 
     #endregion

@@ -3,6 +3,7 @@ using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Services;
 using ECommerce.Application.Interfaces;
+using ECommerce.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerce.Core.Results;
@@ -65,9 +66,7 @@ public class ProductsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
         
         var result = await _productService.GetFeaturedProductsAsync(page, pageSize, cancellationToken);
         return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Featured products retrieved successfully"));

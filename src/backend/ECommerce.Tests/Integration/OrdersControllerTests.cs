@@ -513,9 +513,8 @@ public class OrdersControllerTests
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        // Accept any non-error response
-        Assert.IsTrue((int)response.StatusCode < 500,
-            $"GetUserOrders should not return server error, got {response.StatusCode}");
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.OK or HttpStatusCode.NotFound,
+            $"GetUserOrders should return OK or NotFound, got {response.StatusCode}");
     }
 
     #endregion

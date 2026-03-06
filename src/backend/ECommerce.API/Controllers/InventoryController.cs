@@ -1,4 +1,5 @@
 using ECommerce.API.ActionFilters;
+using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.Interfaces;
@@ -69,9 +70,7 @@ public class InventoryController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving low stock products with threshold: {Threshold}", threshold);
 
@@ -151,9 +150,7 @@ public class InventoryController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving inventory history for product {ProductId} (page: {Page}, pageSize: {PageSize})",
             productId, page, pageSize);

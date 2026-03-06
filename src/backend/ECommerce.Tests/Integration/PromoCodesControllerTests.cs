@@ -268,9 +268,8 @@ public class PromoCodesControllerTests
         var response = await client.PostAsync("/api/promo-codes", content);
 
         // Assert
-        // Accept 2xx/3xx/4xx (not 5xx server errors)
-        Assert.IsTrue((int)response.StatusCode < 500,
-            $"CreatePromoCode should not return server error, got {response.StatusCode}");
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.Created or HttpStatusCode.BadRequest,
+            $"CreatePromoCode should return Created or BadRequest, got {response.StatusCode}");
     }
 
     [TestMethod]

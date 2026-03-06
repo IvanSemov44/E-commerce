@@ -194,9 +194,8 @@ public class PaymentsControllerTests
         var response = await client.PostAsync($"/api/payments/{orderId}/refund", content);
 
         // Assert
-        // Accept any non-500 response
-        Assert.IsTrue((int)response.StatusCode < 500,
-            $"RefundPayment should not return server error, got {response.StatusCode}");
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.OK or HttpStatusCode.NotFound,
+            $"RefundPayment should return OK or NotFound, got {response.StatusCode}");
     }
 
     [TestMethod]
@@ -217,9 +216,8 @@ public class PaymentsControllerTests
         var response = await client.PostAsync($"/api/payments/{orderId}/refund", content);
 
         // Assert
-        // Accept any non-500 response
-        Assert.IsTrue((int)response.StatusCode < 500,
-            $"Partial refund should not return server error, got {response.StatusCode}");
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.OK or HttpStatusCode.NotFound,
+            $"Partial refund should return OK or NotFound, got {response.StatusCode}");
     }
 
     [TestMethod]

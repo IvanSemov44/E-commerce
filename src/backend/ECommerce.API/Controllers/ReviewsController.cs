@@ -1,4 +1,5 @@
 using ECommerce.API.ActionFilters;
+using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Common;
@@ -50,9 +51,7 @@ public class ReviewsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving reviews for product {ProductId}", productId);
         var result = await _reviewService.GetProductReviewsAsync(productId, cancellationToken: cancellationToken);
@@ -110,9 +109,7 @@ public class ReviewsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         var userId = _currentUser.UserId;
         _logger.LogInformation("Retrieving reviews for user {UserId}", userId);
@@ -278,9 +275,7 @@ public class ReviewsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving pending reviews");
         var reviews = await _reviewService.GetPendingReviewsAsync(cancellationToken: cancellationToken);

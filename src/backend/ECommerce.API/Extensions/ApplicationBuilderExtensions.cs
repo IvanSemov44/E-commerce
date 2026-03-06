@@ -56,8 +56,8 @@ public static class ApplicationBuilderExtensions
             app.UseSwaggerDocumentation();
         }
 
-        // HTTPS redirect for production - configured for reverse proxy
-        if (!app.Environment.IsDevelopment())
+        // HTTPS redirect for production/staging - skip in Test to avoid noisy warnings
+        if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Test"))
         {
             app.UseForwardedHeaders();
             app.UseHttpsRedirection();
@@ -139,6 +139,14 @@ public static class ApplicationBuilderExtensions
     {
         try
         {
+            var providerName = context.Database.ProviderName ?? string.Empty;
+            if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ||
+                !context.Database.IsRelational())
+            {
+                Log.Information("Skipping migration/schema validation for non-relational provider: {Provider}", providerName);
+                return;
+            }
+
             var pendingMigrations = await GetPendingMigrationsSafeAsync(context);
 
             if (pendingMigrations.Any())
@@ -158,10 +166,6 @@ public static class ApplicationBuilderExtensions
 
             // Validate schema consistency
             await DatabaseSchemaValidator.ValidateAsync(context);
-        }
-        catch (InvalidOperationException ex)
-        {
-            Log.Warning(ex, "Skipping migration checks for non-relational provider.");
         }
         catch (Exception ex)
         {

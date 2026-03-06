@@ -51,6 +51,14 @@ public static class DatabaseSchemaValidator
     {
         try
         {
+            var providerName = context.Database.ProviderName ?? string.Empty;
+            if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ||
+                !context.Database.IsRelational())
+            {
+                Log.Information("Skipping schema validation for non-relational provider: {Provider}", providerName);
+                return;
+            }
+
             var connection = context.Database.GetDbConnection();
             await connection.OpenAsync();
 
