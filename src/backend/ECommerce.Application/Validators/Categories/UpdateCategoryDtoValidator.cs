@@ -1,7 +1,7 @@
 using FluentValidation;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs.Categories;
 
-namespace ECommerce.Application.Validators.Common;
+namespace ECommerce.Application.Validators.Categories;
 
 /// <summary>
 /// Validator for UpdateCategoryDto - validates category updates with optional fields.

@@ -1,5 +1,6 @@
 using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs.Categories;
 using ECommerce.Application.Interfaces;
 using ECommerce.Core.Constants;
 using ECommerce.Core.Results;

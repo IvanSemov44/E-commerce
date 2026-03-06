@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Common;
+namespace ECommerce.Application.DTOs.Categories;
 
 public class UpdateCategoryDto
 {

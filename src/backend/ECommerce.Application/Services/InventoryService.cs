@@ -422,14 +422,18 @@ public class InventoryService : IInventoryService
         return lowStockProducts.Select(p => _mapper.Map<LowStockAlertDto>(p)).ToList();
     }
 
-    public async Task<List<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
         if (pageSize > 100) pageSize = 100;
 
-        var logs = await _unitOfWork.InventoryLogs
-            .FindByCondition(log => log.ProductId == productId, trackChanges: false)
+        var query = _unitOfWork.InventoryLogs
+            .FindByCondition(log => log.ProductId == productId, trackChanges: false);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var logs = await query
             .OrderByDescending(log => log.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -455,7 +459,7 @@ public class InventoryService : IInventoryService
         }
 
         var currentStock = product?.StockQuantity ?? 0;
-        var result = new List<InventoryLogDto>();
+        var items = new List<InventoryLogDto>();
 
         foreach (var log in logs)
         {
@@ -471,12 +475,18 @@ public class InventoryService : IInventoryService
                 CreatedByUserName = createdByUserName
             };
 
-            result.Add(finalDto);
+            items.Add(finalDto);
 
             currentStock -= log.QuantityChange;
         }
 
-        return result;
+        return new PaginatedResult<InventoryLogDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task CheckAndSendLowStockAlertsAsync(Guid productId, CancellationToken cancellationToken = default)

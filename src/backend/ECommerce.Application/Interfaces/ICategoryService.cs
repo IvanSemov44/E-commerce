@@ -1,4 +1,5 @@
 using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs.Categories;
 using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;

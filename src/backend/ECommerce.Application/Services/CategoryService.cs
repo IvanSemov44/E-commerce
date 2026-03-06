@@ -1,6 +1,7 @@
 using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs.Categories;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;

@@ -13,18 +13,18 @@ public interface IPaymentStore
     /// </summary>
     /// <param name="paymentId">The payment intent ID.</param>
     /// <param name="details">The payment details to store.</param>
-    Task StorePaymentAsync(string paymentId, PaymentDetailsDto details);
+    Task StorePaymentAsync(string paymentId, PaymentDetailsDto details, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves payment details by payment ID asynchronously.
     /// </summary>
     /// <param name="paymentId">The payment intent ID.</param>
     /// <returns>The payment details if found; otherwise null.</returns>
-    Task<PaymentDetailsDto?> GetPaymentAsync(string paymentId);
+    Task<PaymentDetailsDto?> GetPaymentAsync(string paymentId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes payment details from the store asynchronously.
     /// </summary>
     /// <param name="paymentId">The payment intent ID.</param>
-    Task RemovePaymentAsync(string paymentId);
+    Task RemovePaymentAsync(string paymentId, CancellationToken cancellationToken = default);
 }

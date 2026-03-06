@@ -74,12 +74,6 @@ public class ProductService : IProductService
         return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }
 
-    public async Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10, CancellationToken cancellationToken = default)
-    {
-        var products = await _unitOfWork.Products.GetFeaturedAsync(count, cancellationToken: cancellationToken);
-        return products.Select(p => _mapper.Map<ProductDto>(p)).ToList();
-    }
-
     public async Task<Result<ProductDetailDto>> CreateProductAsync(CreateProductDto dto, CancellationToken cancellationToken = default)
     {
         if (!await _unitOfWork.Products.IsSlugUniqueAsync(dto.Slug, cancellationToken: cancellationToken))
@@ -121,18 +115,18 @@ public class ProductService : IProductService
         return await GetProductsAsync(parameters, cancellationToken);
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20)
+    public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         // FIX: Validate and cap page size to prevent DoS
         var effectivePageSize = Math.Min(pageSize, PaginationConstants.MaxPageSize);
         
         // FIX: Get total count of featured products (not all active products)
-        var totalCount = await _unitOfWork.Products.GetFeaturedProductsCountAsync();
+        var totalCount = await _unitOfWork.Products.GetFeaturedProductsCountAsync(cancellationToken);
         
         var skip = (page - 1) * effectivePageSize;
         
         // FIX: Use proper pagination with skip parameter
-        var products = await _unitOfWork.Products.GetFeaturedAsync(skip, effectivePageSize);
+        var products = await _unitOfWork.Products.GetFeaturedAsync(skip, effectivePageSize, cancellationToken: cancellationToken);
 
         return new PaginatedResult<ProductDto>
         {

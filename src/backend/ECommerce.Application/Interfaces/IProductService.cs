@@ -26,9 +26,9 @@ public interface IProductService
     Task<Result<ProductDetailDto>> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets featured products limited to the specified count.
+    /// Gets featured products with pagination.
     /// </summary>
-    Task<List<ProductDto>> GetFeaturedProductsAsync(int count = 10, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new product.

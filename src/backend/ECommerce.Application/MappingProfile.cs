@@ -10,6 +10,7 @@ using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs.Categories;
 using ECommerce.Application.DTOs;
 
 namespace ECommerce.Application;

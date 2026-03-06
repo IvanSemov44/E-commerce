@@ -1,12 +1,12 @@
 namespace ECommerce.Application.DTOs.Cart;
 
-public class CartItemDto
+public record CartItemDto
 {
-    public Guid Id { get; set; }
-    public Guid ProductId { get; set; }
-    public string ProductName { get; set; } = null!;
-    public string? ProductImage { get; set; }
-    public decimal Price { get; set; }
-    public int Quantity { get; set; }
-    public decimal Total { get; set; }
+    public Guid Id { get; init; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = null!;
+    public string? ProductImage { get; init; }
+    public decimal Price { get; init; }
+    public int Quantity { get; init; }
+    public decimal Total { get; init; }
 }
