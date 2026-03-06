@@ -21,10 +21,25 @@ All responses use this structure:
 ```csharp
 public record ApiResponse<T>
 {
-    public bool Success { get; init; }
+    public required bool Success { get; init; }
     public T? Data { get; init; }
-    public ErrorResponse? Error { get; init; }
+    public ErrorResponse? ErrorDetails { get; init; }
     public string? TraceId { get; init; }
+
+    public static ApiResponse<T> Ok(T data) =>
+        new() { Success = true, Data = data };
+
+    public static ApiResponse<T> Failure(string message, string? code = null, Dictionary<string, string[]>? errors = null) =>
+        new()
+        {
+            Success = false,
+            ErrorDetails = new ErrorResponse
+            {
+                Message = message,
+                Code = code,
+                Errors = errors
+            }
+        };
 }
 ```
 
@@ -39,7 +54,7 @@ public record ErrorResponse
 }
 ```
 
-**All endpoints return this shape (success and error). No response-shape exceptions.**
+**All endpoints should return this shape (success and error).**
 
 ### **3. Pagination (MUST)**
 Every list endpoint **must** paginate. Hard caps: default 20, max 100.
@@ -51,28 +66,27 @@ public async Task<ActionResult> GetProducts(
     CancellationToken ct = default)
 {
     if (pageNumber < 1) pageNumber = 1;
-    if (pageSize < 1 || pageSize > 100) pageSize = 20;  // Enforce bounds
+    if (pageSize < 1) pageSize = 20;
+    if (pageSize > 100) pageSize = 100;  // Enforce upper bound
 
     var result = await _service.GetProductsAsync(pageNumber, pageSize, ct);
-    return Ok(ApiResponse<PaginatedResponse<ProductDto>>.Success(result));
+    return Ok(ApiResponse<PaginatedResponse<ProductDto>>.Ok(result));
 }
 ```
 
 ### **4. User Context Injection (MUST)**
-Never pass `userId` as parameter. Always inject:
+Use injected current-user context in the API layer, then pass resolved user identity into service methods when needed:
 ```csharp
-public class OrderService
+public class OrdersController : ControllerBase
 {
-    public OrderService(IUnitOfWork uow, ICurrentUserContext currentUser, IMapper mapper)
-    {
-        _unitOfWork = uow;
-        _currentUser = currentUser;  // ← Injected, not passed
-    }
+    private readonly ICurrentUserService _currentUser;
+    private readonly IOrderService _orderService;
 
-    public async Task<OrderDto> CreateOrderAsync(CreateOrderDto dto, CancellationToken ct)
+    public async Task<IActionResult> CreateOrder(CreateOrderDto dto, CancellationToken ct)
     {
-        var order = new Order { UserId = _currentUser.UserId };  // ✅ Always use injected
-        // ...
+        var userId = _currentUser.UserIdOrNull;
+        var result = await _orderService.CreateOrderAsync(userId, dto, ct);
+        return Ok(ApiResponse<OrderDetailDto>.Ok(result.Data));
     }
 }
 ```
@@ -263,7 +277,7 @@ Use this for every feature PR. Check off before pushing:
 - [ ] **Mandatory Rules**
   - [ ] Feature follows 1→5 delivery order (Domain → Contracts → Persistence → Service → Controller)
   - [ ] All list endpoints paginate with bounds (max 100 items)
-  - [ ] Response shape is `ApiResponse<T>` with `Success`, `Data`, `Error`, `TraceId`
+    - [ ] Response shape is `ApiResponse<T>` with `Success`, `Data`, `ErrorDetails`, `TraceId`
     - [ ] Error handling strategy is consistent per feature (`Result<T>` or typed exceptions)
   - [ ] `[Authorize]` or `[AllowAnonymous]` explicitly set on all endpoints
   - [ ] Ownership checks in service layer (not controller)
@@ -305,14 +319,23 @@ public record ApiResponse<T>
 {
     public required bool Success { get; init; }
     public T? Data { get; init; }
-    public ErrorResponse? Error { get; init; }
+    public ErrorResponse? ErrorDetails { get; init; }
     public string? TraceId { get; init; }
 
-    public static ApiResponse<T> Success(T data) =>
+    public static ApiResponse<T> Ok(T data) =>
         new() { Success = true, Data = data };
 
-    public static ApiResponse<T> Failure(ErrorResponse error, string traceId) =>
-        new() { Success = false, Error = error, TraceId = traceId };
+    public static ApiResponse<T> Failure(string message, string? code = null, Dictionary<string, string[]>? errors = null) =>
+        new()
+        {
+            Success = false,
+            ErrorDetails = new ErrorResponse
+            {
+                Message = message,
+                Code = code,
+                Errors = errors
+            }
+        };
 }
 ```
 
@@ -1763,7 +1786,7 @@ public MyService(IOptionsSnapshot<JwtOptions> options)  // Snapshot for reloadin
 }
 ```
 
-**MUST** never read `IConfiguration` directly in services.
+Prefer strongly-typed options (`IOptions<T>`) for business settings. `IConfiguration` may still be used in integration/infrastructure-oriented services where full options wiring is not yet complete.
 
 **appsettings Structure**:
 - `appsettings.json` — committed, no secrets (empty placeholders)
@@ -1788,8 +1811,10 @@ if (jwtOptions.SecretKey.Length < 32)
 
 ### **Semantic Versioning (Major.Minor.Patch)**
 
+Current API controllers use `api/[controller]` routes. Versioned routing (`api/v{version:apiVersion}/...`) is an optional evolution path when introducing explicit API versions.
+
 ```csharp
-// Route by version in URL (clearest for REST)
+// Optional future route-by-version model
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
