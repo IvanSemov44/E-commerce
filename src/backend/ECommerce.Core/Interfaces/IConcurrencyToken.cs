@@ -21,6 +21,7 @@ namespace ECommerce.Core.Interfaces;
 ///   <item><description>Product - for inventory and pricing updates</description></item>
 ///   <item><description>Order - for status and payment updates</description></item>
 ///   <item><description>PromoCode - for usage count updates</description></item>
+///   <item><description>Cart - for concurrent cart item modifications</description></item>
 /// </list>
 /// <para>
 /// NOTE: The [Timestamp] attribute must be applied on the implementing class property,

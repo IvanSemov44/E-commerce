@@ -119,8 +119,8 @@ public class AddressConfiguration : IEntityTypeConfiguration<Address>
 
 /// <summary>
 /// Configuration for Cart entity.
-/// Carts don't need optimistic concurrency - session-based operations.
-/// Note: Cart does not implement IConcurrencyToken, so no RowVersion property exists.
+/// Carts NEED optimistic concurrency for concurrent item updates.
+/// Cart implements IConcurrencyToken for RowVersion support.
 /// </summary>
 public class CartConfiguration : IEntityTypeConfiguration<Cart>
 {
@@ -128,6 +128,9 @@ public class CartConfiguration : IEntityTypeConfiguration<Cart>
     {
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => e.SessionId);
+
+        // Enable RowVersion for optimistic concurrency - critical for cart item mutation race conditions
+        entity.Property(e => e.RowVersion).IsRowVersion();
         
         entity.HasOne(e => e.User)
             .WithOne(e => e.Cart)
