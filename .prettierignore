@@ -1,0 +1,15 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+coverage
+
+# Backend (not handled by Prettier)
+src/backend
+
+# Misc
+*.min.js
+*.min.css
+.husky

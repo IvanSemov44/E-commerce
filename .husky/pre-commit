@@ -1,0 +1,4 @@
+ROOT=$(git rev-parse --show-toplevel)
+
+cd "$ROOT/src/frontend/storefront" && npx lint-staged --allow-empty
+cd "$ROOT/src/frontend/admin" && npx lint-staged --allow-empty
