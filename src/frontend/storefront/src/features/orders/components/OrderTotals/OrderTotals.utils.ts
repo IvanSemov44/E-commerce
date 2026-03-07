@@ -1,11 +1,4 @@
-/**
- * Format currency amount as USD string
- * @param amount - Numeric amount to format
- * @returns Formatted currency string
- */
-export function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`;
-}
+export { formatPrice as formatCurrency } from '@/shared/lib/utils/priceFormatter';
 
 /**
  * Check if amount should be displayed as free

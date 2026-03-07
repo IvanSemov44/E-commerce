@@ -4,7 +4,11 @@ import styles from './Dashboard.module.css';
 import { formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
-  const { data: dashboardStats, isLoading, error } = useGetDashboardStatsQuery(undefined, {
+  const {
+    data: dashboardStats,
+    isLoading,
+    error,
+  } = useGetDashboardStatsQuery(undefined, {
     pollingInterval: 30000, // Auto-refresh every 30 seconds
   });
 
@@ -94,10 +98,8 @@ export default function Dashboard() {
               <ul className={styles.trendList}>
                 {dashboardStats!.ordersTrend.slice(0, 7).map((trend) => (
                   <li key={trend.date} className={styles.trendItem}>
-                    <span className={styles.trendLabel}>
-                      {formatDate(trend.date)}
-                    </span>
-                    : <strong>{trend.count}</strong> orders
+                    <span className={styles.trendLabel}>{formatDate(trend.date)}</span>:{' '}
+                    <strong>{trend.count}</strong> orders
                   </li>
                 ))}
               </ul>
@@ -116,10 +118,8 @@ export default function Dashboard() {
               <ul className={styles.trendList}>
                 {dashboardStats!.revenueTrend.slice(0, 7).map((trend) => (
                   <li key={trend.date} className={styles.trendItem}>
-                    <span className={styles.trendLabel}>
-                      {formatDate(trend.date)}
-                    </span>
-                    : <strong>${trend.amount.toFixed(2)}</strong>
+                    <span className={styles.trendLabel}>{formatDate(trend.date)}</span>:{' '}
+                    <strong>${trend.amount.toFixed(2)}</strong>
                   </li>
                 ))}
               </ul>

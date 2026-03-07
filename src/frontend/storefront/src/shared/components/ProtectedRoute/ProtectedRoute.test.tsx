@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import ProtectedRoute from './ProtectedRoute';
-import { authSlice } from '@/features/auth/slices/authSlice';
 
 vi.mock('@/shared/lib/store', () => ({
   useAppSelector: vi.fn(),
@@ -393,6 +392,7 @@ describe('ProtectedRoute', () => {
 
     const { container } = renderWithRouter(
       <ProtectedRoute>
+        <span />
       </ProtectedRoute>,
       store
     );

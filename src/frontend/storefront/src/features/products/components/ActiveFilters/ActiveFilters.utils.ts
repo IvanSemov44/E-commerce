@@ -1,21 +1,23 @@
+interface ActiveFilterParams {
+  search: string;
+  categorySelected: boolean;
+  minPrice: number | undefined;
+  maxPrice: number | undefined;
+  minRating: number | undefined;
+  isFeatured: boolean | undefined;
+}
+
 /**
  * Check if any filters are active
- * @param search - Search query
- * @param categorySelected - Whether category is selected
- * @param minPrice - Minimum price filter
- * @param maxPrice - Maximum price filter
- * @param minRating - Minimum rating filter
- * @param isFeatured - Featured filter
- * @returns True if any filter is active
  */
-export function hasActiveFilters(
-  search: string,
-  categorySelected: boolean,
-  minPrice: number | undefined,
-  maxPrice: number | undefined,
-  minRating: number | undefined,
-  isFeatured: boolean | undefined
-): boolean {
+export function hasActiveFilters({
+  search,
+  categorySelected,
+  minPrice,
+  maxPrice,
+  minRating,
+  isFeatured,
+}: ActiveFilterParams): boolean {
   return (
     !!search ||
     categorySelected ||

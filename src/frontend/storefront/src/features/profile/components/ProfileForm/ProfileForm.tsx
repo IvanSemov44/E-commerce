@@ -1,4 +1,5 @@
 import Button from '@/shared/components/ui/Button';
+import Input from '@/shared/components/ui/Input';
 import type { ProfileFormData, ProfileFormProps } from './ProfileForm.types';
 import styles from './ProfileForm.module.css';
 
@@ -27,43 +28,21 @@ export default function ProfileForm({
   return (
     <form className={styles.form} onSubmit={onSubmit}>
       <div className={styles.grid}>
-        <label className={styles.field}>
-          <span>First Name</span>
-          <input
-            value={formData.firstName}
-            onChange={(e) => updateField('firstName', e.target.value)}
-            disabled={!isEditMode || isUpdating}
-          />
-        </label>
-        <label className={styles.field}>
-          <span>Last Name</span>
-          <input
-            value={formData.lastName}
-            onChange={(e) => updateField('lastName', e.target.value)}
-            disabled={!isEditMode || isUpdating}
-          />
-        </label>
-        <label className={styles.field}>
-          <span>Email</span>
-          <input value={formData.email} disabled />
-        </label>
-        <label className={styles.field}>
-          <span>Phone</span>
-          <input
-            value={formData.phone}
-            onChange={(e) => updateField('phone', e.target.value)}
-            disabled={!isEditMode || isUpdating}
-          />
-        </label>
-        <label className={styles.field}>
-          <span>Avatar URL</span>
-          <input
-            value={formData.avatarUrl}
-            onChange={(e) => updateField('avatarUrl', e.target.value)}
-            onBlur={handleAvatarBlur}
-            disabled={!isEditMode || isUpdating}
-          />
-        </label>
+        <div className={styles.field}>
+          <Input label="First Name" value={formData.firstName} onChange={(e) => updateField('firstName', e.target.value)} disabled={!isEditMode || isUpdating} />
+        </div>
+        <div className={styles.field}>
+          <Input label="Last Name" value={formData.lastName} onChange={(e) => updateField('lastName', e.target.value)} disabled={!isEditMode || isUpdating} />
+        </div>
+        <div className={styles.field}>
+          <Input label="Email" value={formData.email} disabled />
+        </div>
+        <div className={styles.field}>
+          <Input label="Phone" value={formData.phone} onChange={(e) => updateField('phone', e.target.value)} disabled={!isEditMode || isUpdating} />
+        </div>
+        <div className={styles.field}>
+          <Input label="Avatar URL" value={formData.avatarUrl} onChange={(e) => updateField('avatarUrl', e.target.value)} onBlur={handleAvatarBlur} disabled={!isEditMode || isUpdating} />
+        </div>
       </div>
 
       {isEditMode ? (

@@ -19,6 +19,7 @@ import styles from './ProductCard.module.css';
  * - Responsive design
  * - Full accessibility support
  */
+// eslint-disable-next-line complexity -- JSX conditional rendering inflates the branch count; logic is delegated to custom hooks
 const ProductCard = memo(function ProductCard({
   id,
   name,

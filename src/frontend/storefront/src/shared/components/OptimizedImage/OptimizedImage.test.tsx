@@ -131,7 +131,7 @@ describe('OptimizedImage', () => {
   });
 
   it('removes loading state after image loads', async () => {
-    const { container } = render(
+    render(
       <OptimizedImage
         src="/image.jpg"
         alt="Test"
@@ -162,7 +162,7 @@ describe('OptimizedImage', () => {
   });
 
   it('supports multiple image formats with srcset', () => {
-    const { container } = render(
+    render(
       <OptimizedImage
         src="/image.jpg"
         alt="Test image"

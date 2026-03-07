@@ -14,7 +14,12 @@ import Modal from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
 import ProductForm from '../components/ProductForm';
 import styles from './Products.module.css';
-import type { Product, ProductDetail, CreateProductRequest, UpdateProductRequest } from '@shared/types';
+import type {
+  Product,
+  ProductDetail,
+  CreateProductRequest,
+  UpdateProductRequest,
+} from '@shared/types';
 
 // eslint-disable-next-line max-lines-per-function -- Products CRUD page: inline column JSX, handlers, and modal
 export default function Products() {
@@ -23,7 +28,11 @@ export default function Products() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductDetail | undefined>();
 
-  const { data: productsResult, isLoading, error } = useGetProductsQuery({
+  const {
+    data: productsResult,
+    isLoading,
+    error,
+  } = useGetProductsQuery({
     page,
     pageSize: 20,
     search,
@@ -62,7 +71,9 @@ export default function Products() {
     }
   };
 
-  const handleFormSubmit = async (data: CreateProductRequest | (UpdateProductRequest & { id: string })) => {
+  const handleFormSubmit = async (
+    data: CreateProductRequest | (UpdateProductRequest & { id: string })
+  ) => {
     try {
       if (editingProduct) {
         await updateProduct(data as UpdateProductRequest).unwrap();
@@ -113,18 +124,10 @@ export default function Products() {
       header: 'Actions',
       accessor: (product: Product) => (
         <div className={styles.actionButtons}>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleEdit(product)}
-          >
+          <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
             Edit
           </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => handleDelete(product.id)}
-          >
+          <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)}>
             Delete
           </Button>
         </div>
@@ -154,13 +157,9 @@ export default function Products() {
 
       <Card variant="elevated">
         {isLoading ? (
-          <div className={styles.loadingState}>
-            Loading products...
-          </div>
+          <div className={styles.loadingState}>Loading products...</div>
         ) : error ? (
-          <div className={styles.errorState}>
-            Failed to load products
-          </div>
+          <div className={styles.errorState}>Failed to load products</div>
         ) : (
           <>
             <Table
@@ -169,11 +168,7 @@ export default function Products() {
               keyExtractor={(product) => product.id}
             />
             <div className={styles.modalFooter}>
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           </>
         )}

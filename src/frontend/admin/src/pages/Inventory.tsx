@@ -119,7 +119,9 @@ export default function Inventory() {
         {lowStockCount > 0 && (
           <div className={styles.alert}>
             <span className={styles.alertIcon}>⚠️</span>
-            <span>{lowStockCount} product{lowStockCount !== 1 ? 's' : ''} running low on stock</span>
+            <span>
+              {lowStockCount} product{lowStockCount !== 1 ? 's' : ''} running low on stock
+            </span>
           </div>
         )}
       </div>
@@ -150,77 +152,75 @@ export default function Inventory() {
         emptyMessage="No products found"
       >
         {(items) => (
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>SKU</th>
-              <th>Price</th>
-              <th>Current Stock</th>
-              <th>Threshold</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-                <tr key={item.productId}>
-                  <td>
-                    <div className={styles.productCell}>
-                      {item.imageUrl && (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.productName}
-                          className={styles.productImage}
-                        />
-                      )}
-                      <span>{item.productName}</span>
-                    </div>
-                  </td>
-                  <td>{item.sku || '-'}</td>
-                  <td>${item.price.toFixed(2)}</td>
-                  <td>
-                    <span className={`${styles.stockQuantity} ${getStockStatusClass(item)}`}>
-                      {item.stockQuantity}
-                    </span>
-                  </td>
-                  <td>{item.lowStockThreshold}</td>
-                  <td>
-                    <span className={getStatusBadgeClass(item)}>
-                      {getStockStatusLabel(item)}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button
-                        onClick={() => handleOpenAdjustModal(item, 'add')}
-                        className={styles.btnRestock}
-                        title="Add stock"
-                      >
-                        +
-                      </button>
-                      <button
-                        onClick={() => handleOpenAdjustModal(item, 'set')}
-                        className={styles.btnAdjust}
-                        title="Adjust stock"
-                      >
-                        ⚙️
-                      </button>
-                      <Link
-                        to={`/products/edit/${item.productId}`}
-                        className={styles.btnView}
-                        title="Edit product"
-                      >
-                        ✏️
-                      </Link>
-                    </div>
-                  </td>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Price</th>
+                  <th>Current Stock</th>
+                  <th>Threshold</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.productId}>
+                    <td>
+                      <div className={styles.productCell}>
+                        {item.imageUrl && (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.productName}
+                            className={styles.productImage}
+                          />
+                        )}
+                        <span>{item.productName}</span>
+                      </div>
+                    </td>
+                    <td>{item.sku || '-'}</td>
+                    <td>${item.price.toFixed(2)}</td>
+                    <td>
+                      <span className={`${styles.stockQuantity} ${getStockStatusClass(item)}`}>
+                        {item.stockQuantity}
+                      </span>
+                    </td>
+                    <td>{item.lowStockThreshold}</td>
+                    <td>
+                      <span className={getStatusBadgeClass(item)}>{getStockStatusLabel(item)}</span>
+                    </td>
+                    <td>
+                      <div className={styles.actions}>
+                        <button
+                          onClick={() => handleOpenAdjustModal(item, 'add')}
+                          className={styles.btnRestock}
+                          title="Add stock"
+                        >
+                          +
+                        </button>
+                        <button
+                          onClick={() => handleOpenAdjustModal(item, 'set')}
+                          className={styles.btnAdjust}
+                          title="Adjust stock"
+                        >
+                          ⚙️
+                        </button>
+                        <Link
+                          to={`/products/edit/${item.productId}`}
+                          className={styles.btnView}
+                          title="Edit product"
+                        >
+                          ✏️
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </QueryRenderer>
 
@@ -229,7 +229,8 @@ export default function Inventory() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>
-                {adjustType === 'add' ? 'Add Stock' : 'Adjust Stock'} - {selectedProduct.productName}
+                {adjustType === 'add' ? 'Add Stock' : 'Adjust Stock'} -{' '}
+                {selectedProduct.productName}
               </h2>
               <button onClick={handleCloseAdjustModal} className={styles.closeBtn}>
                 ×
@@ -242,16 +243,16 @@ export default function Inventory() {
               </div>
 
               <div className={styles.formGroup}>
-                <label>
-                  {adjustType === 'add' ? 'Quantity to Add' : 'New Stock Quantity'}
-                </label>
+                <label>{adjustType === 'add' ? 'Quantity to Add' : 'New Stock Quantity'}</label>
                 <input
                   type="number"
                   value={newQuantity}
                   onChange={(e) => setNewQuantity(e.target.value)}
                   min="0"
                   className={styles.input}
-                  placeholder={adjustType === 'add' ? 'Enter quantity to add' : 'Enter new stock quantity'}
+                  placeholder={
+                    adjustType === 'add' ? 'Enter quantity to add' : 'Enter new stock quantity'
+                  }
                 />
               </div>
 
@@ -283,7 +284,8 @@ export default function Inventory() {
 
               {adjustType === 'add' && newQuantity && (
                 <div className={styles.preview}>
-                  New stock will be: {selectedProduct.stockQuantity + parseInt(newQuantity || '0', 10)} units
+                  New stock will be:{' '}
+                  {selectedProduct.stockQuantity + parseInt(newQuantity || '0', 10)} units
                 </div>
               )}
             </div>

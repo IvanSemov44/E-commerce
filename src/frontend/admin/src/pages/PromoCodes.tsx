@@ -15,7 +15,12 @@ import Pagination from '../components/ui/Pagination';
 import Badge from '../components/ui/Badge';
 import PromoCodeForm from '../components/PromoCodeForm';
 import styles from './PromoCodes.module.css';
-import type { PromoCode, PromoCodeDetail, CreatePromoCodeRequest, UpdatePromoCodeRequest } from '@shared/types';
+import type {
+  PromoCode,
+  PromoCodeDetail,
+  CreatePromoCodeRequest,
+  UpdatePromoCodeRequest,
+} from '@shared/types';
 import { formatDate } from '../utils/formatters';
 
 // eslint-disable-next-line max-lines-per-function -- Promo codes CRUD page: table columns with inline JSX, handlers, filters, and modal
@@ -26,7 +31,11 @@ export default function PromoCodes() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPromoCode, setEditingPromoCode] = useState<PromoCodeDetail | undefined>();
 
-  const { data: promoCodesResult, isLoading, error } = useGetPromoCodesQuery({
+  const {
+    data: promoCodesResult,
+    isLoading,
+    error,
+  } = useGetPromoCodesQuery({
     page,
     pageSize: 20,
     search,
@@ -58,10 +67,12 @@ export default function PromoCodes() {
     }
   };
 
-  const handleFormSubmit = async (data: CreatePromoCodeRequest | (UpdatePromoCodeRequest & { id: string })) => {
+  const handleFormSubmit = async (
+    data: CreatePromoCodeRequest | (UpdatePromoCodeRequest & { id: string })
+  ) => {
     try {
       if (editingPromoCode) {
-        await updatePromoCode(data as (UpdatePromoCodeRequest & { id: string })).unwrap();
+        await updatePromoCode(data as UpdatePromoCodeRequest & { id: string }).unwrap();
         toast.success('Promo code updated successfully');
       } else {
         await createPromoCode(data as CreatePromoCodeRequest).unwrap();
@@ -132,19 +143,11 @@ export default function PromoCodes() {
       header: 'Actions',
       accessor: (promo: PromoCode) => (
         <div className={styles.actionButtons}>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleEdit(promo)}
-          >
+          <Button size="sm" variant="outline" onClick={() => handleEdit(promo)}>
             Edit
           </Button>
           {promo.isActive && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => handleDeactivate(promo.id)}
-            >
+            <Button size="sm" variant="destructive" onClick={() => handleDeactivate(promo.id)}>
               Deactivate
             </Button>
           )}
@@ -193,13 +196,9 @@ export default function PromoCodes() {
 
       <Card variant="elevated">
         {isLoading ? (
-          <div className={styles.loadingState}>
-            Loading promo codes...
-          </div>
+          <div className={styles.loadingState}>Loading promo codes...</div>
         ) : error ? (
-          <div className={styles.errorState}>
-            Failed to load promo codes
-          </div>
+          <div className={styles.errorState}>Failed to load promo codes</div>
         ) : (
           <>
             <Table
@@ -208,11 +207,7 @@ export default function PromoCodes() {
               keyExtractor={(promo) => promo.id}
             />
             <div className={styles.modalFooter}>
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           </>
         )}

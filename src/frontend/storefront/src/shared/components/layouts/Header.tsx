@@ -1,7 +1,9 @@
+/* eslint-disable max-lines -- Three co-located private sub-components (UserMenu, MobileMenu, Header) */
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import { logout, selectIsAuthenticated, selectCurrentUser } from '@/features/auth/slices/authSlice';
+import type { AuthUser } from '@/features/auth/slices/authSlice';
 import { selectCartItemCount } from '@/features/cart/slices/cartSlice';
 import { useGetCartQuery } from '@/features/cart/api/cartApi';
 import { useGetWishlistQuery } from '@/features/wishlist/api/wishlistApi';
@@ -23,6 +25,182 @@ import { LanguageSwitcher } from '../LanguageSwitcher';
 import { SearchBar } from '../SearchBar';
 import styles from './Header.module.css';
 
+// ─── UserMenu ────────────────────────────────────────────────────────────────
+
+interface UserMenuProps {
+  user: AuthUser | null;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onLogout: () => void;
+}
+
+function UserMenu({ user, isOpen, onToggle, onClose, onLogout }: UserMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, onClose]);
+
+  return (
+    <div className={styles.userMenuWrapper} ref={menuRef}>
+      <button
+        onClick={onToggle}
+        className={styles.userButton}
+        aria-expanded={isOpen}
+        aria-label="User menu"
+      >
+        <div className={styles.userAvatar}>
+          {user?.firstName?.charAt(0).toUpperCase() ?? 'U'}
+        </div>
+        <span className={styles.userName}>{user?.firstName}</span>
+        <ChevronDownIcon className={styles.dropdownIcon} />
+      </button>
+
+      {isOpen && (
+        <div className={styles.dropdownMenu}>
+          <div className={styles.dropdownHeader}>
+            <p className={styles.dropdownHeaderLabel}>Account</p>
+            <p className={styles.dropdownHeaderName}>{user?.firstName}</p>
+            <p className={styles.dropdownHeaderEmail}>{user?.email}</p>
+          </div>
+          <div className={styles.dropdownContent}>
+            <Link to="/profile" onClick={onClose} className={styles.dropdownItem}>
+              <UserIcon className={styles.dropdownIcon} />
+              My Profile
+            </Link>
+            <button onClick={onLogout} className={styles.dropdownItem}>
+              <LogoutIcon />
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MobileMenu ──────────────────────────────────────────────────────────────
+
+interface MobileMenuProps {
+  isAuthenticated: boolean;
+  user: AuthUser | null;
+  cartItemCount: number;
+  wishlistItemCount: number;
+  onClose: () => void;
+  onLogout: () => void;
+}
+
+function MobileMenu({
+  isAuthenticated,
+  user,
+  cartItemCount,
+  wishlistItemCount,
+  onClose,
+  onLogout,
+}: MobileMenuProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className={styles.mobileMenu}>
+      <div className={styles.mobileMenuContent}>
+        <Link to="/products" onClick={onClose} className={styles.mobileNavLink}>
+          <div className={styles.mobileNavContent}>
+            <PackageIcon />
+            Products
+          </div>
+        </Link>
+
+        {isAuthenticated && (
+          <Link to="/orders" onClick={onClose} className={styles.mobileNavLink}>
+            <div className={styles.mobileNavContent}>
+              <DocumentIcon />
+              Orders
+            </div>
+          </Link>
+        )}
+
+        {isAuthenticated && (
+          <Link to="/wishlist" onClick={onClose} className={styles.mobileNavLink}>
+            <div className={styles.mobileNavContent}>
+              <HeartIcon />
+              Wishlist
+              {wishlistItemCount > 0 && (
+                <span className={styles.badgeWrapper}>
+                  <span className={styles.cartBadge}>
+                    {wishlistItemCount > 99 ? '99+' : wishlistItemCount}
+                  </span>
+                </span>
+              )}
+            </div>
+          </Link>
+        )}
+
+        <Link to="/cart" onClick={onClose} className={styles.mobileNavLink}>
+          <div className={styles.mobileNavContent}>
+            <ShoppingCartIcon />
+            Cart
+            {cartItemCount > 0 && (
+              <span className={styles.badgeWrapper}>
+                <span className={styles.cartBadge}>
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </span>
+              </span>
+            )}
+          </div>
+        </Link>
+
+        <div className={styles.mobileDivider} />
+
+        <div className={styles.mobileThemeToggle}>
+          <span className={styles.mobileThemeLabel}>{t('nav.appearance')}</span>
+          <ThemeToggle size="md" />
+        </div>
+
+        <div className={styles.mobileDivider} />
+
+        {isAuthenticated ? (
+          <>
+            <div className={styles.mobileUserInfo}>
+              <p className={styles.mobileUserLabel}>Logged in as</p>
+              <p className={styles.mobileUserName}>{user?.firstName}</p>
+              <p className={styles.mobileUserEmail}>{user?.email}</p>
+            </div>
+            <Link to="/profile" onClick={onClose} className={styles.mobileNavLink}>
+              <div className={styles.mobileNavContent}>
+                <UserIcon />
+                My Profile
+              </div>
+            </Link>
+            <button onClick={onLogout} className={styles.mobileLogoutButton}>
+              <LogoutIcon />
+              Logout
+            </button>
+          </>
+        ) : (
+          <div className={styles.mobileAuthButtons}>
+            <Link to="/login" onClick={onClose} className={styles.mobileSignInLink}>
+              Sign In
+            </Link>
+            <Link to="/register" onClick={onClose} className={styles.mobileSignUpLink}>
+              Sign Up
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Header (orchestrator) ───────────────────────────────────────────────────
+
 export default function Header() {
   const { t } = useTranslation();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -32,21 +210,17 @@ export default function Header() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Backend cart query (only for authenticated users)
   const { data: backendCart } = useGetCartQuery(undefined, {
     skip: !isAuthenticated,
     refetchOnMountOrArgChange: true,
   });
 
-  // Wishlist query (only for authenticated users)
   const { data: wishlistData } = useGetWishlistQuery(undefined, {
     skip: !isAuthenticated,
     refetchOnMountOrArgChange: true,
   });
 
-  // Calculate cart item count based on authentication status
   const cartItemCount = useMemo(() => {
     if (isAuthenticated && backendCart?.items) {
       return backendCart.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -54,24 +228,10 @@ export default function Header() {
     return localCartItemCount;
   }, [isAuthenticated, backendCart, localCartItemCount]);
 
-  // Calculate wishlist item count
-  const wishlistItemCount = useMemo(() => {
-    return wishlistData?.items?.length || 0;
-  }, [wishlistData]);
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    };
-
-    if (userMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [userMenuOpen]);
+  const wishlistItemCount = useMemo(
+    () => wishlistData?.items?.length ?? 0,
+    [wishlistData]
+  );
 
   const handleLogout = () => {
     dispatch(logout());
@@ -109,14 +269,13 @@ export default function Header() {
             )}
           </div>
 
-          {/* Search Bar - Centered */}
+          {/* Search Bar */}
           <div className={styles.searchContainer}>
             <SearchBar size="sm" />
           </div>
 
           {/* Desktop Right Items */}
           <div className={styles.desktopRight}>
-            {/* Wishlist */}
             {isAuthenticated && (
               <Link to="/wishlist" className={styles.cartLink} aria-label={t('nav.wishlist')}>
                 <HeartIcon className={styles.cartIcon} />
@@ -128,7 +287,6 @@ export default function Header() {
               </Link>
             )}
 
-            {/* Cart */}
             <Link to="/cart" className={styles.cartLink} aria-label={t('nav.cart')}>
               <ShoppingCartIcon className={styles.cartIcon} />
               {cartItemCount > 0 && (
@@ -138,67 +296,26 @@ export default function Header() {
               )}
             </Link>
 
-            {/* Theme Toggle */}
             <ThemeToggle size="sm" />
-
-            {/* Language Switcher */}
             <LanguageSwitcher size="sm" />
 
-            {/* Auth */}
             {isAuthenticated ? (
-              <div className={styles.userMenuWrapper} ref={userMenuRef}>
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className={styles.userButton}
-                  aria-expanded={userMenuOpen}
-                  aria-label="User menu"
-                >
-                  <div className={styles.userAvatar}>
-                    {user?.firstName?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                  <span className={styles.userName}>{user?.firstName}</span>
-                  <ChevronDownIcon className={styles.dropdownIcon} />
-                </button>
-
-                {/* User Dropdown Menu */}
-                {userMenuOpen && (
-                  <div className={styles.dropdownMenu}>
-                    <div className={styles.dropdownHeader}>
-                      <p className={styles.dropdownHeaderLabel}>Account</p>
-                      <p className={styles.dropdownHeaderName}>{user?.firstName}</p>
-                      <p className={styles.dropdownHeaderEmail}>{user?.email}</p>
-                    </div>
-                    <div className={styles.dropdownContent}>
-                      <Link
-                        to="/profile"
-                        onClick={() => setUserMenuOpen(false)}
-                        className={styles.dropdownItem}
-                      >
-                        <UserIcon className={styles.dropdownIcon} />
-                        My Profile
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className={styles.dropdownItem}
-                      >
-                        <LogoutIcon />
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <UserMenu
+                user={user}
+                isOpen={userMenuOpen}
+                onToggle={() => setUserMenuOpen((open) => !open)}
+                onClose={() => setUserMenuOpen(false)}
+                onLogout={handleLogout}
+              />
             ) : (
               <div className={styles.authButtons}>
                 <Link to="/login">
                   <Button variant="ghost" size="sm">
-                      {t('nav.signIn')}
-                    </Button>
+                    {t('nav.signIn')}
+                  </Button>
                 </Link>
                 <Link to="/register">
-                  <Button size="sm">
-                    Sign Up
-                  </Button>
+                  <Button size="sm">Sign Up</Button>
                 </Link>
               </div>
             )}
@@ -206,7 +323,7 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((open) => !open)}
             className={styles.mobileMenuButton}
             aria-label="Toggle menu"
             aria-expanded={mobileMenuOpen}
@@ -220,134 +337,15 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className={styles.mobileMenu}>
-          <div className={styles.mobileMenuContent}>
-            {/* Mobile Navigation */}
-            <Link
-              to="/products"
-              onClick={() => setMobileMenuOpen(false)}
-              className={styles.mobileNavLink}
-            >
-              <div className={styles.mobileNavContent}>
-                <PackageIcon />
-                Products
-              </div>
-            </Link>
-
-            {/* Mobile Orders */}
-            {isAuthenticated && (
-              <Link
-                to="/orders"
-                onClick={() => setMobileMenuOpen(false)}
-                className={styles.mobileNavLink}
-              >
-                <div className={styles.mobileNavContent}>
-                  <DocumentIcon />
-                  Orders
-                </div>
-              </Link>
-            )}
-
-            {/* Mobile Wishlist */}
-            {isAuthenticated && (
-              <Link
-                to="/wishlist"
-                onClick={() => setMobileMenuOpen(false)}
-                className={styles.mobileNavLink}
-              >
-                <div className={styles.mobileNavContent}>
-                  <HeartIcon />
-                  Wishlist
-                  {wishlistItemCount > 0 && (
-                    <span className={styles.badgeWrapper}>
-                      <span className={styles.cartBadge}>
-                        {wishlistItemCount > 99 ? '99+' : wishlistItemCount}
-                      </span>
-                    </span>
-                  )}
-                </div>
-              </Link>
-            )}
-
-            {/* Mobile Cart */}
-            <Link
-              to="/cart"
-              onClick={() => setMobileMenuOpen(false)}
-              className={styles.mobileNavLink}
-            >
-              <div className={styles.mobileNavContent}>
-                <ShoppingCartIcon />
-                Cart
-                {cartItemCount > 0 && (
-                  <span className={styles.badgeWrapper}>
-                    <span className={styles.cartBadge}>
-                      {cartItemCount > 99 ? '99+' : cartItemCount}
-                    </span>
-                  </span>
-                )}
-              </div>
-            </Link>
-
-            {/* Divider */}
-            <div className={styles.mobileDivider}></div>
-
-            {/* Theme Toggle for Mobile */}
-            <div className={styles.mobileThemeToggle}>
-              <span className={styles.mobileThemeLabel}>{t('nav.appearance')}</span>
-              <ThemeToggle size="md" />
-            </div>
-
-            {/* Divider */}
-            <div className={styles.mobileDivider}></div>
-
-            {/* Auth Section */}
-            {isAuthenticated ? (
-              <>
-                <div className={styles.mobileUserInfo}>
-                  <p className={styles.mobileUserLabel}>Logged in as</p>
-                  <p className={styles.mobileUserName}>{user?.firstName}</p>
-                  <p className={styles.mobileUserEmail}>{user?.email}</p>
-                </div>
-                <Link
-                  to="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={styles.mobileNavLink}
-                >
-                  <div className={styles.mobileNavContent}>
-                    <UserIcon />
-                    My Profile
-                  </div>
-                </Link>
-                <button
-                  onClick={handleMobileLogout}
-                  className={styles.mobileLogoutButton}
-                >
-                  <LogoutIcon />
-                  Logout
-                </button>
-              </>
-            ) : (
-              <div className={styles.mobileAuthButtons}>
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={styles.mobileSignInLink}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={styles.mobileSignUpLink}
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
+        <MobileMenu
+          isAuthenticated={isAuthenticated}
+          user={user}
+          cartItemCount={cartItemCount}
+          wishlistItemCount={wishlistItemCount}
+          onClose={() => setMobileMenuOpen(false)}
+          onLogout={handleMobileLogout}
+        />
       )}
     </header>
   );

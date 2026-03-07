@@ -8,14 +8,7 @@ export function calculateSubtotal(price: number, quantity: number): string {
   return (price * quantity).toFixed(2);
 }
 
-/**
- * Format price with currency symbol
- * @param price - Price to format
- * @returns Formatted price string
- */
-export function formatPrice(price: number): string {
-  return `$${price.toFixed(2)}`;
-}
+export { formatPrice } from '@/shared/lib/utils/priceFormatter';
 
 /**
  * Check if max stock is reached

@@ -20,9 +20,10 @@ import { useValidatePromoCodeMutation } from '../api';
 import { useCheckAvailabilityMutation } from '../api';
 import type { StockIssue } from '../api/inventoryApi';
 import { useCartSync } from '../../cart/hooks/useCartSync';
-import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '@/shared/lib/utils/constants';
+import { calculateOrderTotals } from '@/shared/lib/utils/orderCalculations';
 import useForm from '@/shared/hooks/useForm';
-import { validators } from '@/shared/lib/utils/validation';
+import { zodValidate } from '@/shared/lib/utils/zodValidate';
+import { checkoutSchema } from '../schemas/checkoutSchemas';
 import { telemetry } from '@/shared/lib/utils/telemetry';
 import type { CreateOrderRequest } from '@/shared/types';
 
@@ -85,50 +86,6 @@ interface UseCheckoutReturn {
   handleSubmit: (e: React.FormEvent) => Promise<void>;
 }
 
-// Validation function for checkout form
-const validateCheckoutForm = (values: ShippingFormData): Partial<Record<keyof ShippingFormData, string>> => {
-  const errors: Partial<Record<keyof ShippingFormData, string>> = {};
-
-  const firstNameError = validators.required('First name')(values.firstName);
-  if (firstNameError) errors.firstName = firstNameError;
-
-  const lastNameError = validators.required('Last name')(values.lastName);
-  if (lastNameError) errors.lastName = lastNameError;
-
-  const emailRequiredError = validators.required('Email')(values.email);
-  if (emailRequiredError) {
-    errors.email = emailRequiredError;
-  } else {
-    const emailFormatError = validators.email(values.email);
-    if (emailFormatError) errors.email = emailFormatError;
-  }
-
-  const phoneRequiredError = validators.required('Phone')(values.phone);
-  if (phoneRequiredError) {
-    errors.phone = phoneRequiredError;
-  } else {
-    const phoneFormatError = validators.phone(values.phone);
-    if (phoneFormatError) errors.phone = phoneFormatError;
-  }
-
-  const streetError = validators.required('Street address')(values.streetLine1);
-  if (streetError) errors.streetLine1 = streetError;
-
-  const cityError = validators.required('City')(values.city);
-  if (cityError) errors.city = cityError;
-
-  const stateError = validators.required('State')(values.state);
-  if (stateError) errors.state = stateError;
-
-  const postalCodeError = validators.required('Postal code')(values.postalCode);
-  if (postalCodeError) errors.postalCode = postalCodeError;
-
-  const countryError = validators.required('Country')(values.country);
-  if (countryError) errors.country = countryError;
-
-  return errors;
-};
-
 const CHECKOUT_DRAFT_KEY = 'checkout:shippingDraft';
 
 // Selector for authentication state
@@ -138,6 +95,7 @@ const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) 
 const selectUser = (state: { auth: ReturnType<typeof authReducer> }) => 
   state.auth.user;
 
+// eslint-disable-next-line max-lines-per-function -- Checkout orchestration hook: form state, cart sync, promo codes, order submission, and auth-aware prefill
 export function useCheckout(): UseCheckoutReturn {
   const dispatch = useAppDispatch();
   const localCartItems = useAppSelector(selectCartItems);
@@ -285,7 +243,7 @@ export function useCheckout(): UseCheckoutReturn {
       postalCode: shippingDraft.postalCode ?? '',
       country: shippingDraft.country ?? '',
     },
-    validate: validateCheckoutForm,
+    validate: zodValidate(checkoutSchema),
     onSubmit: handleFormSubmit,
   });
 
@@ -317,9 +275,7 @@ export function useCheckout(): UseCheckoutReturn {
 
   // Calculate totals with discount
   const discount = promoCodeValidation?.isValid ? promoCodeValidation.discountAmount : 0;
-  const shipping = subtotal > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
-  const tax = subtotal * DEFAULT_TAX_RATE;
-  const total = subtotal - discount + shipping + tax;
+  const { shipping, tax, total } = calculateOrderTotals(subtotal, discount);
 
   // Adapter for backward compatibility
   const setFormData = useCallback((data: Partial<ShippingFormData>) => {

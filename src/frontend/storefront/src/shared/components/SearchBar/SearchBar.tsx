@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SearchIcon, SpinnerIcon, CloseIcon, PackageIcon } from '@/shared/components/icons'
 import { useSearch, useKeyboardNavigation, useClickOutside } from './hooks'
+import { formatPriceLocale } from '@/shared/lib/utils/priceFormatter'
 import type { SearchBarProps } from './SearchBar.types'
 import styles from './SearchBar.module.css'
 
@@ -116,12 +117,7 @@ export const SearchBar = function SearchBar({
 
   const showDropdown = isFocused && query.trim().length >= 2 && (results.length > 0 || isFetching)
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price)
-  }
+  const formatPrice = formatPriceLocale
 
   return (
     <div

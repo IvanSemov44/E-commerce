@@ -36,7 +36,7 @@ const cartApiSlice = baseApi.injectEndpoints({
         response.data || { id: '', items: [], subtotal: 0, itemCount: 0 },
       async onQueryStarted({ cartItemId, quantity }, { dispatch, queryFulfilled }) {
         const patchResult = dispatch(
-          baseApi.util.updateQueryData('getCart', undefined, (draft) => {
+          cartApiSlice.util.updateQueryData('getCart', undefined, (draft) => {
             const item = draft.items.find((i) => i.id === cartItemId);
             if (item) {
               const delta = quantity - item.quantity;
@@ -64,7 +64,7 @@ const cartApiSlice = baseApi.injectEndpoints({
         response.data || { id: '', items: [], subtotal: 0, itemCount: 0 },
       async onQueryStarted(cartItemId, { dispatch, queryFulfilled }) {
         const patchResult = dispatch(
-          baseApi.util.updateQueryData('getCart', undefined, (draft) => {
+          cartApiSlice.util.updateQueryData('getCart', undefined, (draft) => {
             const idx = draft.items.findIndex((item) => item.id === cartItemId);
             if (idx !== -1) {
               const removed = draft.items[idx];

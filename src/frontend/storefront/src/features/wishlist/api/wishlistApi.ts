@@ -26,7 +26,7 @@ const wishlistApiSlice = baseApi.injectEndpoints({
         response.data || { id: '', items: [], itemCount: 0 },
       async onQueryStarted(productId, { dispatch, queryFulfilled }) {
         const patchResult = dispatch(
-          baseApi.util.updateQueryData('checkInWishlist', productId, () => true)
+          wishlistApiSlice.util.updateQueryData('checkInWishlist', productId, () => true)
         );
         try {
           await queryFulfilled;
@@ -49,10 +49,10 @@ const wishlistApiSlice = baseApi.injectEndpoints({
         response.data || { id: '', items: [], itemCount: 0 },
       async onQueryStarted(productId, { dispatch, queryFulfilled }) {
         const checkPatch = dispatch(
-          baseApi.util.updateQueryData('checkInWishlist', productId, () => false)
+          wishlistApiSlice.util.updateQueryData('checkInWishlist', productId, () => false)
         );
         const listPatch = dispatch(
-          baseApi.util.updateQueryData('getWishlist', undefined, (draft) => {
+          wishlistApiSlice.util.updateQueryData('getWishlist', undefined, (draft) => {
             const idx = draft.items.findIndex((item) => item.productId === productId);
             if (idx !== -1) {
               draft.items.splice(idx, 1);

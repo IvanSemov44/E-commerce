@@ -14,7 +14,6 @@
 export { Button, type ButtonProps } from './ui';
 export { Input, type InputProps } from './ui';
 export { Card } from './ui';
-export { Skeleton } from './ui';
 
 // Skeletons
 export {

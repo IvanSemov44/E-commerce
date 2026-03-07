@@ -27,7 +27,9 @@ interface ProductFormData {
 }
 
 // Validation function for product form
-const validateProductForm = (values: ProductFormData): Partial<Record<keyof ProductFormData, string>> => {
+const validateProductForm = (
+  values: ProductFormData
+): Partial<Record<keyof ProductFormData, string>> => {
   const errors: Partial<Record<keyof ProductFormData, string>> = {};
 
   const nameError = validators.required('Product name')(values.name);
@@ -215,7 +217,9 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
               </option>
             ))}
           </select>
-          {form.errors.categoryId && <div className={styles.fieldError}>{form.errors.categoryId}</div>}
+          {form.errors.categoryId && (
+            <div className={styles.fieldError}>{form.errors.categoryId}</div>
+          )}
         </div>
       </div>
 

@@ -25,8 +25,7 @@ export const ordersApi = createApi({
     }),
     getOrderById: builder.query<Order, string>({
       query: (id) => `/orders/${id}`,
-      transformResponse: (response: ApiResponse<Order>) =>
-        response.data || ({} as Order),
+      transformResponse: (response: ApiResponse<Order>) => response.data || ({} as Order),
       providesTags: ['Order'],
     }),
     updateOrderStatus: builder.mutation<
@@ -50,7 +49,14 @@ export const ordersApi = createApi({
       void
     >({
       query: () => '/orders/stats',
-      transformResponse: (response: ApiResponse<{ totalOrders: number; totalRevenue: number; ordersToday: number; pendingOrders: number }>) =>
+      transformResponse: (
+        response: ApiResponse<{
+          totalOrders: number;
+          totalRevenue: number;
+          ordersToday: number;
+          pendingOrders: number;
+        }>
+      ) =>
         response.data || {
           totalOrders: 0,
           totalRevenue: 0,

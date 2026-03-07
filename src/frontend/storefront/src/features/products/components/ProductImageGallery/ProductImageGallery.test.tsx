@@ -1,13 +1,13 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import ProductImageGallery from './ProductImageGallery'
 import type { ProductImage } from '@/shared/types'
 
 describe('ProductImageGallery', () => {
   const mockImages: ProductImage[] = [
-    { id: '1', url: 'https://example.com/image1.jpg', altText: 'Front view' },
-    { id: '2', url: 'https://example.com/image2.jpg', altText: 'Side view' },
-    { id: '3', url: 'https://example.com/image3.jpg', altText: 'Top view' },
+    { id: '1', url: 'https://example.com/image1.jpg', altText: 'Front view', isPrimary: true },
+    { id: '2', url: 'https://example.com/image2.jpg', altText: 'Side view', isPrimary: false },
+    { id: '3', url: 'https://example.com/image3.jpg', altText: 'Top view', isPrimary: false },
   ]
 
   it('should render main image with product name as alt text', () => {
@@ -65,8 +65,8 @@ describe('ProductImageGallery', () => {
 
   it('should use fallback text for thumbnail alt when altText is missing', () => {
     const imagesWithoutAlt: ProductImage[] = [
-      { id: '1', url: 'https://example.com/image1.jpg' },
-      { id: '2', url: 'https://example.com/image2.jpg' },
+      { id: '1', url: 'https://example.com/image1.jpg', isPrimary: true },
+      { id: '2', url: 'https://example.com/image2.jpg', isPrimary: false },
     ]
     
     render(<ProductImageGallery images={imagesWithoutAlt} productName="Product" />)

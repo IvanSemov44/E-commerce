@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import {
-  useGetOrdersQuery,
-  useUpdateOrderStatusMutation,
-} from '../store/api/ordersApi';
+import { useGetOrdersQuery, useUpdateOrderStatusMutation } from '../store/api/ordersApi';
 import { Card } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Table from '../components/ui/Table';
@@ -27,7 +24,11 @@ export default function Orders() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
 
-  const { data: ordersResult, isLoading, error } = useGetOrdersQuery({
+  const {
+    data: ordersResult,
+    isLoading,
+    error,
+  } = useGetOrdersQuery({
     page,
     pageSize: 20,
     search,
@@ -45,7 +46,11 @@ export default function Orders() {
     }
   };
 
-  const handleTrackingNumberUpdate = async (orderId: string, currentStatus: OrderStatus, trackingNumber: string) => {
+  const handleTrackingNumberUpdate = async (
+    orderId: string,
+    currentStatus: OrderStatus,
+    trackingNumber: string
+  ) => {
     try {
       await updateOrderStatus({ orderId, status: currentStatus, trackingNumber }).unwrap();
       toast.success('Tracking number updated');
@@ -78,9 +83,7 @@ export default function Orders() {
     {
       header: 'Status',
       accessor: (order: Order) => (
-        <Badge variant={statusColors[order.status]}>
-          {order.status}
-        </Badge>
+        <Badge variant={statusColors[order.status]}>{order.status}</Badge>
       ),
       width: '12%',
     },
@@ -133,9 +136,7 @@ export default function Orders() {
     },
   ];
 
-  const totalPages = ordersResult
-    ? Math.ceil(ordersResult.totalCount / ordersResult.pageSize)
-    : 1;
+  const totalPages = ordersResult ? Math.ceil(ordersResult.totalCount / ordersResult.pageSize) : 1;
 
   return (
     <div className={styles.container}>
@@ -165,13 +166,9 @@ export default function Orders() {
 
       <Card variant="elevated">
         {isLoading ? (
-          <div className={styles.loadingState}>
-            Loading orders...
-          </div>
+          <div className={styles.loadingState}>Loading orders...</div>
         ) : error ? (
-          <div className={styles.errorState}>
-            Failed to load orders
-          </div>
+          <div className={styles.errorState}>Failed to load orders</div>
         ) : (
           <>
             <Table
@@ -180,11 +177,7 @@ export default function Orders() {
               keyExtractor={(order) => order.id}
             />
             <div className={styles.modalFooter}>
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           </>
         )}

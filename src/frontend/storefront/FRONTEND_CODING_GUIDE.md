@@ -434,7 +434,7 @@ function App() {
 **Note on Suspense + RTK Query:**
 - Suspense **does** work with `React.lazy()` code splitting ✅
 - Suspense **does NOT** work with regular RTK Query hooks like `useGetProductQuery` (they return `{ data, isLoading, error }`) ❌
-- For RTK Query with Suspense, use `useSuspenseQuery` hook (RTK Query v1.9+) which throws promises
+- For RTK Query with Suspense, use `useSuspenseQuery` hook (RTK Query 2.x / RTK 2.0+) which throws promises
 
 For most cases, use standard hooks with `QueryRenderer` or conditional `isLoading`/`isError` checks.
 
@@ -686,6 +686,156 @@ function useAsyncProductList(filters: Filters): AsyncState<Product[]> {
 
 ---
 
+## React 19 APIs
+
+The project runs React 19. Use the new APIs instead of the older manual patterns they replace.
+
+### `useOptimistic` — Replaces manual optimistic update logic
+
+```typescript
+// src/features/cart/components/CartItem/CartItem.tsx
+import { useOptimistic } from 'react';
+import { useUpdateCartItemMutation } from '@/features/cart/api/cartApi';
+import { useApiErrorHandler } from '@/shared/hooks/useApiErrorHandler';
+
+export default function CartItem({ item }: { item: CartItem }) {
+  const [updateCartItem] = useUpdateCartItemMutation();
+  const { handleError } = useApiErrorHandler();
+
+  const [optimisticQuantity, setOptimisticQuantity] = useOptimistic(
+    item.quantity,
+    (_current, newQuantity: number) => newQuantity,
+  );
+
+  const handleQuantityChange = async (newQuantity: number) => {
+    setOptimisticQuantity(newQuantity); // Instant UI update
+    try {
+      await updateCartItem({ cartItemId: item.id, quantity: newQuantity }).unwrap();
+    } catch (error) {
+      handleError(error, 'Failed to update cart');
+      // React automatically reverts optimisticQuantity on error
+    }
+  };
+
+  return (
+    <div>
+      <span>{optimisticQuantity}</span>
+      <button onClick={() => handleQuantityChange(optimisticQuantity + 1)}>+</button>
+      <button onClick={() => handleQuantityChange(optimisticQuantity - 1)}>-</button>
+    </div>
+  );
+}
+```
+
+### `useActionState` — Replaces manual `handleSubmit` + `errors` + `isSubmitting` state
+
+```typescript
+// Use for forms where submission drives the state machine
+import { useActionState } from 'react';
+import { useCreateOrderMutation } from '@/features/orders/api';
+import { validators } from '@/shared/lib/utils/validation';
+
+type FormState = { errors: Record<string, string>; success: boolean };
+
+export default function CheckoutFormSimple() {
+  const [createOrder] = useCreateOrderMutation();
+
+  const [state, submitAction, isPending] = useActionState(
+    async (_prev: FormState, formData: FormData): Promise<FormState> => {
+      const email = formData.get('email') as string;
+      const address = formData.get('address') as string;
+
+      // Validate
+      const errors: Record<string, string> = {};
+      const emailError = validators.email(email);
+      if (emailError) errors.email = emailError;
+      const addressError = validators.required('Address')(address);
+      if (addressError) errors.address = addressError;
+      if (Object.keys(errors).length > 0) return { errors, success: false };
+
+      try {
+        await createOrder({ email, address }).unwrap();
+        return { errors: {}, success: true };
+      } catch {
+        return { errors: { _form: 'Order failed. Try again.' }, success: false };
+      }
+    },
+    { errors: {}, success: false },
+  );
+
+  return (
+    <form action={submitAction}>
+      <input name="email" type="email" />
+      {state.errors.email && <span>{state.errors.email}</span>}
+      <input name="address" />
+      {state.errors.address && <span>{state.errors.address}</span>}
+      {state.errors._form && <div>{state.errors._form}</div>}
+      <button type="submit" disabled={isPending}>
+        {isPending ? 'Placing order...' : 'Place Order'}
+      </button>
+    </form>
+  );
+}
+```
+
+**Prefer `useActionState` for simpler forms.** For complex multi-field forms with rich UX (real-time validation per field, controlled inputs), use the custom `useForm` hook — see [Form Pattern](#form-pattern) section.
+
+### `useFormStatus` — Replaces `isLoading` prop drilling into submit buttons
+
+```typescript
+// src/shared/components/ui/SubmitButton/SubmitButton.tsx
+import { useFormStatus } from 'react-dom';
+import Button from '@/shared/components/ui/Button';
+
+interface SubmitButtonProps {
+  children: React.ReactNode;
+  loadingLabel?: string;
+}
+
+export default function SubmitButton({ children, loadingLabel = 'Submitting...' }: SubmitButtonProps) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? loadingLabel : children}
+    </Button>
+  );
+}
+
+// Usage — no need to pass isLoading from parent
+<form action={submitAction}>
+  <input name="email" />
+  <SubmitButton loadingLabel="Placing order...">Place Order</SubmitButton>
+</form>
+```
+
+**Note:** `useFormStatus` only works inside a `<form>` element with an `action` prop (React 19 form actions). It does not work inside regular `onSubmit` forms.
+
+### `use()` — Unwrap promises and context in render
+
+```typescript
+// Unwrap a context value (alternative to useContext)
+import { use } from 'react';
+import { ThemeContext } from '@/shared/contexts/ThemeContext';
+
+export default function ThemedButton({ children }: { children: React.ReactNode }) {
+  const theme = use(ThemeContext); // Replaces useContext(ThemeContext)
+  return <button data-theme={theme}>{children}</button>;
+}
+```
+
+**When to reach for each:**
+
+| Scenario | Use |
+|----------|-----|
+| Optimistic cart/wishlist toggle | `useOptimistic` |
+| Simple form (login, register, filters) | `useActionState` |
+| Submit button inside `<form action>` | `useFormStatus` |
+| Complex controlled form with per-field validation | `useForm` hook |
+| Context reads | `use(Context)` |
+
+---
+
 ## Optimistic Updates for Ecommerce
 
 Update the UI immediately while the API request is in flight. Rollback on error:
@@ -883,6 +1033,7 @@ Queue mutations while offline, sync when connection returns:
 export function usePersistentCart() {
   const dispatch = useAppDispatch();
   const [addToCart] = useAddToCartMutation();
+  const { success, warning } = useToast();
 
   // Persist cart to localStorage
   useEffect(() => {
@@ -896,7 +1047,13 @@ export function usePersistentCart() {
       const pendingJson = localStorage.getItem('pending_cart_items');
       if (!pendingJson) return;
 
-      const pendingItems = JSON.parse(pendingJson) as CartItem[];
+      let pendingItems: CartItem[];
+      try {
+        pendingItems = JSON.parse(pendingJson);
+      } catch {
+        localStorage.removeItem('pending_cart_items'); // Corrupted — discard
+        return;
+      }
       let syncedCount = 0;
 
       for (const item of pendingItems) {
@@ -915,9 +1072,9 @@ export function usePersistentCart() {
 
       if (syncedCount === pendingItems.length) {
         localStorage.removeItem('pending_cart_items');
-        toast.success('Cart synced!');
+        success('Cart synced!');
       } else {
-        toast.warning('Cart partially synced. Will retry.');
+        warning('Cart partially synced. Will retry.');
       }
     };
 
@@ -1050,6 +1207,71 @@ test('user can search, add to cart, and checkout', async ({ page }) => {
 
 ---
 
+## CSS Module Conventions
+
+All styles use **CSS Modules** for scoped class names. Tailwind utility classes are **not** used in this project.
+
+### Rules
+
+- **Always camelCase** class names — they're accessed as JS properties: `styles.productCard` not `styles['product-card']`
+- **No inline styles** for colors, spacing, typography, or layout — use CSS Module classes
+- Inline styles are only acceptable for truly dynamic values that can't be expressed as a class: e.g., `style={{ width: `${pct}%` }}`
+- One `.module.css` file per component, colocated in the component folder
+- CSS variables for design tokens (colors, spacing, breakpoints) are defined globally in `src/shared/styles/`
+
+### File Naming
+
+```
+ComponentName/
+├── ComponentName.tsx
+└── ComponentName.module.css    ← Always same name as component
+```
+
+### Example
+
+```typescript
+// ProductCard.module.css
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--spacing-md);
+}
+
+.cardTitle {            /* camelCase — accessed as styles.cardTitle */
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.priceTag {
+  color: var(--color-primary);
+}
+
+// ProductCard.tsx
+import styles from './ProductCard.module.css';
+
+export default function ProductCard({ name, price }: ProductCardProps) {
+  return (
+    <article className={styles.card}>
+      <h3 className={styles.cardTitle}>{name}</h3>
+      <span className={styles.priceTag}>${price.toFixed(2)}</span>
+    </article>
+  );
+}
+```
+
+### Composing Classes
+
+```typescript
+import styles from './Button.module.css';
+
+// Composing multiple classes
+<button className={`${styles.button} ${styles.primary}`}>
+// or with a utility:
+<button className={[styles.button, isPrimary && styles.primary].filter(Boolean).join(' ')}>
+```
+
+---
+
 ## Component Patterns
 
 ### Hooks-Based Data Fetching (Primary Pattern)
@@ -1086,9 +1308,33 @@ export default function HomePage() {
 
 ### QueryRenderer Component
 
-Use `QueryRenderer` from `src/shared/components/QueryRenderer/` to handle loading/error/empty states consistently:
+Use `QueryRenderer` from `src/shared/components/QueryRenderer/` to handle loading/error/empty states consistently.
+
+**Full props interface:**
 
 ```typescript
+interface QueryRendererProps<T> {
+  isLoading: boolean;
+  error: unknown;
+  data: T | undefined;
+  isEmpty?: (data: T) => boolean;          // Custom empty check (default: array.length === 0 or falsy)
+  loadingSkeleton?: {
+    count?: number;                        // Default: 4
+    type?: 'card' | 'text' | 'image';     // Default: 'card'
+    custom?: React.ReactNode;             // Override skeleton entirely
+  };
+  emptyState?: {
+    icon?: React.ReactNode;
+    title: string;                         // Required when emptyState is provided
+    description?: string;
+    action?: React.ReactNode;
+  };
+  errorMessage?: string;                   // Default: 'Failed to load data. Please try again.'
+  children: (data: T) => React.ReactNode; // Only called when data exists and is not empty
+}
+```
+
+**Usage:
 <QueryRenderer
   isLoading={isLoading}
   error={error}
@@ -1117,7 +1363,11 @@ if (isFetching) return <RefreshIndicator />;    // Background refetch — subtle
 
 ### Render Optimization with React Compiler
 
-React Compiler is enabled in this project, so default to plain components/functions first. Add manual `memo`/`useCallback` only when profiling shows a measurable benefit or when referential stability is required by integration boundaries.
+React Compiler is enabled in this project, so default to plain components/functions first.
+
+**`useCallback` in components:** React Compiler handles component-level memoization. Don't add `useCallback` manually unless profiling shows a measurable win or a third-party integration needs stable identity.
+
+**`useCallback` in custom hooks:** Always wrap functions that are **returned** from a hook — they become dependencies in consumers. This is an identity concern, not a performance concern, and React Compiler does not handle it. See [Custom Hooks](#custom-hooks) section.
 
 ```typescript
 // Preferred default with React Compiler enabled
@@ -1131,7 +1381,8 @@ export default function ProductCard({
     event.preventDefault();
     try {
       await addToCart({ productId: id, quantity: 1 }).unwrap();
-      toast.success('Added to cart!');
+      const { success } = useToast();
+      success('Added to cart!');
     } catch (error) {
       handleError(error, 'Failed to add to cart');
     }
@@ -1182,7 +1433,11 @@ Unless one of these conditions applies, skip memo and let React Compiler optimiz
 
 ### Custom Hooks
 
-Keep hooks simple — plain functions first. When the hook returns functions that will be used as event handlers or passed to children, wrap them in `useCallback` to maintain stable references across renders.
+Keep hooks simple — plain functions first.
+
+**`useCallback` in custom hooks** serves a different purpose than `useCallback` in components. React Compiler handles component-level memoization, but hooks that **return functions** need `useCallback` for **referential stability** — the returned functions typically end up as `useEffect` dependencies or props passed to children. Without `useCallback`, every call to the hook creates new function instances, causing consumers to re-render or re-run effects unnecessarily.
+
+This is an **identity concern**, not a performance concern — React Compiler does not handle it.
 
 ```typescript
 // src/features/products/hooks/useProductFilters.ts
@@ -1192,7 +1447,7 @@ export function useProductFilters() {
   const dispatch = useAppDispatch();
   const filters = useAppSelector((state) => state.ui.selectedFilters);
 
-  // Wrap in useCallback — these functions are returned and used as event handlers
+  // useCallback required: returned functions used as event handlers / deps in consumers
   const updateCategory = useCallback((category: string | null) => {
     dispatch(setCategory(category));
   }, [dispatch]);
@@ -1210,7 +1465,7 @@ export function useProductFilters() {
 }
 ```
 
-**Why:** Returned functions are dependencies in consumers. Without `useCallback`, every render creates new functions, causing unnecessary re-renders.
+**Rule of thumb for hooks:** Wrap returned functions in `useCallback`. Do NOT wrap internal helper functions that are not returned. For components, let React Compiler handle it unless profiling shows a measurable regression or a third-party API needs stable identity.
 
 ### Selector Memoization
 
@@ -1263,6 +1518,289 @@ interface PaginatedResult<T> {
 | 409 | Conflict | Show "Resource modified" message |
 | 422 | Validation error | Show field-level errors |
 | 500 | Server error | Show "Try again later" message |
+
+---
+
+## i18n Conventions
+
+The project uses **react-i18next** with a single namespace (`translation`). All strings must go through `useTranslation()` — no hardcoded user-visible text.
+
+### Setup
+
+One namespace, all keys in `src/shared/i18n/locales/en.json` and `bg.json`. The current supported languages are **English (`en`)** and **Bulgarian (`bg`)**.
+
+```typescript
+// In any component
+import { useTranslation } from 'react-i18next';
+
+export default function ProductCard({ name }: { name: string }) {
+  const { t } = useTranslation();
+  return <h3>{t('products.card.title', { name })}</h3>;
+}
+```
+
+### Key Naming Convention
+
+Keys use **nested camelCase** following the feature structure:
+
+```
+feature.component.description
+```
+
+```json
+// en.json
+{
+  "common": {             // Cross-feature shared strings
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "outOfStock": "Out of Stock"
+  },
+  "nav": {                // Navigation labels
+    "products": "Products",
+    "cart": "Cart"
+  },
+  "products": {           // Products feature
+    "title": "Products",
+    "noProducts": "No products found",
+    "card": {
+      "addToCart": "Add to Cart",
+      "addToWishlist": "Add to Wishlist"
+    }
+  },
+  "checkout": {           // Checkout feature
+    "firstName": "First Name",
+    "placeOrder": "Place Order",
+    "shippingInfo": "Shipping Information"
+  },
+  "orders": {             // Orders feature
+    "history": "Order History",
+    "status": {
+      "pending": "Pending",
+      "shipped": "Shipped"
+    }
+  }
+}
+```
+
+**Rules:**
+- Common/shared strings → `common.*`
+- Navigation → `nav.*`
+- Feature strings → `featureName.*` (e.g., `products.*`, `checkout.*`, `orders.*`)
+- Always add the key to **both** `en.json` and `bg.json` in the same PR
+- Use interpolation for dynamic values: `t('common.viewAllResults', { query })` → `"View all results for \"{{query}}\""` in the JSON
+
+### Pluralization
+
+```typescript
+// en.json: "items": "{{count}} item", "items_plural": "{{count}} items"
+t('cart.items', { count: cartItems.length })
+```
+
+### Changing Language
+
+```typescript
+import { changeLanguage } from '@/shared/i18n';
+
+// Persists to localStorage and updates document.dir for RTL support
+await changeLanguage('bg');
+```
+
+---
+
+## Authentication Patterns
+
+### Auth State Shape
+
+The `auth` Redux slice (`src/features/auth/slices/authSlice.ts`) is the single source of truth for the current user:
+
+```typescript
+interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;           // 'Customer' | 'Admin'
+  phone?: string;
+  avatarUrl?: string;
+}
+
+interface AuthState {
+  isAuthenticated: boolean;
+  user: AuthUser | null;
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;   // true after first auth check completes
+}
+```
+
+### Reading Auth State
+
+Always use the **exported memoized selectors** — never select the whole `auth` slice:
+
+```typescript
+import {
+  selectIsAuthenticated,
+  selectCurrentUser,
+  selectAuthLoading,
+  selectAuthInitialized,
+  selectAuthStatus,         // Combined { isAuthenticated, loading } — single selector call
+} from '@/features/auth/slices/authSlice';
+
+// In a component
+const isAuthenticated = useAppSelector(selectIsAuthenticated);
+const user = useAppSelector(selectCurrentUser);
+
+// When you need both isAuthenticated + loading (avoids two selector calls)
+const { isAuthenticated, loading } = useAppSelector(selectAuthStatus);
+```
+
+### Writing Auth State
+
+Use slice actions for state transitions. The `baseQueryWithReauth` in `baseApi.ts` automatically dispatches `logout()` on token refresh failure:
+
+```typescript
+import { loginSuccess, logout, updateUser, setInitialized } from '@/features/auth/slices/authSlice';
+
+dispatch(loginSuccess(userPayload));   // Sets isAuthenticated=true, user, initialized=true
+dispatch(logout());                    // Clears user, isAuthenticated=false
+dispatch(updateUser({ avatarUrl }));   // Partial update to user object
+dispatch(setInitialized());            // Marks auth check complete (no user found)
+```
+
+### ProtectedRoute
+
+Wrap any route that requires authentication:
+
+```typescript
+// App.tsx
+import ProtectedRoute from '@/shared/components/ProtectedRoute';
+
+<Route path="/orders" element={
+  <ProtectedRoute>
+    <OrderHistory />
+  </ProtectedRoute>
+} />
+```
+
+`ProtectedRoute` behaviour:
+- Shows a spinner while `loading === true` (auth state initializing)
+- Redirects to `/login` with `<Navigate to="/login" replace />` if not authenticated
+- Renders children when authenticated
+
+### Checking Auth in Components
+
+```typescript
+// Check if user is logged in (e.g., conditionally show login button)
+const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+// Get user data (guaranteed non-null inside ProtectedRoute)
+const user = useAppSelector(selectCurrentUser);
+
+// Guest checkout: check auth but don't block
+const { isAuthenticated } = useAppSelector(selectAuthStatus);
+const isGuestOrder = !isAuthenticated;
+```
+
+---
+
+## Form Pattern
+
+The project uses a **custom `useForm` hook** (`src/shared/hooks/useForm.ts`) with a **custom `validators` utility** (`src/shared/lib/utils/validation.ts`). There is no Zod and no react-hook-form dependency.
+
+### `useForm` Hook
+
+```typescript
+import useForm from '@/shared/hooks/useForm';
+import { validators } from '@/shared/lib/utils/validation';
+import { useTranslation } from 'react-i18next';
+
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
+export default function LoginForm() {
+  const { t } = useTranslation();
+  const [login, { isLoading }] = useLoginMutation();
+  const { handleError } = useApiErrorHandler();
+
+  const { values, errors, isSubmitting, handleChange, handleSubmit } = useForm<LoginFormValues>({
+    initialValues: { email: '', password: '' },
+    validate: (vals) => {
+      const errs: Partial<Record<keyof LoginFormValues, string>> = {};
+      const emailErr = validators.email(vals.email);
+      if (emailErr) errs.email = emailErr;
+      const pwErr = validators.required('Password')(vals.password);
+      if (pwErr) errs.password = pwErr;
+      return errs;
+    },
+    onSubmit: async (vals) => {
+      try {
+        await login(vals).unwrap();
+      } catch (error) {
+        handleError(error, 'Login failed');
+      }
+    },
+  });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        name="email"
+        type="email"
+        value={values.email}
+        onChange={handleChange}
+        aria-describedby={errors.email ? 'email-error' : undefined}
+      />
+      {errors.email && <span id="email-error" role="alert">{errors.email}</span>}
+
+      <input
+        name="password"
+        type="password"
+        value={values.password}
+        onChange={handleChange}
+      />
+      {errors.password && <span role="alert">{errors.password}</span>}
+
+      <button type="submit" disabled={isSubmitting || isLoading}>
+        {t('auth.signIn')}
+      </button>
+    </form>
+  );
+}
+```
+
+### Available Validators
+
+```typescript
+import { validators } from '@/shared/lib/utils/validation';
+
+validators.required('Email')(value)          // 'Email is required'
+validators.email(value)                      // 'Invalid email address'
+validators.minLength(8)(value)               // 'Must be at least 8 characters'
+validators.maxLength(100)(value)             // 'Must be at most 100 characters'
+validators.phone(value)                      // 'Invalid phone number'
+validators.numeric(value)                    // 'Must be a number'
+validators.positiveNumber(value)             // 'Must be a positive number'
+validators.url(value)                        // 'Invalid URL'
+validators.match(otherValue, 'Password')(v)  // 'Password must match'
+
+// Compose multiple validators for one field
+validators.compose(
+  validators.required('Password'),
+  validators.minLength(8)
+)(value)
+```
+
+### When to use `useActionState` vs `useForm`
+
+| Situation | Use |
+|-----------|-----|
+| Simple form (login, filter, subscribe) | `useActionState` (React 19) |
+| Complex controlled inputs (per-field real-time validation, dependent fields) | `useForm` hook |
+| Submit inside `<form action>` | `useActionState` + `useFormStatus` |
+| Form state needs to live in a parent hook (`useCheckout`) | `useForm` hook |
 
 ---
 
@@ -1447,39 +1985,6 @@ Minimum telemetry events:
 
 ---
 
-## Feature Flag Lifecycle Standard
-
-Every feature flag must include:
-
-- Owner (`team` + `person`)
-- Expiry date
-- Rollout plan (0% -> 5% -> 25% -> 100%)
-- Cleanup task after full rollout
-
-```typescript
-type FeatureFlagMeta = {
-  key: string;
-  owner: string;
-  expiresOn: string; // ISO date
-  description: string;
-};
-
-export const featureFlags: FeatureFlagMeta[] = [
-  {
-    key: 'checkout.express-payments',
-    owner: 'storefront-team',
-    expiresOn: '2026-06-30',
-    description: 'Enable express payments flow',
-  },
-];
-```
-
-Rules:
-- Expired flags block release unless removed or renewed with approval
-- Never gate security-critical fixes behind flags
-
----
-
 ## PR Checklist
 
 Use this for every feature PR:
@@ -1529,7 +2034,16 @@ Use this for every feature PR:
 - [ ] **Operations & Governance**
   - [ ] Critical user flows emit telemetry (route, API, funnel milestones)
   - [ ] Frontend-backend correlation IDs are captured for error triage
-  - [ ] New feature flags include owner, expiry, rollout plan, cleanup task
+  - [ ] New feature flags: added to `config.features`, documented with owner + expiry comment, added to both `en.json` and `bg.json`
+
+- [ ] **New Features**
+  - [ ] API slice uses `baseApi.injectEndpoints()` and is imported in `store.ts`
+  - [ ] New tag types added to `baseApi.ts` `tagTypes`
+  - [ ] Lazy route added in `App.tsx`
+  - [ ] i18n keys added to both `en.json` AND `bg.json`
+  - [ ] `ProtectedRoute` applied where auth is required
+  - [ ] `useToast()` used for notifications (not `react-hot-toast` directly)
+  - [ ] `useAppDispatch` / `useAppSelector` used instead of bare Redux hooks
 
 ---
 
@@ -1666,6 +2180,235 @@ afterEach(() => {
   store.dispatch(baseApi.util.resetApiState());
 });
 ```
+
+---
+
+## Shared Utilities Reference
+
+### Typed Redux Hooks
+
+Always import from `@/shared/lib/store` — never use bare `useDispatch`/`useSelector`:
+
+```typescript
+import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
+
+// Type-safe dispatch
+const dispatch = useAppDispatch();
+
+// Type-safe selector
+const user = useAppSelector(selectCurrentUser);
+```
+
+**Definitions** (`src/shared/lib/store/hooks.ts`):
+```typescript
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector = <T,>(selector: (state: RootState) => T) =>
+  useSelector<RootState, T>(selector);
+```
+
+### Toast Notifications (`useToast`)
+
+The project uses a **custom Redux-backed toast system** — not `react-hot-toast` directly. Always use `useToast()` from `@/shared/components/Toast`:
+
+```typescript
+import { useToast } from '@/shared/components/Toast';
+
+export default function SomeComponent() {
+  const { success, error, warning, info } = useToast();
+
+  const handleSave = async () => {
+    try {
+      await saveItem().unwrap();
+      success('Item saved!');
+    } catch (err) {
+      error('Failed to save item');
+    }
+  };
+
+  return <button onClick={handleSave}>Save</button>;
+}
+```
+
+Available methods:
+
+| Method | Usage |
+|--------|-------|
+| `success(message, duration?)` | Confirmation / positive outcome |
+| `error(message, duration?)` | Failure / error message |
+| `warning(message, duration?)` | Non-blocking caution |
+| `info(message, duration?)` | Neutral information |
+| `clear(id)` | Dismiss a specific toast |
+| `clearAll()` | Dismiss all toasts |
+
+Default duration: `config.ui.toastDuration` (3000ms). Pass a custom `duration` in ms to override.
+
+> **Note:** `react-hot-toast` is a package dependency used for the `<Toaster>` component in `App.tsx` (visual rendering). Never call `import toast from 'react-hot-toast'` directly in feature code. Use `useToast()`.
+
+### Error Handling (`useApiErrorHandler`)
+
+```typescript
+import { useApiErrorHandler } from '@/shared/hooks/useApiErrorHandler';
+
+const { handleError, getErrorMessage } = useApiErrorHandler();
+
+// Auto-shows a toast with the extracted error message
+handleError(error, 'Default fallback message');
+
+// Get the message without showing a toast (e.g., for inline display)
+const message = getErrorMessage(error, 'Default fallback message');
+```
+
+---
+
+## Adding a New Feature — Step-by-Step
+
+Follow this checklist when building a new feature from scratch. Missing any step is a common source of bugs.
+
+### 1. Create the API file
+
+```typescript
+// src/features/{name}/api/{name}Api.ts
+import { baseApi } from '@/shared/lib/api/baseApi';
+
+const featureApiSlice = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    getItems: builder.query<Item[], void>({
+      query: () => '/items',
+      providesTags: ['Items'],
+      transformResponse: (response: ApiResponse<Item[]>) => response.data ?? [],
+    }),
+    createItem: builder.mutation<Item, CreateItemDto>({
+      query: (body) => ({ url: '/items', method: 'POST', body }),
+      invalidatesTags: ['Items'],
+    }),
+  }),
+});
+
+export const { useGetItemsQuery, useCreateItemMutation } = featureApiSlice;
+```
+
+### 2. Register the tag type in `baseApi.ts`
+
+```typescript
+// src/shared/lib/api/baseApi.ts → tagTypes array
+tagTypes: ['Cart', 'Order', 'Profile', 'Review', 'Wishlist', 'Items'],  // ← add yours
+```
+
+### 3. Import the API slice in `store.ts`
+
+```typescript
+// src/shared/lib/store/store.ts
+import '@/features/{name}/api/{name}Api';  // ← add this line
+```
+
+### 4. Create the page component
+
+```typescript
+// src/features/{name}/pages/{Name}Page/{Name}Page.tsx
+// (or src/pages/{Name}Page/{Name}Page.tsx for top-level pages)
+export default function ItemsPage() { ... }
+```
+
+### 5. Add a lazy route in `App.tsx`
+
+```typescript
+// App.tsx
+const Items = lazy(() => import('./features/{name}/pages/{Name}Page/{Name}Page'));
+
+// Inside <Routes>:
+<Route path="/{name}" element={<Items />} />
+// Wrap with <ProtectedRoute> if auth required
+```
+
+### 6. Add i18n keys
+
+Add all user-visible strings to **both** locale files:
+
+```json
+// src/shared/i18n/locales/en.json
+"{featureName}": {
+  "title": "Items",
+  "noItems": "No items found"
+}
+```
+
+```json
+// src/shared/i18n/locales/bg.json
+"{featureName}": {
+  "title": "Артикули",
+  "noItems": "Няма намерени артикули"
+}
+```
+
+### 7. Add a nav link (if user-accessible)
+
+Update the `nav` section in both locale files and add the route to `Header.tsx`.
+
+### Quick Checklist
+
+- [ ] `{name}Api.ts` created with `baseApi.injectEndpoints()`
+- [ ] Tag type added to `baseApi.ts` `tagTypes`
+- [ ] API slice imported in `store.ts`
+- [ ] Page component created
+- [ ] Lazy route added in `App.tsx`
+- [ ] i18n keys added to `en.json` AND `bg.json`
+- [ ] `ProtectedRoute` wrapping applied if auth required
+
+---
+
+## Feature Flags
+
+Feature flags live in `src/config.ts` under `config.features`:
+
+```typescript
+// src/config.ts
+features: {
+  guestCheckout: true,
+  cartSync: true,
+  wishlist: true,
+  reviews: true,
+  promoCode: true,
+},
+```
+
+### Using Feature Flags in Components
+
+```typescript
+import { config } from '@/config';
+
+export default function WishlistButton({ productId }: { productId: string }) {
+  if (!config.features.wishlist) return null;  // Feature gated
+
+  return <button>Add to Wishlist</button>;
+}
+```
+
+or as a conditional render:
+
+```typescript
+{config.features.promoCode && (
+  <PromoCodeInput onApply={handleApplyPromoCode} />
+)}
+```
+
+### Adding a New Feature Flag
+
+1. Add to `config.features` in `src/config.ts` with a descriptive camelCase name
+2. Document the flag in a comment above it with owner, purpose, and planned expiry:
+
+```typescript
+features: {
+  // Owner: storefront-team | Expires: 2026-06-30 | Rollout: 0→5→25→100%
+  expressCheckout: false,
+  // ...existing flags
+},
+```
+
+3. After full rollout, remove the flag and all conditional checks in the same PR.
+
+**Rules:**
+- Never gate security-critical fixes behind flags
+- Expired flags block release unless removed or renewed with approval
 
 ---
 

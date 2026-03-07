@@ -23,8 +23,7 @@ export const reviewsApi = createApi({
   endpoints: (builder) => ({
     getPendingReviews: builder.query<ReviewDetailDto[], void>({
       query: () => '/reviews/admin/pending',
-      transformResponse: (response: ApiResponse<ReviewDetailDto[]>) =>
-        response.data || [],
+      transformResponse: (response: ApiResponse<ReviewDetailDto[]>) => response.data || [],
       providesTags: ['Review'],
     }),
     approveReview: builder.mutation<void, string>({
@@ -44,8 +43,5 @@ export const reviewsApi = createApi({
   }),
 });
 
-export const {
-  useGetPendingReviewsQuery,
-  useApproveReviewMutation,
-  useRejectReviewMutation,
-} = reviewsApi;
+export const { useGetPendingReviewsQuery, useApproveReviewMutation, useRejectReviewMutation } =
+  reviewsApi;

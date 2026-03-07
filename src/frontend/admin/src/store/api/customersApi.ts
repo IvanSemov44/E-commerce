@@ -24,8 +24,7 @@ export const customersApi = createApi({
     }),
     getCustomerById: builder.query<User, string>({
       query: (id) => `/customers/${id}`,
-      transformResponse: (response: ApiResponse<User>) =>
-        response.data || ({} as User),
+      transformResponse: (response: ApiResponse<User>) => response.data || ({} as User),
       providesTags: ['Customer'],
     }),
     getCustomerStats: builder.query<
@@ -37,7 +36,13 @@ export const customersApi = createApi({
       void
     >({
       query: () => '/customers/stats',
-      transformResponse: (response: ApiResponse<{ totalCustomers: number; activeCustomers: number; newCustomersThisMonth: number }>) =>
+      transformResponse: (
+        response: ApiResponse<{
+          totalCustomers: number;
+          activeCustomers: number;
+          newCustomersThisMonth: number;
+        }>
+      ) =>
         response.data || {
           totalCustomers: 0,
           activeCustomers: 0,
@@ -47,8 +52,5 @@ export const customersApi = createApi({
   }),
 });
 
-export const {
-  useGetCustomersQuery,
-  useGetCustomerByIdQuery,
-  useGetCustomerStatsQuery,
-} = customersApi;
+export const { useGetCustomersQuery, useGetCustomerByIdQuery, useGetCustomerStatsQuery } =
+  customersApi;

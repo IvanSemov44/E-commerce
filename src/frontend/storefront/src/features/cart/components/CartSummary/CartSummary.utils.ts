@@ -18,11 +18,4 @@ export function shouldShowFreeShippingMessage(subtotal: number, threshold: numbe
   return subtotal > 0 && subtotal < threshold;
 }
 
-/**
- * Format currency value
- * @param amount - Amount to format
- * @returns Formatted currency string
- */
-export function formatCurrency(amount: number): string {
-  return amount.toFixed(2);
-}
+export { formatPrice as formatCurrency } from '@/shared/lib/utils/priceFormatter';

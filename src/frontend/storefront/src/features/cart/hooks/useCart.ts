@@ -21,7 +21,7 @@ import {
   useRemoveFromCartMutation
 } from '../api/cartApi';
 import { useCartSync } from './useCartSync';
-import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '@/shared/lib/utils/constants';
+import { calculateOrderTotals } from '@/shared/lib/utils/orderCalculations';
 import toast from 'react-hot-toast';
 
 interface DisplayItem {
@@ -108,16 +108,8 @@ export function useCart(): UseCartReturn {
 
   // Calculate totals
   const totals: CartTotals = useMemo(() => {
-    const shipping = subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_SHIPPING_COST;
-    const tax = subtotal * DEFAULT_TAX_RATE;
-    const total = subtotal + shipping + tax;
-
-    return {
-      subtotal,
-      shipping,
-      tax,
-      total
-    };
+    const { shipping, tax, total } = calculateOrderTotals(subtotal);
+    return { subtotal, shipping, tax, total };
   }, [subtotal]);
 
   // Handle quantity update

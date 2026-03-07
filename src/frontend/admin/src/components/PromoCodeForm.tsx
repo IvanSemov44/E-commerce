@@ -5,11 +5,17 @@ import useForm from '../hooks/useForm';
 import { validators } from '../utils/validation';
 import { getErrorMessage } from '../utils/formatters';
 import styles from './PromoCodeForm.module.css';
-import type { PromoCodeDetail, CreatePromoCodeRequest, UpdatePromoCodeRequest } from '@shared/types';
+import type {
+  PromoCodeDetail,
+  CreatePromoCodeRequest,
+  UpdatePromoCodeRequest,
+} from '@shared/types';
 
 interface PromoCodeFormProps {
   promoCode?: PromoCodeDetail;
-  onSubmit: (data: CreatePromoCodeRequest | (UpdatePromoCodeRequest & { id: string })) => Promise<void>;
+  onSubmit: (
+    data: CreatePromoCodeRequest | (UpdatePromoCodeRequest & { id: string })
+  ) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -26,7 +32,9 @@ interface PromoCodeFormData {
 }
 
 // Validation function for promo code form
-const validatePromoCodeForm = (values: PromoCodeFormData): Partial<Record<keyof PromoCodeFormData, string>> => {
+const validatePromoCodeForm = (
+  values: PromoCodeFormData
+): Partial<Record<keyof PromoCodeFormData, string>> => {
   const errors: Partial<Record<keyof PromoCodeFormData, string>> = {};
 
   const codeError = validators.required('Promo code')(values.code);
@@ -82,7 +90,9 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
         discountValue: parseFloat(values.discountValue),
         isActive: values.isActive,
         ...(values.minOrderAmount && { minOrderAmount: parseFloat(values.minOrderAmount) }),
-        ...(values.maxDiscountAmount && { maxDiscountAmount: parseFloat(values.maxDiscountAmount) }),
+        ...(values.maxDiscountAmount && {
+          maxDiscountAmount: parseFloat(values.maxDiscountAmount),
+        }),
         ...(values.maxUses && { maxUses: parseInt(values.maxUses, 10) }),
         ...(values.startDate && { startDate: new Date(values.startDate).toISOString() }),
         ...(values.endDate && { endDate: new Date(values.endDate).toISOString() }),
@@ -174,7 +184,9 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
             <option value="percentage">Percentage (%)</option>
             <option value="fixed">Fixed Amount ($)</option>
           </select>
-          {form.errors.discountType && <div className={styles.fieldError}>{form.errors.discountType}</div>}
+          {form.errors.discountType && (
+            <div className={styles.fieldError}>{form.errors.discountType}</div>
+          )}
         </div>
 
         <Input

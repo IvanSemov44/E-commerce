@@ -44,10 +44,7 @@ export const promoCodesApi = createApi({
       transformResponse: (response: ApiResponse<PromoCodeDetail>) => response.data!,
       invalidatesTags: ['PromoCode'],
     }),
-    updatePromoCode: builder.mutation<
-      PromoCodeDetail,
-      { id: string } & UpdatePromoCodeRequest
-    >({
+    updatePromoCode: builder.mutation<PromoCodeDetail, { id: string } & UpdatePromoCodeRequest>({
       query: ({ id, ...promoCode }) => ({
         url: `/promo-codes/${id}`,
         method: 'PUT',

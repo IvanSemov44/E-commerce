@@ -1,5 +1,9 @@
 import toast from 'react-hot-toast';
-import { useGetPendingReviewsQuery, useApproveReviewMutation, useRejectReviewMutation } from '../store/api/reviewsApi';
+import {
+  useGetPendingReviewsQuery,
+  useApproveReviewMutation,
+  useRejectReviewMutation,
+} from '../store/api/reviewsApi';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -50,56 +54,56 @@ export default function Reviews() {
         emptyMessage="No pending reviews to moderate"
       >
         {(data) => (
-        <div className={styles.reviewsGrid}>
-          {data.map((review) => (
-            <Card key={review.id} variant="elevated">
-              <CardHeader>
-                <div className={styles.reviewHeader}>
-                  <div>
-                    <CardTitle>{review.title || 'No Title'}</CardTitle>
-                    <div className={styles.reviewMeta}>
-                      <span className={styles.rating}>{renderStars(review.rating)}</span>
-                      <span className={styles.separator}>•</span>
-                      <span>{review.userName || 'Anonymous'}</span>
-                      {review.isVerified && (
-                        <>
-                          <span className={styles.separator}>•</span>
-                          <Badge variant="success">Verified</Badge>
-                        </>
-                      )}
+          <div className={styles.reviewsGrid}>
+            {data.map((review) => (
+              <Card key={review.id} variant="elevated">
+                <CardHeader>
+                  <div className={styles.reviewHeader}>
+                    <div>
+                      <CardTitle>{review.title || 'No Title'}</CardTitle>
+                      <div className={styles.reviewMeta}>
+                        <span className={styles.rating}>{renderStars(review.rating)}</span>
+                        <span className={styles.separator}>•</span>
+                        <span>{review.userName || 'Anonymous'}</span>
+                        {review.isVerified && (
+                          <>
+                            <span className={styles.separator}>•</span>
+                            <Badge variant="success">Verified</Badge>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className={styles.productName}>
-                  Product: {review.productName || `ID: ${review.productId}`}
-                </p>
-                <p className={styles.comment}>{review.comment}</p>
-                <p className={styles.date}>
-                  Submitted: {new Date(review.createdAt).toLocaleString()}
-                </p>
-                <div className={styles.actions}>
-                  <Button
-                    onClick={() => handleApprove(review.id)}
-                    disabled={approving || rejecting}
-                    size="sm"
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleReject(review.id)}
-                    disabled={approving || rejecting}
-                    size="sm"
-                  >
-                    Reject
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardHeader>
+                <CardContent>
+                  <p className={styles.productName}>
+                    Product: {review.productName || `ID: ${review.productId}`}
+                  </p>
+                  <p className={styles.comment}>{review.comment}</p>
+                  <p className={styles.date}>
+                    Submitted: {new Date(review.createdAt).toLocaleString()}
+                  </p>
+                  <div className={styles.actions}>
+                    <Button
+                      onClick={() => handleApprove(review.id)}
+                      disabled={approving || rejecting}
+                      size="sm"
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleReject(review.id)}
+                      disabled={approving || rejecting}
+                      size="sm"
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </QueryRenderer>
     </div>

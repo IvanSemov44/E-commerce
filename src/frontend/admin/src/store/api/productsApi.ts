@@ -58,10 +58,7 @@ export const productsApi = createApi({
       }),
       invalidatesTags: ['Product'],
     }),
-    updateProductStock: builder.mutation<
-      ProductDetail,
-      { productId: string; quantity: number }
-    >({
+    updateProductStock: builder.mutation<ProductDetail, { productId: string; quantity: number }>({
       query: ({ productId, quantity }) => ({
         url: `/products/${productId}/stock`,
         method: 'PUT',
