@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import type { OrderCardProps } from './OrderCard.types';
 import { formatOrderDate, getStatusClassName } from './OrderCard.utils';
 import styles from './OrderCard.module.css';
@@ -49,7 +50,7 @@ export default function OrderCard({ order }: OrderCardProps) {
         <div className={styles.total}>
           <p className={styles.totalLabel}>{t('orders.total')}:</p>
           <p className={styles.totalAmount}>
-            ${order.totalAmount.toFixed(2)}
+            {formatPrice(order.totalAmount)}
           </p>
         </div>
       </div>

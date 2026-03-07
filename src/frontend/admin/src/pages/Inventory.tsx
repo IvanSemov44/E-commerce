@@ -9,19 +9,12 @@ import {
   type InventoryItem,
 } from '../store/api/inventoryApi';
 import QueryRenderer from '../components/QueryRenderer';
+import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
+import { getErrorMessage } from '../utils/formatters';
 import styles from './Inventory.module.css';
 
 // --- Pure helpers (no component state dependency) ---
-
-function getErrorMessage(err: unknown, fallback: string): string {
-  if (err instanceof Object && 'data' in err) {
-    const data = (err as Record<string, unknown>).data;
-    if (data instanceof Object && 'message' in data) {
-      return (data as Record<string, unknown>).message as string;
-    }
-  }
-  return fallback;
-}
 
 function getStockStatusClass(item: InventoryItem): string {
   if (item.isOutOfStock) return styles.stockOutOfStock;
@@ -224,19 +217,13 @@ export default function Inventory() {
         )}
       </QueryRenderer>
 
-      {showAdjustModal && selectedProduct && (
-        <div className={styles.modalOverlay} onClick={handleCloseAdjustModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2>
-                {adjustType === 'add' ? 'Add Stock' : 'Adjust Stock'} -{' '}
-                {selectedProduct.productName}
-              </h2>
-              <button onClick={handleCloseAdjustModal} className={styles.closeBtn}>
-                ×
-              </button>
-            </div>
-
+      <Modal
+        isOpen={showAdjustModal && !!selectedProduct}
+        onClose={handleCloseAdjustModal}
+        title={`${adjustType === 'add' ? 'Add Stock' : 'Adjust Stock'} - ${selectedProduct?.productName ?? ''}`}
+      >
+        {selectedProduct && (
+          <>
             <div className={styles.modalBody}>
               <div className={styles.currentStock}>
                 <strong>Current Stock:</strong> {selectedProduct.stockQuantity} units
@@ -291,20 +278,19 @@ export default function Inventory() {
             </div>
 
             <div className={styles.modalFooter}>
-              <button onClick={handleCloseAdjustModal} className={styles.btnCancel}>
+              <Button variant="ghost" onClick={handleCloseAdjustModal}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSubmitAdjustment}
-                className={styles.btnSubmit}
                 disabled={isAdjusting || isRestocking || !newQuantity}
               >
                 {isAdjusting || isRestocking ? 'Processing...' : 'Confirm'}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import Input from '../components/ui/Input';
 import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Pagination from '../components/ui/Pagination';
+import QueryRenderer from '../components/QueryRenderer';
 import styles from './Orders.module.css';
 import type { Order, OrderStatus } from '@shared/types';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -164,24 +165,27 @@ export default function Orders() {
         </div>
       </div>
 
-      <Card variant="elevated">
-        {isLoading ? (
-          <div className={styles.loadingState}>Loading orders...</div>
-        ) : error ? (
-          <div className={styles.errorState}>Failed to load orders</div>
-        ) : (
-          <>
+      <QueryRenderer
+        isLoading={isLoading}
+        error={error}
+        data={ordersResult?.items}
+        emptyTitle="No Orders"
+        emptyMessage="No orders found"
+        isEmpty={(items) => items.length === 0}
+      >
+        {(items) => (
+          <Card variant="elevated">
             <Table
               columns={columns}
-              data={ordersResult?.items || []}
+              data={items}
               keyExtractor={(order) => order.id}
             />
             <div className={styles.modalFooter}>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
-          </>
+          </Card>
         )}
-      </Card>
+      </QueryRenderer>
     </div>
   );
 }

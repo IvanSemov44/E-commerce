@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
+import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import type { CartItem as CartItemType } from '../../slices/cartSlice';
 import styles from './CartItem.module.css';
 
@@ -35,10 +36,10 @@ const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove
           {item.name}
         </Link>
         <div className={styles.price}>
-          ${item.price.toFixed(2)}
+          {formatPrice(item.price)}
           {item.compareAtPrice && (
             <span className={styles.strikethrough}>
-              ${item.compareAtPrice.toFixed(2)}
+              {formatPrice(item.compareAtPrice)}
             </span>
           )}
         </div>
@@ -70,7 +71,7 @@ const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove
 
       {/* Subtotal & Remove */}
       <div className={styles.rightSection}>
-        <div className={styles.subtotal}>${(item.price * item.quantity).toFixed(2)}</div>
+        <div className={styles.subtotal}>{formatPrice(item.price * item.quantity)}</div>
         {!readOnly && (
           <button
             onClick={() => onRemove(item.id)}

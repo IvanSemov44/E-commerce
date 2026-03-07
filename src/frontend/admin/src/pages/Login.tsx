@@ -4,6 +4,7 @@ import { useLoginMutation } from '../store/api/authApi';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess, type AdminUser } from '../store/slices/authSlice';
 import { useToast } from '../hooks';
+import { getErrorMessage } from '../utils/formatters';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -42,16 +43,6 @@ export default function Login() {
       const message = getErrorMessage(err, 'An error occurred during login');
       toast.error(message);
     }
-  };
-
-  const getErrorMessage = (err: unknown, fallback: string): string => {
-    if (err instanceof Object && 'data' in err) {
-      const data = (err as Record<string, unknown>).data;
-      if (data instanceof Object && 'message' in data) {
-        return (data as Record<string, unknown>).message as string;
-      }
-    }
-    return fallback;
   };
 
   return (

@@ -1,3 +1,4 @@
+import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './ProductInfo.module.css';
 
 interface ProductInfoProps {
@@ -31,9 +32,9 @@ export default function ProductInfo({
 
       <div className={styles.priceSection}>
         <div className={styles.priceContainer}>
-          <span className={styles.pricePrimary}>${price.toFixed(2)}</span>
+          <span className={styles.pricePrimary}>{formatPrice(price)}</span>
           {compareAtPrice && (
-            <span className={styles.priceCompare}>${compareAtPrice.toFixed(2)}</span>
+            <span className={styles.priceCompare}>{formatPrice(compareAtPrice)}</span>
           )}
         </div>
       </div>

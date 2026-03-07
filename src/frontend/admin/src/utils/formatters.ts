@@ -12,5 +12,12 @@ export function formatDateTime(dateString: string): string {
 }
 
 export function getErrorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message : fallback;
+  if (err instanceof Object && 'data' in err) {
+    const data = (err as Record<string, unknown>).data;
+    if (data instanceof Object && 'message' in data) {
+      return (data as Record<string, unknown>).message as string;
+    }
+  }
+  if (err instanceof Error) return err.message;
+  return fallback;
 }

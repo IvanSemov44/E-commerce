@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { useConfirmation } from '../hooks/useConfirmation';
 import {
   useGetPendingReviewsQuery,
   useApproveReviewMutation,
@@ -8,12 +9,14 @@ import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import QueryRenderer from '../components/QueryRenderer';
+import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import styles from './Reviews.module.css';
 
 export default function Reviews() {
   const { data: reviews, isLoading, error } = useGetPendingReviewsQuery();
   const [approveReview, { isLoading: approving }] = useApproveReviewMutation();
   const [rejectReview, { isLoading: rejecting }] = useRejectReviewMutation();
+  const { confirmation, confirm, handleConfirm, handleCancel } = useConfirmation();
 
   const handleApprove = async (reviewId: string) => {
     try {
@@ -24,15 +27,15 @@ export default function Reviews() {
     }
   };
 
-  const handleReject = async (reviewId: string) => {
-    if (!confirm('Are you sure you want to reject and delete this review?')) return;
-
-    try {
-      await rejectReview(reviewId).unwrap();
-      toast.success('Review rejected successfully');
-    } catch {
-      toast.error('Failed to reject review');
-    }
+  const handleReject = (reviewId: string) => {
+    confirm('Reject Review', 'Are you sure you want to reject and delete this review?', async () => {
+      try {
+        await rejectReview(reviewId).unwrap();
+        toast.success('Review rejected successfully');
+      } catch {
+        toast.error('Failed to reject review');
+      }
+    });
   };
 
   const renderStars = (rating: number) => {
@@ -106,6 +109,13 @@ export default function Reviews() {
           </div>
         )}
       </QueryRenderer>
+      <ConfirmationDialog
+        isOpen={confirmation.isOpen}
+        title={confirmation.title}
+        message={confirmation.message}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

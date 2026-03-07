@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useCrudModal } from '../hooks/useCrudModal';
+import { useConfirmation } from '../hooks/useConfirmation';
 import {
   useGetProductsQuery,
   useCreateProductMutation,
@@ -12,6 +14,8 @@ import Input from '../components/ui/Input';
 import Table from '../components/ui/Table';
 import Modal from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
+import QueryRenderer from '../components/QueryRenderer';
+import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import ProductForm from '../components/ProductForm';
 import styles from './Products.module.css';
 import type {
@@ -25,8 +29,8 @@ import type {
 export default function Products() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ProductDetail | undefined>();
+  const { modalOpen, editingItem: editingProduct, handleCreate, handleEdit, handleClose } = useCrudModal<ProductDetail>();
+  const { confirmation, confirm, handleConfirm, handleCancel } = useConfirmation();
 
   const {
     data: productsResult,
@@ -49,26 +53,15 @@ export default function Products() {
     { id: '3', name: 'Home & Garden' },
   ];
 
-  const handleCreate = () => {
-    setEditingProduct(undefined);
-    setModalOpen(true);
-  };
-
-  const handleEdit = (product: Product) => {
-    // Cast to ProductDetail for now
-    setEditingProduct(product as ProductDetail);
-    setModalOpen(true);
-  };
-
-  const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-
-    try {
-      await deleteProduct(productId).unwrap();
-      toast.success('Product deleted successfully');
-    } catch {
-      toast.error('Failed to delete product');
-    }
+  const handleDelete = (productId: string) => {
+    confirm('Delete Product', 'Are you sure you want to delete this product? This action cannot be undone.', async () => {
+      try {
+        await deleteProduct(productId).unwrap();
+        toast.success('Product deleted successfully');
+      } catch {
+        toast.error('Failed to delete product');
+      }
+    });
   };
 
   const handleFormSubmit = async (
@@ -82,7 +75,7 @@ export default function Products() {
         await createProduct(data as CreateProductRequest).unwrap();
         toast.success('Product created successfully');
       }
-      setModalOpen(false);
+      handleClose();
     } catch {
       // Error handling is delegated to the form component
     }
@@ -124,7 +117,7 @@ export default function Products() {
       header: 'Actions',
       accessor: (product: Product) => (
         <div className={styles.actionButtons}>
-          <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
+          <Button size="sm" variant="outline" onClick={() => handleEdit(product as ProductDetail)}>
             Edit
           </Button>
           <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)}>
@@ -155,28 +148,31 @@ export default function Products() {
         </div>
       </div>
 
-      <Card variant="elevated">
-        {isLoading ? (
-          <div className={styles.loadingState}>Loading products...</div>
-        ) : error ? (
-          <div className={styles.errorState}>Failed to load products</div>
-        ) : (
-          <>
+      <QueryRenderer
+        isLoading={isLoading}
+        error={error}
+        data={productsResult?.items}
+        emptyTitle="No Products"
+        emptyMessage="No products found"
+        isEmpty={(items) => items.length === 0}
+      >
+        {(items) => (
+          <Card variant="elevated">
             <Table
               columns={columns}
-              data={productsResult?.items || []}
+              data={items}
               keyExtractor={(product) => product.id}
             />
             <div className={styles.modalFooter}>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
-          </>
+          </Card>
         )}
-      </Card>
+      </QueryRenderer>
 
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={handleClose}
         title={editingProduct ? 'Edit Product' : 'Create Product'}
         size="lg"
       >
@@ -184,9 +180,17 @@ export default function Products() {
           product={editingProduct}
           categories={categories}
           onSubmit={handleFormSubmit}
-          onCancel={() => setModalOpen(false)}
+          onCancel={handleClose}
         />
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmation.isOpen}
+        title={confirmation.title}
+        message={confirmation.message}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

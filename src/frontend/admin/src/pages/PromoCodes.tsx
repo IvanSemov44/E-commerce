@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useCrudModal } from '../hooks/useCrudModal';
+import { useConfirmation } from '../hooks/useConfirmation';
 import {
   useGetPromoCodesQuery,
   useCreatePromoCodeMutation,
@@ -13,6 +15,8 @@ import Table from '../components/ui/Table';
 import Modal from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
 import Badge from '../components/ui/Badge';
+import QueryRenderer from '../components/QueryRenderer';
+import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import PromoCodeForm from '../components/PromoCodeForm';
 import styles from './PromoCodes.module.css';
 import type {
@@ -28,8 +32,8 @@ export default function PromoCodes() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<boolean | undefined>(undefined);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingPromoCode, setEditingPromoCode] = useState<PromoCodeDetail | undefined>();
+  const { modalOpen, editingItem: editingPromoCode, handleCreate, handleEdit, handleClose } = useCrudModal<PromoCodeDetail>();
+  const { confirmation, confirm, handleConfirm, handleCancel } = useConfirmation();
 
   const {
     data: promoCodesResult,
@@ -46,25 +50,15 @@ export default function PromoCodes() {
   const [updatePromoCode] = useUpdatePromoCodeMutation();
   const [deactivatePromoCode] = useDeactivatePromoCodeMutation();
 
-  const handleCreate = () => {
-    setEditingPromoCode(undefined);
-    setModalOpen(true);
-  };
-
-  const handleEdit = (promoCode: PromoCode) => {
-    setEditingPromoCode(promoCode as PromoCodeDetail);
-    setModalOpen(true);
-  };
-
-  const handleDeactivate = async (promoCodeId: string) => {
-    if (!confirm('Are you sure you want to deactivate this promo code?')) return;
-
-    try {
-      await deactivatePromoCode(promoCodeId).unwrap();
-      toast.success('Promo code deactivated successfully');
-    } catch {
-      toast.error('Failed to deactivate promo code');
-    }
+  const handleDeactivate = (promoCodeId: string) => {
+    confirm('Deactivate Promo Code', 'Are you sure you want to deactivate this promo code?', async () => {
+      try {
+        await deactivatePromoCode(promoCodeId).unwrap();
+        toast.success('Promo code deactivated successfully');
+      } catch {
+        toast.error('Failed to deactivate promo code');
+      }
+    });
   };
 
   const handleFormSubmit = async (
@@ -78,7 +72,7 @@ export default function PromoCodes() {
         await createPromoCode(data as CreatePromoCodeRequest).unwrap();
         toast.success('Promo code created successfully');
       }
-      setModalOpen(false);
+      handleClose();
     } catch {
       // Error handling is delegated to the form component
     }
@@ -143,7 +137,7 @@ export default function PromoCodes() {
       header: 'Actions',
       accessor: (promo: PromoCode) => (
         <div className={styles.actionButtons}>
-          <Button size="sm" variant="outline" onClick={() => handleEdit(promo)}>
+          <Button size="sm" variant="outline" onClick={() => handleEdit(promo as PromoCodeDetail)}>
             Edit
           </Button>
           {promo.isActive && (
@@ -194,37 +188,48 @@ export default function PromoCodes() {
         />
       </div>
 
-      <Card variant="elevated">
-        {isLoading ? (
-          <div className={styles.loadingState}>Loading promo codes...</div>
-        ) : error ? (
-          <div className={styles.errorState}>Failed to load promo codes</div>
-        ) : (
-          <>
+      <QueryRenderer
+        isLoading={isLoading}
+        error={error}
+        data={promoCodesResult?.items}
+        emptyTitle="No Promo Codes"
+        emptyMessage="No promo codes found"
+        isEmpty={(items) => items.length === 0}
+      >
+        {(items) => (
+          <Card variant="elevated">
             <Table
               columns={columns}
-              data={promoCodesResult?.items || []}
+              data={items}
               keyExtractor={(promo) => promo.id}
             />
             <div className={styles.modalFooter}>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
-          </>
+          </Card>
         )}
-      </Card>
+      </QueryRenderer>
 
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={handleClose}
         title={editingPromoCode ? 'Edit Promo Code' : 'Create Promo Code'}
         size="lg"
       >
         <PromoCodeForm
           promoCode={editingPromoCode}
           onSubmit={handleFormSubmit}
-          onCancel={() => setModalOpen(false)}
+          onCancel={handleClose}
         />
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmation.isOpen}
+        title={confirmation.title}
+        message={confirmation.message}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

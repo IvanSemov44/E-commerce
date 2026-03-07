@@ -6,8 +6,8 @@ import { useGetWishlistQuery, useRemoveFromWishlistMutation } from '@/features/w
 import { useAddToCartMutation } from '@/features/cart/api/cartApi';
 import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '@/shared/components/ui/Button';
-import EmptyState from '@/shared/components/EmptyState';
 import QueryRenderer from '@/shared/components/QueryRenderer';
+import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './WishlistPage.module.css';
 
 export default function WishlistPage() {
@@ -52,71 +52,57 @@ export default function WishlistPage() {
         }}
       >
         {(wishlist) => (
-          <>
-            {wishlist.items.length === 0 ? (
-              <EmptyState
-                icon={<HeartIcon className={styles.emptyIcon} />}
-                title={t('wishlist.empty')}
-                action={
-                  <Link to="/products">
-                    <Button>{t('wishlist.continueShopping')}</Button>
-                  </Link>
-                }
-              />
-            ) : (
-              <div className={styles.grid}>
-                {wishlist.items.map((item) => (
-                  <div key={item.id} className={styles.card}>
-                    {item.productImage ? (
-                      <img 
-                        src={item.productImage} 
-                        alt={item.productName}
-                        className={styles.productImage}
-                      />
-                    ) : (
-                      <div className={styles.imagePlaceholder}>
-                        <ImageIcon />
-                      </div>
-                    )}
-                    
-                    <div className={styles.content}>
-                      <h3 className={styles.productName}>
-                        {item.productName}
-                      </h3>
-                      
-                      <div className={styles.priceRow}>
-                        <span className={styles.price}>${item.price.toFixed(2)}</span>
-                        {item.compareAtPrice && (
-                          <span className={styles.comparePrice}>${item.compareAtPrice.toFixed(2)}</span>
-                        )}
-                      </div>
-                      
-                      {!item.isAvailable && (
-                        <p className={styles.outOfStock}>{t('wishlist.outOfStock')}</p>
-                      )}
-                      
-                      <div className={styles.actions}>
-                        <button
-                          className={styles.actionButton}
-                          onClick={() => handleAddToCart(item.productId)}
-                          disabled={!item.isAvailable}
-                        >
-                          {t('wishlist.addToCart')}
-                        </button>
-                        <button
-                          className={styles.removeButton}
-                          onClick={() => handleRemove(item.productId)}
-                          aria-label={t('wishlist.remove')}
-                        >
-                          <CloseIcon />
-                        </button>
-                      </div>
-                    </div>
+          <div className={styles.grid}>
+            {wishlist.items.map((item) => (
+              <div key={item.id} className={styles.card}>
+                {item.productImage ? (
+                  <img
+                    src={item.productImage}
+                    alt={item.productName}
+                    className={styles.productImage}
+                  />
+                ) : (
+                  <div className={styles.imagePlaceholder}>
+                    <ImageIcon />
                   </div>
-                ))}
+                )}
+
+                <div className={styles.content}>
+                  <h3 className={styles.productName}>
+                    {item.productName}
+                  </h3>
+
+                  <div className={styles.priceRow}>
+                    <span className={styles.price}>{formatPrice(item.price)}</span>
+                    {item.compareAtPrice && (
+                      <span className={styles.comparePrice}>{formatPrice(item.compareAtPrice)}</span>
+                    )}
+                  </div>
+
+                  {!item.isAvailable && (
+                    <p className={styles.outOfStock}>{t('wishlist.outOfStock')}</p>
+                  )}
+
+                  <div className={styles.actions}>
+                    <button
+                      className={styles.actionButton}
+                      onClick={() => handleAddToCart(item.productId)}
+                      disabled={!item.isAvailable}
+                    >
+                      {t('wishlist.addToCart')}
+                    </button>
+                    <button
+                      className={styles.removeButton}
+                      onClick={() => handleRemove(item.productId)}
+                      aria-label={t('wishlist.remove')}
+                    >
+                      <CloseIcon />
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </QueryRenderer>
     </div>

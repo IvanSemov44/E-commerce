@@ -7,6 +7,7 @@ import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/featu
 import type { ProductCardProps } from './ProductCard.types';
 import { DEFAULT_PRODUCT_IMAGE } from './ProductCard.types';
 import { useWishlistToggle, useAddToCart, useImageError } from './ProductCard.hooks';
+import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './ProductCard.module.css';
 
 /**
@@ -157,11 +158,11 @@ const ProductCard = memo(function ProductCard({
           <div className={styles.priceRow}>
             <div className={styles.priceContainer}>
               <span className={styles.pricePrimary}>
-                ${price.toFixed(2)}
+                {formatPrice(price)}
               </span>
               {compareAtPrice && compareAtPrice > price && (
                 <span className={styles.priceCompare}>
-                  ${compareAtPrice.toFixed(2)}
+                  {formatPrice(compareAtPrice)}
                 </span>
               )}
             </div>
