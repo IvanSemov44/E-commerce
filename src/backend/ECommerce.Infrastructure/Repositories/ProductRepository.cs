@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure.Data;
@@ -217,7 +217,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         if (quantity <= 0)
         {
-            return false;
+            throw new ArgumentException("Quantity must be greater than zero.", nameof(quantity));
         }
 
         var affectedRows = await Context.Database.ExecuteSqlRawAsync(
