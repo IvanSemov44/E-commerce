@@ -16,6 +16,7 @@ import ProductForm from '../components/ProductForm';
 import styles from './Products.module.css';
 import type { Product, ProductDetail, CreateProductRequest, UpdateProductRequest } from '@shared/types';
 
+// eslint-disable-next-line max-lines-per-function -- Products CRUD page: inline column JSX, handlers, and modal
 export default function Products() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');

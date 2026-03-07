@@ -3,6 +3,7 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import useForm from '../hooks/useForm';
 import { validators } from '../utils/validation';
+import { getErrorMessage } from '../utils/formatters';
 import styles from './ProductForm.module.css';
 import type { ProductDetail, CreateProductRequest, UpdateProductRequest } from '@shared/types';
 
@@ -77,8 +78,7 @@ export default function ProductForm({ product, categories, onSubmit, onCancel }:
         stockQuantity: parseInt(values.stockQuantity, 10),
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save product';
-      setError(message);
+      setError(getErrorMessage(err, 'Failed to save product'));
     }
   };
 

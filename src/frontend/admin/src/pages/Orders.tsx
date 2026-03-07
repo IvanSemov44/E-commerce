@@ -11,6 +11,7 @@ import Badge from '../components/ui/Badge';
 import Pagination from '../components/ui/Pagination';
 import styles from './Orders.module.css';
 import type { Order, OrderStatus } from '@shared/types';
+import { formatCurrency, formatDate } from '../utils/formatters';
 
 const statusColors: Record<OrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   pending: 'warning',
@@ -20,6 +21,7 @@ const statusColors: Record<OrderStatus, 'default' | 'info' | 'warning' | 'succes
   cancelled: 'error',
 };
 
+// eslint-disable-next-line max-lines-per-function -- Orders CRUD page: inline column JSX with status selects, tracking input, and handlers
 export default function Orders() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -65,7 +67,7 @@ export default function Orders() {
     },
     {
       header: 'Total',
-      accessor: (order: Order) => `$${order.totalAmount.toFixed(2)}`,
+      accessor: (order: Order) => formatCurrency(order.totalAmount),
       width: '10%',
     },
     {
@@ -93,7 +95,7 @@ export default function Orders() {
     },
     {
       header: 'Date',
-      accessor: (order: Order) => new Date(order.createdAt).toLocaleDateString(),
+      accessor: (order: Order) => formatDate(order.createdAt),
       width: '12%',
     },
     {

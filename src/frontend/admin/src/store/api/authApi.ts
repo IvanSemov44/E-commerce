@@ -1,17 +1,7 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
 import type { LoginRequest, RegisterRequest, ApiResponse } from '@shared/types';
 import type { AdminUser } from '../slices/authSlice';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-/**
- * Helper function to get CSRF token from cookie
- */
-const getCsrfToken = (): string | null => {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-};
+import { csrfBaseQuery } from '../../utils/apiFactory';
 
 interface AuthResponse {
   success: boolean;
@@ -21,18 +11,7 @@ interface AuthResponse {
 
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_URL,
-    credentials: 'include', // Required for httpOnly cookies to be sent
-    prepareHeaders: (headers) => {
-      // Add CSRF token header for state-changing requests
-      const csrfToken = getCsrfToken();
-      if (csrfToken) {
-        headers.set('X-XSRF-TOKEN', csrfToken);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: csrfBaseQuery,
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (credentials) => ({

@@ -1,16 +1,6 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
 import type { ApiResponse } from '@shared/types';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-/**
- * Helper function to get CSRF token from cookie
- */
-const getCsrfToken = (): string | null => {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-};
+import { csrfBaseQuery } from '../../utils/apiFactory';
 
 export interface ReviewDetailDto {
   id: string;
@@ -28,18 +18,7 @@ export interface ReviewDetailDto {
 
 export const reviewsApi = createApi({
   reducerPath: 'reviewsApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_URL,
-    credentials: 'include', // Required for httpOnly cookies to be sent
-    prepareHeaders: (headers) => {
-      // Add CSRF token header for state-changing requests
-      const csrfToken = getCsrfToken();
-      if (csrfToken) {
-        headers.set('X-XSRF-TOKEN', csrfToken);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: csrfBaseQuery,
   tagTypes: ['Review'],
   endpoints: (builder) => ({
     getPendingReviews: builder.query<ReviewDetailDto[], void>({

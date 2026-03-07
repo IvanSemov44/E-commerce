@@ -3,6 +3,7 @@ import { useGetPendingReviewsQuery, useApproveReviewMutation, useRejectReviewMut
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import QueryRenderer from '../components/QueryRenderer';
 import styles from './Reviews.module.css';
 
 export default function Reviews() {
@@ -34,34 +35,6 @@ export default function Reviews() {
     return '★'.repeat(rating) + '☆'.repeat(5 - rating);
   };
 
-  if (isLoading) {
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.title}>Review Moderation</h1>
-        <Card variant="elevated">
-          <CardContent>
-            <p className={styles.loadingState}>Loading reviews...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.title}>Review Moderation</h1>
-        <Card variant="elevated">
-          <CardContent>
-            <p className={styles.errorState}>
-              Failed to load reviews
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -69,17 +42,16 @@ export default function Reviews() {
         <Badge variant="warning">{reviews?.length || 0} Pending</Badge>
       </div>
 
-      {!reviews || reviews.length === 0 ? (
-        <Card variant="elevated">
-          <CardContent>
-            <p className={styles.emptyState}>
-              No pending reviews to moderate
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
+      <QueryRenderer
+        isLoading={isLoading}
+        error={error}
+        data={reviews}
+        emptyTitle="No Pending Reviews"
+        emptyMessage="No pending reviews to moderate"
+      >
+        {(data) => (
         <div className={styles.reviewsGrid}>
-          {reviews.map((review) => (
+          {data.map((review) => (
             <Card key={review.id} variant="elevated">
               <CardHeader>
                 <div className={styles.reviewHeader}>
@@ -128,7 +100,8 @@ export default function Reviews() {
             </Card>
           ))}
         </div>
-      )}
+        )}
+      </QueryRenderer>
     </div>
   );
 }

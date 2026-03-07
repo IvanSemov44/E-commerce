@@ -16,7 +16,9 @@ import Badge from '../components/ui/Badge';
 import PromoCodeForm from '../components/PromoCodeForm';
 import styles from './PromoCodes.module.css';
 import type { PromoCode, PromoCodeDetail, CreatePromoCodeRequest, UpdatePromoCodeRequest } from '@shared/types';
+import { formatDate } from '../utils/formatters';
 
+// eslint-disable-next-line max-lines-per-function -- Promo codes CRUD page: table columns with inline JSX, handlers, filters, and modal
 export default function PromoCodes() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -69,15 +71,6 @@ export default function PromoCodes() {
     } catch {
       // Error handling is delegated to the form component
     }
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
   };
 
   const columns = [

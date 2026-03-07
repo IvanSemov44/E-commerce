@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useGetDashboardStatsQuery } from '../store/api/dashboardApi';
 import styles from './Dashboard.module.css';
+import { formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
   const { data: dashboardStats, isLoading, error } = useGetDashboardStatsQuery(undefined, {
@@ -48,7 +49,7 @@ export default function Dashboard() {
     },
     {
       label: 'Total Revenue',
-      value: `$${dashboardStats!.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: `$${dashboardStats!.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, // keep locale string for large number formatting
       icon: '💰',
     },
     {
@@ -94,7 +95,7 @@ export default function Dashboard() {
                 {dashboardStats!.ordersTrend.slice(0, 7).map((trend) => (
                   <li key={trend.date} className={styles.trendItem}>
                     <span className={styles.trendLabel}>
-                      {new Date(trend.date).toLocaleDateString()}
+                      {formatDate(trend.date)}
                     </span>
                     : <strong>{trend.count}</strong> orders
                   </li>
@@ -116,7 +117,7 @@ export default function Dashboard() {
                 {dashboardStats!.revenueTrend.slice(0, 7).map((trend) => (
                   <li key={trend.date} className={styles.trendItem}>
                     <span className={styles.trendLabel}>
-                      {new Date(trend.date).toLocaleDateString()}
+                      {formatDate(trend.date)}
                     </span>
                     : <strong>${trend.amount.toFixed(2)}</strong>
                   </li>

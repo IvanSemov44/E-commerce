@@ -3,6 +3,7 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import useForm from '../hooks/useForm';
 import { validators } from '../utils/validation';
+import { getErrorMessage } from '../utils/formatters';
 import styles from './PromoCodeForm.module.css';
 import type { PromoCodeDetail, CreatePromoCodeRequest, UpdatePromoCodeRequest } from '@shared/types';
 
@@ -75,37 +76,21 @@ export default function PromoCodeForm({ promoCode, onSubmit, onCancel }: PromoCo
     setError('');
 
     try {
-      const data: Record<string, unknown> = {
+      const baseData: CreatePromoCodeRequest = {
         code: values.code.trim(),
-        discountType: values.discountType,
+        discountType: values.discountType as 'percentage' | 'fixed',
         discountValue: parseFloat(values.discountValue),
         isActive: values.isActive,
+        ...(values.minOrderAmount && { minOrderAmount: parseFloat(values.minOrderAmount) }),
+        ...(values.maxDiscountAmount && { maxDiscountAmount: parseFloat(values.maxDiscountAmount) }),
+        ...(values.maxUses && { maxUses: parseInt(values.maxUses, 10) }),
+        ...(values.startDate && { startDate: new Date(values.startDate).toISOString() }),
+        ...(values.endDate && { endDate: new Date(values.endDate).toISOString() }),
       };
 
-      if (values.minOrderAmount) {
-        data.minOrderAmount = parseFloat(values.minOrderAmount);
-      }
-
-      if (values.maxDiscountAmount) {
-        data.maxDiscountAmount = parseFloat(values.maxDiscountAmount);
-      }
-
-      if (values.maxUses) {
-        data.maxUses = parseInt(values.maxUses, 10);
-      }
-
-      if (values.startDate) {
-        data.startDate = new Date(values.startDate).toISOString();
-      }
-
-      if (values.endDate) {
-        data.endDate = new Date(values.endDate).toISOString();
-      }
-
-      await onSubmit(data);
+      await onSubmit(promoCode ? { ...baseData, id: promoCode.id } : baseData);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save promo code';
-      setError(message);
+      setError(getErrorMessage(err, 'Failed to save promo code'));
     }
   };
 

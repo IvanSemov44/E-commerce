@@ -8,8 +8,40 @@ import {
   useRestockProductMutation,
   type InventoryItem,
 } from '../store/api/inventoryApi';
+import QueryRenderer from '../components/QueryRenderer';
 import styles from './Inventory.module.css';
 
+// --- Pure helpers (no component state dependency) ---
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Object && 'data' in err) {
+    const data = (err as Record<string, unknown>).data;
+    if (data instanceof Object && 'message' in data) {
+      return (data as Record<string, unknown>).message as string;
+    }
+  }
+  return fallback;
+}
+
+function getStockStatusClass(item: InventoryItem): string {
+  if (item.isOutOfStock) return styles.stockOutOfStock;
+  if (item.isLowStock) return styles.stockLowStock;
+  return styles.stockInStock;
+}
+
+function getStatusBadgeClass(item: InventoryItem): string {
+  if (item.isOutOfStock) return `${styles.statusBadge} ${styles.statusOutOfStock}`;
+  if (item.isLowStock) return `${styles.statusBadge} ${styles.statusLowStock}`;
+  return `${styles.statusBadge} ${styles.statusInStock}`;
+}
+
+function getStockStatusLabel(item: InventoryItem): string {
+  if (item.isOutOfStock) return 'Out of Stock';
+  if (item.isLowStock) return 'Low Stock';
+  return 'In Stock';
+}
+
+// eslint-disable-next-line max-lines-per-function, complexity -- Inventory CRUD page: table + stock-adjustment modal; JSX conditionals inflate the branch count
 export default function Inventory() {
   const [search, setSearch] = useState('');
   const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -80,50 +112,6 @@ export default function Inventory() {
     }
   };
 
-  const getErrorMessage = (err: unknown, fallback: string): string => {
-    if (err instanceof Object && 'data' in err) {
-      const data = (err as Record<string, unknown>).data;
-      if (data instanceof Object && 'message' in data) {
-        return (data as Record<string, unknown>).message as string;
-      }
-    }
-    return fallback;
-  };
-
-  const getStockStatusClass = (item: InventoryItem) => {
-    if (item.isOutOfStock) return styles.stockOutOfStock;
-    if (item.isLowStock) return styles.stockLowStock;
-    return styles.stockInStock;
-  };
-
-  const getStatusBadgeClass = (item: InventoryItem) => {
-    if (item.isOutOfStock) return `${styles.statusBadge} ${styles.statusOutOfStock}`;
-    if (item.isLowStock) return `${styles.statusBadge} ${styles.statusLowStock}`;
-    return `${styles.statusBadge} ${styles.statusInStock}`;
-  };
-
-  const getStockStatusLabel = (item: InventoryItem) => {
-    if (item.isOutOfStock) return 'Out of Stock';
-    if (item.isLowStock) return 'Low Stock';
-    return 'In Stock';
-  };
-
-  if (isLoading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Loading inventory...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>Error loading inventory. Please try again.</div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -154,6 +142,14 @@ export default function Inventory() {
         </label>
       </div>
 
+      <QueryRenderer
+        isLoading={isLoading}
+        error={error}
+        data={inventory}
+        emptyTitle="No Products"
+        emptyMessage="No products found"
+      >
+        {(items) => (
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
@@ -168,14 +164,7 @@ export default function Inventory() {
             </tr>
           </thead>
           <tbody>
-            {inventory.length === 0 ? (
-              <tr>
-                <td colSpan={7} className={styles.noData}>
-                  No products found
-                </td>
-              </tr>
-            ) : (
-              inventory.map((item) => (
+            {items.map((item) => (
                 <tr key={item.productId}>
                   <td>
                     <div className={styles.productCell}>
@@ -228,11 +217,12 @@ export default function Inventory() {
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
+              ))}
           </tbody>
         </table>
       </div>
+        )}
+      </QueryRenderer>
 
       {showAdjustModal && selectedProduct && (
         <div className={styles.modalOverlay} onClick={handleCloseAdjustModal}>

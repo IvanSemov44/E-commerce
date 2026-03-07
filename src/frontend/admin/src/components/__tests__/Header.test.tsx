@@ -72,7 +72,7 @@ describe('Admin Header', () => {
     it('should display user initials in avatar', () => {
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -87,7 +87,7 @@ describe('Admin Header', () => {
     it('should display user first name', () => {
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -105,7 +105,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -119,7 +119,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -134,7 +134,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -148,7 +148,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -162,7 +162,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -184,7 +184,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -201,7 +201,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
@@ -227,7 +227,7 @@ describe('Admin Header', () => {
       const user = userEvent.setup()
       const store = createTestStore({
         isAuthenticated: true,
-        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'Admin' },
+        user: { id: '1', email: 'admin@test.com', firstName: 'John', lastName: 'Doe', role: 'admin' },
       })
       renderHeader(store)
 
