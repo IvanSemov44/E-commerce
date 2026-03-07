@@ -29,6 +29,8 @@ const levelPriority: Record<LogLevel, number> = {
 };
 
 function shouldLog(level: LogLevel): boolean {
+  // Errors always log regardless of environment (build config strips them in prod)
+  if (level === 'error') return true;
   return config.enabled && levelPriority[level] >= levelPriority[config.level];
 }
 

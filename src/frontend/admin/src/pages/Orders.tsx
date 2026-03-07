@@ -43,6 +43,15 @@ export default function Orders() {
     }
   };
 
+  const handleTrackingNumberUpdate = async (orderId: string, currentStatus: OrderStatus, trackingNumber: string) => {
+    try {
+      await updateOrderStatus({ orderId, status: currentStatus, trackingNumber }).unwrap();
+      toast.success('Tracking number updated');
+    } catch {
+      toast.error('Failed to update tracking number');
+    }
+  };
+
   const columns = [
     {
       header: 'Order #',
@@ -90,17 +99,33 @@ export default function Orders() {
     {
       header: 'Actions',
       accessor: (order: Order) => (
-        <select
-          value={order.status}
-          onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-          className={styles.statusSelect}
-        >
-          <option value="pending">Pending</option>
-          <option value="processing">Processing</option>
-          <option value="shipped">Shipped</option>
-          <option value="delivered">Delivered</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        <div className={styles.actionsCell}>
+          <select
+            value={order.status}
+            onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+            className={styles.statusSelect}
+          >
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          {order.status === 'shipped' && (
+            <input
+              type="text"
+              placeholder="Tracking # (optional)"
+              defaultValue={order.trackingNumber || ''}
+              onBlur={(e) => {
+                const newValue = e.target.value.trim();
+                if (newValue !== (order.trackingNumber || '').trim()) {
+                  handleTrackingNumberUpdate(order.id, order.status, newValue);
+                }
+              }}
+              className={styles.trackingInput}
+            />
+          )}
+        </div>
       ),
       width: '19%',
     },

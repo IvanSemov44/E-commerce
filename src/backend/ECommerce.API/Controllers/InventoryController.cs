@@ -3,6 +3,7 @@ using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -73,20 +74,7 @@ public class InventoryController : ControllerBase
         (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving low stock products with threshold: {Threshold}", threshold);
-
-        var lowStockProducts = await _inventoryService.GetLowStockProductsAsync(cancellationToken: cancellationToken);
-        var paginatedLowStockProducts = lowStockProducts
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        var result = new PaginatedResult<LowStockAlertDto>
-        {
-            Items = paginatedLowStockProducts,
-            TotalCount = lowStockProducts.Count,
-            Page = page,
-            PageSize = pageSize
-        };
+        var result = await _inventoryService.GetLowStockProductsAsync(page, pageSize, threshold, cancellationToken: cancellationToken);
 
         return Ok(ApiResponse<PaginatedResult<LowStockAlertDto>>.Ok(result, "Low stock products retrieved successfully"));
     }
@@ -98,7 +86,7 @@ public class InventoryController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("{productId:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<InventoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductStock(Guid productId, CancellationToken cancellationToken)
     {
@@ -191,12 +179,12 @@ public class InventoryController : ControllerBase
 
         // Get the product to calculate actual quantity change
         var product = await _inventoryService.GetProductByIdAsync(productId, cancellationToken);
-        if (product == null)
+        if (product is Result<InventoryDto>.Failure failure)
         {
-            return NotFound(ApiResponse<object>.Failure($"Product with ID {productId} not found", "PRODUCT_NOT_FOUND"));
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        var quantityChanged = request.Quantity - product.StockQuantity;
+        var quantityChanged = request.Quantity - ((Result<InventoryDto>.Success)product).Data.StockQuantity;
 
         var response = new StockAdjustmentResponseDto
         {

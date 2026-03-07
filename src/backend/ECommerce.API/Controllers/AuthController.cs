@@ -156,7 +156,9 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("AuthLimit")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<UserDto>>> Register([FromBody] RegisterDto registerDto, CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(registerDto, cancellationToken: cancellationToken);
@@ -201,6 +203,7 @@ public class AuthController : ControllerBase
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<UserDto>>> Login([FromBody] LoginDto loginDto, CancellationToken cancellationToken)
     {
         var result = await _authService.LoginAsync(loginDto, cancellationToken: cancellationToken);
@@ -236,6 +239,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<UserDto>>> RefreshToken(CancellationToken cancellationToken)
     {
         // Get refresh token from httpOnly cookie (app-specific)
@@ -299,12 +303,12 @@ public class AuthController : ControllerBase
         }
 
         var user = await _authService.GetUserByIdAsync(userId.Value, cancellationToken);
-        if (user == null)
+        if (user is ECommerce.Core.Results.Result<UserDto>.Failure failure)
         {
-            return Unauthorized(ApiResponse<object>.Failure("User not found", "USER_NOT_FOUND"));
+            return Unauthorized(ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return Ok(ApiResponse<UserDto>.Ok(user, "User profile retrieved successfully"));
+        return Ok(ApiResponse<UserDto>.Ok(((ECommerce.Core.Results.Result<UserDto>.Success)user).Data, "User profile retrieved successfully"));
     }
 
     /// <summary>
@@ -321,7 +325,9 @@ public class AuthController : ControllerBase
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailDto request, CancellationToken cancellationToken)
     {
         var result = await _authService.VerifyEmailAsync(request.UserId, request.Token, cancellationToken: cancellationToken);
@@ -386,7 +392,9 @@ public class AuthController : ControllerBase
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordDto request, CancellationToken cancellationToken)
     {
         var result = await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword, cancellationToken: cancellationToken);

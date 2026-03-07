@@ -109,41 +109,33 @@ public class ProductService : IProductService
         return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)
     {
         var parameters = new ProductQueryParameters { Page = page, PageSize = pageSize };
         return await GetProductsAsync(parameters, cancellationToken);
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)
     {
-        // FIX: Validate and cap page size to prevent DoS
         var effectivePageSize = Math.Min(pageSize, PaginationConstants.MaxPageSize);
-        
-        // FIX: Get total count of featured products (not all active products)
         var totalCount = await _unitOfWork.Products.GetFeaturedProductsCountAsync(cancellationToken);
-        
         var skip = (page - 1) * effectivePageSize;
-        
-        // FIX: Use proper pagination with skip parameter
         var products = await _unitOfWork.Products.GetFeaturedAsync(skip, effectivePageSize, cancellationToken: cancellationToken);
 
         return new PaginatedResult<ProductDto>
         {
             Items = products.Select(p => _mapper.Map<ProductDto>(p)).ToList(),
-            TotalCount = totalCount,  // FIX: Use featured products count
+            TotalCount = totalCount,
             Page = page,
             PageSize = effectivePageSize
         };
     }
 
-    public async Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)
     {
-        // FIX: Validate and cap page size to prevent DoS
         var effectivePageSize = Math.Min(pageSize, PaginationConstants.MaxPageSize);
         var skip = (page - 1) * effectivePageSize;
 
-        // PERFORMANCE FIX: Use LIKE instead of ToLower().Contains() for better index utilization
         var searchPattern = $"%{query}%";
         var searchQuery = _unitOfWork.Products
             .FindByCondition(p => p.IsActive &&
@@ -169,9 +161,10 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)
     {
-        var skip = (page - 1) * pageSize;
+        var effectivePageSize = Math.Min(pageSize, PaginationConstants.MaxPageSize);
+        var skip = (page - 1) * effectivePageSize;
 
         var query = _unitOfWork.Products
             .FindByCondition(p => p.CategoryId == categoryId && p.IsActive, trackChanges: false)
@@ -182,7 +175,7 @@ public class ProductService : IProductService
 
         var products = await query
             .Skip(skip)
-            .Take(pageSize)
+            .Take(effectivePageSize)
             .ToListAsync(cancellationToken);
 
         return new PaginatedResult<ProductDto>
@@ -190,13 +183,14 @@ public class ProductService : IProductService
             Items = products.Select(p => _mapper.Map<ProductDto>(p)).ToList(),
             TotalCount = totalCount,
             Page = page,
-            PageSize = pageSize
+            PageSize = effectivePageSize
         };
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetProductsByPriceRangeAsync(decimal minPrice, decimal maxPrice, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<ProductDto>> GetProductsByPriceRangeAsync(decimal minPrice, decimal maxPrice, int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)
     {
-        var skip = (page - 1) * pageSize;
+        var effectivePageSize = Math.Min(pageSize, PaginationConstants.MaxPageSize);
+        var skip = (page - 1) * effectivePageSize;
 
         var query = _unitOfWork.Products
             .FindByCondition(p => p.IsActive && p.Price >= minPrice && p.Price <= maxPrice, trackChanges: false)
@@ -207,7 +201,7 @@ public class ProductService : IProductService
 
         var products = await query
             .Skip(skip)
-            .Take(pageSize)
+            .Take(effectivePageSize)
             .ToListAsync(cancellationToken);
 
         return new PaginatedResult<ProductDto>
@@ -215,7 +209,7 @@ public class ProductService : IProductService
             Items = products.Select(p => _mapper.Map<ProductDto>(p)).ToList(),
             TotalCount = totalCount,
             Page = page,
-            PageSize = pageSize
+            PageSize = effectivePageSize
         };
     }
 

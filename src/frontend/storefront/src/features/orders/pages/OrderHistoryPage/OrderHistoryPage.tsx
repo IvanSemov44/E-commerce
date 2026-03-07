@@ -4,7 +4,7 @@ import { useGetOrdersQuery } from '@/features/orders/api/ordersApi';
 import Button from '@/shared/components/ui/Button';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
-import { PackageIcon, DocumentIcon } from '@/shared/components/icons';
+import { PackageIcon, DocumentIcon, RefreshIcon } from '@/shared/components/icons';
 import { OrderCard } from '@/features/orders/components';
 import styles from './OrderHistoryPage.module.css';
 
@@ -19,7 +19,7 @@ interface OrderForDisplay {
 
 export default function OrderHistoryPage() {
   const { t } = useTranslation();
-  const { data: ordersData, isLoading, error } = useGetOrdersQuery();
+  const { data: ordersData, isLoading, isFetching, error } = useGetOrdersQuery();
   const orders: OrderForDisplay[] = (ordersData || []).map((order) => ({
     id: order.id,
     orderNumber: order.orderNumber,
@@ -37,6 +37,13 @@ export default function OrderHistoryPage() {
         icon={<PackageIcon />}
         badge={t('account.myOrders')}
       />
+
+      {isFetching && !isLoading && (
+        <div className={styles.refetchBadge} aria-live="polite" aria-atomic="true">
+          <RefreshIcon className={styles.refetchIcon} aria-hidden="true" />
+          <span>{t('common.updating')}</span>
+        </div>
+      )}
 
       <QueryRenderer
         isLoading={isLoading}

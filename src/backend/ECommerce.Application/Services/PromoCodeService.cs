@@ -70,65 +70,44 @@ public class PromoCodeService : IPromoCodeService
         };
     }
 
-    public async Task<PromoCodeDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<PromoCodeDetailDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, trackChanges: false, cancellationToken: cancellationToken);
-        return promoCode == null ? null : _mapper.Map<PromoCodeDetailDto>(promoCode);
+        if (promoCode == null)
+        {
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
+        }
+
+        return Result<PromoCodeDetailDto>.Ok(_mapper.Map<PromoCodeDetailDto>(promoCode));
     }
 
-    public async Task<PromoCodeDetailDto?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
+    public async Task<Result<PromoCodeDetailDto>> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
         var promoCode = await _unitOfWork.PromoCodes
             .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
             .FirstOrDefaultAsync(cancellationToken);
 
-        return promoCode == null ? null : _mapper.Map<PromoCodeDetailDto>(promoCode);
-    }
-
-    public async Task<Result<PromoCodeDetailDto>> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default)
-    {
-        var normalizedCode = dto.Code.Trim().ToUpperInvariant();
-
-        var validationResult = ValidatePromoCodeDto(dto.DiscountType, dto.DiscountValue, dto.StartDate, dto.EndDate, dto.MinOrderAmount);
-        if (!validationResult.IsSuccess)
-            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.InvalidPromoCode, validationResult.ErrorMessage);
-
-        var existingCode = await _unitOfWork.PromoCodes
-            .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
-            .AnyAsync(cancellationToken);
-
-        if (existingCode)
+        if (promoCode == null)
         {
-            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.DuplicatePromoCode, $"Promo code '{dto.Code}' already exists");
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code '{code}' not found");
         }
-
-        var promoCode = _mapper.Map<PromoCode>(dto);
-        promoCode.Code = normalizedCode;
-        promoCode.UsedCount = 0;
-
-        await _unitOfWork.PromoCodes.AddAsync(promoCode, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-
-        _logger.LogInformation("Promo code created: {Code}", promoCode.Code);
 
         return Result<PromoCodeDetailDto>.Ok(_mapper.Map<PromoCodeDetailDto>(promoCode));
     }
 
-    public async Task<Result<PromoCodeDetailDto>> UpdateAsync(Guid id, UpdatePromoCodeDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<PromoCodeDetailDto>> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default)
     {
-        var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
-        if (promoCode == null)
+        try
         {
-            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
-        }
+            var normalizedCode = dto.Code.Trim().ToUpperInvariant();
 
-        if (!string.IsNullOrWhiteSpace(dto.Code))
-        {
-            var normalizedCode = NormalizePromoCode(dto.Code);
+            var validationResult = ValidatePromoCodeDto(dto.DiscountType, dto.DiscountValue, dto.StartDate, dto.EndDate, dto.MinOrderAmount);
+            if (!validationResult.IsSuccess)
+                return Result<PromoCodeDetailDto>.Fail(ErrorCodes.InvalidPromoCode, validationResult.ErrorMessage);
 
             var existingCode = await _unitOfWork.PromoCodes
-                .FindByCondition(p => p.Code == normalizedCode && p.Id != id, trackChanges: false)
+                .FindByCondition(p => p.Code == normalizedCode, trackChanges: false)
                 .AnyAsync(cancellationToken);
 
             if (existingCode)
@@ -136,68 +115,143 @@ public class PromoCodeService : IPromoCodeService
                 return Result<PromoCodeDetailDto>.Fail(ErrorCodes.DuplicatePromoCode, $"Promo code '{dto.Code}' already exists");
             }
 
+            var promoCode = _mapper.Map<PromoCode>(dto);
             promoCode.Code = normalizedCode;
+            promoCode.UsedCount = 0;
+
+            await _unitOfWork.PromoCodes.AddAsync(promoCode, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Promo code created: {Code}", promoCode.Code);
+
+            return Result<PromoCodeDetailDto>.Ok(_mapper.Map<PromoCodeDetailDto>(promoCode));
         }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while creating promo code {Code}", dto.Code);
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, "Promo code was modified by another operation. Please retry.");
+        }
+    }
 
-        if (dto.DiscountType != null) promoCode.DiscountType = dto.DiscountType;
-        if (dto.DiscountValue.HasValue) promoCode.DiscountValue = dto.DiscountValue.Value;
-        if (dto.MinOrderAmount.HasValue) promoCode.MinOrderAmount = dto.MinOrderAmount;
-        if (dto.MaxDiscountAmount.HasValue) promoCode.MaxDiscountAmount = dto.MaxDiscountAmount;
-        if (dto.MaxUses.HasValue) promoCode.MaxUses = dto.MaxUses;
-        if (dto.StartDate.HasValue) promoCode.StartDate = dto.StartDate;
-        if (dto.EndDate.HasValue) promoCode.EndDate = dto.EndDate;
-        if (dto.IsActive.HasValue) promoCode.IsActive = dto.IsActive.Value;
+    public async Task<Result<PromoCodeDetailDto>> UpdateAsync(Guid id, UpdatePromoCodeDto dto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
+            if (promoCode == null)
+            {
+                return Result<PromoCodeDetailDto>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
+            }
 
-        var validationResult = ValidatePromoCodeDto(promoCode.DiscountType, promoCode.DiscountValue, promoCode.StartDate, promoCode.EndDate, promoCode.MinOrderAmount);
-        if (!validationResult.IsSuccess)
-            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.InvalidPromoCode, validationResult.ErrorMessage);
+            if (!string.IsNullOrWhiteSpace(dto.Code))
+            {
+                var normalizedCode = NormalizePromoCode(dto.Code);
 
-        await _unitOfWork.PromoCodes.UpdateAsync(promoCode, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+                var existingCode = await _unitOfWork.PromoCodes
+                    .FindByCondition(p => p.Code == normalizedCode && p.Id != id, trackChanges: false)
+                    .AnyAsync(cancellationToken);
 
-        _logger.LogInformation("Promo code updated: {Code}", promoCode.Code);
+                if (existingCode)
+                {
+                    return Result<PromoCodeDetailDto>.Fail(ErrorCodes.DuplicatePromoCode, $"Promo code '{dto.Code}' already exists");
+                }
 
-        return Result<PromoCodeDetailDto>.Ok(_mapper.Map<PromoCodeDetailDto>(promoCode));
+                promoCode.Code = normalizedCode;
+            }
+
+            if (dto.DiscountType != null) promoCode.DiscountType = dto.DiscountType;
+            if (dto.DiscountValue.HasValue) promoCode.DiscountValue = dto.DiscountValue.Value;
+            if (dto.MinOrderAmount.HasValue) promoCode.MinOrderAmount = dto.MinOrderAmount;
+            if (dto.MaxDiscountAmount.HasValue) promoCode.MaxDiscountAmount = dto.MaxDiscountAmount;
+            if (dto.MaxUses.HasValue) promoCode.MaxUses = dto.MaxUses;
+            if (dto.StartDate.HasValue) promoCode.StartDate = dto.StartDate;
+            if (dto.EndDate.HasValue) promoCode.EndDate = dto.EndDate;
+            if (dto.IsActive.HasValue) promoCode.IsActive = dto.IsActive.Value;
+
+            var validationResult = ValidatePromoCodeDto(promoCode.DiscountType, promoCode.DiscountValue, promoCode.StartDate, promoCode.EndDate, promoCode.MinOrderAmount);
+            if (!validationResult.IsSuccess)
+                return Result<PromoCodeDetailDto>.Fail(ErrorCodes.InvalidPromoCode, validationResult.ErrorMessage);
+
+            await _unitOfWork.PromoCodes.UpdateAsync(promoCode, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Promo code updated: {Code}", promoCode.Code);
+
+            return Result<PromoCodeDetailDto>.Ok(_mapper.Map<PromoCodeDetailDto>(promoCode));
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while updating promo code {PromoCodeId}", id);
+            return Result<PromoCodeDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, "Promo code was modified by another operation. Please retry.");
+        }
     }
 
     public async Task<Result<Unit>> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
-        if (promoCode == null)
+        try
         {
-            return Result<Unit>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
+            var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
+            if (promoCode == null)
+            {
+                return Result<Unit>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
+            }
+
+            promoCode.IsActive = false;
+            await _unitOfWork.PromoCodes.UpdateAsync(promoCode, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Promo code deactivated: {Code}", promoCode.Code);
+            return Result<Unit>.Ok(new Unit());
         }
-
-        promoCode.IsActive = false;
-        await _unitOfWork.PromoCodes.UpdateAsync(promoCode, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-
-        _logger.LogInformation("Promo code deactivated: {Code}", promoCode.Code);
-        return Result<Unit>.Ok(new Unit());
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while deactivating promo code {PromoCodeId}", id);
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Promo code was modified by another operation. Please retry.");
+        }
     }
 
     public async Task<Result<Unit>> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
-        if (promoCode == null)
+        try
         {
-            return Result<Unit>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
+            var promoCode = await _unitOfWork.PromoCodes.GetByIdAsync(id, cancellationToken: cancellationToken);
+            if (promoCode == null)
+            {
+                return Result<Unit>.Fail(ErrorCodes.PromoCodeNotFound, $"Promo code with id '{id}' not found");
+            }
+
+            await _unitOfWork.PromoCodes.DeleteAsync(promoCode, cancellationToken: cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Promo code deleted: {Code}", promoCode.Code);
+            return Result<Unit>.Ok(new Unit());
         }
-
-        await _unitOfWork.PromoCodes.DeleteAsync(promoCode, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-
-        _logger.LogInformation("Promo code deleted: {Code}", promoCode.Code);
-        return Result<Unit>.Ok(new Unit());
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while deleting promo code {PromoCodeId}", id);
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Promo code was modified by another operation. Please retry.");
+        }
     }
 
-    public async Task<List<PromoCodeDto>> GetActiveCodesAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<PromoCodeDto>> GetActiveCodesAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        var activeCodes = await _unitOfWork.PromoCodes
+        var query = _unitOfWork.PromoCodes
             .FindByCondition(p => p.IsActive, trackChanges: false)
+            .OrderByDescending(p => p.CreatedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return _mapper.Map<List<PromoCodeDto>>(activeCodes);
+        return new PaginatedResult<PromoCodeDto>
+        {
+            Items = _mapper.Map<List<PromoCodeDto>>(items),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
     /// <summary>
     /// Normalizes a promo code by trimming whitespace and converting to uppercase.
@@ -338,6 +392,16 @@ public class PromoCodeService : IPromoCodeService
 
             _logger.LogInformation("Promo code usage incremented: {Code}, New count: {Count}", promoCode.Code, promoCode.UsedCount);
             return Result<Unit>.Ok(new Unit());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            if (useOwnTransaction && transaction != null)
+            {
+                await ((IAsyncTransaction)transaction).RollbackAsync(cancellationToken);
+            }
+
+            _logger.LogWarning(ex, "Concurrency conflict while incrementing usage for promo code {PromoCodeId}", promoCodeId);
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Promo code usage update conflicted with another request. Please retry.");
         }
         catch
         {

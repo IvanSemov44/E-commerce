@@ -9,3 +9,8 @@ export {
   type ValidatePromoCodeRequest,
   type ValidatePromoCodeResponse,
 } from './promoCodeApi';
+
+export {
+  useGetPaymentMethodsQuery,
+  type PaymentMethodsResponse,
+} from './paymentsApi';

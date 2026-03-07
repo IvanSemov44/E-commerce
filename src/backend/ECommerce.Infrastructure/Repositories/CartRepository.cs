@@ -64,7 +64,6 @@ public class CartRepository : Repository<Cart>, ICartRepository
 
     /// <summary>
     /// Calculates the total value of all items in a cart using SQL aggregation (efficient).
-    /// PERFORMANCE FIX: Include Products before SelectMany to prevent lazy loading.
     /// </summary>
     public async Task<decimal> CalculateTotalAsync(Guid cartId, CancellationToken cancellationToken = default)
     {

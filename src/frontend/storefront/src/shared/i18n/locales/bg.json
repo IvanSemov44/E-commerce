@@ -45,6 +45,7 @@
     "failedToLoad": "Неуспешно зареждане",
     "pleaseTryAgain": "Моля, опитайте отново по-късно",
     "searching": "Търсене...",
+    "updating": "Актуализиране...",
     "viewAllResults": "Виж всички резултати за \"{{query}}\""
   },
   "nav": {
@@ -139,6 +140,9 @@
     "searchProducts": "Търси продукти...",
     "showingResults": "Показва {{count}} от {{total}} продукта",
     "failedToLoadProducts": "Неуспешно зареждане на продуктите. Моля, опитайте отново по-късно.",
+    "failedToLoad": "Неуспешно зареждане на продукта. Моля, опитайте отново по-късно.",
+    "notFound": "Продуктът не е намерен",
+    "notFoundDescription": "Продуктът, който търсите, не съществува.",
     "priceRange": "Ценови диапазон",
     "priceMin": "Мин",
     "priceMax": "Макс",
@@ -178,9 +182,7 @@
     "enterPromoCode": "Въведете промо код",
     "validating": "Валидиране...",
     "itemsCount": "Артикули ({{count}} {{itemText}})",
-    "enterPromoCode": "Въведете промо код",
     "discount": "Отстъпка",
-    "itemsCount": "Артикули ({{count}} {{itemText}})",
     "item_one": "продукт",
     "item_other": "продукта"
   },
@@ -219,7 +221,17 @@
     "cardNumber": "Номер на карта",
     "expiryDate": "Срок на валидност",
     "cvv": "CVV",
-    "nameOnCard": "Име на картата"
+    "nameOnCard": "Име на картата",
+    "selectPaymentMethod": "Изберете начин на плащане",
+    "paymentMethodLabel": "Начин на плащане",
+    "paymentOptions": {
+      "stripe": "Кредитна карта (Stripe)",
+      "paypal": "PayPal",
+      "credit_card": "Кредитна карта",
+      "debit_card": "Дебитна карта",
+      "apple_pay": "Apple Pay",
+      "google_pay": "Google Pay"
+    }
   },
   "account": {
     "title": "Моят профил",
@@ -266,7 +278,10 @@
     "backToOrders": "Назад към поръчките",
     "orderNotFound": "Поръчката не е намерена",
     "failedToLoadOrder": "Неуспешно зареждане на поръчката. Моля, опитайте отново по-късно.",
-    "failedToLoadOrders": "Неуспешно зареждане на поръчките. Моля, опитайте отново по-късно."
+    "failedToLoadOrders": "Неуспешно зареждане на поръчките. Моля, опитайте отново по-късно.",
+    "trackingNumber": "Номер за проследяване",
+    "trackingNumberLabel": "Номерът за проследяване на вашата поръчка",
+    "enterTrackingNumber": "Въведете номер за проследяване (по желание)"
   },
   "wishlist": {
     "title": "Моите запазени любими",

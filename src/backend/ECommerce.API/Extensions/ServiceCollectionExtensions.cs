@@ -19,6 +19,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -305,6 +306,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddSingleton<IPaymentStore, InMemoryPaymentStore>();
+        services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IReviewService, ReviewService>();
@@ -389,9 +391,8 @@ public static class ServiceCollectionExtensions
                 // The OrderService uses manual transactions for atomicity, so we cannot use retry on failure here.
                 // If retry logic is needed, it should be implemented at the application level using IExecutionStrategy.
                 
-                // FIX: Configure query splitting behavior for multiple includes
-                // This prevents performance issues with complex queries that have multiple collection includes
-                // SplitQuery separates queries instead of creating one large cartesian product
+                // SplitQuery separates complex multi-include queries into multiple SQL queries
+                // to avoid generating a large cartesian product.
                 npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             });
             
@@ -547,6 +548,20 @@ public static class ServiceCollectionExtensions
                 options.Configuration = redisConnectionString;
                 options.InstanceName = instanceName;
             });
+
+            try
+            {
+                var redisOptions = ConfigurationOptions.Parse(redisConnectionString);
+                redisOptions.AbortOnConnectFail = false;
+
+                var multiplexer = ConnectionMultiplexer.Connect(redisOptions);
+                services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+            }
+            catch (Exception exception)
+            {
+                Log.Warning(exception, "Redis multiplexer initialization failed; idempotency will use distributed-cache fallback semantics");
+            }
+
             Log.Information("Redis caching configured: {ConnectionString}", redisConnectionString);
         }
         else

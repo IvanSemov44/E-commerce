@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { usePerformanceMonitor } from '@/shared/hooks';
 import { GridIcon } from '@/shared/components/icons';
 import { useGetFeaturedProductsQuery, useGetProductsQuery } from '@/features/products/api/productApi';
 import { useGetTopLevelCategoriesQuery } from '@/features/products/api/categoriesApi';
@@ -11,6 +12,7 @@ import TrustSignals from '@/shared/components/TrustSignals';
 import styles from './HomePage.module.css';
 
 export default function HomePage() {
+  usePerformanceMonitor();
   const { t } = useTranslation();
   const { data: featured, isLoading, error } = useGetFeaturedProductsQuery({ page: 1, pageSize: 10 });
   const { data: categories } = useGetTopLevelCategoriesQuery();
@@ -32,7 +34,7 @@ export default function HomePage() {
   return (
     <div className={styles.container}>
       {/* Hero Section */}
-      <section className={styles.hero}>
+      <section className={styles.hero} aria-label={t('home.title')}>
         <div className={styles.heroContent}>
           <h1 className={styles.heroTitle}>
             {t('home.title')}
@@ -49,13 +51,13 @@ export default function HomePage() {
       </section>
 
       {/* Trust Signals Section */}
-      <section className={styles.trustSection}>
+      <section className={styles.trustSection} aria-label={t('trustSignals.title')}>
         <TrustSignals variant="full" />
       </section>
 
       {/* Category Showcase */}
       {categories && categories.length > 0 && (
-        <section className={styles.categoriesSection}>
+        <section className={styles.categoriesSection} aria-label={t('home.browseCategories')}>
           <PageHeader title={t('home.browseCategories')} />
           <div className={styles.categoriesGrid}>
             {categories.slice(0, 6).map((category) => (
@@ -83,7 +85,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Products */}
-      <section className={styles.featuredSection}>
+      <section className={styles.featuredSection} aria-label={t('home.featuredProducts')}>
         <PageHeader title={t('home.featuredProducts')} subtitle={t('home.featuredProductsSubtitle')} />
 
         <QueryRenderer
@@ -118,7 +120,7 @@ export default function HomePage() {
 
       {/* Bestsellers Section */}
       {bestsellersData?.items && bestsellersData.items.length > 0 && (
-        <section className={styles.bestsellersSection}>
+        <section className={styles.bestsellersSection} aria-label={t('home.bestSellers')}>
           <PageHeader title={t('home.bestSellers')} subtitle={t('home.ourMostPopularProducts')} />
           <div className={styles.grid}>
             {bestsellersData.items.map((product) => (
@@ -145,7 +147,7 @@ export default function HomePage() {
 
       {/* Promotions Section */}
       {promotionsData?.items && promotionsData.items.some(p => p.compareAtPrice) && (
-        <section className={styles.promotionsSection}>
+        <section className={styles.promotionsSection} aria-label={t('home.onSale')}>
           <PageHeader title={t('home.onSale')} subtitle={t('home.onSaleSubtitle')} />
           <div className={styles.grid}>
             {promotionsData.items

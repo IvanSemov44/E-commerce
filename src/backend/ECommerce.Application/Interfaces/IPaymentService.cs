@@ -31,7 +31,7 @@ public interface IPaymentService
     /// <summary>
     /// Check if a payment intent exists and its status.
     /// </summary>
-    Task<PaymentDetailsDto?> GetPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken = default);
+    Task<Result<PaymentDetailsDto>> GetPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validate payment method is supported.

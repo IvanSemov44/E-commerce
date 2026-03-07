@@ -46,19 +46,7 @@ public class PromoCodesController : ControllerBase
 
         _logger.LogInformation("Retrieving active promo codes");
 
-        var activeCodes = await _promoCodeService.GetActiveCodesAsync(cancellationToken: cancellationToken);
-        var paginatedActiveCodes = activeCodes
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        var result = new PaginatedResult<PromoCodeDto>
-        {
-            Items = paginatedActiveCodes,
-            TotalCount = activeCodes.Count,
-            Page = page,
-            PageSize = pageSize
-        };
+        var result = await _promoCodeService.GetActiveCodesAsync(page, pageSize, cancellationToken: cancellationToken);
 
         return Ok(ApiResponse<PaginatedResult<PromoCodeDto>>.Ok(result, "Active promo codes retrieved successfully"));
     }
@@ -100,12 +88,12 @@ public class PromoCodesController : ControllerBase
         _logger.LogInformation("Retrieving promo code {Id}", id);
 
         var promoCode = await _promoCodeService.GetByIdAsync(id, cancellationToken: cancellationToken);
-        if (promoCode == null)
+        if (promoCode is Result<PromoCodeDetailDto>.Failure failure)
         {
-            return NotFound(ApiResponse<string>.Failure("Promo code not found", "PROMO_CODE_NOT_FOUND"));
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return Ok(ApiResponse<PromoCodeDetailDto>.Ok(promoCode, "Promo code retrieved successfully"));
+        return Ok(ApiResponse<PromoCodeDetailDto>.Ok(((Result<PromoCodeDetailDto>.Success)promoCode).Data, "Promo code retrieved successfully"));
     }
 
     /// <summary>
@@ -133,7 +121,12 @@ public class PromoCodesController : ControllerBase
                 new { id = success.Data.Id },
                 ApiResponse<PromoCodeDetailDto>.Ok(success.Data, "Promo code created successfully"))
             : result is Result<PromoCodeDetailDto>.Failure failure
-                ? BadRequest(ApiResponse<PromoCodeDetailDto>.Failure(failure.Message, failure.Code))
+                ? failure.Code switch
+                {
+                    "DUPLICATE_PROMO_CODE" => Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    "CONCURRENCY_CONFLICT" => Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    _ => BadRequest(ApiResponse<PromoCodeDetailDto>.Failure(failure.Message, failure.Code))
+                }
                 : BadRequest(ApiResponse<PromoCodeDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -161,7 +154,13 @@ public class PromoCodesController : ControllerBase
         return result is Result<PromoCodeDetailDto>.Success success
             ? Ok(ApiResponse<PromoCodeDetailDto>.Ok(success.Data, "Promo code updated successfully"))
             : result is Result<PromoCodeDetailDto>.Failure failure
-                ? BadRequest(ApiResponse<PromoCodeDetailDto>.Failure(failure.Message, failure.Code))
+                ? failure.Code switch
+                {
+                    "PROMO_CODE_NOT_FOUND" => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    "DUPLICATE_PROMO_CODE" => Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    "CONCURRENCY_CONFLICT" => Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    _ => BadRequest(ApiResponse<PromoCodeDetailDto>.Failure(failure.Message, failure.Code))
+                }
                 : BadRequest(ApiResponse<PromoCodeDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -173,7 +172,9 @@ public class PromoCodesController : ControllerBase
     [HttpPut("{id}/deactivate")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
@@ -181,7 +182,19 @@ public class PromoCodesController : ControllerBase
     {
         _logger.LogInformation("Deactivating promo code {Id}", id);
 
-        await _promoCodeService.DeactivateAsync(id, cancellationToken: cancellationToken);
+        var result = await _promoCodeService.DeactivateAsync(id, cancellationToken: cancellationToken);
+        if (result is Result<Unit>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "PROMO_CODE_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
+        }
+
         return Ok(ApiResponse<object>.Ok(new object(), "Promo code deactivated successfully"));
     }
 
@@ -193,7 +206,9 @@ public class PromoCodesController : ControllerBase
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
@@ -201,7 +216,19 @@ public class PromoCodesController : ControllerBase
     {
         _logger.LogInformation("Deleting promo code {Id}", id);
 
-        await _promoCodeService.DeleteAsync(id, cancellationToken: cancellationToken);
+        var result = await _promoCodeService.DeleteAsync(id, cancellationToken: cancellationToken);
+        if (result is Result<Unit>.Failure failure)
+        {
+            var statusCode = failure.Code switch
+            {
+                "PROMO_CODE_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
+        }
+
         return Ok(ApiResponse<object>.Ok(new object(), "Promo code deleted successfully"));
     }
 

@@ -6,6 +6,8 @@ import { loginSuccess } from '../slices/authSlice';
 import useForm from '@/shared/hooks/useForm';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
+import { zodValidate } from '@/shared/lib/utils/zodValidate';
+import { createLoginSchema } from '../schemas/authSchemas';
 import styles from './Login.module.css';
 
 export default function Login() {
@@ -18,12 +20,7 @@ export default function Login() {
 
   const form = useForm({
     initialValues: { email: '', password: '' },
-    validate: (values) => {
-      const errors: Record<string, string> = {};
-      if (!values.email) errors.email = t('auth.emailRequired');
-      if (!values.password) errors.password = t('auth.passwordRequired');
-      return errors;
-    },
+    validate: zodValidate(createLoginSchema(t)),
     onSubmit: async (values) => {
       try {
         const response = await login(values).unwrap();

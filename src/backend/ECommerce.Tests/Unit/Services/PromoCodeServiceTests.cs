@@ -166,12 +166,13 @@ public class PromoCodeServiceTests
         var result = await _service.GetByIdAsync(promoCode.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Code.Should().Be("TEST10");
+        var success = result as Result<PromoCodeDetailDto>.Success;
+        success.Should().NotBeNull();
+        success!.Data.Code.Should().Be("TEST10");
     }
 
     [TestMethod]
-    public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+    public async Task GetByIdAsync_NonExistentId_ReturnsFailure()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -182,7 +183,15 @@ public class PromoCodeServiceTests
         var result = await _service.GetByIdAsync(id);
 
         // Assert
-        result.Should().BeNull();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PromoCodeDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.PromoCodeNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PromoCodeDetailDto>.Failure");
+        }
     }
 
     #endregion

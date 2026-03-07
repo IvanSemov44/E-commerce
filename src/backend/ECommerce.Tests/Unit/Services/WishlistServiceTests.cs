@@ -230,18 +230,9 @@ public class WishlistServiceTests
     {
         // Arrange
         var user = TestDataFactory.CreateUser();
-        var p1 = TestDataFactory.CreateProduct();
-        var p2 = TestDataFactory.CreateProduct();
-        var entries = new List<Wishlist>
-        {
-            TestDataFactory.CreateWishlistItem(user.Id, p1.Id),
-            TestDataFactory.CreateWishlistItem(user.Id, p2.Id)
-        };
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
-        _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(entries);
-        _mockWishlistRepository.Setup(r => r.DeleteRangeAsync(It.IsAny<IEnumerable<Wishlist>>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _mockWishlistRepository.Setup(r => r.ClearByUserIdAsync(user.Id, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         // Act
         var result = await _service.ClearWishlistAsync(user.Id);
@@ -256,7 +247,6 @@ public class WishlistServiceTests
         {
             Assert.Fail("Expected Result<WishlistDto>.Success");
         }
-        _mockWishlistRepository.Verify(r => r.DeleteRangeAsync(It.IsAny<IEnumerable<Wishlist>>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _mockWishlistRepository.Verify(r => r.ClearByUserIdAsync(user.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -24,7 +24,7 @@ public interface IInventoryService
 
     // Inventory Queries
     Task<PaginatedResult<InventoryDto>> GetAllInventoryAsync(InventoryQueryParameters parameters, CancellationToken cancellationToken = default);
-    Task<List<LowStockAlertDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default);
+    Task<PaginatedResult<LowStockAlertDto>> GetLowStockProductsAsync(int page, int pageSize, int? threshold = null, CancellationToken cancellationToken = default);
     Task<PaginatedResult<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default);
-    Task<InventoryDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default);
+    Task<Result<InventoryDto>> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default);
 }

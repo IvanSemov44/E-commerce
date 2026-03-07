@@ -10,6 +10,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
+import { useLocalStorage } from '@/shared/hooks/useLocalStorage';
 import { selectCartItems, selectCartSubtotal, clearCart } from '../../cart/slices/cartSlice';
 import type { CartItem } from '../../cart/slices/cartSlice';
 import { authReducer } from '../../auth/slices/authSlice';
@@ -22,6 +23,7 @@ import { useCartSync } from '../../cart/hooks/useCartSync';
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING_COST, DEFAULT_TAX_RATE } from '@/shared/lib/utils/constants';
 import useForm from '@/shared/hooks/useForm';
 import { validators } from '@/shared/lib/utils/validation';
+import { telemetry } from '@/shared/lib/utils/telemetry';
 import type { CreateOrderRequest } from '@/shared/types';
 
 interface ShippingFormData {
@@ -75,6 +77,10 @@ interface UseCheckoutReturn {
   // Auth state
   isAuthenticated: boolean;
 
+  // Payment method
+  paymentMethod: string;
+  setPaymentMethod: (method: string) => void;
+
   // Submit handler
   handleSubmit: (e: React.FormEvent) => Promise<void>;
 }
@@ -123,6 +129,8 @@ const validateCheckoutForm = (values: ShippingFormData): Partial<Record<keyof Sh
   return errors;
 };
 
+const CHECKOUT_DRAFT_KEY = 'checkout:shippingDraft';
+
 // Selector for authentication state
 const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) => 
   state.auth.isAuthenticated;
@@ -157,10 +165,19 @@ export function useCheckout(): UseCheckoutReturn {
   const [orderNumber, setOrderNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Payment method state
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+
   // Promo code state
   const [promoCode, setPromoCode] = useState('');
   const [promoCodeValidation, setPromoCodeValidation] = useState<PromoCodeValidation | null>(null);
   const [validatingPromoCode, setValidatingPromoCode] = useState(false);
+
+  // Shipping form draft persisted in localStorage — auto-restored on mount
+  const [shippingDraft, setShippingDraft] = useLocalStorage<Partial<ShippingFormData>>(
+    CHECKOUT_DRAFT_KEY,
+    {}
+  );
 
   // Determine which cart items to use (backend for authenticated, local for guest)
   const cartItems: CartItem[] = useMemo(() => {
@@ -189,6 +206,7 @@ export function useCheckout(): UseCheckoutReturn {
   // Handle order submission (called by useForm after validation)
   const handleFormSubmit = async (values: ShippingFormData) => {
     setError(null);
+    telemetry.track('checkout.submit', { itemCount: cartItems.length, subtotal });
 
     try {
       // Check stock availability before placing order
@@ -222,7 +240,7 @@ export function useCheckout(): UseCheckoutReturn {
           postalCode: values.postalCode,
           country: values.country,
         },
-        paymentMethod: 'card',
+        paymentMethod: paymentMethod,
         promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
         guestEmail: values.email,
       };
@@ -238,29 +256,48 @@ export function useCheckout(): UseCheckoutReturn {
       // Track if this was a guest order for account creation prompt
       setIsGuestOrder(!isAuthenticated);
       setOrderNumber(result.orderNumber);
+      // Clear saved draft once the order is placed
+      setShippingDraft({});
+      telemetry.track('checkout.complete', {
+        orderNumber: result.orderNumber,
+        paymentMethod,
+        isGuest: !isAuthenticated,
+      });
       setOrderComplete(true);
     } catch (err: unknown) {
       const errorObj = err as { data?: { message?: string }; message?: string };
-      setError(errorObj.data?.message || errorObj.message || 'Failed to create order. Please try again.');
+      const message = errorObj.data?.message || errorObj.message || 'Failed to create order. Please try again.';
+      telemetry.track('checkout.error', { message });
+      setError(message);
     }
   };
 
-  // Initialize useForm hook
+  // Initialize useForm hook — restore any previously saved draft
   const form = useForm<ShippingFormData>({
     initialValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      streetLine1: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: '',
+      firstName: shippingDraft.firstName ?? '',
+      lastName: shippingDraft.lastName ?? '',
+      email: shippingDraft.email ?? '',
+      phone: shippingDraft.phone ?? '',
+      streetLine1: shippingDraft.streetLine1 ?? '',
+      city: shippingDraft.city ?? '',
+      state: shippingDraft.state ?? '',
+      postalCode: shippingDraft.postalCode ?? '',
+      country: shippingDraft.country ?? '',
     },
     validate: validateCheckoutForm,
     onSubmit: handleFormSubmit,
   });
+
+  // Persist form values to localStorage as a draft on every change
+  useEffect(() => {
+    setShippingDraft(form.values);
+  }, [form.values]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fire checkout.view once on mount
+  useEffect(() => {
+    telemetry.track('checkout.view', { isAuthenticated });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-fill form with user data when authenticated
   useEffect(() => {
@@ -352,6 +389,8 @@ export function useCheckout(): UseCheckoutReturn {
     tax,
     total,
     isAuthenticated,
+    paymentMethod,
+    setPaymentMethod,
     handleSubmit: form.handleSubmit,
   };
 }

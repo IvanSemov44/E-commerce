@@ -1,11 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
-import { logout } from '@/features/auth/slices/authSlice';
+import { logout, selectIsAuthenticated, selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { selectCartItemCount } from '@/features/cart/slices/cartSlice';
 import { useGetCartQuery } from '@/features/cart/api/cartApi';
 import { useGetWishlistQuery } from '@/features/wishlist/api/wishlistApi';
-import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 import {
   HeartIcon,
   ShoppingCartIcon,
@@ -25,7 +25,8 @@ import styles from './Header.module.css';
 
 export default function Header() {
   const { t } = useTranslation();
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const user = useAppSelector(selectCurrentUser);
   const localCartItemCount = useAppSelector(selectCartItemCount);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();

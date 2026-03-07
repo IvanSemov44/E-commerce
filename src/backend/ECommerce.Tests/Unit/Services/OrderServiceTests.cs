@@ -549,12 +549,19 @@ public class OrderServiceTests
         var result = await _service.GetOrderByIdAsync(order.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(order.Id);
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<OrderDetailDto>.Success success)
+        {
+            success.Data.Id.Should().Be(order.Id);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<OrderDetailDto>.Success");
+        }
     }
 
     [TestMethod]
-    public async Task GetOrderByIdAsync_OrderNotFound_ReturnsNull()
+    public async Task GetOrderByIdAsync_OrderNotFound_ReturnsFailure()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -566,7 +573,15 @@ public class OrderServiceTests
         var result = await _service.GetOrderByIdAsync(orderId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.OrderNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<OrderDetailDto>.Failure");
+        }
     }
 
     #endregion
@@ -589,12 +604,19 @@ public class OrderServiceTests
         var result = await _service.GetOrderByNumberAsync("ORD-12345");
 
         // Assert
-        result.Should().NotBeNull();
-        result!.OrderNumber.Should().Be("ORD-12345");
+        result.IsSuccess.Should().BeTrue();
+        if (result is Result<OrderDetailDto>.Success success)
+        {
+            success.Data.OrderNumber.Should().Be("ORD-12345");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<OrderDetailDto>.Success");
+        }
     }
 
     [TestMethod]
-    public async Task GetOrderByNumberAsync_OrderNotFound_ReturnsNull()
+    public async Task GetOrderByNumberAsync_OrderNotFound_ReturnsFailure()
     {
         // Arrange
         _mockOrderRepository.Setup(r => r.GetByOrderNumberAsync("NONEXISTENT"))
@@ -604,7 +626,15 @@ public class OrderServiceTests
         var result = await _service.GetOrderByNumberAsync("NONEXISTENT");
 
         // Assert
-        result.Should().BeNull();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<OrderDetailDto>.Failure failure)
+        {
+            failure.Code.Should().Be(ErrorCodes.OrderNotFound);
+        }
+        else
+        {
+            Assert.Fail("Expected Result<OrderDetailDto>.Failure");
+        }
     }
 
     #endregion

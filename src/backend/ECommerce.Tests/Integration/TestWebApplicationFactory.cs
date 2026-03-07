@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -114,6 +115,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.RemoveAll(typeof(IEmailService));
             services.AddScoped<IEmailService, NoOpEmailService>();
+
+            services.RemoveAll(typeof(IDistributedCache));
+            services.AddDistributedMemoryCache();
 
             // Replace webhook verification service with test implementation (always returns true)
             services.RemoveAll(typeof(IWebhookVerificationService));
@@ -293,6 +297,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         var client = CreateClient();
         var token = GenerateJwtToken(ConditionalTestAuthHandler.TestUserId, "Customer");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
         return client;
     }
 
@@ -305,6 +311,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         var client = CreateClient();
         var token = GenerateJwtToken(ConditionalTestAuthHandler.TestAdminUserId, "Admin");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
         return client;
     }
 
@@ -314,7 +322,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public HttpClient CreateUnauthenticatedClient()
     {
-        return CreateClient();
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return client;
     }
 
     /// <summary>

@@ -28,6 +28,7 @@ public class Order : BaseEntity, IConcurrencyToken
     public Guid? BillingAddressId { get; set; }
     public Guid? PromoCodeId { get; set; }
     public string? Notes { get; set; }
+    public string? TrackingNumber { get; set; }
     public DateTime? ShippedAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
     public DateTime? CancelledAt { get; set; }

@@ -16,4 +16,6 @@ export interface CheckoutFormProps {
   onFormDataChange: (data: Partial<ShippingFormData>) => void;
   onSubmit: (e: React.FormEvent) => void;
   isAuthenticated: boolean;
+  selectedPaymentMethod: string;
+  onPaymentMethodChange: (method: string) => void;
 }

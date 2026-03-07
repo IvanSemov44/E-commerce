@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch } from '../store/hooks';
 import { setInitialized, setUser } from '../store/slices/authSlice';
+import { logger } from '../utils/logger';
 
 interface AuthInitializerProps {
   children: React.ReactNode;
@@ -28,7 +29,7 @@ export default function AuthInitializer({ children }: AuthInitializerProps) {
           dispatch(setInitialized());
         }
       } catch (error) {
-        console.error('Auth initialization failed:', error);
+        logger.error('AuthInitializer', 'Auth initialization failed', error);
         dispatch(setInitialized());
       }
     };

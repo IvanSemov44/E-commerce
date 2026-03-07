@@ -39,6 +39,7 @@ public class WishlistController : ControllerBase
     /// <response code="404">Wishlist not found.</response>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWishlist(CancellationToken cancellationToken)
     {
@@ -69,6 +70,7 @@ public class WishlistController : ControllerBase
     [HttpPost("add")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AddToWishlist([FromBody] AddToWishlistDto dto, CancellationToken cancellationToken)
@@ -98,6 +100,7 @@ public class WishlistController : ControllerBase
     /// <response code="404">Product not found in wishlist.</response>
     [HttpDelete("remove/{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken cancellationToken)
     {
@@ -125,6 +128,7 @@ public class WishlistController : ControllerBase
     /// <response code="401">User is not authenticated.</response>
     [HttpGet("contains/{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> IsProductInWishlist(Guid productId, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -147,6 +151,7 @@ public class WishlistController : ControllerBase
     /// <response code="404">Wishlist not found.</response>
     [HttpPost("clear")]
     [ProducesResponseType(typeof(ApiResponse<WishlistDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearWishlist(CancellationToken cancellationToken)
     {

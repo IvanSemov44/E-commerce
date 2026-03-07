@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Reviews;
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
@@ -10,7 +11,9 @@ namespace ECommerce.Application.Interfaces;
 public interface IReviewService
 {
     Task<Result<IEnumerable<ReviewDto>>> GetProductReviewsAsync(Guid productId, CancellationToken cancellationToken = default);
+    Task<Result<PaginatedResult<ReviewDto>>> GetProductReviewsAsync(Guid productId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<IEnumerable<ReviewDetailDto>>> GetUserReviewsAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<PaginatedResult<ReviewDetailDto>>> GetUserReviewsAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<ReviewDetailDto>> GetReviewByIdAsync(Guid reviewId, CancellationToken cancellationToken = default);
     Task<Result<ReviewDetailDto>> CreateReviewAsync(Guid userId, CreateReviewDto dto, CancellationToken cancellationToken = default);
     Task<Result<ReviewDetailDto>> UpdateReviewAsync(Guid userId, Guid reviewId, UpdateReviewDto dto, CancellationToken cancellationToken = default);
@@ -20,5 +23,6 @@ public interface IReviewService
     Task<Result<ReviewDetailDto>> ApproveReviewAsync(Guid reviewId, CancellationToken cancellationToken = default);
     Task<Result<ReviewDetailDto>> RejectReviewAsync(Guid reviewId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ReviewDetailDto>> GetPendingReviewsAsync(CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ReviewDetailDto>> GetPendingReviewsAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<decimal> GetProductAverageRatingAsync(Guid productId, CancellationToken cancellationToken = default);
 }

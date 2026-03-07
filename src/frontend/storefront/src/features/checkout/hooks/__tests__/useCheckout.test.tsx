@@ -75,6 +75,7 @@ describe('useCheckout', () => {
 
   afterEach(() => {
     store?.dispatch(baseApi.util.resetApiState())
+    localStorage.clear()
   })
 
   const defaultPreloadedState = {

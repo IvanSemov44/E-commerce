@@ -573,11 +573,11 @@ public class InventoryServiceTests
             .Returns((Product p) => new LowStockAlertDto { ProductName = p.Name, CurrentStock = p.StockQuantity });
 
         // Act
-        var result = await _service.GetLowStockProductsAsync();
+        var result = await _service.GetLowStockProductsAsync(1, 100);
 
         // Assert
-        result.Should().HaveCount(2);
-        result.Select(r => r.ProductName).Should().Contain("Low Stock 1").And.Contain("Low Stock 2");
+        result.Items.Should().HaveCount(2);
+        result.Items.Select(r => r.ProductName).Should().Contain("Low Stock 1").And.Contain("Low Stock 2");
     }
 
     [TestMethod]
@@ -599,11 +599,11 @@ public class InventoryServiceTests
             .Returns((Product p) => new LowStockAlertDto { ProductName = p.Name });
 
         // Act
-        var result = await _service.GetLowStockProductsAsync();
+        var result = await _service.GetLowStockProductsAsync(1, 100);
 
         // Assert
-        result.Should().HaveCount(1);
-        result[0].ProductName.Should().Be("Low Stock Active");
+        result.Items.Should().HaveCount(1);
+        result.Items[0].ProductName.Should().Be("Low Stock Active");
     }
 
     #endregion

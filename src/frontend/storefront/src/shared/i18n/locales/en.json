@@ -45,6 +45,7 @@
     "failedToLoad": "Failed to load",
     "pleaseTryAgain": "Please try again later",
     "searching": "Searching...",
+    "updating": "Updating...",
     "viewAllResults": "View all results for \"{{query}}\""
   },
   "nav": {
@@ -139,6 +140,9 @@
     "searchProducts": "Search products...",
     "showingResults": "Showing {{count}} of {{total}} products",
     "failedToLoadProducts": "Failed to load products. Please try again later.",
+    "failedToLoad": "Failed to load product. Please try again later.",
+    "notFound": "Product not found",
+    "notFoundDescription": "The product you're looking for doesn't exist.",
     "priceRange": "Price Range",
     "priceMin": "Min",
     "priceMax": "Max",
@@ -217,7 +221,17 @@
     "cardNumber": "Card Number",
     "expiryDate": "Expiry Date",
     "cvv": "CVV",
-    "nameOnCard": "Name on Card"
+    "nameOnCard": "Name on Card",
+    "selectPaymentMethod": "Select a payment method",
+    "paymentMethodLabel": "Payment Method",
+    "paymentOptions": {
+      "stripe": "Credit Card (Stripe)",
+      "paypal": "PayPal",
+      "credit_card": "Credit Card",
+      "debit_card": "Debit Card",
+      "apple_pay": "Apple Pay",
+      "google_pay": "Google Pay"
+    }
   },
   "account": {
     "title": "My Account",
@@ -264,7 +278,10 @@
     "backToOrders": "Back to Orders",
     "orderNotFound": "Order not found",
     "failedToLoadOrder": "Failed to load order. Please try again later.",
-    "failedToLoadOrders": "Failed to load orders. Please try again later."
+    "failedToLoadOrders": "Failed to load orders. Please try again later.",
+    "trackingNumber": "Tracking Number",
+    "trackingNumberLabel": "Your order tracking number",
+    "enterTrackingNumber": "Enter tracking number (optional)"
   },
   "wishlist": {
     "title": "My Saved Favorites",

@@ -31,7 +31,7 @@ vi.mock('@/features/wishlist/api/wishlistApi', () => ({
   useGetWishlistQuery: (...args: unknown[]) => getWishlistQueryMock(...args),
 }));
 
-vi.mock('@/shared/hooks/useTranslation', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

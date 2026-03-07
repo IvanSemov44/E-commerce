@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
+using ECommerce.Core.Constants;
 using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;
@@ -28,7 +29,7 @@ public interface IProductService
     /// <summary>
     /// Gets featured products with pagination.
     /// </summary>
-    Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new product.
@@ -48,22 +49,22 @@ public interface IProductService
     /// <summary>
     /// Gets all active products with pagination.
     /// </summary>
-    Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Searches products by name, description, or SKU.
     /// </summary>
-    Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ProductDto>> SearchProductsAsync(string query, int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets products in a specific category.
     /// </summary>
-    Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets products within a price range.
     /// </summary>
-    Task<PaginatedResult<ProductDto>> GetProductsByPriceRangeAsync(decimal minPrice, decimal maxPrice, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<ProductDto>> GetProductsByPriceRangeAsync(decimal minPrice, decimal maxPrice, int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets products with low stock levels.

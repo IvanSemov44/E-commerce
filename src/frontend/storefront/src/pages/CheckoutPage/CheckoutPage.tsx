@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { usePerformanceMonitor } from '@/shared/hooks';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { LocationIcon } from '@/shared/components/icons';
 import Card from '@/shared/components/ui/Card';
@@ -11,6 +12,7 @@ import OrderSuccess from '@/features/checkout/components/OrderSuccess';
 import styles from './CheckoutPage.module.css';
 
 export default function CheckoutPage() {
+  usePerformanceMonitor();
   const { t } = useTranslation();
   const {
     formData,
@@ -34,6 +36,8 @@ export default function CheckoutPage() {
     handleSubmit,
     isAuthenticated,
     isGuestOrder,
+    paymentMethod,
+    setPaymentMethod,
   } = useCheckout();
 
   // Redirect if cart is empty
@@ -94,6 +98,8 @@ export default function CheckoutPage() {
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
                 isAuthenticated={isAuthenticated}
+                selectedPaymentMethod={paymentMethod}
+                onPaymentMethodChange={setPaymentMethod}
               />
             </Card>
           </div>

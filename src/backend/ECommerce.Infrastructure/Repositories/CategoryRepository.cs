@@ -24,7 +24,6 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
         return await query
             .Include(c => c.Parent)
             .Include(c => c.Children)
-            // FIX: Removed .Include(c => c.Products) - was loading all products unnecessarily
             .FirstOrDefaultAsync(c => c.Slug == slug && c.IsActive, cancellationToken);
     }
 
@@ -66,7 +65,6 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     /// </summary>
     public async Task<int> GetProductCountAsync(Guid categoryId, CancellationToken cancellationToken = default)
     {
-        // FIX: Use SQL COUNT instead of loading all products
         return await Context.Products
             .CountAsync(p => p.CategoryId == categoryId && p.IsActive, cancellationToken);
     }

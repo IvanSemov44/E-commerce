@@ -146,6 +146,7 @@ export interface Order {
   paymentMethod?: string;
   createdAt: string;
   updatedAt?: string;
+  trackingNumber?: string;
 }
 
 export interface Address {

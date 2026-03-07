@@ -1,56 +1,41 @@
 /**
  * useOnlineStatus Hook
- * Detects if the user is online or offline
- * Provides graceful degradation for offline scenarios
+ * Tracks the browser's online/offline connectivity state.
+ * Returns:
+ *  - isOnline:   current connectivity status
+ *  - wasOffline: true once the connection is restored after being offline
  */
 
-import { useEffect, useState } from 'react';
-import { logger } from '@/shared/lib/utils/logger';
+import { useState, useEffect } from 'react';
 
-interface UseOnlineStatusReturn {
+interface OnlineStatus {
   isOnline: boolean;
+  /** Becomes true the first time the browser comes back online after being offline. */
   wasOffline: boolean;
 }
 
-export function useOnlineStatus(): UseOnlineStatusReturn {
-  const [isOnline, setIsOnline] = useState(() => {
-    // Check initial online status
-    if (typeof window !== 'undefined') {
-      return navigator.onLine;
-    }
-    return true;
-  });
-
-  const [wasOffline, setWasOffline] = useState(false);
+export function useOnlineStatus(): OnlineStatus {
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [wasOffline, setWasOffline] = useState<boolean>(false);
 
   useEffect(() => {
-    // Handle going online
     const handleOnline = () => {
       setIsOnline(true);
-      // Mark that user was offline (can be used to refetch data)
       setWasOffline(true);
-      logger.info('useOnlineStatus', 'Back online');
     };
 
-    // Handle going offline
     const handleOffline = () => {
       setIsOnline(false);
-      logger.info('useOnlineStatus', 'Went offline');
     };
 
-    // Add event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Cleanup
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  return {
-    isOnline,
-    wasOffline,
-  };
+  return { isOnline, wasOffline };
 }

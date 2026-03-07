@@ -45,8 +45,8 @@ public class CategoryServiceTests
             TestDataFactory.CreateCategory("Cat2")
         };
 
-        _mockCategoryRepository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(categories);
-        _mockMapper.Setup(m => m.Map<IEnumerable<CategoryDto>>(It.IsAny<IEnumerable<Category>>()))
+        _mockCategoryRepository.Setup(r => r.FindAll(It.IsAny<bool>())).Returns(categories.AsAsyncQueryable());
+        _mockMapper.Setup(m => m.Map<List<CategoryDto>>(It.IsAny<IEnumerable<Category>>()))
             .Returns((IEnumerable<Category> src) => src.Select(c => new CategoryDto { Id = c.Id, Name = c.Name }).ToList());
 
         // Act

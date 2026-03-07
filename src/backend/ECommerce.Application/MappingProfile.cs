@@ -40,15 +40,13 @@ public class MappingProfile : Profile
         // Product mappings
         CreateMap<Product, ProductDto>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
-            // FIX: AverageRating and ReviewCount should be calculated at DB level, not during mapping
-            // These require Reviews to be loaded which causes performance issues
+            // AverageRating and ReviewCount are calculated at DB level and set manually after mapping
             .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
             .ForMember(dest => dest.ReviewCount, opt => opt.Ignore());
 
         CreateMap<Product, ProductDetailDto>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
             .ForMember(dest => dest.Reviews, opt => opt.MapFrom(src => src.Reviews))
-            // FIX: AverageRating and ReviewCount should be calculated at DB level
             .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
             .ForMember(dest => dest.ReviewCount, opt => opt.Ignore());
 

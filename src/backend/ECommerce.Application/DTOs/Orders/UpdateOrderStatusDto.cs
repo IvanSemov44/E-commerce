@@ -6,4 +6,5 @@ namespace ECommerce.Application.DTOs.Orders;
 public class UpdateOrderStatusDto
 {
     public string Status { get; set; } = null!;
+    public string? TrackingNumber { get; set; }
 }

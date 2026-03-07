@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using ECommerce.Application.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Integration;
@@ -165,6 +167,62 @@ public class OrdersControllerTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task CreateOrder_WithSameIdempotencyKey_ReplaysCachedResponse()
+    {
+        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+        var idempotencyKey = Guid.NewGuid().ToString();
+
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+
+        var createOrderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                StreetLine1 = "123 Main St",
+                City = "New York",
+                State = "NY",
+                PostalCode = "10001",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "IntegrationProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var firstContent = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+        var secondContent = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var firstResponse = await client.PostAsync("/api/orders", firstContent);
+        var secondResponse = await client.PostAsync("/api/orders", secondContent);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Created, firstResponse.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, secondResponse.StatusCode);
+
+        var firstJson = JsonSerializer.Deserialize<JsonElement>(await firstResponse.Content.ReadAsStringAsync());
+        var secondJson = JsonSerializer.Deserialize<JsonElement>(await secondResponse.Content.ReadAsStringAsync());
+
+        var firstOrderId = firstJson.GetProperty("data").GetProperty("id").GetGuid();
+        var secondOrderId = secondJson.GetProperty("data").GetProperty("id").GetGuid();
+
+        Assert.AreEqual(firstOrderId, secondOrderId,
+            "Second request with the same idempotency key should return the cached order response");
     }
 
     #endregion
@@ -335,6 +393,149 @@ public class OrdersControllerTests
     }
 
     [TestMethod]
+    public async Task CancelOrder_WithoutIdempotencyKey_ReturnsBadRequest()
+    {
+        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+        var orderId = Guid.NewGuid();
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+
+        // Act
+        var response = await client.PostAsync($"/api/orders/{orderId}/cancel", null);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.IsTrue(responseContent.Contains("INVALID_IDEMPOTENCY_KEY", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public async Task CancelOrder_WithSameIdempotencyKey_ReplaysCachedResponse()
+    {
+        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+        var idempotencyKey = Guid.NewGuid().ToString();
+
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "Replay",
+                LastName = "User",
+                StreetLine1 = "123 Replay St",
+                City = "ReplayCity",
+                State = "RP",
+                PostalCode = "12345",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "ReplayProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await client.PostAsync("/api/orders", content);
+
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test idempotent cancellation replay");
+            return;
+        }
+
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(createBody);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+
+        // Act
+        var firstResponse = await client.PostAsync($"/api/orders/{orderId}/cancel", null);
+        var secondResponse = await client.PostAsync($"/api/orders/{orderId}/cancel", null);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.AreEqual(HttpStatusCode.OK, secondResponse.StatusCode);
+
+        var firstJson = JsonSerializer.Deserialize<JsonElement>(await firstResponse.Content.ReadAsStringAsync());
+        var secondJson = JsonSerializer.Deserialize<JsonElement>(await secondResponse.Content.ReadAsStringAsync());
+        var firstSuccess = firstJson.GetProperty("success").GetBoolean();
+        var secondSuccess = secondJson.GetProperty("success").GetBoolean();
+
+        Assert.IsTrue(firstSuccess && secondSuccess, "Both responses should be successful for replayed idempotent cancellation");
+    }
+
+    [TestMethod]
+    public async Task CancelOrder_WhenIdempotencyRequestInProgress_ReturnsConflict()
+    {
+        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+        var idempotencyKey = Guid.NewGuid().ToString();
+
+        var orderDto = new
+        {
+            PaymentMethod = "credit_card",
+            ShippingAddress = new
+            {
+                FirstName = "Lock",
+                LastName = "User",
+                StreetLine1 = "321 Lock St",
+                City = "LockCity",
+                State = "LK",
+                PostalCode = "54321",
+                Country = "US"
+            },
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = ExistingProductId.ToString(),
+                    ProductName = "LockProduct",
+                    Price = 10.0m,
+                    Quantity = 1
+                }
+            }
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(orderDto), Encoding.UTF8, "application/json");
+        var createResponse = await client.PostAsync("/api/orders", content);
+
+        if (createResponse.StatusCode != HttpStatusCode.Created)
+        {
+            Assert.Inconclusive("Order creation failed, cannot test in-progress idempotency");
+            return;
+        }
+
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var orderResponse = JsonSerializer.Deserialize<JsonElement>(createBody);
+        var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var idempotencyStore = scope.ServiceProvider.GetRequiredService<IIdempotencyStore>();
+        var storeKey = $"orders:cancel:{orderId}:{idempotencyKey}";
+        await idempotencyStore.StartAsync<object>(storeKey, TimeSpan.FromMinutes(5), CancellationToken.None);
+
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+
+        // Act
+        var response = await client.PostAsync($"/api/orders/{orderId}/cancel", null);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.IsTrue(responseContent.Contains("IDEMPOTENCY_IN_PROGRESS", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
     public async Task CancelOrder_UserCannotCancelOtherUsersOrder_ReturnsForbidden()
     {
         // Arrange - Create an order owned by User A, then try to cancel it as User B
@@ -382,6 +583,8 @@ public class OrdersControllerTests
         var userBToken = _factory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
         using var clientUserB = _factory.CreateClient();
         clientUserB.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userBToken);
+        clientUserB.DefaultRequestHeaders.Remove("Idempotency-Key");
+        clientUserB.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
 
         // Act - User B tries to cancel User A's order
         var cancelResponse = await clientUserB.PostAsync($"/api/orders/{orderId}/cancel", null);
@@ -525,7 +728,7 @@ public class OrdersControllerTests
     public async Task CreateOrder_GuestWithEmail_ReturnsCreatedOrBadRequest()
     {
         // Arrange
-        using var client = _factory.CreateClient(); // No authentication
+        using var client = _factory.CreateUnauthenticatedClient();
         var createOrderDto = new
         {
             PaymentMethod = "card",
@@ -565,7 +768,7 @@ public class OrdersControllerTests
     public async Task CreateOrder_GuestWithoutEmail_ReturnsBadRequest()
     {
         // Arrange
-        using var client = _factory.CreateClient(); // No authentication
+        using var client = _factory.CreateUnauthenticatedClient();
         var createOrderDto = new
         {
             PaymentMethod = "card",
@@ -610,7 +813,7 @@ public class OrdersControllerTests
     public async Task CreateOrder_GuestWithEmptyEmail_ReturnsBadRequest()
     {
         // Arrange
-        using var client = _factory.CreateClient(); // No authentication
+        using var client = _factory.CreateUnauthenticatedClient();
         var createOrderDto = new
         {
             PaymentMethod = "card",
@@ -690,7 +893,7 @@ public class OrdersControllerTests
     public async Task CreateOrder_GuestWithValidEmail_OrderNumberPresent()
     {
         // Arrange
-        using var client = _factory.CreateClient(); // No authentication
+        using var client = _factory.CreateUnauthenticatedClient();
         var createOrderDto = new
         {
             PaymentMethod = "card",
@@ -734,7 +937,7 @@ public class OrdersControllerTests
     public async Task CreateOrder_GuestWithPromoCode_CalculatesDiscount()
     {
         // Arrange
-        using var client = _factory.CreateClient(); // No authentication
+        using var client = _factory.CreateUnauthenticatedClient();
         var createOrderDto = new
         {
             PaymentMethod = "card",

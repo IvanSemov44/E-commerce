@@ -1,12 +1,13 @@
 import { Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/shared/lib/store';
+import { selectAuthStatus } from '@/features/auth/slices/authSlice';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, loading } = useAppSelector(selectAuthStatus);
 
   if (loading) {
     return (

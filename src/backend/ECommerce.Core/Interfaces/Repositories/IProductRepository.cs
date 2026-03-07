@@ -65,7 +65,6 @@ public interface IProductRepository : IRepository<Product>
 
     /// <summary>
     /// Gets the count of featured products asynchronously.
-    /// FIX: Added to fix wrong pagination total in GetFeaturedProductsAsync.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The count of featured products.</returns>

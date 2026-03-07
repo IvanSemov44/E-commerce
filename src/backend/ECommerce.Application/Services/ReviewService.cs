@@ -2,6 +2,7 @@ using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
@@ -38,6 +39,25 @@ public class ReviewService : IReviewService
         return Result<IEnumerable<ReviewDto>>.Ok(_mapper.Map<IEnumerable<ReviewDto>>(reviews));
     }
 
+    public async Task<Result<PaginatedResult<ReviewDto>>> GetProductReviewsAsync(Guid productId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken: cancellationToken);
+        if (product == null)
+            return Result<PaginatedResult<ReviewDto>>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
+
+        var skip = (page - 1) * pageSize;
+        var totalCount = await _unitOfWork.Reviews.GetByProductIdCountAsync(productId, onlyApproved: true, cancellationToken: cancellationToken);
+        var reviews = await _unitOfWork.Reviews.GetByProductIdAsync(productId, skip, pageSize, onlyApproved: true, cancellationToken: cancellationToken);
+
+        return Result<PaginatedResult<ReviewDto>>.Ok(new PaginatedResult<ReviewDto>
+        {
+            Items = _mapper.Map<List<ReviewDto>>(reviews),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        });
+    }
+
     public async Task<Result<IEnumerable<ReviewDetailDto>>> GetUserReviewsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
@@ -46,6 +66,25 @@ public class ReviewService : IReviewService
 
         var reviews = await _unitOfWork.Reviews.GetByUserIdAsync(userId, cancellationToken: cancellationToken);
         return Result<IEnumerable<ReviewDetailDto>>.Ok(_mapper.Map<IEnumerable<ReviewDetailDto>>(reviews));
+    }
+
+    public async Task<Result<PaginatedResult<ReviewDetailDto>>> GetUserReviewsAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
+        if (user == null)
+            return Result<PaginatedResult<ReviewDetailDto>>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
+
+        var skip = (page - 1) * pageSize;
+        var totalCount = await _unitOfWork.Reviews.GetByUserIdCountAsync(userId, cancellationToken: cancellationToken);
+        var reviews = await _unitOfWork.Reviews.GetByUserIdAsync(userId, skip, pageSize, cancellationToken: cancellationToken);
+
+        return Result<PaginatedResult<ReviewDetailDto>>.Ok(new PaginatedResult<ReviewDetailDto>
+        {
+            Items = _mapper.Map<List<ReviewDetailDto>>(reviews),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        });
     }
 
     public async Task<Result<ReviewDetailDto>> GetReviewByIdAsync(Guid reviewId, CancellationToken cancellationToken = default)
@@ -183,6 +222,21 @@ public class ReviewService : IReviewService
     {
         var reviews = await _unitOfWork.Reviews.GetPendingApprovalAsync(cancellationToken: cancellationToken);
         return _mapper.Map<IEnumerable<ReviewDetailDto>>(reviews);
+    }
+
+    public async Task<PaginatedResult<ReviewDetailDto>> GetPendingReviewsAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var skip = (page - 1) * pageSize;
+        var totalCount = await _unitOfWork.Reviews.GetPendingApprovalCountAsync(cancellationToken: cancellationToken);
+        var reviews = await _unitOfWork.Reviews.GetPendingApprovalAsync(skip, pageSize, cancellationToken: cancellationToken);
+
+        return new PaginatedResult<ReviewDetailDto>
+        {
+            Items = _mapper.Map<List<ReviewDetailDto>>(reviews),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<decimal> GetProductAverageRatingAsync(Guid productId, CancellationToken cancellationToken = default)

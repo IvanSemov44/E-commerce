@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using ECommerce.Application.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Integration;
@@ -241,6 +243,99 @@ public class PaymentsControllerTests
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [TestMethod]
+    public async Task RefundPayment_WithoutIdempotencyKey_ReturnsBadRequest()
+    {
+        // Arrange
+        using var client = _factory.CreateAdminClient();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+
+        var refundDto = new
+        {
+            Reason = "Missing key validation"
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(refundDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync($"/api/payments/{orderId}/refund", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.IsTrue(responseContent.Contains("INVALID_IDEMPOTENCY_KEY", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public async Task RefundPayment_WithSameIdempotencyKey_ReplaysCachedResponse()
+    {
+        // Arrange
+        using var client = _factory.CreateAdminClient();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+        var idempotencyKey = Guid.NewGuid().ToString();
+
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+
+        var refundDto = new
+        {
+            Reason = "Idempotent replay test"
+        };
+
+        var firstContent = new StringContent(JsonSerializer.Serialize(refundDto), Encoding.UTF8, "application/json");
+        var secondContent = new StringContent(JsonSerializer.Serialize(refundDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var firstResponse = await client.PostAsync($"/api/payments/{orderId}/refund", firstContent);
+        var secondResponse = await client.PostAsync($"/api/payments/{orderId}/refund", secondContent);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.AreEqual(HttpStatusCode.OK, secondResponse.StatusCode);
+
+        var firstJson = JsonSerializer.Deserialize<JsonElement>(await firstResponse.Content.ReadAsStringAsync());
+        var secondJson = JsonSerializer.Deserialize<JsonElement>(await secondResponse.Content.ReadAsStringAsync());
+
+        var firstRefundId = firstJson.GetProperty("data").GetProperty("refundId").GetString();
+        var secondRefundId = secondJson.GetProperty("data").GetProperty("refundId").GetString();
+
+        Assert.AreEqual(firstRefundId, secondRefundId,
+            "Second request with the same idempotency key should return the cached refund response");
+    }
+
+    [TestMethod]
+    public async Task RefundPayment_WhenIdempotencyRequestInProgress_ReturnsConflict()
+    {
+        // Arrange
+        using var client = _factory.CreateAdminClient();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+        var idempotencyKey = Guid.NewGuid().ToString();
+
+        using var scope = _factory.Services.CreateScope();
+        var idempotencyStore = scope.ServiceProvider.GetRequiredService<IIdempotencyStore>();
+        var storeKey = $"payments:refund:{orderId}:{idempotencyKey}";
+        await idempotencyStore.StartAsync<object>(storeKey, TimeSpan.FromMinutes(5), CancellationToken.None);
+
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+
+        var refundDto = new
+        {
+            Reason = "In progress conflict"
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(refundDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync($"/api/payments/{orderId}/refund", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.IsTrue(responseContent.Contains("IDEMPOTENCY_IN_PROGRESS", StringComparison.OrdinalIgnoreCase));
+    }
+
     #endregion
 
     #region Webhook Tests
@@ -370,6 +465,46 @@ public class PaymentsControllerTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task ProcessPayment_WithSameIdempotencyKey_ReplaysCachedResponse()
+    {
+        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+        var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+        var idempotencyKey = Guid.NewGuid().ToString();
+
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+
+        var processPaymentDto = new
+        {
+            OrderId = orderId,
+            PaymentMethod = "credit_card",
+            Amount = 100.00m,
+            CardToken = "tok_visa"
+        };
+
+        var firstContent = new StringContent(JsonSerializer.Serialize(processPaymentDto), Encoding.UTF8, "application/json");
+        var secondContent = new StringContent(JsonSerializer.Serialize(processPaymentDto), Encoding.UTF8, "application/json");
+
+        // Act
+        var firstResponse = await client.PostAsync("/api/payments/process", firstContent);
+        var secondResponse = await client.PostAsync("/api/payments/process", secondContent);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.AreEqual(HttpStatusCode.OK, secondResponse.StatusCode);
+
+        var firstJson = JsonSerializer.Deserialize<JsonElement>(await firstResponse.Content.ReadAsStringAsync());
+        var secondJson = JsonSerializer.Deserialize<JsonElement>(await secondResponse.Content.ReadAsStringAsync());
+
+        var firstPaymentIntentId = firstJson.GetProperty("data").GetProperty("paymentIntentId").GetString();
+        var secondPaymentIntentId = secondJson.GetProperty("data").GetProperty("paymentIntentId").GetString();
+
+        Assert.AreEqual(firstPaymentIntentId, secondPaymentIntentId,
+            "Second request with the same idempotency key should return the cached payment response");
     }
 
     #endregion

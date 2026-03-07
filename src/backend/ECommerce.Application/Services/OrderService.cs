@@ -283,7 +283,7 @@ public class OrderService : IOrderService
 
         if (itemDtos != null && itemDtos.Any())
         {
-            // PERFORMANCE FIX: Batch load all products at once instead of looping with individual queries
+            // Batch-load all products at once to avoid N+1 queries
             var productIds = new List<Guid>();
             foreach (var i in itemDtos)
             {
@@ -407,7 +407,7 @@ public class OrderService : IOrderService
 
     /// <summary>
     /// Reduces stock for all products in the order using batch operation.
-    /// PERFORMANCE FIX: Single transaction for all items instead of N individual transactions.
+    /// Processes all items in a single transaction for atomicity.
     /// Throws exception on failure to trigger transaction rollback.
     /// </summary>
     private async Task ReduceProductStockAsync(List<OrderItem> items, Order order, Guid? userId, CancellationToken cancellationToken)
@@ -471,52 +471,66 @@ public class OrderService : IOrderService
 
     #endregion
 
-    public async Task<OrderDetailDto?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<OrderDetailDto>> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
 
         var order = await _unitOfWork.Orders.GetWithItemsAsync(id, cancellationToken: cancellationToken);
-        return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
+        if (order == null)
+        {
+            return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, "Order not found");
+        }
+
+        return Result<OrderDetailDto>.Ok(_mapper.Map<OrderDetailDto>(order));
     }
 
     public async Task<Result<OrderDetailDto>> GetOrderByIdForUserAsync(Guid id, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
         var order = await GetOrderByIdAsync(id, cancellationToken);
+        if (order is Result<OrderDetailDto>.Failure orderFailure)
+        {
+            return Result<OrderDetailDto>.Fail(orderFailure.Code, orderFailure.Message);
+        }
+
+        var orderData = ((Result<OrderDetailDto>.Success)order).Data;
+
+        if (!isAdmin && orderData.UserId != userId)
+        {
+            return Result<OrderDetailDto>.Fail(ErrorCodes.Forbidden, "You do not have permission to access this order");
+        }
+
+        return Result<OrderDetailDto>.Ok(orderData);
+    }
+
+    public async Task<Result<OrderDetailDto>> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Retrieving order {OrderNumber}", orderNumber);
+
+        var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber, cancellationToken: cancellationToken);
         if (order == null)
         {
             return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, "Order not found");
         }
 
-        if (!isAdmin && order.UserId != userId)
-        {
-            return Result<OrderDetailDto>.Fail(ErrorCodes.Forbidden, "You do not have permission to access this order");
-        }
-
-        return Result<OrderDetailDto>.Ok(order);
-    }
-
-    public async Task<OrderDetailDto?> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation("Retrieving order {OrderNumber}", orderNumber);
-
-        var order = await _unitOfWork.Orders.GetByOrderNumberAsync(orderNumber, cancellationToken: cancellationToken);
-        return order != null ? _mapper.Map<OrderDetailDto>(order) : null;
+        return Result<OrderDetailDto>.Ok(_mapper.Map<OrderDetailDto>(order));
     }
 
     public async Task<Result<OrderDetailDto>> GetOrderByNumberForUserAsync(string orderNumber, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
         var order = await GetOrderByNumberAsync(orderNumber, cancellationToken);
-        if (order == null)
+        if (order is Result<OrderDetailDto>.Failure orderFailure)
         {
-            return Result<OrderDetailDto>.Fail(ErrorCodes.OrderNotFound, "Order not found");
+            return Result<OrderDetailDto>.Fail(orderFailure.Code, orderFailure.Message);
         }
 
-        if (!isAdmin && order.UserId != userId)
+        var orderData = ((Result<OrderDetailDto>.Success)order).Data;
+
+        if (!isAdmin && orderData.UserId != userId)
         {
             return Result<OrderDetailDto>.Fail(ErrorCodes.Forbidden, "You do not have permission to access this order");
         }
 
-        return Result<OrderDetailDto>.Ok(order);
+        return Result<OrderDetailDto>.Ok(orderData);
     }
 
     public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(Guid userId, OrderQueryParameters parameters, CancellationToken cancellationToken = default)
@@ -536,7 +550,7 @@ public class OrderService : IOrderService
         };
     }
 
-    public async Task<Result<OrderDetailDto>> UpdateOrderStatusAsync(Guid id, string status, CancellationToken cancellationToken = default)
+    public async Task<Result<OrderDetailDto>> UpdateOrderStatusAsync(Guid id, string status, string? trackingNumber = null, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating order {OrderId} status to {Status}", id, status);
 
@@ -561,6 +575,10 @@ public class OrderService : IOrderService
             if (orderStatus == OrderStatus.Shipped)
             {
                 order.ShippedAt = DateTime.UtcNow;
+                if (!string.IsNullOrWhiteSpace(trackingNumber))
+                {
+                    order.TrackingNumber = trackingNumber.Trim();
+                }
             }
             else if (orderStatus == OrderStatus.Delivered)
             {

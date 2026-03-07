@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
@@ -6,6 +6,8 @@ import { setUser } from '@/features/auth/slices/authSlice';
 import { useGetProfileQuery } from './features/profile/api/profileApi';
 import { useCartSync } from './features/cart/hooks';
 import { useErrorHandler } from '@/shared/hooks/useErrorHandler';
+import { logger } from '@/shared/lib/utils/logger';
+import { telemetry } from '@/shared/lib/utils/telemetry';
 import ToastContainer from './shared/components/Toast/ToastContainer';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 
@@ -49,9 +51,15 @@ import LoadingFallback from './shared/components/LoadingFallback';
 
 function AppContent() {
   const dispatch = useAppDispatch();
+  const location = useLocation();
   const { isAuthenticated, initialized } = useAppSelector((state) => state.auth);
   const { user } = useAppSelector((state) => state.auth);
   const { handleError, clearError } = useErrorHandler();
+
+  // Track route changes
+  useEffect(() => {
+    telemetry.track('route.change', { path: location.pathname });
+  }, [location.pathname]);
 
   // Fetch user profile when authenticated
   const {
@@ -87,7 +95,7 @@ function AppContent() {
    */
   useEffect(() => {
     if (profileError) {
-      console.error('Failed to load user profile:', profileError);
+      logger.error('App', 'Failed to load user profile', profileError);
       handleError(profileError);
 
       // If 401 Unauthorized, user's token is invalid - logout will be handled by API middleware

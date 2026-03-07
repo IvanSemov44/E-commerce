@@ -17,9 +17,12 @@ namespace ECommerce.API.Controllers;
 [Tags("Payments")]
 public class PaymentsController : ControllerBase
 {
+    private const string IdempotencyHeaderName = "Idempotency-Key";
+
     private readonly IPaymentService _paymentService;
     private readonly IOrderService _orderService;
     private readonly ICurrentUserService _currentUser;
+    private readonly IIdempotencyStore _idempotencyStore;
     private readonly IWebhookVerificationService _webhookVerificationService;
     private readonly ILogger<PaymentsController> _logger;
 
@@ -27,12 +30,14 @@ public class PaymentsController : ControllerBase
         IPaymentService paymentService,
         IOrderService orderService,
         ICurrentUserService currentUser,
+        IIdempotencyStore idempotencyStore,
         IWebhookVerificationService webhookVerificationService,
         ILogger<PaymentsController> logger)
     {
         _paymentService = paymentService;
         _orderService = orderService;
         _currentUser = currentUser;
+        _idempotencyStore = idempotencyStore;
         _webhookVerificationService = webhookVerificationService;
         _logger = logger;
     }
@@ -41,6 +46,7 @@ public class PaymentsController : ControllerBase
     /// Process a payment for an order.
     /// </summary>
     /// <param name="dto">Payment details including order ID and payment method.</param>
+    /// <param name="idempotencyKey">Idempotency key header to prevent duplicate payment processing.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Payment response with success/failure status and payment intent ID.</returns>
     /// <response code="200">Payment processed successfully or failed with details.</response>
@@ -54,11 +60,34 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> ProcessPayment(
+        [FromBody] ProcessPaymentDto dto,
+        [FromHeader(Name = IdempotencyHeaderName)] string? idempotencyKey,
+        CancellationToken cancellationToken)
     {
+        var idempotencyError = ValidateIdempotencyKey(idempotencyKey);
+        if (idempotencyError != null)
+        {
+            return idempotencyError;
+        }
+
+        var idempotencyStoreKey = $"payments:process:{idempotencyKey}";
+        var idempotencyStart = await _idempotencyStore.StartAsync<PaymentResponseDto>(idempotencyStoreKey, TimeSpan.FromMinutes(5), cancellationToken);
+        if (idempotencyStart.Status == IdempotencyStartStatus.Replay && idempotencyStart.CachedResponse != null)
+        {
+            _logger.LogInformation("Returning cached idempotent payment response for key {IdempotencyKey}", idempotencyKey);
+            return Ok(ApiResponse<PaymentResponseDto>.Ok(idempotencyStart.CachedResponse, "Payment processed successfully"));
+        }
+
+        if (TryBuildInProgressIdempotencyResponse(idempotencyStart.Status, out var inProgressResponse))
+        {
+            return inProgressResponse;
+        }
+
         _logger.LogInformation("Payment processing initiated for order {OrderId} via {PaymentMethod}",
             dto.OrderId, dto.PaymentMethod);
 
@@ -71,25 +100,32 @@ public class PaymentsController : ControllerBase
             
             if (success.Data.Success)
             {
+                await _idempotencyStore.CompleteAsync(idempotencyStoreKey, success.Data, TimeSpan.FromHours(24), cancellationToken);
                 return Ok(ApiResponse<PaymentResponseDto>.Ok(success.Data, "Payment processed successfully"));
             }
             else
             {
+                await _idempotencyStore.AbandonAsync(idempotencyStoreKey, cancellationToken);
                 return UnprocessableEntity(ApiResponse<PaymentResponseDto>.Failure(success.Data.Message, "PAYMENT_DECLINED"));
             }
         }
 
         if (result is Result<PaymentResponseDto>.Failure failure)
         {
+            await _idempotencyStore.AbandonAsync(idempotencyStoreKey, cancellationToken);
+
             var statusCode = failure.Code switch
             {
                 "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
                 "UNSUPPORTED_PAYMENT_METHOD" => StatusCodes.Status422UnprocessableEntity,
                 "PAYMENT_AMOUNT_MISMATCH" => StatusCodes.Status400BadRequest,
+                "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest
             };
             return StatusCode(statusCode, ApiResponse<PaymentResponseDto>.Failure(failure.Message, failure.Code));
         }
+
+        await _idempotencyStore.AbandonAsync(idempotencyStoreKey, cancellationToken);
 
         return StatusCode(500, ApiResponse<PaymentResponseDto>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
@@ -162,9 +198,33 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RefundPayment(Guid orderId, [FromBody] RefundPaymentDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> RefundPayment(
+        Guid orderId,
+        [FromBody] RefundPaymentDto dto,
+        [FromHeader(Name = IdempotencyHeaderName)] string? idempotencyKey,
+        CancellationToken cancellationToken)
     {
+        var idempotencyError = ValidateIdempotencyKey(idempotencyKey);
+        if (idempotencyError != null)
+        {
+            return idempotencyError;
+        }
+
+        var idempotencyStoreKey = $"payments:refund:{orderId}:{idempotencyKey}";
+        var idempotencyStart = await _idempotencyStore.StartAsync<RefundResponseDto>(idempotencyStoreKey, TimeSpan.FromMinutes(5), cancellationToken);
+        if (idempotencyStart.Status == IdempotencyStartStatus.Replay && idempotencyStart.CachedResponse != null)
+        {
+            _logger.LogInformation("Returning cached idempotent refund response for order {OrderId} and key {IdempotencyKey}", orderId, idempotencyKey);
+            return Ok(ApiResponse<RefundResponseDto>.Ok(idempotencyStart.CachedResponse, "Refund processed successfully"));
+        }
+
+        if (TryBuildInProgressIdempotencyResponse(idempotencyStart.Status, out var inProgressResponse))
+        {
+            return inProgressResponse;
+        }
+
         dto.OrderId = orderId;
 
         _logger.LogInformation("Refund initiated for order {OrderId}", orderId);
@@ -173,6 +233,8 @@ public class PaymentsController : ControllerBase
 
         if (result is Result<RefundResponseDto>.Success success)
         {
+            await _idempotencyStore.CompleteAsync(idempotencyStoreKey, success.Data, TimeSpan.FromHours(24), cancellationToken);
+
             _logger.LogInformation("Refund processed for order {OrderId}. RefundId: {RefundId}",
                 orderId, success.Data.RefundId);
             return Ok(ApiResponse<RefundResponseDto>.Ok(success.Data, "Refund processed successfully"));
@@ -180,14 +242,19 @@ public class PaymentsController : ControllerBase
 
         if (result is Result<RefundResponseDto>.Failure failure)
         {
+            await _idempotencyStore.AbandonAsync(idempotencyStoreKey, cancellationToken);
+
             var statusCode = failure.Code switch
             {
                 "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
                 "INVALID_REFUND" => StatusCodes.Status400BadRequest,
+                "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest
             };
             return StatusCode(statusCode, ApiResponse<RefundResponseDto>.Failure(failure.Message, failure.Code));
         }
+
+        await _idempotencyStore.AbandonAsync(idempotencyStoreKey, cancellationToken);
 
         return StatusCode(500, ApiResponse<RefundResponseDto>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
@@ -214,13 +281,13 @@ public class PaymentsController : ControllerBase
 
         var paymentDetails = await _paymentService.GetPaymentIntentAsync(paymentIntentId, cancellationToken: cancellationToken);
 
-        if (paymentDetails == null)
+        if (paymentDetails is Result<PaymentDetailsDto>.Failure failure)
         {
             _logger.LogWarning("Payment intent {PaymentIntentId} not found", paymentIntentId);
-            return NotFound(ApiResponse<string>.Failure("Payment intent not found", "PAYMENT_INTENT_NOT_FOUND"));
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
         }
 
-        return Ok(ApiResponse<PaymentDetailsDto>.Ok(paymentDetails, "Payment intent retrieved successfully"));
+        return Ok(ApiResponse<PaymentDetailsDto>.Ok(((Result<PaymentDetailsDto>.Success)paymentDetails).Data, "Payment intent retrieved successfully"));
     }
 
     /// <summary>
@@ -278,13 +345,11 @@ public class PaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Webhook processing response.</returns>
     /// <response code="200">Webhook processed successfully.</response>
-    /// <response code="204">Webhook processed successfully (no content).</response>
     /// <response code="400">Invalid webhook payload.</response>
     /// <response code="500">Internal server error.</response>
     [HttpPost("webhook")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
@@ -313,7 +378,7 @@ public class PaymentsController : ControllerBase
         if (webhookPayload == null)
         {
             _logger.LogWarning("Invalid webhook payload received");
-            return BadRequest(ApiResponse<string>.Failure("Invalid webhook payload", "INVALID_WEBHOOK_PAYLOAD"));
+            return BadRequest(ApiResponse<object>.Failure("Invalid webhook payload", "INVALID_WEBHOOK_PAYLOAD"));
         }
 
         _logger.LogInformation("Verified webhook received for event type: {EventType}",
@@ -329,6 +394,32 @@ public class PaymentsController : ControllerBase
             webhookPayload.PaymentIntentId ?? "unknown");
 
         return Ok(ApiResponse<object>.Ok(new { status = "received" }, "Webhook processed successfully"));
+    }
+
+    private IActionResult? ValidateIdempotencyKey(string? idempotencyKey)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey) || !Guid.TryParse(idempotencyKey, out _))
+        {
+            return BadRequest(ApiResponse<object>.Failure(
+                $"{IdempotencyHeaderName} header is required and must be a valid UUID",
+                "INVALID_IDEMPOTENCY_KEY"));
+        }
+
+        return null;
+    }
+
+    private bool TryBuildInProgressIdempotencyResponse(IdempotencyStartStatus status, out IActionResult? response)
+    {
+        if (status == IdempotencyStartStatus.InProgress)
+        {
+            response = Conflict(ApiResponse<object>.Failure(
+                "Request with this idempotency key is already being processed",
+                "IDEMPOTENCY_IN_PROGRESS"));
+            return true;
+        }
+
+        response = null;
+        return false;
     }
 }
 

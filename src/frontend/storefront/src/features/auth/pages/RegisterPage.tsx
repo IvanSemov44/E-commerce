@@ -6,6 +6,8 @@ import { loginSuccess } from '../slices/authSlice';
 import useForm from '@/shared/hooks/useForm';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
+import { zodValidate } from '@/shared/lib/utils/zodValidate';
+import { createRegisterSchema } from '../schemas/authSchemas';
 import styles from './Register.module.css';
 
 export default function Register() {
@@ -24,18 +26,7 @@ export default function Register() {
       password: '',
       confirmPassword: '',
     },
-    validate: (values) => {
-      const errors: Record<string, string> = {};
-      if (!values.firstName) errors.firstName = t('profile.firstName') + ' ' + t('common.required').toLowerCase();
-      if (!values.lastName) errors.lastName = t('profile.lastName') + ' ' + t('common.required').toLowerCase();
-      if (!values.email) errors.email = t('auth.emailRequired');
-      if (!values.password) errors.password = t('auth.passwordRequired');
-      if (!values.confirmPassword) errors.confirmPassword = t('auth.confirmPassword') + ' ' + t('common.required').toLowerCase();
-      if (values.password && values.confirmPassword && values.password !== values.confirmPassword) {
-        errors.confirmPassword = t('auth.passwordsDoNotMatch');
-      }
-      return errors;
-    },
+    validate: zodValidate(createRegisterSchema(t)),
     onSubmit: async (values) => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

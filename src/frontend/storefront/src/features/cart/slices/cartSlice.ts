@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createSelector } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/shared/lib/store';
 import { logger } from '@/shared/lib/utils/logger';
@@ -96,11 +96,15 @@ export const cartReducer = cartSlice.reducer;
 // Selectors
 export const selectCartItems = (state: RootState) => state.cart.items;
 
-export const selectCartItemCount = (state: RootState) =>
-  state.cart.items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+export const selectCartItemCount = createSelector(
+  [selectCartItems],
+  (items) => items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0)
+);
 
-export const selectCartSubtotal = (state: RootState) =>
-  state.cart.items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
+export const selectCartSubtotal = createSelector(
+  [selectCartItems],
+  (items) => items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0)
+);
 
 export const selectCartItemById = (id: string) => (state: RootState) =>
   state.cart.items.find((item: CartItem) => item.id === id);

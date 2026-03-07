@@ -20,6 +20,7 @@ public record OrderDetailDto
     public AddressDto? ShippingAddress { get; init; }
     public AddressDto? BillingAddress { get; init; }
     public string? Notes { get; init; }
+    public string? TrackingNumber { get; init; }
     public DateTime? ShippedAt { get; init; }
     public DateTime? DeliveredAt { get; init; }
 }

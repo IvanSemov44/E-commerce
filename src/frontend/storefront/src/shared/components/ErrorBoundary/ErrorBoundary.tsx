@@ -1,5 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
+import { logger } from '@/shared/lib/utils/logger';
+import { telemetry } from '@/shared/lib/utils/telemetry';
 import styles from './ErrorBoundary.module.css';
 
 interface Props {
@@ -22,7 +24,11 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
-    console.error('ErrorBoundary caught:', error);
+    logger.error('ErrorBoundary', 'Unhandled render error', error);
+    telemetry.track('error.boundary', {
+      message: error.message,
+      name: error.name,
+    });
   }
 
   render() {

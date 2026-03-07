@@ -1,5 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createSelector } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import type { RootState } from '@/shared/lib/store';
 
 export interface AuthUser {
   id: string;
@@ -75,3 +76,19 @@ export const authSlice = createSlice({
 
 export const { loginStart, loginSuccess, loginFailure, logout, clearError, updateUser, setUser, setInitialized } = authSlice.actions;
 export const authReducer = authSlice.reducer;
+
+// Base selector
+const selectAuth = (state: RootState) => state.auth;
+
+// Memoized selectors — select only what you need, not the whole slice
+export const selectIsAuthenticated = createSelector([selectAuth], (auth) => auth.isAuthenticated);
+export const selectCurrentUser = createSelector([selectAuth], (auth) => auth.user);
+export const selectAuthLoading = createSelector([selectAuth], (auth) => auth.loading);
+export const selectAuthInitialized = createSelector([selectAuth], (auth) => auth.initialized);
+
+// Combined selector for components that need both isAuthenticated + loading
+// (avoids two separate useAppSelector calls while still memoizing against auth slice)
+export const selectAuthStatus = createSelector(
+  [selectAuth],
+  (auth) => ({ isAuthenticated: auth.isAuthenticated, loading: auth.loading })
+);

@@ -29,8 +29,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         
-        // FIX: Don't load ALL reviews here - it's a performance killer for popular products
-        // Reviews can be fetched separately via ReviewRepository if needed
+        // Reviews are fetched separately via ReviewRepository to avoid loading all reviews for popular products
         return await query
             .Include(p => p.Category)
             .Include(p => p.Images)
@@ -93,7 +92,6 @@ public class ProductRepository : Repository<Product>, IProductRepository
 
     /// <summary>
     /// Gets the count of featured products.
-    /// FIX: Added to fix wrong pagination total in GetFeaturedProductsAsync.
     /// </summary>
     public async Task<int> GetFeaturedProductsCountAsync(CancellationToken cancellationToken = default)
     {
@@ -165,7 +163,6 @@ public class ProductRepository : Repository<Product>, IProductRepository
         }
 
         // Apply rating filter (only approved reviews)
-        // FIX: Use subquery instead of loading all reviews
         if (minRating.HasValue)
         {
             query = query.Where(p =>

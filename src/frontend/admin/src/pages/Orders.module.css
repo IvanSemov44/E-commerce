@@ -33,6 +33,26 @@
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;
   font-size: 0.875rem;
+  width: 100%;
+}
+
+.actionsCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.trackingInput {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  width: 100%;
+  color: #374151;
+}
+
+.trackingInput::placeholder {
+  color: #9ca3af;
 }
 
 .searchInput {

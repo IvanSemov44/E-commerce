@@ -85,6 +85,16 @@ public class InventoryService : IInventoryService
             await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
             return Result<Unit>.Ok(new Unit());
         }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            _logger.LogWarning(ex, "Concurrency conflict while reducing stock for product {ProductId}", productId);
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Stock was modified by another operation. Please retry.");
+        }
         catch (Exception ex)
         {
             if (useOwnTransaction && transaction != null)
@@ -105,7 +115,6 @@ public class InventoryService : IInventoryService
 
     /// <summary>
     /// Batch reduces stock for multiple products in a single transaction (prevents N+1 queries and transactions).
-    /// PERFORMANCE FIX: Single transaction for all items instead of N individual transactions.
     /// </summary>
     public async Task<Result<Unit>> ReduceStockBatchAsync(List<(Guid ProductId, int Quantity, string Reason, Guid? ReferenceId, Guid? UserId)> items, CancellationToken cancellationToken = default)
     {
@@ -179,6 +188,13 @@ public class InventoryService : IInventoryService
             }
             return Result<Unit>.Ok(new Unit());
         }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            if (useOwnTransaction && transaction != null)
+                await transaction.RollbackAsync(cancellationToken);
+            _logger.LogWarning(ex, "Concurrency conflict in batch stock reduction");
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Stock was modified by another operation. Please retry.");
+        }
         catch (Exception ex)
         {
             if (useOwnTransaction && transaction != null)
@@ -243,6 +259,16 @@ public class InventoryService : IInventoryService
                 _lowStockAlertsSent.Remove(productId);
             }
             return Result<Unit>.Ok(new Unit());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            _logger.LogWarning(ex, "Concurrency conflict while increasing stock for product {ProductId}", productId);
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Stock was modified by another operation. Please retry.");
         }
         catch (Exception ex)
         {
@@ -309,6 +335,16 @@ public class InventoryService : IInventoryService
 
             await CheckAndSendLowStockAlertsAsync(productId, cancellationToken);
             return Result<Unit>.Ok(new Unit());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            if (useOwnTransaction && transaction != null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            _logger.LogWarning(ex, "Concurrency conflict while adjusting stock for product {ProductId}", productId);
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Stock was modified by another operation. Please retry.");
         }
         catch
         {
@@ -412,21 +448,35 @@ public class InventoryService : IInventoryService
         };
     }
 
-    public async Task<List<LowStockAlertDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<LowStockAlertDto>> GetLowStockProductsAsync(int page, int pageSize, int? threshold = null, CancellationToken cancellationToken = default)
     {
-        var lowStockProducts = await _unitOfWork.Products
-            .FindByCondition(p => p.StockQuantity <= p.LowStockThreshold && p.IsActive, trackChanges: false)
+        var query = _unitOfWork.Products
+            .FindByCondition(
+                p => p.IsActive && p.StockQuantity <= (threshold.HasValue ? threshold.Value : p.LowStockThreshold),
+                trackChanges: false)
             .OrderBy(p => p.StockQuantity)
+            .ThenBy(p => p.Name);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var lowStockProducts = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return lowStockProducts.Select(p => _mapper.Map<LowStockAlertDto>(p)).ToList();
+        return new PaginatedResult<LowStockAlertDto>
+        {
+            Items = lowStockProducts.Select(p => _mapper.Map<LowStockAlertDto>(p)).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<PaginatedResult<InventoryLogDto>> GetInventoryHistoryAsync(Guid productId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        if (page < PaginationConstants.MinPageNumber) page = PaginationConstants.MinPageNumber;
+        if (pageSize < PaginationConstants.MinPageSize) pageSize = PaginationConstants.MinPageSize;
+        if (pageSize > PaginationConstants.MaxPageSize) pageSize = PaginationConstants.MaxPageSize;
 
         var query = _unitOfWork.InventoryLogs
             .FindByCondition(log => log.ProductId == productId, trackChanges: false);
@@ -529,12 +579,12 @@ public class InventoryService : IInventoryService
         }
     }
 
-    public async Task<InventoryDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
+    public async Task<Result<InventoryDto>> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken);
         if (product == null)
-            return null;
+            return Result<InventoryDto>.Fail(ErrorCodes.ProductNotFound, $"Product with ID {productId} not found");
 
-        return _mapper.Map<InventoryDto>(product);
+        return Result<InventoryDto>.Ok(_mapper.Map<InventoryDto>(product));
     }
 }

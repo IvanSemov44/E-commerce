@@ -5,6 +5,7 @@
 
 import React from 'react';
 import ErrorPage from '../pages/ErrorPage';
+import { logger } from '../utils/logger';
 
 interface Props {
   children: React.ReactNode;
@@ -26,7 +27,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    logger.error('ErrorBoundary', 'Unhandled render error', error, errorInfo);
   }
 
   handleReset = () => {

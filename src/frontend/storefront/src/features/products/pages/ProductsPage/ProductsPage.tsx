@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { usePerformanceMonitor } from '@/shared/hooks';
 import { useGetProductsQuery } from '@/features/products/api/productApi';
 import { useProductFilters } from '@/features/products/hooks/useProductFilters';
 import Button from '@/shared/components/ui/Button';
@@ -6,7 +7,7 @@ import CategoryFilter from '@/shared/components/CategoryFilter';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { ProductsGridSkeleton } from '@/shared/components/Skeletons';
-import { GridIcon } from '@/shared/components/icons';
+import { GridIcon, RefreshIcon } from '@/shared/components/icons';
 import {
   ProductFilters,
   ProductSearchBar,
@@ -16,6 +17,7 @@ import {
 import styles from './ProductsPage.module.css';
 
 export default function ProductsPage() {
+  usePerformanceMonitor();
   const { t } = useTranslation();
   const {
     page,
@@ -39,7 +41,7 @@ export default function ProductsPage() {
     handleClearFilters,
   } = useProductFilters();
 
-  const { data: result, isLoading, error } = useGetProductsQuery({
+  const { data: result, isLoading, isFetching, error } = useGetProductsQuery({
     page,
     pageSize: 12,
     categoryId: selectedCategoryId,
@@ -101,6 +103,13 @@ export default function ProductsPage() {
               isFeatured={isFeatured}
               onClearAll={handleClearFilters}
             />
+
+            {isFetching && !isLoading && (
+              <div className={styles.refetchBadge} aria-live="polite" aria-atomic="true">
+                <RefreshIcon className={styles.refetchIcon} aria-hidden="true" />
+                <span>{t('common.updating')}</span>
+              </div>
+            )}
           </div>
 
           <QueryRenderer

@@ -34,7 +34,6 @@ public class WishlistService : IWishlistService
         if (user == null)
             return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
-        // FIX: Use database-level filtering instead of loading ALL entries
         var wishlistEntries = await _unitOfWork.Wishlists.GetAllByUserIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
 
         var wishlistDto = await MapWishlistToDtoAsync(wishlistEntries.ToList(), cancellationToken);
@@ -74,7 +73,6 @@ public class WishlistService : IWishlistService
         if (user == null)
             return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
         
-        // FIX: Use efficient deletion without loading all entries
         await _unitOfWork.Wishlists.DeleteByUserIdAndProductIdAsync(userId, productId, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
@@ -92,14 +90,9 @@ public class WishlistService : IWishlistService
         if (user == null)
             return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
         
-        // FIX: Use efficient database query and batch delete
-        var userWishlistEntries = await _unitOfWork.Wishlists.GetAllByUserIdAsync(userId, trackChanges: true, cancellationToken: cancellationToken);
-
-        if (userWishlistEntries.Any())
-        {
-            await _unitOfWork.Wishlists.DeleteRangeAsync(userWishlistEntries, cancellationToken: cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+        // Single bulk DELETE statement — no entity loading, no change-tracker overhead.
+        // ExecuteDeleteAsync commits immediately, so SaveChangesAsync is not required.
+        await _unitOfWork.Wishlists.ClearByUserIdAsync(userId, cancellationToken);
 
         var result = CreateWishlistDto(userId, new List<WishlistItemDto>());
         return Result<WishlistDto>.Ok(result);

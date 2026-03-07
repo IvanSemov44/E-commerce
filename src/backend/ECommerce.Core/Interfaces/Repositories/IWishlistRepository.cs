@@ -46,7 +46,6 @@ public interface IWishlistRepository : IRepository<Wishlist>
 
     /// <summary>
     /// Gets all wishlist entries for a user with product details.
-    /// FIX: Previously loaded ALL wishlist entries then filtered in memory.
     /// </summary>
     /// <param name="userId">The user ID.</param>
     /// <param name="trackChanges">Whether to track changes.</param>
@@ -58,4 +57,10 @@ public interface IWishlistRepository : IRepository<Wishlist>
     /// Deletes a wishlist entry by user ID and product ID.
     /// </summary>
     Task DeleteByUserIdAndProductIdAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes all wishlist entries for the specified user in a single bulk DB operation.
+    /// Uses ExecuteDeleteAsync to avoid loading entities into memory.
+    /// </summary>
+    Task ClearByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }

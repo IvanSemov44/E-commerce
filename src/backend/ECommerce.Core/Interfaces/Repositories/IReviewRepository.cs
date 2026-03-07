@@ -21,7 +21,6 @@ public interface IReviewRepository : IRepository<Review>
 
     /// <summary>
     /// Gets paginated reviews for a product asynchronously.
-    /// FIX: Added pagination to prevent loading all reviews for popular products.
     /// </summary>
     /// <param name="productId">The product ID.</param>
     /// <param name="skip">Number of reviews to skip.</param>
@@ -33,6 +32,11 @@ public interface IReviewRepository : IRepository<Review>
     Task<IEnumerable<Review>> GetByProductIdAsync(Guid productId, int skip, int take, bool onlyApproved = true, bool trackChanges = false, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets count of reviews for a product asynchronously.
+    /// </summary>
+    Task<int> GetByProductIdCountAsync(Guid productId, bool onlyApproved = true, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets reviews written by a user asynchronously.
     /// </summary>
     /// <param name="userId">The user ID.</param>
@@ -40,6 +44,16 @@ public interface IReviewRepository : IRepository<Review>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Reviews by the user.</returns>
     Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets paginated reviews written by a user asynchronously.
+    /// </summary>
+    Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId, int skip, int take, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets count of reviews written by a user asynchronously.
+    /// </summary>
+    Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a review with all details asynchronously.
@@ -82,4 +96,14 @@ public interface IReviewRepository : IRepository<Review>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Reviews pending approval.</returns>
     Task<IEnumerable<Review>> GetPendingApprovalAsync(bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets paginated reviews pending approval asynchronously.
+    /// </summary>
+    Task<IEnumerable<Review>> GetPendingApprovalAsync(int skip, int take, bool trackChanges = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets count of reviews pending approval asynchronously.
+    /// </summary>
+    Task<int> GetPendingApprovalCountAsync(CancellationToken cancellationToken = default);
 }

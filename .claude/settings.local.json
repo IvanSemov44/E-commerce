@@ -73,7 +73,16 @@
       "Bash(do test -f \"$f.module.css\")",
       "Bash(echo:*)",
       "Bash(src/frontend/storefront/.env.example << 'EOF'\n# API Configuration\nVITE_API_URL=http://localhost:5000/api\n\n# Application\nVITE_APP_NAME=E-Commerce Store\nEOF)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\ivans\\\\Desktop\\\\Dev\\\\E-commerce\\\\cleanup.ps1\")",
+      "Bash(npm run lint)",
+      "Bash(npx eslint src/features/checkout/ src/pages/ src/shared/components/ErrorBoundary/ src/shared/components/icons/ src/shared/components/ui/Button/ src/shared/i18n/ src/shared/lib/utils/logger.ts src/App.tsx src/features/products/pages/)",
+      "Bash(npx eslint src/components/AuthInitializer.tsx src/components/ErrorBoundary.tsx src/utils/logger.ts)",
+      "Bash(npx eslint src/features/cart/api/cartApi.ts src/features/wishlist/api/wishlistApi.ts)",
+      "Bash(npx eslint src --rule '{\"\"no-unused-vars\"\":\"\"error\"\",\"\"@typescript-eslint/no-unused-vars\"\":\"\"error\"\"}' --ext .ts,.tsx)",
+      "Bash(npx eslint src --rule '{\"\"no-unused-vars\"\":\"\"off\"\",\"\"@typescript-eslint/no-unused-vars\"\":[\"\"error\"\",{\"\"vars\"\":\"\"all\"\",\"\"args\"\":\"\"none\"\",\"\"ignoreRestSiblings\"\":true}]}' --ext .ts,.tsx --format unix)",
+      "Bash(npx eslint src --rule '{\"\"no-unused-vars\"\":\"\"off\"\",\"\"@typescript-eslint/no-unused-vars\"\":[\"\"warn\"\",{\"\"vars\"\":\"\"all\"\",\"\"args\"\":\"\"none\"\",\"\"ignoreRestSiblings\"\":true}]}' --ext .ts,.tsx)",
+      "Read(//tmp/**)"
     ]
   }
 }

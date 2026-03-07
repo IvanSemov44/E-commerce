@@ -13,3 +13,31 @@
     padding: 1rem;
   }
 }
+
+/* =============================================================================
+   Background Refetch Indicator
+   ============================================================================= */
+
+.refetchBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--surface-overlay, rgba(0, 0, 0, 0.05));
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  width: fit-content;
+  margin-bottom: var(--space-4);
+}
+
+.refetchIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

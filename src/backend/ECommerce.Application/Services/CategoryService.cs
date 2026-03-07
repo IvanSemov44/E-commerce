@@ -7,6 +7,7 @@ using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Constants;
 using ECommerce.Core.Results;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -36,13 +37,14 @@ public class CategoryService : ICategoryService
         // Enforce max page size to prevent DoS attacks
         pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
 
-        var categories = await _unitOfWork.Categories.GetAllAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var totalCount = categories.Count();
-        
-        var paginatedCategories = categories
+        // DB-level count and pagination — no loading of all rows into memory
+        var query = _unitOfWork.Categories.FindAll(trackChanges: false).OrderBy(c => c.Name);
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var paginatedCategories = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<CategoryDto>>(paginatedCategories);
         
@@ -68,17 +70,20 @@ public class CategoryService : ICategoryService
         // Enforce max page size to prevent DoS attacks
         pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
 
-        var categories = await _unitOfWork.Categories.GetTopLevelCategoriesAsync(trackChanges: false, cancellationToken: cancellationToken);
-        var totalCount = categories.Count();
+        // DB-level filter, count, and pagination — no full table scan into memory
+        var query = _unitOfWork.Categories
+            .FindByCondition(c => c.ParentId == null && c.IsActive, trackChanges: false)
+            .Include(c => c.Children)
+            .OrderBy(c => c.Name);
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        var paginatedCategories = categories
+        var paginatedCategories = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<CategoryDto>>(paginatedCategories).ToList();
 
-        // FIX: Use batch query instead of N+1 loop
         var categoryIds = dtos.Select(d => d.Id).ToList();
         var productCounts = await _unitOfWork.Categories.GetProductCountsAsync(categoryIds, cancellationToken);
 

@@ -236,6 +236,7 @@ export interface Order {
   totalAmount: number;
   shippingAddress: Address;
   notes?: string;
+  trackingNumber?: string;
 }
 
 // ============================================

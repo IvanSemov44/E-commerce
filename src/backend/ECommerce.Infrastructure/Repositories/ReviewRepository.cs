@@ -45,7 +45,6 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
 
     /// <summary>
     /// Retrieves paginated reviews for a specific product.
-    /// FIX: Added pagination to prevent loading all reviews for popular products.
     /// </summary>
     public async Task<IEnumerable<Review>> GetByProductIdAsync(Guid productId, int skip, int take, bool onlyApproved = true, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
@@ -65,6 +64,18 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<int> GetByProductIdCountAsync(Guid productId, bool onlyApproved = true, CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.Where(r => r.ProductId == productId);
+
+        if (onlyApproved)
+        {
+            query = query.Where(r => r.IsApproved);
+        }
+
+        return await query.CountAsync(cancellationToken);
+    }
+
     /// <summary>
     /// Retrieves all reviews submitted by a specific user.
     /// </summary>
@@ -76,6 +87,25 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .Include(r => r.Product)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId, int skip, int take, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Where(r => r.UserId == userId)
+            .Include(r => r.Product)
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Where(r => r.UserId == userId)
+            .CountAsync(cancellationToken);
     }
 
     /// <summary>
@@ -132,5 +162,25 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .Include(r => r.Product)
             .OrderBy(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Review>> GetPendingApprovalAsync(int skip, int take, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Where(r => !r.IsApproved)
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .OrderBy(r => r.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetPendingApprovalCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Where(r => !r.IsApproved)
+            .CountAsync(cancellationToken);
     }
 }

@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
+import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import CheckoutForm from './CheckoutForm';
 
 describe('CheckoutForm', () => {
@@ -20,13 +21,15 @@ describe('CheckoutForm', () => {
     const onFormDataChange = vi.fn();
     const onSubmit = vi.fn();
 
-    render(
+    renderWithProviders(
       <CheckoutForm
         formData={mockFormData}
         errors={{}}
         onFormDataChange={onFormDataChange}
         onSubmit={onSubmit}
         isAuthenticated={false}
+        selectedPaymentMethod="credit_card"
+        onPaymentMethodChange={vi.fn()}
       />
     );
 
@@ -46,13 +49,15 @@ describe('CheckoutForm', () => {
     const onFormDataChange = vi.fn();
     const onSubmit = vi.fn();
 
-    render(
+    renderWithProviders(
       <CheckoutForm
         formData={mockFormData}
         errors={{}}
         onFormDataChange={onFormDataChange}
         onSubmit={onSubmit}
         isAuthenticated={false}
+        selectedPaymentMethod="credit_card"
+        onPaymentMethodChange={vi.fn()}
       />
     );
 
@@ -71,13 +76,15 @@ describe('CheckoutForm', () => {
     const onFormDataChange = vi.fn();
     const onSubmit = vi.fn();
 
-    render(
+    renderWithProviders(
       <CheckoutForm
         formData={mockFormData}
         errors={errors}
         onFormDataChange={onFormDataChange}
         onSubmit={onSubmit}
         isAuthenticated={false}
+        selectedPaymentMethod="credit_card"
+        onPaymentMethodChange={vi.fn()}
       />
     );
 
@@ -90,13 +97,15 @@ describe('CheckoutForm', () => {
     const onFormDataChange = vi.fn();
     const onSubmit = vi.fn();
 
-    render(
+    renderWithProviders(
       <CheckoutForm
         formData={mockFormData}
         errors={{}}
         onFormDataChange={onFormDataChange}
         onSubmit={onSubmit}
         isAuthenticated={false}
+        selectedPaymentMethod="credit_card"
+        onPaymentMethodChange={vi.fn()}
       />
     );
 

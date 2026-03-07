@@ -54,18 +54,10 @@ public class ReviewsController : ControllerBase
         (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving reviews for product {ProductId}", productId);
-        var result = await _reviewService.GetProductReviewsAsync(productId, cancellationToken: cancellationToken);
-        return result is Result<IEnumerable<ReviewDto>>.Success success
-            ? Ok(ApiResponse<PaginatedResult<ReviewDto>>.Ok(
-                new PaginatedResult<ReviewDto>
-                {
-                    Items = success.Data.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
-                    TotalCount = success.Data.Count(),
-                    Page = page,
-                    PageSize = pageSize
-                },
-                "Reviews retrieved successfully"))
-            : result is Result<IEnumerable<ReviewDto>>.Failure failure
+        var result = await _reviewService.GetProductReviewsAsync(productId, page, pageSize, cancellationToken: cancellationToken);
+        return result is Result<PaginatedResult<ReviewDto>>.Success success
+            ? Ok(ApiResponse<PaginatedResult<ReviewDto>>.Ok(success.Data, "Reviews retrieved successfully"))
+            : result is Result<PaginatedResult<ReviewDto>>.Failure failure
                 ? failure.Code == "PRODUCT_NOT_FOUND"
                     ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
                     : BadRequest(ApiResponse<PaginatedResult<ReviewDto>>.Failure(failure.Message, failure.Code))
@@ -102,6 +94,7 @@ public class ReviewsController : ControllerBase
     [HttpGet("my-reviews")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ReviewDetailDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyReviews(
@@ -116,18 +109,10 @@ public class ReviewsController : ControllerBase
             return Unauthorized(ApiResponse<PaginatedResult<ReviewDetailDto>>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         _logger.LogInformation("Retrieving reviews for user {UserId}", userId.Value);
-        var result = await _reviewService.GetUserReviewsAsync(userId.Value, cancellationToken: cancellationToken);
-        return result is Result<IEnumerable<ReviewDetailDto>>.Success success
-            ? Ok(ApiResponse<PaginatedResult<ReviewDetailDto>>.Ok(
-                new PaginatedResult<ReviewDetailDto>
-                {
-                    Items = success.Data.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
-                    TotalCount = success.Data.Count(),
-                    Page = page,
-                    PageSize = pageSize
-                },
-                "Your reviews retrieved successfully"))
-            : result is Result<IEnumerable<ReviewDetailDto>>.Failure failure
+        var result = await _reviewService.GetUserReviewsAsync(userId.Value, page, pageSize, cancellationToken: cancellationToken);
+        return result is Result<PaginatedResult<ReviewDetailDto>>.Success success
+            ? Ok(ApiResponse<PaginatedResult<ReviewDetailDto>>.Ok(success.Data, "Your reviews retrieved successfully"))
+            : result is Result<PaginatedResult<ReviewDetailDto>>.Failure failure
                 ? failure.Code == "USER_NOT_FOUND"
                     ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
                     : BadRequest(ApiResponse<PaginatedResult<ReviewDetailDto>>.Failure(failure.Message, failure.Code))
@@ -145,6 +130,7 @@ public class ReviewsController : ControllerBase
     [HttpGet("{reviewId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetReviewById(Guid reviewId, CancellationToken cancellationToken)
     {
@@ -153,7 +139,9 @@ public class ReviewsController : ControllerBase
         return result is Result<ReviewDetailDto>.Success success
             ? Ok(ApiResponse<ReviewDetailDto>.Ok(success.Data, "Review retrieved successfully"))
             : result is Result<ReviewDetailDto>.Failure failure
-                ? BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
+                ? failure.Code == "REVIEW_NOT_FOUND"
+                    ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
+                    : BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
                 : BadRequest(ApiResponse<ReviewDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -172,6 +160,7 @@ public class ReviewsController : ControllerBase
     [Authorize]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
@@ -190,7 +179,12 @@ public class ReviewsController : ControllerBase
                 new { reviewId = success.Data.Id },
                 ApiResponse<ReviewDetailDto>.Ok(success.Data, "Review created successfully. It will be visible after admin approval."))
             : result is Result<ReviewDetailDto>.Failure failure
-                ? BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
+                ? failure.Code switch
+                {
+                    "PRODUCT_NOT_FOUND" => NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    "DUPLICATE_REVIEW" => Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code)),
+                    _ => BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
+                }
                 : BadRequest(ApiResponse<ReviewDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -209,7 +203,9 @@ public class ReviewsController : ControllerBase
     [Authorize]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReview(Guid reviewId, [FromBody] UpdateReviewDto dto, CancellationToken cancellationToken)
     {
@@ -246,6 +242,9 @@ public class ReviewsController : ControllerBase
     [HttpDelete("{reviewId:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteReview(Guid reviewId, CancellationToken cancellationToken)
     {
@@ -283,7 +282,8 @@ public class ReviewsController : ControllerBase
     [HttpGet("admin/pending")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ReviewDetailDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPendingReviews(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -292,22 +292,8 @@ public class ReviewsController : ControllerBase
         (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
 
         _logger.LogInformation("Retrieving pending reviews");
-        var reviews = await _reviewService.GetPendingReviewsAsync(cancellationToken: cancellationToken);
-        var pendingReviews = reviews.ToList();
-        var paginatedReviews = pendingReviews
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        return Ok(ApiResponse<PaginatedResult<ReviewDetailDto>>.Ok(
-            new PaginatedResult<ReviewDetailDto>
-            {
-                Items = paginatedReviews,
-                TotalCount = pendingReviews.Count,
-                Page = page,
-                PageSize = pageSize
-            },
-            "Pending reviews retrieved successfully"));
+        var reviews = await _reviewService.GetPendingReviewsAsync(page, pageSize, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<PaginatedResult<ReviewDetailDto>>.Ok(reviews, "Pending reviews retrieved successfully"));
     }
 
     /// <summary>
@@ -323,6 +309,9 @@ public class ReviewsController : ControllerBase
     [HttpPost("{reviewId:guid}/approve")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ApproveReview(Guid reviewId, CancellationToken cancellationToken)
     {
@@ -331,7 +320,9 @@ public class ReviewsController : ControllerBase
         return result is Result<ReviewDetailDto>.Success success
             ? Ok(ApiResponse<ReviewDetailDto>.Ok(success.Data, "Review updated successfully"))
             : result is Result<ReviewDetailDto>.Failure failure
-                ? BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
+                ? failure.Code == "REVIEW_NOT_FOUND"
+                    ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
+                    : BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
                 : BadRequest(ApiResponse<ReviewDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -348,6 +339,9 @@ public class ReviewsController : ControllerBase
     [HttpPost("{reviewId:guid}/reject")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RejectReview(Guid reviewId, CancellationToken cancellationToken)
     {
@@ -356,7 +350,9 @@ public class ReviewsController : ControllerBase
         return result is Result<ReviewDetailDto>.Success success
             ? Ok(ApiResponse<ReviewDetailDto>.Ok(success.Data, "Review rejected and deleted successfully"))
             : result is Result<ReviewDetailDto>.Failure failure
-                ? BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
+                ? failure.Code == "REVIEW_NOT_FOUND"
+                    ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
+                    : BadRequest(ApiResponse<ReviewDetailDto>.Failure(failure.Message, failure.Code))
                 : BadRequest(ApiResponse<ReviewDetailDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 }

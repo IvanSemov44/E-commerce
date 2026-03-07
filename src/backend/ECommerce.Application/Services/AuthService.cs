@@ -6,6 +6,7 @@ using AutoMapper;
 using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
+using ECommerce.Core.Constants;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Results;
@@ -349,14 +350,14 @@ public class AuthService : IAuthService
         return Result<Unit>.Ok(Unit.Value);
     }
 
-    public async Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<UserDto>> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
         {
-            return null;
+            return Result<UserDto>.Fail(ErrorCodes.UserNotFound, "User not found");
         }
-        return _mapper.Map<UserDto>(user);
+        return Result<UserDto>.Ok(_mapper.Map<UserDto>(user));
     }
 
     

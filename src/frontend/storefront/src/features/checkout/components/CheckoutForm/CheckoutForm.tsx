@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import Button from '@/shared/components/ui/Button';
+import PaymentMethodSelector from '../PaymentMethodSelector/PaymentMethodSelector';
 import type { CheckoutFormProps } from './CheckoutForm.types';
 
 export default function CheckoutForm({
@@ -7,6 +8,8 @@ export default function CheckoutForm({
   errors,
   onFormDataChange,
   onSubmit,
+  selectedPaymentMethod,
+  onPaymentMethodChange,
 }: CheckoutFormProps) {
   const { t } = useTranslation();
 
@@ -16,7 +19,12 @@ export default function CheckoutForm({
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form
+      onSubmit={onSubmit}
+      className="space-y-6"
+      aria-label={t('checkout.shippingInfo')}
+      noValidate
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="firstName" className="block text-sm font-medium mb-1">
@@ -30,8 +38,10 @@ export default function CheckoutForm({
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
             required
+            aria-required="true"
+            aria-describedby={errors.firstName ? 'firstName-error' : undefined}
           />
-          {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+          {errors.firstName && <p id="firstName-error" role="alert" className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
         </div>
         <div>
           <label htmlFor="lastName" className="block text-sm font-medium mb-1">
@@ -45,8 +55,10 @@ export default function CheckoutForm({
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
             required
+            aria-required="true"
+            aria-describedby={errors.lastName ? 'lastName-error' : undefined}
           />
-          {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+          {errors.lastName && <p id="lastName-error" role="alert" className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
         </div>
       </div>
 
@@ -63,8 +75,10 @@ export default function CheckoutForm({
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
             required
+            aria-required="true"
+            aria-describedby={errors.email ? 'email-error' : undefined}
           />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+          {errors.email && <p id="email-error" role="alert" className="text-red-500 text-sm mt-1">{errors.email}</p>}
         </div>
         <div>
           <label htmlFor="phone" className="block text-sm font-medium mb-1">
@@ -77,7 +91,9 @@ export default function CheckoutForm({
             value={formData.phone}
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
+            aria-describedby={errors.phone ? 'phone-error' : undefined}
           />
+          {errors.phone && <p id="phone-error" role="alert" className="text-red-500 text-sm mt-1">{errors.phone}</p>}
         </div>
       </div>
 
@@ -93,8 +109,10 @@ export default function CheckoutForm({
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded-lg"
           required
+          aria-required="true"
+          aria-describedby={errors.streetLine1 ? 'streetLine1-error' : undefined}
         />
-        {errors.streetLine1 && <p className="text-red-500 text-sm mt-1">{errors.streetLine1}</p>}
+        {errors.streetLine1 && <p id="streetLine1-error" role="alert" className="text-red-500 text-sm mt-1">{errors.streetLine1}</p>}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -110,8 +128,10 @@ export default function CheckoutForm({
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
             required
+            aria-required="true"
+            aria-describedby={errors.city ? 'city-error' : undefined}
           />
-          {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+          {errors.city && <p id="city-error" role="alert" className="text-red-500 text-sm mt-1">{errors.city}</p>}
         </div>
         <div>
           <label htmlFor="state" className="block text-sm font-medium mb-1">
@@ -125,8 +145,10 @@ export default function CheckoutForm({
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
             required
+            aria-required="true"
+            aria-describedby={errors.state ? 'state-error' : undefined}
           />
-          {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+          {errors.state && <p id="state-error" role="alert" className="text-red-500 text-sm mt-1">{errors.state}</p>}
         </div>
         <div>
           <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
@@ -140,8 +162,10 @@ export default function CheckoutForm({
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
             required
+            aria-required="true"
+            aria-describedby={errors.postalCode ? 'postalCode-error' : undefined}
           />
-          {errors.postalCode && <p className="text-red-500 text-sm mt-1">{errors.postalCode}</p>}
+          {errors.postalCode && <p id="postalCode-error" role="alert" className="text-red-500 text-sm mt-1">{errors.postalCode}</p>}
         </div>
       </div>
 
@@ -156,6 +180,8 @@ export default function CheckoutForm({
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded-lg"
           required
+          aria-required="true"
+          aria-describedby={errors.country ? 'country-error' : undefined}
         >
           <option value="">{t('checkout.selectCountry')}</option>
           <option value="US">United States</option>
@@ -164,8 +190,13 @@ export default function CheckoutForm({
           <option value="DE">Germany</option>
           <option value="FR">France</option>
         </select>
-        {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
+        {errors.country && <p id="country-error" role="alert" className="text-red-500 text-sm mt-1">{errors.country}</p>}
       </div>
+
+      <PaymentMethodSelector
+        selectedMethod={selectedPaymentMethod}
+        onMethodChange={onPaymentMethodChange}
+      />
 
       <Button type="submit" className="w-full">
         {t('checkout.placeOrder')}

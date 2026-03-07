@@ -762,13 +762,21 @@ public class PaymentServiceTests
     #region GetPaymentIntentAsync Tests
 
     [TestMethod]
-    public async Task GetPaymentIntentAsync_NonExistentIntent_ReturnsNull()
+    public async Task GetPaymentIntentAsync_NonExistentIntent_ReturnsFailure()
     {
         // Act
         var result = await _service.GetPaymentIntentAsync("pi_nonexistent");
 
         // Assert
-        result.Should().BeNull();
+        result.IsSuccess.Should().BeFalse();
+        if (result is Result<PaymentDetailsDto>.Failure failure)
+        {
+            failure.Code.Should().Be("PAYMENT_INTENT_NOT_FOUND");
+        }
+        else
+        {
+            Assert.Fail("Expected Result<PaymentDetailsDto>.Failure");
+        }
     }
 
     #endregion

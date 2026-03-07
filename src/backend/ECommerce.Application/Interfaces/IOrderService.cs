@@ -20,7 +20,7 @@ public interface IOrderService
     /// <summary>
     /// Get order details by ID.
     /// </summary>
-    Task<OrderDetailDto?> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<OrderDetailDto>> GetOrderByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get order details by ID with ownership enforcement.
@@ -30,7 +30,7 @@ public interface IOrderService
     /// <summary>
     /// Get order details by order number.
     /// </summary>
-    Task<OrderDetailDto?> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default);
+    Task<Result<OrderDetailDto>> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get order details by order number with ownership enforcement.
@@ -45,7 +45,7 @@ public interface IOrderService
     /// <summary>
     /// Update order status.
     /// </summary>
-    Task<Result<OrderDetailDto>> UpdateOrderStatusAsync(Guid id, string status, CancellationToken cancellationToken = default);
+    Task<Result<OrderDetailDto>> UpdateOrderStatusAsync(Guid id, string status, string? trackingNumber = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancel an order (if not already shipped).

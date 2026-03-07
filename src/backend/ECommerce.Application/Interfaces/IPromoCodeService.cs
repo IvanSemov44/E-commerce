@@ -10,9 +10,9 @@ namespace ECommerce.Application.Interfaces;
 public interface IPromoCodeService
 {
     Task<PaginatedResult<PromoCodeDto>> GetAllAsync(PromoCodeQueryParameters parameters, CancellationToken cancellationToken = default);
-    Task<PromoCodeDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<PromoCodeDetailDto?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
-    Task<List<PromoCodeDto>> GetActiveCodesAsync(CancellationToken cancellationToken = default);
+    Task<Result<PromoCodeDetailDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<PromoCodeDetailDto>> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<PromoCodeDto>> GetActiveCodesAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<PromoCodeDetailDto>> CreateAsync(CreatePromoCodeDto dto, CancellationToken cancellationToken = default);
     Task<Result<PromoCodeDetailDto>> UpdateAsync(Guid id, UpdatePromoCodeDto dto, CancellationToken cancellationToken = default);
     Task<Result<Unit>> DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
