@@ -93,7 +93,7 @@ public static class TestDataFactory
         {
             Id = Guid.NewGuid(),
             Code = code ?? _faker.Random.AlphaNumeric(8).ToUpper(),
-            DiscountType = discountType,
+            DiscountType = Enum.Parse<DiscountType>(discountType, ignoreCase: true),
             DiscountValue = discountValue,
             MinOrderAmount = minOrderAmount,
             MaxDiscountAmount = maxDiscountAmount,

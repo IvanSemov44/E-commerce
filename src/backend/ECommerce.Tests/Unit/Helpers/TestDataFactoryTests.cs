@@ -52,7 +52,7 @@ public class TestDataFactoryTests
         promoCode.Should().NotBeNull();
         promoCode.Id.Should().NotBeEmpty();
         promoCode.Code.Should().NotBeNullOrWhiteSpace();
-        promoCode.DiscountType.Should().Be("percentage");
+        promoCode.DiscountType.Should().Be(DiscountType.Percentage);
         promoCode.DiscountValue.Should().Be(10);
         promoCode.IsActive.Should().BeTrue();
     }

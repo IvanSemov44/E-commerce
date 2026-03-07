@@ -132,10 +132,14 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.Ignore());
 
         // PromoCode mappings
-        CreateMap<PromoCode, PromoCodeDto>();
-        CreateMap<PromoCode, PromoCodeDetailDto>();
-        CreateMap<CreatePromoCodeDto, PromoCode>();
+        CreateMap<PromoCode, PromoCodeDto>()
+            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLower()));
+        CreateMap<PromoCode, PromoCodeDetailDto>()
+            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLower()));
+        CreateMap<CreatePromoCodeDto, PromoCode>()
+            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => Enum.Parse<ECommerce.Core.Enums.DiscountType>(src.DiscountType, ignoreCase: true)));
         CreateMap<UpdatePromoCodeDto, PromoCode>()
+            .ForMember(dest => dest.DiscountType, opt => opt.Ignore())
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // Inventory mappings

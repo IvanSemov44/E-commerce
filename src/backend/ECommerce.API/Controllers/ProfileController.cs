@@ -2,6 +2,7 @@ using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Constants;
 using ECommerce.Core.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,6 +42,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -70,8 +72,10 @@ public class ProfileController : ControllerBase
     [HttpPut]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -182,7 +186,13 @@ public class ProfileController : ControllerBase
             return BadRequest(ApiResponse<object>.Failure("New password and confirmation do not match", "PASSWORD_MISMATCH"));
         }
 
-        await _userService.ChangePasswordAsync(userId.Value, dto.OldPassword, dto.NewPassword, cancellationToken: cancellationToken);
+        var result = await _userService.ChangePasswordAsync(userId.Value, dto.OldPassword, dto.NewPassword, cancellationToken: cancellationToken);
+        if (result is Result<Unit>.Failure failure)
+        {
+            return failure.Code == ErrorCodes.UserNotFound
+                ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
+                : BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code));
+        }
         return Ok(ApiResponse<object>.Ok(new object(), "Password changed successfully"));
     }
 }

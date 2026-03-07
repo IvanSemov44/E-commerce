@@ -225,7 +225,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
         if (quantity <= 0)
         {
-            throw new ArgumentException("Quantity must be positive.", nameof(quantity));
+            return false;
         }
 
         var affectedRows = await Context.Database.ExecuteSqlRawAsync(

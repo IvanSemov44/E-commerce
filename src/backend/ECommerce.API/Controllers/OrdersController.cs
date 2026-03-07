@@ -213,6 +213,7 @@ public class OrdersController : ControllerBase
     [HttpGet("my-orders")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetMyOrders([FromQuery] OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -240,6 +241,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllOrders([FromQuery] OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving all orders, page {Page}", parameters.Page);

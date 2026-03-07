@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using ECommerce.Core.Common;
+using ECommerce.Core.Enums;
 using ECommerce.Core.Interfaces;
 
 namespace ECommerce.Core.Entities;
@@ -11,7 +12,7 @@ namespace ECommerce.Core.Entities;
 public class PromoCode : BaseEntity, IConcurrencyToken
 {
     public string Code { get; set; } = null!;
-    public string DiscountType { get; set; } = null!; // 'percentage' or 'fixed'
+    public DiscountType DiscountType { get; set; }
     public decimal DiscountValue { get; set; }
     public decimal? MinOrderAmount { get; set; }
     public decimal? MaxDiscountAmount { get; set; }

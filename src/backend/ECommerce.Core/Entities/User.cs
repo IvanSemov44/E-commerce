@@ -1,9 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using ECommerce.Core.Common;
 using ECommerce.Core.Enums;
+using ECommerce.Core.Interfaces;
 
 namespace ECommerce.Core.Entities;
 
-public class User : BaseEntity
+public class User : BaseEntity, IConcurrencyToken
 {
     public string Email { get; set; } = null!;
     public string? PasswordHash { get; set; }
@@ -18,6 +20,10 @@ public class User : BaseEntity
     public string? GoogleId { get; set; }
     public string? FacebookId { get; set; }
     public string? AvatarUrl { get; set; }
+
+    /// <summary>Concurrency token for optimistic locking.</summary>
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 
     // Navigation properties
     public virtual ICollection<Address> Addresses { get; set; } = new List<Address>();

@@ -116,8 +116,13 @@ public class UserService : IUserService
         if (user == null)
             return Result<Unit>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
 
-        // Password change successful (in test environment, just return)
-        await Task.CompletedTask;
+        if (string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(oldPassword, user.PasswordHash))
+            return Result<Unit>.Fail(ErrorCodes.InvalidCredentials, "Current password is incorrect");
+
+        var trackedUser = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: true, cancellationToken: cancellationToken);
+        trackedUser!.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
         return Result<Unit>.Ok(new Unit());
     }
 }

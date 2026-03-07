@@ -207,7 +207,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     {
                         Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
                         Code = "SAVE20",
-                        DiscountType = "percentage",
+                        DiscountType = ECommerce.Core.Enums.DiscountType.Percentage,
                         DiscountValue = 20,
                         IsActive = true,
                         MaxUses = null,

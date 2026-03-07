@@ -3,6 +3,7 @@ using AutoMapper;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Core.Entities;
+using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Results;
@@ -102,7 +103,8 @@ public class PromoCodeService : IPromoCodeService
         {
             var normalizedCode = dto.Code.Trim().ToUpperInvariant();
 
-            var validationResult = ValidatePromoCodeDto(dto.DiscountType, dto.DiscountValue, dto.StartDate, dto.EndDate, dto.MinOrderAmount);
+            var discountType = Enum.Parse<DiscountType>(dto.DiscountType, ignoreCase: true);
+            var validationResult = ValidatePromoCodeDto(discountType, dto.DiscountValue, dto.StartDate, dto.EndDate, dto.MinOrderAmount);
             if (!validationResult.IsSuccess)
                 return Result<PromoCodeDetailDto>.Fail(ErrorCodes.InvalidPromoCode, validationResult.ErrorMessage);
 
@@ -159,7 +161,7 @@ public class PromoCodeService : IPromoCodeService
                 promoCode.Code = normalizedCode;
             }
 
-            if (dto.DiscountType != null) promoCode.DiscountType = dto.DiscountType;
+            if (dto.DiscountType != null) promoCode.DiscountType = Enum.Parse<DiscountType>(dto.DiscountType, ignoreCase: true);
             if (dto.DiscountValue.HasValue) promoCode.DiscountValue = dto.DiscountValue.Value;
             if (dto.MinOrderAmount.HasValue) promoCode.MinOrderAmount = dto.MinOrderAmount;
             if (dto.MaxDiscountAmount.HasValue) promoCode.MaxDiscountAmount = dto.MaxDiscountAmount;
@@ -420,10 +422,9 @@ public class PromoCodeService : IPromoCodeService
         }
     }
 
-    private decimal CalculateDiscount(string discountType, decimal discountValue, decimal orderAmount, decimal? maxDiscount)
+    private decimal CalculateDiscount(DiscountType discountType, decimal discountValue, decimal orderAmount, decimal? maxDiscount)
     {
-        var isPercentage = discountType.Equals("percentage", StringComparison.OrdinalIgnoreCase);
-        decimal discount = isPercentage
+        decimal discount = discountType == DiscountType.Percentage
             ? orderAmount * (discountValue / 100)
             : discountValue;
 
@@ -442,15 +443,8 @@ public class PromoCodeService : IPromoCodeService
         return Math.Round(discount, 2);
     }
 
-    private (bool IsSuccess, string ErrorMessage) ValidatePromoCodeDto(string discountType, decimal discountValue, DateTime? startDate, DateTime? endDate, decimal? minOrderAmount)
+    private (bool IsSuccess, string ErrorMessage) ValidatePromoCodeDto(DiscountType discountType, decimal discountValue, DateTime? startDate, DateTime? endDate, decimal? minOrderAmount)
     {
-        // Validate discount type - normalize case once
-        var normalizedDiscountType = discountType.ToLowerInvariant();
-        if (normalizedDiscountType != "percentage" && normalizedDiscountType != "fixed")
-        {
-            return (false, "Discount type must be 'percentage' or 'fixed'");
-        }
-
         // Validate discount value
         if (discountValue <= 0)
         {
@@ -458,7 +452,7 @@ public class PromoCodeService : IPromoCodeService
         }
 
         // Validate percentage discount
-        if (normalizedDiscountType == "percentage" && discountValue > 100)
+        if (discountType == DiscountType.Percentage && discountValue > 100)
         {
             return (false, "Percentage discount must be between 0 and 100");
         }

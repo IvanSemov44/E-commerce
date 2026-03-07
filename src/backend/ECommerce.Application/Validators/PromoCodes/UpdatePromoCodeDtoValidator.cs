@@ -1,5 +1,6 @@
 using FluentValidation;
 using ECommerce.Application.DTOs.PromoCodes;
+using ECommerce.Core.Enums;
 
 namespace ECommerce.Application.Validators.PromoCodes;
 
@@ -8,8 +9,6 @@ namespace ECommerce.Application.Validators.PromoCodes;
 /// </summary>
 public class UpdatePromoCodeDtoValidator : AbstractValidator<UpdatePromoCodeDto>
 {
-    private static readonly string[] ValidDiscountTypes = { "percentage", "fixed_amount" };
-
     public UpdatePromoCodeDtoValidator()
     {
         RuleFor(x => x.Code)
@@ -18,8 +17,8 @@ public class UpdatePromoCodeDtoValidator : AbstractValidator<UpdatePromoCodeDto>
             .When(x => x.Code != null);
 
         RuleFor(x => x.DiscountType)
-            .Must(t => ValidDiscountTypes.Contains(t?.ToLower()))
-            .WithMessage($"Discount type must be one of: {string.Join(", ", ValidDiscountTypes)}")
+            .Must(t => Enum.TryParse<DiscountType>(t, ignoreCase: true, out _))
+            .WithMessage("Discount type must be 'percentage' or 'fixed'")
             .When(x => x.DiscountType != null);
 
         RuleFor(x => x.DiscountValue)

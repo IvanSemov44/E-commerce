@@ -168,6 +168,14 @@ public class InventoryController : ControllerBase
         _logger.LogInformation("Adjusting stock for product {ProductId} to {Quantity} (User: {UserId})",
             productId, request.Quantity, userId);
 
+        // Capture current quantity before adjustment to compute the delta
+        var current = await _inventoryService.GetProductByIdAsync(productId, cancellationToken);
+        if (current is Result<InventoryDto>.Failure notFound)
+        {
+            return NotFound(ApiResponse<object>.Failure(notFound.Message, notFound.Code));
+        }
+        var previousQty = ((Result<InventoryDto>.Success)current).Data.StockQuantity;
+
         await _inventoryService.AdjustStockAsync(
             productId,
             request.Quantity,
@@ -177,20 +185,13 @@ public class InventoryController : ControllerBase
             cancellationToken: cancellationToken
         );
 
-        // Get the product to calculate actual quantity change
-        var product = await _inventoryService.GetProductByIdAsync(productId, cancellationToken);
-        if (product is Result<InventoryDto>.Failure failure)
-        {
-            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
-        }
-
-        var quantityChanged = request.Quantity - ((Result<InventoryDto>.Success)product).Data.StockQuantity;
+        var quantityChanged = request.Quantity - previousQty;
 
         var response = new StockAdjustmentResponseDto
         {
             ProductId = productId,
             NewQuantity = request.Quantity,
-            QuantityChanged = quantityChanged, // Actual delta change
+            QuantityChanged = quantityChanged,
             AdjustedAt = DateTime.UtcNow
         };
 
@@ -227,10 +228,13 @@ public class InventoryController : ControllerBase
             cancellationToken: cancellationToken
         );
 
+        var restocked = await _inventoryService.GetProductByIdAsync(productId, cancellationToken);
+        var newQuantity = restocked is Result<InventoryDto>.Success success ? success.Data.StockQuantity : 0;
+
         var response = new StockAdjustmentResponseDto
         {
             ProductId = productId,
-            NewQuantity = 0, // Note: Actual new quantity not available without fetching product
+            NewQuantity = newQuantity,
             QuantityChanged = request.Quantity,
             AdjustedAt = DateTime.UtcNow
         };

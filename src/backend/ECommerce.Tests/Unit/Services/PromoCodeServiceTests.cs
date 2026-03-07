@@ -5,6 +5,7 @@ using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Services;
 using ECommerce.Core.Constants;
 using ECommerce.Core.Entities;
+using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Results;
@@ -68,7 +69,7 @@ public class PromoCodeServiceTests
             {
                 Id = p.Id,
                 Code = p.Code,
-                DiscountType = p.DiscountType,
+                DiscountType = p.DiscountType.ToString().ToLower(),
                 DiscountValue = p.DiscountValue,
                 IsActive = p.IsActive
             }).ToList());
@@ -158,7 +159,7 @@ public class PromoCodeServiceTests
             {
                 Id = promoCode.Id,
                 Code = promoCode.Code,
-                DiscountType = promoCode.DiscountType,
+                DiscountType = promoCode.DiscountType.ToString().ToLower(),
                 DiscountValue = promoCode.DiscountValue
             });
 
@@ -219,7 +220,7 @@ public class PromoCodeServiceTests
             {
                 Id = Guid.NewGuid(),
                 Code = dto.Code,
-                DiscountType = dto.DiscountType,
+                DiscountType = Enum.Parse<DiscountType>(dto.DiscountType, ignoreCase: true),
                 DiscountValue = dto.DiscountValue,
                 MinOrderAmount = dto.MinOrderAmount,
                 IsActive = dto.IsActive,
@@ -232,7 +233,7 @@ public class PromoCodeServiceTests
             {
                 Id = source.Id,
                 Code = source.Code,
-                DiscountType = source.DiscountType,
+                DiscountType = source.DiscountType.ToString().ToLower(),
                 DiscountValue = source.DiscountValue
             });
 
@@ -335,7 +336,7 @@ public class PromoCodeServiceTests
             {
                 Id = promoCode.Id,
                 Code = promoCode.Code,
-                DiscountType = promoCode.DiscountType,
+                DiscountType = promoCode.DiscountType.ToString().ToLower(),
                 DiscountValue = promoCode.DiscountValue
             });
 

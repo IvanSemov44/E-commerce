@@ -64,6 +64,7 @@ public static class ErrorCodes
     // Authentication/Authorization errors
     public const string Unauthorized = "UNAUTHORIZED";
     public const string Forbidden = "FORBIDDEN";
+    public const string InvalidCredentials = "INVALID_CREDENTIALS";
     
     // Concurrency errors
     public const string ConcurrencyConflict = "CONCURRENCY_CONFLICT";

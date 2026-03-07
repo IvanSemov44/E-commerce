@@ -89,7 +89,7 @@ public class OrderRepositoryTests
         {
             Id = Guid.NewGuid(),
             Code = "SAVE10",
-            DiscountType = "percentage",
+            DiscountType = DiscountType.Percentage,
             DiscountValue = 10,
             IsActive = true,
             StartDate = DateTime.UtcNow.AddDays(-10),
