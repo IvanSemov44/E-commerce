@@ -1,0 +1,28 @@
+<Project>
+
+  <!-- ==========================================
+       Roslyn / .NET Code Analyzers
+       Applies to ALL projects in src/backend/
+       ========================================== -->
+  <PropertyGroup>
+    <!-- Enable the built-in .NET SDK analyzers (already on by default in .NET 5+,
+         explicit here for clarity) -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+    <!-- "Recommended" enables a curated set of rules that catch real bugs and
+         code-style issues without being overly noisy. -->
+    <AnalysisMode>Recommended</AnalysisMode>
+
+    <!-- Also enforce IDE code-style rules at build time -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- Roslynator: ~500 additional diagnostic rules for C# -->
+  <ItemGroup>
+    <PackageReference Include="Roslynator.Analyzers" Version="4.12.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

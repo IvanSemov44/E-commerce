@@ -16,21 +16,21 @@ public class ProductRepository : Repository<Product>, IProductRepository
     {
     }
 
-    public override async Task<Product?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
+    public override Task<Product?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(p => p.Category)
             .Include(p => p.Images)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public async Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
         
         // Reviews are fetched separately via ReviewRepository to avoid loading all reviews for popular products
-        return await query
+        return query
             .Include(p => p.Category)
             .Include(p => p.Images)
             .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive, cancellationToken);
@@ -46,18 +46,14 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Product>> GetFeaturedAsync(int count, bool trackChanges = false, CancellationToken cancellationToken = default)
-    {
-        return await GetFeaturedInternalAsync(skip: 0, count: count, trackChanges, cancellationToken);
-    }
+    public Task<IEnumerable<Product>> GetFeaturedAsync(int count, bool trackChanges = false, CancellationToken cancellationToken = default)
+        => GetFeaturedInternalAsync(skip: 0, count: count, trackChanges, cancellationToken);
 
     /// <summary>
     /// Gets featured products with pagination support.
     /// </summary>
-    public async Task<IEnumerable<Product>> GetFeaturedAsync(int skip, int count, bool trackChanges = false, CancellationToken cancellationToken = default)
-    {
-        return await GetFeaturedInternalAsync(skip, count, trackChanges, cancellationToken);
-    }
+    public Task<IEnumerable<Product>> GetFeaturedAsync(int skip, int count, bool trackChanges = false, CancellationToken cancellationToken = default)
+        => GetFeaturedInternalAsync(skip, count, trackChanges, cancellationToken);
 
     private async Task<IEnumerable<Product>> GetFeaturedInternalAsync(int skip, int count, bool trackChanges, CancellationToken cancellationToken)
     {
@@ -85,18 +81,14 @@ public class ProductRepository : Repository<Product>, IProductRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetActiveProductsCountAsync(CancellationToken cancellationToken = default)
-    {
-        return await DbSet.CountAsync(p => p.IsActive, cancellationToken);
-    }
+    public Task<int> GetActiveProductsCountAsync(CancellationToken cancellationToken = default)
+        => DbSet.CountAsync(p => p.IsActive, cancellationToken);
 
     /// <summary>
     /// Gets the count of featured products.
     /// </summary>
-    public async Task<int> GetFeaturedProductsCountAsync(CancellationToken cancellationToken = default)
-    {
-        return await DbSet.CountAsync(p => p.IsFeatured && p.IsActive, cancellationToken);
-    }
+    public Task<int> GetFeaturedProductsCountAsync(CancellationToken cancellationToken = default)
+        => DbSet.CountAsync(p => p.IsFeatured && p.IsActive, cancellationToken);
 
     public async Task UpdateStockAsync(Guid productId, int quantity, CancellationToken cancellationToken = default)
     {

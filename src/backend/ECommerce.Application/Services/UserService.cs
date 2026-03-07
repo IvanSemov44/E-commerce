@@ -81,7 +81,7 @@ public class UserService : IUserService
             Currency = "USD",
             NewsletterSubscribed = false
         };
-        
+
         return Result<UserPreferencesDto>.Ok(preferences);
     }
 
@@ -104,7 +104,7 @@ public class UserService : IUserService
             Currency = dto.Currency,
             NewsletterSubscribed = dto.NewsletterSubscribed
         };
-        
+
         return Result<UserPreferencesDto>.Ok(preferences);
     }
 

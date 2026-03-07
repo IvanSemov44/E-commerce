@@ -123,10 +123,8 @@ public class UnitOfWork : IUnitOfWork
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The number of entities written to the database.</returns>
-    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.SaveChangesAsync(cancellationToken);
-    }
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        => _context.SaveChangesAsync(cancellationToken);
 
     /// <summary>
     /// Begins a new database transaction.
@@ -166,6 +164,7 @@ public class UnitOfWork : IUnitOfWork
     public void Dispose()
     {
         _context?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -173,6 +172,7 @@ public class UnitOfWork : IUnitOfWork
     /// </summary>
     public ValueTask DisposeAsync()
     {
+        GC.SuppressFinalize(this);
         return _context?.DisposeAsync() ?? default;
     }
 
@@ -181,7 +181,7 @@ public class UnitOfWork : IUnitOfWork
     /// <summary>
     /// Wraps IDbContextTransaction to implement IAsyncTransaction.
     /// </summary>
-    private class AsyncTransaction : IAsyncTransaction
+    private sealed class AsyncTransaction : IAsyncTransaction
     {
         private readonly IDbContextTransaction _transaction;
 
@@ -198,26 +198,20 @@ public class UnitOfWork : IUnitOfWork
         /// Commits the transaction.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
-        public async Task CommitAsync(CancellationToken cancellationToken = default)
-        {
-            await _transaction.CommitAsync(cancellationToken);
-        }
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+            => _transaction.CommitAsync(cancellationToken);
 
         /// <summary>
         /// Rolls back the transaction.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
-        public async Task RollbackAsync(CancellationToken cancellationToken = default)
-        {
-            await _transaction.RollbackAsync(cancellationToken);
-        }
+        public Task RollbackAsync(CancellationToken cancellationToken = default)
+            => _transaction.RollbackAsync(cancellationToken);
 
         /// <summary>
         /// Disposes the transaction.
         /// </summary>
-        public async ValueTask DisposeAsync()
-        {
-            await _transaction.DisposeAsync();
-        }
+        public ValueTask DisposeAsync()
+            => _transaction.DisposeAsync();
     }
 }

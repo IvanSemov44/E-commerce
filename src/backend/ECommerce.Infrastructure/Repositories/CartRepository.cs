@@ -18,10 +18,10 @@ public class CartRepository : Repository<Cart>, ICartRepository
     /// <summary>
     /// Retrieves a cart by user ID with all items and products.
     /// </summary>
-    public async Task<Cart?> GetByUserIdAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Cart?> GetByUserIdAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
                 .ThenInclude(p => p.Images)
@@ -31,10 +31,10 @@ public class CartRepository : Repository<Cart>, ICartRepository
     /// <summary>
     /// Retrieves a cart by session ID with all items and products.
     /// </summary>
-    public async Task<Cart?> GetBySessionIdAsync(string sessionId, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Cart?> GetBySessionIdAsync(string sessionId, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
                 .ThenInclude(p => p.Images)
@@ -44,10 +44,10 @@ public class CartRepository : Repository<Cart>, ICartRepository
     /// <summary>
     /// Retrieves a specific cart with all its items and products.
     /// </summary>
-    public async Task<Cart?> GetCartWithItemsAsync(Guid cartId, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Cart?> GetCartWithItemsAsync(Guid cartId, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(c => c.Items)
             .ThenInclude(ci => ci.Product)
                 .ThenInclude(p => p.Images)
@@ -57,10 +57,8 @@ public class CartRepository : Repository<Cart>, ICartRepository
     /// <summary>
     /// Checks if a cart exists for the specified user.
     /// </summary>
-    public async Task<bool> CartExistsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet.AnyAsync(c => c.UserId == userId, cancellationToken);
-    }
+    public Task<bool> CartExistsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        => DbSet.AnyAsync(c => c.UserId == userId, cancellationToken);
 
     /// <summary>
     /// Calculates the total value of all items in a cart using SQL aggregation (efficient).
@@ -80,11 +78,9 @@ public class CartRepository : Repository<Cart>, ICartRepository
     /// <summary>
     /// Gets the total count of items in a cart.
     /// </summary>
-    public async Task<int> GetCartItemCountAsync(Guid cartId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet
+    public Task<int> GetCartItemCountAsync(Guid cartId, CancellationToken cancellationToken = default)
+        => DbSet
             .Where(c => c.Id == cartId)
             .Select(c => c.Items.Count)
             .FirstOrDefaultAsync(cancellationToken);
-    }
 }

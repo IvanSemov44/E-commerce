@@ -1,0 +1,123 @@
+root = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# All files
+# ─────────────────────────────────────────────────────────────────────────────
+[*]
+indent_style             = space
+end_of_line              = crlf
+charset                  = utf-8-bom
+trim_trailing_whitespace = true
+insert_final_newline     = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C# files
+# ─────────────────────────────────────────────────────────────────────────────
+[*.cs]
+indent_size = 4
+
+# ── C# language conventions ──────────────────────────────────────────────────
+csharp_style_var_for_built_in_types                     = false : suggestion
+csharp_style_var_when_type_is_apparent                  = true  : suggestion
+csharp_style_var_elsewhere                              = true  : suggestion
+csharp_prefer_simple_using_statement                    = true  : suggestion
+csharp_style_expression_bodied_methods                  = when_on_single_line : suggestion
+csharp_style_expression_bodied_properties               = true  : suggestion
+csharp_style_pattern_matching_over_is_with_cast_check   = true  : warning
+csharp_style_pattern_matching_over_as_with_null_check   = true  : warning
+csharp_style_prefer_switch_expression                   = true  : suggestion
+csharp_style_throw_expression                           = true  : suggestion
+csharp_style_conditional_delegate_call                  = true  : warning
+csharp_style_prefer_null_coalescing_assignment          = true  : suggestion
+csharp_style_prefer_range_operator                      = true  : suggestion
+csharp_style_prefer_index_operator                      = true  : suggestion
+
+# ── .NET naming conventions ───────────────────────────────────────────────────
+# Private fields: _camelCase  (project convention)
+dotnet_naming_rule.private_fields_should_be_camel_case.severity = warning
+dotnet_naming_rule.private_fields_should_be_camel_case.symbols  = private_fields
+dotnet_naming_rule.private_fields_should_be_camel_case.style    = prefix_underscore
+
+dotnet_naming_symbols.private_fields.applicable_kinds            = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities  = private
+
+dotnet_naming_style.prefix_underscore.capitalization             = camel_case
+dotnet_naming_style.prefix_underscore.required_prefix            = _
+
+# ── Roslyn / .NET diagnostic severity overrides ───────────────────────────────
+
+# CA1707: Identifiers should not contain underscores
+#   Suppressed because _camelCase private fields are the project convention.
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1822: Mark members as static — useful signal, keep as warning
+dotnet_diagnostic.CA1822.severity = warning
+
+# CA1873: Use LoggerMessage.Define / [LoggerMessage] source generator
+#   Requires making every affected class partial and restructuring all log calls.
+#   Performance-only concern; suppressed until a dedicated logging refactor pass.
+dotnet_diagnostic.CA1873.severity = none
+
+# CA1848: Use LoggerMessage delegates for performance — same reasoning
+dotnet_diagnostic.CA1848.severity = none
+
+# CA2201: Do not raise reserved exception types (e.g. throw new Exception())
+dotnet_diagnostic.CA2201.severity = warning
+
+# CA1862: Use StringComparison overloads — catches culture-sensitive comparisons
+dotnet_diagnostic.CA1862.severity = warning
+
+# CA1861: Avoid constant arrays as arguments — minor perf improvement
+dotnet_diagnostic.CA1861.severity = suggestion
+
+# CA1860: Prefer using 'IsEmpty', 'Count', 'Length' instead of Any()
+dotnet_diagnostic.CA1860.severity = suggestion
+
+# CA2016: Forward CancellationToken to methods — important for async correctness
+dotnet_diagnostic.CA2016.severity = warning
+
+# CA1068: CancellationToken should be last parameter
+dotnet_diagnostic.CA1068.severity = warning
+
+# CA1000: Do not declare static members on generic types
+#   ApiResponse<T>.Ok/Error and Result<T>.Ok/Fail are intentional static factory methods.
+dotnet_diagnostic.CA1000.severity = none
+
+# CA1725: Parameter names should match base declaration
+#   EntityConfigurations.Configure(builder) vs Configure(entity) — intentional.
+dotnet_diagnostic.CA1725.severity = none
+
+# CA1711: Identifiers should not have incorrect suffix
+#   Migration class names are auto-generated — cannot be renamed.
+dotnet_diagnostic.CA1711.severity = none
+
+# CS1573: Parameter has no matching param tag in the XML comment
+dotnet_diagnostic.CS1573.severity = none
+
+# CA1051: Do not declare visible instance fields
+#   Protected fields in Repository<T> are part of the intended inheritance contract.
+dotnet_diagnostic.CA1051.severity = none
+
+# IDE0290: Use primary constructor — suggestion only, not enforced
+dotnet_diagnostic.IDE0290.severity = suggestion
+
+# IDE0305: Use collection expression — too noisy for existing code
+dotnet_diagnostic.IDE0305.severity = none
+
+# RCS1124: Inline local variable (Roslynator) — suggestion
+dotnet_diagnostic.RCS1124.severity = suggestion
+
+# RCS1163: Unused parameter (Roslynator) — warning to catch dead code
+dotnet_diagnostic.RCS1163.severity = warning
+
+# RCS1174: Remove redundant async/await (Roslynator) — avoids unnecessary state machine
+dotnet_diagnostic.RCS1174.severity = warning
+
+# RCS1036: Remove unnecessary blank line (Roslynator)
+dotnet_diagnostic.RCS1036.severity = suggestion
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON / YAML / Markdown
+# ─────────────────────────────────────────────────────────────────────────────
+[*.{json,yml,yaml,md}]
+indent_size = 2

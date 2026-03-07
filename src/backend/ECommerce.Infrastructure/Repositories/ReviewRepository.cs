@@ -15,10 +15,10 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
     {
     }
 
-    public override async Task<Review?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
+    public override Task<Review?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(r => r.User)
             .Include(r => r.Product)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
@@ -64,7 +64,7 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetByProductIdCountAsync(Guid productId, bool onlyApproved = true, CancellationToken cancellationToken = default)
+    public Task<int> GetByProductIdCountAsync(Guid productId, bool onlyApproved = true, CancellationToken cancellationToken = default)
     {
         var query = DbSet.Where(r => r.ProductId == productId);
 
@@ -73,7 +73,7 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             query = query.Where(r => r.IsApproved);
         }
 
-        return await query.CountAsync(cancellationToken);
+        return query.CountAsync(cancellationToken);
     }
 
     /// <summary>
@@ -101,20 +101,18 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet
+    public Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken cancellationToken = default)
+        => DbSet
             .Where(r => r.UserId == userId)
             .CountAsync(cancellationToken);
-    }
 
     /// <summary>
     /// Retrieves a review with all its related data by ID.
     /// </summary>
-    public async Task<Review?> GetByIdWithDetailsAsync(Guid id, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Review?> GetByIdWithDetailsAsync(Guid id, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(r => r.User)
             .Include(r => r.Product)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
@@ -123,12 +121,10 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
     /// <summary>
     /// Gets the count of approved reviews for a product.
     /// </summary>
-    public async Task<int> GetApprovedReviewCountAsync(Guid productId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet
+    public Task<int> GetApprovedReviewCountAsync(Guid productId, CancellationToken cancellationToken = default)
+        => DbSet
             .Where(r => r.ProductId == productId && r.IsApproved)
             .CountAsync(cancellationToken);
-    }
 
     /// <summary>
     /// Calculates the average rating for a product from approved reviews.
@@ -145,10 +141,8 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
     /// <summary>
     /// Checks if a user has already reviewed a specific product.
     /// </summary>
-    public async Task<bool> UserHasReviewedAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet.AnyAsync(r => r.UserId == userId && r.ProductId == productId, cancellationToken);
-    }
+    public Task<bool> UserHasReviewedAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
+        => DbSet.AnyAsync(r => r.UserId == userId && r.ProductId == productId, cancellationToken);
 
     /// <summary>
     /// Retrieves all reviews pending approval.
@@ -177,10 +171,8 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetPendingApprovalCountAsync(CancellationToken cancellationToken = default)
-    {
-        return await DbSet
+    public Task<int> GetPendingApprovalCountAsync(CancellationToken cancellationToken = default)
+        => DbSet
             .Where(r => !r.IsApproved)
             .CountAsync(cancellationToken);
-    }
 }

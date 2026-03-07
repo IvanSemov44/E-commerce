@@ -16,10 +16,10 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     {
     }
 
-    public override async Task<Order?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
+    public override Task<Order?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(o => o.Items)
                 .ThenInclude(oi => oi.Product)
             .Include(o => o.ShippingAddress)
@@ -32,10 +32,10 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     /// <summary>
     /// Retrieves a complete order by order number with all related entities.
     /// </summary>
-    public async Task<Order?> GetByOrderNumberAsync(string orderNumber, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Order?> GetByOrderNumberAsync(string orderNumber, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(o => o.User)
             .Include(o => o.ShippingAddress)
             .Include(o => o.BillingAddress)
@@ -65,18 +65,16 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     /// <summary>
     /// Gets the total count of orders for a specific user.
     /// </summary>
-    public async Task<int> GetUserOrdersCountAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet.CountAsync(o => o.UserId == userId, cancellationToken);
-    }
+    public Task<int> GetUserOrdersCountAsync(Guid userId, CancellationToken cancellationToken = default)
+        => DbSet.CountAsync(o => o.UserId == userId, cancellationToken);
 
     /// <summary>
     /// Retrieves an order with all its items and related addresses.
     /// </summary>
-    public async Task<Order?> GetWithItemsAsync(Guid orderId, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Order?> GetWithItemsAsync(Guid orderId, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(o => o.Items)
                 .ThenInclude(oi => oi.Product)
             .Include(o => o.ShippingAddress)
@@ -104,10 +102,8 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     /// <summary>
     /// Gets the total count of all orders in the system.
     /// </summary>
-    public async Task<int> GetTotalOrdersCountAsync(CancellationToken cancellationToken = default)
-    {
-        return await DbSet.CountAsync(cancellationToken);
-    }
+    public Task<int> GetTotalOrdersCountAsync(CancellationToken cancellationToken = default)
+        => DbSet.CountAsync(cancellationToken);
 
     /// <summary>
     /// Calculates the total revenue from paid orders.

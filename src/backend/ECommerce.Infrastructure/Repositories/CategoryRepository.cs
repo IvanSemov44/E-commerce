@@ -18,10 +18,10 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     /// <summary>
     /// Retrieves a category by its slug identifier.
     /// </summary>
-    public async Task<Category?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Category?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Include(c => c.Parent)
             .Include(c => c.Children)
             .FirstOrDefaultAsync(c => c.Slug == slug && c.IsActive, cancellationToken);
@@ -63,11 +63,9 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     /// <summary>
     /// Gets the product count for a specific category using SQL COUNT (efficient).
     /// </summary>
-    public async Task<int> GetProductCountAsync(Guid categoryId, CancellationToken cancellationToken = default)
-    {
-        return await Context.Products
+    public Task<int> GetProductCountAsync(Guid categoryId, CancellationToken cancellationToken = default)
+        => Context.Products
             .CountAsync(p => p.CategoryId == categoryId && p.IsActive, cancellationToken);
-    }
 
     /// <summary>
     /// Gets product counts for multiple categories in a single query (avoids N+1).

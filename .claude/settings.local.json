@@ -82,7 +82,9 @@
       "Bash(npx eslint src --rule '{\"\"no-unused-vars\"\":\"\"error\"\",\"\"@typescript-eslint/no-unused-vars\"\":\"\"error\"\"}' --ext .ts,.tsx)",
       "Bash(npx eslint src --rule '{\"\"no-unused-vars\"\":\"\"off\"\",\"\"@typescript-eslint/no-unused-vars\"\":[\"\"error\"\",{\"\"vars\"\":\"\"all\"\",\"\"args\"\":\"\"none\"\",\"\"ignoreRestSiblings\"\":true}]}' --ext .ts,.tsx --format unix)",
       "Bash(npx eslint src --rule '{\"\"no-unused-vars\"\":\"\"off\"\",\"\"@typescript-eslint/no-unused-vars\"\":[\"\"warn\"\",{\"\"vars\"\":\"\"all\"\",\"\"args\"\":\"\"none\"\",\"\"ignoreRestSiblings\"\":true}]}' --ext .ts,.tsx)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(npm test -- --run --reporter=verbose)",
+      "Bash(npm test -- --run)"
     ]
   }
 }

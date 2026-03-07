@@ -18,10 +18,10 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
     /// <summary>
     /// Retrieves a wishlist by user ID without related items.
     /// </summary>
-    public async Task<Wishlist?> GetByUserIdAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Wishlist?> GetByUserIdAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Where(w => w.UserId == userId)
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -29,10 +29,10 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
     /// <summary>
     /// Retrieves a wishlist by user ID with all wishlist items and products.
     /// </summary>
-    public async Task<Wishlist?> GetByUserIdWithItemsAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default)
+    public Task<Wishlist?> GetByUserIdWithItemsAsync(Guid userId, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query
+        return query
             .Where(w => w.UserId == userId)
             .Include(w => w.Product)
                 .ThenInclude(p => p.Images)
@@ -44,20 +44,16 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
     /// <summary>
     /// Checks if a product is in a user's wishlist.
     /// </summary>
-    public async Task<bool> IsProductInWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet.AnyAsync(w => w.UserId == userId && w.ProductId == productId, cancellationToken);
-    }
+    public Task<bool> IsProductInWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
+        => DbSet.AnyAsync(w => w.UserId == userId && w.ProductId == productId, cancellationToken);
 
     /// <summary>
     /// Gets the total count of items in a user's wishlist.
     /// </summary>
-    public async Task<int> GetWishlistItemCountAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await DbSet
+    public Task<int> GetWishlistItemCountAsync(Guid userId, CancellationToken cancellationToken = default)
+        => DbSet
             .Where(w => w.UserId == userId)
             .CountAsync(cancellationToken);
-    }
 
     /// <summary>
     /// Gets all wishlist entries for a user with product details.

@@ -31,10 +31,10 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     /// <summary>
     /// Gets a single entity by its ID asynchronously.
     /// </summary>
-    public virtual async Task<T?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
+    public virtual Task<T?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        return await query.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return query.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
     /// <summary>
@@ -185,26 +185,20 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     /// <summary>
     /// Checks if an entity with the specified ID exists asynchronously.
     /// </summary>
-    public virtual async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await DbSet.AnyAsync(x => x.Id == id, cancellationToken);
-    }
+    public virtual Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+        => DbSet.AnyAsync(x => x.Id == id, cancellationToken);
 
     /// <summary>
     /// Counts all entities asynchronously.
     /// </summary>
-    public virtual async Task<int> CountAsync(CancellationToken cancellationToken = default)
-    {
-        return await DbSet.CountAsync(cancellationToken);
-    }
+    public virtual Task<int> CountAsync(CancellationToken cancellationToken = default)
+        => DbSet.CountAsync(cancellationToken);
 
     /// <summary>
     /// Counts entities matching a predicate asynchronously.
     /// </summary>
-    public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
-    {
-        return await DbSet.CountAsync(predicate, cancellationToken);
-    }
+    public virtual Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+        => DbSet.CountAsync(predicate, cancellationToken);
 
     #endregion
 }

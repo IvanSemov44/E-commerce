@@ -11,6 +11,7 @@ const createMockStore = (isAuthenticated: boolean) =>
     reducer: {
       auth: () => ({
         isAuthenticated,
+        initialized: true,
         user: isAuthenticated ? { id: '1', email: 'admin@test.com', role: 'Admin' } : null,
         isLoading: false,
         error: null,
