@@ -220,7 +220,7 @@ public class OrderService : IOrderService
     /// <summary>
     /// Creates the order entity with addresses mapped from DTO.
     /// </summary>
-    private async Task<Order> CreateOrderEntityAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken)
+    private Task<Order> CreateOrderEntityAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken)
     {
         var order = new Order
         {
@@ -266,7 +266,7 @@ public class OrderService : IOrderService
             order.BillingAddress = billingAddress;
         }
 
-        return await Task.FromResult(order);
+        return Task.FromResult(order);
     }
 
     /// <summary>
@@ -604,10 +604,8 @@ public class OrderService : IOrderService
         }
     }
 
-    public async Task<Result<Unit>> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await CancelOrderAsync(id, userId: null, isAdmin: true, cancellationToken);
-    }
+    public Task<Result<Unit>> CancelOrderAsync(Guid id, CancellationToken cancellationToken = default)
+        => CancelOrderAsync(id, userId: null, isAdmin: true, cancellationToken);
 
     public async Task<Result<Unit>> CancelOrderAsync(Guid id, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
     {

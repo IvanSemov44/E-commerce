@@ -84,7 +84,8 @@
       "Bash(npx eslint src --rule '{\"\"no-unused-vars\"\":\"\"off\"\",\"\"@typescript-eslint/no-unused-vars\"\":[\"\"warn\"\",{\"\"vars\"\":\"\"all\"\",\"\"args\"\":\"\"none\"\",\"\"ignoreRestSiblings\"\":true}]}' --ext .ts,.tsx)",
       "Read(//tmp/**)",
       "Bash(npm test -- --run --reporter=verbose)",
-      "Bash(npm test -- --run)"
+      "Bash(npm test -- --run)",
+      "Bash(npm test -- --run src/hooks/useForm.test.ts)"
     ]
   }
 }

@@ -188,12 +188,10 @@ public static class QueryableExtensions
     /// <param name="source">The source queryable collection.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The count of items.</returns>
-    public static async Task<int> CountAsync<T>(
+    public static Task<int> CountAsync<T>(
         this IQueryable<T> source,
         CancellationToken cancellationToken = default)
-    {
-        return await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(source, cancellationToken);
-    }
+        => Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(source, cancellationToken);
 }
 
 

@@ -148,10 +148,8 @@ public class PaymentService : IPaymentService
         }
     }
 
-    public async Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
-    {
-        return await GetPaymentDetailsAsync(orderId, userId: null, isAdmin: true, cancellationToken);
-    }
+    public Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
+        => GetPaymentDetailsAsync(orderId, userId: null, isAdmin: true, cancellationToken);
 
     public async Task<Result<PaymentDetailsDto>> GetPaymentDetailsAsync(Guid orderId, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
     {

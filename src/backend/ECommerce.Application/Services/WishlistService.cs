@@ -79,10 +79,8 @@ public class WishlistService : IWishlistService
         return await GetUserWishlistAsync(userId, cancellationToken);
     }
 
-    public async Task<bool> IsProductInWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
-    {
-        return await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken);
-    }
+    public Task<bool> IsProductInWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
+        => _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken);
 
     public async Task<Result<WishlistDto>> ClearWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
     {

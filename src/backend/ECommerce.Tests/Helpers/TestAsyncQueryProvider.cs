@@ -7,7 +7,7 @@ namespace ECommerce.Tests.Helpers;
 /// Custom async query provider for testing async LINQ operations (ToListAsync, FirstOrDefaultAsync, etc.)
 /// This allows mocking IQueryable<T> that works with Entity Framework Core async extensions.
 /// </summary>
-internal class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
+internal sealed class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
 {
     private readonly IQueryProvider _inner;
 
@@ -53,7 +53,7 @@ internal class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
     }
 }
 
-internal class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumerable<T>, IQueryable<T>
+internal sealed class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumerable<T>, IQueryable<T>
 {
     public TestAsyncEnumerable(IEnumerable<T> enumerable)
         : base(enumerable)
@@ -71,7 +71,7 @@ internal class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumerable<T>,
     IQueryProvider IQueryable.Provider => new TestAsyncQueryProvider<T>(this);
 }
 
-internal class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
+internal sealed class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
 {
     private readonly IEnumerator<T> _inner;
 

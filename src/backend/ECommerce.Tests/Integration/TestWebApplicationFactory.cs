@@ -339,7 +339,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
     }
 
-    private class NoOpEmailService : IEmailService
+    private sealed class NoOpEmailService : IEmailService
     {
         public Task SendWelcomeEmailAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendEmailVerificationAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -352,7 +352,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
-    private class TestWebhookVerificationService : IWebhookVerificationService
+    private sealed class TestWebhookVerificationService : IWebhookVerificationService
     {
         public bool VerifySignature(string payload, string signature) => true;
     }

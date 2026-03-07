@@ -109,10 +109,10 @@ public class ProductService : IProductService
         return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)
+    public Task<PaginatedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)
     {
         var parameters = new ProductQueryParameters { Page = page, PageSize = pageSize };
-        return await GetProductsAsync(parameters, cancellationToken);
+        return GetProductsAsync(parameters, cancellationToken);
     }
 
     public async Task<PaginatedResult<ProductDto>> GetFeaturedProductsAsync(int page = 1, int pageSize = PaginationConstants.DefaultPageSize, CancellationToken cancellationToken = default)

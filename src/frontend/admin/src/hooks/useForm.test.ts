@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, act, waitFor } from '@testing-library/react'
 import useForm from './useForm'
 
 interface TestFormValues {
@@ -184,21 +184,20 @@ describe('useForm', () => {
       })
     )
 
-    const submitPromise = act(async () => {
-      await result.current.handleSubmit({
+    // Start submission — do not await so isSubmitting stays true
+    act(() => {
+      void result.current.handleSubmit({
         preventDefault: vi.fn(),
       } as unknown as React.FormEvent)
     })
 
     // Should be submitting while promise is pending
-    expect(result.current.isSubmitting).toBe(true)
+    await waitFor(() => expect(result.current.isSubmitting).toBe(true))
 
-    // Resolve the promise
+    // Resolve the promise and wait for isSubmitting to clear
     await act(async () => {
       resolveSubmit!()
     })
-
-    await submitPromise
 
     // Should no longer be submitting
     expect(result.current.isSubmitting).toBe(false)

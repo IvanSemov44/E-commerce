@@ -229,10 +229,8 @@ public class CartService : ICartService
         return Result<CartDto>.Ok(dto);
     }
 
-    public async Task<Result<Unit>> ValidateCartAsync(Guid cartId, CancellationToken cancellationToken = default)
-    {
-        return await ValidateCartAsync(cartId, userId: null, isAdmin: true, cancellationToken);
-    }
+    public Task<Result<Unit>> ValidateCartAsync(Guid cartId, CancellationToken cancellationToken = default)
+        => ValidateCartAsync(cartId, userId: null, isAdmin: true, cancellationToken);
 
     public async Task<Result<Unit>> ValidateCartAsync(Guid cartId, Guid? userId, bool isAdmin, CancellationToken cancellationToken = default)
     {

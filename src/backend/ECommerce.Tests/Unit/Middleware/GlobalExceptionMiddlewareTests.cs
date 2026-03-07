@@ -317,13 +317,13 @@ public class GlobalExceptionMiddlewareTests
 
     #region Response Models
 
-    private class ErrorResponse
+    private sealed class ErrorResponse
     {
         public bool Success { get; set; }
         public ErrorDetails? ErrorDetails { get; set; }
     }
 
-    private class ErrorDetails
+    private sealed class ErrorDetails
     {
         public string Message { get; set; } = null!;
         public string? Code { get; set; }
@@ -333,10 +333,10 @@ public class GlobalExceptionMiddlewareTests
 
     #region Test Exception Classes
 
-    private class TestNotFoundException(string message) : NotFoundException(message);
-    private class TestBadRequestException(string message) : BadRequestException(message);
-    private class TestUnauthorizedException(string message) : UnauthorizedException(message);
-    private class TestConflictException(string message) : ConflictException(message);
+    private sealed class TestNotFoundException(string message) : NotFoundException(message);
+    private sealed class TestBadRequestException(string message) : BadRequestException(message);
+    private sealed class TestUnauthorizedException(string message) : UnauthorizedException(message);
+    private sealed class TestConflictException(string message) : ConflictException(message);
 
     #endregion
 }

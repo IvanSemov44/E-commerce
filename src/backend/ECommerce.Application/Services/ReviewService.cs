@@ -132,10 +132,8 @@ public class ReviewService : IReviewService
         return Result<ReviewDetailDto>.Ok(_mapper.Map<ReviewDetailDto>(review));
     }
 
-    public async Task<Result<ReviewDetailDto>> UpdateReviewAsync(Guid userId, Guid reviewId, UpdateReviewDto dto, CancellationToken cancellationToken = default)
-    {
-        return await UpdateReviewAsync(userId, reviewId, dto, isAdmin: false, cancellationToken);
-    }
+    public Task<Result<ReviewDetailDto>> UpdateReviewAsync(Guid userId, Guid reviewId, UpdateReviewDto dto, CancellationToken cancellationToken = default)
+        => UpdateReviewAsync(userId, reviewId, dto, isAdmin: false, cancellationToken);
 
     public async Task<Result<ReviewDetailDto>> UpdateReviewAsync(Guid userId, Guid reviewId, UpdateReviewDto dto, bool isAdmin, CancellationToken cancellationToken = default)
     {
@@ -170,10 +168,8 @@ public class ReviewService : IReviewService
         return Result<ReviewDetailDto>.Ok(_mapper.Map<ReviewDetailDto>(review));
     }
 
-    public async Task<Result<Unit>> DeleteReviewAsync(Guid userId, Guid reviewId, CancellationToken cancellationToken = default)
-    {
-        return await DeleteReviewAsync(userId, reviewId, isAdmin: false, cancellationToken);
-    }
+    public Task<Result<Unit>> DeleteReviewAsync(Guid userId, Guid reviewId, CancellationToken cancellationToken = default)
+        => DeleteReviewAsync(userId, reviewId, isAdmin: false, cancellationToken);
 
     public async Task<Result<Unit>> DeleteReviewAsync(Guid userId, Guid reviewId, bool isAdmin, CancellationToken cancellationToken = default)
     {
@@ -239,8 +235,6 @@ public class ReviewService : IReviewService
         };
     }
 
-    public async Task<decimal> GetProductAverageRatingAsync(Guid productId, CancellationToken cancellationToken = default)
-    {
-        return await _unitOfWork.Reviews.GetAverageRatingAsync(productId, cancellationToken: cancellationToken);
-    }
+    public Task<decimal> GetProductAverageRatingAsync(Guid productId, CancellationToken cancellationToken = default)
+        => _unitOfWork.Reviews.GetAverageRatingAsync(productId, cancellationToken: cancellationToken);
 }
