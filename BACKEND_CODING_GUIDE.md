@@ -398,7 +398,7 @@ For predictable business logic outcomes, prefer a **Result<T>** pattern for expl
 - Saga patterns and distributed transactions
 - Testability (no exception setup needed)
 
-### **Result<T> Base Types**
+### **Result<T> Implementation** (`Core/Results/Result.cs`)
 
 ```csharp
 public abstract record Result<T>
@@ -406,25 +406,26 @@ public abstract record Result<T>
     public sealed record Success(T Data) : Result<T>;
     public sealed record Failure(string Code, string Message) : Result<T>;
     public sealed record ValidationFailure(Dictionary<string, string[]> Errors) : Result<T>;
-}
 
-// Usage
-public record struct Result<T>
-{
-    private readonly T? _data;
-    private readonly string? _error;
-    public bool IsSuccess { get; private init; }
-    public T Data => IsSuccess ? _data! : throw new InvalidOperationException("Result is not successful");
-    public string Error => _error ?? string.Empty;
+    // Factory methods
+    public static Result<T> Ok(T data) => new Success(data);
+    public static Result<T> Fail(string code, string message) => new Failure(code, message);
+    public static Result<T> ValidationFail(Dictionary<string, string[]> errors) => new ValidationFailure(errors);
 
-    public static Result<T> Ok(T data) => new() { IsSuccess = true, _data = data };
-    public static Result<T> Fail(string error) => new() { IsSuccess = false, _error = error };
+    // State check
+    public bool IsSuccess => this is Success;
 
-    // Pattern matching helper
-    public TResult Match<TResult>(
-        Func<T, TResult> onSuccess,
-        Func<string, TResult> onFailure) =>
-        IsSuccess ? onSuccess(_data!) : onFailure(_error!);
+    // Pattern matching — onFailure receives the full Result<T> for subtype inspection
+    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<Result<T>, TResult> onFailure) =>
+        this switch { Success s => onSuccess(s.Data), _ => onFailure(this) };
+
+    // Safe extractors
+    public T GetDataOrThrow() =>
+        this is Success s ? s.Data : throw new InvalidOperationException("Result is not successful");
+    public (string Code, string Message)? GetFailureOrNull() =>
+        this is Failure f ? (f.Code, f.Message) : null;
+    public Dictionary<string, string[]>? GetValidationErrorsOrNull() =>
+        this is ValidationFailure vf ? vf.Errors : null;
 }
 ```
 
@@ -446,10 +447,10 @@ public class OrderService
             .GetByIdAsync(dto.ProductId, ct);
         
         if (inventoryCheck == null)
-            return Result<OrderDto>.Fail("PRODUCT_NOT_FOUND");
+            return Result<OrderDto>.Fail(ErrorCodes.ProductNotFound, $"Product {dto.ProductId} not found");
         
         if (inventoryCheck.Stock < dto.Quantity)
-            return Result<OrderDto>.Fail("INSUFFICIENT_INVENTORY");
+            return Result<OrderDto>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock: requested {dto.Quantity}");
 
         // Process order
         var order = new Order { ProductId = dto.ProductId, Quantity = dto.Quantity };
@@ -474,11 +475,14 @@ public async Task<ActionResult> CreateOrder(
     return result.Match(
         onSuccess: order => CreatedAtAction(nameof(GetOrder), new { id = order.Id },
             ApiResponse<OrderDto>.Ok(order)),
-        onFailure: error => error switch
+        onFailure: failure => failure switch
         {
-            "PRODUCT_NOT_FOUND" => NotFound(ApiResponse<OrderDto>.Failure("Product not found", error)),
-            "INSUFFICIENT_INVENTORY" => BadRequest(ApiResponse<OrderDto>.Failure("Not enough inventory", error)),
-            _ => StatusCode(500, ApiResponse<OrderDto>.Failure(error, "UNKNOWN_ERROR"))
+            // onFailure receives the full Result<T> — pattern-match on subtype + error code
+            Result<OrderDto>.Failure f when f.Code == ErrorCodes.ProductNotFound =>
+                NotFound(ApiResponse<OrderDto>.Failure(f.Message, f.Code)),
+            Result<OrderDto>.Failure f when f.Code == ErrorCodes.InsufficientStock =>
+                BadRequest(ApiResponse<OrderDto>.Failure(f.Message, f.Code)),
+            _ => StatusCode(500, ApiResponse<OrderDto>.Failure("Unexpected error", "INTERNAL_ERROR"))
         }
     );
 }
@@ -508,8 +512,9 @@ public class OrderService
         CancellationToken ct = default)
     {
         // Load current state
-        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct)
-            ?? return Result<OrderDto>.Fail(ErrorCodes.OrderNotFound, $"Order {orderId} not found");
+        var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct);
+        if (order is null)
+            return Result<OrderDto>.Fail(ErrorCodes.OrderNotFound, $"Order {orderId} not found");
 
         // If client provided RowVersion (from earlier GET), verify not stale
         if (expectedRowVersion != null && !AreRowVersionsEqual(order.RowVersion, expectedRowVersion))
@@ -522,7 +527,7 @@ public class OrderService
 
         // Validate state machine: can only transition from certain states
         if (!order.CanTransitionTo(newStatus))
-            return Result<OrderDto>.Fail("INVALID_STATE_TRANSITION");
+            return Result<OrderDto>.Fail(ErrorCodes.InvalidOrderState, "Invalid state transition");
 
         order.Status = newStatus;
         order.UpdatedAt = DateTime.UtcNow;
@@ -592,7 +597,7 @@ public class PaymentService
         if (@lock == null)
         {
             _logger.LogWarning("Failed to acquire lock for Order {OrderId}, contention", orderId);
-            return Result<PaymentDto>.Fail("PAYMENT_IN_PROGRESS");
+            return Result<PaymentDto>.Fail("PAYMENT_IN_PROGRESS", "Payment is already being processed for this order");
         }
 
         try
@@ -600,7 +605,7 @@ public class PaymentService
             // Double-check order state inside lock
             var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct);
             if (order?.Status != OrderStatus.Pending)
-                return Result<PaymentDto>.Fail("ORDER_ALREADY_PAID_OR_CANCELLED");
+                return Result<PaymentDto>.Fail("ORDER_ALREADY_PAID", "Order is already paid or cancelled");
 
             // Process payment (calls external API)
             var paymentResult = await _paymentGateway.ChargeAsync(
@@ -1068,13 +1073,13 @@ namespace ECommerce.Application.Services;
 public class ProductService : IProductService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ICurrentUserContext _currentUser;
+    private readonly ICurrentUserService _currentUser;
     private readonly IMapper _mapper;
     private readonly ILogger<ProductService> _logger;
 
     public ProductService(
         IUnitOfWork unitOfWork,
-        ICurrentUserContext currentUser,
+        ICurrentUserService currentUser,
         IMapper mapper,
         ILogger<ProductService> logger)
     {
@@ -1086,8 +1091,9 @@ public class ProductService : IProductService
 
     public async Task<Result<ProductDto>> GetProductByIdAsync(Guid productId, CancellationToken ct = default)
     {
-        var product = await _unitOfWork.Products.GetByIdAsync(productId, ct)
-            ?? return Result<ProductDto>.Fail(ErrorCodes.ProductNotFound, $"Product {productId} not found");
+        var product = await _unitOfWork.Products.GetByIdAsync(productId, ct);
+        if (product is null)
+            return Result<ProductDto>.Fail(ErrorCodes.ProductNotFound, $"Product {productId} not found");
 
         _logger.LogInformation("Product {ProductId} retrieved", productId);
         return Result<ProductDto>.Ok(_mapper.Map<ProductDto>(product));
@@ -1147,14 +1153,14 @@ public class ProductService : IProductService
         _logger.LogInformation("Product {ProductId} created with slug {ProductSlug}",
             product.Id, product.Slug);
 
-        return _mapper.Map<ProductDto>(product);
+        return Result<ProductDto>.Ok(_mapper.Map<ProductDto>(product));
     }
 }
 ```
 
 ### **Template 2: Controller (HTTP Transport)**
 ```csharp
-using ECommerce.API.Filters;
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -1169,30 +1175,40 @@ namespace ECommerce.API.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _service;
+    private readonly ILogger<ProductsController> _logger;
 
-    public ProductsController(IProductService service) => _service = service;
+    public ProductsController(IProductService service, ILogger<ProductsController> logger)
+    {
+        _service = service;
+        _logger = logger;
+    }
 
     /// <summary>Retrieve a product by ID</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     [AllowAnonymous]
     public async Task<ActionResult> GetProductById(
         [FromRoute] Guid id,
         CancellationToken ct = default)
     {
         if (id == Guid.Empty)
-            return BadRequest(new ErrorResponse { Message = "Invalid product ID", Code = "INVALID_ID" });
+            return BadRequest(ApiResponse<object>.Failure("Invalid product ID", "INVALID_ID"));
 
         var result = await _service.GetProductByIdAsync(id, ct);
-        return Ok(ApiResponse<ProductDto>.Ok(result));
+
+        if (result is Result<ProductDto>.Failure failure)
+            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
+
+        return Ok(ApiResponse<ProductDto>.Ok(result.GetDataOrThrow()));
     }
 
     /// <summary>Retrieve paginated list of active products</summary>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     [AllowAnonymous]
     public async Task<ActionResult> GetProducts(
         [FromQuery] int pageNumber = 1,
@@ -1203,26 +1219,31 @@ public class ProductsController : ControllerBase
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
         var result = await _service.GetProductsAsync(pageNumber, pageSize, ct);
-        return Ok(ApiResponse<PaginatedResponse<ProductDto>>.Ok(result));
+        return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result));
     }
 
     /// <summary>Create a new product (Admin only)</summary>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     [ValidationFilter]
     public async Task<ActionResult> CreateProduct(
         [FromBody] CreateProductDto dto,
         CancellationToken ct = default)
     {
         var result = await _service.CreateProductAsync(dto, ct);
-        return CreatedAtAction(nameof(GetProductById), new { id = result.Id },
-            ApiResponse<ProductDto>.Ok(result));
+
+        if (result is Result<ProductDto>.Failure failure)
+            return Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code));
+
+        var created = result.GetDataOrThrow();
+        return CreatedAtAction(nameof(GetProductById), new { id = created.Id },
+            ApiResponse<ProductDto>.Ok(created));
     }
 }
 ```
@@ -1305,7 +1326,7 @@ namespace ECommerce.Tests.Unit.Services;
 public class ProductServiceTests
 {
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
-    private Mock<ICurrentUserContext> _mockCurrentUser = null!;
+    private Mock<ICurrentUserService> _mockCurrentUser = null!;
     private Mock<IMapper> _mockMapper = null!;
     private Mock<ILogger<ProductService>> _mockLogger = null!;
     private ProductService _service = null!;
@@ -1314,7 +1335,7 @@ public class ProductServiceTests
     public void Setup()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
-        _mockCurrentUser = new Mock<ICurrentUserContext>();
+        _mockCurrentUser = new Mock<ICurrentUserService>();
         _mockMapper = new Mock<IMapper>();
         _mockLogger = new Mock<ILogger<ProductService>>();
 
@@ -1360,7 +1381,7 @@ public class ProductServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.GetFailureOrNull()?.ErrorCode.Should().Be(ErrorCodes.ProductNotFound);
+        result.GetFailureOrNull()?.Code.Should().Be(ErrorCodes.ProductNotFound);
     }
 
     [TestMethod]
@@ -1379,7 +1400,7 @@ public class ProductServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.GetFailureOrNull()?.ErrorCode.Should().Be(ErrorCodes.DuplicateProductSlug);
+        result.GetFailureOrNull()?.Code.Should().Be(ErrorCodes.DuplicateProductSlug);
     }
 }
 ```
@@ -1401,14 +1422,14 @@ public class PaymentService : IPaymentService
         // Validate order exists and status
         var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct);
         if (order == null)
-            return Result<PaymentDto>.Fail("ORDER_NOT_FOUND");
+            return Result<PaymentDto>.Fail(ErrorCodes.OrderNotFound, $"Order {orderId} not found");
 
         if (order.Status != OrderStatus.Pending)
-            return Result<PaymentDto>.Fail("ORDER_NOT_PENDING");
+            return Result<PaymentDto>.Fail(ErrorCodes.InvalidOrderState, "Order is not in pending state");
 
         // Validate payment method
         if (!IsValidPaymentMethod(method))
-            return Result<PaymentDto>.Fail("INVALID_PAYMENT_METHOD");
+            return Result<PaymentDto>.Fail(ErrorCodes.UnsupportedPaymentMethod, "Payment method is not supported");
 
         // Process with gateway
         try
@@ -1440,7 +1461,7 @@ public class PaymentService : IPaymentService
         {
             // Infrastructure error — log and return retry hint
             _logger.LogError(ex, "Gateway connection failed for Order {OrderId}", orderId);
-            return Result<PaymentDto>.Fail("GATEWAY_UNAVAILABLE_RETRY");
+            return Result<PaymentDto>.Fail("GATEWAY_UNAVAILABLE", "Payment gateway is temporarily unavailable, please retry");
         }
     }
 }
@@ -1448,7 +1469,267 @@ public class PaymentService : IPaymentService
 
 ---
 
-## 📚 Deep Reference
+## � ErrorCodes Reference (`Core/Constants/ErrorCodes.cs`)
+
+All `Result<T>.Fail(code, message)` calls **must** use a constant from this class. Never hard-code string literals.
+
+```csharp
+public static class ErrorCodes
+{
+    // Cart
+    public const string CartNotFound              = "CART_NOT_FOUND";
+    public const string CartItemNotFound          = "CART_ITEM_NOT_FOUND";
+
+    // Product
+    public const string ProductNotFound           = "PRODUCT_NOT_FOUND";
+    public const string ProductNotAvailable       = "PRODUCT_NOT_AVAILABLE";
+    public const string DuplicateProductSlug      = "DUPLICATE_PRODUCT_SLUG";
+
+    // Inventory
+    public const string InsufficientStock         = "INSUFFICIENT_STOCK";
+    public const string InvalidQuantity           = "INVALID_QUANTITY";
+
+    // Order
+    public const string OrderNotFound             = "ORDER_NOT_FOUND";
+    public const string OrderAlreadyProcessed     = "ORDER_ALREADY_PROCESSED";
+    public const string InvalidOrderState         = "INVALID_ORDER_STATE";
+    public const string InvalidOrderStatus        = "INVALID_ORDER_STATUS";
+
+    // Category
+    public const string CategoryNotFound          = "CATEGORY_NOT_FOUND";
+    public const string CategoryAlreadyExists     = "CATEGORY_ALREADY_EXISTS";
+    public const string DuplicateCategorySlug     = "DUPLICATE_CATEGORY_SLUG";
+    public const string CategoryHasProducts       = "CATEGORY_HAS_PRODUCTS";
+
+    // PromoCode
+    public const string InvalidPromoCode          = "INVALID_PROMO_CODE";
+    public const string DuplicatePromoCode        = "DUPLICATE_PROMO_CODE";
+    public const string PromoCodeNotFound         = "PROMO_CODE_NOT_FOUND";
+    public const string PromoCodeUsageLimitReached= "PROMO_CODE_USAGE_LIMIT_REACHED";
+
+    // Review
+    public const string ReviewNotFound            = "REVIEW_NOT_FOUND";
+    public const string InvalidRating             = "INVALID_RATING";
+    public const string EmptyReviewComment        = "EMPTY_REVIEW_COMMENT";
+    public const string DuplicateReview           = "DUPLICATE_REVIEW";
+    public const string ReviewUpdateExpired       = "REVIEW_UPDATE_EXPIRED";
+
+    // Wishlist
+    public const string DuplicateWishlistItem     = "DUPLICATE_WISHLIST_ITEM";
+
+    // User
+    public const string UserNotFound              = "USER_NOT_FOUND";
+
+    // Payment
+    public const string UnsupportedPaymentMethod  = "UNSUPPORTED_PAYMENT_METHOD";
+    public const string PaymentAmountMismatch     = "PAYMENT_AMOUNT_MISMATCH";
+    public const string NoPaymentFound            = "NO_PAYMENT_FOUND";
+    public const string InvalidRefund             = "INVALID_REFUND";
+
+    // Auth
+    public const string Unauthorized              = "UNAUTHORIZED";
+    public const string Forbidden                 = "FORBIDDEN";
+
+    // Concurrency
+    public const string ConcurrencyConflict       = "CONCURRENCY_CONFLICT";
+
+    // Pagination
+    public const string InvalidPagination         = "INVALID_PAGINATION";
+}
+```
+
+**Adding a new error code**: add a `public const string` to the appropriate region. Use `SCREAMING_SNAKE_CASE`. Pick a name that is self-explanatory without context.
+
+---
+
+## 🏛 Core Infrastructure Reference
+
+### **BaseEntity** (`Core/Common/BaseEntity.cs`)
+
+All entities **must** inherit `BaseEntity`:
+
+```csharp
+public abstract class BaseEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+```
+
+Entity field conventions:
+- **Required strings**: `public string Name { get; set; } = null!;`
+- **Optional strings**: `public string? Description { get; set; }`
+- **Navigation properties**: `public virtual Category Category { get; set; } = null!;`
+- **Collections**: `public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();`
+- **Optional FK**: `public Guid? PromoCodeId { get; set; }`
+- **Event timestamps**: `public DateTime? ShippedAt { get; set; }`
+- **Status fields**: use enums, never strings — `public OrderStatus Status { get; set; }`
+- **Concurrency**: implement `IConcurrencyToken` on entities with frequent simultaneous updates
+
+---
+
+### **IRepository\<T\>** (`Core/Interfaces/Repositories/IRepository.cs`)
+
+The generic base interface. Use `IUnitOfWork.OrderItems`, `.CartItems`, etc. for entities with no custom queries.
+
+```csharp
+public interface IRepository<T> where T : BaseEntity
+{
+    // Read
+    Task<T?> GetByIdAsync(Guid id, bool trackChanges = true, CancellationToken ct = default);
+    Task<IEnumerable<T>> GetByIdsAsync(IEnumerable<Guid> ids, bool trackChanges = false, CancellationToken ct = default);
+    Task<IEnumerable<T>> GetAllAsync(bool trackChanges = true, CancellationToken ct = default);
+    IQueryable<T> FindAll(bool trackChanges = false);
+    IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false);
+
+    // Write (none call SaveChangesAsync — UnitOfWork does that)
+    void Add(T entity);
+    Task AddAsync(T entity, CancellationToken ct = default);
+    void AddRange(IEnumerable<T> entities);
+    Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
+    void Update(T entity);
+    Task UpdateAsync(T entity, CancellationToken ct = default);
+    void UpdateRange(IEnumerable<T> entities);
+    Task UpdateRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
+    Task DeleteAsync(T entity, CancellationToken ct = default);
+    void Delete(T entity);
+    void DeleteRange(IEnumerable<T> entities);
+}
+```
+
+---
+
+### **IUnitOfWork** (`Core/Interfaces/Repositories/IUnitOfWork.cs`)
+
+Services **always** inject `IUnitOfWork`. Never inject individual repositories.
+
+```csharp
+public interface IUnitOfWork : IDisposable, IAsyncDisposable
+{
+    // Specialized repositories (custom query methods)
+    IProductRepository  Products   { get; }
+    IOrderRepository    Orders     { get; }
+    IUserRepository     Users      { get; }
+    ICategoryRepository Categories { get; }
+    ICartRepository     Carts      { get; }
+    IReviewRepository   Reviews    { get; }
+    IWishlistRepository Wishlists  { get; }
+
+    // Generic repositories (simple CRUD only)
+    IRepository<OrderItem>     OrderItems     { get; }
+    IRepository<CartItem>      CartItems      { get; }
+    IRepository<Address>       Addresses      { get; }
+    IRepository<PromoCode>     PromoCodes     { get; }
+    IRepository<InventoryLog>  InventoryLogs  { get; }
+    IRepository<ProductImage>  ProductImages  { get; }
+    IRepository<RefreshToken>  RefreshTokens  { get; }
+
+    // Persistence
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+    Task<IAsyncTransaction> BeginTransactionAsync(CancellationToken ct = default);
+    bool HasActiveTransaction { get; }
+    void DetachEntity<T>(T entity) where T : class;
+}
+```
+
+Pattern when adding a new entity that needs custom queries:
+1. Create `INewEntityRepository` in `Core/Interfaces/Repositories/`
+2. Implement `NewEntityRepository` in `Infrastructure/Repositories/`
+3. Add `INewEntityRepository NewEntities { get; }` to `IUnitOfWork`
+4. Add lazy init in `UnitOfWork.cs`: `public INewEntityRepository NewEntities => _newEntities ??= new NewEntityRepository(_context);`
+
+---
+
+### **ValidationFilterAttribute** (`API/ActionFilters/ValidationFilterAttribute.cs`)
+
+Add `[ValidationFilter]` to every `POST`, `PUT`, and `PATCH` endpoint. It runs **before** the controller action and does two things:
+
+1. Checks that the DTO parameter is not `null` → returns `400 Bad Request` with code `NULL_PARAMETER`
+2. Validates `ModelState` (populated by FluentValidation pipeline) → returns `422 Unprocessable Entity` with per-field errors
+
+Result when validation fails:
+```json
+{
+  "success": false,
+  "errorDetails": {
+    "message": "Validation failed",
+    "code": "VALIDATION_FAILED",
+    "errors": {
+      "Name": ["Name is required"],
+      "Price": ["Price must be greater than 0"]
+    }
+  }
+}
+```
+
+You **never** need to check `ModelState.IsValid` manually in controllers — the filter handles it.
+
+---
+
+### **GlobalExceptionMiddleware** — Exception → HTTP Status Code Mapping
+
+For unexpected infrastructure failures only. Business logic must use `Result<T>`, not these.
+
+| Exception type | HTTP Status | Code |
+|---|---|---|
+| `NotFoundException` | 404 Not Found | `NOT_FOUND` |
+| `UnauthorizedException` | 401 Unauthorized | `UNAUTHORIZED` |
+| `BadRequestException` | 400 Bad Request | `BAD_REQUEST` |
+| `ConflictException` | 409 Conflict | `CONFLICT` |
+| `DbUpdateConcurrencyException` | 409 Conflict | `CONCURRENCY_CONFLICT` |
+| `InvalidOperationException` | 409 Conflict | `INVALID_OPERATION` |
+| `ArgumentNullException` | 400 Bad Request | `MISSING_PARAMETER` |
+| `ArgumentException` | 400 Bad Request | `INVALID_ARGUMENT` |
+| Any other `Exception` | 500 Internal Server Error | `INTERNAL_SERVER_ERROR` (message hidden from client) |
+
+---
+
+### **MappingProfile Conventions** (`Application/MappingProfile.cs`)
+
+All AutoMapper mappings live in a **single** `MappingProfile : Profile` class in `ECommerce.Application/MappingProfile.cs`. Register it once at startup — do not create additional profile classes.
+
+**Patterns:**
+
+```csharp
+// 1. Simple entity → DTO (all properties match by name)
+CreateMap<User, UserDto>();
+
+// 2. Computed or renamed property
+CreateMap<User, UserProfileDto>()
+    .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+
+// 3. Write DTO → entity (ignore fields that must NOT be overwritten)
+CreateMap<UpdateProfileDto, User>()
+    .ForMember(dest => dest.Id, opt => opt.Ignore())
+    .ForMember(dest => dest.Email, opt => opt.Ignore())
+    .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
+    .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+    .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));  // Skip null PATCH fields
+
+// 4. Nested navigation mapping
+CreateMap<Product, ProductDetailDto>()
+    .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
+    .ForMember(dest => dest.AverageRating, opt => opt.Ignore())   // Set manually after mapping
+    .ForMember(dest => dest.ReviewCount, opt => opt.Ignore());
+
+// 5. Computed field that uses a sub-expression
+CreateMap<Review, ProductReviewDto>()
+    .ForMember(dest => dest.UserName,
+        opt => opt.MapFrom(src => src.User != null
+            ? $"{src.User.FirstName} {src.User.LastName}"
+            : "Anonymous"));
+```
+
+**Rules:**
+- ❌ `ReverseMap()` is banned — DTOs map **from** entities only, never back. Create explicit reverse maps with `ForMember(... Ignore())` guards if needed.
+- ❌ Do not construct DTOs manually in services — always call `_mapper.Map<TDto>(entity)`.
+- ✅ Post-mapping computed fields (e.g. `AverageRating`) are set by the service **after** mapping: `dto.AverageRating = computedValue;`
+- ✅ Add mapping to `MappingProfile.cs` in the correct named region (group by feature: `// Product mappings`, `// Order mappings`, etc.).
+
+---
+
+## �📚 Deep Reference
 
 ### **1. Feature Delivery Workflow**
 
@@ -1513,21 +1794,26 @@ public class JwtOptions
 - Class-level `[Authorize]` with `[AllowAnonymous]` overrides
 - Role-based: `[Authorize(Roles = "Admin,SuperAdmin")]`
 - Ownership checks in service layer (not controller)
-- Never trust client-provided user IDs — always use `ICurrentUserContext`
+- Never trust client-provided user IDs — always use `ICurrentUserService`
 
 #### **User Context Injection**
 
 ```csharp
-public interface ICurrentUserContext
+// Location: ECommerce.Application/Interfaces/ICurrentUserService.cs
+public interface ICurrentUserService
 {
-    Guid UserId { get; }
-    string Email { get; }
-    IReadOnlyList<string> Roles { get; }
+    Guid UserId { get; }           // Throws if not authenticated
+    Guid? UserIdOrNull { get; }    // Safe: null for anonymous
+    string Email { get; }          // Throws if not authenticated
+    string? EmailOrNull { get; }   // Safe: null for anonymous
+    UserRole Role { get; }         // Throws if not authenticated
+    UserRole? RoleOrNull { get; }  // Safe: null for anonymous
+    string? SessionId { get; }     // From cookie, null if absent
     bool IsAuthenticated { get; }
 }
 
-// Register: services.AddScoped<ICurrentUserContext, CurrentUserContext>();
-// Usage: Inject into services, never pass userId as parameter
+// Register: services.AddScoped<ICurrentUserService, CurrentUserService>();
+// Usage: inject into services — never pass userId from controller as parameter
 ```
 
 #### **Rate Limiting**
@@ -1569,9 +1855,13 @@ private static readonly HashSet<string> AllowedMethods = new(StringComparer.Ordi
 
 **MUST** use descriptive names:
 ```bash
-dotnet ef migrations add AddProductTable
-dotnet ef migrations add AlterProductAddBarcodeColumn
-dotnet ef migrations add CreateProductSlugUniqueIndex
+# Always specify -p (migrations project) and -s (startup project)
+dotnet ef migrations add AddProductTable -p ECommerce.Infrastructure -s ECommerce.API
+dotnet ef migrations add AlterProductAddBarcodeColumn -p ECommerce.Infrastructure -s ECommerce.API
+dotnet ef migrations add CreateProductSlugUniqueIndex -p ECommerce.Infrastructure -s ECommerce.API
+
+# Apply migrations
+dotnet ef database update -p ECommerce.Infrastructure -s ECommerce.API
 ```
 
 **MUST** include `Down()` for rollback:
@@ -1942,7 +2232,7 @@ public class AuditMiddleware
 
             using var scope = services.CreateScope();
             var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
-            var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUserContext>();
+            var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUserService>();
 
             await auditService.LogRequestAsync(new AuditLog
             {
@@ -1971,11 +2261,102 @@ app.UseMiddleware<AuditMiddleware>();
 
 ## 📞 Support & Feedback
 
-- **Question?** Check the **Quick Start** first (10 MUST rules)
-- **Implementing a feature?** Follow the **PR Checklist**
+- **Question?** Check the **Quick Start** first (11 MUST rules)
+- **Implementing a feature?** Follow the **PR Checklist** and **Adding a New Feature** recipe
 - **Need templates?** Copy from **Templates Appendix**
 - **Design pattern?** See **Result Pattern**, **Concurrency**, **Caching** sections
 - **Performance tuning?** Check **Query Optimization Patterns**
 - **Inconsistency found?** Update this guide in the same PR — it's a living document
 
 **Last Updated**: March 2026 | **Database**: PostgreSQL | **Status**: Production-Ready
+
+---
+
+## ✅ Adding a New Feature — Step-by-Step
+
+Use this recipe every time. Follow the layer order — do not skip ahead.
+
+### Checklist
+
+- [ ] **Step 1 — Entity / Enum (Core/Entities/, Core/Enums/)**
+  - Add entity inheriting `BaseEntity`
+  - Add required enums in `Core/Enums/`
+  - Add concurrency token if entity has frequent simultaneous updates: implement `IConcurrencyToken`
+
+- [ ] **Step 2 — DTOs (Application/DTOs/{Feature}/)**
+  - `{Entity}Dto` — list/read response (use `record`)
+  - `{Entity}DetailDto` — detail response, inherits base DTO (use `record`)
+  - `Create{Entity}Dto` — create request (use `class`)
+  - `Update{Entity}Dto` — update request (use `class`)
+  - `{Entity}QueryParameters` — if endpoint supports filtering/sorting
+
+- [ ] **Step 3 — Validators (Application/Validators/{Feature}/)**  
+  - `Create{Entity}DtoValidator : AbstractValidator<Create{Entity}Dto>`
+  - `Update{Entity}DtoValidator : AbstractValidator<Update{Entity}Dto>`
+  - Place in `Application/Validators/{Feature}/` — auto-registered at startup
+
+- [ ] **Step 4 — Repository interface + implementation**
+  - If custom queries needed: create `I{Entity}Repository` in `Core/Interfaces/Repositories/`
+  - Implement in `Infrastructure/Repositories/{Entity}Repository.cs`
+  - Add property to `IUnitOfWork` + lazy init in `UnitOfWork.cs`
+  - If simple CRUD only: use existing `IRepository<T>` via `_unitOfWork.{GenericRepo}`
+
+- [ ] **Step 5 — Migration**
+  ```bash
+  dotnet ef migrations add Add{EntityName}Table -p ECommerce.Infrastructure -s ECommerce.API
+  # Review the generated Up()/Down() before applying
+  dotnet ef database update -p ECommerce.Infrastructure -s ECommerce.API
+  ```
+
+- [ ] **Step 6 — Service (Application/Services/, Application/Interfaces/)**
+  - Create `I{Entity}Service` interface
+  - Implement `{Entity}Service : I{Entity}Service`
+  - Inject: `IUnitOfWork`, `IMapper`, `ILogger<{Entity}Service>`, `ICurrentUserService` if user-scoped
+  - Return `Result<{Entity}Dto>` for all business operations
+  - Register in DI: `services.AddScoped<I{Entity}Service, {Entity}Service>();`
+
+- [ ] **Step 7 — Mapping (Application/MappingProfile.cs)**
+  - Add all entity ↔ DTO mappings in the correct feature region
+  - Use `.ForMember(... opt.Ignore())` for computed/guarded fields
+  - **No `ReverseMap()`**
+
+- [ ] **Step 8 — Controller (API/Controllers/)**
+  - Inherit `ControllerBase`, decorate with `[ApiController]`, `[Route("api/v1/[controller]")]`
+  - Add `[Authorize]` at class level if most endpoints require auth
+  - Every mutating endpoint (`POST`/`PUT`/`PATCH`) needs `[ValidationFilter]`
+  - Every endpoint needs `[ProducesResponseType]` for all possible status codes
+  - Inject `I{Entity}Service` + `ILogger<{Entity}sController>`
+  - Keep controller thin: validate params → call service → map Result<T> to HTTP response
+
+- [ ] **Step 9 — Tests (ECommerce.Tests/Unit/Services/, Validators/, Repositories/)**
+  - Service tests: happy path + every `Result<T>.Failure` code
+  - Validator tests: valid input + each invalid field
+  - Mock pattern: `new Mock<IUnitOfWork>()`, `.Setup(u => u.{Repo}.{Method}(...)).ReturnsAsync(...)`
+
+### Example file layout for a new "Shipping" feature
+
+```
+Core/Entities/Shipment.cs
+Core/Enums/ShipmentStatus.cs
+Core/Interfaces/Repositories/IShipmentRepository.cs
+
+Application/DTOs/Shipping/ShipmentDto.cs
+Application/DTOs/Shipping/ShipmentDetailDto.cs
+Application/DTOs/Shipping/CreateShipmentDto.cs
+Application/DTOs/Shipping/UpdateShipmentDto.cs
+Application/Validators/Shipping/CreateShipmentDtoValidator.cs
+Application/Validators/Shipping/UpdateShipmentDtoValidator.cs
+Application/Interfaces/IShipmentService.cs
+Application/Services/ShipmentService.cs
+# New mapping in: Application/MappingProfile.cs
+
+Infrastructure/Repositories/ShipmentRepository.cs
+# Updated: Infrastructure/UnitOfWork.cs (add IShipmentRepository Shipments property)
+Infrastructure/Migrations/{timestamp}_AddShipmentTable.cs
+
+API/Controllers/ShipmentsController.cs
+
+ECommerce.Tests/Unit/Services/ShipmentServiceTests.cs
+ECommerce.Tests/Unit/Validators/CreateShipmentDtoValidatorTests.cs
+```
+
