@@ -3,18 +3,6 @@ import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import { useCartSync } from '../useCartSync';
 
-// Mock react-hot-toast
-vi.mock('react-hot-toast', () => ({
-  default: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
-  toast: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
-}));
-
 // Mock API hooks
 vi.mock('../../features/cart/api/cartApi', () => ({
   useGetCartQuery: vi.fn(() => ({

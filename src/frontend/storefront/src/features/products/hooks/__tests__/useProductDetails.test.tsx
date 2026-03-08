@@ -4,18 +4,6 @@ import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import useProductDetails from '../useProductDetails';
 
-// Mock react-hot-toast
-vi.mock('react-hot-toast', () => ({
-  default: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
-  toast: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
-}));
-
 // Mock API hooks
 vi.mock('../../store/api/productApi', () => ({
   useGetProductBySlugQuery: vi.fn(() => ({

@@ -4,9 +4,8 @@
  */
 
 import { useCallback } from 'react';
-import toast from 'react-hot-toast';
 import { useAppDispatch } from '@/shared/lib/store';
-import { useApiErrorHandler } from '@/shared/hooks';
+import { useApiErrorHandler, useToast } from '@/shared/hooks';
 import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
 import { useAddToCartMutation } from '@/features/cart/api';
@@ -33,6 +32,7 @@ export function useWishlistToggle({
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const { handleError } = useApiErrorHandler();
+  const { success, error } = useToast();
 
   const handleWishlistToggle = useCallback(
     async (event: React.MouseEvent) => {
@@ -40,7 +40,7 @@ export function useWishlistToggle({
       event.stopPropagation();
 
       if (!isAuthenticated) {
-        toast.error('Please sign in to add items to your wishlist');
+        error('Please sign in to add items to your wishlist');
         return;
       }
 
@@ -49,10 +49,10 @@ export function useWishlistToggle({
       try {
         if (isInWishlist) {
           await removeFromWishlist(id).unwrap();
-          toast.success('Removed from wishlist');
+          success('Removed from wishlist');
         } else {
           await addToWishlist(id).unwrap();
-          toast.success('Added to wishlist');
+          success('Added to wishlist');
         }
         refetchWishlist();
       } catch (err) {
@@ -68,6 +68,8 @@ export function useWishlistToggle({
       removeFromWishlist,
       refetchWishlist,
       handleError,
+      success,
+      error,
     ]
   );
 
@@ -103,6 +105,7 @@ export function useAddToCart({
   const dispatch = useAppDispatch();
   const [addToCartBackend] = useAddToCartMutation();
   const { handleError } = useApiErrorHandler();
+  const { success, error } = useToast();
 
   const handleAddToCart = useCallback(
     async (event: React.MouseEvent) => {
@@ -110,7 +113,7 @@ export function useAddToCart({
       event.stopPropagation();
 
       if (!isInStock) {
-        toast.error('This item is out of stock');
+        error('This item is out of stock');
         return;
       }
 
@@ -131,7 +134,7 @@ export function useAddToCart({
           };
           dispatch(addItem(cartItem));
         }
-        toast.success('Added to cart!', { icon: '🛒' });
+        success('Added to cart!');
       } catch (err) {
         handleError(err, 'Failed to add to cart');
       } finally {
@@ -151,6 +154,8 @@ export function useAddToCart({
       dispatch,
       setIsAddingToCart,
       handleError,
+      success,
+      error,
     ]
   );
 

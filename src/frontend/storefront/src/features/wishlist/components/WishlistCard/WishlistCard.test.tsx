@@ -25,14 +25,6 @@ vi.mock('@/shared/hooks', () => ({
   }),
 }));
 
-// Mock react-hot-toast
-vi.mock('react-hot-toast', () => ({
-  default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe('WishlistCard', () => {
   const mockProps = {
     productId: '123',

@@ -22,7 +22,7 @@ import {
 } from '../api/cartApi';
 import { useCartSync } from './useCartSync';
 import { calculateOrderTotals } from '@/shared/lib/utils/orderCalculations';
-import toast from 'react-hot-toast';
+import { useToast } from '@/shared/hooks';
 
 interface DisplayItem {
   id: string; // For authenticated: cartItemId, for guest: productId
@@ -56,6 +56,7 @@ const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) 
 
 export function useCart(): UseCartReturn {
   const dispatch = useAppDispatch();
+  const { success, error: showError } = useToast();
   const localCartItems = useAppSelector(selectCartItems);
   const localSubtotal = useAppSelector(selectCartSubtotal);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -125,13 +126,13 @@ export function useCart(): UseCartReturn {
           // For guest users, itemId is the product id
           dispatch(updateQuantity({ id: itemId, quantity }));
         }
-        toast.success('Cart updated');
-      } catch (error) {
-        toast.error('Failed to update cart');
-        throw error;
+        success('Cart updated');
+      } catch (err) {
+        showError('Failed to update cart');
+        throw err;
       }
     },
-    [isAuthenticated, updateCartItem, dispatch]
+    [isAuthenticated, updateCartItem, dispatch, success, showError]
   );
 
   // Handle item removal
@@ -155,13 +156,13 @@ export function useCart(): UseCartReturn {
           // For guest users, itemId is the product id
           dispatch(removeItem(itemId));
         }
-        toast.success('Item removed from cart');
-      } catch (error) {
-        toast.error('Failed to remove item');
-        throw error;
+        success('Item removed from cart');
+      } catch (err) {
+        showError('Failed to remove item');
+        throw err;
       }
     },
-    [isAuthenticated, removeFromCartApi, dispatch, backendCart]
+    [isAuthenticated, removeFromCartApi, dispatch, backendCart, success, showError]
   );
 
   return {

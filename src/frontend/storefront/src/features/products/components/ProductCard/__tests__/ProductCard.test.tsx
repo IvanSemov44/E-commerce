@@ -33,14 +33,6 @@ vi.mock('../../../../../features/cart/api/cartApi', () => ({
   useAddToCartMutation: () => [mockAddToCartBackend, { isLoading: false }],
 }));
 
-// Mock toast
-vi.mock('react-hot-toast', () => ({
-  default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe('ProductCard', () => {
   const mockProduct = {
     id: '123',
