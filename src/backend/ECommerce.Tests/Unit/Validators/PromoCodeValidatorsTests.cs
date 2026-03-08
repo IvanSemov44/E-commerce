@@ -14,6 +14,7 @@ namespace ECommerce.Tests.Unit.Validators;
 public class PromoCodeValidatorsTests
 {
     private CreatePromoCodeDtoValidator _createValidator = null!;
+    private static readonly JsonSerializerOptions CamelCaseJsonOptions = new() { PropertyNameCaseInsensitive = false };
 
     [TestInitialize]
     public void Setup()
@@ -603,10 +604,9 @@ public class PromoCodeValidatorsTests
     {
         // Arrange
         var jsonString = "{\"code\":\"SAVE20\",\"orderAmount\":100}";
-        var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = false };
 
         // Act
-        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequestDto>(jsonString, options);
+        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequestDto>(jsonString, CamelCaseJsonOptions);
 
         // Assert
         Assert.IsNotNull(deserialized, "Should deserialize camelCase JSON successfully");
@@ -619,10 +619,9 @@ public class PromoCodeValidatorsTests
     {
         // Arrange
         var jsonString = "{\"code\":\"SAVE20\"}";
-        var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = false };
 
         // Act
-        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequestDto>(jsonString, options);
+        var deserialized = System.Text.Json.JsonSerializer.Deserialize<ValidatePromoCodeRequestDto>(jsonString, CamelCaseJsonOptions);
 
         // Assert
         Assert.IsNotNull(deserialized, "Should deserialize partial JSON");

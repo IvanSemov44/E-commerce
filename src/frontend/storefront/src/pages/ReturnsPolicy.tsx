@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { Link } from 'react-router-dom';
 import Card from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';

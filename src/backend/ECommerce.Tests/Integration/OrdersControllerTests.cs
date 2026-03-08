@@ -120,7 +120,7 @@ public class OrdersControllerTests
                 PostalCode = "10001",
                 Country = "US"
             },
-            Items = new object[] { }  // Empty items
+            Items = Array.Empty<object>() // Empty items
         };
 
         var content = new StringContent(JsonSerializer.Serialize(createOrderDto), Encoding.UTF8, "application/json");

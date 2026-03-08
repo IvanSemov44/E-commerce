@@ -3,6 +3,7 @@ using ECommerce.Core.Common;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Globalization;
 
 namespace ECommerce.Tests.Helpers;
 
@@ -228,7 +229,7 @@ public static class MockHelpers
             {
                 return new ECommerce.Application.DTOs.Dashboard.OrderTrendDto
                 {
-                    Date = kv.Key.ToString("yyyy-MM-dd"),
+                    Date = kv.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     Count = kv.Value
                 };
             }
@@ -243,7 +244,7 @@ public static class MockHelpers
             {
                 return new ECommerce.Application.DTOs.Dashboard.RevenueTrendDto
                 {
-                    Date = kv.Key.ToString("yyyy-MM-dd"),
+                    Date = kv.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     Amount = kv.Value
                 };
             }

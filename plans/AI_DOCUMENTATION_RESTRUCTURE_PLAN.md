@@ -11,14 +11,14 @@
 
 **Problem**: 32+ markdown files scattered across 4+ locations with significant duplication, no clear navigation, and no single entry point for AI assistants.
 
-**Solution**: Create modular `.ai/` directory with hierarchical organization (6 thematic subdirectories), split 1200+ line files into <300 line modules, establish navigable README hub, implement ADR system for architectural decisions.
+**Solution**: Create modular `.ai/` directory with hierarchical organization (6 thematic subdirectories), split monolithic guides into focused topic modules, establish navigable README hub, and add tool-specific adapter files so assistants reliably discover the library.
 
 **Benefits**: 
 - Single source of truth for AI assistants
 - Zero duplication through cross-referencing
 - Easy maintenance (update one file per topic)
 - Scalable structure for future growth
-- Tool-agnostic (works with Copilot, Cursor, Cline, Claude, etc.)
+- Tool-aware by design (explicit adapters for Copilot, Claude, Cursor, and Cline)
 
 ---
 
@@ -141,9 +141,20 @@ README.md                             # Project README (links to .ai/README.md)
 CONTRIBUTING.md                       # Contributor guide (links to .ai/)
 ```
 
+### Tool Discovery (Critical)
+
+The `.ai/` folder is canonical, but each assistant must have its native entry file that points to it:
+
+- `CLAUDE.md` for Claude Code
+- `.github/copilot-instructions.md` for GitHub Copilot
+- `.cursorrules` or `.cursor/rules/*` for Cursor (if used)
+- `.clinerules` for Cline (if used)
+
+Without these adapters, many assistants will not reliably discover `.ai/README.md`.
+
 ### Design Principles
 
-1. **Modular** — Each topic in separate file (max 300 lines)
+1. **Modular** — One topic per file; keep concise, but do not force artificial line limits
 2. **Hierarchical** — Clear folder structure by domain
 3. **Scannable** — Use tables, bullet lists, code snippets
 4. **Actionable** — Concrete examples, not theory
@@ -152,7 +163,7 @@ CONTRIBUTING.md                       # Contributor guide (links to .ai/)
 7. **Versioned** — Last-updated dates on every file
 8. **Minimal Duplication** — DRY principle, link instead of repeat
 9. **Task-Oriented** — Organized by "what developer needs to do"
-10. **Tool-Agnostic** — Works with any AI assistant
+10. **Tool-Aware** — Canonical docs in `.ai/` plus native adapter files for each assistant
 
 ---
 
@@ -422,7 +433,7 @@ ls .ai/
 
 **Deliverables**:
 - [ ] 11 backend documentation files created (overview + 10 modules)
-- [ ] Each file ≤300 lines
+- [ ] Each file keeps one coherent topic without artificial splitting
 - [ ] Zero content duplication (cross-references used)
 - [ ] All files have frontmatter (last_updated, status, category, related)
 - [ ] Code examples extracted from BACKEND_CODING_GUIDE.md
@@ -431,7 +442,7 @@ ls .ai/
 ```bash
 # Count lines in each file
 ls .ai/backend/*.md | ForEach-Object { "$($_): $((Get-Content $_).Count) lines" }
-# All should be ≤300 lines
+# Ensure files are focused by topic and easy to scan
 ```
 
 ---
@@ -467,7 +478,7 @@ ls .ai/backend/*.md | ForEach-Object { "$($_): $((Get-Content $_).Count) lines" 
 
 **Deliverables**:
 - [ ] 9 frontend documentation files created (overview + 8 modules)
-- [ ] Each file ≤300 lines
+- [ ] Each file keeps one coherent topic without artificial splitting
 - [ ] All files have frontmatter
 - [ ] Storefront patterns documented as reference
 - [ ] Admin differences noted where applicable
@@ -843,27 +854,25 @@ Check coverage of all major domains:
 
 **Rationale**:
 - Hidden directory (starts with `.`) keeps root clean
-- Tool-agnostic (works with Copilot, Cursor, Cline, Claude, etc.)
+- Tool-aware via adapter files (Copilot, Claude, Cursor, Cline)
 - Clear intent (AI-focused documentation)
 - Short and memorable
 
-### File Size Limit: 300 Lines
+### File Structure Guideline: One Topic Per File
 
 **Reasoning**:
-- AI context windows are large but not unlimited
-- Humans can scan 300 lines in single session
-- Forces modular thinking (one topic per file)
-- Prevents duplication (easier to link than copy)
-- Easier to maintain (update one file per topic)
+- Different topics need different depth; hard limits cause artificial splitting
+- A focused, coherent topic is easier to maintain than fragmented files
+- Concise docs reduce duplication and improve navigation
 
-**Exception Cases**:
-- `README.md` can exceed 300 lines (it's a navigation hub)
-- `workflows/adding-feature.md` may exceed if it's end-to-end guide
-- `reference/file-structure.md` may exceed if directory tree is large
+**Rule of Thumb**:
+- Keep docs concise, but complete
+- Split only when a file covers multiple topics, not because of raw line count
+- Long workflow files are acceptable if they remain coherent
 
 **Enforcement**:
-- Manual review during PR
-- Optional: Pre-commit hook to warn on files >300 lines
+- Manual review during PR for clarity, coherence, and duplication
+- Optional linter checks for broken links and missing required sections
 
 ### ADR System for Decisions
 
@@ -910,7 +919,7 @@ Check coverage of all major domains:
 ### Quantitative Metrics
 
 - [ ] All AI instructions in one directory (`.ai/`)
-- [ ] No documentation file >300 lines (except README, file-structure)
+- [ ] Every active AI tool has adapter file pointing to `.ai/README.md`
 - [ ] Every file has `last_updated` date in frontmatter
 - [ ] Zero content duplication (use cross-references)
 - [ ] 100% of reference implementations linked
@@ -1136,14 +1145,14 @@ Print this checklist and check off as you complete each item:
 - [ ] Create `backend/overview.md`
 - [ ] Split BACKEND_CODING_GUIDE.md into 10 files
 - [ ] Add frontmatter to all files
-- [ ] Verify line counts ≤300 (except where justified)
+- [ ] Verify each file covers one coherent topic
 - [ ] Test all internal links
 
 ### Phase 3: Frontend
 - [ ] Create `frontend/overview.md`
 - [ ] Extract FRONTEND_CODING_GUIDE.md into 8 files
 - [ ] Add frontmatter to all files
-- [ ] Verify line counts
+- [ ] Verify each file covers one coherent topic
 - [ ] Test all internal links
 
 ### Phase 4: Architecture
@@ -1218,7 +1227,7 @@ Print this checklist and check off as you complete each item:
 
 **Options**:
 1. **Manual PR Review** — Reviewer checks frontmatter, line count
-2. **Pre-commit Hook** — Validates frontmatter, warns on >300 lines
+2. **Pre-commit Hook** — Validates frontmatter, checks broken links and required sections
 3. **CI/CD Check** — Build fails if documentation invalid
 4. **Quarterly Audit** — Manual review every 3 months
 
@@ -1272,14 +1281,14 @@ Print this checklist and check off as you complete each item:
 This plan transforms your documentation from **scattered notes** to **enterprise-level AI knowledge base**. After implementation:
 
 - ✅ **Single entry point** — `.ai/README.md` is the navigation hub
-- ✅ **Modular knowledge** — Each topic in focused <300 line file
+- ✅ **Modular knowledge** — Each file covers one coherent topic with practical depth
 - ✅ **Zero duplication** — DRY principle with cross-references
 - ✅ **Task-oriented** — Find what you need by what you're doing
 - ✅ **Maintainable** — Update one file per topic change
 - ✅ **Discoverable** — Clear hierarchy, no guessing
 - ✅ **Versioned** — Last-updated dates track freshness
 - ✅ **Scalable** — Easy to add new domains
-- ✅ **Tool-agnostic** — Works with any AI assistant
+- ✅ **Tool-aware** — Works through native adapter files for each AI assistant
 - ✅ **Production-ready** — Enterprise-level structure
 
 Ready to start? Begin with **Phase 1** to create the foundation structure.

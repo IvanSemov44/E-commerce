@@ -160,7 +160,7 @@ public class UserRepositoryTests
         // This depends on database collation, but we test the behavior
         if (result != null)
         {
-            result.Email.ToLower().Should().Be("customer@test.com");
+            result.Email.ToLowerInvariant().Should().Be("customer@test.com");
         }
     }
 

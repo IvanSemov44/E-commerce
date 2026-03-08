@@ -20,6 +20,10 @@ namespace ECommerce.Tests.Unit.Middleware;
 public class GlobalExceptionMiddlewareTests
 {
     private readonly Mock<ILogger<GlobalExceptionMiddleware>> _loggerMock;
+    private static readonly JsonSerializerOptions ResponseJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public GlobalExceptionMiddlewareTests()
     {
@@ -283,7 +287,7 @@ public class GlobalExceptionMiddlewareTests
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
+                It.Is<It.IsAnyType>((_, _) => true),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -293,7 +297,7 @@ public class GlobalExceptionMiddlewareTests
 
     #region Helper Methods
 
-    private static HttpContext CreateHttpContext()
+    private static DefaultHttpContext CreateHttpContext()
     {
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
@@ -307,10 +311,7 @@ public class GlobalExceptionMiddlewareTests
         context.Response.Body.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(context.Response.Body);
         var body = await reader.ReadToEndAsync();
-        return JsonSerializer.Deserialize<T>(body, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+        return JsonSerializer.Deserialize<T>(body, ResponseJsonOptions);
     }
 
     #endregion

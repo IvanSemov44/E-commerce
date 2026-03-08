@@ -141,7 +141,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.DefaultAuthenticateScheme = "ConditionalTest";
                 options.DefaultChallengeScheme = "ConditionalTest";
-            }).AddScheme<AuthenticationSchemeOptions, ConditionalTestAuthHandler>("ConditionalTest", o => { });
+            }).AddScheme<AuthenticationSchemeOptions, ConditionalTestAuthHandler>("ConditionalTest", _ => { });
 
             // Ensure DB created and seeded
             var sp = services.BuildServiceProvider();

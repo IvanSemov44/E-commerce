@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using ECommerce.Application.Services;
 using ECommerce.Core.Interfaces.Repositories;
@@ -66,11 +67,11 @@ namespace ECommerce.Tests.Unit.Services
             result.TotalProducts.Should().Be(100);
 
             result.OrdersTrend.Should().HaveCount(2);
-            result.OrdersTrend[0].Date.Should().Be(today.ToString("yyyy-MM-dd"));
+            result.OrdersTrend[0].Date.Should().Be(today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             result.OrdersTrend[0].Count.Should().Be(8);
 
             result.RevenueTrend.Should().HaveCount(2);
-            result.RevenueTrend[0].Date.Should().Be(today.ToString("yyyy-MM-dd"));
+            result.RevenueTrend[0].Date.Should().Be(today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             result.RevenueTrend[0].Amount.Should().Be(80m);
         }
 

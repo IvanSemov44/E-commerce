@@ -69,7 +69,7 @@ public class PromoCodeServiceTests
             {
                 Id = p.Id,
                 Code = p.Code,
-                DiscountType = p.DiscountType.ToString().ToLower(),
+                DiscountType = p.DiscountType.ToString().ToLowerInvariant(),
                 DiscountValue = p.DiscountValue,
                 IsActive = p.IsActive
             }).ToList());
@@ -159,7 +159,7 @@ public class PromoCodeServiceTests
             {
                 Id = promoCode.Id,
                 Code = promoCode.Code,
-                DiscountType = promoCode.DiscountType.ToString().ToLower(),
+                DiscountType = promoCode.DiscountType.ToString().ToLowerInvariant(),
                 DiscountValue = promoCode.DiscountValue
             });
 
@@ -233,7 +233,7 @@ public class PromoCodeServiceTests
             {
                 Id = source.Id,
                 Code = source.Code,
-                DiscountType = source.DiscountType.ToString().ToLower(),
+                DiscountType = source.DiscountType.ToString().ToLowerInvariant(),
                 DiscountValue = source.DiscountValue
             });
 
@@ -336,7 +336,7 @@ public class PromoCodeServiceTests
             {
                 Id = promoCode.Id,
                 Code = promoCode.Code,
-                DiscountType = promoCode.DiscountType.ToString().ToLower(),
+                DiscountType = promoCode.DiscountType.ToString().ToLowerInvariant(),
                 DiscountValue = promoCode.DiscountValue
             });
 
