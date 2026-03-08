@@ -1,5 +1,10 @@
 import type { ReactElement } from 'react';
-import { render, renderHook, type RenderOptions, type RenderHookOptions } from '@testing-library/react';
+import {
+  render,
+  renderHook,
+  type RenderOptions,
+  type RenderHookOptions,
+} from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
@@ -27,8 +32,7 @@ export function setupStore(preloadedState?: any) {
       [baseApi.reducerPath]: baseApi.reducer,
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    middleware: (getDefaultMiddleware: any) =>
-      getDefaultMiddleware().concat(baseApi.middleware),
+    middleware: (getDefaultMiddleware: any) => getDefaultMiddleware().concat(baseApi.middleware),
     preloadedState,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
@@ -44,7 +48,7 @@ export function renderWithProviders(
   }: ExtendedRenderOptions = {}
 ) {
   const store = setupStore(preloadedState);
-  
+
   let Wrapper = ({ children }: { children: React.ReactNode }) => <>{children}</>;
 
   if (withRedux && withRouter) {
@@ -89,8 +93,8 @@ export function renderHookWithProviders<TProps, TResult>(
   return { store, ...renderHook(hook, { wrapper: Wrapper, ...renderOptions }) };
 }
 
-
 // Re-export everything from @testing-library/react
+// eslint-disable-next-line react-refresh/only-export-components
 export * from '@testing-library/react';
 
 // Override render with our custom version

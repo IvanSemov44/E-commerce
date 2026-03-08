@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.Configuration;
 using ECommerce.Application.DTOs.Orders;
@@ -9,6 +9,7 @@ using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Results;
 using ECommerce.Core.Constants;
+using ECommerce.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
@@ -188,7 +189,7 @@ public class OrderService : IOrderService
         {
             _logger.LogError(ex, "Error creating order. Transaction will be rolled back.");
             await transaction.RollbackAsync(cancellationToken);
-            return Result<OrderDetailDto>.Fail("ORDER_CREATION_FAILED", ex.Message);
+            return Result<OrderDetailDto>.Fail(ErrorCodes.OrderCreationFailed, "Failed to create order");
         }
     }
 
@@ -220,7 +221,7 @@ public class OrderService : IOrderService
     /// <summary>
     /// Creates the order entity with addresses mapped from DTO.
     /// </summary>
-    private Task<Order> CreateOrderEntityAsync(Guid? userId, CreateOrderDto dto, CancellationToken cancellationToken)
+    private Task<Order> CreateOrderEntityAsync(Guid? userId, CreateOrderDto dto, CancellationToken _)
     {
         var order = new Order
         {
@@ -274,7 +275,7 @@ public class OrderService : IOrderService
     /// SECURITY: Uses server-side product lookup to prevent price manipulation attacks.
     /// PERFORMANCE: Batch-loads all products to prevent N+1 queries.
     /// </summary>
-    private async Task<Result<(List<OrderItem> items, decimal subtotal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems)>> 
+    private async Task<Result<(List<OrderItem> items, decimal subtotal, List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems)>>
         ProcessOrderItemsAsync(IEnumerable<CreateOrderItemDto>? itemDtos, CancellationToken cancellationToken)
     {
         var items = new List<OrderItem>();
@@ -318,7 +319,7 @@ public class OrderService : IOrderService
                     ProductId = productId,
                     ProductName = product.Name,
                     ProductSku = product.Sku,
-                    ProductImageUrl = product.Images.FirstOrDefault(i => i.IsPrimary)?.Url 
+                    ProductImageUrl = product.Images.FirstOrDefault(i => i.IsPrimary)?.Url
                                       ?? product.Images.FirstOrDefault()?.Url,
                     Quantity = itemDto.Quantity,
                     UnitPrice = product.Price,  // ✓ Server-side price
@@ -347,7 +348,7 @@ public class OrderService : IOrderService
     /// Future enhancement: Add pessimistic locking with SELECT FOR UPDATE (requires raw SQL).
     /// </summary>
     private async Task<Result<Core.Results.Unit>> ValidateStockAvailabilityAsync(
-        List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems, 
+        List<ECommerce.Application.DTOs.Inventory.StockCheckItemDto> stockCheckItems,
         CancellationToken cancellationToken)
     {
         if (stockCheckItems.Any())
@@ -356,7 +357,7 @@ public class OrderService : IOrderService
             if (!stockCheck.IsAvailable)
             {
                 var firstIssue = stockCheck.Issues.First();
-                return Result<Core.Results.Unit>.Fail(ErrorCodes.InsufficientStock, 
+                return Result<Core.Results.Unit>.Fail(ErrorCodes.InsufficientStock,
                     $"Insufficient stock for '{firstIssue.ProductName}': requested {firstIssue.RequestedQuantity}, available {firstIssue.AvailableQuantity}");
             }
         }
@@ -398,8 +399,8 @@ public class OrderService : IOrderService
     private void CalculateOrderTotals(Order order, decimal subtotal)
     {
         order.Subtotal = subtotal;
-        order.ShippingAmount = subtotal > _businessRules.FreeShippingThreshold 
-            ? 0 
+        order.ShippingAmount = subtotal > _businessRules.FreeShippingThreshold
+            ? 0
             : _businessRules.StandardShippingCost;
         order.TaxAmount = subtotal * _businessRules.TaxRate;
         order.TotalAmount = order.Subtotal + order.ShippingAmount + order.TaxAmount - order.DiscountAmount;
@@ -452,14 +453,14 @@ public class OrderService : IOrderService
     {
         try
         {
-            var emailAddress = !string.IsNullOrWhiteSpace(guestEmail) 
-                ? guestEmail 
+            var emailAddress = !string.IsNullOrWhiteSpace(guestEmail)
+                ? guestEmail
                 : userId.HasValue ? await GetUserEmailAsync(userId.Value, cancellationToken) : null;
 
             if (!string.IsNullOrWhiteSpace(emailAddress))
             {
-                await _emailService.SendOrderConfirmationEmailAsync(emailAddress, order);
-                _logger.LogInformation("Order confirmation email sent to {Email}", emailAddress);
+                await _emailService.SendOrderConfirmationEmailAsync(emailAddress, order, cancellationToken);
+                _logger.LogInformation("Order confirmation email sent to {Email}", emailAddress.MaskEmail());
             }
         }
         catch (Exception emailEx)
@@ -599,7 +600,7 @@ public class OrderService : IOrderService
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict while updating order {OrderId} status", id);
-            return Result<OrderDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, 
+            return Result<OrderDetailDto>.Fail(ErrorCodes.ConcurrencyConflict,
                 $"Order {id} was modified by another user. Please refresh and try again.");
         }
     }
@@ -644,7 +645,7 @@ public class OrderService : IOrderService
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict while cancelling order {OrderId}", id);
-            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, 
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict,
                 $"Order {id} was modified by another user. Please refresh and try again.");
         }
     }
@@ -670,18 +671,18 @@ public class OrderService : IOrderService
     /// <summary>
     /// Generate a unique order number.
     /// </summary>
-    private string GenerateOrderNumber()
+    private static string GenerateOrderNumber()
     {
         // Format: ORD-YYYYMMDD-XXXXXX (e.g., ORD-20250120-A1B2C3)
-        var date = DateTime.UtcNow.ToString("yyyyMMdd");
-        var random = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
+        var date = DateTime.UtcNow.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+        var random = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
         return $"ORD-{date}-{random}";
     }
 
     /// <summary>
     /// Normalize country name to 2-letter ISO country code.
     /// </summary>
-    private string NormalizeCountryCode(string country)
+    private static string NormalizeCountryCode(string country)
     {
         if (string.IsNullOrEmpty(country))
             return "US";

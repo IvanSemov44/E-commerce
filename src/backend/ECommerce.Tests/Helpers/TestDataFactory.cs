@@ -1,4 +1,4 @@
-using Bogus;
+﻿using Bogus;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 
@@ -39,7 +39,7 @@ public static class TestDataFactory
         string? slug = null)
     {
         var productName = name ?? _faker.Commerce.ProductName();
-        var productSlug = slug ?? productName.ToLower().Replace(" ", "-");
+        var productSlug = slug ?? productName.ToLowerInvariant().Replace(" ", "-");
 
         return new Product
         {
@@ -63,7 +63,7 @@ public static class TestDataFactory
         bool isActive = true)
     {
         var categoryName = name ?? _faker.Commerce.Categories(1)[0];
-        var categorySlug = slug ?? categoryName.ToLower().Replace(" ", "-");
+        var categorySlug = slug ?? categoryName.ToLowerInvariant().Replace(" ", "-");
 
         return new Category
         {
@@ -92,7 +92,7 @@ public static class TestDataFactory
         return new PromoCode
         {
             Id = Guid.NewGuid(),
-            Code = code ?? _faker.Random.AlphaNumeric(8).ToUpper(),
+            Code = code ?? _faker.Random.AlphaNumeric(8).ToUpperInvariant(),
             DiscountType = Enum.Parse<DiscountType>(discountType, ignoreCase: true),
             DiscountValue = discountValue,
             MinOrderAmount = minOrderAmount,

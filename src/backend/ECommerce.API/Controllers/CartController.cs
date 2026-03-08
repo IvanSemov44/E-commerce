@@ -1,4 +1,4 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
@@ -42,6 +42,7 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> GetCart(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -49,12 +50,12 @@ public class CartController : ControllerBase
             return Unauthorized(ApiResponse<CartDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await _cartService.GetOrCreateCartAsync(userId, sessionId: null, cancellationToken: cancellationToken);
-        
+
         if (result is Result<CartDto>.Success success)
         {
             return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart retrieved successfully"));
         }
-        
+
         if (result is Result<CartDto>.Failure failure)
         {
             return MapFailureToResponse<CartDto>(failure);
@@ -74,18 +75,19 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> GetOrCreateCart(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
         var result = await _cartService.GetOrCreateCartAsync(userId, sessionId, cancellationToken: cancellationToken);
-        
+
         if (result is Result<CartDto>.Success success)
         {
             return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart retrieved or created successfully"));
         }
-        
+
         if (result is Result<CartDto>.Failure failure)
         {
             return MapFailureToResponse<CartDto>(failure);
@@ -109,19 +111,20 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> AddToCart([FromBody] AddToCartDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
         var result = await _cartService.AddToCartAsync(userId, sessionId, dto.ProductId, dto.Quantity, cancellationToken: cancellationToken);
-        
+
         if (result is Result<CartDto>.Success success)
         {
             _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
             return Ok(ApiResponse<CartDto>.Ok(success.Data, "Item added to cart successfully"));
         }
-        
+
         if (result is Result<CartDto>.Failure failure)
         {
             return MapFailureToResponse<CartDto>(failure);
@@ -147,19 +150,20 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> UpdateCartItem(Guid cartItemId, [FromBody] UpdateCartItemDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
         var result = await _cartService.UpdateCartItemAsync(userId, sessionId, cartItemId, dto.Quantity, cancellationToken: cancellationToken);
-        
+
         if (result is Result<CartDto>.Success success)
         {
             _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
             return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart item updated successfully"));
         }
-        
+
         if (result is Result<CartDto>.Failure failure)
         {
             return MapFailureToResponse<CartDto>(failure);
@@ -184,19 +188,20 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> RemoveFromCart(Guid cartItemId, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
         var result = await _cartService.RemoveFromCartAsync(userId, sessionId, cartItemId, cancellationToken: cancellationToken);
-        
+
         if (result is Result<CartDto>.Success success)
         {
             _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
             return Ok(ApiResponse<CartDto>.Ok(success.Data, "Item removed from cart successfully"));
         }
-        
+
         if (result is Result<CartDto>.Failure failure)
         {
             return MapFailureToResponse<CartDto>(failure);
@@ -217,19 +222,20 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> ClearCart(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
         var sessionId = _currentUser.SessionId;
 
         var result = await _cartService.ClearCartAsync(userId, sessionId, cancellationToken: cancellationToken);
-        
+
         if (result is Result<CartDto>.Success success)
         {
             _logger.LogInformation("Cart cleared");
             return Ok(ApiResponse<CartDto>.Ok(success.Data, "Cart cleared successfully"));
         }
-        
+
         if (result is Result<CartDto>.Failure failure)
         {
             return MapFailureToResponse<CartDto>(failure);
@@ -254,19 +260,21 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<object>>> ValidateCart(Guid cartId, CancellationToken cancellationToken)
     {
         var currentUserId = _currentUser.UserIdOrNull;
+        var role = _currentUser.RoleOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
-                     (_currentUser.Role == Core.Enums.UserRole.Admin || _currentUser.Role == Core.Enums.UserRole.SuperAdmin);
+                     (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
 
         var validateResult = await _cartService.ValidateCartAsync(cartId, currentUserId, isAdmin, cancellationToken: cancellationToken);
-        
+
         if (validateResult is Result<Unit>.Success)
         {
             return Ok(ApiResponse<object>.Ok(new object(), "Cart is valid"));
         }
-        
+
         if (validateResult is Result<Unit>.Failure validateFailure)
         {
             return MapValidateFailureToResponse(validateFailure);

@@ -1,4 +1,4 @@
-using FluentValidation.TestHelper;
+﻿using FluentValidation.TestHelper;
 using ECommerce.Application.DTOs.Payments;
 using ECommerce.Application.Validators.Payments;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -10,12 +10,14 @@ public class PaymentValidatorsTests
 {
     private ProcessPaymentDtoValidator _processValidator = null!;
     private RefundPaymentDtoValidator _refundValidator = null!;
+    private PaymentWebhookDtoValidator _webhookValidator = null!;
 
     [TestInitialize]
     public void Setup()
     {
         _processValidator = new ProcessPaymentDtoValidator();
         _refundValidator = new RefundPaymentDtoValidator();
+        _webhookValidator = new PaymentWebhookDtoValidator();
     }
 
     [TestMethod]
@@ -59,6 +61,46 @@ public class PaymentValidatorsTests
     {
         var dto = new RefundPaymentDto { OrderId = Guid.NewGuid(), Amount = 10M, Reason = "Customer requested refund" };
         var result = _refundValidator.TestValidate(dto);
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [TestMethod]
+    public void PaymentWebhook_Should_Have_Errors_On_Invalid_Dto()
+    {
+        var dto = new PaymentWebhookDto
+        {
+            EventType = string.Empty,
+            PaymentIntentId = null,
+            Amount = -1,
+            Status = null,
+            Currency = "US",
+            Timestamp = 0
+        };
+
+        var result = _webhookValidator.TestValidate(dto);
+
+        result.ShouldHaveValidationErrorFor(x => x.EventType);
+        result.ShouldHaveValidationErrorFor(x => x.PaymentIntentId);
+        result.ShouldHaveValidationErrorFor(x => x.Amount);
+        result.ShouldHaveValidationErrorFor(x => x.Status);
+        result.ShouldHaveValidationErrorFor(x => x.Currency);
+        result.ShouldHaveValidationErrorFor(x => x.Timestamp);
+    }
+
+    [TestMethod]
+    public void PaymentWebhook_Should_Pass_For_Valid_Dto()
+    {
+        var dto = new PaymentWebhookDto
+        {
+            EventType = "payment_intent.succeeded",
+            PaymentIntentId = "pi_123456789",
+            Amount = 125.50m,
+            Status = "succeeded",
+            Currency = "USD",
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+
+        var result = _webhookValidator.TestValidate(dto);
         result.ShouldNotHaveAnyValidationErrors();
     }
 }

@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
 using AutoMapper;
@@ -514,8 +514,8 @@ public class InventoryService : IInventoryService
         foreach (var log in logs)
         {
             var dto = _mapper.Map<InventoryLogDto>(log);
-            var createdByUserName = log.CreatedByUserId.HasValue && users.ContainsKey(log.CreatedByUserId.Value)
-                ? users[log.CreatedByUserId.Value]
+            var createdByUserName = log.CreatedByUserId.HasValue && users.TryGetValue(log.CreatedByUserId.Value, out var userName)
+                ? userName
                 : null;
 
             var finalDto = dto with

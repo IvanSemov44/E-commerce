@@ -1,9 +1,4 @@
-import type {
-  Review,
-  CreateReviewRequest,
-  UpdateReviewRequest,
-  ApiResponse,
-} from '@/shared/types';
+import type { Review, CreateReviewRequest, UpdateReviewRequest, ApiResponse } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
 
 // Use ProductReview as alias for Review (API convention)
@@ -14,13 +9,13 @@ const reviewsApiSlice = baseApi.injectEndpoints({
     getProductReviews: builder.query<ProductReview[], string>({
       query: (productId) => `/reviews/product/${productId}`,
       transformResponse: (response: ApiResponse<ProductReview[]>) => response.data || [],
-      providesTags: (result) => result ? [{ type: 'Review' as const, id: 'LIST' }] : [],
+      providesTags: (result) => (result ? [{ type: 'Review' as const, id: 'LIST' }] : []),
     }),
 
     getMyReviews: builder.query<ProductReview[], void>({
       query: () => '/reviews/my-reviews',
       transformResponse: (response: ApiResponse<ProductReview[]>) => response.data || [],
-      providesTags: (result) => result ? [{ type: 'Review' as const, id: 'MY_LIST' }] : [],
+      providesTags: (result) => (result ? [{ type: 'Review' as const, id: 'MY_LIST' }] : []),
     }),
 
     createReview: builder.mutation<ProductReview, CreateReviewRequest>({
@@ -29,7 +24,8 @@ const reviewsApiSlice = baseApi.injectEndpoints({
         method: 'POST',
         body: reviewData,
       }),
-      transformResponse: (response: ApiResponse<ProductReview>) => response.data || {} as ProductReview,
+      transformResponse: (response: ApiResponse<ProductReview>) =>
+        response.data || ({} as ProductReview),
       invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
     }),
 
@@ -39,7 +35,8 @@ const reviewsApiSlice = baseApi.injectEndpoints({
         method: 'PUT',
         body: data,
       }),
-      transformResponse: (response: ApiResponse<ProductReview>) => response.data || {} as ProductReview,
+      transformResponse: (response: ApiResponse<ProductReview>) =>
+        response.data || ({} as ProductReview),
       invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
     }),
 
@@ -48,6 +45,8 @@ const reviewsApiSlice = baseApi.injectEndpoints({
         url: `/reviews/${reviewId}`,
         method: 'DELETE',
       }),
+      // Keep a consistent API envelope contract, even for empty payload responses.
+      transformResponse: () => undefined,
       invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
     }),
   }),

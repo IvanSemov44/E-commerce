@@ -1,4 +1,4 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Orders;
@@ -55,8 +55,11 @@ public class OrdersController : ControllerBase
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateOrder(
         [FromBody] CreateOrderDto dto,
@@ -80,7 +83,7 @@ public class OrdersController : ControllerBase
 
         if (TryBuildInProgressIdempotencyResponse(idempotencyStart.Status, out var inProgressResponse))
         {
-            return inProgressResponse;
+            return inProgressResponse!;
         }
 
         var userId = _currentUser.UserIdOrNull;
@@ -133,6 +136,8 @@ public class OrdersController : ControllerBase
     /// <response code="404">Order not found.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
@@ -173,6 +178,8 @@ public class OrdersController : ControllerBase
     /// <response code="404">Order not found.</response>
     [HttpGet("number/{orderNumber}")]
     [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
@@ -212,7 +219,10 @@ public class OrdersController : ControllerBase
     /// <response code="401">User is not authenticated.</response>
     [HttpGet("my-orders")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetMyOrders([FromQuery] OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
@@ -239,8 +249,10 @@ public class OrdersController : ControllerBase
     [HttpGet]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAllOrders([FromQuery] OrderQueryParameters parameters, CancellationToken cancellationToken = default)
     {
@@ -315,6 +327,7 @@ public class OrdersController : ControllerBase
     /// <response code="403">User does not have permission to cancel this order.</response>
     /// <response code="404">Order not found.</response>
     [HttpPost("{id:guid}/cancel")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -342,7 +355,7 @@ public class OrdersController : ControllerBase
 
         if (TryBuildInProgressIdempotencyResponse(idempotencyStart.Status, out var inProgressResponse))
         {
-            return inProgressResponse;
+            return inProgressResponse!;
         }
 
         _logger.LogInformation("Cancelling order {OrderId}", id);
@@ -372,7 +385,7 @@ public class OrdersController : ControllerBase
         return Ok(ApiResponse<object>.Ok(new object(), "Order cancelled successfully"));
     }
 
-    private IActionResult? ValidateIdempotencyKey(string? idempotencyKey)
+    private BadRequestObjectResult? ValidateIdempotencyKey(string? idempotencyKey)
     {
         if (string.IsNullOrWhiteSpace(idempotencyKey) || !Guid.TryParse(idempotencyKey, out _))
         {

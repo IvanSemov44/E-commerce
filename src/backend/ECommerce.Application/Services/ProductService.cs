@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ECommerce.Application.DTOs.Common;
@@ -34,7 +34,7 @@ public class ProductService : IProductService
     {
         // Validate and cap page size to prevent DoS
         var effectivePageSize = Math.Min(parameters.PageSize, PaginationConstants.MaxPageSize);
-        
+
         var (products, totalCount) = await _unitOfWork.Products.GetProductsWithFiltersAsync(
             parameters.GetSkip(),
             effectivePageSize,
@@ -104,7 +104,15 @@ public class ProductService : IProductService
         product.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.Products.UpdateAsync(product, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while updating product {ProductId}", id);
+            return Result<ProductDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, "Product was modified by another request. Please refresh and try again.");
+        }
 
         return Result<ProductDetailDto>.Ok(_mapper.Map<ProductDetailDto>(product));
     }

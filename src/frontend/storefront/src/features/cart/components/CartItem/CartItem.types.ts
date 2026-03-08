@@ -1,4 +1,4 @@
-import type { CartItem as CartItemType } from '../../slices/cartSlice';
+import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
 
 export interface CartItemProps {
   item: CartItemType;

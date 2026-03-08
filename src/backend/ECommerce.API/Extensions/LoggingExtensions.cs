@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // E-Commerce API - Serilog Logging Configuration Extensions
 // ============================================================================
 
@@ -38,6 +38,7 @@ public static class LoggingExtensions
                 .Enrich.WithProperty("Application", "ECommerce.API");
 
             // Console sink with structured output
+#pragma warning disable CA1305 // Serilog output templates do not use IFormatProvider
             loggerConfiguration.WriteTo.Console(
                 outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
 
@@ -53,6 +54,7 @@ public static class LoggingExtensions
                 rollingInterval: RollingInterval.Day,
                 restrictedToMinimumLevel: LogEventLevel.Warning,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+#pragma warning restore CA1305
 
             // Seq sink for development/staging (if configured)
             var seqServerUrl = context.Configuration.GetValue<string>("Seq:ServerUrl");

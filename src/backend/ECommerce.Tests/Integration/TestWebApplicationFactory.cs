@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text;
@@ -32,7 +32,7 @@ public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSc
     public const string TestUserId = "11111111-1111-1111-1111-111111111111";
     public const string TestAdminUserId = "33333333-3333-3333-3333-333333333333";
     public const string TestOrderId = "44444444-4444-4444-4444-444444444444";
-    
+
     // Static flags to control authentication and user context per test session
     public static bool IsAuthenticationEnabled { get; set; } = true;
     public static string CurrentUserId { get; set; } = TestUserId;
@@ -99,14 +99,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         // Use "Test" environment to skip CSRF validation in tests
         builder.UseEnvironment("Test");
-        
+
         // Configure test-specific configuration values for secrets using UseSetting
         // This ensures values are available before Program.cs runs validation
         builder.UseSetting("Jwt:SecretKey", "SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough");
         builder.UseSetting("Jwt:Issuer", "test");
         builder.UseSetting("Jwt:Audience", "test");
         builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=localhost;Database=TestDb;Username=test;Password=testpassword");
-        
+
         builder.ConfigureTestServices(services =>
         {
             // Replace AppDbContext with InMemory DB
@@ -159,12 +159,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
                 if (!db.Users.Any(u => u.Id == userId))
                 {
-                    db.Users.Add(new User 
-                    { 
-                        Id = userId, 
-                        Email = "integration@test", 
-                        FirstName = "Integration", 
-                        LastName = "User", 
+                    db.Users.Add(new User
+                    {
+                        Id = userId,
+                        Email = "integration@test",
+                        FirstName = "Integration",
+                        LastName = "User",
                         Role = Core.Enums.UserRole.Customer,
                         PasswordHash = passwordHash
                     });
@@ -174,12 +174,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 var adminId = Guid.Parse(ConditionalTestAuthHandler.TestAdminUserId);
                 if (!db.Users.Any(u => u.Id == adminId))
                 {
-                    db.Users.Add(new User 
-                    { 
-                        Id = adminId, 
-                        Email = "admin@test", 
-                        FirstName = "Admin", 
-                        LastName = "User", 
+                    db.Users.Add(new User
+                    {
+                        Id = adminId,
+                        Email = "admin@test",
+                        FirstName = "Admin",
+                        LastName = "User",
                         Role = Core.Enums.UserRole.Admin,
                         PasswordHash = passwordHash
                     });
@@ -189,14 +189,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
                 if (!db.Products.Any())
                 {
-                    db.Products.Add(new Product 
-                    { 
-                        Id = productId, 
-                        Name = "IntegrationProduct", 
-                        Slug = "integration-product", 
-                        Price = 10.0m, 
-                        StockQuantity = 100, 
-                        IsActive = true 
+                    db.Products.Add(new Product
+                    {
+                        Id = productId,
+                        Name = "IntegrationProduct",
+                        Slug = "integration-product",
+                        Price = 10.0m,
+                        StockQuantity = 100,
+                        IsActive = true
                     });
                 }
 
@@ -252,39 +252,39 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// <summary>
     /// Generates a JWT token for testing with specified roles.
     /// </summary>
-    public string GenerateJwtToken(string userId = "", params string[] roles)
+    public static string GenerateJwtToken(string userId = "", params string[] roles)
     {
         userId = string.IsNullOrEmpty(userId) ? ConditionalTestAuthHandler.TestUserId : userId;
-        
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, userId),
             new Claim(ClaimTypes.Name, roles.Contains("Admin") ? "admin@test" : "integration@test"),
             new Claim(ClaimTypes.Email, roles.Contains("Admin") ? "admin@test" : "integration@test")
         };
-        
+
         // Add role claims
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
-        
+
         // If no roles specified, add Customer role
         if (roles.Length == 0)
         {
             claims.Add(new Claim(ClaimTypes.Role, "Customer"));
         }
-        
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        
+
         var token = new JwtSecurityToken(
             issuer: "test",
             audience: "test",
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: creds);
-        
+
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 

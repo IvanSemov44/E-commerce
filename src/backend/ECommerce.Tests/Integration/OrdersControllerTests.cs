@@ -580,7 +580,7 @@ public class OrdersControllerTests
         var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
 
         // Create client for User B (different user)
-        var userBToken = _factory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
+        var userBToken = TestWebApplicationFactory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
         using var clientUserB = _factory.CreateClient();
         clientUserB.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userBToken);
         clientUserB.DefaultRequestHeaders.Remove("Idempotency-Key");
@@ -802,7 +802,7 @@ public class OrdersControllerTests
         // Assert
         Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.NotFound,
             $"Guest checkout without email should return BadRequest or NotFound, got {response.StatusCode}");
-        
+
         var responseContent = await response.Content.ReadAsStringAsync();
         var normalized = responseContent.ToLowerInvariant();
         Assert.IsTrue(normalized.Contains("email") || normalized.Contains("guest"),
@@ -928,7 +928,7 @@ public class OrdersControllerTests
         // Assert - If successful, should have order number
         if (response.StatusCode == HttpStatusCode.Created)
         {
-            Assert.IsTrue(responseContent.Contains("orderNumber"), 
+            Assert.IsTrue(responseContent.Contains("orderNumber"),
                 "Successful guest order should contain orderNumber");
         }
     }

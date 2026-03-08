@@ -1,6 +1,8 @@
-using ECommerce.Application.DTOs.Auth;
+﻿using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
+using ECommerce.Core.Constants;
+using ECommerce.Core.Extensions;
 using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -162,13 +164,13 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<UserDto>>> Register([FromBody] RegisterDto registerDto, CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(registerDto, cancellationToken: cancellationToken);
-        
+
         return result.Match(
             onSuccess: authResponse =>
             {
                 // Set httpOnly cookies instead of returning tokens in body
                 SetAuthCookies(authResponse.Token!, authResponse.RefreshToken!);
-                _logger.LogInformation("User registered successfully: {Email}", registerDto.Email);
+                _logger.LogInformation("User registered successfully: {Email}", registerDto.Email.MaskEmail());
                 return Ok(ApiResponse<UserDto>.Ok(authResponse.User!, "User registered successfully"));
             },
             onFailure: failure =>
@@ -176,11 +178,11 @@ public class AuthController : ControllerBase
                 if (failure is ECommerce.Core.Results.Result<AuthResponseDto>.Failure f)
                 {
                     _logger.LogWarning("Registration failed for {Email}: {Code} - {Message}",
-                        registerDto.Email, f.Code, f.Message);
-                    
+                        registerDto.Email.MaskEmail(), f.Code, f.Message);
+
                     return f.Code switch
                     {
-                        "DUPLICATE_EMAIL" => Conflict(ApiResponse<object>.Failure(f.Message, f.Code)),
+                        ErrorCodes.DuplicateEmail => Conflict(ApiResponse<object>.Failure(f.Message, f.Code)),
                         _ => BadRequest(ApiResponse<object>.Failure(f.Message, f.Code))
                     };
                 }
@@ -207,20 +209,20 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<UserDto>>> Login([FromBody] LoginDto loginDto, CancellationToken cancellationToken)
     {
         var result = await _authService.LoginAsync(loginDto, cancellationToken: cancellationToken);
-        
+
         return result.Match(
             onSuccess: authResponse =>
             {
                 // Set httpOnly cookies instead of returning tokens in body
                 SetAuthCookies(authResponse.Token!, authResponse.RefreshToken!);
-                _logger.LogInformation("User logged in successfully: {Email}", loginDto.Email);
+                _logger.LogInformation("User logged in successfully: {Email}", loginDto.Email.MaskEmail());
                 return Ok(ApiResponse<UserDto>.Ok(authResponse.User!, "Login successful"));
             },
             onFailure: failure =>
             {
                 if (failure is ECommerce.Core.Results.Result<AuthResponseDto>.Failure f)
                 {
-                    _logger.LogWarning("Login failed for {Email}: {Code}", loginDto.Email, f.Code);
+                    _logger.LogWarning("Login failed for {Email}: {Code}", loginDto.Email.MaskEmail(), f.Code);
                     return Unauthorized(ApiResponse<object>.Failure(f.Message, f.Code));
                 }
                 return StatusCode(500, ApiResponse<object>.Failure("Login failed", "LOGIN_ERROR"));
@@ -250,7 +252,7 @@ public class AuthController : ControllerBase
         }
 
         var result = await _authService.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
-        
+
         return result.Match(
             onSuccess: authResponse =>
             {
@@ -277,6 +279,13 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public IActionResult Logout()
     {
         ClearAuthCookies();
@@ -293,7 +302,11 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -331,7 +344,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailDto request, CancellationToken cancellationToken)
     {
         var result = await _authService.VerifyEmailAsync(request.UserId, request.Token, cancellationToken: cancellationToken);
-        
+
         return result.Match(
             onSuccess: _ =>
             {
@@ -343,7 +356,7 @@ public class AuthController : ControllerBase
                 if (failure is ECommerce.Core.Results.Result<ECommerce.Core.Results.Unit>.Failure f)
                 {
                     _logger.LogWarning("Email verification failed for user {UserId}: {Code}", request.UserId, f.Code);
-                    
+
                     return f.Code switch
                     {
                         "USER_NOT_FOUND" => NotFound(ApiResponse<object>.Failure(f.Message, f.Code)),
@@ -374,7 +387,7 @@ public class AuthController : ControllerBase
 
         // Always return success for security reasons (don't reveal if email exists)
         // The service already handles logging of non-existent emails
-        _logger.LogInformation("Password reset requested for {Email}", request.Email);
+        _logger.LogInformation("Password reset requested for {Email}", request.Email.MaskEmail());
         return Ok(ApiResponse<object>.Ok(new object(), "If an account with that email exists, a password reset link has been sent"));
     }
 
@@ -398,18 +411,18 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordDto request, CancellationToken cancellationToken)
     {
         var result = await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword, cancellationToken: cancellationToken);
-        
+
         return result.Match(
             onSuccess: _ =>
             {
-                _logger.LogInformation("Password reset successfully for {Email}", request.Email);
+                _logger.LogInformation("Password reset successfully for {Email}", request.Email.MaskEmail());
                 return Ok(ApiResponse<object>.Ok(new object(), "Password reset successfully. You can now login with your new password"));
             },
             onFailure: failure =>
             {
                 if (failure is ECommerce.Core.Results.Result<ECommerce.Core.Results.Unit>.Failure f)
                 {
-                    _logger.LogWarning("Password reset failed for {Email}: {Code}", request.Email, f.Code);
+                    _logger.LogWarning("Password reset failed for {Email}: {Code}", request.Email.MaskEmail(), f.Code);
                     return f.Code switch
                     {
                         "USER_NOT_FOUND" => NotFound(ApiResponse<object>.Failure(f.Message, f.Code)),

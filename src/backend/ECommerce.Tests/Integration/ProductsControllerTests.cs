@@ -13,6 +13,7 @@ namespace ECommerce.Tests.Integration;
 public class ProductsControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly Guid ExistingProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     [TestInitialize]
@@ -58,7 +59,7 @@ public class ProductsControllerTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
         Assert.IsTrue(responseData.TryGetProperty("data", out _), "Response should have data property");
     }
@@ -118,7 +119,7 @@ public class ProductsControllerTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
 
         Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have data property");
@@ -141,7 +142,7 @@ public class ProductsControllerTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
 
         Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have data property");
@@ -196,7 +197,7 @@ public class ProductsControllerTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
         Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have product data");
         Assert.IsTrue(data.TryGetProperty("id", out _), "Product should have ID");
@@ -420,7 +421,7 @@ public class ProductsControllerTests
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
 
         Assert.IsTrue(responseData.TryGetProperty("success", out var success) && success.GetBoolean(), "Response should have success=true");

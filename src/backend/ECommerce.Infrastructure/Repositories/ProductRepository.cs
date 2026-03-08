@@ -28,7 +28,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
     public Task<Product?> GetBySlugAsync(string slug, bool trackChanges = false, CancellationToken cancellationToken = default)
     {
         var query = trackChanges ? DbSet : DbSet.AsNoTracking();
-        
+
         // Reviews are fetched separately via ReviewRepository to avoid loading all reviews for popular products
         return query
             .Include(p => p.Category)
@@ -172,7 +172,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
         var totalCount = await query.CountAsync(cancellationToken);
 
         // Apply sorting
-        query = sortBy?.ToLower() switch
+        query = sortBy?.ToLowerInvariant() switch
         {
             "name" => query.OrderBy(p => p.Name),
             "price-asc" => query.OrderBy(p => p.Price),
@@ -221,7 +221,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
         }
 
         var affectedRows = await Context.Database.ExecuteSqlRawAsync(
-            @"UPDATE Products 
+            @"UPDATE Products
               SET StockQuantity = StockQuantity - {0}, UpdatedAt = {1}
               WHERE Id = {2} AND StockQuantity >= {0}",
             quantity, DateTime.UtcNow, productId, cancellationToken);

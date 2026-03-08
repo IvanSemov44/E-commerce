@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
@@ -8,6 +8,7 @@ using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Results;
 using ECommerce.Core.Constants;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 
@@ -163,7 +164,15 @@ public class ReviewService : IReviewService
         review.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.Reviews.UpdateAsync(review, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while updating review {ReviewId}", reviewId);
+            return Result<ReviewDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, "Review was modified by another request. Please refresh and try again.");
+        }
 
         return Result<ReviewDetailDto>.Ok(_mapper.Map<ReviewDetailDto>(review));
     }
@@ -181,8 +190,16 @@ public class ReviewService : IReviewService
             return Result<Unit>.Fail(ErrorCodes.Unauthorized, "You can only delete your own reviews");
 
         await _unitOfWork.Reviews.DeleteAsync(review, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
-        
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while deleting review {ReviewId}", reviewId);
+            return Result<Unit>.Fail(ErrorCodes.ConcurrencyConflict, "Review was modified by another request. Please refresh and try again.");
+        }
+
         return Result<Unit>.Ok(new Unit());
     }
 
@@ -196,7 +213,15 @@ public class ReviewService : IReviewService
         review.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.Reviews.UpdateAsync(review, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while approving review {ReviewId}", reviewId);
+            return Result<ReviewDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, "Review approval conflicted with another update. Please try again.");
+        }
 
         return Result<ReviewDetailDto>.Ok(_mapper.Map<ReviewDetailDto>(review));
     }
@@ -209,7 +234,15 @@ public class ReviewService : IReviewService
 
         var mappedDto = _mapper.Map<ReviewDetailDto>(review);
         await _unitOfWork.Reviews.DeleteAsync(review, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while rejecting review {ReviewId}", reviewId);
+            return Result<ReviewDetailDto>.Fail(ErrorCodes.ConcurrencyConflict, "Review rejection conflicted with another update. Please try again.");
+        }
 
         return Result<ReviewDetailDto>.Ok(mappedDto);
     }

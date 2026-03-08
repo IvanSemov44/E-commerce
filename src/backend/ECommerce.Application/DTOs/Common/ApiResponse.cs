@@ -19,7 +19,7 @@ public record ApiResponse<T>
     public string? TraceId { get; init; }
 
     /// <summary>Creates a successful response</summary>
-    public static ApiResponse<T> Ok(T data, string? message = null) =>
+    public static ApiResponse<T> Ok(T data, string? _ = null) =>
         new() { Success = true, Data = data };
 
     /// <summary>Creates a failed response with semantic error code and message</summary>

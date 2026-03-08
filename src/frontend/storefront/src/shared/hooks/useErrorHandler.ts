@@ -12,6 +12,42 @@ export interface ErrorState {
   fieldErrors?: Record<string, string>;
 }
 
+const defaultErrorState: ErrorState = {
+  message: 'An unknown error occurred',
+};
+
+function normalizeRtkQueryError(err: {
+  data?: { message?: string; errors?: unknown };
+  status?: number;
+}): ErrorState {
+  const normalized: ErrorState = {
+    message: err.data?.message ?? defaultErrorState.message,
+    status: err.status,
+  };
+
+  if (typeof err.data?.errors === 'object' && err.data?.errors && !Array.isArray(err.data.errors)) {
+    normalized.fieldErrors = err.data.errors as Record<string, string>;
+  }
+
+  if (Array.isArray(err.data?.errors)) {
+    normalized.message = err.data.errors.join(', ');
+  }
+
+  return normalized;
+}
+
+function normalizeApiError(err: ApiError): ErrorState {
+  return {
+    message: err.message,
+    status: err.status,
+    fieldErrors: err.errors
+      ? Object.fromEntries(
+          Object.entries(err.errors).map(([key, val]) => [key, Array.isArray(val) ? val[0] : val])
+        )
+      : undefined,
+  };
+}
+
 export function useErrorHandler() {
   const [error, setError] = useState<ErrorState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,44 +56,16 @@ export function useErrorHandler() {
    * Handle API errors and normalize them
    */
   const handleError = useCallback((err: unknown): ErrorState => {
-    let errorState: ErrorState = {
-      message: 'An unknown error occurred',
-    };
+    let errorState = defaultErrorState;
 
-    // RTK Query error structure
     if (err && typeof err === 'object' && 'data' in err) {
-      const rtqError = err as { data?: { message?: string; errors?: unknown }; status?: number };
-      if (rtqError.data?.message) {
-        errorState.message = rtqError.data.message;
-      }
-      if (rtqError.data?.errors) {
-        if (typeof rtqError.data.errors === 'object' && !Array.isArray(rtqError.data.errors)) {
-          errorState.fieldErrors = rtqError.data.errors as Record<string, string>;
-        } else if (Array.isArray(rtqError.data.errors)) {
-          errorState.message = rtqError.data.errors.join(', ');
-        }
-      }
-      errorState.status = rtqError.status;
-    }
-
-    // Fetch error
-    else if (err instanceof Error) {
-      errorState.message = err.message;
-    }
-
-    // Custom ApiError
-    else if (err && typeof err === 'object' && 'message' in err) {
-      const apiErr = err as ApiError;
-      errorState = {
-        message: apiErr.message,
-        status: apiErr.status,
-        fieldErrors: apiErr.errors ? Object.fromEntries(
-          Object.entries(apiErr.errors).map(([key, val]) => [
-            key,
-            Array.isArray(val) ? val[0] : val
-          ])
-        ) : undefined,
-      };
+      errorState = normalizeRtkQueryError(
+        err as { data?: { message?: string; errors?: unknown }; status?: number }
+      );
+    } else if (err instanceof Error) {
+      errorState = { message: err.message };
+    } else if (err && typeof err === 'object' && 'message' in err) {
+      errorState = normalizeApiError(err as ApiError);
     }
 
     setError(errorState);
@@ -74,9 +82,12 @@ export function useErrorHandler() {
   /**
    * Get field-specific error
    */
-  const getFieldError = useCallback((fieldName: string): string | undefined => {
-    return error?.fieldErrors?.[fieldName];
-  }, [error]);
+  const getFieldError = useCallback(
+    (fieldName: string): string | undefined => {
+      return error?.fieldErrors?.[fieldName];
+    },
+    [error]
+  );
 
   /**
    * Check if it's a client-side error (4xx)

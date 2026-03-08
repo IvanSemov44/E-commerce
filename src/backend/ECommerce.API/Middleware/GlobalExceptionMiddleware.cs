@@ -10,7 +10,7 @@ namespace ECommerce.API.Middleware;
 /// <summary>
 /// Global exception middleware for handling all unhandled exceptions.
 /// Catches unexpected exceptions from the entire pipeline and returns standardized ApiResponse.
-/// 
+///
 /// NOTE: Business logic failures are handled via Result{T} pattern - exceptions are reserved for
 /// unexpected infrastructure failures only (database conflicts, network issues, etc.).
 /// </summary>
@@ -65,7 +65,7 @@ public class GlobalExceptionMiddleware
     /// Maps different exception types to appropriate HTTP status codes and error messages.
     /// Only handles unexpected infrastructure failures - business logic uses Result{T}.
     /// </summary>
-    private (int StatusCode, ApiResponse<object> ApiResponse) MapExceptionToResponse(Exception exception)
+    private static (int StatusCode, ApiResponse<object> ApiResponse) MapExceptionToResponse(Exception exception)
     {
         return exception switch
         {

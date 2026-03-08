@@ -26,9 +26,24 @@ interface PaginationProps {
   pageLabel?: (page: number) => string;
 }
 
+function buildVisiblePages(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
+  const delta = 2;
+  const range: (number | 'ellipsis')[] = [];
+
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+      range.push(i);
+    } else if (range[range.length - 1] !== 'ellipsis') {
+      range.push('ellipsis');
+    }
+  }
+
+  return range;
+}
+
 /**
  * Professional Pagination Component
- * 
+ *
  * Features:
  * - Page numbers with ellipsis for many pages
  * - First/last page navigation
@@ -50,40 +65,32 @@ export default function Pagination({
   pageLabel = (page) => `Go to page ${page}`,
 }: PaginationProps) {
   const totalPages = Math.ceil(totalCount / pageSize);
-  
+
   // Calculate visible page numbers with ellipsis
-  const visiblePages = useMemo(() => {
-    const delta = 2; // Number of pages to show on each side of current
-    const range: (number | 'ellipsis')[] = [];
-    
-    for (let i = 1; i <= totalPages; i++) {
-      if (
-        i === 1 ||
-        i === totalPages ||
-        (i >= currentPage - delta && i <= currentPage + delta)
-      ) {
-        range.push(i);
-      } else if (range[range.length - 1] !== 'ellipsis') {
-        range.push('ellipsis');
-      }
-    }
-    
-    return range;
-  }, [currentPage, totalPages]);
+  const visiblePages = useMemo(
+    () => buildVisiblePages(currentPage, totalPages),
+    [currentPage, totalPages]
+  );
 
   // Handle keyboard navigation
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>, page: number) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onPageChange(page);
-    }
-  }, [onPageChange]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLButtonElement>, page: number) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onPageChange(page);
+      }
+    },
+    [onPageChange]
+  );
 
   // Handle page size change
-  const handlePageSizeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newSize = Number(e.target.value);
-    onPageSizeChange?.(newSize);
-  }, [onPageSizeChange]);
+  const handlePageSizeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newSize = Number(e.target.value);
+      onPageSizeChange?.(newSize);
+    },
+    [onPageSizeChange]
+  );
 
   // Calculate showing range
   const showingStart = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
@@ -98,14 +105,12 @@ export default function Pagination({
     styles.pagination,
     showPageSizeSelector && styles.paginationWide,
     className,
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <nav
-      className={paginationClassName}
-      role="navigation"
-      aria-label="Pagination"
-    >
+    <nav className={paginationClassName} role="navigation" aria-label="Pagination">
       {/* First Page Button */}
       {showFirstLast && (
         <button
@@ -133,11 +138,7 @@ export default function Pagination({
         {visiblePages.map((page, index) => {
           if (page === 'ellipsis') {
             return (
-              <span
-                key={`ellipsis-${index}`}
-                className={styles.ellipsis}
-                aria-hidden="true"
-              >
+              <span key={`ellipsis-${index}`} className={styles.ellipsis} aria-hidden="true">
                 …
               </span>
             );

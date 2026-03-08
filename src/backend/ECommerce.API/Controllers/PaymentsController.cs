@@ -1,10 +1,11 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Payments;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using ECommerce.Core.Results;
+using System.Text.Json;
 
 namespace ECommerce.API.Controllers;
 
@@ -15,9 +16,11 @@ namespace ECommerce.API.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Payments")]
+[Authorize]
 public class PaymentsController : ControllerBase
 {
     private const string IdempotencyHeaderName = "Idempotency-Key";
+    private static readonly JsonSerializerOptions WebhookJsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private readonly IPaymentService _paymentService;
     private readonly IOrderService _orderService;
@@ -85,7 +88,7 @@ public class PaymentsController : ControllerBase
 
         if (TryBuildInProgressIdempotencyResponse(idempotencyStart.Status, out var inProgressResponse))
         {
-            return inProgressResponse;
+            return inProgressResponse!;
         }
 
         _logger.LogInformation("Payment processing initiated for order {OrderId} via {PaymentMethod}",
@@ -97,7 +100,7 @@ public class PaymentsController : ControllerBase
         {
             _logger.LogInformation("Payment result for order {OrderId}. PaymentIntentId: {PaymentIntentId}",
                 dto.OrderId, success.Data.PaymentIntentId);
-            
+
             if (success.Data.Success)
             {
                 await _idempotencyStore.CompleteAsync(idempotencyStoreKey, success.Data, TimeSpan.FromHours(24), cancellationToken);
@@ -156,7 +159,7 @@ public class PaymentsController : ControllerBase
         var isAdmin = _currentUser.IsAuthenticated &&
                      (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
         var result = await _paymentService.GetPaymentDetailsAsync(orderId, currentUserId, isAdmin, cancellationToken: cancellationToken);
-        
+
         if (result is Result<PaymentDetailsDto>.Success success)
         {
             return Ok(ApiResponse<PaymentDetailsDto>.Ok(success.Data, "Payment details retrieved successfully"));
@@ -222,7 +225,7 @@ public class PaymentsController : ControllerBase
 
         if (TryBuildInProgressIdempotencyResponse(idempotencyStart.Status, out var inProgressResponse))
         {
-            return inProgressResponse;
+            return inProgressResponse!;
         }
 
         dto.OrderId = orderId;
@@ -272,8 +275,10 @@ public class PaymentsController : ControllerBase
     [HttpGet("intent/{paymentIntentId}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PaymentDetailsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPaymentIntent(string paymentIntentId, CancellationToken cancellationToken)
     {
@@ -351,6 +356,7 @@ public class PaymentsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ProcessPaymentWebhook(CancellationToken cancellationToken)
@@ -371,9 +377,7 @@ public class PaymentsController : ControllerBase
         }
 
         // Deserialize after verification
-        var webhookPayload = System.Text.Json.JsonSerializer.Deserialize<PaymentWebhookDto>(
-            rawBody,
-            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var webhookPayload = JsonSerializer.Deserialize<PaymentWebhookDto>(rawBody, WebhookJsonOptions);
 
         if (webhookPayload == null)
         {
@@ -396,7 +400,7 @@ public class PaymentsController : ControllerBase
         return Ok(ApiResponse<object>.Ok(new { status = "received" }, "Webhook processed successfully"));
     }
 
-    private IActionResult? ValidateIdempotencyKey(string? idempotencyKey)
+    private BadRequestObjectResult? ValidateIdempotencyKey(string? idempotencyKey)
     {
         if (string.IsNullOrWhiteSpace(idempotencyKey) || !Guid.TryParse(idempotencyKey, out _))
         {

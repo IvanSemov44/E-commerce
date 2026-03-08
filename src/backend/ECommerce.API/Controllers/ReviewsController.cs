@@ -1,4 +1,4 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Products;
@@ -45,6 +45,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ReviewDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetProductReviews(
         Guid productId,
         [FromQuery] int page = 1,
@@ -74,6 +75,7 @@ public class ReviewsController : ControllerBase
     [HttpGet("product/{productId:guid}/rating")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<decimal>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetProductAverageRating(Guid productId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving average rating for product {ProductId}", productId);
@@ -97,6 +99,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetMyReviews(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -132,6 +135,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetReviewById(Guid reviewId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving review {ReviewId}", reviewId);
@@ -208,6 +212,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateReview(Guid reviewId, [FromBody] UpdateReviewDto dto, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -247,6 +252,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteReview(Guid reviewId, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
@@ -285,6 +291,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ReviewDetailDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPendingReviews(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -314,6 +321,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ApproveReview(Guid reviewId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Approving review {ReviewId}", reviewId);
@@ -344,6 +352,7 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RejectReview(Guid reviewId, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Rejecting review {ReviewId}", reviewId);

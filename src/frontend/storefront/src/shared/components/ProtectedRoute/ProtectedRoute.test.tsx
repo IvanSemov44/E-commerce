@@ -15,7 +15,7 @@ const { useAppSelector } = await import('@/shared/lib/store');
 interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
-  user: any;
+  user: { id: string; email: string } | null;
   error: null;
   initialized: boolean;
 }
@@ -28,12 +28,12 @@ const createMockStore = (authState: AuthState) => {
   });
 };
 
-const renderWithRouter = (component: React.ReactNode, store: any) => {
+type MockStore = ReturnType<typeof createMockStore>;
+
+const renderWithRouter = (component: React.ReactNode, store: MockStore) => {
   return render(
     <Provider store={store}>
-      <BrowserRouter>
-        {component}
-      </BrowserRouter>
+      <BrowserRouter>{component}</BrowserRouter>
     </Provider>
   );
 };
@@ -229,13 +229,15 @@ describe('ProtectedRoute', () => {
 
   it('transitions from loading to authenticated', () => {
     const { rerender } = render(
-      <Provider store={createMockStore({
-        isAuthenticated: false,
-        loading: true,
-        user: null,
-        error: null,
-        initialized: false,
-      })}>
+      <Provider
+        store={createMockStore({
+          isAuthenticated: false,
+          loading: true,
+          user: null,
+          error: null,
+          initialized: false,
+        })}
+      >
         <BrowserRouter>
           <ProtectedRoute>
             <div>Protected Content</div>
@@ -258,13 +260,15 @@ describe('ProtectedRoute', () => {
     });
 
     rerender(
-      <Provider store={createMockStore({
-        isAuthenticated: true,
-        loading: false,
-        user: { id: '1', email: 'test@test.com' },
-        error: null,
-        initialized: true,
-      })}>
+      <Provider
+        store={createMockStore({
+          isAuthenticated: true,
+          loading: false,
+          user: { id: '1', email: 'test@test.com' },
+          error: null,
+          initialized: true,
+        })}
+      >
         <BrowserRouter>
           <ProtectedRoute>
             <div>Protected Content</div>
@@ -294,13 +298,15 @@ describe('ProtectedRoute', () => {
       });
 
     const { rerender } = render(
-      <Provider store={createMockStore({
-        isAuthenticated: false,
-        loading: true,
-        user: null,
-        error: null,
-        initialized: false,
-      })}>
+      <Provider
+        store={createMockStore({
+          isAuthenticated: false,
+          loading: true,
+          user: null,
+          error: null,
+          initialized: false,
+        })}
+      >
         <BrowserRouter>
           <Routes>
             <Route
@@ -319,13 +325,15 @@ describe('ProtectedRoute', () => {
 
     // Re-render unauthenticated state
     rerender(
-      <Provider store={createMockStore({
-        isAuthenticated: false,
-        loading: false,
-        user: null,
-        error: null,
-        initialized: true,
-      })}>
+      <Provider
+        store={createMockStore({
+          isAuthenticated: false,
+          loading: false,
+          user: null,
+          error: null,
+          initialized: true,
+        })}
+      >
         <BrowserRouter>
           <Routes>
             <Route

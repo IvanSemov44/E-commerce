@@ -1,4 +1,4 @@
-namespace ECommerce.Core.Exceptions;
+﻿namespace ECommerce.Core.Exceptions;
 
 /// <summary>
 /// Base exception for all "Not Found" errors (404).
@@ -8,6 +8,9 @@ namespace ECommerce.Core.Exceptions;
 /// Initializes a new instance of the NotFoundException class.
 /// </remarks>
 /// <param name="message">The exception message.</param>
-public abstract class NotFoundException(string message) : Exception(message)
+public abstract class NotFoundException : Exception
 {
+    protected NotFoundException() { }
+    protected NotFoundException(string message) : base(message) { }
+    protected NotFoundException(string message, Exception inner) : base(message, inner) { }
 }

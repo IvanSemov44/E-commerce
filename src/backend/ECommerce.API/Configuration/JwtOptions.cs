@@ -1,4 +1,4 @@
-namespace ECommerce.API.Configuration;
+﻿namespace ECommerce.API.Configuration;
 
 /// <summary>
 /// JWT (JSON Web Token) configuration options.
@@ -47,7 +47,7 @@ public class JwtOptions
     /// Allows for minor time differences between servers.
     /// Default: 0 seconds (strict validation).
     /// </summary>
-    public int ClockSkewSeconds { get; set; } = 0;
+    public int ClockSkewSeconds { get; set; }
 
     /// <summary>
     /// Validates JWT configuration for security requirements.

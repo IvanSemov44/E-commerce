@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ShoppingCartIcon } from '@/shared/components/icons';
-import { useCart } from '../../hooks/useCart';
+import { useCart } from '@/features/cart/hooks/useCart';
 import Button from '@/shared/components/ui/Button';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { CartSkeleton } from '@/shared/components/Skeletons';
-import { CartItemList, CartSummary } from '../../components';
+import { CartItemList, CartSummary } from '@/features/cart/components';
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/lib/utils/constants';
 import styles from './CartPage.module.css';
 

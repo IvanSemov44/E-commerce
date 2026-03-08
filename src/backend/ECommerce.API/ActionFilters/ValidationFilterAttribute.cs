@@ -21,10 +21,10 @@ public class ValidationFilterAttribute : ActionFilterAttribute
 
         // Check for null DTO parameter (supports Dto and Request types)
         var param = context.ActionArguments
-            .SingleOrDefault(x => 
+            .SingleOrDefault(x =>
             {
                 var typeName = x.Value?.GetType().Name ?? "";
-                return typeName.EndsWith("Dto") || typeName.EndsWith("Request");
+                return typeName.EndsWith("Dto", StringComparison.OrdinalIgnoreCase) || typeName.EndsWith("Request", StringComparison.OrdinalIgnoreCase);
             }).Value;
 
         if (param is null)

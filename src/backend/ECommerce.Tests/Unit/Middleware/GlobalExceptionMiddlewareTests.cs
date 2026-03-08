@@ -1,4 +1,4 @@
-using ECommerce.API.Middleware;
+﻿using ECommerce.API.Middleware;
 using ECommerce.Core.Exceptions;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +13,7 @@ namespace ECommerce.Tests.Unit.Middleware;
 /// <summary>
 /// Unit tests for GlobalExceptionMiddleware.
 /// Tests exception handling and mapping to appropriate HTTP responses.
-/// NOTE: With Result<T> pattern, business logic failures are handled via Result - 
+/// NOTE: With Result<T> pattern, business logic failures are handled via Result -
 /// exceptions are reserved for unexpected infrastructure failures only.
 /// </summary>
 [TestClass]
@@ -235,7 +235,7 @@ public class GlobalExceptionMiddlewareTests
         // Arrange
         var wasNextCalled = false;
         var context = CreateHttpContext();
-        var middleware = new GlobalExceptionMiddleware(_ => 
+        var middleware = new GlobalExceptionMiddleware(_ =>
         {
             wasNextCalled = true;
             return Task.CompletedTask;

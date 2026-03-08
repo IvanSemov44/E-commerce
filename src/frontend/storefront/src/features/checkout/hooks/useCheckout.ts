@@ -11,15 +11,15 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import { useLocalStorage } from '@/shared/hooks/useLocalStorage';
-import { selectCartItems, selectCartSubtotal, clearCart } from '../../cart/slices/cartSlice';
-import type { CartItem } from '../../cart/slices/cartSlice';
-import { authReducer } from '../../auth/slices/authSlice';
+import { selectCartItems, selectCartSubtotal, clearCart } from '@/features/cart/slices/cartSlice';
+import type { CartItem } from '@/features/cart/slices/cartSlice';
+import { authReducer } from '@/features/auth/slices/authSlice';
 import { useCreateOrderMutation } from '@/features/orders/api';
-import { useGetCartQuery, useClearCartMutation } from '../../cart/api';
+import { useGetCartQuery, useClearCartMutation } from '@/features/cart/api';
 import { useValidatePromoCodeMutation } from '../api';
 import { useCheckAvailabilityMutation } from '../api';
 import type { StockIssue } from '../api/inventoryApi';
-import { useCartSync } from '../../cart/hooks/useCartSync';
+import { useCartSync } from '@/features/cart/hooks/useCartSync';
 import { calculateOrderTotals } from '@/shared/lib/utils/orderCalculations';
 import useForm from '@/shared/hooks/useForm';
 import { zodValidate } from '@/shared/lib/utils/zodValidate';
@@ -89,11 +89,10 @@ interface UseCheckoutReturn {
 const CHECKOUT_DRAFT_KEY = 'checkout:shippingDraft';
 
 // Selector for authentication state
-const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) => 
+const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) =>
   state.auth.isAuthenticated;
 
-const selectUser = (state: { auth: ReturnType<typeof authReducer> }) => 
-  state.auth.user;
+const selectUser = (state: { auth: ReturnType<typeof authReducer> }) => state.auth.user;
 
 // eslint-disable-next-line max-lines-per-function -- Checkout orchestration hook: form state, cart sync, promo codes, order submission, and auth-aware prefill
 export function useCheckout(): UseCheckoutReturn {
@@ -105,12 +104,12 @@ export function useCheckout(): UseCheckoutReturn {
 
   // Backend cart query (only used when authenticated)
   const { data: backendCart } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated
+    skip: !isAuthenticated,
   });
 
   // Sync local cart with backend on login
   useCartSync({
-    enabled: isAuthenticated
+    enabled: isAuthenticated,
   });
 
   const [createOrder] = useCreateOrderMutation();
@@ -140,14 +139,14 @@ export function useCheckout(): UseCheckoutReturn {
   // Determine which cart items to use (backend for authenticated, local for guest)
   const cartItems: CartItem[] = useMemo(() => {
     if (isAuthenticated && backendCart?.items) {
-      return backendCart.items.map(item => ({
+      return backendCart.items.map((item) => ({
         id: item.productId,
         name: item.productName,
         slug: '',
         price: item.price,
         quantity: item.quantity,
         maxStock: 99,
-        image: item.productImage || item.imageUrl || ''
+        image: item.productImage || item.imageUrl || '',
       }));
     }
     return localCartItems;
@@ -224,7 +223,8 @@ export function useCheckout(): UseCheckoutReturn {
       setOrderComplete(true);
     } catch (err: unknown) {
       const errorObj = err as { data?: { message?: string }; message?: string };
-      const message = errorObj.data?.message || errorObj.message || 'Failed to create order. Please try again.';
+      const message =
+        errorObj.data?.message || errorObj.message || 'Failed to create order. Please try again.';
       telemetry.track('checkout.error', { message });
       setError(message);
     }
@@ -278,9 +278,12 @@ export function useCheckout(): UseCheckoutReturn {
   const { shipping, tax, total } = calculateOrderTotals(subtotal, discount);
 
   // Adapter for backward compatibility
-  const setFormData = useCallback((data: Partial<ShippingFormData>) => {
-    form.setValues({ ...form.values, ...data });
-  }, [form]);
+  const setFormData = useCallback(
+    (data: Partial<ShippingFormData>) => {
+      form.setValues({ ...form.values, ...data });
+    },
+    [form]
+  );
 
   // Validate promo code
   const handleApplyPromoCode = useCallback(async () => {

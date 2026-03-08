@@ -25,7 +25,7 @@ public class CsrfMiddleware
     public async Task InvokeAsync(HttpContext context, IAntiforgery antiforgery)
     {
         var path = context.Request.Path.Value ?? "";
-        
+
         // Skip CSRF validation entirely in test environment
         // Tests use authenticated clients with JWT tokens, not browser cookies
         if (_environment.IsEnvironment("Test"))
@@ -33,7 +33,7 @@ public class CsrfMiddleware
             await _next(context);
             return;
         }
-        
+
         // Skip CSRF for auth endpoints that set cookies (login, register, refresh)
         if (IsAuthEndpoint(path) && context.Request.Method == "POST")
         {
@@ -86,9 +86,9 @@ public class CsrfMiddleware
                 }
                 catch (AntiforgeryValidationException ex)
                 {
-                    _logger.LogWarning("CSRF validation failed for {Method} {Path}: {Message}", 
+                    _logger.LogWarning("CSRF validation failed for {Method} {Path}: {Message}",
                         context.Request.Method, path, ex.Message);
-                    
+
                     context.Response.StatusCode = StatusCodes.Status400BadRequest;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsJsonAsync(new
@@ -145,6 +145,6 @@ internal static class HttpContextExtensions
     public static bool IsDevelopment(this HttpRequest request)
     {
         var host = request.Host.Host;
-        return host == "localhost" || host == "127.0.0.1" || host.StartsWith("192.168.");
+        return host == "localhost" || host == "127.0.0.1" || host.StartsWith("192.168.", StringComparison.OrdinalIgnoreCase);
     }
 }

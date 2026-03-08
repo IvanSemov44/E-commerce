@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ECommerce.Application.DTOs.Auth;
@@ -10,6 +10,7 @@ using ECommerce.Core.Constants;
 using ECommerce.Core.Exceptions;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Core.Results;
+using ECommerce.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -40,7 +41,7 @@ public class AuthService : IAuthService
         // Check if email already exists
         if (await _unitOfWork.Users.EmailExistsAsync(dto.Email, cancellationToken: cancellationToken))
         {
-            return Result<AuthResponseDto>.Fail("DUPLICATE_EMAIL", $"Email '{dto.Email}' is already registered");
+            return Result<AuthResponseDto>.Fail(ErrorCodes.DuplicateEmail, $"Email '{dto.Email}' is already registered");
         }
 
         var user = new User
@@ -57,7 +58,7 @@ public class AuthService : IAuthService
         await _unitOfWork.Users.AddAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        _logger.LogInformation("New user registered: {Email} (ID: {UserId})", user.Email, user.Id);
+        _logger.LogInformation("New user registered: {Email} (ID: {UserId})", user.Email.MaskEmail(), user.Id);
 
         // Send welcome email (fire and forget - don't block registration)
         var verificationLink = $"{_configuration["AppUrl"]}/verify-email?userId={user.Id}&token={user.EmailVerificationToken}";
@@ -69,9 +70,9 @@ public class AuthService : IAuthService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to send welcome email to {Email}", user.Email);
+                _logger.LogWarning(ex, "Failed to send welcome email to {Email}", user.Email.MaskEmail());
             }
-        });
+        }, CancellationToken.None);
 
         var userDto = _mapper.Map<UserDto>(user);
         var token = GenerateJwtToken(userDto);
@@ -84,9 +85,17 @@ public class AuthService : IAuthService
             Token = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddDays(7)
         }, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while saving refresh token for user {UserId}", user.Id);
+            return Result<AuthResponseDto>.Fail(ErrorCodes.ConcurrencyConflict, "Authentication state was updated by another process. Please try again.");
+        }
 
-        _logger.LogInformation("New user registered: {Email} (ID: {UserId})", user.Email, user.Id);
+        _logger.LogInformation("New user registered: {Email} (ID: {UserId})", user.Email.MaskEmail(), user.Id);
 
         return Result<AuthResponseDto>.Ok(new AuthResponseDto
         {
@@ -103,8 +112,8 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email, cancellationToken: cancellationToken);
         if (user == null || !VerifyPassword(dto.Password, user.PasswordHash!))
         {
-            _logger.LogWarning("Failed login attempt for {Email}: Invalid credentials", dto.Email);
-            return Result<AuthResponseDto>.Fail("INVALID_CREDENTIALS", "Email or password is incorrect");
+            _logger.LogWarning("Failed login attempt for {Email}: Invalid credentials", dto.Email.MaskEmail());
+            return Result<AuthResponseDto>.Fail(ErrorCodes.InvalidCredentials, "Email or password is incorrect");
         }
 
         var userDto = _mapper.Map<UserDto>(user);
@@ -118,9 +127,17 @@ public class AuthService : IAuthService
             Token = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddDays(7)
         }, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while saving login refresh token for user {UserId}", user.Id);
+            return Result<AuthResponseDto>.Fail(ErrorCodes.ConcurrencyConflict, "Authentication state was updated by another process. Please try again.");
+        }
 
-        _logger.LogInformation("Successful login for user {Email} (ID: {UserId})", user.Email, user.Id);
+        _logger.LogInformation("Successful login for user {Email} (ID: {UserId})", user.Email.MaskEmail(), user.Id);
 
         return Result<AuthResponseDto>.Ok(new AuthResponseDto
         {
@@ -140,7 +157,7 @@ public class AuthService : IAuthService
 
         if (storedToken == null || storedToken.ExpiresAt < DateTime.UtcNow)
         {
-            return Result<AuthResponseDto>.Fail("INVALID_TOKEN", "The refresh token is invalid or expired");
+            return Result<AuthResponseDto>.Fail(ErrorCodes.InvalidToken, "The refresh token is invalid or expired");
         }
 
         // Revoke old refresh token (rotation)
@@ -150,7 +167,7 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByIdAsync(storedToken.UserId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
         {
-            return Result<AuthResponseDto>.Fail("USER_NOT_FOUND", "The user associated with this token no longer exists");
+            return Result<AuthResponseDto>.Fail(ErrorCodes.UserNotFound, "The user associated with this token no longer exists");
         }
 
         var userDto = _mapper.Map<UserDto>(user);
@@ -166,7 +183,15 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         }, cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while rotating refresh token for user {UserId}", user.Id);
+            return Result<AuthResponseDto>.Fail(ErrorCodes.ConcurrencyConflict, "Token refresh conflicted with another session update. Please sign in again.");
+        }
 
         return Result<AuthResponseDto>.Ok(new AuthResponseDto
         {
@@ -216,7 +241,7 @@ public class AuthService : IAuthService
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expireMinutes = int.Parse(_configuration["Jwt:ExpireMinutes"] ?? "60");
+        var expireMinutes = int.Parse(_configuration["Jwt:ExpireMinutes"] ?? "60", System.Globalization.CultureInfo.InvariantCulture);
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
@@ -250,12 +275,12 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
         {
-            return Result<Unit>.Fail("USER_NOT_FOUND", "User not found");
+            return Result<Unit>.Fail(ErrorCodes.UserNotFound, "User not found");
         }
 
         if (user.EmailVerificationToken != token)
         {
-            return Result<Unit>.Fail("INVALID_TOKEN", "The email verification token is invalid or expired");
+            return Result<Unit>.Fail(ErrorCodes.InvalidToken, "The email verification token is invalid or expired");
         }
 
         user.IsEmailVerified = true;
@@ -276,7 +301,7 @@ public class AuthService : IAuthService
             // For security reasons, we don't fail explicitly here
             // Instead, we return a dummy token that won't work
             // This prevents email enumeration attacks
-            _logger.LogWarning("Password reset requested for non-existent email {Email}", email);
+            _logger.LogWarning("Password reset requested for non-existent email {Email}", email.MaskEmail());
             return Result<string>.Ok(Guid.NewGuid().ToString());
         }
 
@@ -285,7 +310,7 @@ public class AuthService : IAuthService
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        _logger.LogInformation("Password reset token generated for {Email}", email);
+        _logger.LogInformation("Password reset token generated for {Email}", email.MaskEmail());
 
         // Send password reset email (fire and forget)
         var resetLink = $"{_configuration["AppUrl"]}/reset-password?email={email}&token={user.PasswordResetToken}";
@@ -297,9 +322,9 @@ public class AuthService : IAuthService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to send password reset email to {Email}", user.Email);
+                _logger.LogWarning(ex, "Failed to send password reset email to {Email}", user.Email.MaskEmail());
             }
-        });
+        }, CancellationToken.None);
 
         return Result<string>.Ok(user.PasswordResetToken);
     }
@@ -309,12 +334,12 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByEmailAsync(email, cancellationToken: cancellationToken);
         if (user == null)
         {
-            return Result<Unit>.Fail("USER_NOT_FOUND", "User not found");
+            return Result<Unit>.Fail(ErrorCodes.UserNotFound, "User not found");
         }
 
         if (user.PasswordResetToken != token || user.PasswordResetExpires < DateTime.UtcNow)
         {
-            return Result<Unit>.Fail("INVALID_TOKEN", "The password reset token is invalid or expired");
+            return Result<Unit>.Fail(ErrorCodes.InvalidToken, "The password reset token is invalid or expired");
         }
 
         user.PasswordHash = HashPassword(newPassword);
@@ -323,7 +348,7 @@ public class AuthService : IAuthService
         await _unitOfWork.Users.UpdateAsync(user, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
-        _logger.LogInformation("Password reset for user {Email}", email);
+        _logger.LogInformation("Password reset for user {Email}", email.MaskEmail());
 
         return Result<Unit>.Ok(Unit.Value);
     }
@@ -333,12 +358,12 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken: cancellationToken);
         if (user == null)
         {
-            return Result<Unit>.Fail("USER_NOT_FOUND", "User not found");
+            return Result<Unit>.Fail(ErrorCodes.UserNotFound, "User not found");
         }
 
         if (!VerifyPassword(oldPassword, user.PasswordHash!))
         {
-            return Result<Unit>.Fail("INVALID_CREDENTIALS", "The current password is incorrect");
+            return Result<Unit>.Fail(ErrorCodes.InvalidCredentials, "The current password is incorrect");
         }
 
         user.PasswordHash = HashPassword(newPassword);
@@ -360,5 +385,5 @@ public class AuthService : IAuthService
         return Result<UserDto>.Ok(_mapper.Map<UserDto>(user));
     }
 
-    
+
 }

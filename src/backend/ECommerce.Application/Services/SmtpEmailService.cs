@@ -1,7 +1,8 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using System.Net;
 using System.Net.Mail;
 using ECommerce.Core.Entities;
+using ECommerce.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading;
@@ -48,7 +49,7 @@ public class SmtpEmailService : IEmailService
         }
         else
         {
-            _logger.LogInformation("SMTP Email Service initialized with host: {Host}:{Port}", _smtpHost, _smtpPort);
+            _logger.LogInformation("SMTP Email Service initialized.");
         }
     }
 
@@ -138,7 +139,7 @@ public class SmtpEmailService : IEmailService
             </body>
             </html>";
 
-        await SendEmailAsync(email, subject, htmlContent);
+        await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
     public async Task SendOrderConfirmationEmailAsync(string email, Order order, CancellationToken cancellationToken = default)
@@ -373,7 +374,7 @@ public class SmtpEmailService : IEmailService
     {
         if (!_isEnabled)
         {
-            _logger.LogWarning("Email sending is disabled. Would have sent email to {Email} with subject: {Subject}", toEmail, subject);
+            _logger.LogWarning("Email sending is disabled. Would have sent email to {Email} with subject: {Subject}", toEmail.MaskEmail(), subject);
             return;
         }
 
@@ -391,17 +392,17 @@ public class SmtpEmailService : IEmailService
             client.EnableSsl = _enableSsl;
             client.DeliveryMethod = SmtpDeliveryMethod.Network;
 
-            await client.SendMailAsync(message);
+            await client.SendMailAsync(message, cancellationToken);
 
-            _logger.LogInformation("Email sent successfully to {Email} with subject: {Subject}", toEmail, subject);
+            _logger.LogInformation("Email sent successfully to {Email} with subject: {Subject}", toEmail.MaskEmail(), subject);
         }
         catch (SmtpException ex)
         {
-            _logger.LogError(ex, "SMTP error while sending email to {Email}. Status: {StatusCode}", toEmail, ex.StatusCode);
+            _logger.LogError(ex, "SMTP error while sending email to {Email}. Status: {StatusCode}", toEmail.MaskEmail(), ex.StatusCode);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while sending email to {Email} with subject: {Subject}", toEmail, subject);
+            _logger.LogError(ex, "Exception while sending email to {Email} with subject: {Subject}", toEmail.MaskEmail(), subject);
         }
     }
 }

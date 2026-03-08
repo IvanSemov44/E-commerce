@@ -14,7 +14,7 @@ public class UpdateOrderStatusDtoValidator : AbstractValidator<UpdateOrderStatus
     {
         RuleFor(x => x.Status)
             .NotEmpty().WithMessage("Status is required")
-            .Must(s => ValidStatuses.Contains(s.ToLower()))
+            .Must(s => ValidStatuses.Contains(s.ToLowerInvariant()))
             .WithMessage($"Status must be one of: {string.Join(", ", ValidStatuses)}");
     }
 }

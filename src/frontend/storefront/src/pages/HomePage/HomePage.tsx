@@ -2,8 +2,12 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePerformanceMonitor } from '@/shared/hooks';
 import { GridIcon } from '@/shared/components/icons';
-import { useGetFeaturedProductsQuery, useGetProductsQuery } from '@/features/products/api/productApi';
+import {
+  useGetFeaturedProductsQuery,
+  useGetProductsQuery,
+} from '@/features/products/api/productApi';
 import { useGetTopLevelCategoriesQuery } from '@/features/products/api/categoriesApi';
+import type { Product } from '@/shared/types';
 import Button from '@/shared/components/ui/Button';
 import { ProductCard } from '@/features/products/components';
 import PageHeader from '@/shared/components/PageHeader';
@@ -11,19 +15,79 @@ import QueryRenderer from '@/shared/components/QueryRenderer';
 import TrustSignals from '@/shared/components/TrustSignals';
 import styles from './HomePage.module.css';
 
+interface ProductGridProps {
+  products: Product[];
+}
+
+function ProductGrid({ products }: ProductGridProps) {
+  return (
+    <div className={styles.grid}>
+      {products.map((product) => (
+        <ProductCard
+          key={product.id}
+          id={product.id}
+          name={product.name}
+          slug={product.slug}
+          price={product.price}
+          compareAtPrice={product.compareAtPrice}
+          imageUrl={product.images[0]?.url}
+          rating={Math.round(product.averageRating)}
+          reviewCount={product.reviewCount}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface ProductSectionProps {
+  ariaLabel: string;
+  title: string;
+  subtitle: string;
+  products: Product[];
+  ctaTo: string;
+  ctaLabel: string;
+  sectionClassName: string;
+}
+
+function ProductSection({
+  ariaLabel,
+  title,
+  subtitle,
+  products,
+  ctaTo,
+  ctaLabel,
+  sectionClassName,
+}: ProductSectionProps) {
+  return (
+    <section className={sectionClassName} aria-label={ariaLabel}>
+      <PageHeader title={title} subtitle={subtitle} />
+      <ProductGrid products={products} />
+      <div className={styles.sectionCta}>
+        <Link to={ctaTo}>
+          <Button variant="outline">{ctaLabel}</Button>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export default function HomePage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
-  const { data: featured, isLoading, error } = useGetFeaturedProductsQuery({ page: 1, pageSize: 10 });
+  const {
+    data: featured,
+    isLoading,
+    error,
+  } = useGetFeaturedProductsQuery({ page: 1, pageSize: 10 });
   const { data: categories } = useGetTopLevelCategoriesQuery();
-  
+
   // Bestsellers - products sorted by review count (popularity)
   const { data: bestsellersData } = useGetProductsQuery({
     pageSize: 4,
     sortBy: 'rating',
     sortOrder: 'desc',
   });
-  
+
   // Promotions - products with compareAtPrice (on sale)
   const { data: promotionsData } = useGetProductsQuery({
     pageSize: 4,
@@ -36,16 +100,10 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className={styles.hero} aria-label={t('home.title')}>
         <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>
-            {t('home.title')}
-          </h1>
-          <p className={styles.heroSubtitle}>
-            {t('home.subtitle')}
-          </p>
+          <h1 className={styles.heroTitle}>{t('home.title')}</h1>
+          <p className={styles.heroSubtitle}>{t('home.subtitle')}</p>
           <Link to="/products">
-            <Button size="lg">
-              {t('home.exploreProducts')}
-            </Button>
+            <Button size="lg">{t('home.exploreProducts')}</Button>
           </Link>
         </div>
       </section>
@@ -67,8 +125,8 @@ export default function HomePage() {
                 className={styles.categoryCard}
               >
                 {category.imageUrl ? (
-                  <img 
-                    src={category.imageUrl} 
+                  <img
+                    src={category.imageUrl}
                     alt={category.name}
                     className={styles.categoryImage}
                   />
@@ -86,7 +144,10 @@ export default function HomePage() {
 
       {/* Featured Products */}
       <section className={styles.featuredSection} aria-label={t('home.featuredProducts')}>
-        <PageHeader title={t('home.featuredProducts')} subtitle={t('home.featuredProductsSubtitle')} />
+        <PageHeader
+          title={t('home.featuredProducts')}
+          subtitle={t('home.featuredProductsSubtitle')}
+        />
 
         <QueryRenderer
           isLoading={isLoading}
@@ -95,84 +156,37 @@ export default function HomePage() {
           errorMessage={t('products.failedToLoadProducts')}
           emptyState={{
             icon: <GridIcon />,
-            title: t('products.noProducts')
+            title: t('products.noProducts'),
           }}
         >
-          {(featuredItems) => (
-            <div className={styles.grid}>
-              {featuredItems.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  slug={product.slug}
-                  price={product.price}
-                  compareAtPrice={product.compareAtPrice}
-                  imageUrl={product.images[0]?.url}
-                  rating={Math.round(product.averageRating)}
-                  reviewCount={product.reviewCount}
-                />
-              ))}
-            </div>
-          )}
+          {(featuredItems) => <ProductGrid products={featuredItems} />}
         </QueryRenderer>
       </section>
 
       {/* Bestsellers Section */}
       {bestsellersData?.items && bestsellersData.items.length > 0 && (
-        <section className={styles.bestsellersSection} aria-label={t('home.bestSellers')}>
-          <PageHeader title={t('home.bestSellers')} subtitle={t('home.ourMostPopularProducts')} />
-          <div className={styles.grid}>
-            {bestsellersData.items.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                slug={product.slug}
-                price={product.price}
-                compareAtPrice={product.compareAtPrice}
-                imageUrl={product.images[0]?.url}
-                rating={Math.round(product.averageRating)}
-                reviewCount={product.reviewCount}
-              />
-            ))}
-          </div>
-          <div className={styles.sectionCta}>
-            <Link to="/products?sortBy=rating&sortOrder=desc">
-              <Button variant="outline">{t('home.viewAllBestsellers')}</Button>
-            </Link>
-          </div>
-        </section>
+        <ProductSection
+          ariaLabel={t('home.bestSellers')}
+          title={t('home.bestSellers')}
+          subtitle={t('home.ourMostPopularProducts')}
+          products={bestsellersData.items}
+          ctaTo="/products?sortBy=rating&sortOrder=desc"
+          ctaLabel={t('home.viewAllBestsellers')}
+          sectionClassName={styles.bestsellersSection}
+        />
       )}
 
       {/* Promotions Section */}
-      {promotionsData?.items && promotionsData.items.some(p => p.compareAtPrice) && (
-        <section className={styles.promotionsSection} aria-label={t('home.onSale')}>
-          <PageHeader title={t('home.onSale')} subtitle={t('home.onSaleSubtitle')} />
-          <div className={styles.grid}>
-            {promotionsData.items
-              .filter((product) => product.compareAtPrice)
-              .slice(0, 4)
-              .map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  slug={product.slug}
-                  price={product.price}
-                  compareAtPrice={product.compareAtPrice}
-                  imageUrl={product.images[0]?.url}
-                  rating={Math.round(product.averageRating)}
-                  reviewCount={product.reviewCount}
-                />
-              ))}
-          </div>
-          <div className={styles.sectionCta}>
-            <Link to="/products?onSale=true">
-              <Button variant="outline">{t('home.viewAllOffers')}</Button>
-            </Link>
-          </div>
-        </section>
+      {promotionsData?.items && promotionsData.items.some((p) => p.compareAtPrice) && (
+        <ProductSection
+          ariaLabel={t('home.onSale')}
+          title={t('home.onSale')}
+          subtitle={t('home.onSaleSubtitle')}
+          products={promotionsData.items.filter((product) => product.compareAtPrice).slice(0, 4)}
+          ctaTo="/products?onSale=true"
+          ctaLabel={t('home.viewAllOffers')}
+          sectionClassName={styles.promotionsSection}
+        />
       )}
     </div>
   );

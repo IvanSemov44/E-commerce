@@ -46,14 +46,14 @@ public static class ServiceCollectionExtensions
     {
         // Register JwtOptions for DI
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-        
+
         // Get JWT settings from configuration
         var jwtSettings = configuration.GetSection("Jwt");
         var jwtOptions = jwtSettings.Get<JwtOptions>() ?? new JwtOptions();
-        
+
         // Validate JWT configuration
         jwtOptions.Validate();
-        
+
         var secretKey = Encoding.UTF8.GetBytes(jwtOptions.SecretKey);
 
         services.AddAuthentication(options =>
@@ -116,7 +116,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddCsrfProtection(this IServiceCollection services, IHostEnvironment environment)
     {
         var isProduction = !environment.IsDevelopment();
-        
+
         services.AddAntiforgery(options =>
         {
             // Use standard XSRF header name that SPAs expect
@@ -158,7 +158,7 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddCorsConfiguration(
         this IServiceCollection services,
-        bool isDevelopment,
+        bool _,
         IConfiguration configuration)
     {
         services.AddCors(options =>
@@ -186,7 +186,7 @@ public static class ServiceCollectionExtensions
                 // Supports both array format (from appsettings.json) and comma-separated string (from environment variables)
                 var allowedOriginsArray = configuration.GetSection("AllowedOrigins").Get<string[]>();
                 var allowedOriginsString = configuration["AllowedOrigins"];
-                
+
                 var allowedOrigins = allowedOriginsArray?.Length > 0
                     ? allowedOriginsArray
                     : allowedOriginsString?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -223,7 +223,7 @@ public static class ServiceCollectionExtensions
     {
         // Register rate limiting options for DI
         services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
-        
+
         var rateLimitOptions = configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()
             ?? new RateLimitingOptions();
 
@@ -390,12 +390,12 @@ public static class ServiceCollectionExtensions
                 // NOTE: EnableRetryOnFailure is not compatible with manual transactions (BeginTransactionAsync)
                 // The OrderService uses manual transactions for atomicity, so we cannot use retry on failure here.
                 // If retry logic is needed, it should be implemented at the application level using IExecutionStrategy.
-                
+
                 // SplitQuery separates complex multi-include queries into multiple SQL queries
                 // to avoid generating a large cartesian product.
                 npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             });
-            
+
             // Configure warnings - ignore pending model changes warning
             options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
@@ -431,7 +431,7 @@ public static class ServiceCollectionExtensions
     /// Usage:
     /// <code>
     /// builder.Services.AddAppConfiguration(builder.Configuration);
-    /// 
+    ///
     /// // Then in services:
     /// public MyService(IOptions&lt;AppConfiguration&gt; config)
     /// {

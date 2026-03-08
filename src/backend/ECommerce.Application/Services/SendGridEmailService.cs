@@ -1,5 +1,6 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using ECommerce.Core.Entities;
+using ECommerce.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SendGrid;
@@ -13,7 +14,7 @@ namespace ECommerce.Application.Services;
 /// </summary>
 public class SendGridEmailService : IEmailService
 {
-    private readonly ISendGridClient _client;
+    private readonly SendGridClient _client;
     private readonly IConfiguration _configuration;
     private readonly ILogger<SendGridEmailService> _logger;
     private readonly string _fromEmail;
@@ -363,22 +364,22 @@ public class SendGridEmailService : IEmailService
             var to = new EmailAddress(toEmail);
             var msg = MailHelper.CreateSingleEmail(from, to, subject, null, htmlContent);
 
-            var response = await _client.SendEmailAsync(msg);
+            var response = await _client.SendEmailAsync(msg, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Email sent successfully to {Email} with subject: {Subject}", toEmail, subject);
+                _logger.LogInformation("Email sent successfully to {Email} with subject: {Subject}", toEmail.MaskEmail(), subject);
             }
             else
             {
-                var body = await response.Body.ReadAsStringAsync();
+                var body = await response.Body.ReadAsStringAsync(cancellationToken);
                 _logger.LogError("Failed to send email to {Email}. Status: {StatusCode}, Response: {Response}",
-                    toEmail, response.StatusCode, body);
+                    toEmail.MaskEmail(), response.StatusCode, body);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while sending email to {Email} with subject: {Subject}", toEmail, subject);
+            _logger.LogError(ex, "Exception while sending email to {Email} with subject: {Subject}", toEmail.MaskEmail(), subject);
         }
     }
 }

@@ -1,15 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { SVGProps } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 
 // Mock icons
 vi.mock('@/shared/components/icons', () => ({
-  SunIcon: ({ ...props }: any) => <svg data-testid="sun-icon" {...props} />,
-  MoonIcon: ({ ...props }: any) => <svg data-testid="moon-icon" {...props} />,
-  ComputerIcon: ({ ...props }: any) => <svg data-testid="computer-icon" {...props} />,
-  ChevronDownIcon: ({ ...props }: any) => <svg data-testid="chevron-icon" {...props} />,
-  CheckIcon: ({ ...props }: any) => <svg data-testid="check-icon" {...props} />,
+  SunIcon: (props: SVGProps<SVGSVGElement>) => <svg data-testid="sun-icon" {...props} />,
+  MoonIcon: (props: SVGProps<SVGSVGElement>) => <svg data-testid="moon-icon" {...props} />,
+  ComputerIcon: (props: SVGProps<SVGSVGElement>) => <svg data-testid="computer-icon" {...props} />,
+  ChevronDownIcon: (props: SVGProps<SVGSVGElement>) => (
+    <svg data-testid="chevron-icon" {...props} />
+  ),
+  CheckIcon: (props: SVGProps<SVGSVGElement>) => <svg data-testid="check-icon" {...props} />,
 }));
 
 // Mock react-i18next
@@ -208,11 +211,11 @@ describe('ThemeToggle', () => {
 
     // Click theme multiple times
     await user.click(button);
-    let lightOption = screen.getByText('Light');
+    const lightOption = screen.getByText('Light');
     await user.click(lightOption);
 
     await user.click(button);
-    let darkOption = screen.getByText('Dark');
+    const darkOption = screen.getByText('Dark');
     await user.click(darkOption);
 
     expect(localStorage.getItem('theme')).toBe('dark');

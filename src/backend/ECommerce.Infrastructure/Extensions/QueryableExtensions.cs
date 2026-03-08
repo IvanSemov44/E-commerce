@@ -1,4 +1,4 @@
-namespace ECommerce.Infrastructure.Extensions;
+﻿namespace ECommerce.Infrastructure.Extensions;
 
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -51,7 +51,7 @@ public static class QueryableExtensions
             return source;
 
         var properties = typeof(T).GetProperties();
-        var property = properties.FirstOrDefault(p => 
+        var property = properties.FirstOrDefault(p =>
             string.Equals(p.Name, sortBy, StringComparison.OrdinalIgnoreCase));
 
         if (property == null)
@@ -100,7 +100,7 @@ public static class QueryableExtensions
             return source;
 
         return source.Where(x => EF.Functions.ILike(
-            property.Compile()(x) ?? string.Empty, 
+            property.Compile()(x) ?? string.Empty,
             $"%{searchTerm}%"));
     }
 
@@ -123,14 +123,14 @@ public static class QueryableExtensions
     {
         var parameter = Expression.Parameter(typeof(T), "x");
         var member = Expression.Invoke(property, parameter);
-        
+
         var minConst = Expression.Constant(minValue);
         var maxConst = Expression.Constant(maxValue);
-        
+
         var greaterThanOrEqual = Expression.GreaterThanOrEqual(member, minConst);
         var lessThanOrEqual = Expression.LessThanOrEqual(member, maxConst);
         var combined = Expression.AndAlso(greaterThanOrEqual, lessThanOrEqual);
-        
+
         var lambda = Expression.Lambda<Func<T, bool>>(combined, parameter);
         return source.Where(lambda);
     }

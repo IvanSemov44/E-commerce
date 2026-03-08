@@ -15,6 +15,7 @@ namespace ECommerce.Tests.Integration;
 public class PaymentsControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     [TestInitialize]
     public void Setup()
@@ -410,7 +411,7 @@ public class PaymentsControllerTests
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
 
         Assert.IsTrue(responseData.TryGetProperty("success", out _), "Response should have 'success' property");
@@ -556,7 +557,7 @@ public class PaymentsControllerTests
         var orderId = orderResponse.GetProperty("data").GetProperty("id").GetGuid();
 
         // Create client for User B (different user)
-        var userBToken = _factory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
+        var userBToken = TestWebApplicationFactory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
         using var clientUserB = _factory.CreateClient();
         clientUserB.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userBToken);
 

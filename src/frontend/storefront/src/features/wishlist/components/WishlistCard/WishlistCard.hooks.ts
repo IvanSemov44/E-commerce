@@ -4,7 +4,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useRemoveFromWishlistMutation } from '../../api/wishlistApi';
+import { useRemoveFromWishlistMutation } from '@/features/wishlist/api/wishlistApi';
 import { useAddToCartMutation } from '@/features/cart/api/cartApi';
 import { useApiErrorHandler } from '@/shared/hooks';
 

@@ -1,4 +1,5 @@
-using AutoMapper;
+﻿using AutoMapper;
+using System.Globalization;
 using ECommerce.Core.Entities;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Auth;
@@ -35,7 +36,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Role, opt => opt.Ignore())
             .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
         // Product mappings
         CreateMap<Product, ProductDto>()
@@ -68,7 +69,7 @@ public class MappingProfile : Profile
 
         CreateMap<CreateCategoryDto, Category>();
         CreateMap<UpdateCategoryDto, Category>()
-            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
         // ProductImage mappings
         CreateMap<ProductImage, ProductImageDto>();
@@ -84,7 +85,7 @@ public class MappingProfile : Profile
 
         CreateMap<CreateReviewDto, Review>();
         CreateMap<UpdateReviewDto, Review>()
-            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
         // Order mappings
         CreateMap<Order, OrderDto>();
@@ -133,14 +134,14 @@ public class MappingProfile : Profile
 
         // PromoCode mappings
         CreateMap<PromoCode, PromoCodeDto>()
-            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLower()));
+            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLowerInvariant()));
         CreateMap<PromoCode, PromoCodeDetailDto>()
-            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLower()));
+            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLowerInvariant()));
         CreateMap<CreatePromoCodeDto, PromoCode>()
             .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => Enum.Parse<ECommerce.Core.Enums.DiscountType>(src.DiscountType, ignoreCase: true)));
         CreateMap<UpdatePromoCodeDto, PromoCode>()
             .ForMember(dest => dest.DiscountType, opt => opt.Ignore())
-            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
         // Inventory mappings
         CreateMap<Product, InventoryDto>()
@@ -177,7 +178,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.UserId, opt => opt.Ignore())
             .ForMember(dest => dest.Type, opt => opt.Ignore())
             .ForMember(dest => dest.IsDefault, opt => opt.Ignore())
-            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
         // Order item mapping (CreateOrderItemDto -> OrderItem)
         // NOTE: Mapping removed - OrderItem is now constructed in OrderService with server-side product lookup
@@ -191,15 +192,15 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.OrderNumber, opt => opt.Ignore())
             .ForMember(dest => dest.UserId, opt => opt.Ignore())
             .ForMember(dest => dest.PromoCodeId, opt => opt.Ignore())
-            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
         // Dashboard trend mappings from KeyValuePair<DateTime, T> to DTOs
         CreateMap<KeyValuePair<DateTime, int>, ECommerce.Application.DTOs.Dashboard.OrderTrendDto>()
-            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd")))
+            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
             .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.Value));
 
         CreateMap<KeyValuePair<DateTime, decimal>, ECommerce.Application.DTOs.Dashboard.RevenueTrendDto>()
-            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd")))
+            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
             .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Value));
     }
 }

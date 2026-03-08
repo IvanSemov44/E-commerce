@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Core.Entities;
@@ -46,11 +46,11 @@ public class WishlistService : IWishlistService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
-        
+
         var product = await _unitOfWork.Products.GetByIdAsync(productId, trackChanges: false, cancellationToken: cancellationToken);
         if (product == null)
             return Result<WishlistDto>.Fail(ErrorCodes.ProductNotFound, $"Product with id '{productId}' not found");
-        
+
         if (await _unitOfWork.Wishlists.IsProductInWishlistAsync(userId, productId, cancellationToken: cancellationToken))
             return Result<WishlistDto>.Fail(ErrorCodes.DuplicateWishlistItem, "This product is already in your wishlist");
 
@@ -72,7 +72,7 @@ public class WishlistService : IWishlistService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
-        
+
         await _unitOfWork.Wishlists.DeleteByUserIdAndProductIdAsync(userId, productId, cancellationToken: cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
@@ -87,7 +87,7 @@ public class WishlistService : IWishlistService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, trackChanges: false, cancellationToken: cancellationToken);
         if (user == null)
             return Result<WishlistDto>.Fail(ErrorCodes.UserNotFound, $"User with id '{userId}' not found");
-        
+
         // Single bulk DELETE statement — no entity loading, no change-tracker overhead.
         // ExecuteDeleteAsync commits immediately, so SaveChangesAsync is not required.
         await _unitOfWork.Wishlists.ClearByUserIdAsync(userId, cancellationToken);
@@ -96,7 +96,7 @@ public class WishlistService : IWishlistService
         return Result<WishlistDto>.Ok(result);
     }
 
-    private async Task<WishlistDto> MapWishlistToDtoAsync(List<Wishlist> wishlistEntries, CancellationToken cancellationToken = default)
+    private async Task<WishlistDto> MapWishlistToDtoAsync(List<Wishlist> wishlistEntries, CancellationToken _ = default)
     {
         var userId = wishlistEntries.FirstOrDefault()?.UserId ?? Guid.Empty;
         var items = new List<WishlistItemDto>();

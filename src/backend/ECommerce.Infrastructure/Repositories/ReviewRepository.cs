@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure.Data;
@@ -134,7 +134,7 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
         var average = await DbSet
             .Where(r => r.ProductId == productId && r.IsApproved)
             .AverageAsync(r => (decimal?)r.Rating, cancellationToken);
-        
+
         return average ?? 0;
     }
 

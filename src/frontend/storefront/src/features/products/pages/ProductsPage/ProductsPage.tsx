@@ -13,7 +13,7 @@ import {
   ProductSearchBar,
   ActiveFilters,
   ProductGrid,
-} from '../../components';
+} from '@/features/products/components';
 import styles from './ProductsPage.module.css';
 
 export default function ProductsPage() {
@@ -41,7 +41,12 @@ export default function ProductsPage() {
     handleClearFilters,
   } = useProductFilters();
 
-  const { data: result, isLoading, isFetching, error } = useGetProductsQuery({
+  const {
+    data: result,
+    isLoading,
+    isFetching,
+    error,
+  } = useGetProductsQuery({
     page,
     pageSize: 12,
     categoryId: selectedCategoryId,
@@ -55,8 +60,8 @@ export default function ProductsPage() {
 
   return (
     <div className={styles.container}>
-      <PageHeader 
-        title={t('products.discoverProducts')} 
+      <PageHeader
+        title={t('products.discoverProducts')}
         subtitle={t('products.exploreCollection')}
         icon={<GridIcon />}
         badge={t('products.allProducts')}
@@ -121,9 +126,13 @@ export default function ProductsPage() {
             loadingSkeleton={{ custom: <ProductsGridSkeleton count={12} /> }}
             emptyState={{
               icon: <GridIcon />,
-              title: hasActiveFilters ? t('products.noProductsMatchFilters') : t('products.noProducts'),
+              title: hasActiveFilters
+                ? t('products.noProductsMatchFilters')
+                : t('products.noProducts'),
               description: hasActiveFilters ? t('products.tryAdjustingSearch') : undefined,
-              action: hasActiveFilters ? <Button onClick={handleClearFilters}>{t('common.clear')}</Button> : undefined,
+              action: hasActiveFilters ? (
+                <Button onClick={handleClearFilters}>{t('common.clear')}</Button>
+              ) : undefined,
             }}
           >
             {(data) => (

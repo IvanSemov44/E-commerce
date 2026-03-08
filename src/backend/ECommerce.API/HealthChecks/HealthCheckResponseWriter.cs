@@ -65,7 +65,7 @@ public static class HealthCheckResponseWriter
     /// <param name="healthReport">The health check report.</param>
     public static async Task WriteLivenessResponse(
         HttpContext context,
-        HealthReport healthReport)
+        HealthReport _)
     {
         context.Response.ContentType = "application/json";
 

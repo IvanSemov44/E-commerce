@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { useProfileForm } from '../../hooks/useProfileForm';
+import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import Card from '@/shared/components/ui/Card';
 import PageHeader from '@/shared/components/PageHeader';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import { ProfileSkeleton } from '@/shared/components/Skeletons';
-import ProfileHeader from '../../components/ProfileHeader';
-import ProfileForm from '../../components/ProfileForm';
-import ProfileMessages from '../../components/ProfileMessages';
-import AccountDetails from '../../components/AccountDetails';
+import ProfileHeader from '@/features/profile/components/ProfileHeader';
+import ProfileForm from '@/features/profile/components/ProfileForm';
+import ProfileMessages from '@/features/profile/components/ProfileMessages';
+import AccountDetails from '@/features/profile/components/AccountDetails';
 import styles from './ProfilePage.module.css';
 
 export default function ProfilePage() {

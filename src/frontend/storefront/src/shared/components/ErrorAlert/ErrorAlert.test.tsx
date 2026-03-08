@@ -1,16 +1,25 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { HTMLAttributes, ReactNode, SVGProps } from 'react';
 import ErrorAlert from './ErrorAlert';
+
+interface MockCardProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+}
 
 // Mock the Card component
 vi.mock('../ui/Card', () => ({
-  default: ({ children, ...props }: any) => <div data-testid="card" {...props}>{children}</div>,
+  default: ({ children, ...props }: MockCardProps) => (
+    <div data-testid="card" {...props}>
+      {children}
+    </div>
+  ),
 }));
 
 // Mock icon
 vi.mock('../icons', () => ({
-  CloseIcon: ({ ...props }: any) => <svg data-testid="close-icon" {...props} />,
+  CloseIcon: (props: SVGProps<SVGSVGElement>) => <svg data-testid="close-icon" {...props} />,
 }));
 
 describe('ErrorAlert', () => {
@@ -60,7 +69,8 @@ describe('ErrorAlert', () => {
   });
 
   it('handles long error messages', () => {
-    const longMessage = 'This is a very long error message that should wrap to multiple lines and still display correctly in the container without breaking the layout.';
+    const longMessage =
+      'This is a very long error message that should wrap to multiple lines and still display correctly in the container without breaking the layout.';
     render(<ErrorAlert message={longMessage} />);
     expect(screen.getByText(longMessage)).toBeInTheDocument();
   });

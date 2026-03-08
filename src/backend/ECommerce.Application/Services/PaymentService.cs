@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using ECommerce.Application.DTOs.Payments;
 using ECommerce.Core.Enums;
 using ECommerce.Core.Exceptions;
@@ -29,8 +29,8 @@ public class PaymentService : IPaymentService
     private readonly IPaymentStore _paymentStore;
 
     public PaymentService(
-        IUnitOfWork unitOfWork, 
-        ILogger<PaymentService> logger, 
+        IUnitOfWork unitOfWork,
+        ILogger<PaymentService> logger,
         IConfiguration configuration,
         IPaymentStore paymentStore)
     {
@@ -51,20 +51,20 @@ public class PaymentService : IPaymentService
             return Result<PaymentResponseDto>.Fail(ErrorCodes.OrderNotFound, $"Order {dto.OrderId} not found");
         }
 
-        if (!await IsPaymentMethodSupportedAsync(dto.PaymentMethod))
+        if (!await IsPaymentMethodSupportedAsync(dto.PaymentMethod, cancellationToken))
         {
             _logger.LogWarning("Unsupported payment method: {PaymentMethod}", dto.PaymentMethod);
-            return Result<PaymentResponseDto>.Fail("UNSUPPORTED_PAYMENT_METHOD", $"Payment method '{dto.PaymentMethod}' is not supported");
+            return Result<PaymentResponseDto>.Fail(ErrorCodes.UnsupportedPaymentMethod, $"Payment method '{dto.PaymentMethod}' is not supported");
         }
 
         if (dto.Amount != order.TotalAmount)
         {
             _logger.LogWarning("Payment amount {Amount} does not match order total {OrderTotal}", dto.Amount, order.TotalAmount);
-            return Result<PaymentResponseDto>.Fail("PAYMENT_AMOUNT_MISMATCH", $"Payment amount does not match order total");
+            return Result<PaymentResponseDto>.Fail(ErrorCodes.PaymentAmountMismatch, "Payment amount does not match order total");
         }
 
         var paymentIntentId = GenerateMockPaymentIntentId(dto.PaymentMethod);
-        var transactionId = Guid.NewGuid().ToString("N").Substring(0, 20).ToUpper();
+        var transactionId = Guid.NewGuid().ToString("N")[..20].ToUpperInvariant();
 
         bool paymentSucceeds = !ShouldSimulatePaymentFailure();
 
@@ -92,7 +92,7 @@ public class PaymentService : IPaymentService
                     ProcessedAt = DateTime.UtcNow
                 };
 
-                await _paymentStore.StorePaymentAsync(paymentIntentId, paymentDetails);
+                await _paymentStore.StorePaymentAsync(paymentIntentId, paymentDetails, cancellationToken);
 
                 _logger.LogInformation("Payment successful for order {OrderId}. PaymentIntentId: {PaymentIntentId}", dto.OrderId, paymentIntentId);
 
@@ -168,10 +168,10 @@ public class PaymentService : IPaymentService
 
         if (string.IsNullOrEmpty(order.PaymentIntentId))
         {
-            return Result<PaymentDetailsDto>.Fail("NO_PAYMENT_FOUND", $"No payment found for order {orderId}");
+            return Result<PaymentDetailsDto>.Fail(ErrorCodes.NoPaymentFound, $"No payment found for order {orderId}");
         }
 
-        var paymentDetails = await _paymentStore.GetPaymentAsync(order.PaymentIntentId);
+        var paymentDetails = await _paymentStore.GetPaymentAsync(order.PaymentIntentId, cancellationToken);
         if (paymentDetails != null)
         {
             return Result<PaymentDetailsDto>.Ok(paymentDetails);
@@ -181,7 +181,7 @@ public class PaymentService : IPaymentService
         {
             OrderId = orderId,
             PaymentIntentId = order.PaymentIntentId,
-            Status = order.PaymentStatus.ToString().ToLower(),
+            Status = order.PaymentStatus.ToString().ToLowerInvariant(),
             PaymentMethod = order.PaymentMethod ?? "unknown",
             Amount = order.TotalAmount,
             Currency = order.Currency,
@@ -203,12 +203,12 @@ public class PaymentService : IPaymentService
 
         if (order.PaymentStatus != PaymentStatus.Paid)
         {
-            return Result<RefundResponseDto>.Fail("INVALID_REFUND", $"Cannot refund order with payment status: {order.PaymentStatus}");
+            return Result<RefundResponseDto>.Fail(ErrorCodes.InvalidRefund, $"Cannot refund order with payment status: {order.PaymentStatus}");
         }
 
         var refundAmount = dto.Amount ?? order.TotalAmount;
 
-        var refundId = Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper();
+        var refundId = Guid.NewGuid().ToString("N")[..16].ToUpperInvariant();
 
         try
         {
@@ -240,10 +240,10 @@ public class PaymentService : IPaymentService
     {
         _logger.LogInformation("Retrieving payment intent {PaymentIntentId}", paymentIntentId);
 
-        var paymentDetails = await _paymentStore.GetPaymentAsync(paymentIntentId);
+        var paymentDetails = await _paymentStore.GetPaymentAsync(paymentIntentId, cancellationToken);
         if (paymentDetails == null)
         {
-            return Result<PaymentDetailsDto>.Fail("PAYMENT_INTENT_NOT_FOUND", "Payment intent not found");
+            return Result<PaymentDetailsDto>.Fail(ErrorCodes.PaymentIntentNotFound, "Payment intent not found");
         }
 
         return Result<PaymentDetailsDto>.Ok(paymentDetails);
@@ -255,7 +255,7 @@ public class PaymentService : IPaymentService
         return SupportedPaymentMethods.Contains(normalizedMethod);
     }
 
-    private string GenerateMockPaymentIntentId(string paymentMethod)
+    private static string GenerateMockPaymentIntentId(string paymentMethod)
     {
         var normalizedMethod = NormalizePaymentMethod(paymentMethod);
         var prefix = normalizedMethod switch
@@ -267,10 +267,10 @@ public class PaymentService : IPaymentService
             _ => "pi_"
         };
 
-        return prefix + Guid.NewGuid().ToString("N").Substring(0, 20);
+        return string.Concat(prefix, Guid.NewGuid().ToString("N").AsSpan(0, 20));
     }
 
-    private string GetPaymentProviderName(string paymentMethod)
+    private static string GetPaymentProviderName(string paymentMethod)
     {
         var normalizedMethod = NormalizePaymentMethod(paymentMethod);
         return normalizedMethod switch
@@ -295,7 +295,7 @@ public class PaymentService : IPaymentService
     {
         // Only simulate failures in development/testing when explicitly enabled
         var simulateFailures = _configuration.GetValue<bool>("Payment:SimulateFailures", false);
-        
+
         if (!simulateFailures)
             return false;
 

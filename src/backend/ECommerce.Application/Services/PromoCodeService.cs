@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.PromoCodes;
@@ -258,7 +258,7 @@ public class PromoCodeService : IPromoCodeService
     /// <summary>
     /// Normalizes a promo code by trimming whitespace and converting to uppercase.
     /// </summary>
-    private string NormalizePromoCode(string code)
+    private static string NormalizePromoCode(string code)
     {
         return code.Trim().ToUpperInvariant();
     }
@@ -422,7 +422,7 @@ public class PromoCodeService : IPromoCodeService
         }
     }
 
-    private decimal CalculateDiscount(DiscountType discountType, decimal discountValue, decimal orderAmount, decimal? maxDiscount)
+    private static decimal CalculateDiscount(DiscountType discountType, decimal discountValue, decimal orderAmount, decimal? maxDiscount)
     {
         decimal discount = discountType == DiscountType.Percentage
             ? orderAmount * (discountValue / 100)
@@ -443,7 +443,7 @@ public class PromoCodeService : IPromoCodeService
         return Math.Round(discount, 2);
     }
 
-    private (bool IsSuccess, string ErrorMessage) ValidatePromoCodeDto(DiscountType discountType, decimal discountValue, DateTime? startDate, DateTime? endDate, decimal? minOrderAmount)
+    private static (bool IsSuccess, string ErrorMessage) ValidatePromoCodeDto(DiscountType discountType, decimal discountValue, DateTime? startDate, DateTime? endDate, decimal? minOrderAmount)
     {
         // Validate discount value
         if (discountValue <= 0)

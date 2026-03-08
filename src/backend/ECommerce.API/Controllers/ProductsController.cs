@@ -1,4 +1,4 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Services;
@@ -40,6 +40,8 @@ public class ProductsController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetProducts([FromQuery] ProductQueryParameters parameters, CancellationToken cancellationToken)
     {
@@ -60,6 +62,7 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<PaginatedResult<ProductDto>>>> GetFeaturedProducts(
         [FromQuery] int page = 1,
@@ -67,7 +70,7 @@ public class ProductsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
-        
+
         var result = await _productService.GetFeaturedProductsAsync(page, pageSize, cancellationToken);
         return Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(result, "Featured products retrieved successfully"));
     }
@@ -84,18 +87,19 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var result = await _productService.GetProductByIdAsync(id, cancellationToken: cancellationToken);
-        
+
         if (result is Result<ProductDetailDto>.Success success)
             return Ok(ApiResponse<ProductDetailDto>.Ok(success.Data, "Product retrieved successfully"));
-        
+
         if (result is Result<ProductDetailDto>.Failure failure)
             return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
-        
+
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
@@ -111,18 +115,19 @@ public class ProductsController : ControllerBase
     [HttpGet("slug/{slug}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetProductBySlug([FromRoute] string slug, CancellationToken cancellationToken)
     {
         var result = await _productService.GetProductBySlugAsync(slug, cancellationToken: cancellationToken);
-        
+
         if (result is Result<ProductDetailDto>.Success success)
             return Ok(ApiResponse<ProductDetailDto>.Ok(success.Data, "Product retrieved successfully"));
-        
+
         if (result is Result<ProductDetailDto>.Failure failure)
             return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
-        
+
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
@@ -151,7 +156,7 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> CreateProduct([FromBody] CreateProductDto createProductDto, CancellationToken cancellationToken)
     {
         var result = await _productService.CreateProductAsync(createProductDto, cancellationToken: cancellationToken);
-        
+
         if (result is Result<ProductDetailDto>.Success success)
         {
             _logger.LogInformation("Product created: {ProductId}", success.Data.Id);
@@ -199,7 +204,7 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> UpdateProduct([FromRoute] Guid id, [FromBody] UpdateProductDto updateProductDto, CancellationToken cancellationToken)
     {
         var result = await _productService.UpdateProductAsync(id, updateProductDto, cancellationToken: cancellationToken);
-        
+
         if (result is Result<ProductDetailDto>.Success success)
         {
             _logger.LogInformation("Product updated: {ProductId}", id);
@@ -241,7 +246,7 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> DeleteProduct([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var result = await _productService.DeleteProductAsync(id, cancellationToken: cancellationToken);
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Success)
         {
             _logger.LogInformation("Product deleted: {ProductId}", id);

@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure.Data;
@@ -78,7 +78,7 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
     {
         var entry = await DbSet
             .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId, cancellationToken);
-        
+
         if (entry != null)
         {
             DbSet.Remove(entry);

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import CartItem from '../CartItem';
-import type { CartItem as CartItemType } from '../../../slices/cartSlice';
+import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
 
 const mockItem: CartItemType = {
   id: '1',
@@ -19,12 +19,7 @@ const mockItem: CartItemType = {
 const renderCartItem = (props: Partial<React.ComponentProps<typeof CartItem>> = {}) => {
   return render(
     <BrowserRouter>
-      <CartItem
-        item={mockItem}
-        onUpdateQuantity={vi.fn()}
-        onRemove={vi.fn()}
-        {...props}
-      />
+      <CartItem item={mockItem} onUpdateQuantity={vi.fn()} onRemove={vi.fn()} {...props} />
     </BrowserRouter>
   );
 };

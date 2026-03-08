@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ECommerce.Application.DTOs.Cart;
@@ -109,7 +109,7 @@ public class CartService : ICartService
                 Quantity = quantity
             };
             await _unitOfWork.CartItems.AddAsync(cartItem, cancellationToken: cancellationToken);
-            
+
             try
             {
                 await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
@@ -119,19 +119,19 @@ public class CartService : ICartService
                 // Race condition: another request already added this product to the cart
                 // Detach the failed entity from the change tracker
                 _unitOfWork.DetachEntity(cartItem);
-                
+
                 // Reload the cart and update the existing item's quantity instead
                 var existingCartId = cart.Id;
                 cart = await _unitOfWork.Carts.GetCartWithItemsAsync(existingCartId, cancellationToken: cancellationToken);
                 if (cart == null)
                     return Result<CartDto>.Fail(ErrorCodes.CartNotFound, $"Cart {existingCartId} not found");
-                    
+
                 existingItem = cart.Items.FirstOrDefault(x => x.ProductId == productId);
                 if (existingItem != null)
                 {
                     if (existingItem.Quantity + quantity > product.StockQuantity)
                         return Result<CartDto>.Fail(ErrorCodes.InsufficientStock, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, Requested: {existingItem.Quantity + quantity}");
-                    
+
                     existingItem.Quantity += quantity;
                     await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
                 }
@@ -174,7 +174,15 @@ public class CartService : ICartService
             cartItem.Quantity = quantity;
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while updating cart item {CartItemId}", cartItemId);
+            return Result<CartDto>.Fail(ErrorCodes.ConcurrencyConflict, "Cart was modified by another request. Please refresh and try again.");
+        }
         var dto = await MapCartToDtoAsync(cart, cancellationToken);
         return Result<CartDto>.Ok(dto);
     }
@@ -187,7 +195,15 @@ public class CartService : ICartService
             return Result<CartDto>.Fail(ErrorCodes.CartItemNotFound, $"Cart item {cartItemId} not found");
 
         await _unitOfWork.CartItems.DeleteAsync(cartItem, cancellationToken: cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while removing cart item {CartItemId}", cartItemId);
+            return Result<CartDto>.Fail(ErrorCodes.ConcurrencyConflict, "Cart was modified by another request. Please refresh and try again.");
+        }
 
         // Reload cart to get fresh data
         var cartId = cart.Id;
@@ -206,7 +222,15 @@ public class CartService : ICartService
         if (cart.Items.Count > 0)
         {
             await _unitOfWork.CartItems.DeleteRangeAsync(cart.Items.ToList(), cancellationToken: cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict while clearing cart {CartId}", cart.Id);
+                return Result<CartDto>.Fail(ErrorCodes.ConcurrencyConflict, "Cart was modified by another request. Please refresh and try again.");
+            }
         }
 
         // Reload cart to get fresh data
@@ -264,7 +288,7 @@ public class CartService : ICartService
         return Result<Unit>.Ok(Unit.Value);
     }
 
-    private async Task<CartDto> MapCartToDtoAsync(Cart cart, CancellationToken cancellationToken = default)
+    private async Task<CartDto> MapCartToDtoAsync(Cart cart, CancellationToken _ = default)
     {
         // Use AutoMapper to map cart and its items (CartRepository ensures Product is included)
         var dto = _mapper.Map<CartDto>(cart);

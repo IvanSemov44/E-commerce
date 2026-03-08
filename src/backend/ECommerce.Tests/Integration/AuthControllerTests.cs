@@ -15,6 +15,7 @@ namespace ECommerce.Tests.Integration;
 public class AuthControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     [TestInitialize]
     public void Setup()
@@ -358,7 +359,7 @@ public class AuthControllerTests
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
 
         // Verify ApiResponse<AuthResponseDto> structure

@@ -13,6 +13,7 @@ namespace ECommerce.Tests.Integration;
 public class PromoCodesControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     [TestInitialize]
     public void Setup()
@@ -54,7 +55,7 @@ public class PromoCodesControllerTests
             $"ValidatePromoCode should accept camelCase JSON. Response: {responseContent}");
         
         // Verify response contains valid data
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
         Assert.IsTrue(responseData.TryGetProperty("success", out var successProp), "Response should have success property");
         Assert.AreEqual(true, successProp.GetBoolean(), "Response success should be true");
@@ -130,7 +131,7 @@ public class PromoCodesControllerTests
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
         
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
         
         if (responseData.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("discountAmount", out var discountProp))
@@ -156,7 +157,7 @@ public class PromoCodesControllerTests
             "Invalid code should still return 200 with isValid=false");
         
         var responseContent = await response.Content.ReadAsStringAsync();
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
         
         if (responseData.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("isValid", out var isValidProp))
@@ -212,7 +213,7 @@ public class PromoCodesControllerTests
         // Assert
         if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
         {
-            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var jsonOptions = _jsonOptions;
             var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
             Assert.IsTrue(responseData.TryGetProperty("data", out _), "Response should have data property");
         }
@@ -376,7 +377,7 @@ public class PromoCodesControllerTests
         // Assert
         if (!string.IsNullOrEmpty(responseContent) && response.StatusCode == HttpStatusCode.OK)
         {
-            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var jsonOptions = _jsonOptions;
             var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
             Assert.IsTrue(responseData.TryGetProperty("success", out _) || responseData.TryGetProperty("data", out _),
                 "Response should have success or data property");

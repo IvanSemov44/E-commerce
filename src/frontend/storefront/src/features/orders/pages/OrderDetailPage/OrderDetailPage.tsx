@@ -5,14 +5,23 @@ import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import LoadingSkeleton from '@/shared/components/LoadingSkeleton';
-import { OrderHeader, OrderItemsList, OrderTotals, ShippingAddress } from '../../components';
+import {
+  OrderHeader,
+  OrderItemsList,
+  OrderTotals,
+  ShippingAddress,
+} from '@/features/orders/components';
 import styles from './OrderDetailPage.module.css';
 
 export default function OrderDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
-  const { data: order, isLoading, error } = useGetOrderByIdQuery(orderId || '', {
+  const {
+    data: order,
+    isLoading,
+    error,
+  } = useGetOrderByIdQuery(orderId || '', {
     skip: !orderId,
   });
   const { handleError } = useApiErrorHandler();
@@ -28,11 +37,7 @@ export default function OrderDetailPage() {
   }
 
   const handleCancel = async () => {
-    if (
-      window.confirm(
-        t('orders.cancelConfirmMessage')
-      )
-    ) {
+    if (window.confirm(t('orders.cancelConfirmMessage'))) {
       try {
         await cancelOrder(orderId).unwrap();
         navigate('/orders');
@@ -42,7 +47,10 @@ export default function OrderDetailPage() {
     }
   };
 
-  const canCancel: boolean = !!(order && (order.status === 'Pending' || order.status === 'Processing'));
+  const canCancel: boolean = !!(
+    order &&
+    (order.status === 'Pending' || order.status === 'Processing')
+  );
 
   return (
     <div className={styles.container}>

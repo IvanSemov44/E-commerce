@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
-import type { CartItem as CartItemType } from '../../slices/cartSlice';
+import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
 import styles from './CartItem.module.css';
 
 interface CartItemProps {
@@ -12,7 +12,12 @@ interface CartItemProps {
   readOnly?: boolean;
 }
 
-const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove, readOnly = false }: CartItemProps) {
+const CartItem = React.memo(function CartItem({
+  item,
+  onUpdateQuantity,
+  onRemove,
+  readOnly = false,
+}: CartItemProps) {
   // Use default image if item.image is empty or undefined
   const imageSrc = item.image || DEFAULT_PRODUCT_IMAGE;
 
@@ -38,9 +43,7 @@ const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove
         <div className={styles.price}>
           {formatPrice(item.price)}
           {item.compareAtPrice && (
-            <span className={styles.strikethrough}>
-              {formatPrice(item.compareAtPrice)}
-            </span>
+            <span className={styles.strikethrough}>{formatPrice(item.compareAtPrice)}</span>
           )}
         </div>
 
@@ -73,10 +76,7 @@ const CartItem = React.memo(function CartItem({ item, onUpdateQuantity, onRemove
       <div className={styles.rightSection}>
         <div className={styles.subtotal}>{formatPrice(item.price * item.quantity)}</div>
         {!readOnly && (
-          <button
-            onClick={() => onRemove(item.id)}
-            className={styles.removeButton}
-          >
+          <button onClick={() => onRemove(item.id)} className={styles.removeButton}>
             Remove
           </button>
         )}

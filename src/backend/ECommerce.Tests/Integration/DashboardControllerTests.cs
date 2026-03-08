@@ -12,6 +12,7 @@ namespace ECommerce.Tests.Integration;
 public class DashboardControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     [TestInitialize]
     public void Setup()
@@ -86,7 +87,7 @@ public class DashboardControllerTests
         // Assert
         if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
         {
-            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var jsonOptions = _jsonOptions;
             var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
             Assert.IsTrue(responseData.TryGetProperty("data", out _), "Response should have data property");
         }
@@ -205,7 +206,7 @@ public class DashboardControllerTests
         // Assert
         if (!string.IsNullOrEmpty(responseContent) && response.StatusCode == HttpStatusCode.OK)
         {
-            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var jsonOptions = _jsonOptions;
             var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
             Assert.IsTrue(responseData.TryGetProperty("success", out _) || responseData.TryGetProperty("data", out _),
                 "Response should have success or data property");
