@@ -1,32 +1,24 @@
-# TODO
+## Refactoring AppInitializer.tsx into a useAppInitialization hook
 
-## Consolidate EmptyState components (storefront)
+### Steps:
+1. **Create a New Hook File:**  Create a new file named `useAppInitialization.ts` in the appropriate hooks directory.
+2. **Extract Logic:** Move the initialization logic from `AppInitializer.tsx` to the new hook. Ensure it returns any necessary state or functions that were previously used in `AppInitializer`.  
+3. **Update Imports:** Change the imports in `AppInitializer.tsx` to use the newly created `useAppInitialization` hook instead of the original logic.
+4. **Props Handling:** Ensure that any props handled in `AppInitializer` are appropriately managed in the hook as parameters if necessary.
+5. **Testing:** Write unit tests for the `useAppInitialization` hook to verify its functionality.
 
-### Context
-There are two different `EmptyState` implementations in the storefront codebase:
+### Behavior Invariants:
+- The hook should maintain the same functionality as before.
+- Any side effects should remain consistent. If the original `AppInitializer` performed any cleanup, ensure that is replicated in the hook.
 
-1. `src/frontend/storefront/src/shared/components/EmptyState/EmptyState.tsx`
-   - Generic, slot-based component
-   - Props: `icon?: ReactNode`, `title`, `description?`, `action?: ReactNode`
-   - Wraps content in `Card`
+### Verification Commands:
+- Run `jest` or the test framework of choice to ensure tests pass. Check for edge cases covered in the tests.
+- Perform end-to-end testing to verify that the same behavior is observed in the application when using the hook as was previously observed using `AppInitializer.tsx`.
 
-2. `src/frontend/storefront/src/shared/components/ui/EmptyState/EmptyState.tsx`
-   - Opinionated UI component + presets
-   - Props: `icon: 'cart' | 'wishlist' | 'orders' | 'search' | 'error'`, `title`, `description`, optional action labels + handlers
-   - Exports presets: `EmptyCart`, `EmptyWishlist`, `EmptyOrders`, `NoSearchResults`, `ErrorState`
+### Additional Notes:
+- Keep the `AppInitializer.tsx` file clean and focused on component-level concerns after the refactor.
+- Consider performance implications if the hook will be called frequently.
 
-This duplication increases confusion and maintenance cost.
+----
 
-### Suggested solution (low-risk, incremental)
-1. Pick a single canonical component to keep (recommended: the `ui/EmptyState` one).
-2. Add a compatibility shim at the old import path so nothing breaks immediately:
-   - Update `src/frontend/storefront/src/shared/components/EmptyState/index.ts` to re-export from `shared/components/ui/EmptyState`.
-   - Optionally keep `src/shared/components/EmptyState/EmptyState.tsx` temporarily but mark it `@deprecated`.
-3. Migrate imports gradually:
-   - Replace imports from `@/shared/components/EmptyState` with `@/shared/components/ui/EmptyState` (or the repo’s standard import style).
-   - Adjust call sites because props differ (ReactNode slots vs `icon` union + button handlers).
-4. Run `npm run typecheck` and `npm run lint` after each batch.
-5. Once all references are migrated and checks pass, delete the deprecated implementation and folder.
-
-### Notes
-I (Copilot Chat) can help with the migration, but since I cannot run `tsc`/ESLint/Prettier here, prefer doing this in small steps with local checks or CI.
+*Updated on 2026-03-08 16:23:10 UTC*
