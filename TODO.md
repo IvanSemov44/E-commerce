@@ -1,7 +1,11 @@
 # TODO
 
-- Consolidate EmptyState
+## EmptyState
+
+- Detailed description of EmptyState section. 
+  - Point 1
+  - Point 2
 
 ## AppInitializer Hook
 
-- Existing content of AppInitializer hook section.
+- Additional instructions related to AppInitializer Hook.
