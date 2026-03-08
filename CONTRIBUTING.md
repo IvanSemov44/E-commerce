@@ -205,10 +205,26 @@ export { utilFunction1, utilFunction2 } from './utils'; // or './ComponentName.u
 
 1.  Ensure your code adheres to the **Coding Conventions**.
 2.  Make sure all existing **tests pass**. Add new tests for your feature or bug fix. Run tests with `dotnet test` in the `src/backend` directory.
-3.  Update the [README.md](./README.md) or other relevant documentation if your changes impact the project's setup, environment variables, or architecture.
+3.  Update the [README.md](./README.md) or other relevant documentation if your changes impact the project's setup, environment variables, architecture, or established coding patterns.
+4.  If your PR changes an established implementation pattern, update the related `.ai/` documentation in the same PR.
+5.  If code and docs conflict, code is source of truth and docs must be corrected before merge.
 4.  Push your feature branch to your fork on GitHub.
 5.  Open a pull request from your feature branch to the `main` branch of the original repository.
 6.  In the pull request description, clearly explain the **purpose** and **scope** of your changes. Link to any relevant issues.
 7.  The pull request will be reviewed by maintainers. Address any feedback or requested changes.
 
 Once your PR is approved and merges, your contribution will be part of the project. Thank you for your hard work!
+
+## Documentation Maintenance Contract
+
+To prevent documentation drift:
+
+1. Pattern changes require documentation updates in the same commit/PR.
+2. Do not leave "update docs later" for pattern-level changes.
+3. If you add a new recurring pattern, document it in `.ai/` as part of implementation.
+4. If you discover a repeated anti-pattern, add it to `.ai/reference/common-mistakes.md`.
+
+### PR Checklist Additions
+
+- [ ] Pattern changed? Related `.ai/` docs updated in this PR.
+- [ ] New anti-pattern discovered? Added to `.ai/reference/common-mistakes.md`.

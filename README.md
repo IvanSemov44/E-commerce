@@ -7,6 +7,7 @@ This is a full-stack e-commerce platform built with a modern architecture. It fe
 - [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
 - [Project Architecture](#project-architecture)
+- [For AI Assistants](#for-ai-assistants)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
 - [Running the Application](#running-the-application)
@@ -59,6 +60,17 @@ A detailed list of the technologies and major libraries used across the project.
 - **Containerization:** Docker, Docker Compose
 
 - **Database:** PostgreSQL
+
+## For AI Assistants
+
+AI coding assistants should start with `.ai/README.md`.
+
+- Canonical docs hub: `.ai/README.md`
+- Quick start: `.ai/quick-start.md`
+- Feature implementation workflow: `.ai/workflows/adding-feature.md`
+- Database migrations workflow: `.ai/workflows/database-migrations.md`
+- Backend error handling rules: `.ai/backend/error-handling.md`
+- Common mistakes to avoid: `.ai/reference/common-mistakes.md`
 
 
 
