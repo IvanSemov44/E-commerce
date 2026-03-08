@@ -23,7 +23,7 @@ interface ReviewListProps {
 
 export default function ReviewList({ reviews, isLoading, error }: ReviewListProps) {
   const { t } = useTranslation();
-  
+
   if (isLoading) {
     return <div className={styles.loading}>{t('products.loadingReviews')}</div>;
   }
@@ -43,27 +43,21 @@ export default function ReviewList({ reviews, isLoading, error }: ReviewListProp
           <div className={styles.reviewCard}>
             <div className={styles.header}>
               <div className={styles.headerContent}>
-                {review.title && (
-                  <h4 className={styles.title}>
-                    {review.title}
-                  </h4>
-                )}
+                {review.title && <h4 className={styles.title}>{review.title}</h4>}
                 <div className={styles.ratingRow}>
                   <StarRating rating={review.rating} readonly size="md" />
-                  <span className={styles.ratingText}>
-                    {review.rating}/5
-                  </span>
+                  <span className={styles.ratingText}>{review.rating}/5</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <p className={styles.comment}>
-            {review.comment}
-          </p>
+          <p className={styles.comment}>{review.comment}</p>
 
           <div className={styles.footer}>
-            <span>{t('products.by')} {review.userName || t('products.anonymous')}</span>
+            <span>
+              {t('products.by')} {review.userName || t('products.anonymous')}
+            </span>
             <span>{new Date(review.createdAt).toLocaleDateString()}</span>
           </div>
         </Card>

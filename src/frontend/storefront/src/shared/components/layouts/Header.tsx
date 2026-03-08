@@ -57,9 +57,7 @@ function UserMenu({ user, isOpen, onToggle, onClose, onLogout }: UserMenuProps) 
         aria-expanded={isOpen}
         aria-label="User menu"
       >
-        <div className={styles.userAvatar}>
-          {user?.firstName?.charAt(0).toUpperCase() ?? 'U'}
-        </div>
+        <div className={styles.userAvatar}>{user?.firstName?.charAt(0).toUpperCase() ?? 'U'}</div>
         <span className={styles.userName}>{user?.firstName}</span>
         <ChevronDownIcon className={styles.dropdownIcon} />
       </button>
@@ -228,10 +226,7 @@ export default function Header() {
     return localCartItemCount;
   }, [isAuthenticated, backendCart, localCartItemCount]);
 
-  const wishlistItemCount = useMemo(
-    () => wishlistData?.items?.length ?? 0,
-    [wishlistData]
-  );
+  const wishlistItemCount = useMemo(() => wishlistData?.items?.length ?? 0, [wishlistData]);
 
   const handleLogout = () => {
     dispatch(logout());

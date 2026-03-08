@@ -1,4 +1,4 @@
-namespace ECommerce.Core.Constants;
+﻿namespace ECommerce.Core.Constants;
 
 /// <summary>
 /// Centralized constants for pagination across the application.

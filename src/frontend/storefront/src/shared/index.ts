@@ -1,6 +1,6 @@
 /**
  * Shared Module Barrel Export
- * 
+ *
  * Central export for all shared/cross-feature code:
  * - UI components (Button, Input, Card, etc)
  * - Layout components (Header, Footer)
@@ -8,7 +8,7 @@
  * - Shared types
  * - Library utilities and infrastructure
  * - Internationalization
- * 
+ *
  * Usage:
  *   import { Button, Header } from '@/shared';
  *   import { useForm, useToast } from '@/shared/hooks';

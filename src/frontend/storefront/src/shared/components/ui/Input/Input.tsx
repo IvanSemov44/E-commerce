@@ -25,12 +25,18 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || `input-${generatedId}`;
     const variantToUse = error ? 'error' : variant;
     const variantClass = getInputVariantClass(variantToUse);
-    const inputClasses = [styles.input, variantClass, icon ? styles.inputWithIcon : ''].filter(Boolean).join(' ');
+    const inputClasses = [styles.input, variantClass, icon ? styles.inputWithIcon : '']
+      .filter(Boolean)
+      .join(' ');
     const combinedClassName = className ? `${inputClasses} ${className}` : inputClasses;
 
     return (
       <div className={styles.wrapper}>
-        {label && <label htmlFor={inputId} className={styles.label}>{label}</label>}
+        {label && (
+          <label htmlFor={inputId} className={styles.label}>
+            {label}
+          </label>
+        )}
         <div className={styles.inputContainer}>
           {icon && <div className={styles.icon}>{icon}</div>}
           <input id={inputId} ref={ref} className={combinedClassName} {...props} />

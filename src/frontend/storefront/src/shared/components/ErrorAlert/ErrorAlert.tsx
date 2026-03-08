@@ -12,10 +12,7 @@ export default function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
       <div>
         <p className="error-text">{message}</p>
         {onDismiss && (
-          <button
-            onClick={onDismiss}
-            aria-label="Dismiss error"
-          >
+          <button onClick={onDismiss} aria-label="Dismiss error">
             <CloseIcon width={20} height={20} />
           </button>
         )}

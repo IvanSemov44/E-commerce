@@ -13,7 +13,7 @@ describe('useOnlineStatus', () => {
 
   it('should return isOnline as true when online', () => {
     const { result } = renderHook(() => useOnlineStatus());
-    
+
     expect(result.current.isOnline).toBe(true);
   });
 
@@ -22,9 +22,9 @@ describe('useOnlineStatus', () => {
       writable: true,
       value: false,
     });
-    
+
     const { result } = renderHook(() => useOnlineStatus());
-    
+
     expect(result.current.isOnline).toBe(false);
   });
 
@@ -33,27 +33,27 @@ describe('useOnlineStatus', () => {
       writable: true,
       value: false,
     });
-    
+
     const { result } = renderHook(() => useOnlineStatus());
-    
+
     expect(result.current.isOnline).toBe(false);
-    
+
     act(() => {
       window.dispatchEvent(new Event('online'));
     });
-    
+
     expect(result.current.isOnline).toBe(true);
   });
 
   it('should update isOnline when offline event is fired', () => {
     const { result } = renderHook(() => useOnlineStatus());
-    
+
     expect(result.current.isOnline).toBe(true);
-    
+
     act(() => {
       window.dispatchEvent(new Event('offline'));
     });
-    
+
     expect(result.current.isOnline).toBe(false);
   });
 
@@ -62,21 +62,21 @@ describe('useOnlineStatus', () => {
       writable: true,
       value: false,
     });
-    
+
     const { result } = renderHook(() => useOnlineStatus());
-    
+
     expect(result.current.wasOffline).toBe(false);
-    
+
     act(() => {
       window.dispatchEvent(new Event('online'));
     });
-    
+
     expect(result.current.wasOffline).toBe(true);
   });
 
   it('should have initial wasOffline as false', () => {
     const { result } = renderHook(() => useOnlineStatus());
-    
+
     expect(result.current.wasOffline).toBe(false);
   });
 });

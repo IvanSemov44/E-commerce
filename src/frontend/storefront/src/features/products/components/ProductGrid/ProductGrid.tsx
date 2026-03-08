@@ -20,12 +20,13 @@ export default function ProductGrid({
   onPageChange,
 }: ProductGridProps) {
   const { t } = useTranslation();
-  
+
   return (
     <>
       {/* Results Count */}
       <div className={styles.resultsCount}>
-        {t('common.showing')} <strong>{products.length}</strong> {t('common.of')} <strong>{totalCount}</strong> {t('common.products')}
+        {t('common.showing')} <strong>{products.length}</strong> {t('common.of')}{' '}
+        <strong>{totalCount}</strong> {t('common.products')}
       </div>
 
       <PaginatedView

@@ -1,4 +1,4 @@
-namespace ECommerce.API.Middleware;
+﻿namespace ECommerce.API.Middleware;
 
 public class SecurityHeadersMiddleware
 {

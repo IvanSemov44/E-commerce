@@ -40,9 +40,7 @@ describe('Pagination', () => {
   });
 
   it('disables next button on last page', () => {
-    render(
-      <Pagination {...defaultProps} currentPage={10} totalCount={120} pageSize={12} />
-    );
+    render(<Pagination {...defaultProps} currentPage={10} totalCount={120} pageSize={12} />);
     const nextButton = screen.getByLabelText(/next/i);
     expect(nextButton).toBeDisabled();
   });
@@ -56,13 +54,7 @@ describe('Pagination', () => {
   it('calls onPageChange when page button is clicked', async () => {
     const handlePageChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <Pagination
-        {...defaultProps}
-        onPageChange={handlePageChange}
-        currentPage={1}
-      />
-    );
+    render(<Pagination {...defaultProps} onPageChange={handlePageChange} currentPage={1} />);
 
     const page2Button = screen.getByRole('button', { name: /go to page 2/i });
     await user.click(page2Button);
@@ -73,9 +65,7 @@ describe('Pagination', () => {
   it('calls onPageChange when next button is clicked', async () => {
     const handlePageChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <Pagination {...defaultProps} onPageChange={handlePageChange} currentPage={1} />
-    );
+    render(<Pagination {...defaultProps} onPageChange={handlePageChange} currentPage={1} />);
 
     const nextButton = screen.getByLabelText(/next/i);
     await user.click(nextButton);
@@ -86,9 +76,7 @@ describe('Pagination', () => {
   it('calls onPageChange when previous button is clicked', async () => {
     const handlePageChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <Pagination {...defaultProps} onPageChange={handlePageChange} currentPage={3} />
-    );
+    render(<Pagination {...defaultProps} onPageChange={handlePageChange} currentPage={3} />);
 
     const prevButton = screen.getByLabelText(/previous/i);
     await user.click(prevButton);
@@ -98,7 +86,12 @@ describe('Pagination', () => {
 
   it('shows page size selector when showPageSizeSelector is true', () => {
     render(
-      <Pagination {...defaultProps} showPageSizeSelector onPageSizeChange={vi.fn()} pageSizeOptions={[12, 24]} />
+      <Pagination
+        {...defaultProps}
+        showPageSizeSelector
+        onPageSizeChange={vi.fn()}
+        pageSizeOptions={[12, 24]}
+      />
     );
     const select = screen.getByRole('combobox', { name: /items per page/i });
     expect(select).toBeInTheDocument();
@@ -139,13 +132,7 @@ describe('Pagination', () => {
   it('goes to first page when first button is clicked', async () => {
     const handlePageChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <Pagination
-        {...defaultProps}
-        currentPage={5}
-        onPageChange={handlePageChange}
-      />
-    );
+    render(<Pagination {...defaultProps} currentPage={5} onPageChange={handlePageChange} />);
 
     const firstButton = screen.getByLabelText(/first page/i);
     await user.click(firstButton);
@@ -156,13 +143,7 @@ describe('Pagination', () => {
   it('goes to last page when last button is clicked', async () => {
     const handlePageChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <Pagination
-        {...defaultProps}
-        currentPage={1}
-        onPageChange={handlePageChange}
-      />
-    );
+    render(<Pagination {...defaultProps} currentPage={1} onPageChange={handlePageChange} />);
 
     const lastButton = screen.getByLabelText(/last page/i);
     await user.click(lastButton);
@@ -171,20 +152,13 @@ describe('Pagination', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(
-      <Pagination {...defaultProps} className="custom-pagination" />
-    );
+    const { container } = render(<Pagination {...defaultProps} className="custom-pagination" />);
     const pagination = container.querySelector('.custom-pagination');
     expect(pagination).toBeInTheDocument();
   });
 
   it('handles custom pageLabel function', () => {
-    render(
-      <Pagination
-        {...defaultProps}
-        pageLabel={(page) => `Navigate to page ${page}`}
-      />
-    );
+    render(<Pagination {...defaultProps} pageLabel={(page) => `Navigate to page ${page}`} />);
     expect(screen.getByRole('button', { name: /navigate to page 2/i })).toBeInTheDocument();
   });
 
@@ -207,7 +181,12 @@ describe('Pagination', () => {
 
   it('supports default page size options', () => {
     render(
-      <Pagination {...defaultProps} showPageSizeSelector onPageSizeChange={vi.fn()} pageSizeOptions={[12, 24]} />
+      <Pagination
+        {...defaultProps}
+        showPageSizeSelector
+        onPageSizeChange={vi.fn()}
+        pageSizeOptions={[12, 24]}
+      />
     );
     const select = screen.getByRole('combobox', { name: /items per page/i });
     expect(select).toBeInTheDocument();

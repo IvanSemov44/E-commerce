@@ -286,7 +286,8 @@
 }
 
 @keyframes floating {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -298,19 +299,19 @@
    Dark Mode
    ============================================================================= */
 
-[data-theme="dark"] .container {
+[data-theme='dark'] .container {
   background: linear-gradient(135deg, var(--color-neutral-900) 0%, var(--color-neutral-800) 100%);
 }
 
-[data-theme="dark"] .secondaryAction {
+[data-theme='dark'] .secondaryAction {
   background-color: var(--color-neutral-800);
   border-color: var(--color-neutral-700);
 }
 
-[data-theme="dark"] .secondaryAction:hover {
+[data-theme='dark'] .secondaryAction:hover {
   background-color: var(--color-neutral-700);
 }
 
-[data-theme="dark"] .helpLinks {
+[data-theme='dark'] .helpLinks {
   border-top-color: var(--color-neutral-700);
 }

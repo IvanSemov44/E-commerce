@@ -17,10 +17,12 @@ export default function ProductImageGallery({ images, productName }: ProductImag
         <img
           src={images[selectedImageIndex]?.url}
           alt={productName}
-          onError={(e) => { e.currentTarget.src = DEFAULT_PRODUCT_IMAGE }}
+          onError={(e) => {
+            e.currentTarget.src = DEFAULT_PRODUCT_IMAGE;
+          }}
         />
       </div>
-      
+
       {images.length > 1 && (
         <div className={styles.thumbnailGrid}>
           {images.map((img, index) => (
@@ -34,7 +36,9 @@ export default function ProductImageGallery({ images, productName }: ProductImag
               <img
                 src={img.url}
                 alt={img.altText || `Product image ${index + 1}`}
-                onError={(e) => { e.currentTarget.src = DEFAULT_PRODUCT_IMAGE }}
+                onError={(e) => {
+                  e.currentTarget.src = DEFAULT_PRODUCT_IMAGE;
+                }}
               />
             </button>
           ))}

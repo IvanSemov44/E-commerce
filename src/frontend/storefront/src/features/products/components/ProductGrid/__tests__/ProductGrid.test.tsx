@@ -13,7 +13,9 @@ const mockProducts: Product[] = [
     price: 29.99,
     compareAtPrice: 39.99,
     stockQuantity: 10,
-    images: [{ id: 'img-1', url: 'http://example.com/image1.jpg', altText: 'Product 1', isPrimary: true }],
+    images: [
+      { id: 'img-1', url: 'http://example.com/image1.jpg', altText: 'Product 1', isPrimary: true },
+    ],
     averageRating: 4.5,
     reviewCount: 10,
     isFeatured: true,
@@ -26,7 +28,9 @@ const mockProducts: Product[] = [
     price: 49.99,
     compareAtPrice: undefined,
     stockQuantity: 5,
-    images: [{ id: 'img-2', url: 'http://example.com/image2.jpg', altText: 'Product 2', isPrimary: true }],
+    images: [
+      { id: 'img-2', url: 'http://example.com/image2.jpg', altText: 'Product 2', isPrimary: true },
+    ],
     averageRating: 4.0,
     reviewCount: 5,
     isFeatured: false,

@@ -67,12 +67,20 @@ describe('ProductCard', () => {
         },
         auth: {
           isAuthenticated,
-          user: isAuthenticated ? { id: '1', email: 'test@test.com', firstName: 'Test', lastName: 'User', role: 'customer' } : null,
+          user: isAuthenticated
+            ? {
+                id: '1',
+                email: 'test@test.com',
+                firstName: 'Test',
+                lastName: 'User',
+                role: 'customer',
+              }
+            : null,
           loading: false,
           error: null,
           initialized: true,
         },
-      }
+      },
     });
 
     return {

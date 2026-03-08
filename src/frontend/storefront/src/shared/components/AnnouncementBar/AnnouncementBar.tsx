@@ -12,7 +12,7 @@ interface AnnouncementBarProps {
 
 export default function AnnouncementBar({
   message,
-  link = "/products",
+  link = '/products',
   linkText,
   dismissible = true,
 }: AnnouncementBarProps) {

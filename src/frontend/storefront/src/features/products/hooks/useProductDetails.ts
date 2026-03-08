@@ -45,8 +45,7 @@ export default function useProductDetails(slug: string) {
 
   // Mutations
   const [addToWishlist, { isLoading: addingToWishlist }] = useAddToWishlistMutation();
-  const [removeFromWishlist, { isLoading: removingFromWishlist }] =
-    useRemoveFromWishlistMutation();
+  const [removeFromWishlist, { isLoading: removingFromWishlist }] = useRemoveFromWishlistMutation();
   const [addToCartBackend, { isLoading: addingToCartBackend }] = useAddToCartMutation();
 
   // Get current cart item

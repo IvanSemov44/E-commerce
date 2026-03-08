@@ -432,5 +432,6 @@ public class AuthController : ControllerBase
                 }
                 return StatusCode(500, ApiResponse<object>.Failure("Password reset failed", "RESET_ERROR"));
             }
-        );    }
+        );
+    }
 }

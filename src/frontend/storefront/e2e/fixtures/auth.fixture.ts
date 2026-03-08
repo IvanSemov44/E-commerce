@@ -26,10 +26,10 @@ export const test = base.extend<AuthFixtures>({
     const loginPage = new LoginPage(page);
     await loginPage.navigate();
     await loginPage.login(TEST_USER_EMAIL, TEST_USER_PASSWORD);
-    
+
     // Wait for successful login (redirect away from login page)
-    await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10000 });
-    
+    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
@@ -39,12 +39,15 @@ export const test = base.extend<AuthFixtures>({
     const loginPage = new LoginPage(page);
     await loginPage.navigate();
     await loginPage.login(ADMIN_USER_EMAIL, ADMIN_USER_PASSWORD);
-    
+
     // Wait for admin dashboard
-    await page.waitForURL(url => url.pathname.includes('/admin') || url.pathname.includes('/dashboard'), { 
-      timeout: 10000 
-    });
-    
+    await page.waitForURL(
+      (url) => url.pathname.includes('/admin') || url.pathname.includes('/dashboard'),
+      {
+        timeout: 10000,
+      }
+    );
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
@@ -61,30 +64,38 @@ export const test = base.extend<AuthFixtures>({
 export { expect } from '@playwright/test';
 
 // Helper function to manually authenticate a page
-export async function authenticatePage(page: Page, email?: string, password?: string): Promise<void> {
+export async function authenticatePage(
+  page: Page,
+  email?: string,
+  password?: string
+): Promise<void> {
   const loginPage = new LoginPage(page);
   await loginPage.navigate();
   await loginPage.login(email || TEST_USER_EMAIL, password || TEST_USER_PASSWORD);
-  await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10000 });
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
 }
 
 // Helper to check if user is authenticated
 export async function isAuthenticated(page: Page): Promise<boolean> {
   // Check for authenticated state indicators
-  const userMenu = page.locator('[data-testid="user-menu"], [class*="user-dropdown"], [aria-label*="account" i]');
+  const userMenu = page.locator(
+    '[data-testid="user-menu"], [class*="user-dropdown"], [aria-label*="account" i]'
+  );
   const loginLink = page.locator('a[href*="login"], a:has-text("Login")');
-  
-  const hasUserMenu = await userMenu.count() > 0;
-  const hasLoginLink = await loginLink.count() > 0;
-  
+
+  const hasUserMenu = (await userMenu.count()) > 0;
+  const hasLoginLink = (await loginLink.count()) > 0;
+
   return hasUserMenu && !hasLoginLink;
 }
 
 // Helper to logout
 export async function logout(page: Page): Promise<void> {
-  const logoutButton = page.locator('button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")');
-  
-  if (await logoutButton.count() > 0) {
+  const logoutButton = page.locator(
+    'button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")'
+  );
+
+  if ((await logoutButton.count()) > 0) {
     await logoutButton.click();
     await page.waitForURL('/login', { timeout: 5000 }).catch(() => {});
   }

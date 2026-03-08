@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using AutoMapper;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.Interfaces;

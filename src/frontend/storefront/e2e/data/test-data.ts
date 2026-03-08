@@ -191,7 +191,7 @@ export const testOrders = {
 export const mockApiResponses = {
   products: {
     list: {
-      products: Object.values(testProducts).filter(p => p.stock > 0),
+      products: Object.values(testProducts).filter((p) => p.stock > 0),
       total: 3,
       page: 1,
       pageSize: 10,

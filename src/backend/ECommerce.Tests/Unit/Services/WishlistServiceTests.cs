@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.Services;
 using ECommerce.Core.Constants;
@@ -53,8 +53,8 @@ public class WishlistServiceTests
         var entry = TestDataFactory.CreateWishlistItem(user.Id, product.Id, product);
 
         _mockUserRepository.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<bool>())).ReturnsAsync(user);
-            var entries = new List<Wishlist> { entry };
-            _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => entries.ToList());
+        var entries = new List<Wishlist> { entry };
+        _mockWishlistRepository.Setup(r => r.GetAllByUserIdAsync(user.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => entries.ToList());
 
         // Act
         var result = await _service.GetUserWishlistAsync(user.Id);

@@ -311,7 +311,7 @@
   transition: transform var(--duration-200) var(--ease-out);
 }
 
-.userButton[aria-expanded="true"] .dropdownIcon {
+.userButton[aria-expanded='true'] .dropdownIcon {
   transform: rotate(180deg);
 }
 
@@ -668,103 +668,108 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* =============================================================================
    Dark Mode Adjustments
    ============================================================================= */
 
-[data-theme="dark"] .header {
+[data-theme='dark'] .header {
   background-color: rgba(12, 12, 15, 0.85);
   border-bottom-color: var(--border-default);
 }
 
-[data-theme="dark"] .logo:hover .logoBadge {
+[data-theme='dark'] .logo:hover .logoBadge {
   background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
 }
 
-[data-theme="dark"] .navLink:hover {
+[data-theme='dark'] .navLink:hover {
   color: var(--color-brand);
 }
 
-[data-theme="dark"] .navLink::after {
+[data-theme='dark'] .navLink::after {
   background: linear-gradient(90deg, var(--color-primary-400), var(--color-primary-300));
 }
 
-[data-theme="dark"] .cartLink:hover {
+[data-theme='dark'] .cartLink:hover {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .userButton:hover {
+[data-theme='dark'] .userButton:hover {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .userAvatar {
+[data-theme='dark'] .userAvatar {
   background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
 }
 
-[data-theme="dark"] .dropdownMenu {
+[data-theme='dark'] .dropdownMenu {
   background-color: var(--color-neutral-900);
   border-color: var(--border-default);
-  box-shadow: 
+  box-shadow:
     0 10px 40px -10px rgba(0, 0, 0, 0.5),
     0 4px 16px -4px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .dropdownHeader {
+[data-theme='dark'] .dropdownHeader {
   background-color: var(--color-neutral-800);
   border-color: var(--border-default);
 }
 
-[data-theme="dark"] .dropdownItem:hover {
+[data-theme='dark'] .dropdownItem:hover {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .mobileMenu {
+[data-theme='dark'] .mobileMenu {
   background-color: var(--color-neutral-900);
   border-top-color: var(--border-default);
 }
 
-[data-theme="dark"] .mobileNavLink:hover {
+[data-theme='dark'] .mobileNavLink:hover {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .mobileUserInfo {
+[data-theme='dark'] .mobileUserInfo {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .mobileSignInLink {
+[data-theme='dark'] .mobileSignInLink {
   border-color: var(--border-default);
 }
 
-[data-theme="dark"] .mobileSignInLink:hover {
+[data-theme='dark'] .mobileSignInLink:hover {
   background-color: var(--color-neutral-800);
   border-color: var(--border-hover);
 }
 
-[data-theme="dark"] .mobileSignUpLink {
+[data-theme='dark'] .mobileSignUpLink {
   background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
 }
 
-[data-theme="dark"] .mobileLogoutButton {
+[data-theme='dark'] .mobileLogoutButton {
   background-color: rgba(248, 113, 113, 0.1);
   color: #f87171;
 }
 
-[data-theme="dark"] .mobileLogoutButton:hover {
+[data-theme='dark'] .mobileLogoutButton:hover {
   background-color: rgba(248, 113, 113, 0.15);
 }
 
-[data-theme="dark"] .mobileMenuButton:hover {
+[data-theme='dark'] .mobileMenuButton:hover {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .mobileThemeToggle {
+[data-theme='dark'] .mobileThemeToggle {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .mobileThemeLabel {
+[data-theme='dark'] .mobileThemeLabel {
   color: var(--text-secondary);
 }

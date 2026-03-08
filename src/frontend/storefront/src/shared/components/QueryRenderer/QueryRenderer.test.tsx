@@ -25,16 +25,14 @@ describe('QueryRenderer', () => {
 
   it('renders error state when error exists', () => {
     render(
-      <QueryRenderer
-        isLoading={false}
-        error={new Error('boom')}
-        data={undefined}
-      >
+      <QueryRenderer isLoading={false} error={new Error('boom')} data={undefined}>
         {() => <div>Content</div>}
       </QueryRenderer>
     );
 
-    expect(screen.getByTestId('error-alert')).toHaveTextContent('Failed to load data. Please try again.');
+    expect(screen.getByTestId('error-alert')).toHaveTextContent(
+      'Failed to load data. Please try again.'
+    );
   });
 
   it('renders custom error message', () => {
@@ -54,11 +52,7 @@ describe('QueryRenderer', () => {
 
   it('renders loading skeleton with defaults when loading', () => {
     render(
-      <QueryRenderer
-        isLoading
-        error={null}
-        data={undefined}
-      >
+      <QueryRenderer isLoading error={null} data={undefined}>
         {() => <div>Content</div>}
       </QueryRenderer>
     );
@@ -84,11 +78,7 @@ describe('QueryRenderer', () => {
 
   it('renders null on empty data without emptyState config', () => {
     const { container } = render(
-      <QueryRenderer
-        isLoading={false}
-        error={null}
-        data={[] as string[]}
-      >
+      <QueryRenderer isLoading={false} error={null} data={[] as string[]}>
         {() => <div>Content</div>}
       </QueryRenderer>
     );
@@ -129,11 +119,7 @@ describe('QueryRenderer', () => {
 
   it('renders children when data is available', () => {
     render(
-      <QueryRenderer
-        isLoading={false}
-        error={null}
-        data={{ name: 'Phone' }}
-      >
+      <QueryRenderer isLoading={false} error={null} data={{ name: 'Phone' }}>
         {(data) => <div>{data.name}</div>}
       </QueryRenderer>
     );

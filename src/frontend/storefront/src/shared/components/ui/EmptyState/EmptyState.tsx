@@ -91,12 +91,12 @@ export function EmptyOrders({ onBrowse }: { onBrowse?: () => void }) {
   );
 }
 
-export function NoSearchResults({ 
-  query, 
+export function NoSearchResults({
+  query,
   onClear,
-  onBrowse 
-}: { 
-  query?: string; 
+  onBrowse,
+}: {
+  query?: string;
   onClear?: () => void;
   onBrowse?: () => void;
 }) {
@@ -104,9 +104,10 @@ export function NoSearchResults({
     <EmptyState
       icon="search"
       title="No results found"
-      description={query 
-        ? `We couldn't find any products matching "${query}". Try different keywords or browse our categories.`
-        : "We couldn't find any products matching your search. Try different keywords."
+      description={
+        query
+          ? `We couldn't find any products matching "${query}". Try different keywords or browse our categories.`
+          : "We couldn't find any products matching your search. Try different keywords."
       }
       actionLabel="Clear Filters"
       onAction={onClear}
@@ -116,12 +117,12 @@ export function NoSearchResults({
   );
 }
 
-export function ErrorState({ 
-  message, 
+export function ErrorState({
+  message,
   onRetry,
-  onContact 
-}: { 
-  message?: string; 
+  onContact,
+}: {
+  message?: string;
   onRetry?: () => void;
   onContact?: () => void;
 }) {
@@ -129,7 +130,10 @@ export function ErrorState({
     <EmptyState
       icon="error"
       title="Something went wrong"
-      description={message || "We encountered an unexpected error. Please try again or contact support if the problem persists."}
+      description={
+        message ||
+        'We encountered an unexpected error. Please try again or contact support if the problem persists.'
+      }
       actionLabel="Try Again"
       onAction={onRetry}
       secondaryActionLabel="Contact Support"

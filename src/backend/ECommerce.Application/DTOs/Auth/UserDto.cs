@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Auth;
+﻿namespace ECommerce.Application.DTOs.Auth;
 
 public record UserDto
 {

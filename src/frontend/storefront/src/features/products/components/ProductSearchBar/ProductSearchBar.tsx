@@ -15,7 +15,7 @@ export default function ProductSearchBar({
   onSortChange,
 }: ProductSearchBarProps) {
   const { t } = useTranslation();
-  
+
   return (
     <div className={styles.searchBar}>
       <input

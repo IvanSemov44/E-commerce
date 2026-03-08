@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Reviews;
+﻿namespace ECommerce.Application.DTOs.Reviews;
 
 public class UpdateReviewDto
 {

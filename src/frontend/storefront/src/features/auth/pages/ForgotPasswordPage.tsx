@@ -43,9 +43,7 @@ export default function ForgotPassword() {
           </div>
         ) : (
           <>
-            <p className={styles.description}>
-              {t('forgotPassword.subtitle')}
-            </p>
+            <p className={styles.description}>{t('forgotPassword.subtitle')}</p>
 
             <form onSubmit={handleSubmit} className={styles.form}>
               <Input
@@ -58,11 +56,7 @@ export default function ForgotPassword() {
                 placeholder={t('forgotPassword.emailPlaceholder')}
               />
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                size="lg"
-              >
+              <Button type="submit" disabled={isLoading} size="lg">
                 {isLoading ? t('forgotPassword.sending') : t('forgotPassword.sendResetLink')}
               </Button>
             </form>

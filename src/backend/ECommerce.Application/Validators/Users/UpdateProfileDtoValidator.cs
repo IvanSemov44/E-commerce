@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ECommerce.Application.DTOs.Users;
 
 namespace ECommerce.Application.Validators.Users;

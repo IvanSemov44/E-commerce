@@ -34,7 +34,5 @@ export default function LoadingSkeleton({ count = 1, type = 'card' }: LoadingSke
     );
   }
 
-  return (
-    <div className={`animate-pulse ${styles.imageSkeleton}`}></div>
-  );
+  return <div className={`animate-pulse ${styles.imageSkeleton}`}></div>;
 }

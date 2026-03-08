@@ -23,10 +23,7 @@ export function useProfileFormHandling(
  * @param onAvatarError - Callback when avatar URL is invalid
  * @returns Object with handleAvatarBlur function
  */
-export function useAvatarValidation(
-  avatarUrl: string,
-  onAvatarError?: () => void
-) {
+export function useAvatarValidation(avatarUrl: string, onAvatarError?: () => void) {
   const handleAvatarBlur = () => {
     if (!avatarUrl) return;
     try {

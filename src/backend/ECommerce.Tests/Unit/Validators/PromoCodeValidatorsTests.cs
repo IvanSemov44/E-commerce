@@ -1,4 +1,4 @@
-using FluentValidation.TestHelper;
+﻿using FluentValidation.TestHelper;
 using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.Validators.PromoCodes;
 using FluentAssertions;

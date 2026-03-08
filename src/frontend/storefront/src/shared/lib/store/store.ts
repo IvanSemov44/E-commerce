@@ -29,10 +29,7 @@ const rootReducer = {
 export const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
-      baseApi.middleware,
-      cartPersistenceMiddleware
-    ),
+    getDefaultMiddleware().concat(baseApi.middleware, cartPersistenceMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

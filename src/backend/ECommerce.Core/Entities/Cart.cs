@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using ECommerce.Core.Common;
 using ECommerce.Core.Interfaces;
 

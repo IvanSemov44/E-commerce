@@ -6,7 +6,7 @@
   --skeleton-highlight: #f3f4f6;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --skeleton-bg: #374151;
   --skeleton-highlight: #4b5563;
 }
@@ -54,12 +54,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--skeleton-highlight),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, var(--skeleton-highlight), transparent);
   animation: skeletonWave 1.5s ease-in-out infinite;
 }
 
@@ -68,7 +63,8 @@
 }
 
 @keyframes skeletonPulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

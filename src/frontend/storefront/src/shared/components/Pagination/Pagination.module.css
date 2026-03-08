@@ -163,14 +163,14 @@
     flex-wrap: wrap;
     gap: var(--spacing-sm, 0.5rem);
   }
-  
+
   .pageSize {
     margin-left: 0;
     margin-top: var(--spacing-xs, 0.25rem);
     width: 100%;
     justify-content: center;
   }
-  
+
   .pageInfo {
     width: 100%;
     justify-content: center;

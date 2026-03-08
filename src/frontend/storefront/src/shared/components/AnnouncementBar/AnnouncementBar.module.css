@@ -1,5 +1,9 @@
 .announcementBar {
-  background: linear-gradient(90deg, var(--color-primary, #2563eb), var(--color-primary-dark, #1d4ed8));
+  background: linear-gradient(
+    90deg,
+    var(--color-primary, #2563eb),
+    var(--color-primary-dark, #1d4ed8)
+  );
   color: var(--text-inverse, #ffffff);
   padding: 0.625rem 1rem;
   display: flex;

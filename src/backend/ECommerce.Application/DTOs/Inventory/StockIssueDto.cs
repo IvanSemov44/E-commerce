@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Inventory;
+﻿namespace ECommerce.Application.DTOs.Inventory;
 
 public record StockIssueDto
 {

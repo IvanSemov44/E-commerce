@@ -22,7 +22,13 @@ export default function ActiveFilters({
   onClearAll,
 }: ActiveFiltersProps) {
   const { t } = useTranslation();
-  const hasFilters = search || categorySelected || minPrice !== undefined || maxPrice !== undefined || minRating !== undefined || isFeatured;
+  const hasFilters =
+    search ||
+    categorySelected ||
+    minPrice !== undefined ||
+    maxPrice !== undefined ||
+    minRating !== undefined ||
+    isFeatured;
 
   if (!hasFilters) return null;
 
@@ -33,36 +39,32 @@ export default function ActiveFilters({
           {t('products.search')}: <strong>{search}</strong>
         </div>
       )}
-      
+
       {categorySelected && (
         <div className={`${styles.badge} ${styles.badgeCategory}`}>
           {t('products.categorySelected')}
         </div>
       )}
-      
+
       {(minPrice !== undefined || maxPrice !== undefined) && (
         <div className={`${styles.badge} ${styles.badgePrice}`}>
           {t('products.price')}: ${minPrice || 0} - ${maxPrice || '∞'}
         </div>
       )}
-      
+
       {minRating !== undefined && (
         <div className={`${styles.badge} ${styles.badgeRating}`}>
           {minRating}+ {t('products.stars')}
         </div>
       )}
-      
+
       {isFeatured && (
         <div className={`${styles.badge} ${styles.badgeFeatured}`}>
           {t('products.featuredOnly')}
         </div>
       )}
-      
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={onClearAll}
-      >
+
+      <Button variant="secondary" size="sm" onClick={onClearAll}>
         {t('common.clear')}
       </Button>
     </div>

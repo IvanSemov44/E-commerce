@@ -22,17 +22,13 @@ export default function OrderSummary({
   return (
     <div className="bg-gray-50 p-6 rounded-lg">
       <h2 className="text-lg font-semibold mb-4">{t('checkout.orderSummary')}</h2>
-      
+
       {/* Items */}
       <div className="space-y-4 mb-4">
         {cartItems.map((item) => (
           <div key={item.id} className="flex gap-4">
             {item.image && (
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-16 h-16 object-cover rounded"
-              />
+              <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
             )}
             <div className="flex-1">
               <p className="font-medium">{item.name}</p>
@@ -60,11 +56,7 @@ export default function OrderSummary({
             className="flex-1 px-3 py-2 border rounded-lg text-sm"
           />
           {promoCode ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRemovePromoCode}
-            >
+            <Button variant="outline" size="sm" onClick={onRemovePromoCode}>
               {t('checkout.remove')}
             </Button>
           ) : (

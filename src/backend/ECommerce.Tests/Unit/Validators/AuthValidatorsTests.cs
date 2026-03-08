@@ -1,4 +1,4 @@
-using FluentValidation.TestHelper;
+﻿using FluentValidation.TestHelper;
 using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.Validators.Auth;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

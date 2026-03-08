@@ -102,11 +102,7 @@ export default function Register() {
             required
           />
 
-          <Button
-            type="submit"
-            disabled={isLoading || form.isSubmitting}
-            size="lg"
-          >
+          <Button type="submit" disabled={isLoading || form.isSubmitting} size="lg">
             {isLoading || form.isSubmitting ? t('auth.registering') : t('auth.register')}
           </Button>
         </form>

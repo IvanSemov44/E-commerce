@@ -213,8 +213,12 @@
 }
 
 @keyframes progress {
-  from { width: 100%; }
-  to { width: 0%; }
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
 }
 
 /* =============================================================================
@@ -331,21 +335,21 @@
    Dark Mode
    ============================================================================= */
 
-[data-theme="dark"] .toast {
+[data-theme='dark'] .toast {
   background-color: var(--color-neutral-800);
   border-color: var(--color-neutral-700);
 }
 
-[data-theme="dark"] .closeButton:hover {
+[data-theme='dark'] .closeButton:hover {
   background-color: var(--color-neutral-700);
 }
 
-[data-theme="dark"] .actionButton {
+[data-theme='dark'] .actionButton {
   background-color: var(--color-neutral-700);
   border-color: var(--color-neutral-600);
 }
 
-[data-theme="dark"] .actionButton:hover {
+[data-theme='dark'] .actionButton:hover {
   background-color: var(--color-neutral-600);
 }
 

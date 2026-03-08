@@ -13,6 +13,7 @@ Every frontend contribution must follow these rules. They are tiered by severity
 ### P0 - Blocking (Reject PR if missing)
 
 #### **1. RTK Query for All API Calls**
+
 Every API endpoint uses RTK Query via `baseApi.injectEndpoints()`. Never use `fetch`/`axios` directly.
 
 ```typescript
@@ -25,7 +26,15 @@ const productApiSlice = baseApi.injectEndpoints({
     getProducts: builder.query<PaginatedResult<Product>, { page?: number; pageSize?: number }>({
       query: ({ page = 1, pageSize = 20 }) => `/products?page=${page}&pageSize=${pageSize}`,
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>
-        response.data || { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0, hasNext: false, hasPrevious: false },
+        response.data || {
+          items: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 20,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+        },
     }),
     createProduct: builder.mutation<Product, CreateProductDto>({
       query: (body) => ({ url: '/products', method: 'POST', body }),
@@ -38,12 +47,14 @@ export const { useGetProductsQuery, useCreateProductMutation } = productApiSlice
 ```
 
 Key points:
+
 - ONE shared `baseApi` in `src/shared/lib/api/baseApi.ts` — features inject their endpoints
 - Use `transformResponse` to unwrap the `ApiResponse<T>` envelope so components receive clean data
 - Use `providesTags` / `invalidatesTags` for cache management
 - Import API slices in `store.ts` so endpoints get registered
 
 #### **2. TypeScript Types on All Components**
+
 All components must have explicit TypeScript types. No `any`.
 
 ```typescript
@@ -62,6 +73,7 @@ export default function ProductCard({ id, name, price, onSelect }: ProductCardPr
 ```
 
 #### **3. Error Handling with useApiErrorHandler**
+
 Use the centralized `useApiErrorHandler` hook from `src/shared/hooks/useApiErrorHandler.ts`. Never cast errors with `as any`.
 
 ```typescript
@@ -75,7 +87,7 @@ export default function CheckoutForm() {
     try {
       await createOrder(data).unwrap();
     } catch (error) {
-      handleError(error, 'Failed to place order');  // Shows toast automatically
+      handleError(error, 'Failed to place order'); // Shows toast automatically
     }
   };
 
@@ -84,6 +96,7 @@ export default function CheckoutForm() {
 ```
 
 #### **4. Redux for UI State Only**
+
 Use Redux slices for UI state (filters, pagination, modals). RTK Query owns all server data.
 
 ```typescript
@@ -99,6 +112,7 @@ const cartSlice = createSlice({
 ```
 
 #### **5. SVG Icons: Centralized Library Only**
+
 Every icon must be a component in `src/shared/components/icons/` — never embed inline SVGs or icon components in feature files. This ensures consistency, reusability, and maintainability.
 
 ```typescript
@@ -128,9 +142,11 @@ export function ProductCard() {
 ### P1 - Expected (Flag in code review)
 
 #### **5. Import Path Conventions: Use `@` Alias**
+
 Use the `@` alias for all imports instead of relative paths (`../../../`). This improves readability, makes refactoring easier, and is configured in `tsconfig.json`.
 
 **Alias mappings:**
+
 - `@/features/*` → `src/features/*` (feature modules)
 - `@/shared/*` → `src/shared/*` (shared components, hooks, utils, types)
 - `@/` → `src/` (root level)
@@ -148,22 +164,26 @@ import { ProductCard } from '@/features/products/components';
 // ❌ AVOID - Relative paths
 import Button from '../../../../shared/components/ui/Button';
 import { useGetOrdersQuery } from '../../api/ordersApi';
-import { useForm } from '@/shared/hooks/useForm';  // Inconsistent mix!
+import { useForm } from '@/shared/hooks/useForm'; // Inconsistent mix!
 ```
 
 **Rules:**
+
 - Use `@` for ALL imports (features, shared, even same-feature imports when from other directories)
 - Never mix relative and `@` paths in the same file
 - Relative imports (like `./Button`) are acceptable ONLY for same-directory imports (e.g., `./sibling.tsx`)
 
 #### **6. Data Flow Architecture**
+
 Follow this sequence for every feature:
+
 1. **API Layer** — `baseApi.injectEndpoints()` + exported hooks
 2. **Redux Slice** — Only if non-API state needed (UI state, local cart)
 3. **Components** — Consume hooks, handle loading/error/empty states
 4. **Pages** — Orchestrate components, wrap in ErrorBoundary
 
 #### **7. API Response Envelope**
+
 All API calls return this envelope. Use `transformResponse` to unwrap it.
 
 ```typescript
@@ -185,11 +205,13 @@ interface ApiResponse<T> {
 Components follow a **colocation pattern** where a component and its related files are organized together in a dedicated folder structure. This improves code organization, reusability, and maintainability.
 
 **Incremental adoption rule:**
+
 - If a PR touches a component, migrate that component to the colocation structure in the same PR.
 - Keep migration PRs small (1-3 components) and avoid behavior changes.
 - Use the tracker (`COLOCATION_ADOPTION_TRACKER.md`) to prioritize high-traffic and high-churn components first.
 
 **Basic colocation structure (1-2 hooks or utilities):**
+
 ```
 ComponentName/
 ├── ComponentName.tsx         # Main component
@@ -202,6 +224,7 @@ ComponentName/
 ```
 
 **Advanced colocation structure (3+ hooks):**
+
 ```
 ComponentName/
 ├── ComponentName.tsx         # Main component
@@ -223,6 +246,7 @@ ComponentName/
 **Note:** The `hooks/index.ts` and `utils/index.ts` are for internal organization only. They should NOT be re-exported through the component's main `index.ts` unless intentionally designed for reuse across features.
 
 **Feature-level structure (reference example):**
+
 ```
 src/features/products/
 ├── api/
@@ -266,6 +290,7 @@ src/features/products/
 **When to use each pattern:**
 
 1. **Single `.hooks.ts` file** (1-2 tightly-coupled hooks):
+
    ```typescript
    // ProductCard.hooks.ts
    export function useProductCardHandlers(...) { ... }
@@ -273,6 +298,7 @@ src/features/products/
    ```
 
 2. **`hooks/` folder with separate files** (3+ hooks OR hooks potentially reused elsewhere):
+
    ```typescript
    // hooks/usePriceFilters.ts
    export function usePriceFilters(...) { ... }
@@ -287,13 +313,14 @@ src/features/products/
    export { usePriceFilters } from './usePriceFilters';
    export { useRatingFilter } from './useRatingFilter';
    export { useFeaturedFilter } from './useFeaturedFilter';
-   
+
    // Note: This hooks/index.ts is for internal organization within the component.
    // These hooks should NOT be re-exported through the component's main index.ts
    // unless they're intentionally designed for reuse across features.
    ```
 
 3. **Separate `utils/` folder** (5+ utility functions):
+
    ```typescript
    // utils/calculations.utils.ts
    export function calculateTotal(...) { ... }
@@ -306,7 +333,7 @@ src/features/products/
    // utils/index.ts
    export * from './calculations.utils';
    export * from './formatting.utils';
-   
+
    // Note: This utils/index.ts is for internal organization within the component.
    // These utilities should NOT be re-exported through the component's main index.ts
    // unless they're intentionally designed for reuse across features.
@@ -319,14 +346,17 @@ src/features/products/
 The `index.ts` file exports define the public API. Different component types have different export rules:
 
 **UI Library Components** (Button, Input, Card, etc. in `shared/components/ui/`):
+
 ```typescript
 // Button/index.ts — exports component AND types (public API)
 export { default } from './Button';
-export type { ButtonProps, ButtonVariant } from './Button.types';  // ✅ Meant for external consumers
+export type { ButtonProps, ButtonVariant } from './Button.types'; // ✅ Meant for external consumers
 ```
+
 **Rationale:** UI library components are meant to be reused everywhere. Types must be exported so consumers can type their props.
 
 **Feature Components** (Product-specific, Cart-specific, etc. in `features/*/components/`):
+
 ```typescript
 // ProductCard/index.ts — exports component ONLY (minimal public API)
 export { default } from './ProductCard';
@@ -335,15 +365,18 @@ export { default } from './ProductCard';
 // import type { ProductCardProps } from './ProductCard.types';
 // import { useProductCardHandlers } from './ProductCard.hooks';
 ```
+
 **Rationale:** Feature components are self-contained. Types, hooks, and utilities are internal implementation details not meant for reuse. Other features shouldn't couple to ProductCard internals.
 
 **Summary:**
+
 - ✅ The component itself (always)
 - ✅ Types/utilities in **shared/components/ui/** components — exported for external consumers
-- ✅ Types/utilities in **features/*/components/** — NOT exported, kept internal
+- ✅ Types/utilities in **features/\*/components/** — NOT exported, kept internal
 - ℹ️ Tests and component-specific code import directly from `.types.ts` or `.hooks.ts` files
 
 **Benefits of minimal exports:**
+
 - ✅ **Clear public API**: Consumers know exactly what's meant to be used externally
 - ✅ **Prevents accidental coupling**: Other components can't depend on internal implementation details
 - ✅ **Easier refactoring**: Internal files (types, utils, hooks) can be changed/renamed without affecting consumers
@@ -352,6 +385,7 @@ export { default } from './ProductCard';
 - ✅ **Follows colocation principle**: Keep related files close, expose minimal interface
 
 **Import examples:**
+
 ```typescript
 // ✅ Import component (using index.ts)
 import ProductFilters from '@/features/products/components/ProductFilters';
@@ -365,15 +399,17 @@ import { usePriceFilters } from './hooks/usePriceFilters';
 import { usePriceFilters } from './ProductFilters.hooks';
 
 // ❌ WRONG - Don't import internal types/hooks from other components
-import { ProductFiltersProps } from '@/features/products/components/ProductFilters';  // ❌ Won't work
-import { usePriceFilters } from '@/features/products/components/ProductFilters';      // ❌ Won't work
+import { ProductFiltersProps } from '@/features/products/components/ProductFilters'; // ❌ Won't work
+import { usePriceFilters } from '@/features/products/components/ProductFilters'; // ❌ Won't work
 ```
 
 **Reference templates:**
+
 - Starter template with copy-paste file contents: `COMPONENT_COLOCATION_TEMPLATE.md`
 - Rollout tracker and adoption status: `COLOCATION_ADOPTION_TRACKER.md`
 
 #### **9. Form Validation with Zod**
+
 Validate before sending to API.
 
 ```typescript
@@ -390,6 +426,7 @@ type CheckoutDto = z.infer<typeof CheckoutSchema>;
 ### P2 - Recommended (Nice to have)
 
 #### **10. URL Persistence for Filters**
+
 Sync filters to query params so users can share/bookmark URLs.
 
 ```typescript
@@ -409,6 +446,7 @@ export function useFilterSync() {
 ```
 
 #### **11. Suspense for Route-Level Code Splitting**
+
 Use `React.lazy()` + `<Suspense>` for non-critical routes. This is already configured in `App.tsx`.
 
 ```typescript
@@ -432,6 +470,7 @@ function App() {
 ```
 
 **Note on Suspense + RTK Query:**
+
 - Suspense **does** work with `React.lazy()` code splitting ✅
 - Suspense **does NOT** work with regular RTK Query hooks like `useGetProductQuery` (they return `{ data, isLoading, error }`) ❌
 - For RTK Query with Suspense, use `useSuspenseQuery` hook (RTK Query 2.x / RTK 2.0+) which throws promises
@@ -469,6 +508,7 @@ function ProductsPage() {
 ```
 
 #### **12. Error Recovery for Mutations**
+
 Implement retry and user-friendly error messages for mutations. Offline queue and conflict resolution are optional, add them only where the UX demands it (e.g., cart updates).
 
 ```typescript
@@ -493,6 +533,7 @@ const handleQuantityChange = async (itemId: string, qty: number) => {
 All API communication flows through one shared `baseApi` instance. Features inject their endpoints at import time.
 
 **`src/shared/lib/api/baseApi.ts`** — Single source of truth:
+
 ```typescript
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { config } from '../../../config';
@@ -573,6 +614,7 @@ const productApiSlice = baseApi.injectEndpoints({
 ```
 
 Use this baseline:
+
 - Catalog/listing data: higher cache TTL, no focus refetch
 - User-session data (cart/profile): lower cache TTL, refetch on focus/reconnect
 - Real-time-like data: short polling only when UX explicitly requires it
@@ -580,6 +622,7 @@ Use this baseline:
 ### Store Configuration
 
 **`src/shared/lib/store/store.ts`:**
+
 ```typescript
 import { configureStore } from '@reduxjs/toolkit';
 import { baseApi } from '@/shared/lib/api/baseApi';
@@ -594,10 +637,9 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     cart: cartReducer,
-    [baseApi.reducerPath]: baseApi.reducer,  // Single API reducer
+    [baseApi.reducerPath]: baseApi.reducer, // Single API reducer
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(baseApi.middleware),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(baseApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
@@ -607,6 +649,7 @@ export type AppDispatch = typeof store.dispatch;
 ### Environment Configuration
 
 **`src/config.ts`** centralizes all environment-specific settings:
+
 ```typescript
 export const config = {
   api: {
@@ -671,7 +714,7 @@ export function ProductList({ state }: ProductListProps) {
 // Helper to derive from RTK Query hooks
 function useAsyncProductList(filters: Filters): AsyncState<Product[]> {
   const { data, isLoading, error } = useGetProductsQuery(filters);
-  
+
   if (isLoading) return { status: 'pending' };
   if (error) return { status: 'error', error: new Error(error.message) };
   if (data) return { status: 'success', data };
@@ -680,6 +723,7 @@ function useAsyncProductList(filters: Filters): AsyncState<Product[]> {
 ```
 
 **Benefits:**
+
 - ✅ Impossible to have `data && error` simultaneously
 - ✅ Type-safe: `state.data` only exists if `status === 'success'`
 - ✅ Self-documenting state machine
@@ -826,13 +870,13 @@ export default function ThemedButton({ children }: { children: React.ReactNode }
 
 **When to reach for each:**
 
-| Scenario | Use |
-|----------|-----|
-| Optimistic cart/wishlist toggle | `useOptimistic` |
-| Simple form (login, register, filters) | `useActionState` |
-| Submit button inside `<form action>` | `useFormStatus` |
-| Complex controlled form with per-field validation | `useForm` hook |
-| Context reads | `use(Context)` |
+| Scenario                                          | Use              |
+| ------------------------------------------------- | ---------------- |
+| Optimistic cart/wishlist toggle                   | `useOptimistic`  |
+| Simple form (login, register, filters)            | `useActionState` |
+| Submit button inside `<form action>`              | `useFormStatus`  |
+| Complex controlled form with per-field validation | `useForm` hook   |
+| Context reads                                     | `use(Context)`   |
 
 ---
 
@@ -1095,18 +1139,18 @@ export function usePersistentCart() {
 
 Clear guidance on WHERE to store each piece of state:
 
-| Data Type | Redux | RTK Query | localStorage | Comment |
-|-----------|-------|-----------|--------------|---------|
-| Auth token | ✅ | ❌ | ✅ | Persisted for session reuse |
-| User profile | ❌ | ✅ | ❌ | Server-owned, cache invalidated on logout |
-| Filter category | ✅ | ❌ | ✅ | Remember user's preference |
-| Product list | ❌ | ✅ | ❌ | Server-owned, paginated |
-| Selected payment method | ✅ | ❌ | ❌ | UI choice, not persisted |
-| Cart items | ❌️ | ✅ (cache) + ✅ (local state) | ✅ | Optimistic updates + offline sync |
-| Modal open state | ✅ | ❌ | ❌ | Pure UI state |
-| Form draft (unsaved) | ✅ (temp) | ❌ | ✅ | Auto-save to prevent loss |
-| Search results | ❌ | ✅ | ❌ | Server-owned, ephemeral |
-| API error toast | ❌ | ❌ | ❌ | Handled by error hook, not stored |
+| Data Type               | Redux     | RTK Query                     | localStorage | Comment                                   |
+| ----------------------- | --------- | ----------------------------- | ------------ | ----------------------------------------- |
+| Auth token              | ✅        | ❌                            | ✅           | Persisted for session reuse               |
+| User profile            | ❌        | ✅                            | ❌           | Server-owned, cache invalidated on logout |
+| Filter category         | ✅        | ❌                            | ✅           | Remember user's preference                |
+| Product list            | ❌        | ✅                            | ❌           | Server-owned, paginated                   |
+| Selected payment method | ✅        | ❌                            | ❌           | UI choice, not persisted                  |
+| Cart items              | ❌️        | ✅ (cache) + ✅ (local state) | ✅           | Optimistic updates + offline sync         |
+| Modal open state        | ✅        | ❌                            | ❌           | Pure UI state                             |
+| Form draft (unsaved)    | ✅ (temp) | ❌                            | ✅           | Auto-save to prevent loss                 |
+| Search results          | ❌        | ✅                            | ❌           | Server-owned, ephemeral                   |
+| API error toast         | ❌        | ❌                            | ❌           | Handled by error hook, not stored         |
 
 ---
 
@@ -1122,6 +1166,7 @@ Clear guidance on WHERE to store each piece of state:
 ```
 
 ### Unit Tests (75% of effort)
+
 Test components in isolation with mocked API hooks:
 
 ```typescript
@@ -1149,6 +1194,7 @@ describe('ProductCard', () => {
 ```
 
 ### Integration Tests (20% of effort)
+
 Test multiple components + Redux state together:
 
 ```typescript
@@ -1183,6 +1229,7 @@ it('user adds product and sees cart total update', async () => {
 ```
 
 ### E2E Tests (5% of effort)
+
 Test full user journeys in real browser:
 
 ```typescript
@@ -1317,39 +1364,40 @@ interface QueryRendererProps<T> {
   isLoading: boolean;
   error: unknown;
   data: T | undefined;
-  isEmpty?: (data: T) => boolean;          // Custom empty check (default: array.length === 0 or falsy)
+  isEmpty?: (data: T) => boolean; // Custom empty check (default: array.length === 0 or falsy)
   loadingSkeleton?: {
-    count?: number;                        // Default: 4
-    type?: 'card' | 'text' | 'image';     // Default: 'card'
-    custom?: React.ReactNode;             // Override skeleton entirely
+    count?: number; // Default: 4
+    type?: 'card' | 'text' | 'image'; // Default: 'card'
+    custom?: React.ReactNode; // Override skeleton entirely
   };
   emptyState?: {
     icon?: React.ReactNode;
-    title: string;                         // Required when emptyState is provided
+    title: string; // Required when emptyState is provided
     description?: string;
     action?: React.ReactNode;
   };
-  errorMessage?: string;                   // Default: 'Failed to load data. Please try again.'
+  errorMessage?: string; // Default: 'Failed to load data. Please try again.'
   children: (data: T) => React.ReactNode; // Only called when data exists and is not empty
 }
 ```
 
-**Usage:
+\*\*Usage:
 <QueryRenderer
-  isLoading={isLoading}
-  error={error}
-  data={data}
-  errorMessage="Custom error message"
-  loadingSkeleton={{ count: 6, type: 'card' }}
-  emptyState={{
+isLoading={isLoading}
+error={error}
+data={data}
+errorMessage="Custom error message"
+loadingSkeleton={{ count: 6, type: 'card' }}
+emptyState={{
     title: 'No items found',
     description: 'Try adjusting your filters',
     action: <Button onClick={resetFilters}>Clear filters</Button>,
   }}
->
-  {(data) => <YourContent data={data} />}
-</QueryRenderer>
-```
+
+> {(data) => <YourContent data={data} />}
+> </QueryRenderer>
+
+````
 
 For simpler cases, conditional checks are also acceptable:
 
@@ -1359,7 +1407,7 @@ const { data, isLoading, isFetching, error } = useGetProductsQuery(params);
 if (isLoading) return <LoadingSkeleton />;     // First load — show skeleton
 if (error) return <ErrorAlert message="..." />;  // Error — show message
 if (isFetching) return <RefreshIndicator />;    // Background refetch — subtle indicator
-```
+````
 
 ### Render Optimization with React Compiler
 
@@ -1402,11 +1450,13 @@ export default function ProductCard({
 ```
 
 Use manual `memo`/`useCallback` when:
+
 - Profiling shows avoidable re-renders and a measurable win
 - A child component or third-party API depends on stable callback/prop identity
 - A hot path still regresses after compiler optimization
 
 Avoid manual `memo`/`useCallback` when:
+
 - The component is simple and renders infrequently
 - There is no measured performance issue
 - The wrapper makes code harder to read without clear benefit
@@ -1416,7 +1466,11 @@ When manual memoization IS needed (after profiling confirms regression), use thi
 ```typescript
 // Only after profiling shows avoidable re-renders
 const ProductCard = memo(function ProductCard({
-  id, name, slug, price, imageUrl,
+  id,
+  name,
+  slug,
+  price,
+  imageUrl,
 }: ProductCardProps) {
   // implementation
 });
@@ -1425,6 +1479,7 @@ export default ProductCard;
 ```
 
 **When to actually use memo:**
+
 - A list renders 100+ items and re-parent causes cascading re-renders
 - A child component's render is computationally expensive
 - A third-party library requires stable prop/callback identity (VirtualList, Canvas)
@@ -1448,13 +1503,19 @@ export function useProductFilters() {
   const filters = useAppSelector((state) => state.ui.selectedFilters);
 
   // useCallback required: returned functions used as event handlers / deps in consumers
-  const updateCategory = useCallback((category: string | null) => {
-    dispatch(setCategory(category));
-  }, [dispatch]);
+  const updateCategory = useCallback(
+    (category: string | null) => {
+      dispatch(setCategory(category));
+    },
+    [dispatch]
+  );
 
-  const updatePage = useCallback((page: number) => {
-    dispatch(setPageNumber(page));
-  }, [dispatch]);
+  const updatePage = useCallback(
+    (page: number) => {
+      dispatch(setPageNumber(page));
+    },
+    [dispatch]
+  );
 
   const resetFilters = useCallback(() => {
     dispatch(setCategory(null));
@@ -1473,17 +1534,16 @@ Select only what you need. Use `createSelector` for derived data.
 
 ```typescript
 // Select specific properties — NOT entire slices
-const selectedCategory = useAppSelector(state => state.ui.selectedFilters.category);
-const pageNumber = useAppSelector(state => state.ui.selectedFilters.pageNumber);
+const selectedCategory = useAppSelector((state) => state.ui.selectedFilters.category);
+const pageNumber = useAppSelector((state) => state.ui.selectedFilters.pageNumber);
 
 // Use createSelector for computed/derived values
 import { createSelector } from '@reduxjs/toolkit';
 
 const selectUi = (state: RootState) => state.ui;
 
-export const selectActiveFilters = createSelector(
-  [selectUi],
-  (ui) => Object.entries(ui.selectedFilters).filter(([, value]) => value !== null && value !== 0)
+export const selectActiveFilters = createSelector([selectUi], (ui) =>
+  Object.entries(ui.selectedFilters).filter(([, value]) => value !== null && value !== 0)
 );
 ```
 
@@ -1492,9 +1552,11 @@ export const selectActiveFilters = createSelector(
 ## Data Contracts
 
 ### API Response Envelope
+
 Use the same `ApiResponse<T>` envelope defined earlier in **Quick Start → 6. API Response Envelope**.
 
 ### Pagination Response
+
 ```typescript
 interface PaginatedResult<T> {
   items: T[];
@@ -1508,16 +1570,17 @@ interface PaginatedResult<T> {
 ```
 
 ### HTTP Status Codes Mapping
-| Status | Meaning | UI Action |
-|--------|---------|-----------|
-| 200 | Success | Show data |
-| 400 | Bad request | Show validation errors |
-| 401 | Unauthorized | Auto-refresh token, then redirect to login |
-| 403 | Forbidden | Show "Access Denied" |
-| 404 | Not found | Show "Not found" message |
-| 409 | Conflict | Show "Resource modified" message |
-| 422 | Validation error | Show field-level errors |
-| 500 | Server error | Show "Try again later" message |
+
+| Status | Meaning          | UI Action                                  |
+| ------ | ---------------- | ------------------------------------------ |
+| 200    | Success          | Show data                                  |
+| 400    | Bad request      | Show validation errors                     |
+| 401    | Unauthorized     | Auto-refresh token, then redirect to login |
+| 403    | Forbidden        | Show "Access Denied"                       |
+| 404    | Not found        | Show "Not found" message                   |
+| 409    | Conflict         | Show "Resource modified" message           |
+| 422    | Validation error | Show field-level errors                    |
+| 500    | Server error     | Show "Try again later" message             |
 
 ---
 
@@ -1550,17 +1613,20 @@ feature.component.description
 ```json
 // en.json
 {
-  "common": {             // Cross-feature shared strings
+  "common": {
+    // Cross-feature shared strings
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
     "outOfStock": "Out of Stock"
   },
-  "nav": {                // Navigation labels
+  "nav": {
+    // Navigation labels
     "products": "Products",
     "cart": "Cart"
   },
-  "products": {           // Products feature
+  "products": {
+    // Products feature
     "title": "Products",
     "noProducts": "No products found",
     "card": {
@@ -1568,12 +1634,14 @@ feature.component.description
       "addToWishlist": "Add to Wishlist"
     }
   },
-  "checkout": {           // Checkout feature
+  "checkout": {
+    // Checkout feature
     "firstName": "First Name",
     "placeOrder": "Place Order",
     "shippingInfo": "Shipping Information"
   },
-  "orders": {             // Orders feature
+  "orders": {
+    // Orders feature
     "history": "Order History",
     "status": {
       "pending": "Pending",
@@ -1584,6 +1652,7 @@ feature.component.description
 ```
 
 **Rules:**
+
 - Common/shared strings → `common.*`
 - Navigation → `nav.*`
 - Feature strings → `featureName.*` (e.g., `products.*`, `checkout.*`, `orders.*`)
@@ -1594,7 +1663,7 @@ feature.component.description
 
 ```typescript
 // en.json: "items": "{{count}} item", "items_plural": "{{count}} items"
-t('cart.items', { count: cartItems.length })
+t('cart.items', { count: cartItems.length });
 ```
 
 ### Changing Language
@@ -1620,7 +1689,7 @@ interface AuthUser {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;           // 'Customer' | 'Admin'
+  role: string; // 'Customer' | 'Admin'
   phone?: string;
   avatarUrl?: string;
 }
@@ -1630,7 +1699,7 @@ interface AuthState {
   user: AuthUser | null;
   loading: boolean;
   error: string | null;
-  initialized: boolean;   // true after first auth check completes
+  initialized: boolean; // true after first auth check completes
 }
 ```
 
@@ -1644,7 +1713,7 @@ import {
   selectCurrentUser,
   selectAuthLoading,
   selectAuthInitialized,
-  selectAuthStatus,         // Combined { isAuthenticated, loading } — single selector call
+  selectAuthStatus, // Combined { isAuthenticated, loading } — single selector call
 } from '@/features/auth/slices/authSlice';
 
 // In a component
@@ -1662,10 +1731,10 @@ Use slice actions for state transitions. The `baseQueryWithReauth` in `baseApi.t
 ```typescript
 import { loginSuccess, logout, updateUser, setInitialized } from '@/features/auth/slices/authSlice';
 
-dispatch(loginSuccess(userPayload));   // Sets isAuthenticated=true, user, initialized=true
-dispatch(logout());                    // Clears user, isAuthenticated=false
-dispatch(updateUser({ avatarUrl }));   // Partial update to user object
-dispatch(setInitialized());            // Marks auth check complete (no user found)
+dispatch(loginSuccess(userPayload)); // Sets isAuthenticated=true, user, initialized=true
+dispatch(logout()); // Clears user, isAuthenticated=false
+dispatch(updateUser({ avatarUrl })); // Partial update to user object
+dispatch(setInitialized()); // Marks auth check complete (no user found)
 ```
 
 ### ProtectedRoute
@@ -1684,6 +1753,7 @@ import ProtectedRoute from '@/shared/components/ProtectedRoute';
 ```
 
 `ProtectedRoute` behaviour:
+
 - Shows a spinner while `loading === true` (auth state initializing)
 - Redirects to `/login` with `<Navigate to="/login" replace />` if not authenticated
 - Renders children when authenticated
@@ -1776,37 +1846,35 @@ export default function LoginForm() {
 ```typescript
 import { validators } from '@/shared/lib/utils/validation';
 
-validators.required('Email')(value)          // 'Email is required'
-validators.email(value)                      // 'Invalid email address'
-validators.minLength(8)(value)               // 'Must be at least 8 characters'
-validators.maxLength(100)(value)             // 'Must be at most 100 characters'
-validators.phone(value)                      // 'Invalid phone number'
-validators.numeric(value)                    // 'Must be a number'
-validators.positiveNumber(value)             // 'Must be a positive number'
-validators.url(value)                        // 'Invalid URL'
-validators.match(otherValue, 'Password')(v)  // 'Password must match'
+validators.required('Email')(value); // 'Email is required'
+validators.email(value); // 'Invalid email address'
+validators.minLength(8)(value); // 'Must be at least 8 characters'
+validators.maxLength(100)(value); // 'Must be at most 100 characters'
+validators.phone(value); // 'Invalid phone number'
+validators.numeric(value); // 'Must be a number'
+validators.positiveNumber(value); // 'Must be a positive number'
+validators.url(value); // 'Invalid URL'
+validators.match(otherValue, 'Password')(v); // 'Password must match'
 
 // Compose multiple validators for one field
-validators.compose(
-  validators.required('Password'),
-  validators.minLength(8)
-)(value)
+validators.compose(validators.required('Password'), validators.minLength(8))(value);
 ```
 
 ### When to use `useActionState` vs `useForm`
 
-| Situation | Use |
-|-----------|-----|
-| Simple form (login, filter, subscribe) | `useActionState` (React 19) |
-| Complex controlled inputs (per-field real-time validation, dependent fields) | `useForm` hook |
-| Submit inside `<form action>` | `useActionState` + `useFormStatus` |
-| Form state needs to live in a parent hook (`useCheckout`) | `useForm` hook |
+| Situation                                                                    | Use                                |
+| ---------------------------------------------------------------------------- | ---------------------------------- |
+| Simple form (login, filter, subscribe)                                       | `useActionState` (React 19)        |
+| Complex controlled inputs (per-field real-time validation, dependent fields) | `useForm` hook                     |
+| Submit inside `<form action>`                                                | `useActionState` + `useFormStatus` |
+| Form state needs to live in a parent hook (`useCheckout`)                    | `useForm` hook                     |
 
 ---
 
 ## Testing
 
 ### Test Stack
+
 - **Vitest** as test runner (configured in `vite.config.ts`)
 - **@testing-library/react** for component tests
 - **vi.mock()** for unit tests (component-level mocking)
@@ -1923,6 +1991,7 @@ export const performanceBudget = {
 ```
 
 Rules:
+
 - Add lazy loading before increasing budgets
 - Budget increases require ADR + approval
 - Measure in production-like environment, not dev mode
@@ -1978,6 +2047,7 @@ const baseQueryWithTelemetry: BaseQueryFn = async (args, api, extraOptions) => {
 ```
 
 Minimum telemetry events:
+
 - Route change
 - API request success/failure + duration
 - Checkout funnel milestones
@@ -2050,6 +2120,7 @@ Use this for every feature PR:
 ## Anti-Patterns to Avoid
 
 #### Using Relative Paths Instead of `@` Alias
+
 ```typescript
 // BAD — relative paths are hard to refactor
 import Button from '../../../../shared/components/ui/Button';
@@ -2062,10 +2133,11 @@ import { useGetOrdersQuery } from '@/features/orders/api/ordersApi';
 import useForm from '@/shared/hooks/useForm';
 
 // Exception: same-directory relative imports are acceptable
-import { sibling } from './sibling.tsx';  // OK — same folder
+import { sibling } from './sibling.tsx'; // OK — same folder
 ```
 
 #### Mixing Icons with Other Components
+
 ```typescript
 // BAD — icons in component files
 // src/features/products/components/ProductCard.tsx
@@ -2094,15 +2166,17 @@ export function ProductCard() {
 **Rule:** Every icon goes in `src/shared/components/icons/` in its own file. Never embed SVG or icon components in feature files.
 
 #### Selecting Entire State
+
 ```typescript
 // BAD — re-renders on ANY state change
-const allState = useAppSelector(state => state.ui);
+const allState = useAppSelector((state) => state.ui);
 
 // GOOD — select only what you need
-const pageNumber = useAppSelector(state => state.ui.selectedFilters.pageNumber);
+const pageNumber = useAppSelector((state) => state.ui.selectedFilters.pageNumber);
 ```
 
 #### Storing API Data in Redux
+
 ```typescript
 // BAD — RTK Query already manages this
 const productsSlice = createSlice({
@@ -2116,6 +2190,7 @@ const { data, isLoading, error } = useGetProductsQuery(params);
 ```
 
 #### Creating Separate `createApi` Instances
+
 ```typescript
 // BAD — creates separate middleware, separate cache
 export const productApi = createApi({ reducerPath: 'productApi', ... });
@@ -2125,6 +2200,7 @@ const productApiSlice = baseApi.injectEndpoints({ endpoints: (builder) => ({ ...
 ```
 
 #### Using `tags` Instead of `providesTags`
+
 ```typescript
 // BAD — `tags` is not a valid RTK Query property
 getProducts: builder.query({
@@ -2140,6 +2216,7 @@ getProducts: builder.query({
 ```
 
 #### Casting Errors with `as any`
+
 ```typescript
 // BAD — loses type safety
 } catch (error) {
@@ -2157,6 +2234,7 @@ try {
 ```
 
 #### Ignoring isLoading vs isFetching
+
 ```typescript
 const { data, isLoading, isFetching } = useGetProductsQuery(params);
 
@@ -2168,6 +2246,7 @@ if (isFetching) return <RefreshIcon />;   // Background refetch — subtle indic
 ```
 
 #### Not Resetting Cache in Tests
+
 ```typescript
 // BAD — cache bleeds between tests
 describe('ProductList', () => {
@@ -2200,9 +2279,10 @@ const user = useAppSelector(selectCurrentUser);
 ```
 
 **Definitions** (`src/shared/lib/store/hooks.ts`):
+
 ```typescript
 export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector = <T,>(selector: (state: RootState) => T) =>
+export const useAppSelector = <T>(selector: (state: RootState) => T) =>
   useSelector<RootState, T>(selector);
 ```
 
@@ -2231,14 +2311,14 @@ export default function SomeComponent() {
 
 Available methods:
 
-| Method | Usage |
-|--------|-------|
+| Method                        | Usage                           |
+| ----------------------------- | ------------------------------- |
 | `success(message, duration?)` | Confirmation / positive outcome |
-| `error(message, duration?)` | Failure / error message |
-| `warning(message, duration?)` | Non-blocking caution |
-| `info(message, duration?)` | Neutral information |
-| `clear(id)` | Dismiss a specific toast |
-| `clearAll()` | Dismiss all toasts |
+| `error(message, duration?)`   | Failure / error message         |
+| `warning(message, duration?)` | Non-blocking caution            |
+| `info(message, duration?)`    | Neutral information             |
+| `clear(id)`                   | Dismiss a specific toast        |
+| `clearAll()`                  | Dismiss all toasts              |
 
 Default duration: `config.ui.toastDuration` (3000ms). Pass a custom `duration` in ms to override.
 
@@ -2298,7 +2378,7 @@ tagTypes: ['Cart', 'Order', 'Profile', 'Review', 'Wishlist', 'Items'],  // ← a
 
 ```typescript
 // src/shared/lib/store/store.ts
-import '@/features/{name}/api/{name}Api';  // ← add this line
+import '@/features/{name}/api/{name}Api'; // ← add this line
 ```
 
 ### 4. Create the page component
@@ -2407,6 +2487,7 @@ features: {
 3. After full rollout, remove the flag and all conditional checks in the same PR.
 
 **Rules:**
+
 - Never gate security-critical fixes behind flags
 - Expired flags block release unless removed or renewed with approval
 

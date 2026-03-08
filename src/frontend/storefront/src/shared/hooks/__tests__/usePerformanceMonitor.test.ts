@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { usePerformanceMonitor } from '../usePerformanceMonitor'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { usePerformanceMonitor } from '../usePerformanceMonitor';
 
 // Mock PerformanceObserver
 class MockPerformanceObserver {
-  callback: PerformanceObserverCallback
+  callback: PerformanceObserverCallback;
   constructor(callback: PerformanceObserverCallback) {
-    this.callback = callback
+    this.callback = callback;
   }
   observe() {}
   disconnect() {}
@@ -19,61 +19,61 @@ vi.mock('../utils/logger', () => ({
     info: vi.fn(),
     error: vi.fn(),
   },
-}))
+}));
 
 // Mock import.meta.env
 vi.stubGlobal('import.meta', {
   env: {
     MODE: 'development',
   },
-})
+});
 
 describe('usePerformanceMonitor', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    
+    vi.clearAllMocks();
+
     // Mock PerformanceObserver
-    vi.stubGlobal('PerformanceObserver', MockPerformanceObserver)
-  })
+    vi.stubGlobal('PerformanceObserver', MockPerformanceObserver);
+  });
 
   afterEach(() => {
-    vi.restoreAllMocks()
-  })
+    vi.restoreAllMocks();
+  });
 
   it('should initialize without errors', () => {
-    const { result } = renderHook(() => usePerformanceMonitor())
-    expect(result.current).toBeUndefined()
-  })
+    const { result } = renderHook(() => usePerformanceMonitor());
+    expect(result.current).toBeUndefined();
+  });
 
   it('should accept options', () => {
-    const onMetric = vi.fn()
-    
-    const { result } = renderHook(() => 
-      usePerformanceMonitor({ 
+    const onMetric = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePerformanceMonitor({
         onMetric,
-        enableLogging: true 
+        enableLogging: true,
       })
-    )
-    
-    expect(result.current).toBeUndefined()
-  })
+    );
+
+    expect(result.current).toBeUndefined();
+  });
 
   it('should call onMetric callback when provided', () => {
-    const onMetric = vi.fn()
-    
-    renderHook(() => 
-      usePerformanceMonitor({ 
+    const onMetric = vi.fn();
+
+    renderHook(() =>
+      usePerformanceMonitor({
         onMetric,
-        enableLogging: false 
+        enableLogging: false,
       })
-    )
-    
+    );
+
     // Hook should not throw
-    expect(onMetric).not.toHaveBeenCalled()
-  })
+    expect(onMetric).not.toHaveBeenCalled();
+  });
 
   it('should work with default options', () => {
-    const { result } = renderHook(() => usePerformanceMonitor())
-    expect(result.current).toBeUndefined()
-  })
-})
+    const { result } = renderHook(() => usePerformanceMonitor());
+    expect(result.current).toBeUndefined();
+  });
+});

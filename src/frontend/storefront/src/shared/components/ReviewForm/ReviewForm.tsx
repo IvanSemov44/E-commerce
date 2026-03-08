@@ -52,7 +52,9 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
 
       <form onSubmit={handleSubmit}>
         <div className={styles.formGroup}>
-          <label className={styles.label}>{t('products.reviewTitle').replace(' (Optional)', '')}</label>
+          <label className={styles.label}>
+            {t('products.reviewTitle').replace(' (Optional)', '')}
+          </label>
           <StarRating rating={rating} onRatingChange={setRating} size="lg" />
         </div>
 

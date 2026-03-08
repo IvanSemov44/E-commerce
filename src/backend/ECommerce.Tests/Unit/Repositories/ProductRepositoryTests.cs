@@ -1,4 +1,4 @@
-using ECommerce.Core.Entities;
+﻿using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Repositories;
@@ -181,7 +181,7 @@ public class ProductRepositoryTests
     {
         // Arrange
         var product = await _repository.GetBySlugAsync("laptop", trackChanges: true);
-        
+
         // Act
         product!.Name = "Modified Laptop";
         await _context.SaveChangesAsync();

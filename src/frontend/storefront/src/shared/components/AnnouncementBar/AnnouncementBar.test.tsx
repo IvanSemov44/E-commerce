@@ -18,7 +18,10 @@ describe('AnnouncementBar', () => {
     );
 
     expect(screen.getByText('announcement.freeShipping')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'announcement.shopNow' })).toHaveAttribute('href', '/products');
+    expect(screen.getByRole('link', { name: 'announcement.shopNow' })).toHaveAttribute(
+      'href',
+      '/products'
+    );
   });
 
   it('renders custom message and link text', () => {

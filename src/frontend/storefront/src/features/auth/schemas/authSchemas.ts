@@ -23,9 +23,7 @@ export const createRegisterSchema = (t: TFunction) =>
       firstName: z
         .string()
         .min(1, `${t('profile.firstName')} ${t('common.required').toLowerCase()}`),
-      lastName: z
-        .string()
-        .min(1, `${t('profile.lastName')} ${t('common.required').toLowerCase()}`),
+      lastName: z.string().min(1, `${t('profile.lastName')} ${t('common.required').toLowerCase()}`),
       email: z.string().min(1, t('auth.emailRequired')),
       password: z.string().min(1, t('auth.passwordRequired')),
       confirmPassword: z

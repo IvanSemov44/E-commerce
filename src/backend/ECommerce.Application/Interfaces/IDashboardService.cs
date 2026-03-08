@@ -1,4 +1,4 @@
-using ECommerce.Application.DTOs.Dashboard;
+﻿using ECommerce.Application.DTOs.Dashboard;
 
 namespace ECommerce.Application.Interfaces;
 

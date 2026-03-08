@@ -39,7 +39,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       api,
       extraOptions
     );
-    
+
     if (refreshResult.error) {
       // Refresh failed, logout user
       api.dispatch(logout());
@@ -55,11 +55,11 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
  * Outermost query wrapper: measures duration and records an api.request telemetry
  * event for every request regardless of success or failure.
  */
-const baseQueryWithTelemetry: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
-  args,
-  api,
-  extraOptions
-) => {
+const baseQueryWithTelemetry: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
   const startedAt = performance.now();
   const result = await baseQueryWithReauth(args, api, extraOptions);
   const durationMs = Math.round(performance.now() - startedAt);
@@ -78,6 +78,17 @@ export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithTelemetry,
   keepUnusedDataFor: 60,
-  tagTypes: ['Cart', 'Order', 'Profile', 'Review', 'Wishlist', 'WishlistCheck', 'Categories', 'Products', 'User', 'Auth'],
+  tagTypes: [
+    'Cart',
+    'Order',
+    'Profile',
+    'Review',
+    'Wishlist',
+    'WishlistCheck',
+    'Categories',
+    'Products',
+    'User',
+    'Auth',
+  ],
   endpoints: () => ({}),
 });

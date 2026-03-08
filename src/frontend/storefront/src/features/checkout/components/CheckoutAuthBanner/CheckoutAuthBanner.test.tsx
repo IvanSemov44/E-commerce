@@ -70,7 +70,7 @@ describe('CheckoutAuthBanner', () => {
     });
 
     const links = screen.queryAllByRole('link');
-    const signInLink = links.find(link => link.getAttribute('href')?.includes('/login'));
+    const signInLink = links.find((link) => link.getAttribute('href')?.includes('/login'));
     expect(signInLink).toBeUndefined();
   });
 });

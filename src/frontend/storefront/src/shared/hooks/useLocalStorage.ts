@@ -6,7 +6,10 @@
 import { useState } from 'react';
 import { logger } from '@/shared/lib/utils/logger';
 
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T | ((val: T) => T)) => void] {
   // Get from local storage by key
   const readValue = (): T => {
     if (typeof window === 'undefined') {

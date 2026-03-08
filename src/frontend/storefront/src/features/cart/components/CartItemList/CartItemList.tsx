@@ -24,12 +24,10 @@ interface CartItemListProps {
 export default function CartItemList({ items, onUpdateQuantity, onRemove }: CartItemListProps) {
   const { t } = useTranslation();
   const itemText = items.length === 1 ? t('cart.item_one') : t('cart.item_other');
-  
+
   return (
     <Card variant="elevated" padding="lg">
-      <h2 className={styles.title}>
-        {t('cart.itemsCount', { count: items.length, itemText })}
-      </h2>
+      <h2 className={styles.title}>{t('cart.itemsCount', { count: items.length, itemText })}</h2>
       <div className={styles.itemsList}>
         {items.map((item) => (
           <CartItem

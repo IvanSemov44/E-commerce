@@ -8,10 +8,7 @@ import toast from 'react-hot-toast';
 import { useAppDispatch } from '@/shared/lib/store';
 import { useApiErrorHandler } from '@/shared/hooks';
 import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
-import {
-  useAddToWishlistMutation,
-  useRemoveFromWishlistMutation,
-} from '@/features/wishlist/api';
+import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
 import { useAddToCartMutation } from '@/features/cart/api';
 import { DEFAULT_PRODUCT_IMAGE } from './ProductCard.types';
 
@@ -62,7 +59,16 @@ export function useWishlistToggle({
         handleError(err, 'Failed to update wishlist');
       }
     },
-    [id, isAuthenticated, isInWishlist, isWishlistLoading, addToWishlist, removeFromWishlist, refetchWishlist, handleError]
+    [
+      id,
+      isAuthenticated,
+      isInWishlist,
+      isWishlistLoading,
+      addToWishlist,
+      removeFromWishlist,
+      refetchWishlist,
+      handleError,
+    ]
   );
 
   return { handleWishlistToggle };
@@ -132,7 +138,20 @@ export function useAddToCart({
         setTimeout(() => setIsAddingToCart(false), 300);
       }
     },
-    [id, name, slug, price, imageUrl, stockQuantity, isInStock, isAuthenticated, addToCartBackend, dispatch, setIsAddingToCart, handleError]
+    [
+      id,
+      name,
+      slug,
+      price,
+      imageUrl,
+      stockQuantity,
+      isInStock,
+      isAuthenticated,
+      addToCartBackend,
+      dispatch,
+      setIsAddingToCart,
+      handleError,
+    ]
   );
 
   return { handleAddToCart };

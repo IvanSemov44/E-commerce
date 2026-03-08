@@ -26,9 +26,7 @@ export default function PaginatedView<T extends { id: string }>({
 }: PaginatedViewProps<T>) {
   return (
     <>
-      <div className={gridClassName}>
-        {items.map(renderItem)}
-      </div>
+      <div className={gridClassName}>{items.map(renderItem)}</div>
 
       <Pagination
         currentPage={currentPage}

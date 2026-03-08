@@ -1,4 +1,4 @@
-using ECommerce.Infrastructure.Data.Seeders;
+﻿using ECommerce.Infrastructure.Data.Seeders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

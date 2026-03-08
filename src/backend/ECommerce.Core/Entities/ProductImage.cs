@@ -1,4 +1,4 @@
-using ECommerce.Core.Common;
+﻿using ECommerce.Core.Common;
 
 namespace ECommerce.Core.Entities;
 

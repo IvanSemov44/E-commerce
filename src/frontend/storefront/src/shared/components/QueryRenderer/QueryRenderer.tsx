@@ -45,13 +45,8 @@ export default function QueryRenderer<T>({
     if (loadingSkeleton.custom) {
       return <>{loadingSkeleton.custom}</>;
     }
-    
-    return (
-      <LoadingSkeleton
-        count={loadingSkeleton.count}
-        type={loadingSkeleton.type}
-      />
-    );
+
+    return <LoadingSkeleton count={loadingSkeleton.count} type={loadingSkeleton.type} />;
   }
 
   if (!data || isEmpty(data)) {

@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Common;
+﻿namespace ECommerce.Application.DTOs.Common;
 
 /// <summary>
 /// Standard API response wrapper for all endpoints.

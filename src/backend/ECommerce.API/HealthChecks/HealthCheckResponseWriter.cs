@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -62,7 +62,6 @@ public static class HealthCheckResponseWriter
     /// Writes a simple liveness response for basic health checks.
     /// </summary>
     /// <param name="context">The HTTP context.</param>
-    /// <param name="healthReport">The health check report.</param>
     public static async Task WriteLivenessResponse(
         HttpContext context,
         HealthReport _)

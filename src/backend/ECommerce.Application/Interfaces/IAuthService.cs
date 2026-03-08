@@ -1,4 +1,4 @@
-using ECommerce.Application.DTOs.Auth;
+﻿using ECommerce.Application.DTOs.Auth;
 using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;

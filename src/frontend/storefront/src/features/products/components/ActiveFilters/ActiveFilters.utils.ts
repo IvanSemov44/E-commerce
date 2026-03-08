@@ -34,7 +34,10 @@ export function hasActiveFilters({
  * @param maxPrice - Maximum price
  * @returns Formatted price range
  */
-export function formatPriceRange(minPrice: number | undefined, maxPrice: number | undefined): string {
+export function formatPriceRange(
+  minPrice: number | undefined,
+  maxPrice: number | undefined
+): string {
   const min = minPrice || 0;
   const max = maxPrice || '∞';
   return `$${min} - $${max}`;

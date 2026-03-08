@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using ECommerce.Application.Configuration;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.DTOs.Common;
@@ -85,7 +85,7 @@ public class OrderServiceTests
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
         var productId = Guid.NewGuid();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -222,7 +222,7 @@ public class OrderServiceTests
         var user = TestDataFactory.CreateUser();
         var promoCode = TestDataFactory.CreatePromoCode("SAVE20", discountValue: 20);
         var productId = Guid.NewGuid();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -340,7 +340,7 @@ public class OrderServiceTests
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
         var productId = Guid.NewGuid();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -435,7 +435,7 @@ public class OrderServiceTests
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
         var productId = Guid.NewGuid();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -1115,10 +1115,10 @@ public class OrderServiceTests
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
         var productId = Guid.NewGuid();
-        
+
         // The actual product price in the database is $100.00
         const decimal serverSidePrice = 100.00m;
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -1186,8 +1186,8 @@ public class OrderServiceTests
                 Images = new List<ProductImage>()
             });
 
-                _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
-            .ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+    .ReturnsAsync(user);
 
         _mockInventoryService.Setup(s => s.CheckStockAvailabilityAsync(It.IsAny<List<StockCheckItemDto>>()))
             .ReturnsAsync(new StockCheckResponse
@@ -1199,8 +1199,8 @@ public class OrderServiceTests
         Order capturedOrder = null!;
 
         _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .Callback<Order, CancellationToken>((order, _) => 
-            { 
+            .Callback<Order, CancellationToken>((order, _) =>
+            {
                 if (order.Id == Guid.Empty) order.Id = Guid.NewGuid();
                 capturedOrder = order;
             })
@@ -1217,14 +1217,14 @@ public class OrderServiceTests
         // Assert
         capturedOrder.Should().NotBeNull();
         capturedOrder.Items.Should().HaveCount(1);
-        
+
         // Verify the order item uses the SERVER-SIDE price ($100), not any client-provided price
         var orderItem = capturedOrder.Items.First();
-        orderItem.UnitPrice.Should().Be(serverSidePrice, 
+        orderItem.UnitPrice.Should().Be(serverSidePrice,
             "because the order must use the server-side price from the database to prevent price manipulation");
-        orderItem.TotalPrice.Should().Be(serverSidePrice * 2, 
+        orderItem.TotalPrice.Should().Be(serverSidePrice * 2,
             "because total should be calculated from server-side price");
-        
+
         // Verify subtotal is calculated correctly from server-side prices
         capturedOrder.Subtotal.Should().Be(serverSidePrice * 2,
             "because subtotal must be calculated from server-side prices");
@@ -1241,7 +1241,7 @@ public class OrderServiceTests
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
         var nonExistentProductId = Guid.NewGuid();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -1266,8 +1266,8 @@ public class OrderServiceTests
             }
         };
 
-                _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
-            .ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+    .ReturnsAsync(user);
 
         // Product does not exist in database - return empty list
         _mockProductRepository.Setup(r => r.GetByIdsAsync(
@@ -1302,7 +1302,7 @@ public class OrderServiceTests
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
         var productId = Guid.NewGuid();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -1390,7 +1390,7 @@ public class OrderServiceTests
         var user = TestDataFactory.CreateUser();
         var productId1 = Guid.NewGuid();
         var productId2 = Guid.NewGuid();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -1434,45 +1434,45 @@ public class OrderServiceTests
             Images = new List<ProductImage>()
         };
 
-                _mockProductRepository.Setup(r => r.GetByIdsAsync(
-            It.IsAny<List<Guid>>(),
-            It.IsAny<bool>(),
-            It.IsAny<CancellationToken>()))
-            .ReturnsAsync((List<Guid> ids, bool _, CancellationToken __) =>
+        _mockProductRepository.Setup(r => r.GetByIdsAsync(
+    It.IsAny<List<Guid>>(),
+    It.IsAny<bool>(),
+    It.IsAny<CancellationToken>()))
+    .ReturnsAsync((List<Guid> ids, bool _, CancellationToken __) =>
+    {
+        // Map IDs to products with correct prices
+        var products = new List<Product>();
+        foreach (var id in ids)
+        {
+            if (id == productId1)
             {
-                // Map IDs to products with correct prices
-                var products = new List<Product>();
-                foreach (var id in ids)
+                products.Add(new Product
                 {
-                    if (id == productId1)
-                    {
-                        products.Add(new Product
-                        {
-                            Id = productId1,
-                            Name = "Product 1",
-                            Sku = "PROD-001",
-                            Price = 50.00m,
-                            IsActive = true,
-                            StockQuantity = 100,
-                            Images = new List<ProductImage>()
-                        });
-                    }
-                    else if (id == productId2)
-                    {
-                        products.Add(new Product
-                        {
-                            Id = productId2,
-                            Name = "Product 2",
-                            Sku = "PROD-002",
-                            Price = 25.00m,
-                            IsActive = true,
-                            StockQuantity = 50,
-                            Images = new List<ProductImage>()
-                        });
-                    }
-                }
-                return products;
-            });
+                    Id = productId1,
+                    Name = "Product 1",
+                    Sku = "PROD-001",
+                    Price = 50.00m,
+                    IsActive = true,
+                    StockQuantity = 100,
+                    Images = new List<ProductImage>()
+                });
+            }
+            else if (id == productId2)
+            {
+                products.Add(new Product
+                {
+                    Id = productId2,
+                    Name = "Product 2",
+                    Sku = "PROD-002",
+                    Price = 25.00m,
+                    IsActive = true,
+                    StockQuantity = 50,
+                    Images = new List<ProductImage>()
+                });
+            }
+        }
+        return products;
+    });
 
         // Also need to mock individual GetByIdAsync for post-processing validation
         _mockProductRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>()))
@@ -1499,8 +1499,8 @@ public class OrderServiceTests
         Order capturedOrder = null!;
 
         _mockOrderRepository.Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .Callback<Order, CancellationToken>((order, _) => 
-            { 
+            .Callback<Order, CancellationToken>((order, _) =>
+            {
                 if (order.Id == Guid.Empty) order.Id = Guid.NewGuid();
                 capturedOrder = order;
             })
@@ -1521,21 +1521,21 @@ public class OrderServiceTests
                 Assert.Fail($"Order creation failed: {failure.Code} - {failure.Message}");
             Assert.Fail("Order creation failed");
         }
-        
+
         capturedOrder.Should().NotBeNull();
-        
+
         // Subtotal: $100 + $25 = $125
-        capturedOrder.Subtotal.Should().Be(125.00m, 
+        capturedOrder.Subtotal.Should().Be(125.00m,
             "because subtotal must be calculated from server-side prices");
-        
+
         // Shipping: Free (over $100 threshold)
         capturedOrder.ShippingAmount.Should().Be(0.00m,
             "because shipping is free for orders over $100");
-        
+
         // Tax: $125 * 0.08 = $10
         capturedOrder.TaxAmount.Should().Be(10.00m,
             "because tax must be calculated server-side");
-        
+
         // Total: $125 + $0 + $10 - $0 = $135
         capturedOrder.TotalAmount.Should().Be(135.00m,
             "because total must be calculated server-side from all components");
@@ -1550,7 +1550,7 @@ public class OrderServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var user = TestDataFactory.CreateUser();
-        
+
         var dto = new CreateOrderDto
         {
             PaymentMethod = "CreditCard",
@@ -1575,8 +1575,8 @@ public class OrderServiceTests
             }
         };
 
-                _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
-            .ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>()))
+    .ReturnsAsync(user);
 
         // Invalid product ID format won't be converted to Guid, so GetByIdsAsync gets empty/invalid list
         // The service should return failure

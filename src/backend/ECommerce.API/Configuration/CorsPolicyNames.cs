@@ -1,4 +1,4 @@
-namespace ECommerce.API.Configuration;
+﻿namespace ECommerce.API.Configuration;
 
 /// <summary>
 /// CORS policy names used throughout the application.

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -239,7 +239,7 @@ public class AuthControllerTests
         // Assert
         // Missing token is a validation error (422 Unprocessable Entity)
         // or a service error returning 401 Unauthorized
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.UnprocessableEntity || 
+        Assert.IsTrue(response.StatusCode == HttpStatusCode.UnprocessableEntity ||
                       response.StatusCode == HttpStatusCode.BadRequest ||
                       response.StatusCode == HttpStatusCode.Unauthorized,
             $"Expected 422/400/401 but got {response.StatusCode}");

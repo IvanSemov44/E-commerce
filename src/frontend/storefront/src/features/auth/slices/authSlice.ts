@@ -74,7 +74,16 @@ export const authSlice = createSlice({
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, clearError, updateUser, setUser, setInitialized } = authSlice.actions;
+export const {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  logout,
+  clearError,
+  updateUser,
+  setUser,
+  setInitialized,
+} = authSlice.actions;
 export const authReducer = authSlice.reducer;
 
 // Base selector
@@ -88,7 +97,7 @@ export const selectAuthInitialized = createSelector([selectAuth], (auth) => auth
 
 // Combined selector for components that need both isAuthenticated + loading
 // (avoids two separate useAppSelector calls while still memoizing against auth slice)
-export const selectAuthStatus = createSelector(
-  [selectAuth],
-  (auth) => ({ isAuthenticated: auth.isAuthenticated, loading: auth.loading })
-);
+export const selectAuthStatus = createSelector([selectAuth], (auth) => ({
+  isAuthenticated: auth.isAuthenticated,
+  loading: auth.loading,
+}));

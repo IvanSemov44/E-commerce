@@ -31,8 +31,8 @@ export default function OrderHistoryPage() {
 
   return (
     <div className={styles.container}>
-      <PageHeader 
-        title={t('orders.title')} 
+      <PageHeader
+        title={t('orders.title')}
         subtitle={t('orders.subtitle')}
         icon={<PackageIcon />}
         badge={t('account.myOrders')}
@@ -51,9 +51,7 @@ export default function OrderHistoryPage() {
         data={orders}
         errorMessage={t('orders.failedToLoadOrders')}
         emptyState={{
-          icon: (
-            <DocumentIcon className={styles.emptyIcon} />
-          ),
+          icon: <DocumentIcon className={styles.emptyIcon} />,
           title: t('orders.noOrdersYet'),
           description: t('account.startShopping'),
           action: (

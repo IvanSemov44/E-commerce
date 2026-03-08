@@ -1,4 +1,4 @@
-using ECommerce.Core.Constants;
+﻿using ECommerce.Core.Constants;
 
 namespace ECommerce.Application.DTOs.Common;
 

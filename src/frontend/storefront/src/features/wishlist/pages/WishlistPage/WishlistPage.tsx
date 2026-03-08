@@ -2,7 +2,10 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { HeartIcon, ImageIcon, CloseIcon } from '@/shared/components/icons';
-import { useGetWishlistQuery, useRemoveFromWishlistMutation } from '@/features/wishlist/api/wishlistApi';
+import {
+  useGetWishlistQuery,
+  useRemoveFromWishlistMutation,
+} from '@/features/wishlist/api/wishlistApi';
 import { useAddToCartMutation } from '@/features/cart/api/cartApi';
 import { useApiErrorHandler } from '@/shared/hooks';
 import Button from '@/shared/components/ui/Button';
@@ -36,7 +39,7 @@ export default function WishlistPage() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>{t('wishlist.title')}</h1>
-      
+
       <QueryRenderer
         isLoading={isLoading}
         error={error}
@@ -48,7 +51,7 @@ export default function WishlistPage() {
             <Link to="/products">
               <Button>{t('wishlist.continueShopping')}</Button>
             </Link>
-          )
+          ),
         }}
       >
         {(wishlist) => (
@@ -68,14 +71,14 @@ export default function WishlistPage() {
                 )}
 
                 <div className={styles.content}>
-                  <h3 className={styles.productName}>
-                    {item.productName}
-                  </h3>
+                  <h3 className={styles.productName}>{item.productName}</h3>
 
                   <div className={styles.priceRow}>
                     <span className={styles.price}>{formatPrice(item.price)}</span>
                     {item.compareAtPrice && (
-                      <span className={styles.comparePrice}>{formatPrice(item.compareAtPrice)}</span>
+                      <span className={styles.comparePrice}>
+                        {formatPrice(item.compareAtPrice)}
+                      </span>
                     )}
                   </div>
 

@@ -107,11 +107,7 @@ describe('ProductActions', () => {
     const user = userEvent.setup();
     const onDismissError = vi.fn();
     render(
-      <ProductActions
-        {...defaultProps}
-        cartError="Failed to add"
-        onDismissError={onDismissError}
-      />
+      <ProductActions {...defaultProps} cartError="Failed to add" onDismissError={onDismissError} />
     );
 
     const dismissButton = screen.getByRole('button', { name: /close|dismiss|×/i });

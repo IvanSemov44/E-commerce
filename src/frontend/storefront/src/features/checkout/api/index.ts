@@ -10,7 +10,4 @@ export {
   type ValidatePromoCodeResponse,
 } from './promoCodeApi';
 
-export {
-  useGetPaymentMethodsQuery,
-  type PaymentMethodsResponse,
-} from './paymentsApi';
+export { useGetPaymentMethodsQuery, type PaymentMethodsResponse } from './paymentsApi';

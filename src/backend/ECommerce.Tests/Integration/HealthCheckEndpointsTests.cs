@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using ECommerce.Application.DTOs.Common;
@@ -40,7 +40,7 @@ public class HealthCheckEndpointsTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         Assert.IsTrue(content.Contains("healthy"));
         Assert.IsTrue(content.Contains("timestamp"));
@@ -219,7 +219,7 @@ public class HealthCheckEndpointsTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         Assert.IsTrue(content.Contains("healthy"));
         Assert.IsTrue(content.Contains("PaymentService"));

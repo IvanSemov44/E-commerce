@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react';
 
 interface UseKeyboardNavigationOptions {
-  itemCount: number
-  onEnter?: (index: number) => void
+  itemCount: number;
+  onEnter?: (index: number) => void;
 }
 
 /**
@@ -15,33 +15,33 @@ interface UseKeyboardNavigationOptions {
  * @returns Selected index, setter, and keyboard handler
  */
 export function useKeyboardNavigation({ itemCount, onEnter }: UseKeyboardNavigationOptions) {
-  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       switch (e.key) {
         case 'ArrowDown':
-          e.preventDefault()
-          setSelectedIndex((prev) => (prev < itemCount - 1 ? prev + 1 : prev))
-          break
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev < itemCount - 1 ? prev + 1 : prev));
+          break;
         case 'ArrowUp':
-          e.preventDefault()
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1))
-          break
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+          break;
         case 'Enter':
           if (selectedIndex >= 0) {
-            e.preventDefault()
-            onEnter?.(selectedIndex)
+            e.preventDefault();
+            onEnter?.(selectedIndex);
           }
-          break
+          break;
       }
     },
     [itemCount, selectedIndex, onEnter]
-  )
+  );
 
   const resetSelection = useCallback(() => {
-    setSelectedIndex(-1)
-  }, [])
+    setSelectedIndex(-1);
+  }, []);
 
-  return { selectedIndex, setSelectedIndex, handleKeyDown, resetSelection }
+  return { selectedIndex, setSelectedIndex, handleKeyDown, resetSelection };
 }

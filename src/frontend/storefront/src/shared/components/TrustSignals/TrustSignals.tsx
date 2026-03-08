@@ -69,26 +69,22 @@ export default function TrustSignals({ variant = 'full' }: TrustSignalsProps) {
           <p className={styles.headerSubtitle}>{t('trustSignals.subtitle')}</p>
         </div>
       </div>
-      
+
       <div className={styles.signals}>
         {trustSignals.map((signal, index) => (
           <div key={index} className={styles.signal}>
-            <div className={styles.iconWrapper}>
-              {signal.icon}
-            </div>
+            <div className={styles.iconWrapper}>{signal.icon}</div>
             <div className={styles.content}>
               <div className={styles.titleRow}>
                 <h4 className={styles.title}>{signal.title}</h4>
-                {signal.badge && (
-                  <span className={styles.badge}>{signal.badge}</span>
-                )}
+                {signal.badge && <span className={styles.badge}>{signal.badge}</span>}
               </div>
               <p className={styles.description}>{signal.description}</p>
             </div>
           </div>
         ))}
       </div>
-      
+
       <div className={styles.footer}>
         <div className={styles.certificationBadges}>
           <div className={styles.certBadge}>

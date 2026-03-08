@@ -41,17 +41,10 @@ export default class ErrorBoundary extends React.Component<Props, State> {
               An error occurred while loading the application. Please try refreshing the page.
             </p>
             <details className={styles.detailsSection}>
-              <summary className={styles.detailsSummary}>
-                Error details
-              </summary>
-              <pre className={styles.errorDetails}>
-                {this.state.error?.message}
-              </pre>
+              <summary className={styles.detailsSummary}>Error details</summary>
+              <pre className={styles.errorDetails}>{this.state.error?.message}</pre>
             </details>
-            <button
-              onClick={() => window.location.reload()}
-              className={styles.refreshButton}
-            >
+            <button onClick={() => window.location.reload()} className={styles.refreshButton}>
               Refresh Page
             </button>
           </div>

@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Payments;
+﻿namespace ECommerce.Application.DTOs.Payments;
 
 /// <summary>
 /// DTO for payment webhook events from payment providers.

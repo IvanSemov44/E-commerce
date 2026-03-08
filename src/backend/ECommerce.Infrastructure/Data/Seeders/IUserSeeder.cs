@@ -1,4 +1,4 @@
-namespace ECommerce.Infrastructure.Data.Seeders;
+﻿namespace ECommerce.Infrastructure.Data.Seeders;
 
 /// <summary>
 /// Interface for seeding user data into the database.

@@ -85,11 +85,7 @@ describe('Card', () => {
   });
 
   it('accepts data-testid attribute', () => {
-    render(
-      <Card data-testid="card-element">
-        Content
-      </Card>
-    );
+    render(<Card data-testid="card-element">Content</Card>);
     expect(screen.getByTestId('card-element')).toBeInTheDocument();
   });
 
@@ -113,11 +109,7 @@ describe('Card', () => {
 
   it('accepts click event', () => {
     const handleClick = vi.fn();
-    const { container } = render(
-      <Card onClick={handleClick}>
-        Clickable
-      </Card>
-    );
+    const { container } = render(<Card onClick={handleClick}>Clickable</Card>);
     const card = container.querySelector('div[class*="card"]') as HTMLElement;
     card?.click();
     expect(handleClick).toHaveBeenCalled();

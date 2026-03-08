@@ -5,7 +5,11 @@
 
 import { useCallback } from 'react';
 import { useAppDispatch } from '@/shared/lib/store';
-import { addToast, removeToast, clearToasts as clearAllToasts } from '@/shared/components/Toast/toastSlice';
+import {
+  addToast,
+  removeToast,
+  clearToasts as clearAllToasts,
+} from '@/shared/components/Toast/toastSlice';
 import type { ToastVariant } from '@/shared/components/Toast/toastSlice';
 import { config } from '@/config';
 

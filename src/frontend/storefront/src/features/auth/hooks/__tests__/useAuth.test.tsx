@@ -16,13 +16,15 @@ vi.mock('@/shared/hooks/useErrorHandler', () => ({
   }),
 }));
 
-const createTestStore = (initialAuthState: Partial<{
-  isAuthenticated: boolean;
-  user: AuthUser | null;
-  loading: boolean;
-  error: string | null;
-  initialized: boolean;
-}> = {}) => {
+const createTestStore = (
+  initialAuthState: Partial<{
+    isAuthenticated: boolean;
+    user: AuthUser | null;
+    loading: boolean;
+    error: string | null;
+    initialized: boolean;
+  }> = {}
+) => {
   return configureStore({
     reducer: {
       auth: authSlice.reducer,
@@ -216,21 +218,21 @@ describe('useAuth', () => {
 
   it('should get CSRF token from cookie', () => {
     document.cookie = 'XSRF-TOKEN=test-csrf-token; path=/';
-    
+
     const store = createTestStore();
     const { result } = renderHook(() => useAuth(), {
       wrapper: wrapper(store),
     });
 
     expect(result.current.getCsrfToken()).toBe('test-csrf-token');
-    
+
     // Cleanup
     document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
   });
 
   it('should return null for CSRF token when not present', () => {
     document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
-    
+
     const store = createTestStore();
     const { result } = renderHook(() => useAuth(), {
       wrapper: wrapper(store),

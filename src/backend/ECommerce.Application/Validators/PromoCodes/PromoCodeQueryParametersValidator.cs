@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ECommerce.Application.DTOs.PromoCodes;
 
 namespace ECommerce.Application.Validators.PromoCodes;

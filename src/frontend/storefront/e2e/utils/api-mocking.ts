@@ -9,24 +9,27 @@ import { mockApiResponses, testProducts } from '../data/test-data';
 /**
  * Mock all product-related API calls
  */
-export async function mockProductsApi(page: Page, options: {
-  products?: typeof mockApiResponses.products.list;
-  delay?: number;
-  failRate?: number;
-} = {}): Promise<void> {
+export async function mockProductsApi(
+  page: Page,
+  options: {
+    products?: typeof mockApiResponses.products.list;
+    delay?: number;
+    failRate?: number;
+  } = {}
+): Promise<void> {
   const response = options.products || mockApiResponses.products.list;
-  
+
   // Mock products list
-  await page.route('**/api/products*', async route => {
+  await page.route('**/api/products*', async (route) => {
     if (options.failRate && Math.random() < options.failRate) {
       await route.fulfill({ status: 500, body: 'Internal Server Error' });
       return;
     }
-    
+
     if (options.delay) {
-      await new Promise(resolve => setTimeout(resolve, options.delay));
+      await new Promise((resolve) => setTimeout(resolve, options.delay));
     }
-    
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -35,13 +38,14 @@ export async function mockProductsApi(page: Page, options: {
   });
 
   // Mock single product
-  await page.route('**/api/products/*', async route => {
+  await page.route('**/api/products/*', async (route) => {
     const url = route.request().url();
     const match = url.match(/\/api\/products\/(\d+)/);
     const productId = match ? parseInt(match[1]) : 1;
-    
-    const product = Object.values(testProducts).find(p => p.id === productId) || testProducts.laptop;
-    
+
+    const product =
+      Object.values(testProducts).find((p) => p.id === productId) || testProducts.laptop;
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -53,13 +57,16 @@ export async function mockProductsApi(page: Page, options: {
 /**
  * Mock authentication API calls
  */
-export async function mockAuthApi(page: Page, options: {
-  authenticated?: boolean;
-  isAdmin?: boolean;
-  failLogin?: boolean;
-} = {}): Promise<void> {
+export async function mockAuthApi(
+  page: Page,
+  options: {
+    authenticated?: boolean;
+    isAdmin?: boolean;
+    failLogin?: boolean;
+  } = {}
+): Promise<void> {
   // Mock login
-  await page.route('**/api/auth/login', async route => {
+  await page.route('**/api/auth/login', async (route) => {
     if (options.failLogin) {
       await route.fulfill({
         status: 401,
@@ -68,9 +75,11 @@ export async function mockAuthApi(page: Page, options: {
       });
       return;
     }
-    
-    const user = options.isAdmin ? mockApiResponses.user.admin : mockApiResponses.user.authenticated;
-    
+
+    const user = options.isAdmin
+      ? mockApiResponses.user.admin
+      : mockApiResponses.user.authenticated;
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -83,7 +92,7 @@ export async function mockAuthApi(page: Page, options: {
   });
 
   // Mock register
-  await page.route('**/api/auth/register', async route => {
+  await page.route('**/api/auth/register', async (route) => {
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
@@ -95,7 +104,7 @@ export async function mockAuthApi(page: Page, options: {
   });
 
   // Mock current user
-  await page.route('**/api/auth/me', async route => {
+  await page.route('**/api/auth/me', async (route) => {
     if (!options.authenticated) {
       await route.fulfill({
         status: 401,
@@ -104,9 +113,11 @@ export async function mockAuthApi(page: Page, options: {
       });
       return;
     }
-    
-    const user = options.isAdmin ? mockApiResponses.user.admin : mockApiResponses.user.authenticated;
-    
+
+    const user = options.isAdmin
+      ? mockApiResponses.user.admin
+      : mockApiResponses.user.authenticated;
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -115,7 +126,7 @@ export async function mockAuthApi(page: Page, options: {
   });
 
   // Mock logout
-  await page.route('**/api/auth/logout', async route => {
+  await page.route('**/api/auth/logout', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -127,14 +138,19 @@ export async function mockAuthApi(page: Page, options: {
 /**
  * Mock cart API calls
  */
-export async function mockCartApi(page: Page, options: {
-  cart?: typeof mockApiResponses.cart.withItems;
-  empty?: boolean;
-} = {}): Promise<void> {
-  const cart = options.empty ? mockApiResponses.cart.empty : (options.cart || mockApiResponses.cart.withItems);
-  
+export async function mockCartApi(
+  page: Page,
+  options: {
+    cart?: typeof mockApiResponses.cart.withItems;
+    empty?: boolean;
+  } = {}
+): Promise<void> {
+  const cart = options.empty
+    ? mockApiResponses.cart.empty
+    : options.cart || mockApiResponses.cart.withItems;
+
   // Mock get cart
-  await page.route('**/api/cart', async route => {
+  await page.route('**/api/cart', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -143,7 +159,7 @@ export async function mockCartApi(page: Page, options: {
   });
 
   // Mock add to cart
-  await page.route('**/api/cart/add', async route => {
+  await page.route('**/api/cart/add', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -152,7 +168,7 @@ export async function mockCartApi(page: Page, options: {
   });
 
   // Mock update cart item
-  await page.route('**/api/cart/items/*', async route => {
+  await page.route('**/api/cart/items/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -161,7 +177,7 @@ export async function mockCartApi(page: Page, options: {
   });
 
   // Mock remove from cart
-  await page.route('**/api/cart/items/*', async route => {
+  await page.route('**/api/cart/items/*', async (route) => {
     if (route.request().method() === 'DELETE') {
       await route.fulfill({
         status: 200,
@@ -175,12 +191,15 @@ export async function mockCartApi(page: Page, options: {
 /**
  * Mock checkout API calls
  */
-export async function mockCheckoutApi(page: Page, options: {
-  success?: boolean;
-  orderId?: string;
-} = {}): Promise<void> {
+export async function mockCheckoutApi(
+  page: Page,
+  options: {
+    success?: boolean;
+    orderId?: string;
+  } = {}
+): Promise<void> {
   // Mock create order
-  await page.route('**/api/orders', async route => {
+  await page.route('**/api/orders', async (route) => {
     if (route.request().method() === 'POST') {
       await route.fulfill({
         status: 201,
@@ -195,7 +214,7 @@ export async function mockCheckoutApi(page: Page, options: {
   });
 
   // Mock payment processing
-  await page.route('**/api/payments/process', async route => {
+  await page.route('**/api/payments/process', async (route) => {
     if (options.success === false) {
       await route.fulfill({
         status: 400,
@@ -207,7 +226,7 @@ export async function mockCheckoutApi(page: Page, options: {
       });
       return;
     }
-    
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -223,25 +242,28 @@ export async function mockCheckoutApi(page: Page, options: {
 /**
  * Mock all APIs at once for full integration testing
  */
-export async function mockAllApis(page: Page, options: {
-  authenticated?: boolean;
-  isAdmin?: boolean;
-  emptyCart?: boolean;
-  emptyProducts?: boolean;
-} = {}): Promise<void> {
-  await mockAuthApi(page, { 
-    authenticated: options.authenticated, 
-    isAdmin: options.isAdmin 
+export async function mockAllApis(
+  page: Page,
+  options: {
+    authenticated?: boolean;
+    isAdmin?: boolean;
+    emptyCart?: boolean;
+    emptyProducts?: boolean;
+  } = {}
+): Promise<void> {
+  await mockAuthApi(page, {
+    authenticated: options.authenticated,
+    isAdmin: options.isAdmin,
   });
-  
-  await mockProductsApi(page, { 
-    products: options.emptyProducts ? mockApiResponses.products.empty : undefined 
+
+  await mockProductsApi(page, {
+    products: options.emptyProducts ? mockApiResponses.products.empty : undefined,
   });
-  
-  await mockCartApi(page, { 
-    empty: options.emptyCart 
+
+  await mockCartApi(page, {
+    empty: options.emptyCart,
   });
-  
+
   await mockCheckoutApi(page);
 }
 
@@ -256,8 +278,8 @@ export async function clearMocks(page: Page): Promise<void> {
  * Mock slow network conditions
  */
 export async function mockSlowNetwork(page: Page, delayMs: number = 2000): Promise<void> {
-  await page.route('**', async route => {
-    await new Promise(resolve => setTimeout(resolve, delayMs));
+  await page.route('**', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
     await route.continue();
   });
 }
@@ -266,14 +288,16 @@ export async function mockSlowNetwork(page: Page, delayMs: number = 2000): Promi
  * Mock offline conditions
  */
 export async function mockOffline(page: Page): Promise<void> {
-  await page.route('**', route => route.abort('failed'));
+  await page.route('**', (route) => route.abort('failed'));
 }
 
 /**
  * Mock specific HTTP status code
  */
-export async function mockErrorStatus(page: Page, urlPattern: string, status: number): Promise<void> {
-  await page.route(urlPattern, route => 
-    route.fulfill({ status, body: `Error ${status}` })
-  );
+export async function mockErrorStatus(
+  page: Page,
+  urlPattern: string,
+  status: number
+): Promise<void> {
+  await page.route(urlPattern, (route) => route.fulfill({ status, body: `Error ${status}` }));
 }

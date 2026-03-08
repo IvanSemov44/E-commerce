@@ -1,11 +1,11 @@
 /**
  * Shared Library Barrel Export
- * 
+ *
  * Central export for all shared infrastructure and utilities:
  * - API utilities (baseApi re-export)
  * - Store utilities (Redux hooks)
  * - Common utilities (constants, validation, logger)
- * 
+ *
  * Usage:
  *   import { baseApi } from '@/shared/lib/api';
  *   import { useAppDispatch } from '@/shared/lib/store';

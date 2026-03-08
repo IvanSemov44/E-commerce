@@ -1,4 +1,4 @@
-namespace ECommerce.Application.Configuration;
+﻿namespace ECommerce.Application.Configuration;
 
 /// <summary>
 /// Configuration options for business rules and calculations.

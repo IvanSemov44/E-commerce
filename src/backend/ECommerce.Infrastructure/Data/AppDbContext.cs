@@ -1,4 +1,4 @@
-using ECommerce.Core.Entities;
+﻿using ECommerce.Core.Entities;
 using ECommerce.Infrastructure.Data.Configurations;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

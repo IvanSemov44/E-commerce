@@ -110,7 +110,7 @@
   color: var(--color-primary-600);
 }
 
-[data-theme="dark"] .price {
+[data-theme='dark'] .price {
   color: var(--color-primary-400);
 }
 
@@ -127,7 +127,7 @@
   margin: 0;
 }
 
-[data-theme="dark"] .outOfStock {
+[data-theme='dark'] .outOfStock {
   color: var(--color-error-400);
 }
 
@@ -189,7 +189,7 @@
   color: var(--color-error-600);
 }
 
-[data-theme="dark"] .removeButton:hover {
+[data-theme='dark'] .removeButton:hover {
   background: rgba(239, 68, 68, 0.1);
   border-color: var(--color-error-500);
   color: var(--color-error-400);

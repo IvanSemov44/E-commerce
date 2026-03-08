@@ -23,7 +23,11 @@ describe('CategoryFilter', () => {
   });
 
   it('shows error state', () => {
-    getTopLevelCategoriesQueryMock.mockReturnValue({ data: [], isLoading: false, error: new Error('fail') });
+    getTopLevelCategoriesQueryMock.mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: new Error('fail'),
+    });
     render(<CategoryFilter onSelectCategory={vi.fn()} />);
 
     expect(screen.getByText('products.failedToLoadCategories')).toBeInTheDocument();

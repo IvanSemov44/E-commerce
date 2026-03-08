@@ -7,7 +7,6 @@
 /// <remarks>
 /// Initializes a new instance of the NotFoundException class.
 /// </remarks>
-/// <param name="message">The exception message.</param>
 public abstract class NotFoundException : Exception
 {
     protected NotFoundException() { }

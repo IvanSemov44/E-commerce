@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Antiforgery;
+﻿using Microsoft.AspNetCore.Antiforgery;
 using System.Security.Claims;
 using Microsoft.Extensions.Hosting;
 

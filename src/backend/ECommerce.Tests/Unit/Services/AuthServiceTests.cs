@@ -1,4 +1,4 @@
-using ECommerce.Application.DTOs.Auth;
+﻿using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
@@ -95,7 +95,7 @@ public class AuthServiceTests
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
-        
+
         if (result is Result<AuthResponseDto>.Success success)
         {
             success.Data.Should().NotBeNull();
@@ -135,7 +135,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<AuthResponseDto>.Failure failure)
         {
             failure.Code.Should().Be("DUPLICATE_EMAIL");
@@ -215,7 +215,7 @@ public class AuthServiceTests
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
-        
+
         if (result is Result<AuthResponseDto>.Success success)
         {
             success.Data.Should().NotBeNull();
@@ -250,7 +250,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<AuthResponseDto>.Failure failure)
         {
             failure.Code.Should().Be("INVALID_CREDENTIALS");
@@ -279,7 +279,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<AuthResponseDto>.Failure failure)
         {
             failure.Code.Should().Be("INVALID_CREDENTIALS");
@@ -451,7 +451,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
         {
             failure.Code.Should().Be("INVALID_TOKEN");
@@ -460,7 +460,7 @@ public class AuthServiceTests
         {
             Assert.Fail("Expected Result<Unit>.Failure");
         }
-        
+
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
@@ -477,7 +477,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
         {
             failure.Code.Should().Be("USER_NOT_FOUND");
@@ -583,7 +583,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
         {
             failure.Code.Should().Be("INVALID_TOKEN");
@@ -592,7 +592,7 @@ public class AuthServiceTests
         {
             Assert.Fail("Expected Result<Unit>.Failure");
         }
-        
+
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
@@ -613,7 +613,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
         {
             failure.Code.Should().Be("INVALID_TOKEN");
@@ -637,7 +637,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
         {
             failure.Code.Should().Be("USER_NOT_FOUND");
@@ -698,7 +698,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
         {
             failure.Code.Should().Be("INVALID_CREDENTIALS");
@@ -707,7 +707,7 @@ public class AuthServiceTests
         {
             Assert.Fail("Expected Result<Unit>.Failure");
         }
-        
+
         _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
@@ -724,7 +724,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        
+
         if (result is Result<ECommerce.Core.Results.Unit>.Failure failure)
         {
             failure.Code.Should().Be("USER_NOT_FOUND");

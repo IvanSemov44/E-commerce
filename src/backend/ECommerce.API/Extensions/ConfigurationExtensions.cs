@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace ECommerce.API.Extensions;
 
@@ -21,7 +21,7 @@ public static class ConfigurationExtensions
         string? environmentVariableName = null)
     {
         var value = configuration[key];
-        
+
         if (string.IsNullOrEmpty(value))
         {
             var envVarName = environmentVariableName ?? key.Replace(":", "__");
@@ -29,7 +29,7 @@ public static class ConfigurationExtensions
                 $"Required configuration value '{key}' is missing. " +
                 $"Set it via environment variable '{envVarName}' or in configuration.");
         }
-        
+
         return value;
     }
 
@@ -49,7 +49,7 @@ public static class ConfigurationExtensions
         string? environmentVariableName = null)
     {
         var value = configuration.GetRequiredValue(key, environmentVariableName);
-        
+
         if (value.Length < minLength)
         {
             var envVarName = environmentVariableName ?? key.Replace(":", "__");
@@ -58,7 +58,7 @@ public static class ConfigurationExtensions
                 $"Current length: {value.Length}. " +
                 $"Update the environment variable '{envVarName}'.");
         }
-        
+
         return value;
     }
 
@@ -74,14 +74,14 @@ public static class ConfigurationExtensions
         string name = "DefaultConnection")
     {
         var connectionString = configuration.GetConnectionString(name);
-        
+
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new InvalidOperationException(
                 $"Connection string '{name}' is missing. " +
                 $"Set it via environment variable 'ConnectionStrings__{name}'.");
         }
-        
+
         // Validate that the connection string contains a password for security
         if (!connectionString.Contains("Password=", StringComparison.OrdinalIgnoreCase) &&
             !connectionString.Contains("Pwd=", StringComparison.OrdinalIgnoreCase))
@@ -90,7 +90,7 @@ public static class ConfigurationExtensions
                 $"Connection string '{name}' must include a Password. " +
                 $"Ensure the connection string includes authentication credentials.");
         }
-        
+
         return connectionString;
     }
 
@@ -105,7 +105,7 @@ public static class ConfigurationExtensions
             "Jwt:SecretKey",
             minLength: 32,
             environmentVariableName: "Jwt__SecretKey");
-        
+
         // Validate issuer and audience are set
         configuration.GetRequiredValue("Jwt:Issuer", "Jwt__Issuer");
         configuration.GetRequiredValue("Jwt:Audience", "Jwt__Audience");
@@ -119,7 +119,7 @@ public static class ConfigurationExtensions
     public static void ValidateRequiredConfiguration(this IConfiguration configuration)
     {
         var errors = new List<string>();
-        
+
         // Validate JWT configuration
         try
         {
@@ -129,7 +129,7 @@ public static class ConfigurationExtensions
         {
             errors.Add(ex.Message);
         }
-        
+
         // Validate connection string
         try
         {
@@ -139,7 +139,7 @@ public static class ConfigurationExtensions
         {
             errors.Add(ex.Message);
         }
-        
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(

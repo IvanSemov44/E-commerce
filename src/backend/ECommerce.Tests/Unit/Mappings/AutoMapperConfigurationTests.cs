@@ -1,4 +1,4 @@
-using ECommerce.Application;
+﻿using ECommerce.Application;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Unit.Mappings;

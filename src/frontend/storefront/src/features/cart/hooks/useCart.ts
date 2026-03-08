@@ -12,13 +12,13 @@ import {
   selectCartItems,
   selectCartSubtotal,
   updateQuantity,
-  removeItem
+  removeItem,
 } from '../slices/cartSlice';
 import { authReducer } from '@/features/auth/slices/authSlice';
 import {
   useGetCartQuery,
   useUpdateCartItemMutation,
-  useRemoveFromCartMutation
+  useRemoveFromCartMutation,
 } from '../api/cartApi';
 import { useCartSync } from './useCartSync';
 import { calculateOrderTotals } from '@/shared/lib/utils/orderCalculations';
@@ -51,7 +51,7 @@ interface UseCartReturn {
 }
 
 // Selector for authentication state
-const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) => 
+const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) =>
   state.auth.isAuthenticated;
 
 export function useCart(): UseCartReturn {
@@ -62,12 +62,12 @@ export function useCart(): UseCartReturn {
 
   // Backend cart query (only used when authenticated)
   const { data: backendCart, isLoading: isCartLoading } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated
+    skip: !isAuthenticated,
   });
 
   // Sync local cart with backend on login
   const { isLoading: isSyncLoading } = useCartSync({
-    enabled: isAuthenticated
+    enabled: isAuthenticated,
   });
 
   // Mutations
@@ -77,24 +77,24 @@ export function useCart(): UseCartReturn {
   // Determine which cart to display
   const displayItems: DisplayItem[] = useMemo(() => {
     if (isAuthenticated && backendCart?.items) {
-      return backendCart.items.map(item => ({
+      return backendCart.items.map((item) => ({
         id: item.id, // Backend returns 'id' as the cart item ID
         name: item.productName,
         slug: '', // Not available in CartItemDto
         price: item.price,
         quantity: item.quantity,
         maxStock: 99, // Default max stock
-        image: item.productImage || item.imageUrl || ''
+        image: item.productImage || item.imageUrl || '',
       }));
     }
-    return localCartItems.map(item => ({
+    return localCartItems.map((item) => ({
       id: item.id,
       name: item.name,
       slug: item.slug,
       price: item.price,
       quantity: item.quantity,
       maxStock: item.maxStock,
-      image: item.image
+      image: item.image,
     }));
   }, [isAuthenticated, backendCart, localCartItems]);
 
@@ -113,50 +113,56 @@ export function useCart(): UseCartReturn {
   }, [subtotal]);
 
   // Handle quantity update
-  const handleUpdateQuantity = useCallback(async (itemId: string, quantity: number) => {
-    if (quantity < 1) return;
+  const handleUpdateQuantity = useCallback(
+    async (itemId: string, quantity: number) => {
+      if (quantity < 1) return;
 
-    try {
-      if (isAuthenticated) {
-        // For authenticated users, itemId is the cart item ID
-        await updateCartItem({ cartItemId: itemId, quantity }).unwrap();
-      } else {
-        // For guest users, itemId is the product id
-        dispatch(updateQuantity({ id: itemId, quantity }));
+      try {
+        if (isAuthenticated) {
+          // For authenticated users, itemId is the cart item ID
+          await updateCartItem({ cartItemId: itemId, quantity }).unwrap();
+        } else {
+          // For guest users, itemId is the product id
+          dispatch(updateQuantity({ id: itemId, quantity }));
+        }
+        toast.success('Cart updated');
+      } catch (error) {
+        toast.error('Failed to update cart');
+        throw error;
       }
-      toast.success('Cart updated');
-    } catch (error) {
-      toast.error('Failed to update cart');
-      throw error;
-    }
-  }, [isAuthenticated, updateCartItem, dispatch]);
+    },
+    [isAuthenticated, updateCartItem, dispatch]
+  );
 
   // Handle item removal
-  const handleRemove = useCallback(async (itemId: string) => {
-    try {
-      if (isAuthenticated) {
-        // For authenticated users, itemId is the cart item ID
-        // Find the product ID from backendCart to remove from local cart
-        const cartItem = backendCart?.items.find(item => item.id === itemId);
-        const productId = cartItem?.productId;
-        
-        await removeFromCartApi(itemId).unwrap();
-        
-        // Also remove from local cart to prevent useCartSync from re-adding it
-        // Use productId since local cart stores items by product ID
-        if (productId) {
-          dispatch(removeItem(productId));
+  const handleRemove = useCallback(
+    async (itemId: string) => {
+      try {
+        if (isAuthenticated) {
+          // For authenticated users, itemId is the cart item ID
+          // Find the product ID from backendCart to remove from local cart
+          const cartItem = backendCart?.items.find((item) => item.id === itemId);
+          const productId = cartItem?.productId;
+
+          await removeFromCartApi(itemId).unwrap();
+
+          // Also remove from local cart to prevent useCartSync from re-adding it
+          // Use productId since local cart stores items by product ID
+          if (productId) {
+            dispatch(removeItem(productId));
+          }
+        } else {
+          // For guest users, itemId is the product id
+          dispatch(removeItem(itemId));
         }
-      } else {
-        // For guest users, itemId is the product id
-        dispatch(removeItem(itemId));
+        toast.success('Item removed from cart');
+      } catch (error) {
+        toast.error('Failed to remove item');
+        throw error;
       }
-      toast.success('Item removed from cart');
-    } catch (error) {
-      toast.error('Failed to remove item');
-      throw error;
-    }
-  }, [isAuthenticated, removeFromCartApi, dispatch, backendCart]);
+    },
+    [isAuthenticated, removeFromCartApi, dispatch, backendCart]
+  );
 
   return {
     displayItems,
@@ -164,6 +170,6 @@ export function useCart(): UseCartReturn {
     isLoading: isCartLoading || isSyncLoading,
     isAuthenticated,
     handleUpdateQuantity,
-    handleRemove
+    handleRemove,
   };
 }

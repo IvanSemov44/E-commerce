@@ -1,4 +1,4 @@
-using ECommerce.Application.Services;
+﻿using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using FluentAssertions;
@@ -29,7 +29,7 @@ public class SmtpEmailServiceTests
     {
         _configurationMock.Reset();
         _loggerMock.Reset();
-        
+
         // Default configuration - disabled (no credentials)
         _configurationMock.Setup(x => x["Smtp:Host"]).Returns("smtp.test.com");
         _configurationMock.Setup(x => x["Smtp:Port"]).Returns("587");

@@ -10,7 +10,10 @@ import { baseApi } from '@/shared/lib/api/baseApi';
 
 const authApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    register: builder.mutation<{ success: boolean; message: string; user?: AuthUser }, RegisterRequest>({
+    register: builder.mutation<
+      { success: boolean; message: string; user?: AuthUser },
+      RegisterRequest
+    >({
       query: (credentials) => ({
         url: '/auth/register',
         method: 'POST',

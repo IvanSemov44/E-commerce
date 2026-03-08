@@ -1,4 +1,4 @@
-using ECommerce.Core.Entities;
+﻿using ECommerce.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,7 +15,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => e.Email).IsUnique();
-        
+
         entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
         entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
         entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
@@ -33,10 +33,10 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => e.Slug).IsUnique();
-        
+
         entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
         entity.Property(e => e.Slug).IsRequired().HasMaxLength(100);
-        
+
         entity.HasOne(e => e.Parent)
             .WithMany(e => e.Children)
             .HasForeignKey(e => e.ParentId)
@@ -58,16 +58,16 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         entity.HasIndex(e => e.IsActive);
         entity.HasIndex(e => e.IsFeatured);
         entity.HasIndex(e => new { e.IsActive, e.Price });
-        
+
         entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
         entity.Property(e => e.Slug).IsRequired().HasMaxLength(255);
         entity.Property(e => e.Price).HasPrecision(10, 2);
         entity.Property(e => e.CompareAtPrice).HasPrecision(10, 2);
         entity.Property(e => e.CostPrice).HasPrecision(10, 2);
-        
+
         // Enable RowVersion for optimistic concurrency - critical for inventory management
         entity.Property(e => e.RowVersion).IsRowVersion();
-        
+
         entity.HasOne(e => e.Category)
             .WithMany(e => e.Products)
             .HasForeignKey(e => e.CategoryId)
@@ -85,7 +85,7 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
     public void Configure(EntityTypeBuilder<ProductImage> entity)
     {
         entity.HasKey(e => e.Id);
-        
+
         entity.HasOne(e => e.Product)
             .WithMany(e => e.Images)
             .HasForeignKey(e => e.ProductId)
@@ -103,13 +103,13 @@ public class AddressConfiguration : IEntityTypeConfiguration<Address>
     public void Configure(EntityTypeBuilder<Address> entity)
     {
         entity.HasKey(e => e.Id);
-        
+
         entity.Property(e => e.StreetLine1).IsRequired().HasMaxLength(255);
         entity.Property(e => e.City).IsRequired().HasMaxLength(100);
         entity.Property(e => e.State).IsRequired().HasMaxLength(100);
         entity.Property(e => e.PostalCode).IsRequired().HasMaxLength(20);
         entity.Property(e => e.Country).IsRequired().HasMaxLength(2);
-        
+
         entity.HasOne(e => e.User)
             .WithMany(e => e.Addresses)
             .HasForeignKey(e => e.UserId)
@@ -131,7 +131,7 @@ public class CartConfiguration : IEntityTypeConfiguration<Cart>
 
         // Enable RowVersion for optimistic concurrency - critical for cart item mutation race conditions
         entity.Property(e => e.RowVersion).IsRowVersion();
-        
+
         entity.HasOne(e => e.User)
             .WithOne(e => e.Cart)
             .HasForeignKey<Cart>(e => e.UserId)
@@ -150,12 +150,12 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
     {
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => new { e.CartId, e.ProductId }).IsUnique();
-        
+
         entity.HasOne(e => e.Cart)
             .WithMany(e => e.Items)
             .HasForeignKey(e => e.CartId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         entity.HasOne(e => e.Product)
             .WithMany(e => e.CartItems)
             .HasForeignKey(e => e.ProductId)
@@ -174,12 +174,12 @@ public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
     {
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => e.Code).IsUnique();
-        
+
         entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
         entity.Property(e => e.DiscountValue).HasPrecision(10, 2);
         entity.Property(e => e.MinOrderAmount).HasPrecision(10, 2);
         entity.Property(e => e.MaxDiscountAmount).HasPrecision(10, 2);
-        
+
         // Enable RowVersion for optimistic concurrency - critical for usage limits
         entity.Property(e => e.RowVersion).IsRowVersion();
     }
@@ -199,22 +199,22 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         entity.HasIndex(e => e.UserId);
         entity.HasIndex(e => e.CreatedAt);
         entity.HasIndex(e => e.Status);
-        
+
         entity.Property(e => e.OrderNumber).IsRequired().HasMaxLength(20);
         entity.Property(e => e.Subtotal).HasPrecision(10, 2);
         entity.Property(e => e.DiscountAmount).HasPrecision(10, 2);
         entity.Property(e => e.ShippingAmount).HasPrecision(10, 2);
         entity.Property(e => e.TaxAmount).HasPrecision(10, 2);
         entity.Property(e => e.TotalAmount).HasPrecision(10, 2);
-        
+
         // Enable RowVersion for optimistic concurrency - critical for order processing
         entity.Property(e => e.RowVersion).IsRowVersion();
-        
+
         entity.HasOne(e => e.User)
             .WithMany(e => e.Orders)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.SetNull);
-        
+
         entity.HasOne(e => e.PromoCode)
             .WithMany(e => e.Orders)
             .HasForeignKey(e => e.PromoCodeId)
@@ -232,15 +232,15 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
     public void Configure(EntityTypeBuilder<OrderItem> entity)
     {
         entity.HasKey(e => e.Id);
-        
+
         entity.Property(e => e.UnitPrice).HasPrecision(10, 2);
         entity.Property(e => e.TotalPrice).HasPrecision(10, 2);
-        
+
         entity.HasOne(e => e.Order)
             .WithMany(e => e.Items)
             .HasForeignKey(e => e.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         entity.HasOne(e => e.Product)
             .WithMany(e => e.OrderItems)
             .HasForeignKey(e => e.ProductId)
@@ -258,12 +258,12 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
     public void Configure(EntityTypeBuilder<Review> entity)
     {
         entity.HasKey(e => e.Id);
-        
+
         entity.HasOne(e => e.Product)
             .WithMany(e => e.Reviews)
             .HasForeignKey(e => e.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         entity.HasOne(e => e.User)
             .WithMany(e => e.Reviews)
             .HasForeignKey(e => e.UserId)
@@ -282,12 +282,12 @@ public class WishlistConfiguration : IEntityTypeConfiguration<Wishlist>
     {
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => new { e.UserId, e.ProductId }).IsUnique();
-        
+
         entity.HasOne(e => e.User)
             .WithMany(e => e.Wishlists)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         entity.HasOne(e => e.Product)
             .WithMany(e => e.Wishlists)
             .HasForeignKey(e => e.ProductId)
@@ -307,7 +307,7 @@ public class InventoryLogConfiguration : IEntityTypeConfiguration<InventoryLog>
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => e.ProductId);
         entity.HasIndex(e => new { e.ProductId, e.CreatedAt });
-        
+
         entity.HasOne(e => e.Product)
             .WithMany(e => e.InventoryLogs)
             .HasForeignKey(e => e.ProductId)
@@ -326,9 +326,9 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
     {
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => e.Token).IsUnique();
-        
+
         entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
-        
+
         entity.HasOne(e => e.User)
             .WithMany()
             .HasForeignKey(e => e.UserId)

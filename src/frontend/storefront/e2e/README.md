@@ -14,6 +14,7 @@ This directory contains end-to-end tests for the storefront application using Pl
 ### Prerequisites
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -50,6 +51,7 @@ npx playwright test --project=webkit
 ## Test Configuration
 
 Configuration is in `playwright.config.ts`:
+
 - Tests run against `http://localhost:5173` (dev server)
 - Dev server starts automatically before tests
 - Screenshots on failure
@@ -63,13 +65,14 @@ Tests use Playwright's flexible selectors that work with various implementations
 ```typescript
 // Multiple selector strategies for resilience
 const button = page.locator(
-  'button:has-text("Add to Cart"), ' +  // Text-based
-  '[data-testid="add-to-cart"], ' +      // Test ID (preferred)
-  'button:has-text("Add to Bag")'        // Alternative text
+  'button:has-text("Add to Cart"), ' + // Text-based
+    '[data-testid="add-to-cart"], ' + // Test ID (preferred)
+    'button:has-text("Add to Bag")' // Alternative text
 );
 ```
 
 This approach ensures tests work even if:
+
 - Component names change
 - CSS classes change
 - Exact text changes slightly
@@ -114,5 +117,6 @@ These tests can run in CI pipelines:
 ### Screenshots and videos
 
 Find test artifacts in:
+
 - `test-results/` - Screenshots and videos
 - `playwright-report/` - HTML report

@@ -45,7 +45,7 @@ export const cartSlice = createSlice({
   reducers: {
     addItem: (state, action: PayloadAction<CartItem>) => {
       const newItem = action.payload;
-      const existingItem = state.items.find(item => item.id === newItem.id);
+      const existingItem = state.items.find((item) => item.id === newItem.id);
 
       if (existingItem) {
         const newQuantity = existingItem.quantity + newItem.quantity;
@@ -96,14 +96,12 @@ export const cartReducer = cartSlice.reducer;
 // Selectors
 export const selectCartItems = (state: RootState) => state.cart.items;
 
-export const selectCartItemCount = createSelector(
-  [selectCartItems],
-  (items) => items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0)
+export const selectCartItemCount = createSelector([selectCartItems], (items) =>
+  items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0)
 );
 
-export const selectCartSubtotal = createSelector(
-  [selectCartItems],
-  (items) => items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0)
+export const selectCartSubtotal = createSelector([selectCartItems], (items) =>
+  items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0)
 );
 
 export const selectCartItemById = (id: string) => (state: RootState) =>

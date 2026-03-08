@@ -109,16 +109,10 @@ export default function OptimizedImage({
       {/* Picture element with multiple format support */}
       <picture className={`${styles.picture} ${className}`}>
         {/* AVIF: Modern format with best compression */}
-        <source
-          srcSet={src.replace(/\.\w+$/, '.avif')}
-          type="image/avif"
-        />
+        <source srcSet={src.replace(/\.\w+$/, '.avif')} type="image/avif" />
 
         {/* WebP: Good compression, wide browser support */}
-        <source
-          srcSet={src.replace(/\.\w+$/, '.webp')}
-          type="image/webp"
-        />
+        <source srcSet={src.replace(/\.\w+$/, '.webp')} type="image/webp" />
 
         {/* Fallback to original image format */}
         <img

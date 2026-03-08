@@ -8,12 +8,7 @@ afterEach(() => {
 
 describe('Toast', () => {
   it('renders message and variant icon', () => {
-    render(
-      <Toast
-        toast={{ id: '1', message: 'Saved', variant: 'success' }}
-        onDismiss={vi.fn()}
-      />
-    );
+    render(<Toast toast={{ id: '1', message: 'Saved', variant: 'success' }} onDismiss={vi.fn()} />);
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText('Saved')).toBeInTheDocument();
@@ -22,12 +17,7 @@ describe('Toast', () => {
 
   it('dismisses on close button click', () => {
     const onDismiss = vi.fn();
-    render(
-      <Toast
-        toast={{ id: '1', message: 'Error', variant: 'error' }}
-        onDismiss={onDismiss}
-      />
-    );
+    render(<Toast toast={{ id: '1', message: 'Error', variant: 'error' }} onDismiss={onDismiss} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss notification' }));
     expect(onDismiss).toHaveBeenCalledWith('1');

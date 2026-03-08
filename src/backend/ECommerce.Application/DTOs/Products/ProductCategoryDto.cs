@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Products;
+﻿namespace ECommerce.Application.DTOs.Products;
 
 /// <summary>
 /// Simplified category DTO for embedding in product responses.

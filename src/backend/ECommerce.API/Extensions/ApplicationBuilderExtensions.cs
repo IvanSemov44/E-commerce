@@ -1,4 +1,4 @@
-using ECommerce.API.Configuration;
+﻿using ECommerce.API.Configuration;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Middleware;
 using ECommerce.Infrastructure.Data;
@@ -184,7 +184,7 @@ public static class ApplicationBuilderExtensions
         {
             return Enumerable.Empty<string>();
         }
-        catch (Exception ex) when (ex.Message.Contains("__EFMigrationsHistory") || 
+        catch (Exception ex) when (ex.Message.Contains("__EFMigrationsHistory") ||
                                    ex.InnerException?.Message.Contains("__EFMigrationsHistory") == true)
         {
             // Migration history table doesn't exist - return all migrations as pending

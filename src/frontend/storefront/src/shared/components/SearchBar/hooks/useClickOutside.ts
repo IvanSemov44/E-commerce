@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react'
-import type { RefObject } from 'react'
+import { useEffect, useCallback } from 'react';
+import type { RefObject } from 'react';
 
 /**
  * useClickOutside Hook
@@ -17,14 +17,14 @@ export function useClickOutside<T extends HTMLElement>(
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-        callback()
+        callback();
       }
     },
     [ref, callback]
-  )
+  );
 
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [handleClickOutside])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [handleClickOutside]);
 }

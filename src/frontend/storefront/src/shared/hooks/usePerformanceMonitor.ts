@@ -42,9 +42,7 @@ interface UsePerformanceMonitorOptions {
   enableLogging?: boolean;
 }
 
-export function usePerformanceMonitor(
-  options: UsePerformanceMonitorOptions = {}
-): void {
+export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}): void {
   const { onMetric, enableLogging = import.meta.env.MODE === 'development' } = options;
 
   useEffect(() => {
@@ -94,7 +92,12 @@ export function usePerformanceMonitor(
             const metric: PerformanceMetric = {
               name: 'First Input Delay (FID)',
               value: fidEntry.processingDuration,
-              rating: fidEntry.processingDuration < 100 ? 'good' : fidEntry.processingDuration < 300 ? 'needs-improvement' : 'poor',
+              rating:
+                fidEntry.processingDuration < 100
+                  ? 'good'
+                  : fidEntry.processingDuration < 300
+                    ? 'needs-improvement'
+                    : 'poor',
               timestamp: Date.now(),
             };
 
@@ -151,7 +154,12 @@ export function usePerformanceMonitor(
             const metric: PerformanceMetric = {
               name: 'First Contentful Paint (FCP)',
               value: fcpEntry.startTime,
-              rating: fcpEntry.startTime < 1800 ? 'good' : fcpEntry.startTime < 3000 ? 'needs-improvement' : 'poor',
+              rating:
+                fcpEntry.startTime < 1800
+                  ? 'good'
+                  : fcpEntry.startTime < 3000
+                    ? 'needs-improvement'
+                    : 'poor',
               timestamp: Date.now(),
             };
 

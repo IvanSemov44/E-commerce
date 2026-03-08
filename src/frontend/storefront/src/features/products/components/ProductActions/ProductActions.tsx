@@ -44,7 +44,9 @@ export default function ProductActions({
   return (
     <div className={styles.actions}>
       <div className={styles.stockSection}>
-        <p className={`${styles.stockLabel} ${stockQuantity > 0 ? styles.inStock : styles.outOfStock}`}>
+        <p
+          className={`${styles.stockLabel} ${stockQuantity > 0 ? styles.inStock : styles.outOfStock}`}
+        >
           {stockQuantity > 0 ? `${stockQuantity} in stock` : 'Out of stock'}
         </p>
         {stockQuantity > 0 && stockQuantity <= lowStockThreshold && (
@@ -81,11 +83,7 @@ export default function ProductActions({
               +
             </button>
           </div>
-          {cartItem && (
-            <span className={styles.cartHint}>
-              ({cartItem.quantity} in cart)
-            </span>
-          )}
+          {cartItem && <span className={styles.cartHint}>({cartItem.quantity} in cart)</span>}
         </div>
       </div>
 
@@ -103,7 +101,7 @@ export default function ProductActions({
         >
           {stockQuantity === 0 ? 'Out of Stock' : addedToCart ? '✓ Added to Cart!' : 'Add to Cart'}
         </Button>
-        
+
         {isAuthenticated && (
           <Button
             variant={isInWishlist ? 'primary' : 'secondary'}

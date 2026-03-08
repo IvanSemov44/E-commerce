@@ -1,4 +1,4 @@
-using FluentValidation.TestHelper;
+﻿using FluentValidation.TestHelper;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.Validators.Products;
 using FluentAssertions;

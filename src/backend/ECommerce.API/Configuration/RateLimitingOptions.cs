@@ -1,4 +1,4 @@
-namespace ECommerce.API.Configuration;
+﻿namespace ECommerce.API.Configuration;
 
 /// <summary>
 /// Configuration options for rate limiting policies.

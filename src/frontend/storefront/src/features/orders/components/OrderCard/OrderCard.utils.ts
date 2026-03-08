@@ -30,7 +30,10 @@ export function getStatusClassName(status: string, styles: Record<string, string
  * @param t - Translation function
  * @returns Formatted items label
  */
-export function formatItemsLabel(count: number, t: (key: string, options?: Record<string, unknown>) => string): string {
+export function formatItemsLabel(
+  count: number,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
   return count === 1
     ? t('orders.oneItem') || '1 item'
     : t('orders.multipleItems', { count }) || `${count} items`;
@@ -49,13 +52,16 @@ export function formatItemsPreview(
   t: (key: string, options?: Record<string, unknown>) => string
 ): string {
   if (items.length === 0) return '';
-  
-  const displayItems = items.slice(0, maxDisplay).map((item) => item.productName).join(', ');
+
+  const displayItems = items
+    .slice(0, maxDisplay)
+    .map((item) => item.productName)
+    .join(', ');
   const remaining = items.length - maxDisplay;
-  
+
   if (remaining > 0) {
     return `${displayItems} +${remaining} ${t('orders.more') || 'more'}`;
   }
-  
+
   return displayItems;
 }

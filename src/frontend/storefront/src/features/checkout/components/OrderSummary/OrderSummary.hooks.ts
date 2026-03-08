@@ -8,7 +8,7 @@
 export function usePromoCode(
   onPromoCodeChange: (code: string) => void,
   onApplyPromoCode: () => Promise<void>,
-  onRemovePromoCode: () => void,
+  onRemovePromoCode: () => void
 ) {
   const handlePromoCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onPromoCodeChange(e.target.value);
@@ -41,7 +41,7 @@ export function useOrderCalculations(
   subtotal: number,
   discount: number,
   shipping: number,
-  tax: number,
+  tax: number
 ) {
   const discountedSubtotal = subtotal - discount;
   const total = discountedSubtotal + shipping + tax;

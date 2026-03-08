@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Dashboard;
+﻿namespace ECommerce.Application.DTOs.Dashboard;
 
 public record DashboardStatsDto
 {

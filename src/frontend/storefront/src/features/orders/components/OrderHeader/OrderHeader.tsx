@@ -25,12 +25,12 @@ export default function OrderHeader({
         <h1 className="text-2xl font-bold">
           {t('orders.order')} #{orderNumber}
         </h1>
-        <p className="text-gray-500">
-          {new Date(createdAt).toLocaleDateString()}
-        </p>
+        <p className="text-gray-500">{new Date(createdAt).toLocaleDateString()}</p>
       </div>
       <div className="flex items-center gap-4">
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}
+        >
           {t(`orders.status.${status.toLowerCase()}`)}
         </span>
         {canCancel && (
@@ -39,7 +39,9 @@ export default function OrderHeader({
             disabled={isCancelling}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
           >
-            {isCancelling ? t('orders.cancelling') || 'Cancelling...' : t('orders.cancel') || 'Cancel Order'}
+            {isCancelling
+              ? t('orders.cancelling') || 'Cancelling...'
+              : t('orders.cancel') || 'Cancel Order'}
           </button>
         )}
       </div>

@@ -5,20 +5,13 @@
  */
 
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
-import {
-  loginSuccess,
-  loginFailure,
-  logout,
-  setUser,
-} from '../slices/authSlice';
+import { loginSuccess, loginFailure, logout, setUser } from '../slices/authSlice';
 import type { AuthUser } from '@/shared/types';
 import { useErrorHandler } from '@/shared/hooks/useErrorHandler';
 
 export function useAuth() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user, loading } = useAppSelector(
-    (state) => state.auth
-  );
+  const { isAuthenticated, user, loading } = useAppSelector((state) => state.auth);
   const { handleError, clearError } = useErrorHandler();
 
   /**

@@ -3,7 +3,9 @@ import { render, screen } from '@testing-library/react';
 import ReviewList, { type Review } from './ReviewList';
 
 vi.mock('../ui/Card', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div data-testid="card">{children}</div>,
+  default: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="card">{children}</div>
+  ),
 }));
 
 vi.mock('../ErrorAlert', () => ({
@@ -58,11 +60,7 @@ describe('ReviewList', () => {
   });
 
   it('falls back to anonymous when userName missing', () => {
-    render(
-      <ReviewList
-        reviews={[{ ...reviews[0], id: '2', userName: undefined }]}
-      />
-    );
+    render(<ReviewList reviews={[{ ...reviews[0], id: '2', userName: undefined }]} />);
 
     expect(screen.getByText('products.by products.anonymous')).toBeInTheDocument();
   });

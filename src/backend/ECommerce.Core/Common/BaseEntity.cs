@@ -1,4 +1,4 @@
-namespace ECommerce.Core.Common;
+﻿namespace ECommerce.Core.Common;
 
 /// <summary>
 /// Base class for all entities in the domain.
@@ -15,12 +15,12 @@ public abstract class BaseEntity
     /// Gets or sets the unique identifier for the entity.
     /// </summary>
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
     /// <summary>
     /// Gets or sets the timestamp when the entity was created.
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// Gets or sets the timestamp when the entity was last updated.
     /// </summary>

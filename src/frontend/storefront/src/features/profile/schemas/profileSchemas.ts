@@ -13,10 +13,9 @@ export const profileSchema = z.object({
   email: z.string(),
   phone: z
     .string()
-    .refine(
-      (val) => !val || !val.trim() || /^\+?[\d\s\-()]{10,}$/.test(val.trim()),
-      { message: 'Invalid phone number' }
-    )
+    .refine((val) => !val || !val.trim() || /^\+?[\d\s\-()]{10,}$/.test(val.trim()), {
+      message: 'Invalid phone number',
+    })
     .optional(),
   avatarUrl: z.string().optional(),
 });

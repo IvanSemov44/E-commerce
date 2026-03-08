@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ECommerce.Application.DTOs.Reviews;
 
 namespace ECommerce.Application.Validators.Reviews;

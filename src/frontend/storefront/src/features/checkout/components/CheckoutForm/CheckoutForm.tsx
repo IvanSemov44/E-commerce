@@ -138,7 +138,11 @@ export default function CheckoutForm({
           <option value="DE">Germany</option>
           <option value="FR">France</option>
         </select>
-        {errors.country && <p id="country-error" role="alert" className="text-red-500 text-sm mt-1">{errors.country}</p>}
+        {errors.country && (
+          <p id="country-error" role="alert" className="text-red-500 text-sm mt-1">
+            {errors.country}
+          </p>
+        )}
       </div>
 
       <PaymentMethodSelector

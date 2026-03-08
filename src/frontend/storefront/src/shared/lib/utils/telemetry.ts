@@ -35,11 +35,7 @@ type TelemetrySink = (event: TelemetryEvent) => void;
 // ---------------------------------------------------------------------------
 
 const consoleSink: TelemetrySink = (te) => {
-  logger.info(
-    'Telemetry',
-    `[${te.event}]`,
-    te.payload ?? ''
-  );
+  logger.info('Telemetry', `[${te.event}]`, te.payload ?? '');
 };
 
 // ---------------------------------------------------------------------------

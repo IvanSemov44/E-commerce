@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Users;
+﻿namespace ECommerce.Application.DTOs.Users;
 
 public static class UserPreferencesDtoExtensions
 {

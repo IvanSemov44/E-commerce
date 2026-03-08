@@ -23,7 +23,7 @@ export default function ProductFilters({
   onIsFeaturedChange,
 }: ProductFiltersProps) {
   const { t } = useTranslation();
-  
+
   return (
     <div className={styles.filters}>
       {/* Price Filter */}
@@ -34,14 +34,18 @@ export default function ProductFilters({
             type="number"
             placeholder={t('products.priceMin')}
             value={minPrice || ''}
-            onChange={(e) => onMinPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+            onChange={(e) =>
+              onMinPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)
+            }
             className={styles.priceInput}
           />
           <input
             type="number"
             placeholder={t('products.priceMax')}
             value={maxPrice || ''}
-            onChange={(e) => onMaxPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+            onChange={(e) =>
+              onMaxPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)
+            }
             className={styles.priceInput}
           />
         </div>
@@ -52,7 +56,9 @@ export default function ProductFilters({
         <h3 className={styles.filterTitle}>{t('products.minimumRating')}</h3>
         <select
           value={minRating || ''}
-          onChange={(e) => onMinRatingChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+          onChange={(e) =>
+            onMinRatingChange(e.target.value ? parseFloat(e.target.value) : undefined)
+          }
           className={styles.filterSelect}
         >
           <option value="">{t('products.allRatings')}</option>

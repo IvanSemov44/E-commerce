@@ -31,25 +31,17 @@ function getButtonClasses(
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
+  (
+    { className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props },
+    ref
+  ) => {
     const buttonClasses = getButtonClasses(variant, size);
     const combinedClassName = className ? `${buttonClasses} ${className}` : buttonClasses;
     const isDisabled = disabled || isLoading;
 
     return (
-      <button
-        className={combinedClassName}
-        ref={ref}
-        disabled={isDisabled}
-        {...props}
-      >
-        {isLoading && (
-          <SpinnerIcon
-            className={styles.spinner}
-            fill="none"
-            aria-hidden="true"
-          />
-        )}
+      <button className={combinedClassName} ref={ref} disabled={isDisabled} {...props}>
+        {isLoading && <SpinnerIcon className={styles.spinner} fill="none" aria-hidden="true" />}
         {children}
       </button>
     );

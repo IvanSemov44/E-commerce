@@ -1,4 +1,4 @@
-using ECommerce.Application.Interfaces;
+﻿using ECommerce.Application.Interfaces;
 using AutoMapper;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Categories;
@@ -33,7 +33,7 @@ public class CategoryService : ICategoryService
     {
         if (pageNumber <= 0)
             return Result<PaginatedResult<CategoryDto>>.Fail(ErrorCodes.InvalidPagination, "Page number must be greater than 0");
-        
+
         // Enforce max page size to prevent DoS attacks
         pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
 
@@ -47,7 +47,7 @@ public class CategoryService : ICategoryService
             .ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<CategoryDto>>(paginatedCategories);
-        
+
         var result = new PaginatedResult<CategoryDto>
         {
             Items = dtos,
@@ -55,7 +55,7 @@ public class CategoryService : ICategoryService
             Page = pageNumber,
             PageSize = pageSize
         };
-        
+
         return Result<PaginatedResult<CategoryDto>>.Ok(result);
     }
 
@@ -66,7 +66,7 @@ public class CategoryService : ICategoryService
     {
         if (pageNumber <= 0)
             return Result<PaginatedResult<CategoryDto>>.Fail(ErrorCodes.InvalidPagination, "Page number must be greater than 0");
-        
+
         // Enforce max page size to prevent DoS attacks
         pageSize = pageSize < 1 ? PaginationConstants.DefaultPageSize : Math.Min(pageSize, PaginationConstants.MaxPageSize);
 
@@ -98,7 +98,7 @@ public class CategoryService : ICategoryService
             Page = pageNumber,
             PageSize = pageSize
         };
-        
+
         return Result<PaginatedResult<CategoryDto>>.Ok(result);
     }
 

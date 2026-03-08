@@ -10,11 +10,13 @@ test.describe('Authentication', () => {
     await page.goto('/');
 
     // Find login link
-    const loginLink = page.locator(
-      'a[href*="login"], [data-testid="login-link"], a:has-text("Login"), a:has-text("Sign In")'
-    ).first();
+    const loginLink = page
+      .locator(
+        'a[href*="login"], [data-testid="login-link"], a:has-text("Login"), a:has-text("Sign In")'
+      )
+      .first();
 
-    if (await loginLink.count() > 0) {
+    if ((await loginLink.count()) > 0) {
       await loginLink.click();
 
       // Verify we're on login page
@@ -36,12 +38,14 @@ test.describe('Authentication', () => {
   test('should show validation error for invalid login', async ({ page }) => {
     // Navigate to login
     await page.goto('/');
-    
-    const loginLink = page.locator(
-      'a[href*="login"], [data-testid="login-link"], a:has-text("Login"), a:has-text("Sign In")'
-    ).first();
 
-    if (await loginLink.count() === 0) {
+    const loginLink = page
+      .locator(
+        'a[href*="login"], [data-testid="login-link"], a:has-text("Login"), a:has-text("Sign In")'
+      )
+      .first();
+
+    if ((await loginLink.count()) === 0) {
       test.skip();
       return;
     }
@@ -66,7 +70,7 @@ test.describe('Authentication', () => {
       '.error, [class*="error"], [role="alert"], .toast, .notification'
     );
 
-    const hasError = await errorMessage.count() > 0;
+    const hasError = (await errorMessage.count()) > 0;
     const stillOnLogin = page.url().match(/\/(login|signin|auth)/i);
 
     // Either shows error or stays on login page
@@ -77,11 +81,13 @@ test.describe('Authentication', () => {
     await page.goto('/');
 
     // Find register/signup link
-    const registerLink = page.locator(
-      'a[href*="register"], a[href*="signup"], [data-testid="register-link"], a:has-text("Register"), a:has-text("Sign Up")'
-    ).first();
+    const registerLink = page
+      .locator(
+        'a[href*="register"], a[href*="signup"], [data-testid="register-link"], a:has-text("Register"), a:has-text("Sign Up")'
+      )
+      .first();
 
-    if (await registerLink.count() > 0) {
+    if ((await registerLink.count()) > 0) {
       await registerLink.click();
 
       // Verify we're on registration page
@@ -103,11 +109,13 @@ test.describe('Authentication', () => {
   test('should display registration form fields', async ({ page }) => {
     await page.goto('/');
 
-    const registerLink = page.locator(
-      'a[href*="register"], a[href*="signup"], [data-testid="register-link"], a:has-text("Register"), a:has-text("Sign Up")'
-    ).first();
+    const registerLink = page
+      .locator(
+        'a[href*="register"], a[href*="signup"], [data-testid="register-link"], a:has-text("Register"), a:has-text("Sign Up")'
+      )
+      .first();
 
-    if (await registerLink.count() === 0) {
+    if ((await registerLink.count()) === 0) {
       test.skip();
       return;
     }
@@ -123,7 +131,7 @@ test.describe('Authentication', () => {
     expect(await passwordInputs.count()).toBeGreaterThanOrEqual(1);
 
     // Registration typically has 2 password fields (password + confirm)
-    if (await passwordInputs.count() >= 2) {
+    if ((await passwordInputs.count()) >= 2) {
       await expect(passwordInputs.nth(0)).toBeVisible();
       await expect(passwordInputs.nth(1)).toBeVisible();
     }
@@ -132,11 +140,13 @@ test.describe('Authentication', () => {
   test('should require valid email format', async ({ page }) => {
     await page.goto('/');
 
-    const loginLink = page.locator(
-      'a[href*="login"], [data-testid="login-link"], a:has-text("Login"), a:has-text("Sign In")'
-    ).first();
+    const loginLink = page
+      .locator(
+        'a[href*="login"], [data-testid="login-link"], a:has-text("Login"), a:has-text("Sign In")'
+      )
+      .first();
 
-    if (await loginLink.count() === 0) {
+    if ((await loginLink.count()) === 0) {
       test.skip();
       return;
     }
@@ -151,10 +161,10 @@ test.describe('Authentication', () => {
 
     await emailInput.fill('notanemail');
     await passwordInput.fill('password123');
-    
+
     // Browser should show HTML5 validation or form should show error
     const isInvalid = await emailInput.evaluate((el: HTMLInputElement) => !el.validity.valid);
-    
+
     if (isInvalid) {
       // HTML5 validation should prevent submission
       expect(isInvalid).toBeTruthy();
@@ -162,10 +172,10 @@ test.describe('Authentication', () => {
       // Try submitting and check for error
       await submitButton.click();
       await page.waitForTimeout(500);
-      
+
       const errorMessage = page.locator('.error, [class*="error"], [role="alert"]');
-      const hasError = await errorMessage.count() > 0;
-      
+      const hasError = (await errorMessage.count()) > 0;
+
       expect(hasError).toBeTruthy();
     }
   });
@@ -179,13 +189,11 @@ test.describe('Authentication', () => {
       '[data-testid="user-menu"], .user-menu, [aria-label*="user"], button:has-text("Account")'
     );
 
-    const loginLink = page.locator(
-      'a[href*="login"], a:has-text("Login"), a:has-text("Sign In")'
-    );
+    const loginLink = page.locator('a[href*="login"], a:has-text("Login"), a:has-text("Sign In")');
 
     // Either logged in (has user menu) or logged out (has login link)
-    const hasUserMenu = await userMenu.count() > 0;
-    const hasLoginLink = await loginLink.count() > 0;
+    const hasUserMenu = (await userMenu.count()) > 0;
+    const hasLoginLink = (await loginLink.count()) > 0;
 
     expect(hasUserMenu || hasLoginLink).toBeTruthy();
   });

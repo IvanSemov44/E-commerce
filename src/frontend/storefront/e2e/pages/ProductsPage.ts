@@ -11,53 +11,69 @@ export class ProductsPage extends BasePage {
   }
 
   // Locators
-  readonly productCard = (): Locator => this.page.getByTestId('product-card').or(
-    this.page.locator('[class*="product-card"], [class*="product-item"]')
-  );
-  
-  readonly productGrid = (): Locator => this.page.getByTestId('product-grid').or(
-    this.page.locator('[class*="product-grid"], [class*="products-container"]')
-  );
-  
-  readonly searchInput = (): Locator => this.page.getByTestId('search-input').or(
-    this.page.locator('input[type="search"], input[placeholder*="search" i]')
-  );
-  
-  readonly searchButton = (): Locator => this.page.getByTestId('search-button').or(
-    this.page.locator('button[type="submit"], button:has-text("Search")')
-  );
-  
-  readonly categoryFilter = (): Locator => this.page.getByTestId('category-filter').or(
-    this.page.locator('select[name*="category"], [class*="category-filter"]')
-  );
-  
-  readonly priceFilter = (): Locator => this.page.getByTestId('price-filter').or(
-    this.page.locator('input[type="range"], [class*="price-filter"]')
-  );
-  
-  readonly sortDropdown = (): Locator => this.page.getByTestId('sort-dropdown').or(
-    this.page.locator('select[name*="sort"], [class*="sort"]')
-  );
-  
-  readonly pagination = (): Locator => this.page.getByTestId('pagination').or(
-    this.page.locator('[class*="pagination"], nav[aria-label*="pagination"]')
-  );
-  
-  readonly nextPageButton = (): Locator => this.page.getByTestId('next-page').or(
-    this.page.locator('button:has-text("Next"), a:has-text("Next"), [aria-label*="next" i]')
-  );
-  
-  readonly previousPageButton = (): Locator => this.page.getByTestId('previous-page').or(
-    this.page.locator('button:has-text("Previous"), a:has-text("Previous"), [aria-label*="previous" i]')
-  );
-  
-  readonly noResultsMessage = (): Locator => this.page.getByTestId('no-results').or(
-    this.page.locator('[class*="no-results"], :text("No products found")')
-  );
-  
-  readonly productCount = (): Locator => this.page.getByTestId('product-count').or(
-    this.page.locator('[class*="product-count"], [class*="results-count"]')
-  );
+  readonly productCard = (): Locator =>
+    this.page
+      .getByTestId('product-card')
+      .or(this.page.locator('[class*="product-card"], [class*="product-item"]'));
+
+  readonly productGrid = (): Locator =>
+    this.page
+      .getByTestId('product-grid')
+      .or(this.page.locator('[class*="product-grid"], [class*="products-container"]'));
+
+  readonly searchInput = (): Locator =>
+    this.page
+      .getByTestId('search-input')
+      .or(this.page.locator('input[type="search"], input[placeholder*="search" i]'));
+
+  readonly searchButton = (): Locator =>
+    this.page
+      .getByTestId('search-button')
+      .or(this.page.locator('button[type="submit"], button:has-text("Search")'));
+
+  readonly categoryFilter = (): Locator =>
+    this.page
+      .getByTestId('category-filter')
+      .or(this.page.locator('select[name*="category"], [class*="category-filter"]'));
+
+  readonly priceFilter = (): Locator =>
+    this.page
+      .getByTestId('price-filter')
+      .or(this.page.locator('input[type="range"], [class*="price-filter"]'));
+
+  readonly sortDropdown = (): Locator =>
+    this.page
+      .getByTestId('sort-dropdown')
+      .or(this.page.locator('select[name*="sort"], [class*="sort"]'));
+
+  readonly pagination = (): Locator =>
+    this.page
+      .getByTestId('pagination')
+      .or(this.page.locator('[class*="pagination"], nav[aria-label*="pagination"]'));
+
+  readonly nextPageButton = (): Locator =>
+    this.page
+      .getByTestId('next-page')
+      .or(this.page.locator('button:has-text("Next"), a:has-text("Next"), [aria-label*="next" i]'));
+
+  readonly previousPageButton = (): Locator =>
+    this.page
+      .getByTestId('previous-page')
+      .or(
+        this.page.locator(
+          'button:has-text("Previous"), a:has-text("Previous"), [aria-label*="previous" i]'
+        )
+      );
+
+  readonly noResultsMessage = (): Locator =>
+    this.page
+      .getByTestId('no-results')
+      .or(this.page.locator('[class*="no-results"], :text("No products found")'));
+
+  readonly productCount = (): Locator =>
+    this.page
+      .getByTestId('product-count')
+      .or(this.page.locator('[class*="product-count"], [class*="results-count"]'));
 
   // Navigation
   async navigate(): Promise<void> {
@@ -67,7 +83,9 @@ export class ProductsPage extends BasePage {
 
   async waitForProductsToLoad(): Promise<void> {
     await this.productGrid().waitFor({ state: 'visible', timeout: 10000 });
-    await this.loadingSpinner().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    await this.loadingSpinner()
+      .waitFor({ state: 'hidden', timeout: 5000 })
+      .catch(() => {});
   }
 
   // Actions
@@ -116,14 +134,14 @@ export class ProductsPage extends BasePage {
   async setPriceRange(min: number, max: number): Promise<void> {
     const minInput = this.page.locator('input[name*="min-price"], input[placeholder*="min" i]');
     const maxInput = this.page.locator('input[name*="max-price"], input[placeholder*="max" i]');
-    
-    if (await minInput.count() > 0) {
+
+    if ((await minInput.count()) > 0) {
       await this.fillInput(minInput, min.toString());
     }
-    if (await maxInput.count() > 0) {
+    if ((await maxInput.count()) > 0) {
       await this.fillInput(maxInput, max.toString());
     }
-    
+
     await this.waitForProductsToLoad();
   }
 
@@ -136,20 +154,20 @@ export class ProductsPage extends BasePage {
     const products = this.productCard();
     const count = await products.count();
     const names: string[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       const name = await products.nth(i).locator('[class*="product-name"], h3, h4').textContent();
       if (name) names.push(name);
     }
-    
+
     return names;
   }
 
   async getProductPrice(index: number): Promise<number | null> {
     const product = this.productCard().nth(index);
     const priceElement = product.locator('[class*="price"], [data-testid="price"]');
-    
-    if (await priceElement.count() > 0) {
+
+    if ((await priceElement.count()) > 0) {
       const priceText = await priceElement.textContent();
       const match = priceText?.match(/[\d.]+/);
       return match ? parseFloat(match[0]) : null;
@@ -159,7 +177,7 @@ export class ProductsPage extends BasePage {
 
   async getCurrentPage(): Promise<number> {
     const activePage = this.pagination().locator('[aria-current="page"], .active');
-    if (await activePage.count() > 0) {
+    if ((await activePage.count()) > 0) {
       const text = await activePage.textContent();
       return parseInt(text || '1');
     }
@@ -194,13 +212,13 @@ export class ProductsPage extends BasePage {
   async expectProductsSortedByPrice(ascending: boolean = true): Promise<void> {
     const prices: number[] = [];
     const count = await this.getProductCount();
-    
+
     for (let i = 0; i < count; i++) {
       const price = await this.getProductPrice(i);
       if (price !== null) prices.push(price);
     }
-    
-    const sortedPrices = [...prices].sort((a, b) => ascending ? a - b : b - a);
+
+    const sortedPrices = [...prices].sort((a, b) => (ascending ? a - b : b - a));
     expect(prices).toEqual(sortedPrices);
   }
 

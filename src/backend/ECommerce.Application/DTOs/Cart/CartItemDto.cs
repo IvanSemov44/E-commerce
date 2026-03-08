@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Cart;
+﻿namespace ECommerce.Application.DTOs.Cart;
 
 public record CartItemDto
 {

@@ -333,10 +333,65 @@ public class GlobalExceptionMiddlewareTests
 
     #region Test Exception Classes
 
-    private sealed class TestNotFoundException(string message) : NotFoundException(message);
-    private sealed class TestBadRequestException(string message) : BadRequestException(message);
-    private sealed class TestUnauthorizedException(string message) : UnauthorizedException(message);
-    private sealed class TestConflictException(string message) : ConflictException(message);
+    private sealed class TestNotFoundException : NotFoundException
+    {
+        public TestNotFoundException(string message) : base(message)
+        {
+        }
+
+        public TestNotFoundException() : base()
+        {
+        }
+
+        public TestNotFoundException(string message, Exception inner) : base(message, inner)
+        {
+        }
+    }
+
+    private sealed class TestBadRequestException : BadRequestException
+    {
+        public TestBadRequestException(string message) : base(message)
+        {
+        }
+
+        public TestBadRequestException() : base()
+        {
+        }
+
+        public TestBadRequestException(string message, Exception inner) : base(message, inner)
+        {
+        }
+    }
+
+    private sealed class TestUnauthorizedException : UnauthorizedException
+    {
+        public TestUnauthorizedException(string message) : base(message)
+        {
+        }
+
+        public TestUnauthorizedException() : base()
+        {
+        }
+
+        public TestUnauthorizedException(string message, Exception inner) : base(message, inner)
+        {
+        }
+    }
+
+    private sealed class TestConflictException : ConflictException
+    {
+        public TestConflictException(string message) : base(message)
+        {
+        }
+
+        public TestConflictException() : base()
+        {
+        }
+
+        public TestConflictException(string message, Exception inner) : base(message, inner)
+        {
+        }
+    }
 
     #endregion
 }

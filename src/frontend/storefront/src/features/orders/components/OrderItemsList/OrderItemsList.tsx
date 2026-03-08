@@ -14,7 +14,9 @@ export default function OrderItemsList({ items }: OrderItemsListProps) {
           )}
           <div className="ml-4">
             <p className="font-medium">{item.productName}</p>
-            <p className="text-sm text-gray-500">Qty: {item.quantity} x ${item.unitPrice.toFixed(2)}</p>
+            <p className="text-sm text-gray-500">
+              Qty: {item.quantity} x ${item.unitPrice.toFixed(2)}
+            </p>
           </div>
         </div>
       ))}

@@ -27,7 +27,9 @@ describe('StarRating', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /2 stars/i }));
     expect(onRatingChange).not.toHaveBeenCalled();
-    expect(screen.getAllByRole('button').every((btn) => (btn as HTMLButtonElement).disabled)).toBe(true);
+    expect(screen.getAllByRole('button').every((btn) => (btn as HTMLButtonElement).disabled)).toBe(
+      true
+    );
   });
 
   it('applies size class based on prop', () => {

@@ -74,29 +74,29 @@
    Dark Mode
    ============================================================================= */
 
-[data-theme="dark"] .container {
+[data-theme='dark'] .container {
   background-color: var(--surface-secondary);
   border-color: var(--border-default);
 }
 
-[data-theme="dark"] .title {
+[data-theme='dark'] .title {
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .loading {
+[data-theme='dark'] .loading {
   color: var(--text-muted);
 }
 
-[data-theme="dark"] .categoryButton {
+[data-theme='dark'] .categoryButton {
   color: var(--text-secondary);
 }
 
-[data-theme="dark"] .categoryButton:hover {
+[data-theme='dark'] .categoryButton:hover {
   color: var(--color-brand);
   background-color: var(--surface-tertiary);
 }
 
-[data-theme="dark"] .categoryButton.active {
+[data-theme='dark'] .categoryButton.active {
   color: var(--color-brand);
   background-color: rgba(74, 222, 128, 0.15);
 }

@@ -18,10 +18,14 @@ import Register from './features/auth/pages/RegisterPage';
 
 // Lazy load non-critical pages for code splitting
 const Products = lazy(() => import('./features/products/pages/ProductsPage/ProductsPage'));
-const ProductDetail = lazy(() => import('./features/products/pages/ProductDetailPage/ProductDetailPage'));
+const ProductDetail = lazy(
+  () => import('./features/products/pages/ProductDetailPage/ProductDetailPage')
+);
 const Cart = lazy(() => import('./features/cart/pages/CartPage/CartPage'));
 const Checkout = lazy(() => import('./pages/CheckoutPage/CheckoutPage'));
-const OrderHistory = lazy(() => import('./features/orders/pages/OrderHistoryPage/OrderHistoryPage'));
+const OrderHistory = lazy(
+  () => import('./features/orders/pages/OrderHistoryPage/OrderHistoryPage')
+);
 const OrderDetail = lazy(() => import('./features/orders/pages/OrderDetailPage/OrderDetailPage'));
 const Profile = lazy(() => import('./features/profile/pages/ProfilePage/ProfilePage'));
 const Wishlist = lazy(() => import('./features/wishlist/pages/WishlistPage/WishlistPage'));
@@ -114,9 +118,7 @@ function AppContent() {
       <AnnouncementBar />
       <Header />
       <main>
-        {isAppLoading && (
-          <LoadingFallback />
-        )}
+        {isAppLoading && <LoadingFallback />}
         {!isAppLoading && (
           <Suspense fallback={lazyLoadingFallback}>
             <Routes>
@@ -190,7 +192,7 @@ function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <Toaster 
+        <Toaster
           position="top-right"
           toastOptions={{
             style: {

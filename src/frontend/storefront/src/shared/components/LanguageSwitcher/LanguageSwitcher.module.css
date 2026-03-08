@@ -162,7 +162,7 @@
   background-color: var(--surface-primary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xl);
-  box-shadow: 
+  box-shadow:
     0 10px 40px -10px rgba(0, 0, 0, 0.15),
     0 4px 16px -4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -328,58 +328,63 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* =============================================================================
    Dark Mode Adjustments
    ============================================================================= */
 
-[data-theme="dark"] .toggle:hover {
+[data-theme='dark'] .toggle:hover {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .dropdown {
+[data-theme='dark'] .dropdown {
   background-color: var(--color-neutral-900);
   border-color: var(--color-neutral-700);
-  box-shadow: 
+  box-shadow:
     0 10px 40px -10px rgba(0, 0, 0, 0.5),
     0 4px 16px -4px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .dropdownHeader {
+[data-theme='dark'] .dropdownHeader {
   background-color: var(--color-neutral-800);
   border-color: var(--color-neutral-700);
 }
 
-[data-theme="dark"] .option:hover {
+[data-theme='dark'] .option:hover {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .optionActive {
+[data-theme='dark'] .optionActive {
   background-color: rgba(59, 130, 246, 0.15);
   color: var(--color-brand-light);
 }
 
-[data-theme="dark"] .optionActive:hover {
+[data-theme='dark'] .optionActive:hover {
   background-color: rgba(59, 130, 246, 0.2);
 }
 
-[data-theme="dark"] .optionIcon {
+[data-theme='dark'] .optionIcon {
   background-color: var(--color-neutral-800);
 }
 
-[data-theme="dark"] .optionActive .optionIcon {
+[data-theme='dark'] .optionActive .optionIcon {
   background-color: var(--color-brand);
   color: var(--text-inverse, #ffffff);
 }
 
-[data-theme="dark"] .optionActive .optionDescription {
+[data-theme='dark'] .optionActive .optionDescription {
   color: var(--color-brand-light);
 }
 
-[data-theme="dark"] .checkIcon {
+[data-theme='dark'] .checkIcon {
   color: var(--color-brand-light);
 }
 

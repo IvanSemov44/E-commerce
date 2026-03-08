@@ -308,34 +308,34 @@
    Dark Mode
    ============================================================================= */
 
-[data-theme="dark"] .container {
+[data-theme='dark'] .container {
   background-color: var(--surface-primary);
 }
 
-[data-theme="dark"] .summary {
+[data-theme='dark'] .summary {
   background-color: var(--surface-elevated);
   border-color: var(--border-default);
 }
 
-[data-theme="dark"] .freeShippingHint {
+[data-theme='dark'] .freeShippingHint {
   color: var(--color-brand);
 }
 
-[data-theme="dark"] .totalAmount {
+[data-theme='dark'] .totalAmount {
   color: var(--color-brand);
 }
 
-[data-theme="dark"] .trustBadge svg {
+[data-theme='dark'] .trustBadge svg {
   color: var(--color-brand);
 }
 
-[data-theme="dark"] .promoInput input {
+[data-theme='dark'] .promoInput input {
   background-color: var(--surface-secondary);
   border-color: var(--border-default);
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .promoInput input:focus {
+[data-theme='dark'] .promoInput input:focus {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
 }

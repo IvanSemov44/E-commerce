@@ -66,32 +66,32 @@
    Dark Mode
    ============================================================================= */
 
-[data-theme="dark"] .searchInput {
+[data-theme='dark'] .searchInput {
   background-color: var(--surface-secondary);
   border-color: var(--border-default);
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .searchInput:hover {
+[data-theme='dark'] .searchInput:hover {
   border-color: var(--border-hover);
 }
 
-[data-theme="dark"] .searchInput:focus {
+[data-theme='dark'] .searchInput:focus {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
 }
 
-[data-theme="dark"] .sortSelect {
+[data-theme='dark'] .sortSelect {
   background-color: var(--surface-secondary);
   border-color: var(--border-default);
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .sortSelect:hover {
+[data-theme='dark'] .sortSelect:hover {
   border-color: var(--border-hover);
 }
 
-[data-theme="dark"] .sortSelect:focus {
+[data-theme='dark'] .sortSelect:focus {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
 }
@@ -101,7 +101,7 @@
   .searchBar {
     flex-direction: column;
   }
-  
+
   .sortSelect {
     min-width: 100%;
   }

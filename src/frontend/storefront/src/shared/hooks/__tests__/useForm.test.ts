@@ -25,9 +25,7 @@ describe('useForm', () => {
 
   it('should initialize with initial values', () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     expect(result.current.values).toEqual(initialValues);
     expect(result.current.errors).toEqual({});
@@ -36,9 +34,7 @@ describe('useForm', () => {
 
   it('should update values on handleChange', () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     act(() => {
       result.current.handleChange({
@@ -51,9 +47,7 @@ describe('useForm', () => {
 
   it('should clear error when field is changed', () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     // Set an error first
     act(() => {
@@ -74,9 +68,7 @@ describe('useForm', () => {
 
   it('should call onSubmit with values when validation passes', async () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     // Set values
     act(() => {
@@ -103,9 +95,7 @@ describe('useForm', () => {
       return {};
     });
 
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit, validate })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit, validate }));
 
     await act(async () => {
       await result.current.handleSubmit(createMockFormEvent());
@@ -120,9 +110,7 @@ describe('useForm', () => {
       return new Promise((resolve) => setTimeout(resolve, 100));
     });
 
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     expect(result.current.isSubmitting).toBe(false);
 
@@ -143,9 +131,7 @@ describe('useForm', () => {
 
   it('should reset form to initial values', () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     // Change values
     act(() => {
@@ -165,9 +151,7 @@ describe('useForm', () => {
 
   it('should set field value directly', () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     act(() => {
       result.current.setFieldValue('name', 'John Doe');
@@ -178,9 +162,7 @@ describe('useForm', () => {
 
   it('should set field error directly', () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     act(() => {
       result.current.setFieldError('password', 'Password too short');
@@ -191,9 +173,7 @@ describe('useForm', () => {
 
   it('should update all values', () => {
     const onSubmit = vi.fn();
-    const { result } = renderHook(() =>
-      useForm({ initialValues, onSubmit })
-    );
+    const { result } = renderHook(() => useForm({ initialValues, onSubmit }));
 
     const newValues: TestFormValues = {
       email: 'new@example.com',

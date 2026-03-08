@@ -318,27 +318,27 @@
 }
 
 /* Individual social link brand colors on hover */
-.socialLink[href*="facebook"]:hover {
+.socialLink[href*='facebook']:hover {
   background: #1877f2;
   box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
 }
 
-.socialLink[href*="twitter"]:hover {
+.socialLink[href*='twitter']:hover {
   background: #000000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.socialLink[href*="instagram"]:hover {
+.socialLink[href*='instagram']:hover {
   background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
   box-shadow: 0 4px 12px rgba(225, 48, 108, 0.3);
 }
 
-.socialLink[href*="linkedin"]:hover {
+.socialLink[href*='linkedin']:hover {
   background: #0a66c2;
   box-shadow: 0 4px 12px rgba(10, 102, 194, 0.3);
 }
 
-.socialLink[href*="youtube"]:hover {
+.socialLink[href*='youtube']:hover {
   background: #ff0000;
   box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
 }

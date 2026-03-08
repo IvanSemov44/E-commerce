@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using ECommerce.Core.Common;
 
 namespace ECommerce.Core.Interfaces.Repositories;

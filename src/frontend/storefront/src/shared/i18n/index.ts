@@ -6,7 +6,7 @@ import { resources, defaultLanguage, languages, type Language } from './locales'
 
 /**
  * i18n Configuration
- * 
+ *
  * Provides internationalization support with:
  * - Automatic language detection from browser/localStorage
  * - Lazy loading of translations
@@ -44,16 +44,13 @@ export const i18nConfig = {
 };
 
 // Initialize i18next
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init(i18nConfig);
+i18n.use(LanguageDetector).use(initReactI18next).init(i18nConfig);
 
 /**
  * Helper to get language direction
  */
 const getLanguageDir = (lang: Language): 'ltr' | 'rtl' => {
-  const langConfig = languages.find(l => l.code === lang);
+  const langConfig = languages.find((l) => l.code === lang);
   return langConfig?.dir || 'ltr';
 };
 
@@ -63,7 +60,7 @@ const getLanguageDir = (lang: Language): 'ltr' | 'rtl' => {
 const changeLang = async (lang: Language): Promise<void> => {
   await i18n.changeLanguage(lang);
   localStorage.setItem('language', lang);
-  
+
   // Update document direction for RTL support
   const dir = getLanguageDir(lang);
   document.documentElement.dir = dir;

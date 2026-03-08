@@ -1,4 +1,4 @@
-using ECommerce.Core.Entities;
+﻿using ECommerce.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Data.Seeders;

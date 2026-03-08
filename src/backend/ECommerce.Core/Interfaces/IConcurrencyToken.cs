@@ -1,4 +1,4 @@
-namespace ECommerce.Core.Interfaces;
+﻿namespace ECommerce.Core.Interfaces;
 
 /// <summary>
 /// Interface for entities that support optimistic concurrency control.

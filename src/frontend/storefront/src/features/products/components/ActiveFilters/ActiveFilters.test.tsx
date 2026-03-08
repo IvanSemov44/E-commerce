@@ -85,13 +85,7 @@ describe('ActiveFilters', () => {
   it('calls onClearAll when clear button is clicked', async () => {
     const user = userEvent.setup();
     const onClearAll = vi.fn();
-    render(
-      <ActiveFilters
-        {...defaultProps}
-        search="laptop"
-        onClearAll={onClearAll}
-      />
-    );
+    render(<ActiveFilters {...defaultProps} search="laptop" onClearAll={onClearAll} />);
 
     const clearButton = screen.getByRole('button', { name: /clear/i });
     await user.click(clearButton);

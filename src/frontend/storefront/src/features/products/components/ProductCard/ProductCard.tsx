@@ -12,7 +12,7 @@ import styles from './ProductCard.module.css';
 
 /**
  * ProductCard Component
- * 
+ *
  * A polished, production-ready product card with:
  * - Smooth hover animations and micro-interactions
  * - Quick add to cart with visual feedback
@@ -33,27 +33,28 @@ const ProductCard = memo(function ProductCard({
   stockQuantity = 99,
 }: ProductCardProps) {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  
+
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  
+
   // Wishlist hooks
   const { data: isInWishlist = false, refetch: refetchWishlist } = useCheckInWishlistQuery(id, {
     skip: !isAuthenticated,
     refetchOnMountOrArgChange: false,
   });
-  
+
   const [, { isLoading: isAddingToWishlist }] = useAddToWishlistMutation();
   const [, { isLoading: isRemovingFromWishlist }] = useRemoveFromWishlistMutation();
-  
+
   const isWishlistLoading = isAddingToWishlist || isRemovingFromWishlist;
 
   // Calculations
-  const discountPercentage = compareAtPrice && compareAtPrice > price
-    ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
-    : 0;
-  
+  const discountPercentage =
+    compareAtPrice && compareAtPrice > price
+      ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
+      : 0;
+
   const showDiscountBadge = discountPercentage >= 10;
   const isInStock = stockQuantity > 0;
 
@@ -80,16 +81,16 @@ const ProductCard = memo(function ProductCard({
 
   const { handleImageError } = useImageError(setImageError);
 
-  const imageSrc = imageError ? DEFAULT_PRODUCT_IMAGE : (imageUrl || DEFAULT_PRODUCT_IMAGE);
+  const imageSrc = imageError ? DEFAULT_PRODUCT_IMAGE : imageUrl || DEFAULT_PRODUCT_IMAGE;
 
   return (
-    <article 
+    <article
       className={styles.card}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link 
-        to={`/products/${slug}`} 
+      <Link
+        to={`/products/${slug}`}
         className={styles.cardLink}
         aria-label={`View details for ${name}`}
       >
@@ -103,9 +104,11 @@ const ProductCard = memo(function ProductCard({
             loading="lazy"
             decoding="async"
           />
-          
+
           {/* Quick Add Button - Shows on Hover */}
-          <div className={`${styles.quickAddWrapper} ${isHovered && isInStock ? styles.visible : ''}`}>
+          <div
+            className={`${styles.quickAddWrapper} ${isHovered && isInStock ? styles.visible : ''}`}
+          >
             <button
               type="button"
               onClick={handleAddToCart}
@@ -120,20 +123,18 @@ const ProductCard = memo(function ProductCard({
               )}
             </button>
           </div>
-          
+
           {/* Badges */}
           {showDiscountBadge && (
-            <span className={styles.discountBadge}>
-              -{discountPercentage}%
-            </span>
+            <span className={styles.discountBadge}>-{discountPercentage}%</span>
           )}
-          
+
           {!isInStock && (
             <div className={styles.outOfStockOverlay}>
               <span>Sold Out</span>
             </div>
           )}
-          
+
           {/* Wishlist Button */}
           {isAuthenticated && (
             <button
@@ -154,19 +155,15 @@ const ProductCard = memo(function ProductCard({
           <h3 className={styles.productName} title={name}>
             {name}
           </h3>
-          
+
           <div className={styles.priceRow}>
             <div className={styles.priceContainer}>
-              <span className={styles.pricePrimary}>
-                {formatPrice(price)}
-              </span>
+              <span className={styles.pricePrimary}>{formatPrice(price)}</span>
               {compareAtPrice && compareAtPrice > price && (
-                <span className={styles.priceCompare}>
-                  {formatPrice(compareAtPrice)}
-                </span>
+                <span className={styles.priceCompare}>{formatPrice(compareAtPrice)}</span>
               )}
             </div>
-            
+
             {rating > 0 && (
               <div className={styles.ratingBadge}>
                 <StarIcon fill="currentColor" aria-hidden="true" />
@@ -174,7 +171,7 @@ const ProductCard = memo(function ProductCard({
               </div>
             )}
           </div>
-          
+
           {rating > 0 && reviewCount > 0 && (
             <p className={styles.reviewCount}>
               {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}

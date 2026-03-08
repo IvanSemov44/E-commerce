@@ -1,4 +1,4 @@
-using ECommerce.API.Configuration;
+﻿using ECommerce.API.Configuration;
 using ECommerce.API.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -132,7 +132,7 @@ public class MemoryHealthCheckTests
         var gen0 = (int)result.Data["Gen0Collections"];
         var gen1 = (int)result.Data["Gen1Collections"];
         var gen2 = (int)result.Data["Gen2Collections"];
-        
+
         gen0.Should().BeGreaterOrEqualTo(0);
         gen1.Should().BeGreaterOrEqualTo(0);
         gen2.Should().BeGreaterOrEqualTo(0);

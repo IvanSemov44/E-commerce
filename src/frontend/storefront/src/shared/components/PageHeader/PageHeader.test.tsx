@@ -11,7 +11,9 @@ describe('PageHeader', () => {
   });
 
   it('renders badge and icon', () => {
-    render(<PageHeader title="Orders" badge="New" icon={<span data-testid="title-icon">I</span>} />);
+    render(
+      <PageHeader title="Orders" badge="New" icon={<span data-testid="title-icon">I</span>} />
+    );
 
     expect(screen.getByText('New')).toBeInTheDocument();
     expect(screen.getByTestId('title-icon')).toBeInTheDocument();

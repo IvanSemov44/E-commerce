@@ -37,8 +37,8 @@ export default function CookieConsent() {
         <div className={styles.content}>
           <h3 className={styles.title}>🍪 Cookie Preferences</h3>
           <p className={styles.description}>
-            We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. 
-            By clicking "Accept All", you consent to our use of cookies. 
+            We use cookies to enhance your browsing experience, serve personalized ads or content,
+            and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
             Read more in our{' '}
             <Link to="/privacy" className={styles.link}>
               Privacy Policy
@@ -47,16 +47,10 @@ export default function CookieConsent() {
           </p>
         </div>
         <div className={styles.actions}>
-          <button 
-            onClick={handleDecline}
-            className={styles.declineButton}
-          >
+          <button onClick={handleDecline} className={styles.declineButton}>
             Decline
           </button>
-          <button 
-            onClick={handleAccept}
-            className={styles.acceptButton}
-          >
+          <button onClick={handleAccept} className={styles.acceptButton}>
             Accept All
           </button>
         </div>

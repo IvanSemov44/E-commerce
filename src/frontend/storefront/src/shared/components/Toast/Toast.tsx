@@ -39,11 +39,7 @@ export default function Toast({ toast, onDismiss }: ToastProps) {
   };
 
   return (
-    <div
-      className={`${styles.toast} ${styles[toast.variant]}`}
-      role="alert"
-      aria-live="polite"
-    >
+    <div className={`${styles.toast} ${styles[toast.variant]}`} role="alert" aria-live="polite">
       <span className={styles.icon}>{getIcon()}</span>
       <span className={styles.message}>{toast.message}</span>
       <button

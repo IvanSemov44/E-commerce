@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Users;
+﻿namespace ECommerce.Application.DTOs.Users;
 
 /// <summary>
 /// User profile response DTO with full profile information.

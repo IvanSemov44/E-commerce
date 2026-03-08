@@ -1,4 +1,4 @@
-namespace ECommerce.Tests.Helpers;
+﻿namespace ECommerce.Tests.Helpers;
 
 /// <summary>
 /// Extension methods for creating testable async queryables.

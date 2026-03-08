@@ -1,9 +1,4 @@
-import type {
-  Product,
-  ProductDetail,
-  PaginatedResult,
-  ApiResponse,
-} from '@/shared/types';
+import type { Product, ProductDetail, PaginatedResult, ApiResponse } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
 
 // Re-export types for components
@@ -26,7 +21,18 @@ const productApiSlice = baseApi.injectEndpoints({
         sortOrder?: string;
       }
     >({
-      query: ({ page = 1, pageSize = 20, categoryId, search, minPrice, maxPrice, minRating, isFeatured, sortBy, sortOrder }) => {
+      query: ({
+        page = 1,
+        pageSize = 20,
+        categoryId,
+        search,
+        minPrice,
+        maxPrice,
+        minRating,
+        isFeatured,
+        sortBy,
+        sortOrder,
+      }) => {
         const params = new URLSearchParams();
         params.set('page', page.toString());
         params.set('pageSize', pageSize.toString());
@@ -41,27 +47,48 @@ const productApiSlice = baseApi.injectEndpoints({
         return `/products?${params}`;
       },
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>
-        response.data || { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0, hasNext: false, hasPrevious: false },
+        response.data || {
+          items: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 20,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+        },
       providesTags: ['Products'],
     }),
     getProductBySlug: builder.query<ProductDetail, string>({
       query: (slug) => `/products/slug/${slug}`,
-      transformResponse: (response: ApiResponse<ProductDetail>) => response.data || {} as ProductDetail,
+      transformResponse: (response: ApiResponse<ProductDetail>) =>
+        response.data || ({} as ProductDetail),
       providesTags: ['Products'],
     }),
     getProductById: builder.query<ProductDetail, string>({
       query: (id) => `/products/${id}`,
-      transformResponse: (response: ApiResponse<ProductDetail>) => response.data || {} as ProductDetail,
+      transformResponse: (response: ApiResponse<ProductDetail>) =>
+        response.data || ({} as ProductDetail),
       providesTags: ['Products'],
     }),
-    getFeaturedProducts: builder.query<PaginatedResult<Product>, { page?: number; pageSize?: number } | void>({
+    getFeaturedProducts: builder.query<
+      PaginatedResult<Product>,
+      { page?: number; pageSize?: number } | void
+    >({
       query: (args) => {
         const page = args?.page ?? 1;
         const pageSize = args?.pageSize ?? 10;
         return `/products/featured?page=${page}&pageSize=${pageSize}`;
       },
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>
-        response.data || { items: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0, hasNext: false, hasPrevious: false },
+        response.data || {
+          items: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 10,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+        },
       providesTags: ['Products'],
     }),
   }),

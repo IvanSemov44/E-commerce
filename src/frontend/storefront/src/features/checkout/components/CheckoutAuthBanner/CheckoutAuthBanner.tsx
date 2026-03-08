@@ -31,17 +31,10 @@ export default function CheckoutAuthBanner({ className }: CheckoutAuthBannerProp
           <span className={styles.icon}>👋</span>
           <div className={styles.text}>
             <strong>Welcome back, {user.firstName}!</strong>
-            <span className={styles.subtext}>
-              You're signed in as {user.email}
-            </span>
+            <span className={styles.subtext}>You're signed in as {user.email}</span>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSignOut}
-          className={styles.signOutBtn}
-        >
+        <Button variant="ghost" size="sm" onClick={handleSignOut} className={styles.signOutBtn}>
           Sign out
         </Button>
       </div>

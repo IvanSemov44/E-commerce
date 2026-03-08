@@ -48,12 +48,18 @@ describe('WishlistCard', () => {
       preloadedState: {
         auth: {
           isAuthenticated: true,
-          user: { id: '1', email: 'test@test.com', firstName: 'Test', lastName: 'User', role: 'customer' },
+          user: {
+            id: '1',
+            email: 'test@test.com',
+            firstName: 'Test',
+            lastName: 'User',
+            role: 'customer',
+          },
           loading: false,
           error: null,
           initialized: true,
         },
-      }
+      },
     });
 
     return render(
@@ -100,7 +106,7 @@ describe('WishlistCard', () => {
 
   it('calls removeFromWishlist when remove button is clicked', async () => {
     renderComponent();
-    
+
     const removeButton = screen.getByText('wishlist.remove');
     fireEvent.click(removeButton);
 
@@ -111,7 +117,7 @@ describe('WishlistCard', () => {
 
   it('calls addToCart when add to cart button is clicked', async () => {
     renderComponent();
-    
+
     const addToCartButton = screen.getByText('wishlist.addToCart');
     fireEvent.click(addToCartButton);
 
@@ -122,12 +128,12 @@ describe('WishlistCard', () => {
 
   it('handles remove error gracefully', async () => {
     const error = new Error('Remove failed');
-    mockRemoveFromWishlist.mockReturnValue({ 
-      unwrap: () => Promise.reject(error) 
+    mockRemoveFromWishlist.mockReturnValue({
+      unwrap: () => Promise.reject(error),
     });
 
     renderComponent();
-    
+
     const removeButton = screen.getByText('wishlist.remove');
     fireEvent.click(removeButton);
 
@@ -138,12 +144,12 @@ describe('WishlistCard', () => {
 
   it('handles add to cart error gracefully', async () => {
     const error = new Error('Add to cart failed');
-    mockAddToCart.mockReturnValue({ 
-      unwrap: () => Promise.reject(error) 
+    mockAddToCart.mockReturnValue({
+      unwrap: () => Promise.reject(error),
     });
 
     renderComponent();
-    
+
     const addToCartButton = screen.getByText('wishlist.addToCart');
     fireEvent.click(addToCartButton);
 
@@ -161,19 +167,19 @@ describe('WishlistCard', () => {
 
   it('has correct CSS classes applied', () => {
     const { container } = renderComponent();
-    
+
     // Check for main card container
     const card = container.querySelector('[class*="card"]');
     expect(card).toBeInTheDocument();
-    
+
     // Check for image placeholder
     const imagePlaceholder = container.querySelector('[class*="imagePlaceholder"]');
     expect(imagePlaceholder).toBeInTheDocument();
-    
+
     // Check for content container
     const content = container.querySelector('[class*="content"]');
     expect(content).toBeInTheDocument();
-    
+
     // Check for actions container
     const actions = container.querySelector('[class*="actions"]');
     expect(actions).toBeInTheDocument();

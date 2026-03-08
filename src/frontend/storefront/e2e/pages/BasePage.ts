@@ -8,9 +8,11 @@ export abstract class BasePage {
   constructor(protected page: Page) {}
 
   // Common locators
-  readonly loadingSpinner = () => this.page.locator('[data-testid="loading"], .loading, [class*="spinner"]');
+  readonly loadingSpinner = () =>
+    this.page.locator('[data-testid="loading"], .loading, [class*="spinner"]');
   readonly toastMessage = () => this.page.locator('[data-testid="toast"], [role="alert"], .toast');
-  readonly errorMessage = () => this.page.locator('[data-testid="error"], [class*="error"], [role="alert"]');
+  readonly errorMessage = () =>
+    this.page.locator('[data-testid="error"], [class*="error"], [role="alert"]');
   readonly successMessage = () => this.page.locator('[data-testid="success"], [class*="success"]');
 
   // Navigation
@@ -21,7 +23,9 @@ export abstract class BasePage {
 
   async waitForPageLoad(): Promise<void> {
     await this.page.waitForLoadState('networkidle');
-    await this.loadingSpinner().waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+    await this.loadingSpinner()
+      .waitFor({ state: 'hidden', timeout: 10000 })
+      .catch(() => {});
   }
 
   // Common actions
@@ -65,7 +69,7 @@ export abstract class BasePage {
 
   // Wait helpers
   async waitForResponse(url: string | RegExp): Promise<void> {
-    await this.page.waitForResponse(resp => 
+    await this.page.waitForResponse((resp) =>
       typeof url === 'string' ? resp.url().includes(url) : url.test(resp.url())
     );
   }

@@ -1,4 +1,4 @@
-using ECommerce.API.Configuration;
+﻿using ECommerce.API.Configuration;
 using ECommerce.API.HealthChecks;
 using ECommerce.Application;
 using ECommerce.Application.Configuration;
@@ -153,7 +153,6 @@ public static class ServiceCollectionExtensions
     /// Uses distinct policy names for development and production environments.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="isDevelopment">Whether the application is running in development mode.</param>
     /// <param name="configuration">The application configuration.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddCorsConfiguration(

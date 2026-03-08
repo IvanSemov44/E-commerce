@@ -10,11 +10,7 @@ const mockOrder: Order = {
   status: 'Pending',
   totalAmount: 299.99,
   createdAt: '2024-03-01T10:00:00Z',
-  items: [
-    { productName: 'Product 1' },
-    { productName: 'Product 2' },
-    { productName: 'Product 3' },
-  ],
+  items: [{ productName: 'Product 1' }, { productName: 'Product 2' }, { productName: 'Product 3' }],
 };
 
 const renderOrderCard = (order: Order = mockOrder) => {

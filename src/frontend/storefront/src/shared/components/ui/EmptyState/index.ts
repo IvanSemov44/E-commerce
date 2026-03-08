@@ -1,1 +1,8 @@
-export { default, EmptyCart, EmptyWishlist, EmptyOrders, NoSearchResults, ErrorState } from './EmptyState';
+export {
+  default,
+  EmptyCart,
+  EmptyWishlist,
+  EmptyOrders,
+  NoSearchResults,
+  ErrorState,
+} from './EmptyState';

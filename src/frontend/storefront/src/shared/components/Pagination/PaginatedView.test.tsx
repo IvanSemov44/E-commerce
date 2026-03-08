@@ -26,7 +26,10 @@ describe('PaginatedView', () => {
   it('renders items via renderItem callback', () => {
     render(
       <PaginatedView
-        items={[{ id: '1', name: 'Phone' }, { id: '2', name: 'Laptop' }]}
+        items={[
+          { id: '1', name: 'Phone' },
+          { id: '2', name: 'Laptop' },
+        ]}
         totalCount={2}
         currentPage={1}
         pageSize={12}

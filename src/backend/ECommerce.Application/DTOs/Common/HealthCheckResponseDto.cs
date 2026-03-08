@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Common;
+﻿namespace ECommerce.Application.DTOs.Common;
 
 /// <summary>
 /// Response DTO for service health check endpoints.

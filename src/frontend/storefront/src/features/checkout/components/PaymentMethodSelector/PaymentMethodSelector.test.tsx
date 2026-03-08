@@ -14,10 +14,7 @@ vi.mock('../../api/paymentsApi', () => ({
 describe('PaymentMethodSelector', () => {
   it('renders available payment methods', () => {
     renderWithProviders(
-      <PaymentMethodSelector
-        selectedMethod="credit_card"
-        onMethodChange={vi.fn()}
-      />
+      <PaymentMethodSelector selectedMethod="credit_card" onMethodChange={vi.fn()} />
     );
 
     expect(screen.getByText(/credit card/i)).toBeInTheDocument();
@@ -27,12 +24,7 @@ describe('PaymentMethodSelector', () => {
   });
 
   it('marks the selected method as checked', () => {
-    renderWithProviders(
-      <PaymentMethodSelector
-        selectedMethod="paypal"
-        onMethodChange={vi.fn()}
-      />
-    );
+    renderWithProviders(<PaymentMethodSelector selectedMethod="paypal" onMethodChange={vi.fn()} />);
 
     const paypalRadio = screen.getByRole('radio', { name: /paypal/i });
     expect(paypalRadio).toBeChecked();
@@ -45,10 +37,7 @@ describe('PaymentMethodSelector', () => {
     const onMethodChange = vi.fn();
 
     renderWithProviders(
-      <PaymentMethodSelector
-        selectedMethod="credit_card"
-        onMethodChange={onMethodChange}
-      />
+      <PaymentMethodSelector selectedMethod="credit_card" onMethodChange={onMethodChange} />
     );
 
     const debitCardLabel = screen.getByLabelText(/debit card/i).closest('label')!;
@@ -59,10 +48,7 @@ describe('PaymentMethodSelector', () => {
 
   it('renders as a radiogroup with accessible label', () => {
     renderWithProviders(
-      <PaymentMethodSelector
-        selectedMethod="credit_card"
-        onMethodChange={vi.fn()}
-      />
+      <PaymentMethodSelector selectedMethod="credit_card" onMethodChange={vi.fn()} />
     );
 
     expect(screen.getByRole('radiogroup')).toBeInTheDocument();
@@ -77,12 +63,7 @@ describe('PaymentMethodSelector', () => {
       }),
     }));
 
-    renderWithProviders(
-      <PaymentMethodSelector
-        selectedMethod=""
-        onMethodChange={vi.fn()}
-      />
-    );
+    renderWithProviders(<PaymentMethodSelector selectedMethod="" onMethodChange={vi.fn()} />);
 
     // Component renders something (loading or nothing) — just verify no crash
     expect(document.body).toBeInTheDocument();

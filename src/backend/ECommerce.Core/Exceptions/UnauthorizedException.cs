@@ -7,7 +7,6 @@
 /// <remarks>
 /// Initializes a new instance of the UnauthorizedException class.
 /// </remarks>
-/// <param name="message">The exception message.</param>
 public abstract class UnauthorizedException : Exception
 {
     protected UnauthorizedException() { }

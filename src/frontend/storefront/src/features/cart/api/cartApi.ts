@@ -1,9 +1,4 @@
-import type {
-  CartDto,
-  AddToCartRequest,
-  UpdateCartItemRequest,
-  ApiResponse,
-} from '@/shared/types';
+import type { CartDto, AddToCartRequest, UpdateCartItemRequest, ApiResponse } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
 
 const cartApiSlice = baseApi.injectEndpoints({

@@ -13,10 +13,7 @@
    ============================================================================= */
 
 .container {
-  background: linear-gradient(135deg, 
-    var(--surface-secondary) 0%, 
-    var(--surface-tertiary) 100%
-  );
+  background: linear-gradient(135deg, var(--surface-secondary) 0%, var(--surface-tertiary) 100%);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
@@ -31,19 +28,17 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, 
-    var(--color-brand) 0%, 
-    var(--color-success) 50%, 
+  background: linear-gradient(
+    90deg,
+    var(--color-brand) 0%,
+    var(--color-success) 50%,
     var(--color-info) 100%
   );
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .container {
-  background: linear-gradient(135deg, 
-    rgba(20, 20, 25, 0.9) 0%, 
-    rgba(28, 28, 36, 0.9) 100%
-  );
+[data-theme='dark'] .container {
+  background: linear-gradient(135deg, rgba(20, 20, 25, 0.9) 0%, rgba(28, 28, 36, 0.9) 100%);
   border-color: var(--border-subtle);
 }
 
@@ -132,11 +127,11 @@
   transform: translateY(-1px);
 }
 
-[data-theme="dark"] .signal {
+[data-theme='dark'] .signal {
   background: rgba(12, 12, 15, 0.6);
 }
 
-[data-theme="dark"] .signal:hover {
+[data-theme='dark'] .signal:hover {
   border-color: var(--color-brand);
   box-shadow: 0 2px 8px rgba(74, 222, 128, 0.15);
 }
@@ -151,22 +146,16 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  background: linear-gradient(135deg, 
-    rgba(34, 197, 94, 0.2) 0%, 
-    rgba(34, 197, 94, 0.1) 100%
-  );
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%);
   border: 1px solid rgba(34, 197, 94, 0.2);
   border-radius: var(--radius-md);
   color: var(--color-success-600);
   flex-shrink: 0;
 }
 
-[data-theme="dark"] .iconWrapper {
+[data-theme='dark'] .iconWrapper {
   color: var(--color-success-400);
-  background: linear-gradient(135deg, 
-    rgba(34, 197, 94, 0.15) 0%, 
-    rgba(34, 197, 94, 0.08) 100%
-  );
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
   border-color: rgba(34, 197, 94, 0.3);
 }
 
@@ -261,7 +250,7 @@
   height: 0.875rem;
 }
 
-[data-theme="dark"] .certBadge {
+[data-theme='dark'] .certBadge {
   background: rgba(12, 12, 15, 0.6);
 }
 
@@ -316,44 +305,44 @@
   .container {
     padding: var(--space-5);
   }
-  
+
   .header {
     gap: var(--space-3);
     margin-bottom: var(--space-4);
   }
-  
+
   .shieldBadge {
     width: 2.5rem;
     height: 2.5rem;
   }
-  
+
   .shieldBadge svg {
     width: 1.25rem;
     height: 1.25rem;
   }
-  
+
   .headerTitle {
     font-size: var(--text-base);
   }
-  
+
   .signals {
     gap: var(--space-3);
   }
-  
+
   .signal {
     padding: var(--space-2-5);
   }
-  
+
   .iconWrapper {
     width: 2rem;
     height: 2rem;
   }
-  
+
   .iconWrapper svg {
     width: 1rem;
     height: 1rem;
   }
-  
+
   .certificationBadges {
     gap: var(--space-3);
   }
@@ -363,30 +352,30 @@
   .container {
     padding: var(--space-4);
   }
-  
+
   .header {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .headerText {
     text-align: center;
   }
-  
+
   .signal {
     flex-direction: column;
     text-align: center;
     align-items: center;
   }
-  
+
   .titleRow {
     justify-content: center;
   }
-  
+
   .certificationBadges {
     gap: var(--space-2);
   }
-  
+
   .certBadge {
     padding: var(--space-1-5) var(--space-2-5);
     font-size: 0.6875rem;

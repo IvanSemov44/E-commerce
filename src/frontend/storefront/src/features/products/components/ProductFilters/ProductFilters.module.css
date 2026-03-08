@@ -114,49 +114,49 @@
    Dark Mode
    ============================================================================= */
 
-[data-theme="dark"] .filterSection {
+[data-theme='dark'] .filterSection {
   background-color: var(--surface-secondary);
   border-color: var(--border-default);
 }
 
-[data-theme="dark"] .filterTitle {
+[data-theme='dark'] .filterTitle {
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .priceInput {
+[data-theme='dark'] .priceInput {
   background-color: var(--surface-tertiary);
   border-color: var(--border-default);
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .priceInput:hover {
+[data-theme='dark'] .priceInput:hover {
   border-color: var(--border-hover);
 }
 
-[data-theme="dark"] .priceInput:focus {
+[data-theme='dark'] .priceInput:focus {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
 }
 
-[data-theme="dark"] .filterSelect {
+[data-theme='dark'] .filterSelect {
   background-color: var(--surface-tertiary);
   border-color: var(--border-default);
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .filterSelect:hover {
+[data-theme='dark'] .filterSelect:hover {
   border-color: var(--border-hover);
 }
 
-[data-theme="dark"] .filterSelect:focus {
+[data-theme='dark'] .filterSelect:focus {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
 }
 
-[data-theme="dark"] .checkboxLabel:hover {
+[data-theme='dark'] .checkboxLabel:hover {
   background-color: var(--surface-tertiary);
 }
 
-[data-theme="dark"] .checkboxText {
+[data-theme='dark'] .checkboxText {
   color: var(--text-secondary);
 }

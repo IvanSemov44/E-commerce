@@ -1,4 +1,4 @@
-namespace ECommerce.Core.Enums;
+﻿namespace ECommerce.Core.Enums;
 
 public enum DiscountType
 {

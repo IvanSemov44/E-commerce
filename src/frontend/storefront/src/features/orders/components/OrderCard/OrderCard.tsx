@@ -18,9 +18,10 @@ export default function OrderCard({ order }: OrderCardProps) {
   const statusClassName = getStatusClassName(order.status, styles);
 
   const itemCount = order.items.length;
-  const itemsLabel = itemCount === 1
-    ? t('orders.oneItem') || '1 item'
-    : t('orders.multipleItems', { count: itemCount }) || `${itemCount} items`;
+  const itemsLabel =
+    itemCount === 1
+      ? t('orders.oneItem') || '1 item'
+      : t('orders.multipleItems', { count: itemCount }) || `${itemCount} items`;
 
   return (
     <Link to={`/orders/${order.id}`} className={styles.card}>
@@ -41,24 +42,24 @@ export default function OrderCard({ order }: OrderCardProps) {
           <p className={styles.itemsLabel}>{itemsLabel}</p>
           {order.items.length > 0 && (
             <p className={styles.itemNames}>
-              {order.items.slice(0, 2).map((item) => item.productName).join(', ')}
-              {order.items.length > 2 && ` +${order.items.length - 2} ${t('orders.more') || 'more'}`}
+              {order.items
+                .slice(0, 2)
+                .map((item) => item.productName)
+                .join(', ')}
+              {order.items.length > 2 &&
+                ` +${order.items.length - 2} ${t('orders.more') || 'more'}`}
             </p>
           )}
         </div>
 
         <div className={styles.total}>
           <p className={styles.totalLabel}>{t('orders.total')}:</p>
-          <p className={styles.totalAmount}>
-            {formatPrice(order.totalAmount)}
-          </p>
+          <p className={styles.totalAmount}>{formatPrice(order.totalAmount)}</p>
         </div>
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.viewButton}>
-          {t('orders.viewDetails')} →
-        </span>
+        <span className={styles.viewButton}>{t('orders.viewDetails')} →</span>
       </div>
     </Link>
   );

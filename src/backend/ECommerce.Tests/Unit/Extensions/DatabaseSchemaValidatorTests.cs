@@ -1,4 +1,4 @@
-using ECommerce.API.Extensions;
+﻿using ECommerce.API.Extensions;
 using ECommerce.Infrastructure.Data;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Categories;
+﻿namespace ECommerce.Application.DTOs.Categories;
 
 public class CreateCategoryDto
 {

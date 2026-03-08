@@ -1,4 +1,4 @@
-using ECommerce.Core.Enums;
+﻿using ECommerce.Core.Enums;
 
 namespace ECommerce.Application.Interfaces;
 

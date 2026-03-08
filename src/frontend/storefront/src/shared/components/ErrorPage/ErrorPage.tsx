@@ -39,11 +39,7 @@ export default function ErrorPage({ error, isDevelopment, onReset }: ErrorPagePr
         )}
 
         <div className={styles.actions}>
-          <Button
-            onClick={handleGoHome}
-            size="lg"
-            className={styles.primaryButton}
-          >
+          <Button onClick={handleGoHome} size="lg" className={styles.primaryButton}>
             Go to Home
           </Button>
           <Button

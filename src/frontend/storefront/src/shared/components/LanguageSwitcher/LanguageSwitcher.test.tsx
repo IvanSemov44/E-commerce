@@ -19,7 +19,11 @@ vi.mock('@/shared/i18n', () => ({
 }));
 
 vi.mock('@/shared/components/icons', () => ({
-  ChevronDownIcon: ({ className }: { className?: string }) => <span data-testid="chevron" className={className}>v</span>,
+  ChevronDownIcon: ({ className }: { className?: string }) => (
+    <span data-testid="chevron" className={className}>
+      v
+    </span>
+  ),
   CheckIcon: () => <span data-testid="check">✓</span>,
 }));
 

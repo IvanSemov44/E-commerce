@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Wishlist;
+﻿namespace ECommerce.Application.DTOs.Wishlist;
 
 public class AddToWishlistDto
 {

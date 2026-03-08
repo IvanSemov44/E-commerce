@@ -1,4 +1,4 @@
-using Polly;
+﻿using Polly;
 
 namespace ECommerce.Infrastructure.Resilience;
 

@@ -69,11 +69,7 @@ export default function Login() {
             </Link>
           </div>
 
-          <Button
-            type="submit"
-            disabled={isLoading || form.isSubmitting}
-            size="lg"
-          >
+          <Button type="submit" disabled={isLoading || form.isSubmitting} size="lg">
             {isLoading || form.isSubmitting ? t('auth.loggingIn') : t('auth.login')}
           </Button>
         </form>

@@ -1,4 +1,4 @@
-using ECommerce.Application.Services;
+﻿using ECommerce.Application.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security.Cryptography;
@@ -72,7 +72,7 @@ public class WebhookVerificationServiceTests
     {
         // Arrange
         const string payload = "{\"event\":\"payment.success\",\"orderId\":\"123\"}";
-        
+
         // Act
         var result = _service.VerifySignature(payload, null!);
 

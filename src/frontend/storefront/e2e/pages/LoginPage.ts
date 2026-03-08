@@ -11,33 +11,42 @@ export class LoginPage extends BasePage {
   }
 
   // Locators using data-testid for reliability
-  readonly emailInput = (): Locator => this.page.getByTestId('email-input').or(
-    this.page.locator('input[type="email"], input[name*="email"]')
-  );
-  
-  readonly passwordInput = (): Locator => this.page.getByTestId('password-input').or(
-    this.page.locator('input[type="password"], input[name*="password"]')
-  );
-  
-  readonly loginButton = (): Locator => this.page.getByTestId('login-button').or(
-    this.page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign In")')
-  );
-  
-  readonly registerLink = (): Locator => this.page.getByTestId('register-link').or(
-    this.page.locator('a[href*="register"], a:has-text("Register"), a:has-text("Sign Up")')
-  );
-  
-  readonly forgotPasswordLink = (): Locator => this.page.getByTestId('forgot-password-link').or(
-    this.page.locator('a[href*="forgot"], a:has-text("Forgot"), a:has-text("Reset")')
-  );
-  
-  readonly rememberMeCheckbox = (): Locator => this.page.getByTestId('remember-me').or(
-    this.page.locator('input[type="checkbox"][name*="remember"]')
-  );
-  
-  readonly showPasswordButton = (): Locator => this.page.getByTestId('show-password').or(
-    this.page.locator('button[aria-label*="password"]')
-  );
+  readonly emailInput = (): Locator =>
+    this.page
+      .getByTestId('email-input')
+      .or(this.page.locator('input[type="email"], input[name*="email"]'));
+
+  readonly passwordInput = (): Locator =>
+    this.page
+      .getByTestId('password-input')
+      .or(this.page.locator('input[type="password"], input[name*="password"]'));
+
+  readonly loginButton = (): Locator =>
+    this.page
+      .getByTestId('login-button')
+      .or(
+        this.page.locator(
+          'button[type="submit"], button:has-text("Login"), button:has-text("Sign In")'
+        )
+      );
+
+  readonly registerLink = (): Locator =>
+    this.page
+      .getByTestId('register-link')
+      .or(this.page.locator('a[href*="register"], a:has-text("Register"), a:has-text("Sign Up")'));
+
+  readonly forgotPasswordLink = (): Locator =>
+    this.page
+      .getByTestId('forgot-password-link')
+      .or(this.page.locator('a[href*="forgot"], a:has-text("Forgot"), a:has-text("Reset")'));
+
+  readonly rememberMeCheckbox = (): Locator =>
+    this.page
+      .getByTestId('remember-me')
+      .or(this.page.locator('input[type="checkbox"][name*="remember"]'));
+
+  readonly showPasswordButton = (): Locator =>
+    this.page.getByTestId('show-password').or(this.page.locator('button[aria-label*="password"]'));
 
   // Navigation
   async navigate(): Promise<void> {
@@ -98,12 +107,16 @@ export class LoginPage extends BasePage {
   }
 
   async expectEmailError(message: string): Promise<void> {
-    const emailError = this.page.locator('[data-testid="email-error"], [class*="email-error"], input[name*="email"] + [class*="error"]');
+    const emailError = this.page.locator(
+      '[data-testid="email-error"], [class*="email-error"], input[name*="email"] + [class*="error"]'
+    );
     await this.expectToContainText(emailError, message);
   }
 
   async expectPasswordError(message: string): Promise<void> {
-    const passwordError = this.page.locator('[data-testid="password-error"], [class*="password-error"], input[name*="password"] + [class*="error"]');
+    const passwordError = this.page.locator(
+      '[data-testid="password-error"], [class*="password-error"], input[name*="password"] + [class*="error"]'
+    );
     await this.expectToContainText(passwordError, message);
   }
 
@@ -113,7 +126,7 @@ export class LoginPage extends BasePage {
 
   async expectSuccessfulLogin(): Promise<void> {
     // Should redirect away from login page
-    await this.page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 10000 });
+    await this.page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
   }
 
   async expectOnLoginPage(): Promise<void> {

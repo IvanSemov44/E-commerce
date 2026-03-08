@@ -1,6 +1,6 @@
 /**
  * Test Utilities
- * 
+ *
  * Shared utilities for writing tests across the application.
  * Use these to reduce boilerplate and ensure consistent test patterns.
  */
@@ -89,10 +89,10 @@ export const mockOrder = (overrides = {}) => ({
   orderNumber: 'ORD-001',
   createdAt: '2024-01-15T10:00:00Z',
   status: 'processing',
-  totalAmount: 150.00,
+  totalAmount: 150.0,
   items: [
-    { productName: 'Product 1', quantity: 2, unitPrice: 50.00, totalPrice: 100.00 },
-    { productName: 'Product 2', quantity: 1, unitPrice: 50.00, totalPrice: 50.00 },
+    { productName: 'Product 1', quantity: 2, unitPrice: 50.0, totalPrice: 100.0 },
+    { productName: 'Product 2', quantity: 1, unitPrice: 50.0, totalPrice: 50.0 },
   ],
   shippingAddress: {
     firstName: 'John',
@@ -106,8 +106,7 @@ export const mockOrder = (overrides = {}) => ({
   ...overrides,
 });
 
-export const mockApiResponse = <T,>(data: T): Promise<T> => 
-  Promise.resolve(data);
+export const mockApiResponse = <T,>(data: T): Promise<T> => Promise.resolve(data);
 
 export const mockApiError = (message: string, status = 400) => {
   const error = new Error(message) as unknown as { status: number; data: { message: string } };
@@ -129,34 +128,23 @@ interface CustomRenderOptions {
 /**
  * Render with Redux Provider and optional Router and i18n
  */
-export function renderWithProviders(
-  ui: ReactElement,
-  options: CustomRenderOptions = {}
-) {
-  const { 
-    store = createTestStore(), 
-    router = false,
-    preloadedState,
-  } = options;
+export function renderWithProviders(ui: ReactElement, options: CustomRenderOptions = {}) {
+  const { store = createTestStore(), router = false, preloadedState } = options;
 
   // If preloadedState provided, create new store with it
-  const finalStore = preloadedState 
-    ? createTestStore(preloadedState)
-    : store;
+  const finalStore = preloadedState ? createTestStore(preloadedState) : store;
 
   function Wrapper({ children }: { children: ReactNode }) {
     let content = (
       <I18nextProvider i18n={i18n}>
-        <Provider store={finalStore}>
-          {children}
-        </Provider>
+        <Provider store={finalStore}>{children}</Provider>
       </I18nextProvider>
     );
-    
+
     if (router) {
       content = <BrowserRouter>{content}</BrowserRouter>;
     }
-    
+
     return content;
   }
 
@@ -173,13 +161,11 @@ export function renderWithRouter(ui: ReactElement) {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <I18nextProvider i18n={i18n}>
-        <BrowserRouter>
-          {children}
-        </BrowserRouter>
+        <BrowserRouter>{children}</BrowserRouter>
       </I18nextProvider>
     );
   }
-  
+
   return render(ui, { wrapper: Wrapper });
 }
 
@@ -197,21 +183,21 @@ export const mockApiHandlers = {
     pageNumber: 1,
     pageSize: 12,
   },
-  
+
   getCart: {
     items: [mockCartItem()],
     subtotal: 59.98,
     itemCount: 2,
   },
-  
+
   getOrders: [mockOrder()],
-  
+
   login: {
     token: 'mock-token',
     refreshToken: 'mock-refresh-token',
     user: mockUser(),
   },
-  
+
   register: mockUser(),
 };
 

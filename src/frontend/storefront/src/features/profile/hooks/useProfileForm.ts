@@ -29,7 +29,9 @@ export interface UseProfileFormReturn {
   isUpdating: boolean;
   error: unknown;
   errors: Partial<Record<keyof ProfileFormData, string>>;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  handleChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => void;
   setFormData: (data: ProfileFormData) => void;
   setIsEditMode: (mode: boolean) => void;
   setErrorMessage: (msg: string) => void;
@@ -38,7 +40,9 @@ export interface UseProfileFormReturn {
 }
 
 // Validation function for profile form
-const validateProfileForm = (values: ProfileFormData): Partial<Record<keyof ProfileFormData, string>> => {
+const validateProfileForm = (
+  values: ProfileFormData
+): Partial<Record<keyof ProfileFormData, string>> => {
   const errors: Partial<Record<keyof ProfileFormData, string>> = {};
 
   const firstNameError = validators.required('First name')(values.firstName);
@@ -135,7 +139,7 @@ export const useProfileForm = (): UseProfileFormReturn => {
         avatarUrl: profile.avatarUrl || '',
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   // Handle form cancel

@@ -1,4 +1,1 @@
-export {
-  useGetProfileQuery,
-  useUpdateProfileMutation,
-} from './profileApi';
+export { useGetProfileQuery, useUpdateProfileMutation } from './profileApi';

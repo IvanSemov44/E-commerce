@@ -11,49 +11,52 @@ export class CartPage extends BasePage {
   }
 
   // Locators
-  readonly cartItem = (): Locator => this.page.getByTestId('cart-item').or(
-    this.page.locator('[class*="cart-item"], [class*="cart-row"]')
-  );
-  
-  readonly emptyCartMessage = (): Locator => this.page.getByTestId('empty-cart').or(
-    this.page.locator('[class*="empty-cart"], :text("Your cart is empty")')
-  );
-  
-  readonly checkoutButton = (): Locator => this.page.getByTestId('checkout-button').or(
-    this.page.locator('button:has-text("Checkout"), a:has-text("Checkout")')
-  );
-  
-  readonly continueShoppingButton = (): Locator => this.page.getByTestId('continue-shopping').or(
-    this.page.locator('a:has-text("Continue Shopping"), button:has-text("Continue Shopping")')
-  );
-  
-  readonly cartTotal = (): Locator => this.page.getByTestId('cart-total').or(
-    this.page.locator('[class*="cart-total"], [class*="order-total"]')
-  );
-  
-  readonly cartSubtotal = (): Locator => this.page.getByTestId('cart-subtotal').or(
-    this.page.locator('[class*="subtotal"]')
-  );
-  
-  readonly shippingCost = (): Locator => this.page.getByTestId('shipping-cost').or(
-    this.page.locator('[class*="shipping"]')
-  );
-  
-  readonly taxAmount = (): Locator => this.page.getByTestId('tax-amount').or(
-    this.page.locator('[class*="tax"]')
-  );
-  
-  readonly promoCodeInput = (): Locator => this.page.getByTestId('promo-code-input').or(
-    this.page.locator('input[name*="promo"], input[placeholder*="promo" i]')
-  );
-  
-  readonly applyPromoButton = (): Locator => this.page.getByTestId('apply-promo').or(
-    this.page.locator('button:has-text("Apply")')
-  );
-  
-  readonly discountAmount = (): Locator => this.page.getByTestId('discount-amount').or(
-    this.page.locator('[class*="discount"]')
-  );
+  readonly cartItem = (): Locator =>
+    this.page
+      .getByTestId('cart-item')
+      .or(this.page.locator('[class*="cart-item"], [class*="cart-row"]'));
+
+  readonly emptyCartMessage = (): Locator =>
+    this.page
+      .getByTestId('empty-cart')
+      .or(this.page.locator('[class*="empty-cart"], :text("Your cart is empty")'));
+
+  readonly checkoutButton = (): Locator =>
+    this.page
+      .getByTestId('checkout-button')
+      .or(this.page.locator('button:has-text("Checkout"), a:has-text("Checkout")'));
+
+  readonly continueShoppingButton = (): Locator =>
+    this.page
+      .getByTestId('continue-shopping')
+      .or(
+        this.page.locator('a:has-text("Continue Shopping"), button:has-text("Continue Shopping")')
+      );
+
+  readonly cartTotal = (): Locator =>
+    this.page
+      .getByTestId('cart-total')
+      .or(this.page.locator('[class*="cart-total"], [class*="order-total"]'));
+
+  readonly cartSubtotal = (): Locator =>
+    this.page.getByTestId('cart-subtotal').or(this.page.locator('[class*="subtotal"]'));
+
+  readonly shippingCost = (): Locator =>
+    this.page.getByTestId('shipping-cost').or(this.page.locator('[class*="shipping"]'));
+
+  readonly taxAmount = (): Locator =>
+    this.page.getByTestId('tax-amount').or(this.page.locator('[class*="tax"]'));
+
+  readonly promoCodeInput = (): Locator =>
+    this.page
+      .getByTestId('promo-code-input')
+      .or(this.page.locator('input[name*="promo"], input[placeholder*="promo" i]'));
+
+  readonly applyPromoButton = (): Locator =>
+    this.page.getByTestId('apply-promo').or(this.page.locator('button:has-text("Apply")'));
+
+  readonly discountAmount = (): Locator =>
+    this.page.getByTestId('discount-amount').or(this.page.locator('[class*="discount"]'));
 
   // Navigation
   async navigate(): Promise<void> {
@@ -63,13 +66,17 @@ export class CartPage extends BasePage {
 
   async waitForCartToLoad(): Promise<void> {
     await this.page.waitForLoadState('networkidle');
-    await this.loadingSpinner().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    await this.loadingSpinner()
+      .waitFor({ state: 'hidden', timeout: 5000 })
+      .catch(() => {});
   }
 
   // Actions
   async removeItem(index: number): Promise<void> {
     const item = this.cartItem().nth(index);
-    const removeButton = item.locator('[data-testid="remove-item"], button:has-text("Remove"), [class*="remove"]');
+    const removeButton = item.locator(
+      '[data-testid="remove-item"], button:has-text("Remove"), [class*="remove"]'
+    );
     await removeButton.click();
     await this.waitForCartToLoad();
   }
@@ -77,8 +84,8 @@ export class CartPage extends BasePage {
   async updateQuantity(index: number, quantity: number): Promise<void> {
     const item = this.cartItem().nth(index);
     const quantityInput = item.locator('input[type="number"], select[name*="quantity"]');
-    
-    if (await quantityInput.count() > 0) {
+
+    if ((await quantityInput.count()) > 0) {
       await quantityInput.fill(quantity.toString());
       await this.waitForCartToLoad();
     }
@@ -86,9 +93,11 @@ export class CartPage extends BasePage {
 
   async incrementQuantity(index: number): Promise<void> {
     const item = this.cartItem().nth(index);
-    const incrementButton = item.locator('[data-testid="increment"], button:has-text("+"), [aria-label*="increase" i]');
-    
-    if (await incrementButton.count() > 0) {
+    const incrementButton = item.locator(
+      '[data-testid="increment"], button:has-text("+"), [aria-label*="increase" i]'
+    );
+
+    if ((await incrementButton.count()) > 0) {
       await incrementButton.click();
       await this.waitForCartToLoad();
     }
@@ -96,9 +105,11 @@ export class CartPage extends BasePage {
 
   async decrementQuantity(index: number): Promise<void> {
     const item = this.cartItem().nth(index);
-    const decrementButton = item.locator('[data-testid="decrement"], button:has-text("-"), [aria-label*="decrease" i]');
-    
-    if (await decrementButton.count() > 0) {
+    const decrementButton = item.locator(
+      '[data-testid="decrement"], button:has-text("-"), [aria-label*="decrease" i]'
+    );
+
+    if ((await decrementButton.count()) > 0) {
       await decrementButton.click();
       await this.waitForCartToLoad();
     }
@@ -164,11 +175,11 @@ export class CartPage extends BasePage {
     const item = this.cartItem().nth(index);
     const quantityInput = item.locator('input[type="number"]');
     const quantitySelect = item.locator('select');
-    
-    if (await quantityInput.count() > 0) {
+
+    if ((await quantityInput.count()) > 0) {
       const value = await quantityInput.inputValue();
       return parseInt(value) || 1;
-    } else if (await quantitySelect.count() > 0) {
+    } else if ((await quantitySelect.count()) > 0) {
       const value = await quantitySelect.inputValue();
       return parseInt(value) || 1;
     }

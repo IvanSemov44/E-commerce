@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTOs.Common;
+﻿namespace ECommerce.Application.DTOs.Common;
 
 /// <summary>
 /// Standard error response with semantic codes for client error handling.

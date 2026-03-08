@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ECommerce.Application.DTOs.Wishlist;
 
 namespace ECommerce.Application.Validators.Wishlist;

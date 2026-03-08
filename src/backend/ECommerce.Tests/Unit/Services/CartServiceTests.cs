@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
@@ -42,8 +42,8 @@ public class CartServiceTests
             _mockMapper.Object,
             _mockLogger.Object);
 
-            // Sanity check: ensure unit of work is wired to product repo
-            _mockUnitOfWork.Object.Products.Should().BeSameAs(_mockProductRepository.Object);
+        // Sanity check: ensure unit of work is wired to product repo
+        _mockUnitOfWork.Object.Products.Should().BeSameAs(_mockProductRepository.Object);
     }
 
     #region GetOrCreateCartAsync Tests

@@ -57,7 +57,9 @@ vi.mock('../ThemeToggle', () => ({
 }));
 
 vi.mock('../LanguageSwitcher', () => ({
-  LanguageSwitcher: ({ size }: { size: string }) => <div data-testid="language-switcher">{size}</div>,
+  LanguageSwitcher: ({ size }: { size: string }) => (
+    <div data-testid="language-switcher">{size}</div>
+  ),
 }));
 
 vi.mock('../SearchBar', () => ({
@@ -138,7 +140,9 @@ describe('Header', () => {
 
     renderHeader();
 
-    const userMenuButton = document.querySelector('button[aria-label="User menu"]') as HTMLButtonElement;
+    const userMenuButton = document.querySelector(
+      'button[aria-label="User menu"]'
+    ) as HTMLButtonElement;
     fireEvent.click(userMenuButton);
 
     expect(screen.getByText('Account')).toBeInTheDocument();
@@ -182,8 +186,14 @@ describe('Header', () => {
 
     renderHeader();
 
-    expect(getCartQueryMock).toHaveBeenCalledWith(undefined, expect.objectContaining({ skip: false }));
-    expect(getWishlistQueryMock).toHaveBeenCalledWith(undefined, expect.objectContaining({ skip: false }));
+    expect(getCartQueryMock).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ skip: false })
+    );
+    expect(getWishlistQueryMock).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ skip: false })
+    );
   });
 });
 

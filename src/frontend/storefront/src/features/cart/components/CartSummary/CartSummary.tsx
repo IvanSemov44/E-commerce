@@ -27,7 +27,7 @@ export default function CartSummary({
   return (
     <Card variant="elevated" padding="lg">
       <h2 className={styles.title}>{t('checkout.orderSummary')}</h2>
-      
+
       {showFreeShippingMessage && (
         <div className={styles.shippingMessage}>
           Add ${freeShippingRemaining.toFixed(2)} more for free shipping!
@@ -42,13 +42,15 @@ export default function CartSummary({
         freeShippingLabel={t('common.free')}
         className={styles.totalsSection}
       />
-      
+
       <div className={styles.actions}>
         <Link to="/checkout" className={styles.actionLink}>
           <Button size="lg">{t('cart.proceedToCheckout')}</Button>
         </Link>
         <Link to="/products" className={styles.actionLink}>
-          <Button variant="secondary" size="lg">{t('cart.continueShopping')}</Button>
+          <Button variant="secondary" size="lg">
+            {t('cart.continueShopping')}
+          </Button>
         </Link>
       </div>
     </Card>

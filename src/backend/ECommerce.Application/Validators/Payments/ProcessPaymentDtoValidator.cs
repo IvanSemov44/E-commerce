@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ECommerce.Application.DTOs.Payments;
 
 namespace ECommerce.Application.Validators.Payments;
@@ -40,7 +40,7 @@ public class ProcessPaymentDtoValidator : AbstractValidator<ProcessPaymentDto>
             RuleFor(x => x)
                 .Must(x => !string.IsNullOrEmpty(x.PayPalEmail) || !string.IsNullOrEmpty(x.PaypalToken))
                 .WithMessage("Either PayPalEmail or PaypalToken is required for PayPal payments");
-            
+
             RuleFor(x => x.PayPalEmail)
                 .EmailAddress().When(x => !string.IsNullOrEmpty(x.PayPalEmail))
                 .WithMessage("PayPalEmail must be a valid email address");

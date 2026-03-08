@@ -1,4 +1,4 @@
-namespace ECommerce.Core.Results;
+﻿namespace ECommerce.Core.Results;
 
 /// <summary>
 /// Represents the result of an operation, either success or failure.

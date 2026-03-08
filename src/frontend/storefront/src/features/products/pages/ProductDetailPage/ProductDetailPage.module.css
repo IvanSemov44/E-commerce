@@ -75,7 +75,9 @@
 
 .thumbnailActive {
   border-color: var(--color-info-500);
-  box-shadow: 0 0 0 2px var(--surface-primary), 0 0 0 4px var(--color-info-500);
+  box-shadow:
+    0 0 0 2px var(--surface-primary),
+    0 0 0 4px var(--color-info-500);
 }
 
 .details h1 {
@@ -325,6 +327,10 @@
   }
 }
 
-.errorContainer { margin-bottom: 16px; }
+.errorContainer {
+  margin-bottom: 16px;
+}
 
-.reviewFormContainer { margin-bottom: 2rem; }
+.reviewFormContainer {
+  margin-bottom: 2rem;
+}

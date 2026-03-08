@@ -6,7 +6,7 @@
  */
 export function usePriceFilters(
   onMinPriceChange: (value: number | undefined) => void,
-  onMaxPriceChange: (value: number | undefined) => void,
+  onMaxPriceChange: (value: number | undefined) => void
 ) {
   const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onMinPriceChange(e.target.value ? parseFloat(e.target.value) : undefined);

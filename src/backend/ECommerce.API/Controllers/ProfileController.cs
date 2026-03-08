@@ -1,4 +1,4 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.Interfaces;
@@ -113,13 +113,13 @@ public class ProfileController : ControllerBase
         _logger.LogInformation("Retrieving preferences for user {UserId}", userId.Value);
 
         var result = await _userService.GetUserPreferencesAsync(userId.Value, cancellationToken: cancellationToken);
-        
+
         if (result is Result<UserPreferencesDto>.Success success)
             return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences retrieved successfully"));
-        
+
         if (result is Result<UserPreferencesDto>.Failure failure)
             return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
-        
+
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
@@ -146,13 +146,13 @@ public class ProfileController : ControllerBase
         _logger.LogInformation("Updating preferences for user {UserId}", userId.Value);
 
         var result = await _userService.UpdateUserPreferencesAsync(userId.Value, dto, cancellationToken: cancellationToken);
-        
+
         if (result is Result<UserPreferencesDto>.Success success)
             return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences updated successfully"));
-        
+
         if (result is Result<UserPreferencesDto>.Failure failure)
             return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
-        
+
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 

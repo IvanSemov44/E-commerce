@@ -1,4 +1,4 @@
-using ECommerce.Infrastructure.Resilience;
+﻿using ECommerce.Infrastructure.Resilience;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 

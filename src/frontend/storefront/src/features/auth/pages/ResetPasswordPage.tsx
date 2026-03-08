@@ -71,16 +71,16 @@ export default function ResetPassword() {
           <>
             {email && token ? (
               <>
-                <p className={styles.description}>
-                  {t('resetPassword.subtitle')}
-                </p>
+                <p className={styles.description}>{t('resetPassword.subtitle')}</p>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                   <Input
                     label={t('resetPassword.newPassword')}
                     type="password"
                     value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPassword(e.target.value)
+                    }
                     required
                     placeholder={t('resetPassword.newPasswordPlaceholder')}
                   />
@@ -89,25 +89,21 @@ export default function ResetPassword() {
                     label={t('resetPassword.confirmNewPassword')}
                     type="password"
                     value={confirmPassword}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setConfirmPassword(e.target.value)
+                    }
                     required
                     placeholder={t('resetPassword.confirmPasswordPlaceholder')}
                   />
 
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    size="lg"
-                  >
+                  <Button type="submit" disabled={isLoading} size="lg">
                     {isLoading ? t('resetPassword.resetting') : t('resetPassword.resetPasswordBtn')}
                   </Button>
                 </form>
               </>
             ) : (
               <div className={styles.centered}>
-                <p className={styles.description}>
-                  {t('resetPassword.invalidLink')}
-                </p>
+                <p className={styles.description}>{t('resetPassword.invalidLink')}</p>
                 <Link to="/forgot-password" className={styles.footerLink}>
                   {t('resetPassword.requestNewLink')}
                 </Link>

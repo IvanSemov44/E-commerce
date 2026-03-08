@@ -7,23 +7,20 @@ interface CategoryFilterProps {
   onSelectCategory: (categoryId?: string) => void;
 }
 
-export default function CategoryFilter({ selectedCategoryId, onSelectCategory }: CategoryFilterProps) {
+export default function CategoryFilter({
+  selectedCategoryId,
+  onSelectCategory,
+}: CategoryFilterProps) {
   const { data: categories, isLoading, error } = useGetTopLevelCategoriesQuery();
   const { t } = useTranslation();
 
   if (error) {
-    return (
-      <div className={styles.error}>
-        {t('products.failedToLoadCategories')}
-      </div>
-    );
+    return <div className={styles.error}>{t('products.failedToLoadCategories')}</div>;
   }
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>
-        {t('products.categories')}
-      </h3>
+      <h3 className={styles.title}>{t('products.categories')}</h3>
 
       {isLoading ? (
         <div className={styles.loading}>{t('products.loadingCategories')}</div>

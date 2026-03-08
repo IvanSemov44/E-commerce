@@ -239,21 +239,21 @@
     padding: var(--space-2) var(--space-3);
     font-size: var(--text-sm);
   }
-  
+
   .inputSmall {
     padding: var(--space-1-5) var(--space-2-5);
     font-size: var(--text-xs);
   }
-  
+
   .inputLarge {
     padding: var(--space-2-5) var(--space-3);
     font-size: var(--text-base);
   }
-  
+
   .label {
     font-size: var(--text-xs);
   }
-  
+
   .error,
   .helper {
     font-size: var(--text-xs);

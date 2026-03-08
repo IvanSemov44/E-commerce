@@ -145,7 +145,17 @@ export const useProductFilters = (): UseProductFiltersReturn => {
     if (page > 1) params.set('page', page.toString());
 
     setSearchParams(params, { replace: true });
-  }, [debouncedSearch, selectedCategoryId, minPrice, maxPrice, minRating, sortBy, isFeatured, page, setSearchParams]);
+  }, [
+    debouncedSearch,
+    selectedCategoryId,
+    minPrice,
+    maxPrice,
+    minRating,
+    sortBy,
+    isFeatured,
+    page,
+    setSearchParams,
+  ]);
 
   // Compute derived state
   const hasActiveFilters = !!(

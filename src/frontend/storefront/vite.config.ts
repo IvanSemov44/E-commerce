@@ -1,9 +1,9 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 // @ts-expect-error - Type definitions not available for rollup-plugin-visualizer
-import visualizer from 'rollup-plugin-visualizer'
-import path from 'path'
+import visualizer from 'rollup-plugin-visualizer';
+import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -75,13 +75,6 @@ export default defineConfig({
   },
   // Optimize dependencies
   optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      '@reduxjs/toolkit',
-      'react-redux',
-      'axios',
-    ],
+    include: ['react', 'react-dom', 'react-router-dom', '@reduxjs/toolkit', 'react-redux', 'axios'],
   },
-})
+});

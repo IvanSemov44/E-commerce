@@ -1,4 +1,4 @@
-using ECommerce.Application.DTOs.Wishlist;
+﻿using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Core.Results;
 
 namespace ECommerce.Application.Interfaces;

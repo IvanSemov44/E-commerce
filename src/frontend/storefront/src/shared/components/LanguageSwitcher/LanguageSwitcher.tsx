@@ -13,17 +13,14 @@ interface LanguageSwitcherProps {
 
 /**
  * LanguageSwitcher Component
- * 
+ *
  * A professional language selector matching ThemeToggle style with:
  * - Dropdown menu with clear options
  * - Language flag icons
  * - Persistent language preference via localStorage
  * - Size variants (sm, md, lg)
  */
-export function LanguageSwitcher({ 
-  className = '', 
-  size = 'md'
-}: LanguageSwitcherProps) {
+export function LanguageSwitcher({ className = '', size = 'md' }: LanguageSwitcherProps) {
   const { currentLanguage, changeLanguage } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -80,11 +77,11 @@ export function LanguageSwitcher({
     setIsOpen(!isOpen);
   };
 
-  const currentLang = languages.find(l => l.code === currentLanguage) || languages[0];
+  const currentLang = languages.find((l) => l.code === currentLanguage) || languages[0];
 
   // Get current language flag icon
   const getCurrentIcon = () => {
-    const lang = languages.find(l => l.code === currentLanguage);
+    const lang = languages.find((l) => l.code === currentLanguage);
     return lang?.code.toUpperCase() || 'EN';
   };
 
@@ -92,10 +89,7 @@ export function LanguageSwitcher({
   if (!mounted) {
     return (
       <div className={`${styles.wrapper} ${className}`}>
-        <button 
-          className={`${styles.toggle} ${styles[size]}`}
-          disabled
-        >
+        <button className={`${styles.toggle} ${styles[size]}`} disabled>
           <span className={styles.iconPlaceholder}>EN</span>
         </button>
       </div>
@@ -112,19 +106,13 @@ export function LanguageSwitcher({
         aria-haspopup="listbox"
         aria-label={`Language: ${currentLang.nativeName}. Click to change.`}
       >
-        <span className={styles.iconWrapper}>
-          {getCurrentIcon()}
-        </span>
+        <span className={styles.iconWrapper}>{getCurrentIcon()}</span>
         <span className={styles.label}>{currentLang.nativeName}</span>
         <ChevronDownIcon className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`} />
       </button>
 
       {isOpen && (
-        <div 
-          className={styles.dropdown}
-          role="listbox"
-          aria-label="Language options"
-        >
+        <div className={styles.dropdown} role="listbox" aria-label="Language options">
           <div className={styles.dropdownHeader}>
             <span>Language</span>
           </div>
@@ -136,9 +124,7 @@ export function LanguageSwitcher({
               role="option"
               aria-selected={currentLanguage === lang.code}
             >
-              <span className={styles.optionIcon}>
-                {lang.code.toUpperCase()}
-              </span>
+              <span className={styles.optionIcon}>{lang.code.toUpperCase()}</span>
               <span className={styles.optionContent}>
                 <span className={styles.optionLabel}>{lang.nativeName}</span>
                 <span className={styles.optionDescription}>{lang.name}</span>

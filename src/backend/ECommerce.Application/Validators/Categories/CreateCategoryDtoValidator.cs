@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using ECommerce.Application.DTOs.Categories;
 
 namespace ECommerce.Application.Validators.Categories;

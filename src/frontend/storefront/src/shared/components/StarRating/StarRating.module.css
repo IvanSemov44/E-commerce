@@ -8,7 +8,9 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;

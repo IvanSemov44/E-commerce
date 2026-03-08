@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -186,7 +186,7 @@ public class SecurityHeadersMiddlewareTests
     private static DefaultHttpContext CreateHttpContext(bool isDevelopment)
     {
         var context = new DefaultHttpContext();
-        
+
         var mockEnvironment = new Mock<IWebHostEnvironment>();
         mockEnvironment.Setup(e => e.EnvironmentName)
             .Returns(isDevelopment ? "Development" : "Production");

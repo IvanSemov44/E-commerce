@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -51,9 +51,9 @@ public class PromoCodesControllerTests
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, 
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode,
             $"ValidatePromoCode should accept camelCase JSON. Response: {responseContent}");
-        
+
         // Verify response contains valid data
         var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
@@ -76,7 +76,7 @@ public class PromoCodesControllerTests
 
         // Assert
         // Should NOT return 400 Bad Request with "Object is null" error
-        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode, 
+        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode,
             "Zero order amount should be accepted by validator");
     }
 
@@ -95,7 +95,7 @@ public class PromoCodesControllerTests
         // Assert
         // Note: ASP.NET's default JSON deserialization is case-insensitive,
         // so both camelCase and PascalCase are accepted. This is acceptable API behavior.
-        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode, 
+        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode,
             "PascalCase properties should be accepted (case-insensitive binding)");
     }
 
@@ -112,7 +112,7 @@ public class PromoCodesControllerTests
         var response = await client.PostAsync("/api/promo-codes/validate", content);
 
         // Assert
-        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode, 
+        Assert.AreNotEqual(HttpStatusCode.BadRequest, response.StatusCode,
             "Missing orderAmount should use default 0m and be accepted");
     }
 
@@ -130,10 +130,10 @@ public class PromoCodesControllerTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        
+
         var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-        
+
         if (responseData.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("discountAmount", out var discountProp))
         {
             var discount = discountProp.GetDecimal();
@@ -155,11 +155,11 @@ public class PromoCodesControllerTests
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode,
             "Invalid code should still return 200 with isValid=false");
-        
+
         var responseContent = await response.Content.ReadAsStringAsync();
         var jsonOptions = _jsonOptions;
         var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-        
+
         if (responseData.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("isValid", out var isValidProp))
         {
             Assert.AreEqual(false, isValidProp.GetBoolean(), "Invalid code should have isValid=false");
@@ -178,7 +178,7 @@ public class PromoCodesControllerTests
         var response = await client.PostAsync("/api/promo-codes/validate", content);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, 
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode,
             "Endpoint should allow anonymous (unauthenticated) users");
     }
 

@@ -12,9 +12,11 @@ test.describe('Search', () => {
 
   test('should display search input in header', async ({ page }) => {
     // Look for search input
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       expect(await searchInput.isVisible()).toBeTruthy();
     } else {
       test.skip();
@@ -22,16 +24,18 @@ test.describe('Search', () => {
   });
 
   test('should search for products by name', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       await searchInput.fill('product');
       await searchInput.press('Enter');
       await page.waitForTimeout(1000);
 
       // Should show search results
       const searchResults = page.locator('[class*="product"], [class*="result"]');
-      expect(await searchResults.count() >= 0).toBeTruthy();
+      expect((await searchResults.count()) >= 0).toBeTruthy();
     } else {
       test.skip();
     }
@@ -46,31 +50,37 @@ test.describe('Search', () => {
   });
 
   test('should display no results message for empty search', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       await searchInput.fill('zzzzzzzzzzzzzzzzzzzz');
       await searchInput.press('Enter');
       await page.waitForTimeout(1000);
 
       // Look for no results message
       const noResults = page.locator(':text("No results"), :text("No products found")');
-      expect(await noResults.count() >= 0).toBeTruthy();
+      expect((await noResults.count()) >= 0).toBeTruthy();
     } else {
       test.skip();
     }
   });
 
   test('should show search suggestions while typing', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       await searchInput.fill('pro');
       await page.waitForTimeout(500);
 
       // Look for autocomplete/suggestions dropdown
-      const suggestions = page.locator('[class*="suggestion"], [class*="autocomplete"], [class*="dropdown"]');
-      expect(await suggestions.count() >= 0).toBeTruthy();
+      const suggestions = page.locator(
+        '[class*="suggestion"], [class*="autocomplete"], [class*="dropdown"]'
+      );
+      expect((await suggestions.count()) >= 0).toBeTruthy();
     } else {
       test.skip();
     }
@@ -81,15 +91,17 @@ test.describe('Search', () => {
     await page.waitForTimeout(1000);
 
     // Look for category filter
-    const categoryFilter = page.locator('[class*="filter"] select, [class*="category-filter"]').first();
-    
-    if (await categoryFilter.count() > 0) {
+    const categoryFilter = page
+      .locator('[class*="filter"] select, [class*="category-filter"]')
+      .first();
+
+    if ((await categoryFilter.count()) > 0) {
       await categoryFilter.click();
       await page.waitForTimeout(500);
 
       // Look for category options
       const categoryOption = page.locator('option').first();
-      expect(await categoryOption.count() >= 0).toBeTruthy();
+      expect((await categoryOption.count()) >= 0).toBeTruthy();
     } else {
       test.skip();
     }
@@ -101,8 +113,8 @@ test.describe('Search', () => {
 
     // Look for price filter
     const priceFilter = page.locator('input[type="range"], [class*="price-filter"]').first();
-    
-    if (await priceFilter.count() > 0) {
+
+    if ((await priceFilter.count()) > 0) {
       expect(await priceFilter.isVisible()).toBeTruthy();
     } else {
       test.skip();
@@ -115,31 +127,35 @@ test.describe('Search', () => {
 
     // Look for sort dropdown
     const sortDropdown = page.locator('select, [class*="sort"]').first();
-    
-    if (await sortDropdown.count() > 0) {
+
+    if ((await sortDropdown.count()) > 0) {
       await sortDropdown.click();
       await page.waitForTimeout(500);
 
       // Look for sort options
       const sortOption = page.locator('option:has-text("Price"), option:has-text("Name")');
-      expect(await sortOption.count() >= 0).toBeTruthy();
+      expect((await sortOption.count()) >= 0).toBeTruthy();
     } else {
       test.skip();
     }
   });
 
   test('should clear search and show all products', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       await searchInput.fill('test');
       await searchInput.press('Enter');
       await page.waitForTimeout(1000);
 
       // Clear search
-      const clearButton = page.locator('button:has-text("Clear"), button[aria-label*="clear" i]').first();
-      
-      if (await clearButton.count() > 0) {
+      const clearButton = page
+        .locator('button:has-text("Clear"), button[aria-label*="clear" i]')
+        .first();
+
+      if ((await clearButton.count()) > 0) {
         await clearButton.click();
         await page.waitForTimeout(1000);
 
@@ -163,7 +179,7 @@ test.describe('Search', () => {
 
     // Look for result count
     const resultCount = page.locator(':text(/\\d+\\s*(products?|results?)/i), [class*="count"]');
-    expect(await resultCount.count() >= 0).toBeTruthy();
+    expect((await resultCount.count()) >= 0).toBeTruthy();
   });
 
   test('should navigate to product from search results', async ({ page }) => {
@@ -171,8 +187,8 @@ test.describe('Search', () => {
     await page.waitForTimeout(1000);
 
     const productLink = page.locator('a[href*="/products/"]').first();
-    
-    if (await productLink.count() > 0) {
+
+    if ((await productLink.count()) > 0) {
       await productLink.click();
       await page.waitForTimeout(1000);
 
@@ -184,9 +200,11 @@ test.describe('Search', () => {
   });
 
   test('should preserve search query in URL', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       await searchInput.fill('laptop');
       await searchInput.press('Enter');
       await page.waitForTimeout(1000);
@@ -199,9 +217,11 @@ test.describe('Search', () => {
   });
 
   test('should search with special characters', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       await searchInput.fill('product-test');
       await searchInput.press('Enter');
       await page.waitForTimeout(1000);
@@ -215,9 +235,11 @@ test.describe('Search', () => {
   });
 
   test('should show recent searches', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       // Perform a search
       await searchInput.fill('recent search');
       await searchInput.press('Enter');
@@ -233,23 +255,25 @@ test.describe('Search', () => {
 
       // Look for recent searches
       const recentSearches = page.locator(':text("Recent"), :text("History")');
-      expect(await recentSearches.count() >= 0).toBeTruthy();
+      expect((await recentSearches.count()) >= 0).toBeTruthy();
     } else {
       test.skip();
     }
   });
 
   test('should search by product SKU', async ({ page }) => {
-    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
-    
-    if (await searchInput.count() > 0) {
+    const searchInput = page
+      .locator('input[type="search"], input[placeholder*="search" i]')
+      .first();
+
+    if ((await searchInput.count()) > 0) {
       await searchInput.fill('SKU-');
       await searchInput.press('Enter');
       await page.waitForTimeout(1000);
 
       // Should show results or no results
       const results = page.locator('[class*="product"], :text("No results")');
-      expect(await results.count() >= 0).toBeTruthy();
+      expect((await results.count()) >= 0).toBeTruthy();
     } else {
       test.skip();
     }

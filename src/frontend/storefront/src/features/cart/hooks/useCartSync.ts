@@ -7,10 +7,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
 import { selectCartItems, removeItem } from '../slices/cartSlice';
-import {
-  useGetCartQuery,
-  useAddToCartMutation,
-} from '../api/cartApi';
+import { useGetCartQuery, useAddToCartMutation } from '../api/cartApi';
 import { useErrorHandler } from '@/shared/hooks/useErrorHandler';
 import { logger } from '@/shared/lib/utils/logger';
 import type { AddToCartRequest } from '@/shared/types';
@@ -44,13 +41,7 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
    * Sync local cart items to backend when user logs in
    */
   useEffect(() => {
-    if (
-      !enabled ||
-      !isAuthenticated ||
-      !backendCart ||
-      cartLoading ||
-      syncInProgressRef.current
-    ) {
+    if (!enabled || !isAuthenticated || !backendCart || cartLoading || syncInProgressRef.current) {
       return;
     }
 
@@ -61,12 +52,8 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
 
       try {
         // Get items from local cart that aren't in backend cart
-        const backendProductIds = new Set(
-          backendCart.items.map((item) => item.productId)
-        );
-        const itemsToSync = localCartItems.filter(
-          (item) => !backendProductIds.has(item.id)
-        );
+        const backendProductIds = new Set(backendCart.items.map((item) => item.productId));
+        const itemsToSync = localCartItems.filter((item) => !backendProductIds.has(item.id));
 
         if (itemsToSync.length === 0) {
           syncInProgressRef.current = false;
@@ -102,7 +89,10 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
 
         // Notify user if items were removed
         if (failedItems.length > 0) {
-          logger.info('useCartSync', `Removed ${failedItems.length} unavailable item(s) from cart: ${failedItems.join(', ')}`);
+          logger.info(
+            'useCartSync',
+            `Removed ${failedItems.length} unavailable item(s) from cart: ${failedItems.join(', ')}`
+          );
         }
       } catch (error) {
         logger.error('useCartSync', 'Cart sync failed', error);

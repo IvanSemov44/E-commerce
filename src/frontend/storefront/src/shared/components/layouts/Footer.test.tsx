@@ -77,12 +77,17 @@ describe('Footer', () => {
 
     expect(screen.getByRole('button', { name: 'footer.subscribing' })).toBeDisabled();
 
-    await waitFor(() => {
-      expect(successMock).toHaveBeenCalledWith('footer.subscribeSuccess');
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(successMock).toHaveBeenCalledWith('footer.subscribeSuccess');
+      },
+      { timeout: 2000 }
+    );
 
     expect(errorMock).not.toHaveBeenCalled();
-    expect(localStorage.getItem('newsletter_subscribers')).toBe(JSON.stringify(['john@example.com']));
+    expect(localStorage.getItem('newsletter_subscribers')).toBe(
+      JSON.stringify(['john@example.com'])
+    );
     expect(screen.getByPlaceholderText('footer.yourEmail')).toHaveValue('');
   });
 
@@ -94,9 +99,12 @@ describe('Footer', () => {
     fireEvent.change(input, { target: { value: 'john@example.com' } });
     fireEvent.submit(input.closest('form') as HTMLFormElement);
 
-    await waitFor(() => {
-      expect(errorMock).toHaveBeenCalledWith('footer.emailAlreadySubscribed');
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(errorMock).toHaveBeenCalledWith('footer.emailAlreadySubscribed');
+      },
+      { timeout: 2000 }
+    );
 
     expect(successMock).not.toHaveBeenCalled();
   });

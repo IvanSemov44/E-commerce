@@ -1,4 +1,4 @@
-using ECommerce.Application.Services;
+﻿using ECommerce.Application.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using FluentAssertions;
@@ -32,7 +32,7 @@ public class SendGridEmailServiceTests
     {
         _configurationMock.Reset();
         _loggerMock.Reset();
-        
+
         // Default configuration
         _configurationMock.Setup(x => x["SendGrid:ApiKey"]).Returns("test-api-key");
         _configurationMock.Setup(x => x["SendGrid:FromEmail"]).Returns("noreply@test.com");

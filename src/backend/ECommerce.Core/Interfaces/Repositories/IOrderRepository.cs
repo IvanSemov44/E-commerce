@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using ECommerce.Core.Entities;
 
 namespace ECommerce.Core.Interfaces.Repositories;

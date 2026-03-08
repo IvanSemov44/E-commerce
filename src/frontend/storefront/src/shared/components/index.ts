@@ -1,11 +1,11 @@
 /**
  * Shared Components Barrel Export
- * 
+ *
  * All shared components used across features:
  * - UI components (Button, Input, Card, etc)
  * - Layout components (Header, Footer)
  * - Utility components (EmptyState, LoadingSkeleton, etc)
- * 
+ *
  * Usage:
  *   import { Button, Header, Footer } from '@/shared/components';
  */
@@ -16,12 +16,7 @@ export { Input, type InputProps } from './ui';
 export { Card } from './ui';
 
 // Skeletons
-export {
-	ProductSkeleton,
-	ProductsGridSkeleton,
-	ProfileSkeleton,
-	CartSkeleton,
-} from './Skeletons';
+export { ProductSkeleton, ProductsGridSkeleton, ProfileSkeleton, CartSkeleton } from './Skeletons';
 
 // Utility Components
 export { default as AnnouncementBar } from './AnnouncementBar';

@@ -50,7 +50,7 @@ export default function CheckoutPage() {
             title={t('cart.emptyCart')}
             description={t('checkout.addItemsBeforeCheckout')}
             actionLabel={t('products.browseProducts')}
-            onAction={() => window.location.href = '/products'}
+            onAction={() => (window.location.href = '/products')}
           />
         </div>
       </div>
@@ -60,11 +60,7 @@ export default function CheckoutPage() {
   // Success screen
   if (orderComplete) {
     return (
-      <OrderSuccess 
-        orderNumber={orderNumber} 
-        email={formData.email} 
-        isGuestOrder={isGuestOrder}
-      />
+      <OrderSuccess orderNumber={orderNumber} email={formData.email} isGuestOrder={isGuestOrder} />
     );
   }
 
