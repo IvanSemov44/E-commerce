@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useResetPasswordMutation } from '../api/authApi';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './ResetPassword.module.css';
@@ -45,7 +46,7 @@ export default function ResetPassword() {
       toast.success(t('resetPassword.passwordResetSuccess'));
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate('/login');
+        navigate(ROUTE_PATHS.login);
       }, 2000);
     } catch (err) {
       handleError(err, t('resetPassword.failed'));
@@ -63,7 +64,7 @@ export default function ResetPassword() {
               <p className={styles.successTitle}>{t('resetPassword.successTitle')}</p>
               <p>{t('resetPassword.successMessage')}</p>
             </div>
-            <Link to="/login" className={styles.footerLink}>
+            <Link to={ROUTE_PATHS.login} className={styles.footerLink}>
               {t('resetPassword.goToLogin')}
             </Link>
           </div>
@@ -104,7 +105,7 @@ export default function ResetPassword() {
             ) : (
               <div className={styles.centered}>
                 <p className={styles.description}>{t('resetPassword.invalidLink')}</p>
-                <Link to="/forgot-password" className={styles.footerLink}>
+                <Link to={ROUTE_PATHS.forgotPassword} className={styles.footerLink}>
                   {t('resetPassword.requestNewLink')}
                 </Link>
               </div>
@@ -113,7 +114,7 @@ export default function ResetPassword() {
             <div className={styles.footer}>
               <p className={styles.footerText}>
                 {t('auth.rememberMe')}{' '}
-                <Link to="/login" className={styles.footerLink}>
+                <Link to={ROUTE_PATHS.login} className={styles.footerLink}>
                   {t('resetPassword.backToLogin')}
                 </Link>
               </p>

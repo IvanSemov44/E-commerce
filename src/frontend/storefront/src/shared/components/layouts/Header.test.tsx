@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Header from './Header';
+import Header from './header/Header';
 
 const dispatchMock = vi.fn();
 const navigateMock = vi.fn();

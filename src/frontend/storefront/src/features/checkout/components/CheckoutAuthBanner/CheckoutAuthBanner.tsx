@@ -8,6 +8,7 @@
 import { Link } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import { logout } from '@/features/auth/slices/authSlice';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Button from '@/shared/components/ui/Button';
 import styles from './CheckoutAuthBanner.module.css';
 
@@ -52,7 +53,7 @@ export default function CheckoutAuthBanner({ className }: CheckoutAuthBannerProp
           </span>
         </div>
       </div>
-      <Link to="/login?redirect=/checkout">
+      <Link to={`${ROUTE_PATHS.login}?redirect=${ROUTE_PATHS.checkout}`}>
         <Button variant="outline" size="sm">
           Sign In
         </Button>

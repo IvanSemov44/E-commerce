@@ -1,5 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { Link } from 'react-router-dom';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';
 
@@ -54,7 +55,7 @@ export default function ReturnsPolicy() {
           <ol>
             <li>
               Log into your account and go to your{' '}
-              <Link to="/orders" className={styles.link}>
+              <Link to={ROUTE_PATHS.orders} className={styles.link}>
                 Order History
               </Link>
             </li>
@@ -170,7 +171,7 @@ export default function ReturnsPolicy() {
         </section>
 
         <div className={styles.backLink}>
-          <Link to="/">← Back to Home</Link>
+          <Link to={ROUTE_PATHS.home}>← Back to Home</Link>
         </div>
       </Card>
     </div>

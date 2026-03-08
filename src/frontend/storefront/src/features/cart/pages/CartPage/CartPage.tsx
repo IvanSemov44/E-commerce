@@ -7,6 +7,7 @@ import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { CartSkeleton } from '@/shared/components/Skeletons';
 import { CartItemList, CartSummary } from '@/features/cart/components';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/lib/utils/constants';
 import styles from './CartPage.module.css';
 
@@ -28,7 +29,7 @@ export default function CartPage() {
             icon: <ShoppingCartIcon />,
             title: t('cart.emptyCart'),
             action: (
-              <Link to="/products">
+              <Link to={ROUTE_PATHS.products}>
                 <Button size="lg">{t('cart.continueShopping')}</Button>
               </Link>
             ),

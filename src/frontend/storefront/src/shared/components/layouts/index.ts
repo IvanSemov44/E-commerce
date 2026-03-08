@@ -8,5 +8,5 @@
  * These are app-level components that define the overall layout.
  */
 
-export { default as Header } from './Header';
-export { default as Footer } from './Footer';
+export { default as Header } from './header/Header';
+export { default as Footer } from './footer/Footer';

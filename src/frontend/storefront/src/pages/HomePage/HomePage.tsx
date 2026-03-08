@@ -8,6 +8,8 @@ import {
 } from '@/features/products/api/productApi';
 import { useGetTopLevelCategoriesQuery } from '@/features/products/api/categoriesApi';
 import type { Product } from '@/shared/types';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
+import { withQuery } from '@/shared/lib/routing';
 import Button from '@/shared/components/ui/Button';
 import { ProductCard } from '@/features/products/components';
 import PageHeader from '@/shared/components/PageHeader';
@@ -102,7 +104,7 @@ export default function HomePage() {
         <div className={styles.heroContent}>
           <h1 className={styles.heroTitle}>{t('home.title')}</h1>
           <p className={styles.heroSubtitle}>{t('home.subtitle')}</p>
-          <Link to="/products">
+          <Link to={ROUTE_PATHS.products}>
             <Button size="lg">{t('home.exploreProducts')}</Button>
           </Link>
         </div>
@@ -121,7 +123,7 @@ export default function HomePage() {
             {categories.slice(0, 6).map((category) => (
               <Link
                 key={category.id}
-                to={`/products?category=${category.id}`}
+                to={withQuery(ROUTE_PATHS.products, { category: category.id })}
                 className={styles.categoryCard}
               >
                 {category.imageUrl ? (
@@ -170,7 +172,7 @@ export default function HomePage() {
           title={t('home.bestSellers')}
           subtitle={t('home.ourMostPopularProducts')}
           products={bestsellersData.items}
-          ctaTo="/products?sortBy=rating&sortOrder=desc"
+          ctaTo={withQuery(ROUTE_PATHS.products, { sortBy: 'rating', sortOrder: 'desc' })}
           ctaLabel={t('home.viewAllBestsellers')}
           sectionClassName={styles.bestsellersSection}
         />
@@ -183,7 +185,7 @@ export default function HomePage() {
           title={t('home.onSale')}
           subtitle={t('home.onSaleSubtitle')}
           products={promotionsData.items.filter((product) => product.compareAtPrice).slice(0, 4)}
-          ctaTo="/products?onSale=true"
+          ctaTo={withQuery(ROUTE_PATHS.products, { onSale: true })}
           ctaLabel={t('home.viewAllOffers')}
           sectionClassName={styles.promotionsSection}
         />

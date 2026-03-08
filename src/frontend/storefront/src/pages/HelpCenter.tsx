@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';
 
@@ -54,7 +55,7 @@ export default function HelpCenter() {
           <p>
             We offer a 30-day return policy for most items. Products must be unused and in original
             packaging. See our{' '}
-            <Link to="/returns" className={styles.link}>
+            <Link to={ROUTE_PATHS.returns} className={styles.link}>
               Returns Policy
             </Link>{' '}
             for full details.
@@ -97,7 +98,7 @@ export default function HelpCenter() {
         </section>
 
         <div className={styles.backLink}>
-          <Link to="/">← Back to Home</Link>
+          <Link to={ROUTE_PATHS.home}>← Back to Home</Link>
         </div>
       </Card>
     </div>

@@ -3,6 +3,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Button from '../ui/Button';
 import styles from './ErrorPage.module.css';
 
@@ -17,7 +18,7 @@ export default function ErrorPage({ error, isDevelopment, onReset }: ErrorPagePr
 
   const handleGoHome = () => {
     onReset();
-    navigate('/');
+    navigate(ROUTE_PATHS.home);
   };
 
   return (

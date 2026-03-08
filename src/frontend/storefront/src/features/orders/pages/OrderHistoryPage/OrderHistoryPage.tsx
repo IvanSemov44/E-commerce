@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetOrdersQuery } from '@/features/orders/api/ordersApi';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Button from '@/shared/components/ui/Button';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
@@ -55,7 +56,7 @@ export default function OrderHistoryPage() {
           title: t('orders.noOrdersYet'),
           description: t('account.startShopping'),
           action: (
-            <Link to="/products">
+            <Link to={ROUTE_PATHS.products}>
               <Button>{t('account.browseProducts')}</Button>
             </Link>
           ),

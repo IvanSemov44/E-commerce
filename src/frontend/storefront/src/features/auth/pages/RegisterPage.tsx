@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useRegisterMutation } from '../api/authApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '../slices/authSlice';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import useForm from '@/shared/hooks/useForm';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
@@ -35,7 +36,7 @@ export default function Register() {
         if (response.success && response.user) {
           dispatch(loginSuccess(response.user));
           toast.success(t('auth.registrationSuccess'));
-          navigate('/');
+          navigate(ROUTE_PATHS.home);
         } else {
           toast.error(response.message || t('auth.registrationFailed'));
         }
@@ -110,7 +111,7 @@ export default function Register() {
         <div className={styles.footer}>
           <p className={styles.footerText}>
             {t('auth.alreadyHaveAccount')}{' '}
-            <Link to="/login" className={styles.footerLink}>
+            <Link to={ROUTE_PATHS.login} className={styles.footerLink}>
               {t('auth.loginHere')}
             </Link>
           </p>

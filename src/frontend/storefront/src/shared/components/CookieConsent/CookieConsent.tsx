@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import styles from './CookieConsent.module.css';
 
 const COOKIE_CONSENT_KEY = 'cookie-consent';
@@ -40,7 +41,7 @@ export default function CookieConsent() {
             We use cookies to enhance your browsing experience, serve personalized ads or content,
             and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
             Read more in our{' '}
-            <Link to="/privacy" className={styles.link}>
+            <Link to={ROUTE_PATHS.privacy} className={styles.link}>
               Privacy Policy
             </Link>
             .

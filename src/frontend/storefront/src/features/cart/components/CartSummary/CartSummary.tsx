@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';
 import Button from '@/shared/components/ui/Button';
 import OrderTotalsDisplay from '@/shared/components/OrderTotalsDisplay/OrderTotalsDisplay';
@@ -44,10 +45,10 @@ export default function CartSummary({
       />
 
       <div className={styles.actions}>
-        <Link to="/checkout" className={styles.actionLink}>
+        <Link to={ROUTE_PATHS.checkout} className={styles.actionLink}>
           <Button size="lg">{t('cart.proceedToCheckout')}</Button>
         </Link>
-        <Link to="/products" className={styles.actionLink}>
+        <Link to={ROUTE_PATHS.products} className={styles.actionLink}>
           <Button variant="secondary" size="lg">
             {t('cart.continueShopping')}
           </Button>

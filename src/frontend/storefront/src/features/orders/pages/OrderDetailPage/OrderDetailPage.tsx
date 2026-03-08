@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/features/orders/api/ordersApi';
 import { useApiErrorHandler } from '@/shared/hooks';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Button from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import LoadingSkeleton from '@/shared/components/LoadingSkeleton';
@@ -40,7 +41,7 @@ export default function OrderDetailPage() {
     if (window.confirm(t('orders.cancelConfirmMessage'))) {
       try {
         await cancelOrder(orderId).unwrap();
-        navigate('/orders');
+        navigate(ROUTE_PATHS.orders);
       } catch (err) {
         handleError(err, t('orders.failedToCancel'));
       }
@@ -55,7 +56,7 @@ export default function OrderDetailPage() {
   return (
     <div className={styles.container}>
       <div className={styles.backButton}>
-        <Link to="/orders" className={styles.backLink}>
+        <Link to={ROUTE_PATHS.orders} className={styles.backLink}>
           <Button variant="secondary">{t('orders.backToOrders')}</Button>
         </Link>
       </div>

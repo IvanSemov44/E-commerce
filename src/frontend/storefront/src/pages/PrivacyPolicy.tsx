@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';
 
@@ -84,7 +85,7 @@ export default function PrivacyPolicy() {
             us to provide you with a good experience when you browse our website and also allows us
             to improve our site. For detailed information on the cookies we use and the purposes for
             which we use them, please see our{' '}
-            <Link to="/cookies" className={styles.link}>
+            <Link to={ROUTE_PATHS.cookies} className={styles.link}>
               Cookie Policy
             </Link>
             .
@@ -122,7 +123,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <div className={styles.backLink}>
-          <Link to="/">← Back to Home</Link>
+          <Link to={ROUTE_PATHS.home}>← Back to Home</Link>
         </div>
       </Card>
     </div>

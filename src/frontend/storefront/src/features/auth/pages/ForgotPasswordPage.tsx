@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForgotPasswordMutation } from '../api/authApi';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { Button, Input, Card } from '@/shared/components/ui';
 import styles from './ForgotPassword.module.css';
 
@@ -37,7 +38,7 @@ export default function ForgotPassword() {
               <p className={styles.successTitle}>{t('forgotPassword.checkEmail')}</p>
               <p>{t('forgotPassword.resetLinkSent')}</p>
             </div>
-            <Link to="/login" className={styles.footerLink}>
+            <Link to={ROUTE_PATHS.login} className={styles.footerLink}>
               {t('forgotPassword.backToLogin')}
             </Link>
           </div>
@@ -64,7 +65,7 @@ export default function ForgotPassword() {
             <div className={styles.footer}>
               <p className={styles.footerText}>
                 {t('auth.rememberMe')}{' '}
-                <Link to="/login" className={styles.footerLink}>
+                <Link to={ROUTE_PATHS.login} className={styles.footerLink}>
                   {t('forgotPassword.backToLogin')}
                 </Link>
               </p>

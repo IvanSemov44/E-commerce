@@ -1,5 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { Link } from 'react-router-dom';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';
 
@@ -95,7 +96,7 @@ export default function TermsOfService() {
             Our return policy allows returns within 30 days of purchase. Items must be unused, in
             original packaging, and accompanied by proof of purchase. For full details, please see
             our
-            <Link to="/returns" className={styles.link}>
+            <Link to={ROUTE_PATHS.returns} className={styles.link}>
               {' '}
               Returns Policy
             </Link>
@@ -189,7 +190,7 @@ export default function TermsOfService() {
         </section>
 
         <div className={styles.backLink}>
-          <Link to="/">← Back to Home</Link>
+          <Link to={ROUTE_PATHS.home}>← Back to Home</Link>
         </div>
       </Card>
     </div>

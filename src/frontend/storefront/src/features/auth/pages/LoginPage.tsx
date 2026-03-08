@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLoginMutation } from '../api/authApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '../slices/authSlice';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import useForm from '@/shared/hooks/useForm';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
@@ -27,7 +28,7 @@ export default function Login() {
         if (response.success && response.user) {
           dispatch(loginSuccess(response.user));
           toast.success(t('auth.loginSuccess'));
-          navigate('/');
+          navigate(ROUTE_PATHS.home);
         } else {
           toast.error(response.message || t('auth.loginError'));
         }
@@ -64,7 +65,7 @@ export default function Login() {
           />
 
           <div className={styles.forgotPassword}>
-            <Link to="/forgot-password" className={styles.footerLink}>
+            <Link to={ROUTE_PATHS.forgotPassword} className={styles.footerLink}>
               {t('auth.forgotPassword')}
             </Link>
           </div>
@@ -77,7 +78,7 @@ export default function Login() {
         <div className={styles.footer}>
           <p className={styles.footerText}>
             {t('auth.dontHaveAccount')}{' '}
-            <Link to="/register" className={styles.footerLink}>
+            <Link to={ROUTE_PATHS.register} className={styles.footerLink}>
               {t('auth.loginHere')}
             </Link>
           </p>

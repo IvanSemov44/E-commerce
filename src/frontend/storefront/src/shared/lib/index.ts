@@ -18,5 +18,8 @@ export * from './api';
 // Store utilities
 export * from './store';
 
+// Routing utilities
+export * from './routing';
+
 // Common utilities
 export * from './utils';

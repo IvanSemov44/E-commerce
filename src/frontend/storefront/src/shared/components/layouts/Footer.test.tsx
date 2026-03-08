@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Footer from './Footer';
+import Footer from './footer/Footer';
 
 const successMock = vi.fn();
 const errorMock = vi.fn();
