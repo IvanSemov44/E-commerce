@@ -13,7 +13,7 @@ public class UpdatePromoCodeDtoValidator : AbstractValidator<UpdatePromoCodeDto>
     {
         RuleFor(x => x.Code)
             .Length(1, 50).WithMessage("Promo code must be between 1 and 50 characters")
-            .Matches("^[A-Z0-9-]+$").WithMessage("Promo code must contain only uppercase letters, numbers, and hyphens")
+            .Matches("^[A-Z0-9]+$").WithMessage("Promo code must contain only uppercase letters and numbers")
             .When(x => x.Code != null);
 
         RuleFor(x => x.DiscountType)
@@ -26,7 +26,7 @@ public class UpdatePromoCodeDtoValidator : AbstractValidator<UpdatePromoCodeDto>
             .When(x => x.DiscountValue.HasValue);
 
         RuleFor(x => x.MinOrderAmount)
-            .GreaterThan(0).WithMessage("Minimum order amount must be greater than 0")
+            .GreaterThanOrEqualTo(0).WithMessage("Minimum order amount cannot be negative")
             .When(x => x.MinOrderAmount.HasValue);
 
         RuleFor(x => x.MaxDiscountAmount)

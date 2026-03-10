@@ -14,8 +14,8 @@ public static class DatabaseSchemaValidator
     /// </summary>
     private static readonly string[] TablesWithoutRowVersion =
     [
-        "RefreshTokens", "Users", "Categories", "ProductImages", "Addresses",
-        "Carts", "CartItems", "OrderItems", "Reviews", "Wishlists", "InventoryLogs"
+        "RefreshTokens", "Categories", "ProductImages", "Addresses",
+        "CartItems", "OrderItems", "Reviews", "Wishlists", "InventoryLogs"
     ];
 
     /// <summary>
@@ -23,7 +23,7 @@ public static class DatabaseSchemaValidator
     /// </summary>
     private static readonly string[] TablesWithRowVersion =
     [
-        "Products", "Orders", "PromoCodes"
+        "Users", "Products", "Carts", "Orders", "PromoCodes"
     ];
 
     /// <summary>

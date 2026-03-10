@@ -56,10 +56,12 @@ public class DatabaseSchemaValidatorTests
     [TestMethod]
     public void TablesWithRowVersion_ContainsExpectedTables()
     {
-        var expectedTablesWithRowVersion = new[] { "Products", "Orders", "PromoCodes" };
+        var expectedTablesWithRowVersion = new[] { "Users", "Products", "Carts", "Orders", "PromoCodes" };
 
-        expectedTablesWithRowVersion.Should().HaveCount(3);
+        expectedTablesWithRowVersion.Should().HaveCount(5);
+        expectedTablesWithRowVersion.Should().Contain("Users");
         expectedTablesWithRowVersion.Should().Contain("Products");
+        expectedTablesWithRowVersion.Should().Contain("Carts");
         expectedTablesWithRowVersion.Should().Contain("Orders");
         expectedTablesWithRowVersion.Should().Contain("PromoCodes");
     }
@@ -69,13 +71,12 @@ public class DatabaseSchemaValidatorTests
     {
         var expectedTablesWithoutRowVersion = new[]
         {
-            "RefreshTokens", "Users", "Categories", "ProductImages", "Addresses",
-            "Carts", "CartItems", "OrderItems", "Reviews", "Wishlists", "InventoryLogs"
+            "RefreshTokens", "Categories", "ProductImages", "Addresses",
+            "CartItems", "OrderItems", "Reviews", "Wishlists", "InventoryLogs"
         };
 
-        expectedTablesWithoutRowVersion.Should().HaveCount(11);
+        expectedTablesWithoutRowVersion.Should().HaveCount(9);
         expectedTablesWithoutRowVersion.Should().Contain("RefreshTokens");
-        expectedTablesWithoutRowVersion.Should().Contain("Users");
         expectedTablesWithoutRowVersion.Should().Contain("Categories");
     }
 

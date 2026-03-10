@@ -63,11 +63,17 @@ Capture high-frequency mistakes so AI and humans avoid repeating technical debt 
 - Correct: use AutoMapper where configured and keep mapping centralized.
 - Reference: `src/backend/ECommerce.Application/Services/ProductService.cs`, `src/backend/ECommerce.Application/MappingProfile.cs`
 
+12. Divergent create/update validator rules
+- Wrong: create and update validators enforce different constraints for the same field semantics.
+- Correct: keep create and update validation rules aligned unless there is an explicit business reason.
+- Reference: `src/backend/ECommerce.Application/Validators/PromoCodes/CreatePromoCodeDtoValidator.cs`, `src/backend/ECommerce.Application/Validators/PromoCodes/UpdatePromoCodeDtoValidator.cs`
+
 ## Usage Rule
 Before implementing a feature or refactor, scan this file and explicitly check that no listed mistake is being introduced.
 
 ## Pattern Links
 - Mistakes 1-3, 10-11: `.ai/backend/services.md`, `.ai/backend/repositories.md`, `.ai/backend/query-patterns.md`
+- Mistake 12: `.ai/workflows/adding-feature.md`
 - Mistakes 4-6: `.ai/backend/entities.md`, `.ai/backend/api-contracts.md`, `.ai/backend/error-handling.md`
 - Mistakes 7-9: `.ai/frontend/api-integration.md`, `.ai/frontend/redux.md`, `.ai/frontend/type-safety.md`
 - Full flow reference: `.ai/workflows/adding-feature.md`

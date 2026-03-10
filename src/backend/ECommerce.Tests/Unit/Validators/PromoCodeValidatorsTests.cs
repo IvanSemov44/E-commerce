@@ -14,12 +14,14 @@ namespace ECommerce.Tests.Unit.Validators;
 public class PromoCodeValidatorsTests
 {
     private CreatePromoCodeDtoValidator _createValidator = null!;
+    private UpdatePromoCodeDtoValidator _updateValidator = null!;
     private static readonly JsonSerializerOptions CamelCaseJsonOptions = new() { PropertyNameCaseInsensitive = false };
 
     [TestInitialize]
     public void Setup()
     {
         _createValidator = new CreatePromoCodeDtoValidator();
+        _updateValidator = new UpdatePromoCodeDtoValidator();
     }
 
     #region Code Validation Tests
@@ -449,6 +451,49 @@ public class PromoCodeValidatorsTests
 
         // Assert
         result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    #endregion
+
+    #region UpdatePromoCodeDto Validation Tests
+
+    [TestMethod]
+    public void UpdatePromoCode_Should_Fail_When_Code_Contains_Hyphen()
+    {
+        // Arrange
+        var dto = new UpdatePromoCodeDto { Code = "CODE-2024" };
+
+        // Act
+        var result = _updateValidator.TestValidate(dto);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Code);
+    }
+
+    [TestMethod]
+    public void UpdatePromoCode_Should_Pass_With_Zero_MinOrderAmount()
+    {
+        // Arrange
+        var dto = new UpdatePromoCodeDto { MinOrderAmount = 0m };
+
+        // Act
+        var result = _updateValidator.TestValidate(dto);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.MinOrderAmount);
+    }
+
+    [TestMethod]
+    public void UpdatePromoCode_Should_Fail_With_Negative_MinOrderAmount()
+    {
+        // Arrange
+        var dto = new UpdatePromoCodeDto { MinOrderAmount = -1m };
+
+        // Act
+        var result = _updateValidator.TestValidate(dto);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.MinOrderAmount);
     }
 
     #endregion
