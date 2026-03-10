@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import AnnouncementBar from '@/shared/components/AnnouncementBar';
 import { Header, Footer } from '@/shared/components/layouts';
-import CookieConsent from '@/shared/components/CookieConsent';
 import LoadingFallback from '@/shared/components/LoadingFallback';
 
 interface AppShellProps {
@@ -16,7 +15,6 @@ export default function AppShell({ children, isInitializing }: AppShellProps) {
       <Header />
       <main>{isInitializing ? <LoadingFallback /> : children}</main>
       <Footer />
-      <CookieConsent />
     </div>
   );
 }

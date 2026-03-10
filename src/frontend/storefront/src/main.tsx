@@ -1,10 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Provider } from 'react-redux';
 import './index.css';
 import './shared/i18n'; // Initialize i18n
 import App from './App';
-import { store } from '@/shared/lib/store';
+import AppProviders from '@/app/providers/AppProviders';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,8 +12,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <Provider store={store}>
+    <AppProviders>
       <App />
-    </Provider>
+    </AppProviders>
   </StrictMode>
 );

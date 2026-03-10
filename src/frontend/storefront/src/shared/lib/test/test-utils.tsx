@@ -10,7 +10,6 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from '@/features/auth/slices/authSlice';
 import { cartReducer } from '@/features/cart/slices/cartSlice';
-import { languageReducer } from '@/shared/i18n/languageSlice';
 import toastReducer from '@/shared/components/Toast/toastSlice';
 import { baseApi } from '@/shared/lib/api/baseApi';
 
@@ -27,7 +26,6 @@ export function setupStore(preloadedState?: any) {
     reducer: {
       auth: authReducer,
       cart: cartReducer,
-      language: languageReducer,
       toast: toastReducer,
       [baseApi.reducerPath]: baseApi.reducer,
     },

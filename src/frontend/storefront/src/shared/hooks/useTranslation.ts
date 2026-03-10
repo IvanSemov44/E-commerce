@@ -1,34 +1,22 @@
 import { useTranslation as useI18nextTranslation } from 'react-i18next';
-import { useSelector, useDispatch } from 'react-redux';
-import type { TypedUseSelectorHook } from 'react-redux';
-import type { RootState, AppDispatch } from '@/shared/lib/store';
-import { setLanguage, selectCurrentLanguage } from '@/shared/i18n/languageSlice';
-import type { Language } from '@/shared/i18n';
-
-// Typed Redux hooks
-export const useAppDispatch: () => AppDispatch = useDispatch;
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 /**
- * Custom hook for translations with Redux integration
- * Provides both translation function and language switching
+ * Custom hook for translations
+ * Wraps i18next with convenience helpers
  */
 export const useTranslation = () => {
   const { t, i18n } = useI18nextTranslation();
-  const dispatch = useAppDispatch();
-  const currentLanguage = useAppSelector(selectCurrentLanguage);
 
-  const changeLanguage = async (lang: Language) => {
+  const changeLanguage = async (lang: string) => {
     await i18n.changeLanguage(lang);
-    await dispatch(setLanguage(lang));
   };
 
   return {
     t,
     i18n,
-    currentLanguage,
+    currentLanguage: i18n.language,
     changeLanguage,
-    isEnglish: currentLanguage === 'en',
-    isBulgarian: currentLanguage === 'bg',
+    isEnglish: i18n.language === 'en',
+    isBulgarian: i18n.language === 'bg',
   };
 };

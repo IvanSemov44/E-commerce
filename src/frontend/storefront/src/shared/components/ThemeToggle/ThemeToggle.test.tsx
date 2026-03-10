@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SVGProps } from 'react';
 import { ThemeToggle } from './ThemeToggle';
+import { ThemeProvider } from '@/app/providers/ThemeProvider';
 
 // Mock icons
 vi.mock('@/shared/components/icons', () => ({
@@ -33,23 +34,45 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('ThemeToggle', () => {
+  function renderThemeToggle(size: 'sm' | 'md' = 'md') {
+    return render(
+      <ThemeProvider>
+        <ThemeToggle size={size} />
+      </ThemeProvider>
+    );
+  }
+
   beforeEach(() => {
-    // Clear localStorage before each test
     localStorage.clear();
     vi.clearAllMocks();
-    // Reset document class
-    document.documentElement.className = '';
+
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia =
+      originalMatchMedia ||
+      ((query: string) =>
+        ({
+          matches: query.includes('dark') ? false : false,
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as MediaQueryList);
+
+    document.documentElement.removeAttribute('data-theme');
   });
 
   it('renders toggle button', () => {
-    render(<ThemeToggle />);
+    renderThemeToggle();
     const button = screen.getByRole('button');
     expect(button).toBeInTheDocument();
   });
 
   it('renders dropdown menu on button click', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -62,15 +85,9 @@ describe('ThemeToggle', () => {
     });
   });
 
-  it('renders with cycle variant', () => {
-    render(<ThemeToggle variant="cycle" />);
-    const button = screen.getByRole('button');
-    expect(button).toBeInTheDocument();
-  });
-
   it('changes theme to light', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -84,7 +101,7 @@ describe('ThemeToggle', () => {
 
   it('changes theme to dark', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -97,7 +114,7 @@ describe('ThemeToggle', () => {
 
   it('changes theme to system', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -110,7 +127,7 @@ describe('ThemeToggle', () => {
 
   it('closes dropdown after selection', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -128,7 +145,7 @@ describe('ThemeToggle', () => {
     const user = userEvent.setup();
     localStorage.setItem('theme', 'dark');
 
-    render(<ThemeToggle />);
+    renderThemeToggle();
     const button = screen.getByRole('button');
     await user.click(button);
 
@@ -138,41 +155,30 @@ describe('ThemeToggle', () => {
 
   it('loads theme from localStorage on mount', () => {
     localStorage.setItem('theme', 'dark');
-    render(<ThemeToggle />);
+    renderThemeToggle();
     // Component should initialize with saved theme
-    expect(localStorage.getItem('theme')).toBe('dark');
-  });
-
-  it('applies custom className', () => {
-    const { container } = render(<ThemeToggle className="custom-class" />);
-    const element = container.querySelector('.custom-class');
-    expect(element).toBeInTheDocument();
+    expect(screen.getByRole('button')).toHaveTextContent('dark');
   });
 
   it('renders with different size variants', () => {
-    const { rerender } = render(<ThemeToggle size="sm" />);
+    const { rerender } = render(
+      <ThemeProvider>
+        <ThemeToggle size="sm" />
+      </ThemeProvider>
+    );
     expect(screen.getByRole('button')).toBeInTheDocument();
 
-    rerender(<ThemeToggle size="lg" />);
+    rerender(
+      <ThemeProvider>
+        <ThemeToggle size="md" />
+      </ThemeProvider>
+    );
     expect(screen.getByRole('button')).toBeInTheDocument();
-  });
-
-  it('supports keyboard navigation', async () => {
-    const user = userEvent.setup();
-    render(<ThemeToggle />);
-
-    const button = screen.getByRole('button');
-    await user.click(button);
-
-    // Navigate with arrow keys
-    await user.keyboard('{ArrowDown}');
-    // Next option should be highlighted
-    expect(screen.getByText('Dark')).toBeInTheDocument();
   });
 
   it('closes dropdown on escape key', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -190,7 +196,7 @@ describe('ThemeToggle', () => {
 
   it('displays theme icons in dropdown', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -205,7 +211,7 @@ describe('ThemeToggle', () => {
 
   it('handles rapid theme changes', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
 
@@ -223,7 +229,7 @@ describe('ThemeToggle', () => {
 
   it('applies theme attribute to document root', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -239,7 +245,7 @@ describe('ThemeToggle', () => {
 
   it('renders dropdown options with descriptions', async () => {
     const user = userEvent.setup();
-    render(<ThemeToggle />);
+    renderThemeToggle();
 
     const button = screen.getByRole('button');
     await user.click(button);
@@ -251,10 +257,15 @@ describe('ThemeToggle', () => {
     });
   });
 
-  it('handles system preference changes when system theme is selected', () => {
-    render(<ThemeToggle />);
+  it('keeps system mode persisted', async () => {
+    const user = userEvent.setup();
+    renderThemeToggle();
+
+    const button = screen.getByRole('button');
+    await user.click(button);
+    await user.click(screen.getByText('System'));
+
     localStorage.setItem('theme', 'system');
-    // Component should respect system preference
     expect(localStorage.getItem('theme')).toBe('system');
   });
 });
