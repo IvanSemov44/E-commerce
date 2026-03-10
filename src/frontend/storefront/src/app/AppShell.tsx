@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import AnnouncementBar from '@/shared/components/AnnouncementBar';
-import { Header, Footer } from '@/shared/components/layouts';
-import LoadingFallback from '@/shared/components/LoadingFallback';
+import AnnouncementBar from '@/app/AnnouncementBar';
+import { Header, Footer } from '@/app/layouts';
+import { AppBootstrapLoading } from '@/app/skeletons';
 
 interface AppShellProps {
   children: ReactNode;
@@ -9,11 +9,15 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children, isInitializing }: AppShellProps) {
+  if (isInitializing) {
+    return <AppBootstrapLoading />;
+  }
+
   return (
     <div>
       <AnnouncementBar />
       <Header />
-      <main>{isInitializing ? <LoadingFallback /> : children}</main>
+      <main>{children}</main>
       <Footer />
     </div>
   );

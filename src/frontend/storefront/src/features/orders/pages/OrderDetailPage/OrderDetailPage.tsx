@@ -5,12 +5,12 @@ import { useApiErrorHandler } from '@/shared/hooks';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Button from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
-import LoadingSkeleton from '@/shared/components/LoadingSkeleton';
 import {
   OrderHeader,
   OrderItemsList,
   OrderTotals,
   ShippingAddress,
+  OrderDetailSkeleton,
 } from '@/features/orders/components';
 import styles from './OrderDetailPage.module.css';
 
@@ -64,7 +64,7 @@ export default function OrderDetailPage() {
       {error ? (
         <ErrorAlert message={t('orders.failedToLoadOrder')} />
       ) : isLoading ? (
-        <LoadingSkeleton count={1} type="card" />
+        <OrderDetailSkeleton />
       ) : order ? (
         <div className={styles.content}>
           <OrderHeader

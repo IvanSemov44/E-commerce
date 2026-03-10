@@ -10,7 +10,7 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from '@/features/auth/slices/authSlice';
 import { cartReducer } from '@/features/cart/slices/cartSlice';
-import toastReducer from '@/shared/components/Toast/toastSlice';
+import toastReducer from '@/app/Toast/toastSlice';
 import { baseApi } from '@/shared/lib/api/baseApi';
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'wrapper'> {

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import Button from '@/shared/components/ui/Button';
-import OrderTotalsDisplay from '@/shared/components/OrderTotalsDisplay/OrderTotalsDisplay';
+import OrderTotalsDisplay from '@/features/orders/components/OrderTotalsDisplay/OrderTotalsDisplay';
 import type { OrderSummaryProps } from './OrderSummary.types';
 
 export default function OrderSummary({

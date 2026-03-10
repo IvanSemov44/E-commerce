@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { PackageIcon, DocumentIcon, RefreshIcon } from '@/shared/components/icons';
-import { OrderCard } from '@/features/orders/components';
+import { OrderCard, OrdersListSkeleton } from '@/features/orders/components';
 import styles from './OrderHistoryPage.module.css';
 
 interface OrderForDisplay {
@@ -50,6 +50,7 @@ export default function OrderHistoryPage() {
         isLoading={isLoading}
         error={error}
         data={orders}
+        loadingSkeleton={{ custom: <OrdersListSkeleton count={6} /> }}
         errorMessage={t('orders.failedToLoadOrders')}
         emptyState={{
           icon: <DocumentIcon className={styles.emptyIcon} />,

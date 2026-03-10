@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import Button from '../Button';
 import {
   ShoppingCartIcon,
   HeartIcon,
@@ -15,8 +14,7 @@ export interface EmptyStateProps {
   icon?: EmptyStateIcon | ReactNode;
   title: string;
   description?: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  action?: ReactNode;
 }
 
 function getPresetIcon(icon: EmptyStateIcon): ReactNode {
@@ -36,103 +34,16 @@ function getPresetIcon(icon: EmptyStateIcon): ReactNode {
   }
 }
 
-export default function EmptyState({
-  icon,
-  title,
-  description,
-  actionLabel,
-  onAction,
-}: EmptyStateProps) {
+export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   const renderedIcon =
     typeof icon === 'string' ? getPresetIcon(icon as EmptyStateIcon) : (icon ?? null);
 
   return (
     <div className={styles.container}>
-      {renderedIcon}
+      {renderedIcon && <div className={styles.iconWrapper}>{renderedIcon}</div>}
       <h2 className={styles.title}>{title}</h2>
       {description && <p className={styles.description}>{description}</p>}
-      {actionLabel && onAction && (
-        <div className={styles.action}>
-          <Button onClick={onAction}>{actionLabel}</Button>
-        </div>
-      )}
+      {action && <div className={styles.action}>{action}</div>}
     </div>
-  );
-}
-
-export function EmptyCart({
-  actionLabel,
-  onAction,
-}: Pick<EmptyStateProps, 'actionLabel' | 'onAction'>) {
-  return (
-    <EmptyState
-      icon="cart"
-      title="Your cart is empty"
-      description="Looks like you have not added anything to your cart yet."
-      actionLabel={actionLabel}
-      onAction={onAction}
-    />
-  );
-}
-
-export function EmptyWishlist({
-  actionLabel,
-  onAction,
-}: Pick<EmptyStateProps, 'actionLabel' | 'onAction'>) {
-  return (
-    <EmptyState
-      icon="wishlist"
-      title="Your wishlist is empty"
-      description="Save items you love so you can find them later."
-      actionLabel={actionLabel}
-      onAction={onAction}
-    />
-  );
-}
-
-export function EmptyOrders({
-  actionLabel,
-  onAction,
-}: Pick<EmptyStateProps, 'actionLabel' | 'onAction'>) {
-  return (
-    <EmptyState
-      icon="orders"
-      title="No orders yet"
-      description="When you place your first order, it will appear here."
-      actionLabel={actionLabel}
-      onAction={onAction}
-    />
-  );
-}
-
-export function NoSearchResults({
-  actionLabel,
-  onAction,
-}: Pick<EmptyStateProps, 'actionLabel' | 'onAction'>) {
-  return (
-    <EmptyState
-      icon="search"
-      title="No results found"
-      description="Try a different query or remove some filters."
-      actionLabel={actionLabel}
-      onAction={onAction}
-    />
-  );
-}
-
-export function ErrorState({
-  title = 'Something went wrong',
-  description = 'Please try again.',
-  actionLabel,
-  onAction,
-}: Omit<EmptyStateProps, 'icon'>) {
-  return (
-    <EmptyState
-      icon="error"
-      title={title}
-      description={description}
-      actionLabel={actionLabel}
-      onAction={onAction}
-    />
   );
 }

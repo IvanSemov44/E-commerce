@@ -3,11 +3,15 @@ import { usePerformanceMonitor } from '@/shared/hooks';
 
 import useProductDetails from '@/features/products/hooks/useProductDetails';
 import Card from '@/shared/components/ui/Card';
-import { ProductSkeleton } from '@/shared/components/Skeletons';
 import QueryRenderer from '@/shared/components/QueryRenderer';
-import ReviewForm from '@/shared/components/ReviewForm';
-import ReviewList from '@/shared/components/ReviewList';
-import { ProductImageGallery, ProductInfo, ProductActions } from '@/features/products/components';
+import ReviewForm from '@/features/products/components/ReviewForm';
+import ReviewList from '@/features/products/components/ReviewList';
+import {
+  ProductImageGallery,
+  ProductInfo,
+  ProductActions,
+  ProductSkeleton,
+} from '@/features/products/components';
 import { useTranslation } from 'react-i18next';
 
 import styles from './ProductDetailPage.module.css';

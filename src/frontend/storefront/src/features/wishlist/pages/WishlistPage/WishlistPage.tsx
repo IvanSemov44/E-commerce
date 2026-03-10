@@ -11,6 +11,7 @@ import { useApiErrorHandler } from '@/shared/hooks';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Button from '@/shared/components/ui/Button';
 import QueryRenderer from '@/shared/components/QueryRenderer';
+import WishlistSkeleton from '@/features/wishlist/components/WishlistSkeleton';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './WishlistPage.module.css';
 
@@ -45,6 +46,7 @@ export default function WishlistPage() {
         isLoading={isLoading}
         error={error}
         data={wishlist}
+        loadingSkeleton={{ custom: <WishlistSkeleton count={8} /> }}
         emptyState={{
           icon: <HeartIcon className={styles.emptyIcon} />,
           title: t('wishlist.empty'),

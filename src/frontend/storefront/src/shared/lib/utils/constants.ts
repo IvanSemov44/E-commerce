@@ -29,3 +29,10 @@ export const SHIPPING_COST = 10; // Keeping for backward compatibility
 export const MAX_REVIEW_RATING = 5;
 export const MIN_REVIEW_RATING = 1;
 export const MAX_REVIEW_COMMENT_LENGTH = 1000;
+
+// Progressive bootstrap loading thresholds (milliseconds)
+// Phase 0: 0–TOP_BAR_DELAY_MS     → nothing shown (80% of loads finish here)
+// Phase 1: TOP_BAR_DELAY_MS–FULL_FALLBACK_DELAY_MS → top loading bar only
+// Phase 2: >FULL_FALLBACK_DELAY_MS → full loading fallback
+export const BOOTSTRAP_TOP_BAR_DELAY_MS = 150;
+export const BOOTSTRAP_FULL_FALLBACK_DELAY_MS = 900;

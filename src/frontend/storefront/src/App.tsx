@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import LoadingFallback from '@/shared/components/LoadingFallback';
+import { RouteLoadingFallback } from '@/app/skeletons';
 import AppShell from '@/app/AppShell';
 import AppRoutes from '@/app/AppRoutes';
 import { useAppInitialization, useLanguageMetaSync, useRouteTelemetry } from '@/app/hooks';
@@ -11,7 +11,7 @@ function App() {
 
   return (
     <AppShell isInitializing={isInitializing}>
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<RouteLoadingFallback />}>
         <AppRoutes />
       </Suspense>
     </AppShell>

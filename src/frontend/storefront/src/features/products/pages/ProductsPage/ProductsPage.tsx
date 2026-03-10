@@ -3,16 +3,16 @@ import { usePerformanceMonitor } from '@/shared/hooks';
 import { useGetProductsQuery } from '@/features/products/api/productApi';
 import { useProductFilters } from '@/features/products/hooks/useProductFilters';
 import Button from '@/shared/components/ui/Button';
-import CategoryFilter from '@/shared/components/CategoryFilter';
+import CategoryFilter from '@/features/products/components/CategoryFilter';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
-import { ProductsGridSkeleton } from '@/shared/components/Skeletons';
 import { GridIcon, RefreshIcon } from '@/shared/components/icons';
 import {
   ProductFilters,
   ProductSearchBar,
   ActiveFilters,
   ProductGrid,
+  ProductsGridSkeleton,
 } from '@/features/products/components';
 import styles from './ProductsPage.module.css';
 

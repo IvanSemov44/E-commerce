@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';
 import Button from '@/shared/components/ui/Button';
-import OrderTotalsDisplay from '@/shared/components/OrderTotalsDisplay/OrderTotalsDisplay';
+import OrderTotalsDisplay from '@/features/orders/components/OrderTotalsDisplay/OrderTotalsDisplay';
 import styles from './CartSummary.module.css';
 
 interface CartSummaryProps {

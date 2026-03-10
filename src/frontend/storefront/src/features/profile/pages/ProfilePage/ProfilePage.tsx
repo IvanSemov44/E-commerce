@@ -3,11 +3,11 @@ import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import Card from '@/shared/components/ui/Card';
 import PageHeader from '@/shared/components/PageHeader';
 import ErrorAlert from '@/shared/components/ErrorAlert';
-import { ProfileSkeleton } from '@/shared/components/Skeletons';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import ProfileForm from '@/features/profile/components/ProfileForm';
 import ProfileMessages from '@/features/profile/components/ProfileMessages';
 import AccountDetails from '@/features/profile/components/AccountDetails';
+import ProfileSkeleton from '@/features/profile/components/ProfileSkeleton';
 import styles from './ProfilePage.module.css';
 
 export default function ProfilePage() {

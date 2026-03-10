@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import ProtectedRoute from '@/shared/components/ProtectedRoute';
+import ProtectedRoute from '@/app/ProtectedRoute';
 
 // Eagerly load critical pages (home, login, register)
 import Home from '@/pages/HomePage/HomePage';

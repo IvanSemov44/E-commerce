@@ -1,4 +1,4 @@
-import OrderTotalsDisplay from '@/shared/components/OrderTotalsDisplay/OrderTotalsDisplay';
+import OrderTotalsDisplay from '@/features/orders/components/OrderTotalsDisplay/OrderTotalsDisplay';
 import type { OrderTotalsProps } from './OrderTotals.types';
 
 export default function OrderTotals({

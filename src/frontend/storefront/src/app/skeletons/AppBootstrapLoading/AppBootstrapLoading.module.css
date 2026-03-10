@@ -1,0 +1,15 @@
+.topBarDelay {
+  opacity: 0;
+  animation: show-loader 0s linear var(--bootstrap-top-bar-delay, 150ms) forwards;
+}
+
+.fullFallbackDelay {
+  opacity: 0;
+  animation: show-loader 0s linear var(--bootstrap-full-fallback-delay, 900ms) forwards;
+}
+
+@keyframes show-loader {
+  to {
+    opacity: 1;
+  }
+}

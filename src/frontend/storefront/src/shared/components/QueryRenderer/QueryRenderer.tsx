@@ -1,6 +1,6 @@
 import ErrorAlert from '../ErrorAlert';
-import LoadingSkeleton from '../LoadingSkeleton';
-import EmptyState from '../EmptyState';
+import QueryRendererSkeleton from './QueryRendererSkeleton/QueryRendererSkeleton';
+import EmptyState from '../ui/EmptyState';
 
 // Default isEmpty function (defined outside component to prevent recreation on every render)
 const defaultIsEmpty = <T,>(data: T): boolean =>
@@ -46,7 +46,7 @@ export default function QueryRenderer<T>({
       return <>{loadingSkeleton.custom}</>;
     }
 
-    return <LoadingSkeleton count={loadingSkeleton.count} type={loadingSkeleton.type} />;
+    return <QueryRendererSkeleton count={loadingSkeleton.count} type={loadingSkeleton.type} />;
   }
 
   if (!data || isEmpty(data)) {

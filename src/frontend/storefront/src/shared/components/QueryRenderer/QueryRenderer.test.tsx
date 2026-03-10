@@ -6,7 +6,7 @@ vi.mock('../ErrorAlert', () => ({
   default: ({ message }: { message: string }) => <div data-testid="error-alert">{message}</div>,
 }));
 
-vi.mock('../LoadingSkeleton', () => ({
+vi.mock('./QueryRendererSkeleton/QueryRendererSkeleton', () => ({
   default: ({ count, type }: { count?: number; type?: string }) => (
     <div data-testid="loading-skeleton">{`${count ?? 'none'}-${type ?? 'none'}`}</div>
   ),

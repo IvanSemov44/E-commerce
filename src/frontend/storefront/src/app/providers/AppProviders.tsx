@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import ToastContainer from '@/shared/components/Toast/ToastContainer';
-import CookieConsent from '@/shared/components/CookieConsent';
-import ErrorBoundary from '@/shared/components/ErrorBoundary';
+import ToastContainer from '@/app/Toast/ToastContainer';
+import CookieConsent from '@/app/CookieConsent';
+import ErrorBoundary from '@/app/ErrorBoundary';
 import { store } from '@/shared/lib/store';
 import { ThemeProvider } from './ThemeProvider';
 

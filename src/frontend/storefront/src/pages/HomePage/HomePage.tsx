@@ -11,7 +11,7 @@ import type { Product } from '@/shared/types';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { withQuery } from '@/shared/lib/routing';
 import Button from '@/shared/components/ui/Button';
-import { ProductCard } from '@/features/products/components';
+import { ProductCard, ProductsGridSkeleton } from '@/features/products/components';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import TrustSignals from '@/shared/components/TrustSignals';
@@ -155,6 +155,7 @@ export default function HomePage() {
           isLoading={isLoading}
           error={error}
           data={featured?.items}
+          loadingSkeleton={{ custom: <ProductsGridSkeleton count={10} /> }}
           errorMessage={t('products.failedToLoadProducts')}
           emptyState={{
             icon: <GridIcon />,

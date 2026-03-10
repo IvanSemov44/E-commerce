@@ -3,6 +3,7 @@ import { usePerformanceMonitor } from '@/shared/hooks';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { LocationIcon } from '@/shared/components/icons';
 import Card from '@/shared/components/ui/Card';
+import Button from '@/shared/components/ui/Button';
 import EmptyState from '@/shared/components/ui/EmptyState';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import TrustSignals from '@/shared/components/TrustSignals';
@@ -49,8 +50,11 @@ export default function CheckoutPage() {
             icon="cart"
             title={t('cart.emptyCart')}
             description={t('checkout.addItemsBeforeCheckout')}
-            actionLabel={t('products.browseProducts')}
-            onAction={() => (window.location.href = '/products')}
+            action={
+              <Button onClick={() => (window.location.href = '/products')}>
+                {t('products.browseProducts')}
+              </Button>
+            }
           />
         </div>
       </div>
