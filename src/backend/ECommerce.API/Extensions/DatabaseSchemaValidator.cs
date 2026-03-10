@@ -156,8 +156,8 @@ public static class DatabaseSchemaValidator
     {
         command.CommandText = $@"
             SELECT EXISTS (
-                SELECT 1 FROM information_schema.tables 
-                WHERE table_schema = 'public' 
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = 'public'
                 AND table_name = '{tableName}'
             )";
 
@@ -169,9 +169,9 @@ public static class DatabaseSchemaValidator
     {
         command.CommandText = $@"
             SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns 
+                SELECT 1 FROM information_schema.columns
                 WHERE table_schema = 'public'
-                AND table_name = '{tableName}' 
+                AND table_name = '{tableName}'
                 AND column_name = '{columnName}'
             )";
 
