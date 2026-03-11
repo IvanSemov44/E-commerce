@@ -1,0 +1,2 @@
+/* Re-export shared styles from Header */
+@import '../Header/Header.module.css';

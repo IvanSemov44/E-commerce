@@ -11,7 +11,7 @@ import {
   DocumentIcon,
 } from '@/shared/components/icons';
 import { ThemeToggle } from '@/app/ThemeToggle';
-import styles from '../Header.module.css';
+import styles from './HeaderMobileMenu.module.css';
 
 interface HeaderMobileMenuProps {
   isAuthenticated: boolean;

@@ -3,7 +3,7 @@ import { useRef, useEffect } from 'react';
 import type { AuthUser } from '@/features/auth/slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { ChevronDownIcon, UserIcon, LogoutIcon } from '@/shared/components/icons';
-import styles from '../Header.module.css';
+import styles from './HeaderUserMenu.module.css';
 
 interface HeaderUserMenuProps {
   user: AuthUser | null;
