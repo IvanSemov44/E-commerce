@@ -9,9 +9,9 @@ import Button from '@/shared/components/ui/Button';
 import { ThemeToggle } from '@/app/ThemeToggle';
 import { LanguageSwitcher } from '@/app/LanguageSwitcher';
 import { SearchBar } from '@/app/SearchBar';
-import HeaderUserMenu from './HeaderUserMenu';
-import HeaderMobileMenu from './HeaderMobileMenu';
-import { useHeaderData } from './useHeaderData';
+import HeaderUserMenu from '../HeaderUserMenu';
+import HeaderMobileMenu from '../HeaderMobileMenu';
+import { useHeaderData } from '../useHeaderData';
 import styles from '../Header.module.css';
 
 export default function Header() {
@@ -25,15 +25,9 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = (onClose: () => void) => {
     dispatch(logout());
-    setUserMenuOpen(false);
-    navigate(ROUTE_PATHS.home);
-  };
-
-  const handleMobileLogout = () => {
-    dispatch(logout());
-    setMobileMenuOpen(false);
+    onClose();
     navigate(ROUTE_PATHS.home);
   };
 
@@ -96,7 +90,7 @@ export default function Header() {
                 isOpen={userMenuOpen}
                 onToggle={() => setUserMenuOpen((open) => !open)}
                 onClose={() => setUserMenuOpen(false)}
-                onLogout={handleLogout}
+                onLogout={() => handleLogout(() => setUserMenuOpen(false))}
               />
             ) : (
               <div className={styles.authButtons}>
@@ -134,7 +128,7 @@ export default function Header() {
           cartItemCount={cartItemCount}
           wishlistItemCount={wishlistItemCount}
           onClose={() => setMobileMenuOpen(false)}
-          onLogout={handleMobileLogout}
+          onLogout={() => handleLogout(() => setMobileMenuOpen(false))}
         />
       )}
     </header>
