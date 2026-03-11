@@ -10,3 +10,5 @@
 
 export { default as Header } from './header/Header';
 export { default as Footer } from './footer/Footer';
+export { default as HeaderMobileMenu } from './header/HeaderMobileMenu';
+export { default as HeaderUserMenu } from './header/HeaderUserMenu';
