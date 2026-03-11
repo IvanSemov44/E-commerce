@@ -1,12 +1,13 @@
-import Card from '../ui/Card';
-import ErrorAlert from '../ErrorAlert';
+import Card from '@/shared/components/ui/Card';
+import EmptyState from '@/shared/components/ui/EmptyState';
+import ErrorAlert from '@/shared/components/ErrorAlert';
 import StarRating from '../StarRating';
-import { Skeleton, SkeletonLabelRow } from '@/shared/components/Skeletons';
+import ReviewSkeleton from '../ReviewSkeleton';
 import { useTranslation } from 'react-i18next';
 
 import styles from './ReviewList.module.css';
 
-export interface Review {
+interface Review {
   id: string;
   title?: string;
   comment?: string;
@@ -26,30 +27,7 @@ export default function ReviewList({ reviews, isLoading, error }: ReviewListProp
   const { t } = useTranslation();
 
   if (isLoading) {
-    return (
-      <div className={styles.grid}>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} variant="bordered" padding="lg">
-            <SkeletonLabelRow
-              items={[
-                { width: '55%', height: 16 },
-                { width: 90, height: 14 },
-              ]}
-            />
-            <Skeleton width="100%" height={12} variant="rounded" animation="wave" />
-            <Skeleton width="90%" height={12} variant="rounded" animation="wave" />
-            <Skeleton width="70%" height={12} variant="rounded" animation="wave" />
-            <SkeletonLabelRow
-              items={[
-                { width: '28%', height: 12 },
-                { width: '18%', height: 12 },
-              ]}
-              between={false}
-            />
-          </Card>
-        ))}
-      </div>
-    );
+    return <ReviewSkeleton />;
   }
 
   if (error) {
@@ -57,7 +35,7 @@ export default function ReviewList({ reviews, isLoading, error }: ReviewListProp
   }
 
   if (reviews.length === 0) {
-    return <div className={styles.emptyState}>{t('products.noReviewsYet')}</div>;
+    return <EmptyState icon="orders" title={t('products.noReviewsYet')} />;
   }
 
   return (

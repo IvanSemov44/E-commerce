@@ -4,7 +4,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import Button from '../ui/Button';
+import Button from '@/shared/components/ui/Button';
 import styles from './ErrorPage.module.css';
 
 interface ErrorPageProps {

@@ -39,7 +39,7 @@ export default function EmptyState({ icon, title, description, action }: EmptySt
     typeof icon === 'string' ? getPresetIcon(icon as EmptyStateIcon) : (icon ?? null);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-testid="empty-state">
       {renderedIcon && <div className={styles.iconWrapper}>{renderedIcon}</div>}
       <h2 className={styles.title}>{title}</h2>
       {description && <p className={styles.description}>{description}</p>}

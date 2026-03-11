@@ -98,7 +98,7 @@ describe('QueryRenderer', () => {
       </QueryRenderer>
     );
 
-    expect(screen.getByTestId('empty-state')).toHaveTextContent('No items:Try again later');
+    expect(screen.getByTestId('empty-state')).toHaveTextContent('No itemsTry again later');
   });
 
   it('uses custom isEmpty function', () => {

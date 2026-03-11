@@ -1,19 +1,40 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import ReviewList, { type Review } from './ReviewList';
+import ReviewList from './ReviewList';
 
-vi.mock('../ui/Card', () => ({
+vi.mock('@/shared/components/ui/Card', () => ({
   default: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="card">{children}</div>
   ),
 }));
 
-vi.mock('../ErrorAlert', () => ({
+vi.mock('@/shared/components/ErrorAlert', () => ({
   default: ({ message }: { message: string }) => <div data-testid="error-alert">{message}</div>,
+}));
+
+vi.mock('@/shared/components/ui/EmptyState', () => ({
+  default: ({ title }: { title: string }) => <div data-testid="empty-state">{title}</div>,
 }));
 
 vi.mock('../StarRating', () => ({
   default: ({ rating }: { rating: number }) => <div data-testid="star-rating">{rating}</div>,
+}));
+
+vi.mock('../ReviewSkeleton', () => ({
+  default: () => <div data-testid="review-skeleton">Loading...</div>,
+}));
+
+vi.mock('@/shared/components/Skeletons', () => ({
+  Skeleton: ({
+    height,
+    width,
+    className,
+  }: {
+    height?: number | string;
+    width?: number | string;
+    className?: string;
+  }) => <span data-testid="skeleton" style={{ height, width }} className={className} />,
+  SkeletonLabelRow: () => <div data-testid="skeleton-label-row" />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -22,7 +43,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const reviews: Review[] = [
+const reviews = [
   {
     id: '1',
     title: 'Great',
@@ -36,7 +57,11 @@ const reviews: Review[] = [
 describe('ReviewList', () => {
   it('shows loading state', () => {
     render(<ReviewList reviews={[]} isLoading />);
-    expect(screen.getByText('products.loadingReviews')).toBeInTheDocument();
+    // When loading, the component renders skeleton cards
+    const skeletons = screen.getAllByTestId('skeleton');
+    expect(skeletons.length).toBeGreaterThan(0);
+    const skeletonRows = screen.getAllByTestId('skeleton-label-row');
+    expect(skeletonRows.length).toBeGreaterThan(0);
   });
 
   it('shows error state', () => {

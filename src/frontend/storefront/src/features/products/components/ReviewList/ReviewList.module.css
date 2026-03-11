@@ -50,9 +50,3 @@
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
-
-.emptyState {
-  color: var(--text-muted);
-  text-align: center;
-  padding: var(--space-8);
-}

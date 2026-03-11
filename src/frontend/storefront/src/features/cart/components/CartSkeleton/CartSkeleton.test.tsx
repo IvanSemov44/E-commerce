@@ -42,8 +42,11 @@ describe('CartSkeleton', () => {
 
   it('renders summary rows', () => {
     const { container } = render(<CartSkeleton />);
-    const summaryRows = container.querySelectorAll('[class*="summaryRow"]');
-    expect(summaryRows.length).toBeGreaterThanOrEqual(2);
+    const cartSummary = container.querySelector('[class*="cartSummary"]');
+    expect(cartSummary).toBeInTheDocument();
+    // Verify there are skeleton elements in the summary
+    const skeletons = cartSummary?.querySelectorAll('span[class*="skeleton"]');
+    expect(skeletons?.length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders multiple skeleton elements', () => {

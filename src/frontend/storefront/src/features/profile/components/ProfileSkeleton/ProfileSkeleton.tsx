@@ -1,4 +1,4 @@
-import Skeleton from '@/shared/components/Skeletons';
+import { Skeleton } from '@/shared/components/Skeletons';
 import styles from './ProfileSkeleton.module.css';
 
 export default function ProfileSkeleton() {

@@ -85,7 +85,14 @@
       "Read(//tmp/**)",
       "Bash(npm test -- --run --reporter=verbose)",
       "Bash(npm test -- --run)",
-      "Bash(npm test -- --run src/hooks/useForm.test.ts)"
+      "Bash(npm test -- --run src/hooks/useForm.test.ts)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/ivans/Desktop/Dev/E-commerce/src/frontend/storefront/src/features/$f/**)",
+      "Bash(sort find:*)",
+      "Bash(for dir:*)",
+      "Bash(do)",
+      "Read(//c/Users/ivans/Desktop/Dev/E-commerce/src/frontend/storefront/src/app/**)"
     ]
   }
 }
