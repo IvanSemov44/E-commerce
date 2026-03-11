@@ -1,2 +1,139 @@
-/* Re-export shared styles from Header */
-@import '../Header/Header.module.css';
+.userMenuWrapper {
+  position: relative;
+}
+
+.userButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.userButton:hover {
+  background-color: var(--surface-secondary);
+}
+
+.userAvatar {
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: var(--text-inverse, #ffffff);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+}
+
+.userName {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+}
+
+.dropdownIcon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-muted);
+  transition: transform var(--duration-200) var(--ease-out);
+}
+
+.userButton[aria-expanded='true'] .dropdownIcon {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-2));
+  min-width: 14rem;
+  background-color: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+  animation: fadeInDown var(--duration-200) var(--ease-out);
+  z-index: var(--z-dropdown);
+}
+
+.dropdownHeader {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+  background-color: var(--surface-secondary);
+}
+
+.dropdownHeaderLabel {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-weight: var(--font-medium);
+}
+
+.dropdownHeaderName {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-top: var(--space-1);
+}
+
+.dropdownHeaderEmail {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-0-5);
+}
+
+.dropdownContent {
+  padding: var(--space-2);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.dropdownItem:hover {
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
+}
+
+.dropdownItem svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-theme='dark'] .userButton:hover {
+  background-color: var(--color-neutral-800);
+}
+
+[data-theme='dark'] .userAvatar {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
+}

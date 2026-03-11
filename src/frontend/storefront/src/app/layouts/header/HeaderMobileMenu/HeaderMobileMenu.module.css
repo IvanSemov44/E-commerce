@@ -1,2 +1,202 @@
-/* Re-export shared styles from Header */
-@import '../Header/Header.module.css';
+.mobileMenu {
+  display: block;
+  border-top: 1px solid var(--border-default);
+  background-color: var(--surface-primary);
+  animation: slideDown var(--duration-200) var(--ease-out);
+}
+
+@media (min-width: 1024px) {
+  .mobileMenu {
+    display: none;
+  }
+}
+
+.mobileMenuContent {
+  max-width: var(--container-2xl);
+  margin: 0 auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mobileNavLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  font-size: var(--text-base);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-colors);
+  text-align: left;
+  width: 100%;
+}
+
+.mobileNavLink:hover {
+  background-color: var(--surface-secondary);
+  color: var(--color-brand);
+}
+
+.mobileNavLink svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.mobileNavContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.mobileDivider {
+  height: 1px;
+  background-color: var(--border-default);
+  margin: var(--space-2) 0;
+}
+
+.mobileThemeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.mobileThemeLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+.mobileUserInfo {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-secondary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2);
+}
+
+.mobileUserLabel {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-1);
+}
+
+.mobileUserName {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-0-5);
+}
+
+.mobileUserEmail {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.mobileAuthButtons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.mobileSignInLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  font-size: var(--text-base);
+  text-align: center;
+  text-decoration: none;
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.mobileSignInLink:hover {
+  border-color: var(--border-hover);
+  background-color: var(--surface-secondary);
+}
+
+.mobileSignUpLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-inverse, #ffffff);
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  font-size: var(--text-base);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-transform), var(--transition-shadow);
+}
+
+.mobileSignUpLink:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-primary);
+}
+
+.mobileLogoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-error-50);
+  color: var(--color-error-600);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.mobileLogoutButton:hover {
+  background-color: var(--color-error-100);
+}
+
+.badgeWrapper {
+  margin-left: auto;
+}
+
+.badgeWrapper .cartBadge {
+  position: static;
+  margin-left: var(--space-2);
+  animation: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-theme='dark'] .mobileMenu {
+  background-color: var(--color-neutral-900);
+}
