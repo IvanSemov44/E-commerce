@@ -17,3 +17,4 @@ export { default as CategoryFilter } from './CategoryFilter';
 // Skeletons
 export { default as ProductSkeleton } from './ProductSkeleton/ProductSkeleton';
 export { default as ProductsGridSkeleton } from './ProductsGridSkeleton/ProductsGridSkeleton';
+export { default as ReviewSkeleton } from './ReviewSkeleton/ReviewSkeleton';

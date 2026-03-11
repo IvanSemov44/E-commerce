@@ -2,7 +2,7 @@ import Card from '@/shared/components/ui/Card';
 import EmptyState from '@/shared/components/ui/EmptyState';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import StarRating from '../StarRating';
-import ReviewSkeleton from '../ReviewSkeleton';
+import { ReviewSkeleton } from '@/features/products/components';
 import { useTranslation } from 'react-i18next';
 
 import styles from './ReviewList.module.css';

@@ -20,8 +20,8 @@ vi.mock('../StarRating', () => ({
   default: ({ rating }: { rating: number }) => <div data-testid="star-rating">{rating}</div>,
 }));
 
-vi.mock('../ReviewSkeleton', () => ({
-  default: () => <div data-testid="review-skeleton">Loading...</div>,
+vi.mock('@/features/products/components', () => ({
+  ReviewSkeleton: () => <div data-testid="review-skeleton">Loading...</div>,
 }));
 
 vi.mock('@/shared/components/Skeletons', () => ({

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import ReviewSkeleton from './ReviewSkeleton';
+import { ReviewSkeleton } from '@/features/products/components';
 
 describe('ReviewSkeleton', () => {
   it('renders grid container', () => {

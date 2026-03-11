@@ -40,6 +40,7 @@ Define where loading UI lives, how it is composed, and which component to reach 
 |---|---|
 | `ProductSkeleton` | `features/products/components/ProductSkeleton/` |
 | `ProductsGridSkeleton` | `features/products/components/ProductsGridSkeleton/` |
+| `ReviewSkeleton` | `features/products/components/ReviewSkeleton/` |
 | `CartSkeleton` | `features/cart/components/CartSkeleton/` |
 | `ProfileSkeleton` | `features/profile/components/ProfileSkeleton/` |
 | `WishlistSkeleton` | `features/wishlist/components/WishlistSkeleton/` |
