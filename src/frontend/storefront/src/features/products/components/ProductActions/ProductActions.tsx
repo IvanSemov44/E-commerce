@@ -24,6 +24,12 @@ interface ProductActionsProps {
   onDismissError: () => void;
 }
 
+function getAddToCartLabel(stockQuantity: number, addedToCart: boolean): string {
+  if (stockQuantity === 0) return 'Out of Stock';
+  if (addedToCart) return '✓ Added to Cart!';
+  return 'Add to Cart';
+}
+
 export default function ProductActions({
   stockQuantity,
   lowStockThreshold,
@@ -99,7 +105,7 @@ export default function ProductActions({
           disabled={stockQuantity === 0 || addedToCart || addingToCartBackend}
           size="lg"
         >
-          {stockQuantity === 0 ? 'Out of Stock' : addedToCart ? '✓ Added to Cart!' : 'Add to Cart'}
+          {getAddToCartLabel(stockQuantity, addedToCart)}
         </Button>
 
         {isAuthenticated && (

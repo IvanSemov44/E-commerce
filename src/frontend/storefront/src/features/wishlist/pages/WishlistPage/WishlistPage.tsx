@@ -1,6 +1,6 @@
 // WishlistPage - User's wishlist page
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { HeartIcon, ImageIcon, CloseIcon } from '@/shared/components/icons';
 import {
   useGetWishlistQuery,

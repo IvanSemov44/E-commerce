@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import { reactRouter } from '@react-router/dev/vite';
- 
+
 // @ts-expect-error - rollup-plugin-visualizer has no type declarations
 import visualizer from 'rollup-plugin-visualizer';
 import path from 'path';
@@ -46,7 +46,6 @@ export default defineConfig({
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router', 'react-router-dom'],
           'vendor-redux': ['@reduxjs/toolkit', 'react-redux'],
-          'vendor-axios': ['axios'],
         },
       },
     },
@@ -61,7 +60,6 @@ export default defineConfig({
       'react-router-dom',
       '@reduxjs/toolkit',
       'react-redux',
-      'axios',
     ],
   },
 });

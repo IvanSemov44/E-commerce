@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useResetPasswordMutation } from '../api/authApi';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';

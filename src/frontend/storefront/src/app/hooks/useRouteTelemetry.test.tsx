@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useRouteTelemetry } from './useRouteTelemetry';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import type { ReactNode } from 'react';
 
 vi.mock('@/shared/lib/utils/telemetry', () => ({

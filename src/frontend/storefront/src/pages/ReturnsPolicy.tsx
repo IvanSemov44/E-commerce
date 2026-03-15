@@ -1,5 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';

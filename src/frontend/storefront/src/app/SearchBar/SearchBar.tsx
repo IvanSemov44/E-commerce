@@ -1,5 +1,5 @@
 import { useState, useRef, useId, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { SearchIcon, CloseIcon } from '@/shared/components/icons';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { useProductSearch } from './hooks/useProductSearch';

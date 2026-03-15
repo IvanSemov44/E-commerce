@@ -60,7 +60,11 @@
     "signOut": "Изход",
     "profile": "Профил",
     "settings": "Настройки",
-    "appearance": "В външен вид"
+    "appearance": "В външен вид",
+    "loggedInAs": "Влязъл като",
+    "myProfile": "Моят профил",
+    "toggleMenu": "Превключи меню",
+    "userMenu": "Потребителско меню"
   },
   "theme": {
     "title": "В външен вид",

@@ -2,7 +2,7 @@
  * Error Page - Fallback UI displayed when error boundary catches an error
  */
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Button from '@/shared/components/ui/Button';
 import styles from './ErrorPage.module.css';

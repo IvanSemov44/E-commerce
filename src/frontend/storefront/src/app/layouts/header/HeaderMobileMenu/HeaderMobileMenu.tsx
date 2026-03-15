@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import type { AuthUser } from '@/features/auth/slices/authSlice';
 import { MOBILE_NAV_ITEMS, ROUTE_PATHS } from '@/shared/constants/navigation';
@@ -92,28 +92,28 @@ export default function HeaderMobileMenu({
         {isAuthenticated ? (
           <>
             <div className={styles.mobileUserInfo}>
-              <p className={styles.mobileUserLabel}>Logged in as</p>
+              <p className={styles.mobileUserLabel}>{t('nav.loggedInAs')}</p>
               <p className={styles.mobileUserName}>{user?.firstName}</p>
               <p className={styles.mobileUserEmail}>{user?.email}</p>
             </div>
             <Link to={ROUTE_PATHS.profile} onClick={onClose} className={styles.mobileNavLink}>
               <div className={styles.mobileNavContent}>
                 <UserIcon />
-                My Profile
+                {t('nav.myProfile')}
               </div>
             </Link>
             <button onClick={onLogout} className={styles.mobileLogoutButton}>
               <LogoutIcon />
-              Logout
+              {t('nav.signOut')}
             </button>
           </>
         ) : (
           <div className={styles.mobileAuthButtons}>
             <Link to={ROUTE_PATHS.login} onClick={onClose} className={styles.mobileSignInLink}>
-              Sign In
+              {t('nav.signIn')}
             </Link>
             <Link to={ROUTE_PATHS.register} onClick={onClose} className={styles.mobileSignUpLink}>
-              Sign Up
+              {t('nav.signUp')}
             </Link>
           </div>
         )}

@@ -11,6 +11,14 @@
 import { useEffect } from 'react';
 import { logger } from '@/shared/lib/utils/logger';
 
+// Google Web Vitals thresholds — https://web.dev/vitals/
+const THRESHOLDS = {
+  LCP: { good: 2500, poor: 4000 },
+  FID: { good: 100, poor: 300 },
+  CLS: { good: 0.1, poor: 0.25 },
+  FCP: { good: 1800, poor: 3000 },
+} as const;
+
 interface PerformanceMetric {
   name: string;
   value: number;
@@ -67,7 +75,12 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
           const metric: PerformanceMetric = {
             name: 'Largest Contentful Paint (LCP)',
             value: value,
-            rating: value < 2500 ? 'good' : value < 4000 ? 'needs-improvement' : 'poor',
+            rating:
+              value < THRESHOLDS.LCP.good
+                ? 'good'
+                : value < THRESHOLDS.LCP.poor
+                  ? 'needs-improvement'
+                  : 'poor',
             timestamp: Date.now(),
           };
 
@@ -92,7 +105,12 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
             const metric: PerformanceMetric = {
               name: 'First Input Delay (FID)',
               value: delay,
-              rating: delay < 100 ? 'good' : delay < 300 ? 'needs-improvement' : 'poor',
+              rating:
+                delay < THRESHOLDS.FID.good
+                  ? 'good'
+                  : delay < THRESHOLDS.FID.poor
+                    ? 'needs-improvement'
+                    : 'poor',
               timestamp: Date.now(),
             };
 
@@ -121,7 +139,12 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
               const metric: PerformanceMetric = {
                 name: 'Cumulative Layout Shift (CLS)',
                 value: clsValue,
-                rating: clsValue < 0.1 ? 'good' : clsValue < 0.25 ? 'needs-improvement' : 'poor',
+                rating:
+                  clsValue < THRESHOLDS.CLS.good
+                    ? 'good'
+                    : clsValue < THRESHOLDS.CLS.poor
+                      ? 'needs-improvement'
+                      : 'poor',
                 timestamp: Date.now(),
               };
 
@@ -150,9 +173,9 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
               name: 'First Contentful Paint (FCP)',
               value: fcpEntry.startTime,
               rating:
-                fcpEntry.startTime < 1800
+                fcpEntry.startTime < THRESHOLDS.FCP.good
                   ? 'good'
-                  : fcpEntry.startTime < 3000
+                  : fcpEntry.startTime < THRESHOLDS.FCP.poor
                     ? 'needs-improvement'
                     : 'poor',
               timestamp: Date.now(),

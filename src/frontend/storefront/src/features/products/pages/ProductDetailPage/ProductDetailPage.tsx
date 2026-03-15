@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { usePerformanceMonitor } from '@/shared/hooks';
 
 import useProductDetails from '@/features/products/hooks/useProductDetails';

@@ -5,7 +5,7 @@
  * - For guests: Shows guest checkout info with sign in prompt
  */
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import { logout } from '@/features/auth/slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';

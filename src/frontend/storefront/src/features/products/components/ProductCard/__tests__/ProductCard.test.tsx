@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import { configureStore } from '@reduxjs/toolkit';
 import ProductCard from '../ProductCard';
 import { cartReducer } from '@/features/cart/slices/cartSlice';

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import Card from '@/shared/components/ui/Card';

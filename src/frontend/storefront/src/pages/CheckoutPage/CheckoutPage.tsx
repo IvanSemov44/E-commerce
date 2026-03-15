@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { usePerformanceMonitor } from '@/shared/hooks';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { LocationIcon } from '@/shared/components/icons';

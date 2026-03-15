@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useAppSelector } from '@/shared/lib/store';
 import { SpinnerIcon, PlusIcon, HeartIcon, StarIcon } from '@/shared/components/icons';
 import {

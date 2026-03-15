@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router';
 import { selectAuthStatus } from '@/features/auth/slices/authSlice';
 import { useAppSelector } from '@/shared/lib/store';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';

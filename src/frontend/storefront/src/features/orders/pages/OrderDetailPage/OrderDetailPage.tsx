@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/features/orders/api/ordersApi';
 import { useApiErrorHandler } from '@/shared/hooks';

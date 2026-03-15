@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
@@ -100,7 +100,7 @@ export default function Header() {
                   </Button>
                 </Link>
                 <Link to={ROUTE_PATHS.register}>
-                  <Button size="sm">Sign Up</Button>
+                  <Button size="sm">{t('nav.signUp')}</Button>
                 </Link>
               </div>
             )}
@@ -109,7 +109,7 @@ export default function Header() {
           <button
             onClick={() => setMobileMenuOpen((open) => !open)}
             className={styles.mobileMenuButton}
-            aria-label="Toggle menu"
+            aria-label={t('nav.toggleMenu')}
             aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (

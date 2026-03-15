@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuthUser } from '@/features/auth/slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { ChevronDownIcon, UserIcon, LogoutIcon } from '@/shared/components/icons';
@@ -20,6 +21,7 @@ export default function HeaderUserMenu({
   onClose,
   onLogout,
 }: HeaderUserMenuProps) {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function HeaderUserMenu({
         onClick={onToggle}
         className={styles.userButton}
         aria-expanded={isOpen}
-        aria-label="User menu"
+        aria-label={t('nav.userMenu')}
       >
         <div className={styles.userAvatar}>{user?.firstName?.charAt(0).toUpperCase() ?? 'U'}</div>
         <span className={styles.userName}>{user?.firstName}</span>
@@ -53,18 +55,18 @@ export default function HeaderUserMenu({
       {isOpen && (
         <div className={styles.dropdownMenu}>
           <div className={styles.dropdownHeader}>
-            <p className={styles.dropdownHeaderLabel}>Account</p>
+            <p className={styles.dropdownHeaderLabel}>{t('nav.account')}</p>
             <p className={styles.dropdownHeaderName}>{user?.firstName}</p>
             <p className={styles.dropdownHeaderEmail}>{user?.email}</p>
           </div>
           <div className={styles.dropdownContent}>
             <Link to={ROUTE_PATHS.profile} onClick={onClose} className={styles.dropdownItem}>
               <UserIcon className={styles.dropdownIcon} />
-              My Profile
+              {t('nav.myProfile')}
             </Link>
             <button onClick={onLogout} className={styles.dropdownItem}>
               <LogoutIcon />
-              Logout
+              {t('nav.signOut')}
             </button>
           </div>
         </div>

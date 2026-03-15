@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';

@@ -32,8 +32,6 @@ export function useNewsletterSubscription({
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       const subscribers = JSON.parse(localStorage.getItem(NEWSLETTER_SUBSCRIBERS_KEY) || '[]');
       if (!subscribers.includes(email)) {
         subscribers.push(email);

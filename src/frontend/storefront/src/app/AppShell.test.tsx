@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import AppShell from './AppShell';
 vi.mock('@/app/AnnouncementBar', () => ({
   default: () => <div data-testid="announcement-bar">AnnouncementBar</div>,

@@ -60,7 +60,11 @@
     "signOut": "Sign Out",
     "profile": "Profile",
     "settings": "Settings",
-    "appearance": "Appearance"
+    "appearance": "Appearance",
+    "loggedInAs": "Logged in as",
+    "myProfile": "My Profile",
+    "toggleMenu": "Toggle menu",
+    "userMenu": "User menu"
   },
   "theme": {
     "title": "Appearance",
