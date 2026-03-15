@@ -1,18 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
+import type { ActiveFiltersProps } from './ActiveFilters.types';
 import styles from './ActiveFilters.module.css';
 
-interface ActiveFiltersProps {
-  search: string;
-  categorySelected: boolean;
-  minPrice: number | undefined;
-  maxPrice: number | undefined;
-  minRating: number | undefined;
-  isFeatured: boolean | undefined;
-  onClearAll: () => void;
-}
-
-export default function ActiveFilters({
+export function ActiveFilters({
   search,
   categorySelected,
   minPrice,

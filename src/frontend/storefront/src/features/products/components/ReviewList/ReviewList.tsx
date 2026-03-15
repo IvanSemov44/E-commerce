@@ -1,7 +1,7 @@
 import { Card } from '@/shared/components/ui/Card';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import ErrorAlert from '@/shared/components/ErrorAlert';
-import StarRating from '../StarRating';
+import { StarRating } from '../StarRating';
 import { ReviewSkeleton } from '@/features/products/components';
 import { useTranslation } from 'react-i18next';
 
@@ -20,10 +20,9 @@ interface ReviewListProps {
   reviews: Review[];
   isLoading?: boolean;
   error?: unknown;
-  onReviewDeleted?: () => void;
 }
 
-export default function ReviewList({ reviews, isLoading, error }: ReviewListProps) {
+export function ReviewList({ reviews, isLoading, error }: ReviewListProps) {
   const { t } = useTranslation();
 
   if (isLoading) {

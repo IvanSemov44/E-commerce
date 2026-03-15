@@ -8,7 +8,7 @@ interface ProductSearchBarProps {
   onSortChange: (value: string) => void;
 }
 
-export default function ProductSearchBar({
+export function ProductSearchBar({
   searchValue,
   sortBy,
   onSearchChange,

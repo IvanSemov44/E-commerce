@@ -5,4 +5,4 @@ export type {
   ProductFiltersActions,
   UseProductFiltersReturn,
 } from './useProductFilters';
-export { default as useProductDetails } from './useProductDetails';
+export { useProductDetails } from './useProductDetails';

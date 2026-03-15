@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import ReviewForm from './ReviewForm';
+import { ReviewForm } from './ReviewForm';
 
 const unwrapMock = vi.fn();
 const createReviewMock = vi.fn(() => ({ unwrap: unwrapMock }));

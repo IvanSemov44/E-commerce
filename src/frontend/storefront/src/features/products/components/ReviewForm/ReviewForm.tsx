@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useApiErrorHandler } from '@/shared/hooks';
 import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/ui/Card';
-import StarRating from '../StarRating';
+import { StarRating } from '../StarRating';
 
 import styles from './ReviewForm.module.css';
 
@@ -13,7 +13,7 @@ interface ReviewFormProps {
   onSuccess?: () => void;
 }
 
-export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
+export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');

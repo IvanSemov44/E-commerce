@@ -8,7 +8,7 @@ interface StarRatingProps {
   readonly?: boolean;
 }
 
-export default function StarRating({
+export function StarRating({
   rating,
   maxStars = 5,
   onRatingChange,

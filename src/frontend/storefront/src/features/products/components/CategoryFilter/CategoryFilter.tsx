@@ -7,10 +7,7 @@ interface CategoryFilterProps {
   onSelectCategory: (categoryId?: string) => void;
 }
 
-export default function CategoryFilter({
-  selectedCategoryId,
-  onSelectCategory,
-}: CategoryFilterProps) {
+export function CategoryFilter({ selectedCategoryId, onSelectCategory }: CategoryFilterProps) {
   const { data: categories, isLoading, error } = useGetTopLevelCategoriesQuery();
   const { t } = useTranslation();
 

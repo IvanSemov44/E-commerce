@@ -1,7 +1,7 @@
 import { Skeleton } from '@/shared/components/Skeletons';
 import styles from './ProductSkeleton.module.css';
 
-export default function ProductSkeleton() {
+export function ProductSkeleton() {
   return (
     <div className={styles.productCard}>
       <Skeleton height={250} className={styles.productImage} />

@@ -1,20 +1,20 @@
 // Product Components
-export { default as ProductCard } from './ProductCard/ProductCard';
-export { default as ProductGrid } from './ProductGrid/ProductGrid';
-export { default as ProductFilters } from './ProductFilters/ProductFilters';
-export { default as ProductSearchBar } from './ProductSearchBar/ProductSearchBar';
-export { default as ActiveFilters } from './ActiveFilters/ActiveFilters';
-export { default as ProductImageGallery } from './ProductImageGallery/ProductImageGallery';
-export { default as ProductInfo } from './ProductInfo/ProductInfo';
-export { default as ProductActions } from './ProductActions/ProductActions';
+export { ProductCard } from './ProductCard';
+export { ProductGrid } from './ProductGrid';
+export { ProductFilters } from './ProductFilters';
+export { ProductSearchBar } from './ProductSearchBar/ProductSearchBar';
+export { ActiveFilters } from './ActiveFilters';
+export { ProductImageGallery } from './ProductImageGallery/ProductImageGallery';
+export { ProductInfo } from './ProductInfo/ProductInfo';
+export { ProductActions } from './ProductActions';
 
 // Review & Rating Components
-export { default as ReviewForm } from './ReviewForm';
-export { default as ReviewList } from './ReviewList';
-export { default as StarRating } from './StarRating';
-export { default as CategoryFilter } from './CategoryFilter';
+export { ReviewForm } from './ReviewForm';
+export { ReviewList } from './ReviewList';
+export { StarRating } from './StarRating';
+export { CategoryFilter } from './CategoryFilter/CategoryFilter';
 
 // Skeletons
-export { default as ProductSkeleton } from './ProductSkeleton/ProductSkeleton';
-export { default as ProductsGridSkeleton } from './ProductsGridSkeleton/ProductsGridSkeleton';
-export { default as ReviewSkeleton } from './ReviewSkeleton/ReviewSkeleton';
+export { ProductSkeleton } from './ProductSkeleton';
+export { ProductsGridSkeleton } from './ProductsGridSkeleton';
+export { ReviewSkeleton } from './ReviewSkeleton';

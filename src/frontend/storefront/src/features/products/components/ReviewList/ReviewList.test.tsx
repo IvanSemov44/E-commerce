@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import ReviewList from './ReviewList';
+import { ReviewList } from './ReviewList';
 
 vi.mock('@/shared/components/ui/Card', () => ({
   default: ({ children }: { children: React.ReactNode }) => (

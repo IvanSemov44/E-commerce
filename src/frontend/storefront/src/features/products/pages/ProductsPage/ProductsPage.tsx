@@ -3,7 +3,7 @@ import { usePerformanceMonitor } from '@/shared/hooks';
 import { useGetProductsQuery } from '@/features/products/api/productApi';
 import { useProductFilters } from '@/features/products/hooks/useProductFilters';
 import { Button } from '@/shared/components/ui/Button';
-import CategoryFilter from '@/features/products/components/CategoryFilter';
+import { CategoryFilter } from '@/features/products/components/CategoryFilter';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { GridIcon, RefreshIcon } from '@/shared/components/icons';
@@ -16,7 +16,7 @@ import {
 } from '@/features/products/components';
 import styles from './ProductsPage.module.css';
 
-export default function ProductsPage() {
+export function ProductsPage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
   const {

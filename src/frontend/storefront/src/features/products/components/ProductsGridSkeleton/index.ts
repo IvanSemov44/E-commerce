@@ -1,1 +1,1 @@
-export { default } from './ProductsGridSkeleton';
+export { ProductsGridSkeleton } from './ProductsGridSkeleton';

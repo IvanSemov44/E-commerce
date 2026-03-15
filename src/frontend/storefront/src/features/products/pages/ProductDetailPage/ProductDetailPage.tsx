@@ -4,8 +4,8 @@ import { usePerformanceMonitor } from '@/shared/hooks';
 import useProductDetails from '@/features/products/hooks/useProductDetails';
 import { Card } from '@/shared/components/ui/Card';
 import QueryRenderer from '@/shared/components/QueryRenderer';
-import ReviewForm from '@/features/products/components/ReviewForm';
-import ReviewList from '@/features/products/components/ReviewList';
+import { ReviewForm } from '@/features/products/components/ReviewForm';
+import { ReviewList } from '@/features/products/components/ReviewList';
 import {
   ProductImageGallery,
   ProductInfo,
@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 import styles from './ProductDetailPage.module.css';
 
-export default function ProductDetailPage() {
+export function ProductDetailPage() {
   usePerformanceMonitor();
   const { slug = '' } = useParams();
   const { t } = useTranslation();
@@ -117,7 +117,6 @@ export default function ProductDetailPage() {
                   reviews={reviews || []}
                   isLoading={reviewsLoading}
                   error={reviewsError}
-                  onReviewDeleted={() => refetchReviews()}
                 />
               </div>
             </Card>

@@ -1,1 +1,1 @@
-export { default } from './ReviewSkeleton';
+export { ReviewSkeleton } from './ReviewSkeleton';

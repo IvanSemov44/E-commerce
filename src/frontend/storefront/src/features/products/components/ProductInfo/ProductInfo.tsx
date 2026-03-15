@@ -10,7 +10,7 @@ interface ProductInfoProps {
   compareAtPrice?: number;
 }
 
-export default function ProductInfo({
+export function ProductInfo({
   name,
   description,
   averageRating,

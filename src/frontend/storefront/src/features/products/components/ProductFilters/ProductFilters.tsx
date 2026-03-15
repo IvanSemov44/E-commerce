@@ -1,18 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import type { ProductFiltersProps } from './ProductFilters.types';
 import styles from './ProductFilters.module.css';
 
-interface ProductFiltersProps {
-  minPrice: number | undefined;
-  maxPrice: number | undefined;
-  minRating: number | undefined;
-  isFeatured: boolean | undefined;
-  onMinPriceChange: (value: number | undefined) => void;
-  onMaxPriceChange: (value: number | undefined) => void;
-  onMinRatingChange: (value: number | undefined) => void;
-  onIsFeaturedChange: (value: boolean | undefined) => void;
-}
-
-export default function ProductFilters({
+export function ProductFilters({
   minPrice,
   maxPrice,
   minRating,

@@ -1,5 +1,5 @@
 import { Skeleton } from '@/shared/components/Skeletons';
-import ProductSkeleton from '@/features/products/components/ProductSkeleton/ProductSkeleton';
+import { ProductSkeleton } from '@/features/products/components/ProductSkeleton/ProductSkeleton';
 import styles from './QueryRendererSkeleton.module.css';
 
 interface QueryRendererSkeletonProps {

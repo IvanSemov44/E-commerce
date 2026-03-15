@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import StarRating from './StarRating';
+import { StarRating } from './StarRating';
 
 describe('StarRating', () => {
   it('renders five stars by default', () => {

@@ -11,7 +11,7 @@ import { addItem, selectCartItemById } from '@/features/cart/slices/cartSlice';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { logger } from '@/shared/lib/utils/logger';
 
-export default function useProductDetails(slug: string) {
+export function useProductDetails(slug: string) {
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [quantity, setQuantity] = useState(1);

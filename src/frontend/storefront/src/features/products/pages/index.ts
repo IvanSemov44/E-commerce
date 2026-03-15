@@ -1,3 +1,2 @@
-// Product Pages
-export { default as ProductsPage } from './ProductsPage/ProductsPage';
-export { default as ProductDetailPage } from './ProductDetailPage/ProductDetailPage';
+export { ProductsPage } from './ProductsPage/ProductsPage';
+export { ProductDetailPage } from './ProductDetailPage/ProductDetailPage';
