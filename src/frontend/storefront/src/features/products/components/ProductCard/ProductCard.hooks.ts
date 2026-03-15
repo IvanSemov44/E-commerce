@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { useAppDispatch } from '@/shared/lib/store';
+import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
 import { useApiErrorHandler, useToast } from '@/shared/hooks';
 import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
@@ -13,7 +13,6 @@ import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 
 interface UseWishlistToggleParams {
   id: string;
-  isAuthenticated: boolean;
   isInWishlist: boolean;
   isWishlistLoading: boolean;
 }
@@ -23,10 +22,10 @@ interface UseWishlistToggleParams {
  */
 export function useWishlistToggle({
   id,
-  isAuthenticated,
   isInWishlist,
   isWishlistLoading,
 }: UseWishlistToggleParams) {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const { handleError } = useApiErrorHandler();
@@ -80,7 +79,6 @@ interface UseAddToCartParams {
   imageUrl: string;
   stockQuantity: number;
   isInStock: boolean;
-  isAuthenticated: boolean;
   setIsAddingToCart: (value: boolean) => void;
 }
 
@@ -95,9 +93,9 @@ export function useAddToCart({
   imageUrl,
   stockQuantity,
   isInStock,
-  isAuthenticated,
   setIsAddingToCart,
 }: UseAddToCartParams) {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const [addToCartBackend] = useAddToCartMutation();
   const { handleError } = useApiErrorHandler();

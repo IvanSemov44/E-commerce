@@ -19,7 +19,6 @@ export interface WishlistState {
 export interface ProductActionsProps {
   stockQuantity: number;
   lowStockThreshold: number;
-  isAuthenticated: boolean;
   cart: CartState;
   wishlist: WishlistState;
   onQuantityChange: (quantity: number) => void;

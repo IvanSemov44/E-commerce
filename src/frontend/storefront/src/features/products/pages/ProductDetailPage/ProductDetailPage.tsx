@@ -82,7 +82,6 @@ export function ProductDetailPage() {
                   <ProductActions
                     stockQuantity={product.stockQuantity}
                     lowStockThreshold={product.lowStockThreshold}
-                    isAuthenticated={isAuthenticated}
                     cart={{
                       quantity,
                       cartItem,

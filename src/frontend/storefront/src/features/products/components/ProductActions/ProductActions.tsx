@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
+import { useAppSelector } from '@/shared/lib/store';
 import type { ProductActionsProps } from './ProductActions.types';
 import { isInStock, isStockLow } from './ProductActions.utils';
 import styles from './ProductActions.module.css';
@@ -8,7 +9,6 @@ import styles from './ProductActions.module.css';
 export function ProductActions({
   stockQuantity,
   lowStockThreshold,
-  isAuthenticated,
   cart,
   wishlist,
   onQuantityChange,
@@ -16,6 +16,7 @@ export function ProductActions({
   onToggleWishlist,
   onDismissError,
 }: ProductActionsProps) {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const {
     quantity,
     cartItem,

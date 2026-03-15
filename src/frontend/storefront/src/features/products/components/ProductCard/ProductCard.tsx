@@ -64,7 +64,6 @@ export const ProductCard = memo(function ProductCard({
   // Custom hooks
   const { handleWishlistToggle } = useWishlistToggle({
     id,
-    isAuthenticated,
     isInWishlist,
     isWishlistLoading,
   });
@@ -77,7 +76,6 @@ export const ProductCard = memo(function ProductCard({
     imageUrl,
     stockQuantity,
     isInStock,
-    isAuthenticated,
     setIsAddingToCart,
   });
 
