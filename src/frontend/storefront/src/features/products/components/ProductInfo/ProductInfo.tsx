@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './ProductInfo.module.css';
 
@@ -18,6 +19,7 @@ export function ProductInfo({
   price,
   compareAtPrice,
 }: ProductInfoProps) {
+  const { t } = useTranslation();
   return (
     <div className={styles.info}>
       <h1 className={styles.name}>{name}</h1>
@@ -27,7 +29,9 @@ export function ProductInfo({
           <span className={styles.ratingIcon}>★</span>
           <span className={styles.ratingValue}>{averageRating}</span>
         </div>
-        <span className={styles.ratingCount}>({reviewCount} reviews)</span>
+        <span className={styles.ratingCount}>
+          {t('products.reviewCount', { count: reviewCount })}
+        </span>
       </div>
 
       <div className={styles.priceSection}>

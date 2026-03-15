@@ -1,13 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import type { ProductActionsProps } from './ProductActions.types';
-import {
-  isInStock,
-  isStockLow,
-  getStockStatusMessage,
-  getAddToCartButtonText,
-  getWishlistButtonText,
-} from './ProductActions.utils';
+import { isInStock, isStockLow } from './ProductActions.utils';
 import styles from './ProductActions.module.css';
 
 export function ProductActions({
@@ -29,6 +24,7 @@ export function ProductActions({
     error: cartError,
   } = cart;
   const { isInWishlist, isAdding: addingToWishlist, isRemoving: removingFromWishlist } = wishlist;
+  const { t } = useTranslation();
 
   return (
     <div className={styles.actions}>
@@ -36,15 +32,19 @@ export function ProductActions({
         <p
           className={`${styles.stockLabel} ${isInStock(stockQuantity) ? styles.inStock : styles.outOfStock}`}
         >
-          {getStockStatusMessage(stockQuantity)}
+          {stockQuantity === 0
+            ? t('common.outOfStock')
+            : t('products.inStockCount', { count: stockQuantity })}
         </p>
         {isStockLow(stockQuantity, lowStockThreshold) && (
-          <p className={styles.lowStockWarning}>⚠ Only {stockQuantity} left!</p>
+          <p className={styles.lowStockWarning}>
+            {t('products.lowStockWarning', { count: stockQuantity })}
+          </p>
         )}
       </div>
 
       <div className={styles.quantitySection}>
-        <label className={styles.quantityLabel}>Quantity:</label>
+        <label className={styles.quantityLabel}>{t('productDetail.quantity')}:</label>
         <div className={styles.quantityControls}>
           <div className={styles.quantityButtonGroup}>
             <button
@@ -72,7 +72,11 @@ export function ProductActions({
               +
             </button>
           </div>
-          {cartItem && <span className={styles.cartHint}>({cartItem.quantity} in cart)</span>}
+          {cartItem && (
+            <span className={styles.cartHint}>
+              ({cartItem.quantity} {t('productDetail.inCart')})
+            </span>
+          )}
         </div>
       </div>
 
@@ -88,7 +92,11 @@ export function ProductActions({
           disabled={!isInStock(stockQuantity) || addedToCart || addingToCartBackend}
           size="lg"
         >
-          {getAddToCartButtonText(stockQuantity, addedToCart)}
+          {stockQuantity === 0
+            ? t('common.outOfStock')
+            : addedToCart
+              ? t('products.addedToCartSuccess')
+              : t('products.addToCart')}
         </Button>
 
         {isAuthenticated && (
@@ -98,7 +106,7 @@ export function ProductActions({
             onClick={onToggleWishlist}
             disabled={addingToWishlist || removingFromWishlist}
           >
-            {getWishlistButtonText(isInWishlist)}
+            {isInWishlist ? t('products.inWishlist') : t('products.addToWishlist')}
           </Button>
         )}
       </div>

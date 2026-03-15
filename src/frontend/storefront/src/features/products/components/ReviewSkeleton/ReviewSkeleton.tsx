@@ -1,11 +1,12 @@
 import { Skeleton, SkeletonLabelRow } from '@/shared/components/Skeletons';
 import { Card } from '@/shared/components/ui/Card';
+import { REVIEW_SKELETON_COUNT } from '@/features/products/constants';
 import styles from './ReviewSkeleton.module.css';
 
 export function ReviewSkeleton() {
   return (
     <div className={styles.grid}>
-      {Array.from({ length: 3 }).map((_, i) => (
+      {Array.from({ length: REVIEW_SKELETON_COUNT }).map((_, i) => (
         <Card key={i} variant="bordered" padding="lg">
           <SkeletonLabelRow
             items={[

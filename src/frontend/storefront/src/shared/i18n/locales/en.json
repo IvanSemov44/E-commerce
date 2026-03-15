@@ -157,7 +157,19 @@
     "rating5": "5 Stars",
     "stars": "stars",
     "categorySelected": "Category",
-    "search": "Search"
+    "search": "Search",
+    "featuredOnly": "Featured Only",
+    "inStockCount": "{{count}} in stock",
+    "lowStockWarning": "⚠ Only {{count}} left!",
+    "inWishlist": "♥ In Wishlist",
+    "addedToCartSuccess": "✓ Added to Cart!",
+    "soldOut": "Sold Out",
+    "review_one": "{{count}} review",
+    "review_other": "{{count}} reviews",
+    "reviewCount_one": "({{count}} review)",
+    "reviewCount_other": "({{count}} reviews)",
+    "stockLimitError": "Only {{available}} items available. You already have {{inCart}} in cart.",
+    "addToCartError": "Failed to add item to cart. Please try again."
   },
   "productDetail": {
     "quantity": "Quantity",

@@ -1,5 +1,9 @@
 import type { Product, ProductDetail, PaginatedResult, ApiResponse } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
+import {
+  DEFAULT_PRODUCTS_PAGE_SIZE,
+  FEATURED_PRODUCTS_PAGE_SIZE,
+} from '@/features/products/constants';
 
 const productApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -20,7 +24,7 @@ const productApiSlice = baseApi.injectEndpoints({
     >({
       query: ({
         page = 1,
-        pageSize = 20,
+        pageSize = DEFAULT_PRODUCTS_PAGE_SIZE,
         categoryId,
         search,
         minPrice,
@@ -48,7 +52,7 @@ const productApiSlice = baseApi.injectEndpoints({
           items: [],
           totalCount: 0,
           page: 1,
-          pageSize: 20,
+          pageSize: DEFAULT_PRODUCTS_PAGE_SIZE,
           totalPages: 0,
           hasNext: false,
           hasPrevious: false,
@@ -72,16 +76,17 @@ const productApiSlice = baseApi.injectEndpoints({
       { page?: number; pageSize?: number } | void
     >({
       query: (args) => {
-        const page = args?.page ?? 1;
-        const pageSize = args?.pageSize ?? 10;
-        return `/products/featured?page=${page}&pageSize=${pageSize}`;
+        const params = new URLSearchParams();
+        params.set('page', (args?.page ?? 1).toString());
+        params.set('pageSize', (args?.pageSize ?? FEATURED_PRODUCTS_PAGE_SIZE).toString());
+        return `/products/featured?${params}`;
       },
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>
         response.data || {
           items: [],
           totalCount: 0,
           page: 1,
-          pageSize: 10,
+          pageSize: FEATURED_PRODUCTS_PAGE_SIZE,
           totalPages: 0,
           hasNext: false,
           hasPrevious: false,

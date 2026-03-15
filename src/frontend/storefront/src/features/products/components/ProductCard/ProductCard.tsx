@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '@/shared/lib/store';
 import { SpinnerIcon, PlusIcon, HeartIcon, StarIcon } from '@/shared/components/icons';
 import {
@@ -35,6 +36,7 @@ export const ProductCard = memo(function ProductCard({
   reviewCount = 0,
   stockQuantity = 99,
 }: ProductCardProps) {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [imageError, setImageError] = useState(false);
@@ -131,7 +133,7 @@ export const ProductCard = memo(function ProductCard({
 
           {!isInStock && (
             <div className={styles.outOfStockOverlay}>
-              <span>Sold Out</span>
+              <span>{t('products.soldOut')}</span>
             </div>
           )}
 
@@ -173,9 +175,7 @@ export const ProductCard = memo(function ProductCard({
           </div>
 
           {rating > 0 && reviewCount > 0 && (
-            <p className={styles.reviewCount}>
-              {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
-            </p>
+            <p className={styles.reviewCount}>{t('products.review', { count: reviewCount })}</p>
           )}
         </div>
       </Link>

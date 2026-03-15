@@ -14,6 +14,7 @@ import {
   ProductGrid,
   ProductsGridSkeleton,
 } from '@/features/products/components';
+import { PRODUCTS_PAGE_SIZE } from '@/features/products/constants';
 import styles from './ProductsPage.module.css';
 
 export function ProductsPage() {
@@ -48,7 +49,7 @@ export function ProductsPage() {
     error,
   } = useGetProductsQuery({
     page,
-    pageSize: 12,
+    pageSize: PRODUCTS_PAGE_SIZE,
     categoryId: selectedCategoryId,
     search: debouncedSearch,
     minPrice,
@@ -123,7 +124,7 @@ export function ProductsPage() {
             data={result}
             errorMessage={t('products.failedToLoadProducts')}
             isEmpty={(data) => !data || data.items.length === 0}
-            loadingSkeleton={{ custom: <ProductsGridSkeleton count={12} /> }}
+            loadingSkeleton={{ custom: <ProductsGridSkeleton count={PRODUCTS_PAGE_SIZE} /> }}
             emptyState={{
               icon: <GridIcon />,
               title: hasActiveFilters
@@ -140,7 +141,7 @@ export function ProductsPage() {
                 products={data.items}
                 totalCount={data.totalCount}
                 currentPage={page}
-                pageSize={12}
+                pageSize={PRODUCTS_PAGE_SIZE}
                 onPageChange={setPage}
               />
             )}

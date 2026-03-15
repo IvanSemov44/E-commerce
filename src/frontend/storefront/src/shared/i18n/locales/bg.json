@@ -157,7 +157,19 @@
     "rating5": "5 звезди",
     "stars": "звезди",
     "categorySelected": "Категория",
-    "search": "Търсене"
+    "search": "Търсене",
+    "featuredOnly": "Само препоръчани",
+    "inStockCount": "{{count}} в наличност",
+    "lowStockWarning": "⚠ Остават само {{count}}!",
+    "inWishlist": "♥ В любими",
+    "addedToCartSuccess": "✓ Добавено в количката!",
+    "soldOut": "Изчерпан",
+    "review_one": "{{count}} отзив",
+    "review_other": "{{count}} отзива",
+    "reviewCount_one": "({{count}} отзив)",
+    "reviewCount_other": "({{count}} отзива)",
+    "stockLimitError": "Налични са само {{available}} бр. Вече имате {{inCart}} в количката.",
+    "addToCartError": "Неуспешно добавяне в количката. Моля, опитайте отново."
   },
   "productDetail": {
     "quantity": "Количество",

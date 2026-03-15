@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGetProductBySlugQuery, useGetProductReviewsQuery } from '@/features/products/api';
 import {
   useAddToWishlistMutation,
@@ -9,10 +10,12 @@ import { useAddToCartMutation } from '@/features/cart/api';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import { addItem, selectCartItemById } from '@/features/cart/slices/cartSlice';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
+import { ADDED_TO_CART_RESET_MS } from '@/features/products/constants';
 import { logger } from '@/shared/lib/utils/logger';
 
 export function useProductDetails(slug: string) {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -75,7 +78,7 @@ export function useProductDetails(slug: string) {
 
     if (totalQuantity > product.stockQuantity) {
       setCartError(
-        `Only ${product.stockQuantity} items available. You already have ${currentInCart} in cart.`
+        t('products.stockLimitError', { available: product.stockQuantity, inCart: currentInCart })
       );
       return;
     }
@@ -104,14 +107,13 @@ export function useProductDetails(slug: string) {
       }
 
       setAddedToCart(true);
-      setTimeout(() => setAddedToCart(false), 2000);
+      setTimeout(() => setAddedToCart(false), ADDED_TO_CART_RESET_MS);
       setQuantity(1);
     } catch (error: unknown) {
       logger.error('useProductDetails', 'Failed to add to cart', error);
       // Parse backend error message
       const err = error as { data?: { message?: string }; message?: string };
-      const errorMessage =
-        err?.data?.message || err?.message || 'Failed to add item to cart. Please try again.';
+      const errorMessage = err?.data?.message || err?.message || t('products.addToCartError');
       setCartError(errorMessage);
     }
   };
