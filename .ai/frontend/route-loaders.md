@@ -3,8 +3,10 @@
 Updated: 2026-03-15
 Owner: @ivans
 
-> Applies after completing `.ai/workflows/rr7-framework-migration.md`.
-> In Library Mode (current) there are no loaders — skip this doc until migration is done.
+> **SPA Mode constraint:** This project runs with `ssr: false` in `react-router.config.ts`.
+> Route `loader` exports are **not supported in SPA mode** — the framework will error at build time.
+> Loaders only become available if/when SSR is enabled (`ssr: true`).
+> Until then, auth guards and redirects stay as component-level logic in layout files (see `_protected.tsx`).
 
 ---
 
