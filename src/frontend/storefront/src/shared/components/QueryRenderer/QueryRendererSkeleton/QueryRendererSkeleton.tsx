@@ -1,4 +1,4 @@
-import Skeleton from '@/shared/components/Skeletons';
+import { Skeleton } from '@/shared/components/Skeletons';
 import ProductSkeleton from '@/features/products/components/ProductSkeleton/ProductSkeleton';
 import styles from './QueryRendererSkeleton.module.css';
 

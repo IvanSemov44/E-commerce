@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FOOTER_SECTIONS } from '@/shared/constants/navigation';
 import { FOOTER_SOCIAL_LINKS } from './socialLinks';
 import { useNewsletterSubscription } from './useNewsletterSubscription';
-import styles from '../Footer.module.css';
+import styles from './Footer.module.css';
 
 export default function Footer() {
   const { t } = useTranslation();

@@ -75,7 +75,7 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
           logMetric(metric);
         });
 
-        observer.observe({ entryTypes: ['largest-contentful-paint'], buffered: true });
+        observer.observe({ type: 'largest-contentful-paint', buffered: true });
         return () => observer.disconnect();
       } catch {
         logger.warn('usePerformanceMonitor', 'LCP monitoring not supported');
@@ -105,7 +105,7 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
           }
         });
 
-        observer.observe({ entryTypes: ['first-input'], buffered: true });
+        observer.observe({ type: 'first-input', buffered: true });
         return () => observer.disconnect();
       } catch {
         logger.warn('usePerformanceMonitor', 'FID monitoring not supported');
@@ -135,7 +135,7 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
           }
         });
 
-        observer.observe({ entryTypes: ['layout-shift'], buffered: true });
+        observer.observe({ type: 'layout-shift', buffered: true });
         return () => observer.disconnect();
       } catch {
         logger.warn('usePerformanceMonitor', 'CLS monitoring not supported');
@@ -167,7 +167,7 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
           }
         });
 
-        observer.observe({ entryTypes: ['paint'], buffered: true });
+        observer.observe({ type: 'paint', buffered: true });
         return () => observer.disconnect();
       } catch {
         logger.warn('usePerformanceMonitor', 'FCP monitoring not supported');

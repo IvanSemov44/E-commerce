@@ -12,7 +12,7 @@ import { SearchBar } from '@/app/SearchBar';
 import HeaderUserMenu from '../HeaderUserMenu';
 import HeaderMobileMenu from '../HeaderMobileMenu';
 import { useHeaderData } from '../useHeaderData';
-import styles from '../Header.module.css';
+import styles from './Header.module.css';
 
 export default function Header() {
   const { t } = useTranslation();
