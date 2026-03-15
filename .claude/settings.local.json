@@ -92,7 +92,12 @@
       "Bash(sort find:*)",
       "Bash(for dir:*)",
       "Bash(do)",
-      "Read(//c/Users/ivans/Desktop/Dev/E-commerce/src/frontend/storefront/src/app/**)"
+      "Read(//c/Users/ivans/Desktop/Dev/E-commerce/src/frontend/storefront/src/app/**)",
+      "Bash(npx prettier:*)",
+      "Bash(npm run:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vitest:*)",
+      "Read(//c/Users/ivans/Desktop/Dev/E-commerce/**)"
     ]
   }
 }

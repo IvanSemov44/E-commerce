@@ -15,6 +15,7 @@ This is the canonical AI documentation for this repository. All assistant-specif
 6. Read `.ai/workflows/troubleshooting.md` when investigating failures.
 7. Read `.ai/backend/error-handling.md` before touching service/controller logic.
 8. Read `.ai/reference/common-mistakes.md` before writing code.
+9. Read `.ai/workflows/post-modification-checks.md` — run after every code change.
 
 ## By Task
 - Understand architecture decisions and boundaries:
@@ -33,6 +34,8 @@ This is the canonical AI documentation for this repository. All assistant-specif
   - `.ai/workflows/deployment.md`
 - Debug failures quickly:
   - `.ai/workflows/troubleshooting.md`
+- **Verify code after any modification:**
+  - `.ai/workflows/post-modification-checks.md`
 - Update/maintain AI docs:
   - `.ai/standards/documentation.md`
 - Apply coding/security/review standards:

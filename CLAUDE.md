@@ -11,6 +11,7 @@ Start here for this repository.
 6. `.ai/workflows/troubleshooting.md`
 7. `.ai/backend/error-handling.md`
 8. `.ai/reference/common-mistakes.md`
+9. `.ai/workflows/post-modification-checks.md` (run after every code change)
 
 ## Critical Rules (Do Not Violate)
 - Follow Clean Architecture direction: API -> Application -> Core, Infrastructure -> Core/Application.
