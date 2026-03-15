@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
-import { logout, selectCurrentUser, selectIsAuthenticated } from '@/features/auth/slices/authSlice';
+import { logout, selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import { HEADER_NAV_ITEMS, ROUTE_PATHS } from '@/shared/constants/navigation';
 import { HeartIcon, ShoppingCartIcon, MenuIcon, CloseIcon } from '@/shared/components/icons';
 import { Button } from '@/shared/components/ui/Button';
@@ -19,8 +19,7 @@ export default function Header() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const user = useAppSelector(selectCurrentUser);
-  const { cartItemCount, wishlistItemCount } = useHeaderData(isAuthenticated);
+  const { cartItemCount, wishlistItemCount } = useHeaderData();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -86,7 +85,6 @@ export default function Header() {
 
             {isAuthenticated ? (
               <HeaderUserMenu
-                user={user}
                 isOpen={userMenuOpen}
                 onToggle={() => setUserMenuOpen((open) => !open)}
                 onClose={() => setUserMenuOpen(false)}
@@ -123,10 +121,6 @@ export default function Header() {
 
       {mobileMenuOpen && (
         <HeaderMobileMenu
-          isAuthenticated={isAuthenticated}
-          user={user}
-          cartItemCount={cartItemCount}
-          wishlistItemCount={wishlistItemCount}
           onClose={() => setMobileMenuOpen(false)}
           onLogout={() => handleLogout(() => setMobileMenuOpen(false))}
         />

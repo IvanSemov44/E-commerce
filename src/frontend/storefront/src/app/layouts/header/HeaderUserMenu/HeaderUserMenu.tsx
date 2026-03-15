@@ -1,13 +1,13 @@
 import { Link } from 'react-router';
 import { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AuthUser } from '@/features/auth/slices/authSlice';
+import { useAppSelector } from '@/shared/lib/store';
+import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { ChevronDownIcon, UserIcon, LogoutIcon } from '@/shared/components/icons';
 import styles from './HeaderUserMenu.module.css';
 
 interface HeaderUserMenuProps {
-  user: AuthUser | null;
   isOpen: boolean;
   onToggle: () => void;
   onClose: () => void;
@@ -15,12 +15,12 @@ interface HeaderUserMenuProps {
 }
 
 export default function HeaderUserMenu({
-  user,
   isOpen,
   onToggle,
   onClose,
   onLogout,
 }: HeaderUserMenuProps) {
+  const user = useAppSelector(selectCurrentUser);
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 

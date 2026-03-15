@@ -37,7 +37,6 @@ export default function CheckoutPage() {
     total,
     errors,
     handleSubmit,
-    isAuthenticated,
     isGuestOrder,
     paymentMethod,
     setPaymentMethod,
@@ -97,7 +96,6 @@ export default function CheckoutPage() {
                 errors={errors}
                 onFormDataChange={setFormData}
                 onSubmit={handleSubmit}
-                isAuthenticated={isAuthenticated}
                 selectedPaymentMethod={paymentMethod}
                 onPaymentMethodChange={setPaymentMethod}
               />

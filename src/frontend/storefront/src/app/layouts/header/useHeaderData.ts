@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { useAppSelector } from '@/shared/lib/store';
 import { selectCartItemCount } from '@/features/cart/slices/cartSlice';
+import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import { useGetCartQuery } from '@/features/cart/api/cartApi';
 import { useGetWishlistQuery } from '@/features/wishlist/api/wishlistApi';
 
-export function useHeaderData(isAuthenticated: boolean) {
+export function useHeaderData() {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const localCartItemCount = useAppSelector(selectCartItemCount);
 
   const { data: backendCart } = useGetCartQuery(undefined, {

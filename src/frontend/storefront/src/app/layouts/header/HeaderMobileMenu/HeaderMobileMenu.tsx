@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import type { AuthUser } from '@/features/auth/slices/authSlice';
+import { useAppSelector } from '@/shared/lib/store';
+import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import { MOBILE_NAV_ITEMS, ROUTE_PATHS } from '@/shared/constants/navigation';
 import {
   HeartIcon,
@@ -11,25 +12,18 @@ import {
   DocumentIcon,
 } from '@/shared/components/icons';
 import { ThemeToggle } from '@/app/ThemeToggle';
+import { useHeaderData } from '../useHeaderData';
 import styles from './HeaderMobileMenu.module.css';
 
 interface HeaderMobileMenuProps {
-  isAuthenticated: boolean;
-  user: AuthUser | null;
-  cartItemCount: number;
-  wishlistItemCount: number;
   onClose: () => void;
   onLogout: () => void;
 }
 
-export default function HeaderMobileMenu({
-  isAuthenticated,
-  user,
-  cartItemCount,
-  wishlistItemCount,
-  onClose,
-  onLogout,
-}: HeaderMobileMenuProps) {
+export default function HeaderMobileMenu({ onClose, onLogout }: HeaderMobileMenuProps) {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const user = useAppSelector(selectCurrentUser);
+  const { cartItemCount, wishlistItemCount } = useHeaderData();
   const { t } = useTranslation();
 
   const getMobileIcon = (icon: (typeof MOBILE_NAV_ITEMS)[number]['icon']) => {
