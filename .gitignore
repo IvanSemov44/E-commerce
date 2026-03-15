@@ -74,4 +74,7 @@ References/
 /chapter-25-sorting/
 .LSOverride
 
-.fake
+.fakesrc/frontend/storefront/.react-router/
+
+# React Router generated types
+.react-router/

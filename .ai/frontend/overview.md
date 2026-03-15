@@ -7,10 +7,12 @@ Owner: @ivans
 Quick orientation for storefront/admin frontend architecture.
 
 ## Architecture Snapshot
-- React 19 + TypeScript + Vite.
+- React 19 + TypeScript + Vite 7.
+- React Router v7 (Library Mode now; Framework Mode migration planned).
 - Server state via RTK Query (`baseApi.injectEndpoints`).
 - Redux slices for UI/local state only.
 - Shared API base with auth refresh and telemetry in storefront.
+- Auth guards: `<ProtectedRoute>` wrapper now; route `loader` + `redirect()` after migration.
 
 ## Non-Negotiable Rules
 - Do not use manual `fetch` in feature components for API workflows.
@@ -27,5 +29,7 @@ Quick orientation for storefront/admin frontend architecture.
 
 ## Read Next
 - `.ai/frontend/redux.md`
+- `.ai/frontend/routing.md`
+- `.ai/frontend/route-loaders.md`
 - `.ai/workflows/adding-feature.md`
 - `.ai/reference/common-mistakes.md`

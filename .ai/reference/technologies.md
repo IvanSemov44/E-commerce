@@ -11,10 +11,11 @@ Owner: @ivans
 - AutoMapper
 
 ## Frontend
-- React
+- React 19
 - TypeScript
 - Redux Toolkit + RTK Query
-- Vite
+- React Router v7 (Library Mode now; Framework Mode migration planned — see `.ai/workflows/rr7-framework-migration.md`)
+- Vite 7
 - CSS Modules
 
 ## Tooling and Ops

@@ -18,8 +18,12 @@ Implement features in a consistent order so backend and frontend stay aligned wi
 1. Add/extend feature API via `baseApi.injectEndpoints(...)`.
 2. Add or update slice only for UI state (server state stays in RTK Query).
 3. Build/extend page and feature components.
-4. Handle loading/error states (`isLoading`, `useApiErrorHandler`, query result checks).
-5. Add/update tests (slice/component/e2e as needed).
+4. Register the route:
+   - **Library Mode (current):** add `<Route>` entry in `AppRoutes.tsx`.
+   - **Framework Mode (post-migration):** create a file in `src/app/routes/` — no registration step.
+   - If the route is protected, use `<ProtectedRoute>` (Library Mode) or the `_protected.*` naming convention (Framework Mode).
+5. Handle loading/error states (`isLoading`, `useApiErrorHandler`, query result checks).
+6. Add/update tests (slice/component/e2e as needed).
 
 ## Real Code References
 - Entity examples:

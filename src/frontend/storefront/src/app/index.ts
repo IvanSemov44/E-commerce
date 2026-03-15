@@ -17,8 +17,6 @@ export { default as AnnouncementBar } from './AnnouncementBar';
 export { default as CookieConsent } from './CookieConsent';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as ErrorPage } from './ErrorPage';
-export { default as ProtectedRoute } from './ProtectedRoute';
-
 // UI Utility Components (app-level)
 export { ThemeToggle } from './ThemeToggle';
 export { LanguageSwitcher } from './LanguageSwitcher';
