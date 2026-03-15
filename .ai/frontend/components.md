@@ -70,6 +70,48 @@ export function MyComponent({ title, onClose }: MyComponentProps) { ... }
 - Default only: `src/frontend/storefront/src/app/AnnouncementBar/AnnouncementBar.tsx`
 - Both (named + default): `src/frontend/storefront/src/app/LanguageSwitcher/LanguageSwitcher.tsx`
 
+## Async State Pattern — guard clauses for loading / error / empty
+
+When a component receives `isLoading`, `error`, and `data` (from RTK Query or a hook), use **three early-return guard clauses** in this order, then the happy-path return last.
+
+```tsx
+export function MyList({ items, isLoading, error }: MyListProps) {
+  if (isLoading) return <MyListSkeleton />;
+  if (error)     return <ErrorAlert message={t('ns.failedToLoad')} />;
+  if (!items.length) return <EmptyState title={t('ns.noItems')} />;
+
+  return (
+    <ul>
+      {items.map((item) => <li key={item.id}>{item.name}</li>)}
+    </ul>
+  );
+}
+```
+
+**Why this order matters**
+- `isLoading` first — RTK Query can have both `isLoading: true` and `error` simultaneously on retry; show the spinner.
+- `error` second — only reached once loading is definitely done.
+- empty-state third — only when data is confirmed present but has zero items.
+
+**When to skip the empty-state guard**
+Skip it when the component renders meaningful UI even with an empty collection (e.g. `CategoryFilter` always shows an "All Products" button, so an empty category list is still usable).
+
+**Anti-pattern — do not mix**
+```tsx
+// ❌ avoid — inconsistent: error exits early but isLoading is a ternary inside return
+if (error) return <ErrorAlert />;
+
+return (
+  <div>
+    {isLoading ? <Spinner /> : <ul>{items.map(...)}</ul>}
+  </div>
+);
+```
+
+**Real examples**
+- `src/frontend/storefront/src/features/products/components/ReviewList/ReviewList.tsx`
+- `src/frontend/storefront/src/features/products/components/CategoryFilter/CategoryFilter.tsx`
+
 ## Core Rules
 1. Components should be presentational by default.
 2. Keep API/data-fetch logic in feature API files and hooks.

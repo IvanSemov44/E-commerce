@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ProductImageGallery from './ProductImageGallery';
+import { ProductImageGallery } from './ProductImageGallery';
 import type { ProductImage } from '@/shared/types';
 
 describe('ProductImageGallery', () => {

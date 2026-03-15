@@ -3,9 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { ReviewList } from './ReviewList';
 
 vi.mock('@/shared/components/ui/Card', () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="card">{children}</div>
-  ),
+  Card: ({ children }: { children: React.ReactNode }) => <div data-testid="card">{children}</div>,
 }));
 
 vi.mock('@/shared/components/ErrorAlert', () => ({
@@ -13,11 +11,11 @@ vi.mock('@/shared/components/ErrorAlert', () => ({
 }));
 
 vi.mock('@/shared/components/ui/EmptyState', () => ({
-  default: ({ title }: { title: string }) => <div data-testid="empty-state">{title}</div>,
+  EmptyState: ({ title }: { title: string }) => <div data-testid="empty-state">{title}</div>,
 }));
 
 vi.mock('../StarRating', () => ({
-  default: ({ rating }: { rating: number }) => <div data-testid="star-rating">{rating}</div>,
+  StarRating: ({ rating }: { rating: number }) => <div data-testid="star-rating">{rating}</div>,
 }));
 
 vi.mock('@/features/products/components', () => ({
@@ -57,11 +55,7 @@ const reviews = [
 describe('ReviewList', () => {
   it('shows loading state', () => {
     render(<ReviewList reviews={[]} isLoading />);
-    // When loading, the component renders skeleton cards
-    const skeletons = screen.getAllByTestId('skeleton');
-    expect(skeletons.length).toBeGreaterThan(0);
-    const skeletonRows = screen.getAllByTestId('skeleton-label-row');
-    expect(skeletonRows.length).toBeGreaterThan(0);
+    expect(screen.getByTestId('review-skeleton')).toBeInTheDocument();
   });
 
   it('shows error state', () => {

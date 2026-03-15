@@ -11,6 +11,10 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
   const { data: categories, isLoading, error } = useGetTopLevelCategoriesQuery();
   const { t } = useTranslation();
 
+  if (isLoading) {
+    return <div className={styles.loading}>{t('products.loadingCategories')}</div>;
+  }
+
   if (error) {
     return <div className={styles.error}>{t('products.failedToLoadCategories')}</div>;
   }
@@ -18,32 +22,26 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
   return (
     <div className={styles.container}>
       <h3 className={styles.title}>{t('products.categories')}</h3>
-
-      {isLoading ? (
-        <div className={styles.loading}>{t('products.loadingCategories')}</div>
-      ) : (
-        <ul className={styles.list}>
-          <li>
+      <ul className={styles.list}>
+        <li>
+          <button
+            onClick={() => onSelectCategory(undefined)}
+            className={`${styles.categoryButton} ${!selectedCategoryId ? styles.active : ''}`}
+          >
+            {t('products.allProducts')}
+          </button>
+        </li>
+        {categories?.map((category) => (
+          <li key={category.id}>
             <button
-              onClick={() => onSelectCategory(undefined)}
-              className={`${styles.categoryButton} ${!selectedCategoryId ? styles.active : ''}`}
+              onClick={() => onSelectCategory(category.id)}
+              className={`${styles.categoryButton} ${selectedCategoryId === category.id ? styles.active : ''}`}
             >
-              {t('products.allProducts')}
+              {category.name}
             </button>
           </li>
-
-          {categories?.map((category) => (
-            <li key={category.id}>
-              <button
-                onClick={() => onSelectCategory(category.id)}
-                className={`${styles.categoryButton} ${selectedCategoryId === category.id ? styles.active : ''}`}
-              >
-                {category.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+        ))}
+      </ul>
     </div>
   );
 }

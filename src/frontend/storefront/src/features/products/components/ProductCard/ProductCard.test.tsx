@@ -1,11 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router';
-import { configureStore } from '@reduxjs/toolkit';
-import ProductCard from '../ProductCard';
-import { cartReducer } from '@/features/cart/slices/cartSlice';
-import { authSlice } from '@/features/auth/slices/authSlice';
+import { renderWithProviders } from '@/shared/lib/test/test-utils';
+import { ProductCard } from './ProductCard';
 
 // Mock the OptimizedImage component to simplify testing
 vi.mock('../../../../../components/ui/OptimizedImage', () => ({
@@ -20,7 +16,7 @@ const mockRemoveFromWishlist = vi.fn();
 const mockAddToCartBackend = vi.fn();
 const mockGetWishlist = vi.fn();
 
-vi.mock('../../../../../features/wishlist/api/wishlistApi', () => ({
+vi.mock('@/features/wishlist/api', () => ({
   useGetWishlistQuery: (...args: unknown[]) => {
     const result = mockGetWishlist(...args);
     return { data: result };
@@ -29,7 +25,7 @@ vi.mock('../../../../../features/wishlist/api/wishlistApi', () => ({
   useRemoveFromWishlistMutation: () => [mockRemoveFromWishlist, { isLoading: false }],
 }));
 
-vi.mock('../../../../../features/cart/api/cartApi', () => ({
+vi.mock('@/features/cart/api', () => ({
   useAddToCartMutation: () => [mockAddToCartBackend, { isLoading: false }],
 }));
 
@@ -46,17 +42,10 @@ describe('ProductCard', () => {
     stockQuantity: 10,
   };
 
-  const renderComponent = (product = mockProduct, isAuthenticated = false) => {
-    const store = configureStore({
-      reducer: {
-        cart: cartReducer,
-        auth: authSlice.reducer,
-      },
+  const renderComponent = (product = mockProduct, isAuthenticated = false) =>
+    renderWithProviders(<ProductCard {...product} />, {
       preloadedState: {
-        cart: {
-          items: [],
-          lastUpdated: Date.now(),
-        },
+        cart: { items: [], lastUpdated: Date.now() },
         auth: {
           isAuthenticated,
           user: isAuthenticated
@@ -74,18 +63,6 @@ describe('ProductCard', () => {
         },
       },
     });
-
-    return {
-      ...render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ProductCard {...product} />
-          </BrowserRouter>
-        </Provider>
-      ),
-      store,
-    };
-  };
 
   beforeEach(() => {
     vi.clearAllMocks();

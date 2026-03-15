@@ -24,7 +24,7 @@ describe('ReviewSkeleton', () => {
 
   it('renders skeleton label rows', () => {
     const { container } = render(<ReviewSkeleton />);
-    const labelRows = container.querySelectorAll('[class*="skeletonLabelRow"]');
+    const labelRows = container.querySelectorAll('[class*="row"]');
     expect(labelRows.length).toBeGreaterThan(0);
   });
 
@@ -32,7 +32,7 @@ describe('ReviewSkeleton', () => {
     const { container } = render(<ReviewSkeleton />);
     const skeletons = container.querySelectorAll('span[class*="skeleton"]');
     skeletons.forEach((skeleton) => {
-      expect(skeleton).toHaveAttribute('aria-hidden', 'true');
+      expect(skeleton).toHaveAttribute('aria-busy', 'true');
     });
   });
 });

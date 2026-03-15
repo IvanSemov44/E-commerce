@@ -33,7 +33,7 @@ vi.mock('../ui/Card', () => ({
 }));
 
 vi.mock('../StarRating', () => ({
-  default: ({ onRatingChange }: { onRatingChange?: (value: number) => void }) => (
+  StarRating: ({ onRatingChange }: { onRatingChange?: (value: number) => void }) => (
     <button type="button" onClick={() => onRatingChange?.(4)}>
       Set Rating
     </button>

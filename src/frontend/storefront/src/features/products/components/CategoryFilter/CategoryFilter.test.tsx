@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import CategoryFilter from './CategoryFilter';
+import { CategoryFilter } from './CategoryFilter';
 
 const getTopLevelCategoriesQueryMock = vi.fn();
 
@@ -58,5 +58,31 @@ describe('CategoryFilter', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'products.allProducts' }));
     expect(onSelectCategory).toHaveBeenCalledWith(undefined);
+  });
+
+  it('marks "All Products" button as active when no category is selected', () => {
+    getTopLevelCategoriesQueryMock.mockReturnValue({ data: [], isLoading: false, error: null });
+
+    render(<CategoryFilter onSelectCategory={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'products.allProducts' }).className).toContain(
+      'active'
+    );
+  });
+
+  it('marks the matching category button as active', () => {
+    getTopLevelCategoriesQueryMock.mockReturnValue({
+      data: [
+        { id: 'c1', name: 'Phones' },
+        { id: 'c2', name: 'Laptops' },
+      ],
+      isLoading: false,
+      error: null,
+    });
+
+    render(<CategoryFilter selectedCategoryId="c2" onSelectCategory={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Laptops' }).className).toContain('active');
+    expect(screen.getByRole('button', { name: 'Phones' }).className).not.toContain('active');
   });
 });

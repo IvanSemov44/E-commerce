@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
-import ActiveFilters from './ActiveFilters';
+import { ActiveFilters } from './ActiveFilters';
 import type { ActiveFiltersProps } from './ActiveFilters.types';
 
 const defaultProps: ActiveFiltersProps = {

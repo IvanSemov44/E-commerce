@@ -2,18 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
-import useProductDetails from '../useProductDetails';
+import { useProductDetails } from '../useProductDetails';
 
 // Mock API hooks
-vi.mock('../../store/api/productApi', () => ({
+vi.mock('@/features/products/api', () => ({
   useGetProductBySlugQuery: vi.fn(() => ({
     data: null,
     isLoading: false,
     isError: false,
   })),
-}));
-
-vi.mock('../../store/api/reviewsApi', () => ({
   useGetProductReviewsQuery: vi.fn(() => ({
     data: null,
     isLoading: false,
@@ -22,7 +19,7 @@ vi.mock('../../store/api/reviewsApi', () => ({
   })),
 }));
 
-vi.mock('../../store/api/wishlistApi', () => ({
+vi.mock('@/features/wishlist/api', () => ({
   useAddToWishlistMutation: vi.fn(() => [
     vi.fn().mockResolvedValue({ data: {} }),
     { isLoading: false },
@@ -31,13 +28,12 @@ vi.mock('../../store/api/wishlistApi', () => ({
     vi.fn().mockResolvedValue({ data: {} }),
     { isLoading: false },
   ]),
-  useCheckInWishlistQuery: vi.fn(() => ({
-    data: false,
-    refetch: vi.fn(),
+  useGetWishlistQuery: vi.fn(() => ({
+    data: undefined,
   })),
 }));
 
-vi.mock('../../store/api/cartApi', () => ({
+vi.mock('@/features/cart/api', () => ({
   useAddToCartMutation: vi.fn(() => [
     vi.fn().mockResolvedValue({ data: {} }),
     { isLoading: false },
@@ -45,7 +41,7 @@ vi.mock('../../store/api/cartApi', () => ({
 }));
 
 // Mock logger
-vi.mock('../../utils/logger', () => ({
+vi.mock('@/shared/lib/utils/logger', () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),
