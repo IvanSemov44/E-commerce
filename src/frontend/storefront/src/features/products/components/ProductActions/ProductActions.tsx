@@ -1,61 +1,44 @@
 import { Button } from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
+import type { ProductActionsProps } from './ProductActions.types';
+import {
+  isInStock,
+  isStockLow,
+  getStockStatusMessage,
+  getAddToCartButtonText,
+  getWishlistButtonText,
+} from './ProductActions.utils';
 import styles from './ProductActions.module.css';
 
-interface CartItem {
-  quantity: number;
-}
-
-interface ProductActionsProps {
-  stockQuantity: number;
-  lowStockThreshold: number;
-  quantity: number;
-  cartItem: CartItem | undefined;
-  addedToCart: boolean;
-  addingToCartBackend: boolean;
-  cartError: string | null;
-  isAuthenticated: boolean;
-  isInWishlist: boolean | undefined;
-  addingToWishlist: boolean;
-  removingFromWishlist: boolean;
-  onQuantityChange: (quantity: number) => void;
-  onAddToCart: () => void;
-  onToggleWishlist: () => void;
-  onDismissError: () => void;
-}
-
-function getAddToCartLabel(stockQuantity: number, addedToCart: boolean): string {
-  if (stockQuantity === 0) return 'Out of Stock';
-  if (addedToCart) return '✓ Added to Cart!';
-  return 'Add to Cart';
-}
-
-export default function ProductActions({
+export function ProductActions({
   stockQuantity,
   lowStockThreshold,
-  quantity,
-  cartItem,
-  addedToCart,
-  addingToCartBackend,
-  cartError,
   isAuthenticated,
-  isInWishlist,
-  addingToWishlist,
-  removingFromWishlist,
+  cart,
+  wishlist,
   onQuantityChange,
   onAddToCart,
   onToggleWishlist,
   onDismissError,
 }: ProductActionsProps) {
+  const {
+    quantity,
+    cartItem,
+    addedToCart,
+    isLoading: addingToCartBackend,
+    error: cartError,
+  } = cart;
+  const { isInWishlist, isAdding: addingToWishlist, isRemoving: removingFromWishlist } = wishlist;
+
   return (
     <div className={styles.actions}>
       <div className={styles.stockSection}>
         <p
-          className={`${styles.stockLabel} ${stockQuantity > 0 ? styles.inStock : styles.outOfStock}`}
+          className={`${styles.stockLabel} ${isInStock(stockQuantity) ? styles.inStock : styles.outOfStock}`}
         >
-          {stockQuantity > 0 ? `${stockQuantity} in stock` : 'Out of stock'}
+          {getStockStatusMessage(stockQuantity)}
         </p>
-        {stockQuantity > 0 && stockQuantity <= lowStockThreshold && (
+        {isStockLow(stockQuantity, lowStockThreshold) && (
           <p className={styles.lowStockWarning}>⚠ Only {stockQuantity} left!</p>
         )}
       </div>
@@ -102,10 +85,10 @@ export default function ProductActions({
       <div className={styles.buttonGroup}>
         <Button
           onClick={onAddToCart}
-          disabled={stockQuantity === 0 || addedToCart || addingToCartBackend}
+          disabled={!isInStock(stockQuantity) || addedToCart || addingToCartBackend}
           size="lg"
         >
-          {getAddToCartLabel(stockQuantity, addedToCart)}
+          {getAddToCartButtonText(stockQuantity, addedToCart)}
         </Button>
 
         {isAuthenticated && (
@@ -115,7 +98,7 @@ export default function ProductActions({
             onClick={onToggleWishlist}
             disabled={addingToWishlist || removingFromWishlist}
           >
-            {isInWishlist ? '♥ In Wishlist' : '♡ Add to Wishlist'}
+            {getWishlistButtonText(isInWishlist)}
           </Button>
         )}
       </div>

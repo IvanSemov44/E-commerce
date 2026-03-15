@@ -82,15 +82,19 @@ export default function ProductDetailPage() {
                   <ProductActions
                     stockQuantity={product.stockQuantity}
                     lowStockThreshold={product.lowStockThreshold}
-                    quantity={quantity}
-                    cartItem={cartItem}
-                    addedToCart={addedToCart}
-                    addingToCartBackend={addingToCartBackend}
-                    cartError={cartError}
                     isAuthenticated={isAuthenticated}
-                    isInWishlist={isInWishlist}
-                    addingToWishlist={addingToWishlist}
-                    removingFromWishlist={removingFromWishlist}
+                    cart={{
+                      quantity,
+                      cartItem,
+                      addedToCart,
+                      isLoading: addingToCartBackend,
+                      error: cartError,
+                    }}
+                    wishlist={{
+                      isInWishlist,
+                      isAdding: addingToWishlist,
+                      isRemoving: removingFromWishlist,
+                    }}
                     onQuantityChange={setQuantity}
                     onAddToCart={addToCart}
                     onToggleWishlist={toggleWishlist}

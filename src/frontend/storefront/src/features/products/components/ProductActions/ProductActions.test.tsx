@@ -1,21 +1,25 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
-import ProductActions from './ProductActions';
+import { ProductActions } from './ProductActions';
 import type { ProductActionsProps } from './ProductActions.types';
 
 const defaultProps: ProductActionsProps = {
   stockQuantity: 10,
   lowStockThreshold: 3,
-  quantity: 1,
-  cartItem: undefined,
-  addedToCart: false,
-  addingToCartBackend: false,
-  cartError: null,
   isAuthenticated: true,
-  isInWishlist: false,
-  addingToWishlist: false,
-  removingFromWishlist: false,
+  cart: {
+    quantity: 1,
+    cartItem: undefined,
+    addedToCart: false,
+    isLoading: false,
+    error: null,
+  },
+  wishlist: {
+    isInWishlist: false,
+    isAdding: false,
+    isRemoving: false,
+  },
   onQuantityChange: vi.fn(),
   onAddToCart: vi.fn(),
   onToggleWishlist: vi.fn(),
@@ -61,7 +65,12 @@ describe('ProductActions', () => {
   });
 
   it('shows cart hint when item is in cart', () => {
-    render(<ProductActions {...defaultProps} cartItem={{ quantity: 2 }} />);
+    render(
+      <ProductActions
+        {...defaultProps}
+        cart={{ ...defaultProps.cart, cartItem: { quantity: 2 } }}
+      />
+    );
 
     expect(screen.getByText(/2 in cart/i)).toBeInTheDocument();
   });
@@ -80,7 +89,7 @@ describe('ProductActions', () => {
   });
 
   it('shows added confirmation', () => {
-    render(<ProductActions {...defaultProps} addedToCart={true} />);
+    render(<ProductActions {...defaultProps} cart={{ ...defaultProps.cart, addedToCart: true }} />);
 
     expect(screen.getByText(/✓ added to cart/i)).toBeInTheDocument();
   });
@@ -98,7 +107,12 @@ describe('ProductActions', () => {
   });
 
   it('shows error message when cart error exists', () => {
-    render(<ProductActions {...defaultProps} cartError="Failed to add to cart" />);
+    render(
+      <ProductActions
+        {...defaultProps}
+        cart={{ ...defaultProps.cart, error: 'Failed to add to cart' }}
+      />
+    );
 
     expect(screen.getByText('Failed to add to cart')).toBeInTheDocument();
   });
@@ -107,7 +121,11 @@ describe('ProductActions', () => {
     const user = userEvent.setup();
     const onDismissError = vi.fn();
     render(
-      <ProductActions {...defaultProps} cartError="Failed to add" onDismissError={onDismissError} />
+      <ProductActions
+        {...defaultProps}
+        cart={{ ...defaultProps.cart, error: 'Failed to add' }}
+        onDismissError={onDismissError}
+      />
     );
 
     const dismissButton = screen.getByRole('button', { name: /close|dismiss|×/i });
@@ -117,7 +135,13 @@ describe('ProductActions', () => {
   });
 
   it('disables increase button at max stock', () => {
-    render(<ProductActions {...defaultProps} quantity={10} stockQuantity={10} />);
+    render(
+      <ProductActions
+        {...defaultProps}
+        stockQuantity={10}
+        cart={{ ...defaultProps.cart, quantity: 10 }}
+      />
+    );
 
     const increaseButton = screen.getByRole('button', { name: '+' });
     expect(increaseButton).toBeDisabled();

@@ -6,17 +6,25 @@ export interface PromoCodeValidation {
   message?: string;
 }
 
-export interface OrderSummaryProps {
-  cartItems: CartItem[];
+export interface OrderTotals {
   subtotal: number;
   discount: number;
   shipping: number;
   tax: number;
   total: number;
-  promoCode: string;
-  onPromoCodeChange: (code: string) => void;
-  promoCodeValidation: PromoCodeValidation | null;
-  validatingPromoCode: boolean;
-  onApplyPromoCode: () => Promise<void>;
-  onRemovePromoCode: () => void;
+}
+
+export interface PromoCodeState {
+  code: string;
+  validation: PromoCodeValidation | null;
+  isValidating: boolean;
+  onChange: (code: string) => void;
+  onApply: () => Promise<void>;
+  onRemove: () => void;
+}
+
+export interface OrderSummaryProps {
+  cartItems: CartItem[];
+  totals: OrderTotals;
+  promoCode: PromoCodeState;
 }

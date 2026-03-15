@@ -1,19 +1,27 @@
-export interface CartItem {
+interface CartItem {
   quantity: number;
+}
+
+export interface CartState {
+  quantity: number;
+  cartItem: CartItem | undefined;
+  addedToCart: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface WishlistState {
+  isInWishlist: boolean | undefined;
+  isAdding: boolean;
+  isRemoving: boolean;
 }
 
 export interface ProductActionsProps {
   stockQuantity: number;
   lowStockThreshold: number;
-  quantity: number;
-  cartItem: CartItem | undefined;
-  addedToCart: boolean;
-  addingToCartBackend: boolean;
-  cartError: string | null;
   isAuthenticated: boolean;
-  isInWishlist: boolean | undefined;
-  addingToWishlist: boolean;
-  removingFromWishlist: boolean;
+  cart: CartState;
+  wishlist: WishlistState;
   onQuantityChange: (quantity: number) => void;
   onAddToCart: () => void;
   onToggleWishlist: () => void;

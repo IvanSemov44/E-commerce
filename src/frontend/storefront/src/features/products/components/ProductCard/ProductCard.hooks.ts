@@ -9,7 +9,7 @@ import { useApiErrorHandler, useToast } from '@/shared/hooks';
 import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
 import { useAddToCartMutation } from '@/features/cart/api';
-import { DEFAULT_PRODUCT_IMAGE } from './ProductCard.types';
+import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 
 interface UseWishlistToggleParams {
   id: string;

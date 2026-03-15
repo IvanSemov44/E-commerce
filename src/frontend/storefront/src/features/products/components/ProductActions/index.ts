@@ -1,5 +1,5 @@
-export { default } from './ProductActions';
-export type { ProductActionsProps, CartItem } from './ProductActions.types';
+export { ProductActions } from './ProductActions';
+export type { ProductActionsProps, CartState, WishlistState } from './ProductActions.types';
 export {
   isStockLow,
   isInStock,
