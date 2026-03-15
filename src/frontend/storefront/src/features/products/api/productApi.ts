@@ -1,9 +1,6 @@
 import type { Product, ProductDetail, PaginatedResult, ApiResponse } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
 
-// Re-export types for components
-export type { Product, ProductDetail, ProductImage, ProductCategory } from '@/shared/types';
-
 const productApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<

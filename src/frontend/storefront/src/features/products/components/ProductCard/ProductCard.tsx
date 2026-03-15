@@ -8,7 +8,7 @@ import {
   useRemoveFromWishlistMutation,
 } from '@/features/wishlist/api';
 import type { ProductCardProps } from './ProductCard.types';
-import { DEFAULT_PRODUCT_IMAGE } from './ProductCard.types';
+import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { useWishlistToggle, useAddToCart, useImageError } from './ProductCard.hooks';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './ProductCard.module.css';

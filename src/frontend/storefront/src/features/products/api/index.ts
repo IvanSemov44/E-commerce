@@ -6,8 +6,6 @@ export {
   useGetFeaturedProductsQuery,
 } from './productApi';
 
-export type { Product, ProductDetail, ProductImage, ProductCategory } from './productApi';
-
 // Categories API
 export {
   useGetCategoriesQuery,
