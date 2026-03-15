@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useId } from 'react';
 import styles from './Input.module.css';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   variant?: 'default' | 'subtle' | 'error';
   label?: string;
   error?: string;
@@ -19,7 +19,7 @@ function getInputVariantClass(variant: 'default' | 'subtle' | 'error' = 'default
   return variantMap[variant];
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, variant = 'default', label, error, icon, id, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id || `input-${generatedId}`;
@@ -48,6 +48,3 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 );
 
 Input.displayName = 'Input';
-
-export { Input };
-export default Input;

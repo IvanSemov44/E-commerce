@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import Card from '@/shared/components/ui/Card';
+import { Card } from '@/shared/components/ui/Card';
 import PageHeader from '@/shared/components/PageHeader';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';

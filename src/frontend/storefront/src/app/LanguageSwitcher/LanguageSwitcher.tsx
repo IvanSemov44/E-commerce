@@ -141,5 +141,3 @@ export function LanguageSwitcher({ className = '', size = 'md' }: LanguageSwitch
     </div>
   );
 }
-
-export default LanguageSwitcher;

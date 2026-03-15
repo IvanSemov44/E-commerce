@@ -135,5 +135,3 @@ export function ThemeToggle({ size = 'md' }: ThemeToggleProps) {
     </div>
   );
 }
-
-export default ThemeToggle;

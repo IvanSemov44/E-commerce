@@ -1,4 +1,4 @@
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import styles from './ProductActions.module.css';
 

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import OrderTotalsDisplay from '@/features/orders/components/OrderTotalsDisplay/OrderTotalsDisplay';
 import type { OrderSummaryProps } from './OrderSummary.types';
 

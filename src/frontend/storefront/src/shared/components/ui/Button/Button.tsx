@@ -2,7 +2,7 @@ import * as React from 'react';
 import { SpinnerIcon } from '@/shared/components/icons';
 import styles from './Button.module.css';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
@@ -30,7 +30,7 @@ function getButtonClasses(
   return `${styles.button} ${variantMap[variant]} ${sizeMap[size]}`;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     { className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props },
     ref
@@ -49,6 +49,3 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = 'Button';
-
-export { Button };
-export default Button;

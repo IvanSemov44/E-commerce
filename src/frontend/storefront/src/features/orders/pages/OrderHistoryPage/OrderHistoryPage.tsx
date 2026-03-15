@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useGetOrdersQuery } from '@/features/orders/api/ordersApi';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { PackageIcon, DocumentIcon, RefreshIcon } from '@/shared/components/icons';

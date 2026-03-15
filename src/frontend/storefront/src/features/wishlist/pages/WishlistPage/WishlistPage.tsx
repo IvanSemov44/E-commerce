@@ -9,7 +9,7 @@ import {
 import { useAddToCartMutation } from '@/features/cart/api/cartApi';
 import { useApiErrorHandler } from '@/shared/hooks';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import WishlistSkeleton from '@/features/wishlist/components/WishlistSkeleton';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';

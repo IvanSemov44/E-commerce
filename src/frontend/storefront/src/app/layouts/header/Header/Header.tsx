@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
 import { logout, selectCurrentUser, selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import { HEADER_NAV_ITEMS, ROUTE_PATHS } from '@/shared/constants/navigation';
 import { HeartIcon, ShoppingCartIcon, MenuIcon, CloseIcon } from '@/shared/components/icons';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import { ThemeToggle } from '@/app/ThemeToggle';
 import { LanguageSwitcher } from '@/app/LanguageSwitcher';
 import { SearchBar } from '@/app/SearchBar';

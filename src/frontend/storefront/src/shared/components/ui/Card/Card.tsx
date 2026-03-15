@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styles from './Card.module.css';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'bordered' | 'elevated' | 'ghost';
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
@@ -28,7 +28,7 @@ function getCardClasses(
   return `${styles.card} ${variantMap[variant]} ${paddingMap[padding]}`;
 }
 
-const Card = React.forwardRef<HTMLDivElement, CardProps>(
+export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', padding = 'md', ...props }, ref) => {
     const cardClasses = getCardClasses(variant, padding);
     const combinedClassName = className ? `${cardClasses} ${className}` : cardClasses;
@@ -38,6 +38,3 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 );
 
 Card.displayName = 'Card';
-
-export { Card };
-export default Card;

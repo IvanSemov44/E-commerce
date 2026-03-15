@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import Button from '@/shared/components/ui/Button';
-import Input from '@/shared/components/ui/Input';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import PaymentMethodSelector from '../PaymentMethodSelector/PaymentMethodSelector';
 import type { CheckoutFormProps } from './CheckoutForm.types';
 

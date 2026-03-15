@@ -1,6 +1,6 @@
 import ErrorAlert from '../ErrorAlert';
 import QueryRendererSkeleton from './QueryRendererSkeleton/QueryRendererSkeleton';
-import EmptyState from '../ui/EmptyState';
+import { EmptyState } from '../ui/EmptyState';
 
 // Default isEmpty function (defined outside component to prevent recreation on every render)
 const defaultIsEmpty = <T,>(data: T): boolean =>

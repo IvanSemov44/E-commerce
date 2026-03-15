@@ -10,7 +10,7 @@ import { useGetTopLevelCategoriesQuery } from '@/features/products/api/categorie
 import type { Product } from '@/shared/types';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { withQuery } from '@/shared/lib/routing';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import { ProductCard, ProductsGridSkeleton } from '@/features/products/components';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';

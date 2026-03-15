@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ShoppingCartIcon } from '@/shared/components/icons';
 import { useCart } from '@/features/cart/hooks/useCart';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { CartItemList, CartSummary, CartSkeleton } from '@/features/cart/components';

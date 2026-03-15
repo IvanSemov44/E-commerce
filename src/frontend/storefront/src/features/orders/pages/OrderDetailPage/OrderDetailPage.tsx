@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/features/orders/api/ordersApi';
 import { useApiErrorHandler } from '@/shared/hooks';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import {
   OrderHeader,

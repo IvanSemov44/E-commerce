@@ -1,5 +1,5 @@
-import Button from '@/shared/components/ui/Button';
-import Input from '@/shared/components/ui/Input';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import type { ProfileFormData, ProfileFormProps } from './ProfileForm.types';
 import styles from './ProfileForm.module.css';
 

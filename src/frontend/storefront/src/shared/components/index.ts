@@ -10,15 +10,15 @@
  */
 
 // UI Components
-export { Button, type ButtonProps } from './ui';
-export { Input, type InputProps } from './ui';
+export { Button } from './ui';
+export { Input } from './ui';
 export { Card } from './ui';
 
 // Skeletons and loading components
 export * from './Skeletons';
 
 // Utility Components
-export { default as EmptyState, type EmptyStateProps } from './ui/EmptyState';
+export { EmptyState } from './ui/EmptyState';
 export { default as ErrorAlert } from './ErrorAlert';
 export { default as OptimizedImage } from './OptimizedImage';
 export { default as PageHeader } from './PageHeader';

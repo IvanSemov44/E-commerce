@@ -10,7 +10,7 @@ import styles from './EmptyState.module.css';
 
 type EmptyStateIcon = 'cart' | 'wishlist' | 'orders' | 'search' | 'error';
 
-export interface EmptyStateProps {
+interface EmptyStateProps {
   icon?: EmptyStateIcon | ReactNode;
   title: string;
   description?: string;
@@ -34,7 +34,7 @@ function getPresetIcon(icon: EmptyStateIcon): ReactNode {
   }
 }
 
-export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   const renderedIcon =
     typeof icon === 'string' ? getPresetIcon(icon as EmptyStateIcon) : (icon ?? null);
 

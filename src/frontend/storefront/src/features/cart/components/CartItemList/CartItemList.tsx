@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import Card from '@/shared/components/ui/Card';
+import { Card } from '@/shared/components/ui/Card';
 import CartItem from '../CartItem/CartItem';
 import styles from './CartItemList.module.css';
 

@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import { CheckIcon } from '@/shared/components/icons';
 import type { OrderSuccessProps } from './OrderSuccess.types';
 

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import { ImageIcon } from '@/shared/components/icons';
 import type { WishlistCardProps } from './WishlistCard.types';
 import { useWishlistRemove, useWishlistAddToCart } from './WishlistCard.hooks';

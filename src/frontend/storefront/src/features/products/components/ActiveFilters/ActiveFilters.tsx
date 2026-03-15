@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import Button from '@/shared/components/ui/Button';
+import { Button } from '@/shared/components/ui/Button';
 import styles from './ActiveFilters.module.css';
 
 interface ActiveFiltersProps {

@@ -1,5 +1,5 @@
 import { Skeleton, SkeletonLabelRow } from '@/shared/components/Skeletons';
-import Card from '@/shared/components/ui/Card';
+import { Card } from '@/shared/components/ui/Card';
 import styles from './ReviewSkeleton.module.css';
 
 export default function ReviewSkeleton() {

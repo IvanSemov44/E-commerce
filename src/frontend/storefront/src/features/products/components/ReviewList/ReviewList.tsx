@@ -1,5 +1,5 @@
-import Card from '@/shared/components/ui/Card';
-import EmptyState from '@/shared/components/ui/EmptyState';
+import { Card } from '@/shared/components/ui/Card';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import StarRating from '../StarRating';
 import { ReviewSkeleton } from '@/features/products/components';

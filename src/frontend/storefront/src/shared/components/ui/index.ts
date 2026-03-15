@@ -10,7 +10,7 @@
  * These are truly shared, reusable UI primitives.
  */
 
-export { Button, type ButtonProps } from './Button';
-export { Input, type InputProps } from './Input';
-export { Card, type CardProps } from './Card';
-export { default as EmptyState, type EmptyStateProps } from './EmptyState';
+export { Button } from './Button';
+export { Input } from './Input';
+export { Card } from './Card';
+export { EmptyState } from './EmptyState';
