@@ -142,11 +142,7 @@ export function useProductDetails(slug: string) {
     addedToCart,
     cartError,
     setCartError,
-    cartItem,
     addingToCartBackend,
     addToCart,
-
-    // Auth
-    isAuthenticated,
   };
 }

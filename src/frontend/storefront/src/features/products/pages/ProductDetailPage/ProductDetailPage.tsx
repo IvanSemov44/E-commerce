@@ -13,6 +13,7 @@ import {
   ProductSkeleton,
 } from '@/features/products/components';
 import { useTranslation } from 'react-i18next';
+import { useAppSelector } from '@/shared/lib/store';
 
 import styles from './ProductDetailPage.module.css';
 
@@ -20,6 +21,7 @@ export function ProductDetailPage() {
   usePerformanceMonitor();
   const { slug = '' } = useParams();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const {
     product,
@@ -38,10 +40,8 @@ export function ProductDetailPage() {
     addedToCart,
     cartError,
     setCartError,
-    cartItem,
     addingToCartBackend,
     addToCart,
-    isAuthenticated,
   } = useProductDetails(slug);
 
   return (
@@ -80,11 +80,11 @@ export function ProductDetailPage() {
                   />
 
                   <ProductActions
+                    productId={product.id}
                     stockQuantity={product.stockQuantity}
                     lowStockThreshold={product.lowStockThreshold}
                     cart={{
                       quantity,
-                      cartItem,
                       addedToCart,
                       isLoading: addingToCartBackend,
                       error: cartError,

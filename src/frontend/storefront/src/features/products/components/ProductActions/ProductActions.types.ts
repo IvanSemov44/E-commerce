@@ -1,10 +1,5 @@
-interface CartItem {
-  quantity: number;
-}
-
 export interface CartState {
   quantity: number;
-  cartItem: CartItem | undefined;
   addedToCart: boolean;
   isLoading: boolean;
   error: string | null;
@@ -17,6 +12,7 @@ export interface WishlistState {
 }
 
 export interface ProductActionsProps {
+  productId: string;
   stockQuantity: number;
   lowStockThreshold: number;
   cart: CartState;

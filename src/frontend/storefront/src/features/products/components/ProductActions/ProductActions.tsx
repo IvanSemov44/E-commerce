@@ -2,11 +2,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import { useAppSelector } from '@/shared/lib/store';
+import { selectCartItemById } from '@/features/cart/slices/cartSlice';
 import type { ProductActionsProps } from './ProductActions.types';
 import { isInStock, isStockLow } from './ProductActions.utils';
 import styles from './ProductActions.module.css';
 
 export function ProductActions({
+  productId,
   stockQuantity,
   lowStockThreshold,
   cart,
@@ -17,13 +19,8 @@ export function ProductActions({
   onDismissError,
 }: ProductActionsProps) {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const {
-    quantity,
-    cartItem,
-    addedToCart,
-    isLoading: addingToCartBackend,
-    error: cartError,
-  } = cart;
+  const cartItem = useAppSelector(selectCartItemById(productId));
+  const { quantity, addedToCart, isLoading: addingToCartBackend, error: cartError } = cart;
   const { isInWishlist, isAdding: addingToWishlist, isRemoving: removingFromWishlist } = wishlist;
   const { t } = useTranslation();
 
