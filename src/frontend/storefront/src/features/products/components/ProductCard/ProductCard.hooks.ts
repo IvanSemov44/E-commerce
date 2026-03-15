@@ -16,7 +16,6 @@ interface UseWishlistToggleParams {
   isAuthenticated: boolean;
   isInWishlist: boolean;
   isWishlistLoading: boolean;
-  refetchWishlist: () => void;
 }
 
 /**
@@ -27,7 +26,6 @@ export function useWishlistToggle({
   isAuthenticated,
   isInWishlist,
   isWishlistLoading,
-  refetchWishlist,
 }: UseWishlistToggleParams) {
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
@@ -54,7 +52,6 @@ export function useWishlistToggle({
           await addToWishlist(id).unwrap();
           success('Added to wishlist');
         }
-        refetchWishlist();
       } catch (err) {
         handleError(err, 'Failed to update wishlist');
       }
@@ -66,7 +63,6 @@ export function useWishlistToggle({
       isWishlistLoading,
       addToWishlist,
       removeFromWishlist,
-      refetchWishlist,
       handleError,
       success,
       error,

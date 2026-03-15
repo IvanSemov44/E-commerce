@@ -18,12 +18,12 @@ vi.mock('../../../../../components/ui/OptimizedImage', () => ({
 const mockAddToWishlist = vi.fn();
 const mockRemoveFromWishlist = vi.fn();
 const mockAddToCartBackend = vi.fn();
-const mockCheckInWishlist = vi.fn();
+const mockGetWishlist = vi.fn();
 
 vi.mock('../../../../../features/wishlist/api/wishlistApi', () => ({
-  useCheckInWishlistQuery: (...args: unknown[]) => {
-    const result = mockCheckInWishlist(...args);
-    return { data: result, refetch: vi.fn() };
+  useGetWishlistQuery: (...args: unknown[]) => {
+    const result = mockGetWishlist(...args);
+    return { data: result };
   },
   useAddToWishlistMutation: () => [mockAddToWishlist, { isLoading: false }],
   useRemoveFromWishlistMutation: () => [mockRemoveFromWishlist, { isLoading: false }],
@@ -89,7 +89,7 @@ describe('ProductCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCheckInWishlist.mockReturnValue(false); // Default not in wishlist
+    mockGetWishlist.mockReturnValue({ id: '', items: [], itemCount: 0 }); // Default not in wishlist
     mockAddToWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
     mockRemoveFromWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
     mockAddToCartBackend.mockReturnValue({ unwrap: () => Promise.resolve() });
@@ -155,7 +155,7 @@ describe('ProductCard', () => {
   });
 
   it('removes from wishlist if already in wishlist', async () => {
-    mockCheckInWishlist.mockReturnValue(true); // Already in wishlist
+    mockGetWishlist.mockReturnValue({ id: '', items: [{ productId: '123' }], itemCount: 1 }); // Already in wishlist
     renderComponent(mockProduct, true);
 
     const wishlistBtn = screen.getByRole('button', { name: /remove from wishlist/i });

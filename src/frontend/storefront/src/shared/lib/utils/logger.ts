@@ -77,7 +77,7 @@ export const logger = {
     if (config.enabled) {
       const color = rating === 'good' ? 'green' : rating === 'needs-improvement' ? 'orange' : 'red';
       console.log(
-        `%c${name}%c Value: ${value.toFixed(2)}ms | Rating: ${rating}`,
+        `%c${name}%c Value: ${value != null && !isNaN(value) ? value.toFixed(2) : '?'}ms | Rating: ${rating}`,
         `color: ${color}; font-weight: bold;`,
         ''
       );

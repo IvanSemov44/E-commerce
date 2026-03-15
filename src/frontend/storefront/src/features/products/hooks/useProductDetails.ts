@@ -3,7 +3,7 @@ import { useGetProductBySlugQuery, useGetProductReviewsQuery } from '@/features/
 import {
   useAddToWishlistMutation,
   useRemoveFromWishlistMutation,
-  useCheckInWishlistQuery,
+  useGetWishlistQuery,
 } from '@/features/wishlist/api';
 import { useAddToCartMutation } from '@/features/cart/api';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
@@ -35,13 +35,9 @@ export default function useProductDetails(slug: string) {
     skip: !product?.id,
   });
 
-  // Wishlist state
-  const { data: isInWishlist, refetch: refetchWishlist } = useCheckInWishlistQuery(
-    product?.id || '',
-    {
-      skip: !product?.id || !isAuthenticated,
-    }
-  );
+  // Wishlist state — derive from cached full wishlist (avoids redundant per-product request)
+  const { data: wishlist } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
+  const isInWishlist = wishlist?.items.some((item) => item.productId === product?.id) ?? false;
 
   // Mutations
   const [addToWishlist, { isLoading: addingToWishlist }] = useAddToWishlistMutation();
@@ -64,7 +60,6 @@ export default function useProductDetails(slug: string) {
       } else {
         await addToWishlist(product.id).unwrap();
       }
-      await refetchWishlist();
     } catch {
       // Error handled by mutation state
     }

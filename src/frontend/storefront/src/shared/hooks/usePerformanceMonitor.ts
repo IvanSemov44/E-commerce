@@ -30,7 +30,6 @@ interface LargestContentfulPaint extends PerformanceEntry {
 
 interface FirstInputDelay extends PerformanceEntry {
   processingStart: number;
-  processingDuration: number;
 }
 
 interface PerformanceCallback {
@@ -89,15 +88,11 @@ export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}
         const observer = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
             const fidEntry = entry as FirstInputDelay;
+            const delay = fidEntry.processingStart - fidEntry.startTime;
             const metric: PerformanceMetric = {
               name: 'First Input Delay (FID)',
-              value: fidEntry.processingDuration,
-              rating:
-                fidEntry.processingDuration < 100
-                  ? 'good'
-                  : fidEntry.processingDuration < 300
-                    ? 'needs-improvement'
-                    : 'poor',
+              value: delay,
+              rating: delay < 100 ? 'good' : delay < 300 ? 'needs-improvement' : 'poor',
               timestamp: Date.now(),
             };
 

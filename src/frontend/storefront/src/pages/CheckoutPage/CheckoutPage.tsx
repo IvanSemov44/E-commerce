@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { usePerformanceMonitor } from '@/shared/hooks';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { LocationIcon } from '@/shared/components/icons';
@@ -15,6 +16,7 @@ import styles from './CheckoutPage.module.css';
 export default function CheckoutPage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const {
     formData,
     setFormData,
@@ -51,9 +53,7 @@ export default function CheckoutPage() {
             title={t('cart.emptyCart')}
             description={t('checkout.addItemsBeforeCheckout')}
             action={
-              <Button onClick={() => (window.location.href = '/products')}>
-                {t('products.browseProducts')}
-              </Button>
+              <Button onClick={() => navigate('/products')}>{t('products.browseProducts')}</Button>
             }
           />
         </div>

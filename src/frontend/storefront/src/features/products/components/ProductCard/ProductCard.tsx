@@ -2,8 +2,11 @@ import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppSelector } from '@/shared/lib/store';
 import { SpinnerIcon, PlusIcon, HeartIcon, StarIcon } from '@/shared/components/icons';
-import { useCheckInWishlistQuery } from '@/features/wishlist/api';
-import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
+import {
+  useGetWishlistQuery,
+  useAddToWishlistMutation,
+  useRemoveFromWishlistMutation,
+} from '@/features/wishlist/api';
 import type { ProductCardProps } from './ProductCard.types';
 import { DEFAULT_PRODUCT_IMAGE } from './ProductCard.types';
 import { useWishlistToggle, useAddToCart, useImageError } from './ProductCard.hooks';
@@ -38,11 +41,9 @@ const ProductCard = memo(function ProductCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  // Wishlist hooks
-  const { data: isInWishlist = false, refetch: refetchWishlist } = useCheckInWishlistQuery(id, {
-    skip: !isAuthenticated,
-    refetchOnMountOrArgChange: false,
-  });
+  // Wishlist hooks — derive from cached full wishlist (avoids N+1 per-card requests)
+  const { data: wishlist } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
+  const isInWishlist = wishlist?.items.some((item) => item.productId === id) ?? false;
 
   const [, { isLoading: isAddingToWishlist }] = useAddToWishlistMutation();
   const [, { isLoading: isRemovingFromWishlist }] = useRemoveFromWishlistMutation();
@@ -64,7 +65,6 @@ const ProductCard = memo(function ProductCard({
     isAuthenticated,
     isInWishlist,
     isWishlistLoading,
-    refetchWishlist,
   });
 
   const { handleAddToCart } = useAddToCart({

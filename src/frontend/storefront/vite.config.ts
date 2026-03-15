@@ -1,17 +1,30 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { reactRouter } from '@react-router/dev/vite';
-// @ts-expect-error - Type definitions not available for rollup-plugin-visualizer
+ 
+// @ts-expect-error - rollup-plugin-visualizer has no type declarations
 import visualizer from 'rollup-plugin-visualizer';
 import path from 'path';
+
+// Silences noisy dev-only browser probes before React Router handles them
+const ignoreBrowserProbes: Plugin = {
+  name: 'ignore-browser-probes',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url === '/favicon.ico' || req.url?.startsWith('/.well-known')) {
+        res.statusCode = 404;
+        res.end();
+        return;
+      }
+      next();
+    });
+  },
+};
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    reactRouter({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
+    ignoreBrowserProbes,
+    reactRouter(),
     // Bundle analysis visualization
     visualizer({
       open: false,

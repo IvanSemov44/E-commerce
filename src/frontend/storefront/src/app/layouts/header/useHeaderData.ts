@@ -9,12 +9,10 @@ export function useHeaderData(isAuthenticated: boolean) {
 
   const { data: backendCart } = useGetCartQuery(undefined, {
     skip: !isAuthenticated,
-    refetchOnMountOrArgChange: true,
   });
 
   const { data: wishlistData } = useGetWishlistQuery(undefined, {
     skip: !isAuthenticated,
-    refetchOnMountOrArgChange: true,
   });
 
   const cartItemCount = useMemo(() => {
