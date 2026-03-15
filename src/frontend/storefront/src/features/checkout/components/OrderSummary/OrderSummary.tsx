@@ -3,21 +3,10 @@ import { Button } from '@/shared/components/ui/Button';
 import OrderTotalsDisplay from '@/features/orders/components/OrderTotalsDisplay/OrderTotalsDisplay';
 import type { OrderSummaryProps } from './OrderSummary.types';
 
-export default function OrderSummary({
-  cartItems,
-  subtotal,
-  discount,
-  shipping,
-  tax,
-  total,
-  promoCode,
-  onPromoCodeChange,
-  promoCodeValidation,
-  validatingPromoCode,
-  onApplyPromoCode,
-  onRemovePromoCode,
-}: OrderSummaryProps) {
+export function OrderSummary({ cartItems, totals, promoCode }: OrderSummaryProps) {
   const { t } = useTranslation();
+  const { subtotal, discount, shipping, tax, total } = totals;
+  const { code, validation, isValidating, onChange, onApply, onRemove } = promoCode;
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg">
@@ -50,30 +39,26 @@ export default function OrderSummary({
           <input
             type="text"
             id="promoCode"
-            value={promoCode}
-            onChange={(e) => onPromoCodeChange(e.target.value)}
+            value={code}
+            onChange={(e) => onChange(e.target.value)}
             placeholder={t('checkout.enterPromoCode')}
             className="flex-1 px-3 py-2 border rounded-lg text-sm"
           />
-          {promoCode ? (
-            <Button variant="outline" size="sm" onClick={onRemovePromoCode}>
+          {code ? (
+            <Button variant="outline" size="sm" onClick={onRemove}>
               {t('checkout.remove')}
             </Button>
           ) : (
-            <Button
-              size="sm"
-              onClick={onApplyPromoCode}
-              disabled={validatingPromoCode || !promoCode}
-            >
-              {validatingPromoCode ? t('checkout.applying') : t('checkout.apply')}
+            <Button size="sm" onClick={onApply} disabled={isValidating || !code}>
+              {isValidating ? t('checkout.applying') : t('checkout.apply')}
             </Button>
           )}
         </div>
-        {promoCodeValidation && !promoCodeValidation.isValid && (
-          <p className="text-red-500 text-sm mt-1">{promoCodeValidation.message}</p>
+        {validation && !validation.isValid && (
+          <p className="text-red-500 text-sm mt-1">{validation.message}</p>
         )}
-        {promoCodeValidation && promoCodeValidation.isValid && (
-          <p className="text-green-600 text-sm mt-1">{promoCodeValidation.message}</p>
+        {validation && validation.isValid && (
+          <p className="text-green-600 text-sm mt-1">{validation.message}</p>
         )}
       </div>
 

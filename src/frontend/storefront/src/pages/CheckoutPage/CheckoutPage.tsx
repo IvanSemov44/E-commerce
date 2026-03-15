@@ -9,7 +9,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import ErrorAlert from '@/shared/components/ErrorAlert';
 import TrustSignals from '@/shared/components/TrustSignals';
 import CheckoutForm from '@/features/checkout/components/CheckoutForm';
-import OrderSummary from '@/features/checkout/components/OrderSummary';
+import { OrderSummary } from '@/features/checkout/components/OrderSummary';
 import OrderSuccess from '@/features/checkout/components/OrderSuccess';
 import styles from './CheckoutPage.module.css';
 
@@ -109,17 +109,15 @@ export default function CheckoutPage() {
             <Card variant="elevated" padding="lg">
               <OrderSummary
                 cartItems={cartItems}
-                subtotal={subtotal}
-                discount={discount}
-                shipping={shipping}
-                tax={tax}
-                total={total}
-                promoCode={promoCode}
-                onPromoCodeChange={setPromoCode}
-                promoCodeValidation={promoCodeValidation}
-                validatingPromoCode={validatingPromoCode}
-                onApplyPromoCode={handleApplyPromoCode}
-                onRemovePromoCode={handleRemovePromoCode}
+                totals={{ subtotal, discount, shipping, tax, total }}
+                promoCode={{
+                  code: promoCode,
+                  validation: promoCodeValidation,
+                  isValidating: validatingPromoCode,
+                  onChange: setPromoCode,
+                  onApply: handleApplyPromoCode,
+                  onRemove: handleRemovePromoCode,
+                }}
               />
             </Card>
           </div>

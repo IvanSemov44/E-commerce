@@ -1,3 +1,7 @@
-export { default } from './OrderSummary';
-export { default as OrderSummary } from './OrderSummary';
-export type { OrderSummaryProps, PromoCodeValidation } from './OrderSummary.types';
+export { OrderSummary } from './OrderSummary';
+export type {
+  OrderSummaryProps,
+  OrderTotals,
+  PromoCodeState,
+  PromoCodeValidation,
+} from './OrderSummary.types';
