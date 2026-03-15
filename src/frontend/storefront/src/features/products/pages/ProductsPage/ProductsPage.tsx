@@ -4,43 +4,18 @@ import { useGetProductsQuery } from '@/features/products/api/productApi';
 import { useProductFilters } from '@/features/products/hooks/useProductFilters';
 import { Button } from '@/shared/components/ui/Button';
 import { CategoryFilter } from '@/features/products/components/CategoryFilter';
-import { SearchBar } from '@/app/SearchBar';
+import { ProductsToolbar } from '@/features/products/components/ProductsToolbar';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
-import { GridIcon, RefreshIcon } from '@/shared/components/icons';
-import {
-  ProductFilters,
-  ActiveFilters,
-  ProductGrid,
-  ProductsGridSkeleton,
-} from '@/features/products/components';
+import { GridIcon } from '@/shared/components/icons';
+import { ProductFilters, ProductGrid, ProductsGridSkeleton } from '@/features/products/components';
 import { PRODUCTS_PAGE_SIZE } from '@/features/products/constants';
 import styles from './ProductsPage.module.css';
 
 export function ProductsPage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
-  const {
-    page,
-    selectedCategoryId,
-    searchInput,
-    debouncedSearch,
-    minPrice,
-    maxPrice,
-    minRating,
-    sortBy,
-    isFeatured,
-    hasActiveFilters,
-    setPage,
-    setSelectedCategoryId,
-    setSearchInput,
-    setMinPrice,
-    setMaxPrice,
-    setMinRating,
-    setSortBy,
-    setIsFeatured,
-    handleClearFilters,
-  } = useProductFilters();
+  const filters = useProductFilters();
 
   const {
     data: result,
@@ -48,15 +23,15 @@ export function ProductsPage() {
     isFetching,
     error,
   } = useGetProductsQuery({
-    page,
+    page: filters.page,
     pageSize: PRODUCTS_PAGE_SIZE,
-    categoryId: selectedCategoryId,
-    search: debouncedSearch,
-    minPrice,
-    maxPrice,
-    minRating,
-    sortBy,
-    isFeatured,
+    categoryId: filters.selectedCategoryId,
+    search: filters.debouncedSearch,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    minRating: filters.minRating,
+    sortBy: filters.sortBy,
+    isFeatured: filters.isFeatured,
   });
 
   return (
@@ -72,66 +47,41 @@ export function ProductsPage() {
         {/* Sidebar */}
         <div className={styles.sidebar}>
           <CategoryFilter
-            selectedCategoryId={selectedCategoryId}
-            onSelectCategory={setSelectedCategoryId}
+            selectedCategoryId={filters.selectedCategoryId}
+            onSelectCategory={filters.setSelectedCategoryId}
           />
 
           <div className={styles.filtersSection}>
             <ProductFilters
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              minRating={minRating}
-              isFeatured={isFeatured}
-              onMinPriceChange={setMinPrice}
-              onMaxPriceChange={setMaxPrice}
-              onMinRatingChange={setMinRating}
-              onIsFeaturedChange={setIsFeatured}
+              minPrice={filters.minPrice}
+              maxPrice={filters.maxPrice}
+              minRating={filters.minRating}
+              isFeatured={filters.isFeatured}
+              onMinPriceChange={filters.setMinPrice}
+              onMaxPriceChange={filters.setMaxPrice}
+              onMinRatingChange={filters.setMinRating}
+              onIsFeaturedChange={filters.setIsFeatured}
             />
           </div>
         </div>
 
         {/* Main Content */}
         <div className={styles.content}>
-          <div className={styles.searchSection}>
-            <div className={styles.searchBar}>
-              <div className={styles.searchInput}>
-                <SearchBar
-                  key={searchInput ? 1 : 0}
-                  size="md"
-                  placeholder={t('products.searchProducts')}
-                  onQueryChange={setSearchInput}
-                />
-              </div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className={styles.sortSelect}
-              >
-                <option value="newest">{t('products.sortNewest')}</option>
-                <option value="name">{t('products.sortNameAZ')}</option>
-                <option value="price-asc">{t('products.sortPriceLowHigh')}</option>
-                <option value="price-desc">{t('products.sortPriceHighLow')}</option>
-                <option value="rating">{t('products.sortRating')}</option>
-              </select>
-            </div>
-
-            <ActiveFilters
-              search={debouncedSearch}
-              categorySelected={!!selectedCategoryId}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              minRating={minRating}
-              isFeatured={isFeatured}
-              onClearAll={handleClearFilters}
-            />
-
-            {isFetching && !isLoading && (
-              <div className={styles.refetchBadge} aria-live="polite" aria-atomic="true">
-                <RefreshIcon className={styles.refetchIcon} aria-hidden="true" />
-                <span>{t('common.updating')}</span>
-              </div>
-            )}
-          </div>
+          <ProductsToolbar
+            searchInput={filters.searchInput}
+            sortBy={filters.sortBy}
+            debouncedSearch={filters.debouncedSearch}
+            selectedCategoryId={filters.selectedCategoryId}
+            minPrice={filters.minPrice}
+            maxPrice={filters.maxPrice}
+            minRating={filters.minRating}
+            isFeatured={filters.isFeatured}
+            onSearchChange={filters.setSearchInput}
+            onSortChange={filters.setSortBy}
+            onClearFilters={filters.handleClearFilters}
+            isFetching={isFetching}
+            isLoading={isLoading}
+          />
 
           <QueryRenderer
             isLoading={isLoading}
@@ -142,12 +92,12 @@ export function ProductsPage() {
             loadingSkeleton={{ custom: <ProductsGridSkeleton count={PRODUCTS_PAGE_SIZE} /> }}
             emptyState={{
               icon: <GridIcon />,
-              title: hasActiveFilters
+              title: filters.hasActiveFilters
                 ? t('products.noProductsMatchFilters')
                 : t('products.noProducts'),
-              description: hasActiveFilters ? t('products.tryAdjustingSearch') : undefined,
-              action: hasActiveFilters ? (
-                <Button onClick={handleClearFilters}>{t('common.clear')}</Button>
+              description: filters.hasActiveFilters ? t('products.tryAdjustingSearch') : undefined,
+              action: filters.hasActiveFilters ? (
+                <Button onClick={filters.handleClearFilters}>{t('common.clear')}</Button>
               ) : undefined,
             }}
           >
@@ -155,9 +105,9 @@ export function ProductsPage() {
               <ProductGrid
                 products={data.items}
                 totalCount={data.totalCount}
-                currentPage={page}
+                currentPage={filters.page}
                 pageSize={PRODUCTS_PAGE_SIZE}
-                onPageChange={setPage}
+                onPageChange={filters.setPage}
               />
             )}
           </QueryRenderer>
