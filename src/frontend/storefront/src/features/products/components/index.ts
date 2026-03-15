@@ -2,7 +2,6 @@
 export { ProductCard } from './ProductCard';
 export { ProductGrid } from './ProductGrid';
 export { ProductFilters } from './ProductFilters';
-export { ProductSearchBar } from './ProductSearchBar/ProductSearchBar';
 export { ActiveFilters } from './ActiveFilters';
 export { ProductImageGallery } from './ProductImageGallery/ProductImageGallery';
 export { ProductInfo } from './ProductInfo/ProductInfo';

@@ -7,7 +7,11 @@ import { SearchResultsDropdown } from './SearchResultsDropdown';
 import type { SearchBarProps, SearchResult } from './SearchBar.types';
 import styles from './SearchBar.module.css';
 
-export function SearchBar({ size = 'md', placeholder = 'Search… (Ctrl+K)' }: SearchBarProps) {
+export function SearchBar({
+  size = 'md',
+  placeholder = 'Search… (Ctrl+K)',
+  onQueryChange,
+}: SearchBarProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
@@ -78,13 +82,17 @@ export function SearchBar({ size = 'md', placeholder = 'Search… (Ctrl+K)' }: S
     e.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) return;
-    navigate(`${ROUTE_PATHS.products}?search=${encodeURIComponent(trimmed)}`);
+    if (!onQueryChange) {
+      navigate(`${ROUTE_PATHS.products}?search=${encodeURIComponent(trimmed)}`);
+    }
     close();
     inputRef.current?.blur();
   };
 
   const handleViewAll = () => {
-    navigate(`${ROUTE_PATHS.products}?search=${encodeURIComponent(query.trim())}`);
+    if (!onQueryChange) {
+      navigate(`${ROUTE_PATHS.products}?search=${encodeURIComponent(query.trim())}`);
+    }
     close();
     inputRef.current?.blur();
   };
@@ -109,6 +117,7 @@ export function SearchBar({ size = 'md', placeholder = 'Search… (Ctrl+K)' }: S
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(-1);
+              onQueryChange?.(e.target.value);
             }}
             onFocus={() => setFocused(true)}
             placeholder={placeholder}

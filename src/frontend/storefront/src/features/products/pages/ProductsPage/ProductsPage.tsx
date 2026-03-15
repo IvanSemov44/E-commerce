@@ -4,12 +4,12 @@ import { useGetProductsQuery } from '@/features/products/api/productApi';
 import { useProductFilters } from '@/features/products/hooks/useProductFilters';
 import { Button } from '@/shared/components/ui/Button';
 import { CategoryFilter } from '@/features/products/components/CategoryFilter';
+import { SearchBar } from '@/app/SearchBar';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { GridIcon, RefreshIcon } from '@/shared/components/icons';
 import {
   ProductFilters,
-  ProductSearchBar,
   ActiveFilters,
   ProductGrid,
   ProductsGridSkeleton,
@@ -93,12 +93,27 @@ export function ProductsPage() {
         {/* Main Content */}
         <div className={styles.content}>
           <div className={styles.searchSection}>
-            <ProductSearchBar
-              searchValue={searchInput}
-              sortBy={sortBy}
-              onSearchChange={setSearchInput}
-              onSortChange={setSortBy}
-            />
+            <div className={styles.searchBar}>
+              <div className={styles.searchInput}>
+                <SearchBar
+                  key={searchInput ? 1 : 0}
+                  size="md"
+                  placeholder={t('products.searchProducts')}
+                  onQueryChange={setSearchInput}
+                />
+              </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={styles.sortSelect}
+              >
+                <option value="newest">{t('products.sortNewest')}</option>
+                <option value="name">{t('products.sortNameAZ')}</option>
+                <option value="price-asc">{t('products.sortPriceLowHigh')}</option>
+                <option value="price-desc">{t('products.sortPriceHighLow')}</option>
+                <option value="rating">{t('products.sortRating')}</option>
+              </select>
+            </div>
 
             <ActiveFilters
               search={debouncedSearch}

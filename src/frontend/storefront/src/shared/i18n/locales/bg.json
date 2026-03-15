@@ -169,7 +169,12 @@
     "reviewCount_one": "({{count}} отзив)",
     "reviewCount_other": "({{count}} отзива)",
     "stockLimitError": "Налични са само {{available}} бр. Вече имате {{inCart}} в количката.",
-    "addToCartError": "Неуспешно добавяне в количката. Моля, опитайте отново."
+    "addToCartError": "Неуспешно добавяне в количката. Моля, опитайте отново.",
+    "sortNewest": "Най-нови",
+    "sortNameAZ": "Наименование: А–Я",
+    "sortPriceLowHigh": "Цена: от ниска към висока",
+    "sortPriceHighLow": "Цена: от висока към ниска",
+    "sortRating": "Най-висок рейтинг"
   },
   "productDetail": {
     "quantity": "Количество",

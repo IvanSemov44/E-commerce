@@ -169,7 +169,12 @@
     "reviewCount_one": "({{count}} review)",
     "reviewCount_other": "({{count}} reviews)",
     "stockLimitError": "Only {{available}} items available. You already have {{inCart}} in cart.",
-    "addToCartError": "Failed to add item to cart. Please try again."
+    "addToCartError": "Failed to add item to cart. Please try again.",
+    "sortNewest": "Newest First",
+    "sortNameAZ": "Name: A–Z",
+    "sortPriceLowHigh": "Price: Low to High",
+    "sortPriceHighLow": "Price: High to Low",
+    "sortRating": "Highest Rated"
   },
   "productDetail": {
     "quantity": "Quantity",
