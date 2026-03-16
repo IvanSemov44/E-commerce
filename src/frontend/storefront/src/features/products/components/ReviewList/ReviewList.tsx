@@ -5,19 +5,11 @@ import { StarRating } from '../StarRating';
 import { ReviewSkeleton } from '@/features/products/components';
 import { useTranslation } from 'react-i18next';
 
+import type { ProductReview } from '@/shared/types';
 import styles from './ReviewList.module.css';
 
-interface Review {
-  id: string;
-  title?: string;
-  comment?: string;
-  rating: number;
-  userName?: string;
-  createdAt: string;
-}
-
 interface ReviewListProps {
-  reviews: Review[];
+  reviews: ProductReview[];
   isLoading?: boolean;
   error?: unknown;
 }

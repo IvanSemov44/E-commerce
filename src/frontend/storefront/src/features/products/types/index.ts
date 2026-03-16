@@ -4,6 +4,7 @@
  */
 
 import type { ApiResponse, PaginatedResult, Product, ProductDetail } from '@/shared/types';
+import type { SortBy } from '@/features/products/constants';
 
 export interface GetProductsQueryParams {
   page?: number;
@@ -14,8 +15,7 @@ export interface GetProductsQueryParams {
   maxPrice?: number;
   minRating?: number;
   isFeatured?: boolean;
-  sortBy?: string;
-  sortOrder?: string;
+  sortBy?: SortBy;
 }
 
 export type GetProductsResponse = ApiResponse<PaginatedResult<Product>>;

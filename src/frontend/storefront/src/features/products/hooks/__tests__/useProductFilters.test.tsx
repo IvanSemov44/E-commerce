@@ -16,7 +16,7 @@ describe('useProductFilters', () => {
     const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     expect(result.current.page).toBe(1);
-    expect(result.current.debouncedSearch).toBe('');
+    expect(result.current.search).toBe('');
     expect(result.current.sortBy).toBe('newest');
     expect(result.current.selectedCategoryId).toBeUndefined();
     expect(result.current.minPrice).toBeUndefined();
@@ -37,7 +37,7 @@ describe('useProductFilters', () => {
     window.history.pushState({}, '', '/products?search=laptop');
     const { result } = renderHook(() => useProductFilters(), { wrapper });
 
-    expect(result.current.debouncedSearch).toBe('laptop');
+    expect(result.current.search).toBe('laptop');
   });
 
   it('reads categoryId from URL', () => {

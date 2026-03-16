@@ -21,8 +21,7 @@ export function ProductDetailPage() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
-  const { product, isLoading, error, reviews, reviewsLoading, reviewsError, refetchReviews } =
-    useProductData(slug);
+  const { product, isLoading, error, reviews, reviewsLoading, reviewsError } = useProductData(slug);
 
   return (
     <div className={styles.container}>
@@ -68,7 +67,7 @@ export function ProductDetailPage() {
 
                 {isAuthenticated && (
                   <div className={styles.reviewFormSection}>
-                    <ReviewForm productId={product.id} onSuccess={() => refetchReviews()} />
+                    <ReviewForm productId={product.id} />
                   </div>
                 )}
 

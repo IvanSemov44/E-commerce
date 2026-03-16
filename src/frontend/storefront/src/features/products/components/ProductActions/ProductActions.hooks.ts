@@ -38,8 +38,8 @@ export function useWishlistActions(productId: string | undefined) {
         await addToWishlist(productId).unwrap();
         success(t('wishlist.addedToWishlist'));
       }
-    } catch {
-      // mutation error state handled by isAdding / isRemoving
+    } catch (err) {
+      logger.error('useWishlistActions', 'Failed to toggle wishlist', err);
     }
   };
 

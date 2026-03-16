@@ -30,7 +30,7 @@ export const ProductCard = memo(function ProductCard({
   imageUrl,
   rating = 0,
   reviewCount = 0,
-  stockQuantity = 99,
+  stockQuantity,
 }: ProductCardProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);

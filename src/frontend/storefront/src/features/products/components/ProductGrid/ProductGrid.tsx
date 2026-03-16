@@ -37,8 +37,9 @@ export function ProductGrid({
             price={product.price}
             compareAtPrice={product.compareAtPrice}
             imageUrl={product.images[0]?.url}
-            rating={Math.round(product.averageRating)}
+            rating={product.averageRating}
             reviewCount={product.reviewCount}
+            stockQuantity={product.stockQuantity}
           />
         )}
       />

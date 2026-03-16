@@ -5,18 +5,9 @@ import { SearchBar } from '@/app/SearchBar';
 import { ActiveFilters } from '@/features/products/components/ActiveFilters';
 import { RefreshIcon } from '@/shared/components/icons';
 import { useDebounce } from '@/shared/hooks';
-import { VALID_SORT_BY, type SortBy } from '@/features/products/constants';
+import { SEARCH_DEBOUNCE_MS, type SortBy } from '@/features/products/constants';
+import { parseOptionalFloat, parseSortBy } from '@/features/products/utils/parsing';
 import styles from './ProductsToolbar.module.css';
-
-function parseSortBy(value: string | null): SortBy {
-  return value && (VALID_SORT_BY as readonly string[]).includes(value)
-    ? (value as SortBy)
-    : 'newest';
-}
-
-function parseFloat_(value: string | null): number | undefined {
-  return value ? parseFloat(value) : undefined;
-}
 
 interface ProductsToolbarProps {
   isRefetching: boolean;
@@ -29,16 +20,16 @@ export function ProductsToolbar({ isRefetching }: ProductsToolbarProps) {
   // Read current filter values from URL (for ActiveFilters badge)
   const urlSearch = searchParams.get('search') ?? '';
   const selectedCategoryId = searchParams.get('categoryId') ?? undefined;
-  const minPrice = parseFloat_(searchParams.get('minPrice'));
-  const maxPrice = parseFloat_(searchParams.get('maxPrice'));
-  const minRating = parseFloat_(searchParams.get('minRating'));
+  const minPrice = parseOptionalFloat(searchParams.get('minPrice'));
+  const maxPrice = parseOptionalFloat(searchParams.get('maxPrice'));
+  const minRating = parseOptionalFloat(searchParams.get('minRating'));
   const isFeatured = searchParams.get('isFeatured') === 'true' ? true : undefined;
   const sortBy = parseSortBy(searchParams.get('sortBy'));
 
   // Local search: debounce → write to URL
   const [searchInput, setSearchInput] = useState(urlSearch);
   const [clearKey, setClearKey] = useState(0);
-  const debouncedSearch = useDebounce(searchInput, 500);
+  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
   const isFirstRender = useRef(true);
 
   useEffect(() => {

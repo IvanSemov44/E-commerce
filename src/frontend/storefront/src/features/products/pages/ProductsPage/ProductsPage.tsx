@@ -28,7 +28,7 @@ export function ProductsPage() {
     page: filters.page,
     pageSize: PRODUCTS_PAGE_SIZE,
     categoryId: filters.selectedCategoryId,
-    search: filters.debouncedSearch,
+    search: filters.search,
     minPrice: filters.minPrice,
     maxPrice: filters.maxPrice,
     minRating: filters.minRating,

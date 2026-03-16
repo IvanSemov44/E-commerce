@@ -11,6 +11,7 @@ import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
 import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
 import { useAddToCartMutation } from '@/features/cart/api';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
+import { QUICK_ADD_RESET_MS } from '@/features/products/constants';
 
 interface UseWishlistToggleParams {
   id: string;
@@ -133,7 +134,7 @@ export function useAddToCart({
       } catch (err) {
         handleError(err, t('products.addToCartError'));
       } finally {
-        setTimeout(() => setIsAddingToCart(false), 300);
+        setTimeout(() => setIsAddingToCart(false), QUICK_ADD_RESET_MS);
       }
     },
     [

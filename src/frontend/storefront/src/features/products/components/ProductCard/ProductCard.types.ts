@@ -12,5 +12,5 @@ export interface ProductCardProps {
   imageUrl: string;
   rating?: number;
   reviewCount?: number;
-  stockQuantity?: number;
+  stockQuantity: number;
 }
