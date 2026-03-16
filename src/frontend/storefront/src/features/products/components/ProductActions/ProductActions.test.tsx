@@ -1,9 +1,32 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductActions } from './ProductActions';
-import type { ProductActionsProps } from './ProductActions.types';
+import type { ProductDetail } from '@/shared/types';
+
+// Mock the smart hooks so we control all cart/wishlist behavior
+vi.mock('./ProductActions.hooks', () => ({
+  useCartActions: vi.fn(),
+  useWishlistActions: vi.fn(),
+}));
+
+const defaultCartHook = {
+  quantity: 1,
+  setQuantity: vi.fn(),
+  addedToCart: false,
+  cartError: null,
+  dismissCartError: vi.fn(),
+  addToCart: vi.fn(),
+  isAdding: false,
+};
+
+const defaultWishlistHook = {
+  isInWishlist: false,
+  toggleWishlist: vi.fn(),
+  isAdding: false,
+  isRemoving: false,
+};
 
 const authAuthenticated = {
   isAuthenticated: true,
@@ -23,43 +46,39 @@ const authUnauthenticated = {
 
 const emptyCart = { items: [], lastUpdated: 0 };
 
-const defaultPreloadedState = {
-  auth: authAuthenticated,
-  cart: emptyCart,
-};
-
-const defaultProps: ProductActionsProps = {
-  productId: 'test-product',
+const makeProduct = (overrides: Partial<ProductDetail> = {}): ProductDetail => ({
+  id: 'test-product',
+  name: 'Test Product',
+  slug: 'test-product',
+  price: 29.99,
+  images: [{ url: '/test.jpg', altText: 'Test', isPrimary: true, displayOrder: 0 }],
   stockQuantity: 10,
   lowStockThreshold: 3,
-  cart: {
-    quantity: 1,
-    addedToCart: false,
-    isLoading: false,
-    error: null,
-  },
-  wishlist: {
-    isInWishlist: false,
-    isAdding: false,
-    isRemoving: false,
-  },
-  onQuantityChange: vi.fn(),
-  onAddToCart: vi.fn(),
-  onToggleWishlist: vi.fn(),
-  onDismissError: vi.fn(),
-};
+  averageRating: 4.5,
+  reviewCount: 12,
+  isActive: true,
+  reviews: [],
+  ...overrides,
+});
 
 const render = (
-  props: Partial<ProductActionsProps> = {},
+  productOverrides: Partial<ProductDetail> = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preloadedState: any = defaultPreloadedState
+  preloadedState: any = { auth: authAuthenticated, cart: emptyCart }
 ) =>
-  renderWithProviders(<ProductActions {...defaultProps} {...props} />, {
+  renderWithProviders(<ProductActions product={makeProduct(productOverrides)} />, {
     preloadedState,
     withRouter: false,
   });
 
 describe('ProductActions', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook });
+    vi.mocked(hooks.useWishlistActions).mockReturnValue({ ...defaultWishlistHook });
+  });
+
   it('displays in stock status', () => {
     render();
 
@@ -86,15 +105,17 @@ describe('ProductActions', () => {
     expect(screen.getByRole('button', { name: '+' })).toBeInTheDocument();
   });
 
-  it('calls onQuantityChange when quantity changes', async () => {
+  it('calls setQuantity when quantity increases', async () => {
     const user = userEvent.setup();
-    const onQuantityChange = vi.fn();
-    render({ onQuantityChange });
+    const setQuantity = vi.fn();
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, setQuantity });
 
-    const increaseButton = screen.getByRole('button', { name: '+' });
-    await user.click(increaseButton);
+    render();
 
-    expect(onQuantityChange).toHaveBeenCalledWith(2);
+    await user.click(screen.getByRole('button', { name: '+' }));
+
+    expect(setQuantity).toHaveBeenCalledWith(2);
   });
 
   it('shows cart hint when item is in cart', () => {
@@ -135,10 +156,13 @@ describe('ProductActions', () => {
     expect(button).toBeDisabled();
   });
 
-  it('shows added confirmation', () => {
-    render({ cart: { ...defaultProps.cart, addedToCart: true } });
+  it('shows added confirmation', async () => {
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, addedToCart: true });
 
-    expect(screen.getByText(/✓ added to cart/i)).toBeInTheDocument();
+    render();
+
+    expect(screen.getByText(/added to cart/i)).toBeInTheDocument();
   });
 
   it('renders wishlist button when authenticated', () => {
@@ -153,25 +177,41 @@ describe('ProductActions', () => {
     expect(screen.queryByRole('button', { name: /wishlist/i })).not.toBeInTheDocument();
   });
 
-  it('shows error message when cart error exists', () => {
-    render({ cart: { ...defaultProps.cart, error: 'Failed to add to cart' } });
+  it('shows error message when cart error exists', async () => {
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({
+      ...defaultCartHook,
+      cartError: 'Failed to add to cart',
+    });
+
+    render();
 
     expect(screen.getByText('Failed to add to cart')).toBeInTheDocument();
   });
 
-  it('calls onDismissError when error is dismissed', async () => {
+  it('calls dismissCartError when error is dismissed', async () => {
     const user = userEvent.setup();
-    const onDismissError = vi.fn();
-    render({ cart: { ...defaultProps.cart, error: 'Failed to add' }, onDismissError });
+    const dismissCartError = vi.fn();
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({
+      ...defaultCartHook,
+      cartError: 'Failed to add',
+      dismissCartError,
+    });
+
+    render();
 
     const dismissButton = screen.getByRole('button', { name: /close|dismiss|×/i });
     await user.click(dismissButton);
 
-    expect(onDismissError).toHaveBeenCalled();
+    expect(dismissCartError).toHaveBeenCalled();
   });
 
-  it('disables increase button at max stock', () => {
-    render({ stockQuantity: 10, cart: { ...defaultProps.cart, quantity: 10 } });
+  it('disables increase button at max stock', async () => {
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, quantity: 10 });
+
+    render({ stockQuantity: 10 });
 
     const increaseButton = screen.getByRole('button', { name: '+' });
     expect(increaseButton).toBeDisabled();

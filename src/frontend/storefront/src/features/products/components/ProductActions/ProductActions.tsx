@@ -4,39 +4,31 @@ import ErrorAlert from '@/shared/components/ErrorAlert';
 import { useAppSelector } from '@/shared/lib/store';
 import { selectCartItemById } from '@/features/cart/slices/cartSlice';
 import type { ProductActionsProps } from './ProductActions.types';
+import { useCartActions, useWishlistActions } from './ProductActions.hooks';
 import { isInStock, isStockLow } from './ProductActions.utils';
 import styles from './ProductActions.module.css';
 
-export function ProductActions({
-  productId,
-  stockQuantity,
-  lowStockThreshold,
-  cart,
-  wishlist,
-  onQuantityChange,
-  onAddToCart,
-  onToggleWishlist,
-  onDismissError,
-}: ProductActionsProps) {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const cartItem = useAppSelector(selectCartItemById(productId));
-  const { quantity, addedToCart, isLoading: addingToCartBackend, error: cartError } = cart;
-  const { isInWishlist, isAdding: addingToWishlist, isRemoving: removingFromWishlist } = wishlist;
+export function ProductActions({ product }: ProductActionsProps) {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const cartItem = useAppSelector(selectCartItemById(product.id));
+
+  const cart = useCartActions(product);
+  const wishlist = useWishlistActions(product.id);
 
   return (
     <div className={styles.actions}>
       <div className={styles.stockSection}>
         <p
-          className={`${styles.stockLabel} ${isInStock(stockQuantity) ? styles.inStock : styles.outOfStock}`}
+          className={`${styles.stockLabel} ${isInStock(product.stockQuantity) ? styles.inStock : styles.outOfStock}`}
         >
-          {stockQuantity === 0
+          {product.stockQuantity === 0
             ? t('common.outOfStock')
-            : t('products.inStockCount', { count: stockQuantity })}
+            : t('products.inStockCount', { count: product.stockQuantity })}
         </p>
-        {isStockLow(stockQuantity, lowStockThreshold) && (
+        {isStockLow(product.stockQuantity, product.lowStockThreshold) && (
           <p className={styles.lowStockWarning}>
-            {t('products.lowStockWarning', { count: stockQuantity })}
+            {t('products.lowStockWarning', { count: product.stockQuantity })}
           </p>
         )}
       </div>
@@ -46,25 +38,25 @@ export function ProductActions({
         <div className={styles.quantityControls}>
           <div className={styles.quantityButtonGroup}>
             <button
-              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+              onClick={() => cart.setQuantity(Math.max(1, cart.quantity - 1))}
               className={styles.quantityButton}
             >
               −
             </button>
             <input
               type="number"
-              value={quantity}
+              value={cart.quantity}
               onChange={(e) => {
                 const val = parseInt(e.target.value) || 1;
-                onQuantityChange(Math.min(stockQuantity, Math.max(1, val)));
+                cart.setQuantity(Math.min(product.stockQuantity, Math.max(1, val)));
               }}
               className={styles.quantityInput}
               min="1"
-              max={stockQuantity}
+              max={product.stockQuantity}
             />
             <button
-              onClick={() => onQuantityChange(Math.min(stockQuantity, quantity + 1))}
-              disabled={quantity >= stockQuantity}
+              onClick={() => cart.setQuantity(Math.min(product.stockQuantity, cart.quantity + 1))}
+              disabled={cart.quantity >= product.stockQuantity}
               className={styles.quantityButton}
             >
               +
@@ -78,33 +70,33 @@ export function ProductActions({
         </div>
       </div>
 
-      {cartError && (
+      {cart.cartError && (
         <div className={styles.errorContainer}>
-          <ErrorAlert message={cartError} onDismiss={onDismissError} />
+          <ErrorAlert message={cart.cartError} onDismiss={cart.dismissCartError} />
         </div>
       )}
 
       <div className={styles.buttonGroup}>
         <Button
-          onClick={onAddToCart}
-          disabled={!isInStock(stockQuantity) || addedToCart || addingToCartBackend}
+          onClick={cart.addToCart}
+          disabled={!isInStock(product.stockQuantity) || cart.addedToCart || cart.isAdding}
           size="lg"
         >
-          {stockQuantity === 0
+          {product.stockQuantity === 0
             ? t('common.outOfStock')
-            : addedToCart
+            : cart.addedToCart
               ? t('products.addedToCartSuccess')
               : t('products.addToCart')}
         </Button>
 
         {isAuthenticated && (
           <Button
-            variant={isInWishlist ? 'primary' : 'secondary'}
+            variant={wishlist.isInWishlist ? 'primary' : 'secondary'}
             size="lg"
-            onClick={onToggleWishlist}
-            disabled={addingToWishlist || removingFromWishlist}
+            onClick={wishlist.toggleWishlist}
+            disabled={wishlist.isAdding || wishlist.isRemoving}
           >
-            {isInWishlist ? t('products.inWishlist') : t('products.addToWishlist')}
+            {wishlist.isInWishlist ? t('products.inWishlist') : t('products.addToWishlist')}
           </Button>
         )}
       </div>

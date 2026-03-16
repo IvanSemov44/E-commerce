@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { usePerformanceMonitor } from '@/shared/hooks';
-
-import { useProductDetails } from '@/features/products/hooks/useProductDetails';
+import { useProductData } from '@/features/products/hooks/useProductData';
 import { Card } from '@/shared/components/ui/Card';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { ReviewForm } from '@/features/products/components/ReviewForm';
@@ -12,9 +12,7 @@ import {
   ProductActions,
   ProductSkeleton,
 } from '@/features/products/components';
-import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '@/shared/lib/store';
-
 import styles from './ProductDetailPage.module.css';
 
 export function ProductDetailPage() {
@@ -23,26 +21,8 @@ export function ProductDetailPage() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
-  const {
-    product,
-    productLoading: isLoading,
-    productError: error,
-    reviews,
-    reviewsLoading,
-    reviewsError,
-    refetchReviews,
-    isInWishlist,
-    addingToWishlist,
-    removingFromWishlist,
-    toggleWishlist,
-    quantity,
-    setQuantity,
-    addedToCart,
-    cartError,
-    setCartError,
-    addingToCartBackend,
-    addToCart,
-  } = useProductDetails(slug);
+  const { product, isLoading, error, reviews, reviewsLoading, reviewsError, refetchReviews } =
+    useProductData(slug);
 
   return (
     <div className={styles.container}>
@@ -79,30 +59,10 @@ export function ProductDetailPage() {
                     compareAtPrice={product.compareAtPrice}
                   />
 
-                  <ProductActions
-                    productId={product.id}
-                    stockQuantity={product.stockQuantity}
-                    lowStockThreshold={product.lowStockThreshold}
-                    cart={{
-                      quantity,
-                      addedToCart,
-                      isLoading: addingToCartBackend,
-                      error: cartError,
-                    }}
-                    wishlist={{
-                      isInWishlist,
-                      isAdding: addingToWishlist,
-                      isRemoving: removingFromWishlist,
-                    }}
-                    onQuantityChange={setQuantity}
-                    onAddToCart={addToCart}
-                    onToggleWishlist={toggleWishlist}
-                    onDismissError={() => setCartError(null)}
-                  />
+                  <ProductActions product={product} />
                 </div>
               </div>
 
-              {/* Reviews */}
               <div className={styles.reviewsSection}>
                 <h2 className={styles.reviewsTitle}>{t('products.customerReviews')}</h2>
 
