@@ -10,7 +10,7 @@ interface MockCardProps extends HTMLAttributes<HTMLDivElement> {
 
 // Mock the Card component
 vi.mock('../ui/Card', () => ({
-  default: ({ children, ...props }: MockCardProps) => (
+  Card: ({ children, ...props }: MockCardProps) => (
     <div data-testid="card" {...props}>
       {children}
     </div>

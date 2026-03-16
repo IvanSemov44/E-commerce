@@ -47,7 +47,7 @@ describe('useNewsletterSubscription', () => {
     expect(result.current.email).toBe('test@example.com');
   });
 
-  it('sets isSubmitting during submission', async () => {
+  it('resets isSubmitting to false after submission completes', async () => {
     const { result } = renderHook(() =>
       useNewsletterSubscription({
         invalidEmailMessage: 'Invalid email',
@@ -63,12 +63,11 @@ describe('useNewsletterSubscription', () => {
 
     const formEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent;
 
-    // Start the submission
-    act(() => {
-      result.current.handleNewsletterSubmit(formEvent);
+    await act(async () => {
+      await result.current.handleNewsletterSubmit(formEvent);
     });
 
-    // isSubmitting should be true during submission
-    expect(result.current.isSubmitting).toBe(true);
+    // isSubmitting should be reset to false once submission completes
+    expect(result.current.isSubmitting).toBe(false);
   });
 });

@@ -1,53 +1,97 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
-import { ThemeProvider } from '@/app/providers/ThemeProvider';
 import HeaderMobileMenu from './HeaderMobileMenu';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+type MockState = {
+  auth: {
+    isAuthenticated: boolean;
+    user: { firstName: string; email: string } | null;
+  };
+};
+
+let mockState: MockState = {
+  auth: { isAuthenticated: false, user: null },
+};
+
+const mockHeaderData = { cartItemCount: 0, wishlistItemCount: 0 };
+
+vi.mock('@/shared/lib/store', () => ({
+  useAppSelector: (selector: (state: MockState) => unknown) => selector(mockState),
+}));
+
+vi.mock('../useHeaderData', () => ({
+  useHeaderData: () => mockHeaderData,
+}));
+
+vi.mock('@/app/ThemeToggle', () => ({
+  ThemeToggle: () => <div />,
+}));
+
+vi.mock('@/shared/components/icons', () => ({
+  HeartIcon: () => null,
+  ShoppingCartIcon: () => null,
+  UserIcon: () => null,
+  LogoutIcon: () => null,
+  PackageIcon: () => null,
+  DocumentIcon: () => null,
 }));
 
 const defaultProps = {
-  isAuthenticated: false,
-  user: null,
-  cartItemCount: 0,
-  wishlistItemCount: 0,
   onClose: vi.fn(),
   onLogout: vi.fn(),
 };
 
-const renderMenu = (props = {}) => {
-  return render(
-    <ThemeProvider>
-      <BrowserRouter>
-        <HeaderMobileMenu {...defaultProps} {...props} />
-      </BrowserRouter>
-    </ThemeProvider>
+const renderMenu = (overrides = {}) =>
+  render(
+    <BrowserRouter>
+      <HeaderMobileMenu {...defaultProps} {...overrides} />
+    </BrowserRouter>
   );
-};
 
 describe('HeaderMobileMenu', () => {
-  it('renders sign in and sign up buttons for unauthenticated user', () => {
+  beforeEach(() => {
+    mockState = { auth: { isAuthenticated: false, user: null } };
+    mockHeaderData.cartItemCount = 0;
+    mockHeaderData.wishlistItemCount = 0;
+    vi.clearAllMocks();
+  });
+
+  it('renders sign in and sign up links for unauthenticated user', () => {
     renderMenu();
     expect(screen.getByText(/Sign In/i)).toBeInTheDocument();
     expect(screen.getByText(/Sign Up/i)).toBeInTheDocument();
   });
 
   it('renders user info for authenticated user', () => {
-    const user = { firstName: 'John', email: 'john@example.com', role: 'Customer' };
-    renderMenu({ isAuthenticated: true, user });
-    expect(screen.getByText(/John/)).toBeInTheDocument();
-    expect(screen.getByText(/john@example.com/)).toBeInTheDocument();
+    mockState.auth = {
+      isAuthenticated: true,
+      user: { firstName: 'John', email: 'john@example.com' },
+    };
+    renderMenu();
+    expect(screen.getByText('John')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  });
+
+  it('does not show sign in / sign up for authenticated user', () => {
+    mockState.auth = {
+      isAuthenticated: true,
+      user: { firstName: 'John', email: 'john@example.com' },
+    };
+    renderMenu();
+    expect(screen.queryByText(/Sign In/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sign Up/i)).not.toBeInTheDocument();
   });
 
   it('displays cart badge when items exist', () => {
-    renderMenu({ cartItemCount: 5 });
-    expect(screen.getByText(/5/)).toBeInTheDocument();
+    mockHeaderData.cartItemCount = 5;
+    renderMenu();
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('displays 99+ when cart count exceeds 99', () => {
-    renderMenu({ cartItemCount: 150 });
-    expect(screen.getByText(/99+/)).toBeInTheDocument();
+    mockHeaderData.cartItemCount = 150;
+    renderMenu();
+    expect(screen.getByText('99+')).toBeInTheDocument();
   });
 });
