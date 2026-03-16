@@ -1,127 +1,99 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { useProductFilters } from '../useProductFilters';
 
-// Mock useTranslation
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: {
-      language: 'en',
-    },
-  }),
-}));
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <BrowserRouter>{children}</BrowserRouter>
+);
 
 describe('useProductFilters', () => {
   beforeEach(() => {
-    // Clear URL params before each test
     window.history.pushState({}, '', '/products');
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <BrowserRouter>{children}</BrowserRouter>
-  );
-
-  it('should initialize with default values', () => {
+  it('returns defaults when no URL params are present', () => {
     const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     expect(result.current.page).toBe(1);
-    expect(result.current.searchInput).toBe('');
     expect(result.current.debouncedSearch).toBe('');
     expect(result.current.sortBy).toBe('newest');
-    expect(result.current.hasActiveFilters).toBe(false);
-  });
-
-  it('should set page', () => {
-    const { result } = renderHook(() => useProductFilters(), { wrapper });
-
-    act(() => {
-      result.current.setPage(2);
-    });
-
-    expect(result.current.page).toBe(2);
-  });
-
-  it('should set search input', () => {
-    const { result } = renderHook(() => useProductFilters(), { wrapper });
-
-    act(() => {
-      result.current.setSearchInput('test search');
-    });
-
-    expect(result.current.searchInput).toBe('test search');
-  });
-
-  it('should set category filter', () => {
-    const { result } = renderHook(() => useProductFilters(), { wrapper });
-
-    act(() => {
-      result.current.setSelectedCategoryId('category-1');
-    });
-
-    expect(result.current.selectedCategoryId).toBe('category-1');
-  });
-
-  it('should clear all filters', () => {
-    const { result } = renderHook(() => useProductFilters(), { wrapper });
-
-    // Set some filters
-    act(() => {
-      result.current.setPage(3);
-      result.current.setSearchInput('test');
-      result.current.setSelectedCategoryId('cat-1');
-      result.current.setMinPrice(10);
-      result.current.setMaxPrice(100);
-    });
-
-    // Clear filters
-    act(() => {
-      result.current.handleClearFilters();
-    });
-
-    expect(result.current.page).toBe(1);
-    expect(result.current.searchInput).toBe('');
     expect(result.current.selectedCategoryId).toBeUndefined();
     expect(result.current.minPrice).toBeUndefined();
     expect(result.current.maxPrice).toBeUndefined();
+    expect(result.current.minRating).toBeUndefined();
+    expect(result.current.isFeatured).toBeUndefined();
+    expect(result.current.hasActiveFilters).toBe(false);
   });
 
-  it('should set sort by', () => {
+  it('reads page from URL', () => {
+    window.history.pushState({}, '', '/products?page=3');
     const { result } = renderHook(() => useProductFilters(), { wrapper });
 
-    act(() => {
-      result.current.setSortBy('price-asc');
-    });
+    expect(result.current.page).toBe(3);
+  });
+
+  it('reads search from URL', () => {
+    window.history.pushState({}, '', '/products?search=laptop');
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
+
+    expect(result.current.debouncedSearch).toBe('laptop');
+  });
+
+  it('reads categoryId from URL', () => {
+    window.history.pushState({}, '', '/products?categoryId=cat-1');
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
+
+    expect(result.current.selectedCategoryId).toBe('cat-1');
+  });
+
+  it('reads price range from URL', () => {
+    window.history.pushState({}, '', '/products?minPrice=10&maxPrice=200');
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
+
+    expect(result.current.minPrice).toBe(10);
+    expect(result.current.maxPrice).toBe(200);
+  });
+
+  it('reads minRating from URL', () => {
+    window.history.pushState({}, '', '/products?minRating=4.5');
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
+
+    expect(result.current.minRating).toBe(4.5);
+  });
+
+  it('reads sortBy from URL', () => {
+    window.history.pushState({}, '', '/products?sortBy=price-asc');
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     expect(result.current.sortBy).toBe('price-asc');
   });
 
-  it('should set price range', () => {
+  it('falls back to "newest" for invalid sortBy value', () => {
+    window.history.pushState({}, '', '/products?sortBy=invalid-sort');
     const { result } = renderHook(() => useProductFilters(), { wrapper });
 
-    act(() => {
-      result.current.setMinPrice(50);
-      result.current.setMaxPrice(200);
-    });
-
-    expect(result.current.minPrice).toBe(50);
-    expect(result.current.maxPrice).toBe(200);
+    expect(result.current.sortBy).toBe('newest');
   });
 
-  it('should detect active filters', () => {
+  it('reads isFeatured from URL', () => {
+    window.history.pushState({}, '', '/products?isFeatured=true');
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
+
+    expect(result.current.isFeatured).toBe(true);
+  });
+
+  it('hasActiveFilters is true when any filter is set', () => {
+    window.history.pushState({}, '', '/products?minPrice=50');
+    const { result } = renderHook(() => useProductFilters(), { wrapper });
+
+    expect(result.current.hasActiveFilters).toBe(true);
+  });
+
+  it('hasActiveFilters is false when only page is set', () => {
+    window.history.pushState({}, '', '/products?page=2');
     const { result } = renderHook(() => useProductFilters(), { wrapper });
 
     expect(result.current.hasActiveFilters).toBe(false);
-
-    act(() => {
-      result.current.setMinPrice(50);
-    });
-
-    expect(result.current.hasActiveFilters).toBe(true);
   });
 });

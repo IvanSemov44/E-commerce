@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePerformanceMonitor } from '@/shared/hooks';
 import { useGetProductsQuery } from '@/features/products/api/productApi';
@@ -15,6 +16,7 @@ import styles from './ProductsPage.module.css';
 export function ProductsPage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
+  const [, setSearchParams] = useSearchParams();
   const filters = useProductFilters();
 
   const {
@@ -34,6 +36,20 @@ export function ProductsPage() {
     isFeatured: filters.isFeatured,
   });
 
+  const handlePageChange = (page: number) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (page > 1) next.set('page', page.toString());
+        else next.delete('page');
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
+  const handleClearFilters = () => setSearchParams({}, { replace: true });
+
   return (
     <div className={styles.container}>
       <PageHeader
@@ -46,42 +62,16 @@ export function ProductsPage() {
       <div className={styles.layout}>
         {/* Sidebar */}
         <div className={styles.sidebar}>
-          <CategoryFilter
-            selectedCategoryId={filters.selectedCategoryId}
-            onSelectCategory={filters.setSelectedCategoryId}
-          />
+          <CategoryFilter />
 
           <div className={styles.filtersSection}>
-            <ProductFilters
-              minPrice={filters.minPrice}
-              maxPrice={filters.maxPrice}
-              minRating={filters.minRating}
-              isFeatured={filters.isFeatured}
-              onMinPriceChange={filters.setMinPrice}
-              onMaxPriceChange={filters.setMaxPrice}
-              onMinRatingChange={filters.setMinRating}
-              onIsFeaturedChange={filters.setIsFeatured}
-            />
+            <ProductFilters />
           </div>
         </div>
 
         {/* Main Content */}
         <div className={styles.content}>
-          <ProductsToolbar
-            searchInput={filters.searchInput}
-            sortBy={filters.sortBy}
-            debouncedSearch={filters.debouncedSearch}
-            selectedCategoryId={filters.selectedCategoryId}
-            minPrice={filters.minPrice}
-            maxPrice={filters.maxPrice}
-            minRating={filters.minRating}
-            isFeatured={filters.isFeatured}
-            onSearchChange={filters.setSearchInput}
-            onSortChange={filters.setSortBy}
-            onClearFilters={filters.handleClearFilters}
-            isFetching={isFetching}
-            isLoading={isLoading}
-          />
+          <ProductsToolbar isRefetching={isFetching && !isLoading} />
 
           <QueryRenderer
             isLoading={isLoading}
@@ -97,7 +87,7 @@ export function ProductsPage() {
                 : t('products.noProducts'),
               description: filters.hasActiveFilters ? t('products.tryAdjustingSearch') : undefined,
               action: filters.hasActiveFilters ? (
-                <Button onClick={filters.handleClearFilters}>{t('common.clear')}</Button>
+                <Button onClick={handleClearFilters}>{t('common.clear')}</Button>
               ) : undefined,
             }}
           >
@@ -107,7 +97,7 @@ export function ProductsPage() {
                 totalCount={data.totalCount}
                 currentPage={filters.page}
                 pageSize={PRODUCTS_PAGE_SIZE}
-                onPageChange={filters.setPage}
+                onPageChange={handlePageChange}
               />
             )}
           </QueryRenderer>

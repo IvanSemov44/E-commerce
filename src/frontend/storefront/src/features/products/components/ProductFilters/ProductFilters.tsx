@@ -1,18 +1,32 @@
+import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import type { ProductFiltersProps } from './ProductFilters.types';
 import styles from './ProductFilters.module.css';
 
-export function ProductFilters({
-  minPrice,
-  maxPrice,
-  minRating,
-  isFeatured,
-  onMinPriceChange,
-  onMaxPriceChange,
-  onMinRatingChange,
-  onIsFeaturedChange,
-}: ProductFiltersProps) {
+function parseFloat_(value: string | null): number | undefined {
+  return value ? parseFloat(value) : undefined;
+}
+
+export function ProductFilters() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const minPrice = parseFloat_(searchParams.get('minPrice'));
+  const maxPrice = parseFloat_(searchParams.get('maxPrice'));
+  const minRating = parseFloat_(searchParams.get('minRating'));
+  const isFeatured = searchParams.get('isFeatured') === 'true';
+
+  const setParam = (key: string, value: string | undefined) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value !== undefined) next.set(key, value);
+        else next.delete(key);
+        next.delete('page');
+        return next;
+      },
+      { replace: true }
+    );
+  };
 
   return (
     <div className={styles.filters}>
@@ -23,19 +37,15 @@ export function ProductFilters({
           <input
             type="number"
             placeholder={t('products.priceMin')}
-            value={minPrice || ''}
-            onChange={(e) =>
-              onMinPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)
-            }
+            value={minPrice ?? ''}
+            onChange={(e) => setParam('minPrice', e.target.value || undefined)}
             className={styles.priceInput}
           />
           <input
             type="number"
             placeholder={t('products.priceMax')}
-            value={maxPrice || ''}
-            onChange={(e) =>
-              onMaxPriceChange(e.target.value ? parseFloat(e.target.value) : undefined)
-            }
+            value={maxPrice ?? ''}
+            onChange={(e) => setParam('maxPrice', e.target.value || undefined)}
             className={styles.priceInput}
           />
         </div>
@@ -45,10 +55,8 @@ export function ProductFilters({
       <div className={styles.filterSection}>
         <h3 className={styles.filterTitle}>{t('products.minimumRating')}</h3>
         <select
-          value={minRating || ''}
-          onChange={(e) =>
-            onMinRatingChange(e.target.value ? parseFloat(e.target.value) : undefined)
-          }
+          value={minRating ?? ''}
+          onChange={(e) => setParam('minRating', e.target.value || undefined)}
           className={styles.filterSelect}
         >
           <option value="">{t('products.allRatings')}</option>
@@ -63,8 +71,8 @@ export function ProductFilters({
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
-            checked={isFeatured || false}
-            onChange={(e) => onIsFeaturedChange(e.target.checked ? true : undefined)}
+            checked={isFeatured}
+            onChange={(e) => setParam('isFeatured', e.target.checked ? 'true' : undefined)}
             className={styles.checkbox}
           />
           <span className={styles.checkboxText}>{t('products.featuredOnly')}</span>

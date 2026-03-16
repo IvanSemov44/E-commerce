@@ -1,104 +1,99 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter, Routes, Route } from 'react-router';
 import { ProductFilters } from './ProductFilters';
 
-const defaultProps = {
-  minPrice: undefined,
-  maxPrice: undefined,
-  minRating: undefined,
-  isFeatured: undefined,
-  onMinPriceChange: vi.fn(),
-  onMaxPriceChange: vi.fn(),
-  onMinRatingChange: vi.fn(),
-  onIsFeaturedChange: vi.fn(),
-};
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+function renderProductFilters(url = '/') {
+  return render(
+    <MemoryRouter initialEntries={[url]}>
+      <Routes>
+        <Route path="*" element={<ProductFilters />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
 
 describe('ProductFilters', () => {
   it('renders price range inputs', () => {
-    render(<ProductFilters {...defaultProps} />);
+    renderProductFilters();
 
     expect(screen.getByPlaceholderText(/min/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/max/i)).toBeInTheDocument();
   });
 
   it('renders rating select dropdown', () => {
-    render(<ProductFilters {...defaultProps} />);
+    renderProductFilters();
 
     expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
   it('renders featured checkbox', () => {
-    render(<ProductFilters {...defaultProps} />);
+    renderProductFilters();
 
     expect(screen.getByRole('checkbox')).toBeInTheDocument();
   });
 
-  it('calls onMinPriceChange when min price is entered', async () => {
-    const user = userEvent.setup();
-    const onMinPriceChange = vi.fn();
-    render(<ProductFilters {...defaultProps} onMinPriceChange={onMinPriceChange} />);
+  it('displays price values from URL params', () => {
+    renderProductFilters('/?minPrice=10&maxPrice=100');
 
-    const minPriceInput = screen.getByPlaceholderText(/min/i);
-    await user.type(minPriceInput, '10');
-
-    expect(onMinPriceChange).toHaveBeenCalled();
+    expect((screen.getByPlaceholderText(/min/i) as HTMLInputElement).value).toBe('10');
+    expect((screen.getByPlaceholderText(/max/i) as HTMLInputElement).value).toBe('100');
   });
 
-  it('calls onMaxPriceChange when max price is entered', async () => {
-    const user = userEvent.setup();
-    const onMaxPriceChange = vi.fn();
-    render(<ProductFilters {...defaultProps} onMaxPriceChange={onMaxPriceChange} />);
+  it('displays rating value from URL params', () => {
+    renderProductFilters('/?minRating=4.5');
 
-    const maxPriceInput = screen.getByPlaceholderText(/max/i);
-    await user.type(maxPriceInput, '100');
-
-    expect(onMaxPriceChange).toHaveBeenCalled();
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('4.5');
   });
 
-  it('calls onMinRatingChange when rating is selected', async () => {
-    const user = userEvent.setup();
-    const onMinRatingChange = vi.fn();
-    render(<ProductFilters {...defaultProps} onMinRatingChange={onMinRatingChange} />);
+  it('displays checked featured from URL params', () => {
+    renderProductFilters('/?isFeatured=true');
 
-    const ratingSelect = screen.getByRole('combobox');
-    await user.selectOptions(ratingSelect, '4');
-
-    expect(onMinRatingChange).toHaveBeenCalledWith(4);
+    expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true);
   });
 
-  it('calls onIsFeaturedChange when featured checkbox is toggled', async () => {
+  it('typing in min price input updates value', async () => {
     const user = userEvent.setup();
-    const onIsFeaturedChange = vi.fn();
-    render(<ProductFilters {...defaultProps} onIsFeaturedChange={onIsFeaturedChange} />);
+    renderProductFilters();
+
+    const minInput = screen.getByPlaceholderText(/min/i);
+    await user.type(minInput, '50');
+
+    expect((minInput as HTMLInputElement).value).toBe('50');
+  });
+
+  it('typing in max price input updates value', async () => {
+    const user = userEvent.setup();
+    renderProductFilters();
+
+    const maxInput = screen.getByPlaceholderText(/max/i);
+    await user.type(maxInput, '200');
+
+    expect((maxInput as HTMLInputElement).value).toBe('200');
+  });
+
+  it('selecting a rating option updates the select', async () => {
+    const user = userEvent.setup();
+    renderProductFilters();
+
+    const select = screen.getByRole('combobox');
+    await user.selectOptions(select, '4');
+
+    expect((select as HTMLSelectElement).value).toBe('4');
+  });
+
+  it('checking featured checkbox reflects in UI', async () => {
+    const user = userEvent.setup();
+    renderProductFilters();
 
     const checkbox = screen.getByRole('checkbox');
     await user.click(checkbox);
 
-    expect(onIsFeaturedChange).toHaveBeenCalledWith(true);
-  });
-
-  it('displays current price values', () => {
-    render(<ProductFilters {...defaultProps} minPrice={10} maxPrice={100} />);
-
-    const minPriceInput = screen.getByPlaceholderText(/min/i) as HTMLInputElement;
-    const maxPriceInput = screen.getByPlaceholderText(/max/i) as HTMLInputElement;
-
-    expect(minPriceInput.value).toBe('10');
-    expect(maxPriceInput.value).toBe('100');
-  });
-
-  it('displays current rating value', () => {
-    render(<ProductFilters {...defaultProps} minRating={4.5} />);
-
-    const ratingSelect = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(ratingSelect.value).toBe('4.5');
-  });
-
-  it('displays checked state for featured filter', () => {
-    render(<ProductFilters {...defaultProps} isFeatured={true} />);
-
-    const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
-    expect(checkbox.checked).toBe(true);
+    expect((checkbox as HTMLInputElement).checked).toBe(true);
   });
 });

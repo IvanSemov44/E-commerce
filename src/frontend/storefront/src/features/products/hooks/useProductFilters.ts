@@ -1,11 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
-import { useDebounce } from '@/shared/hooks';
 import { VALID_SORT_BY, type SortBy } from '@/features/products/constants';
-import { useFilterState } from './useFilterState';
-import type { FilterStateReturn } from './useFilterState';
-
-export type UseProductFiltersReturn = FilterStateReturn & { debouncedSearch: string };
 
 function parseSortBy(value: string | null): SortBy {
   return value && (VALID_SORT_BY as readonly string[]).includes(value)
@@ -17,58 +11,48 @@ function parseFloat_(value: string | null): number | undefined {
   return value ? parseFloat(value) : undefined;
 }
 
-export function useProductFilters(): UseProductFiltersReturn {
-  const [searchParams, setSearchParams] = useSearchParams();
+export interface ProductFiltersState {
+  page: number;
+  selectedCategoryId: string | undefined;
+  debouncedSearch: string;
+  minPrice: number | undefined;
+  maxPrice: number | undefined;
+  minRating: number | undefined;
+  sortBy: SortBy;
+  isFeatured: boolean | undefined;
+  hasActiveFilters: boolean;
+}
 
-  const filters = useFilterState({
-    page: parseInt(searchParams.get('page') ?? '1', 10) || 1,
-    selectedCategoryId: searchParams.get('categoryId') ?? undefined,
-    searchInput: searchParams.get('search') ?? '',
-    minPrice: parseFloat_(searchParams.get('minPrice')),
-    maxPrice: parseFloat_(searchParams.get('maxPrice')),
-    minRating: parseFloat_(searchParams.get('minRating')),
-    sortBy: parseSortBy(searchParams.get('sortBy')),
-    isFeatured: searchParams.get('isFeatured') === 'true' ? true : undefined,
-  });
+export function useProductFilters(): ProductFiltersState {
+  const [searchParams] = useSearchParams();
 
-  const debouncedSearch = useDebounce(filters.searchInput, 500);
-  const { setPage } = filters;
+  const debouncedSearch = searchParams.get('search') ?? '';
+  const selectedCategoryId = searchParams.get('categoryId') ?? undefined;
+  const minPrice = parseFloat_(searchParams.get('minPrice'));
+  const maxPrice = parseFloat_(searchParams.get('maxPrice'));
+  const minRating = parseFloat_(searchParams.get('minRating'));
+  const sortBy = parseSortBy(searchParams.get('sortBy'));
+  const isFeatured = searchParams.get('isFeatured') === 'true' ? true : undefined;
+  const page = parseInt(searchParams.get('page') ?? '1', 10) || 1;
 
-  // Reset page when the debounced search settles to a new value (skip initial mount)
-  const isFirstRender = useRef(true);
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    setPage(1);
-  }, [debouncedSearch, setPage]);
+  const hasActiveFilters = !!(
+    selectedCategoryId ||
+    debouncedSearch ||
+    minPrice !== undefined ||
+    maxPrice !== undefined ||
+    minRating !== undefined ||
+    isFeatured
+  );
 
-  // Sync all filter state back to URL params
-  useEffect(() => {
-    const params = new URLSearchParams();
-
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (filters.selectedCategoryId) params.set('categoryId', filters.selectedCategoryId);
-    if (filters.minPrice !== undefined) params.set('minPrice', filters.minPrice.toString());
-    if (filters.maxPrice !== undefined) params.set('maxPrice', filters.maxPrice.toString());
-    if (filters.minRating !== undefined) params.set('minRating', filters.minRating.toString());
-    if (filters.sortBy !== 'newest') params.set('sortBy', filters.sortBy);
-    if (filters.isFeatured) params.set('isFeatured', 'true');
-    if (filters.page > 1) params.set('page', filters.page.toString());
-
-    setSearchParams(params, { replace: true });
-  }, [
+  return {
+    page,
+    selectedCategoryId,
     debouncedSearch,
-    filters.selectedCategoryId,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.minRating,
-    filters.sortBy,
-    filters.isFeatured,
-    filters.page,
-    setSearchParams,
-  ]);
-
-  return { ...filters, debouncedSearch };
+    minPrice,
+    maxPrice,
+    minRating,
+    sortBy,
+    isFeatured,
+    hasActiveFilters,
+  };
 }
