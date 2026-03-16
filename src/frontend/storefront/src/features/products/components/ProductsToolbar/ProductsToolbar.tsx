@@ -2,11 +2,12 @@ import { useTranslation } from 'react-i18next';
 import { SearchBar } from '@/app/SearchBar';
 import { ActiveFilters } from '@/features/products/components/ActiveFilters';
 import { RefreshIcon } from '@/shared/components/icons';
+import type { SortBy } from '@/features/products/constants';
 import styles from './ProductsToolbar.module.css';
 
 interface ProductsToolbarProps {
   searchInput: string;
-  sortBy: string;
+  sortBy: SortBy;
   debouncedSearch: string;
   selectedCategoryId: string | undefined;
   minPrice: number | undefined;
@@ -14,7 +15,7 @@ interface ProductsToolbarProps {
   minRating: number | undefined;
   isFeatured: boolean | undefined;
   onSearchChange: (search: string) => void;
-  onSortChange: (sort: string) => void;
+  onSortChange: (sort: SortBy) => void;
   onClearFilters: () => void;
   isFetching: boolean;
   isLoading: boolean;
@@ -50,7 +51,7 @@ export function ProductsToolbar({
         </div>
         <select
           value={sortBy}
-          onChange={(e) => onSortChange(e.target.value)}
+          onChange={(e) => onSortChange(e.target.value as SortBy)}
           className={styles.sortSelect}
         >
           <option value="newest">{t('products.sortNewest')}</option>

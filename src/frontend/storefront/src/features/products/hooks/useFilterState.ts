@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { SortBy } from '@/features/products/constants';
 
 export interface FilterValues {
   page: number;
@@ -7,7 +8,7 @@ export interface FilterValues {
   minPrice: number | undefined;
   maxPrice: number | undefined;
   minRating: number | undefined;
-  sortBy: string;
+  sortBy: SortBy;
   isFeatured: boolean | undefined;
 }
 
@@ -19,7 +20,7 @@ export interface FilterStateReturn extends FilterValues {
   setMinPrice: (price: number | undefined) => void;
   setMaxPrice: (price: number | undefined) => void;
   setMinRating: (rating: number | undefined) => void;
-  setSortBy: (sort: string) => void;
+  setSortBy: (sort: SortBy) => void;
   setIsFeatured: (featured: boolean | undefined) => void;
   handleClearFilters: () => void;
 }
@@ -70,7 +71,7 @@ export function useFilterState(initial: Partial<FilterValues> = {}): FilterState
     setPage(1);
   };
 
-  const handleSetSortBy = (sort: string) => {
+  const handleSetSortBy = (sort: SortBy) => {
     setSortBy(sort);
     setPage(1);
   };

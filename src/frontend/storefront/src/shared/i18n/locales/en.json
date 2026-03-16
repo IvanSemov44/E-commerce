@@ -310,6 +310,7 @@
     "emptyWishlist": "Your wishlist is empty",
     "emptyWishlistSubtitle": "Start adding products you love to your wishlist",
     "browseProducts": "Browse Products",
+    "signInRequired": "Please sign in to add items to your wishlist",
     "removedFromWishlist": "Removed from wishlist",
     "addedToWishlist": "Added to wishlist",
     "failedToLoad": "Failed to load wishlist. Please try again later."

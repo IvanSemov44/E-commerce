@@ -4,24 +4,11 @@ import {
   DEFAULT_PRODUCTS_PAGE_SIZE,
   FEATURED_PRODUCTS_PAGE_SIZE,
 } from '@/features/products/constants';
+import type { GetProductsQueryParams } from '@/features/products/types';
 
 const productApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getProducts: builder.query<
-      PaginatedResult<Product>,
-      {
-        page?: number;
-        pageSize?: number;
-        categoryId?: string;
-        search?: string;
-        minPrice?: number;
-        maxPrice?: number;
-        minRating?: number;
-        isFeatured?: boolean;
-        sortBy?: string;
-        sortOrder?: string;
-      }
-    >({
+    getProducts: builder.query<PaginatedResult<Product>, GetProductsQueryParams>({
       query: ({
         page = 1,
         pageSize = DEFAULT_PRODUCTS_PAGE_SIZE,

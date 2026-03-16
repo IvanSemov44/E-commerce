@@ -36,13 +36,13 @@ describe('ActiveFilters', () => {
   it('shows price range filter badge', () => {
     render(<ActiveFilters {...defaultProps} minPrice={10} maxPrice={100} />);
 
-    expect(screen.getByText(/\$10 - \$100/)).toBeInTheDocument();
+    expect(screen.getByText(/\$10\.00 - \$100\.00/)).toBeInTheDocument();
   });
 
   it('shows only min price when max is undefined', () => {
     render(<ActiveFilters {...defaultProps} minPrice={50} maxPrice={undefined} />);
 
-    expect(screen.getByText(/\$50 - \$∞/)).toBeInTheDocument();
+    expect(screen.getByText(/\$50\.00 - ∞/)).toBeInTheDocument();
   });
 
   it('shows rating filter badge', () => {

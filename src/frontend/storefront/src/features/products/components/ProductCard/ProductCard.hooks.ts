@@ -4,6 +4,7 @@
  */
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
 import { useApiErrorHandler, useToast } from '@/shared/hooks';
 import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
@@ -14,22 +15,20 @@ import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 interface UseWishlistToggleParams {
   id: string;
   isInWishlist: boolean;
-  isWishlistLoading: boolean;
 }
 
 /**
  * Hook for handling wishlist toggle functionality
  */
-export function useWishlistToggle({
-  id,
-  isInWishlist,
-  isWishlistLoading,
-}: UseWishlistToggleParams) {
+export function useWishlistToggle({ id, isInWishlist }: UseWishlistToggleParams) {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const [addToWishlist] = useAddToWishlistMutation();
-  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+  const [addToWishlist, { isLoading: isAdding }] = useAddToWishlistMutation();
+  const [removeFromWishlist, { isLoading: isRemoving }] = useRemoveFromWishlistMutation();
   const { handleError } = useApiErrorHandler();
   const { success, error } = useToast();
+
+  const isWishlistLoading = isAdding || isRemoving;
 
   const handleWishlistToggle = useCallback(
     async (event: React.MouseEvent) => {
@@ -37,7 +36,7 @@ export function useWishlistToggle({
       event.stopPropagation();
 
       if (!isAuthenticated) {
-        error('Please sign in to add items to your wishlist');
+        error(t('wishlist.signInRequired'));
         return;
       }
 
@@ -46,16 +45,17 @@ export function useWishlistToggle({
       try {
         if (isInWishlist) {
           await removeFromWishlist(id).unwrap();
-          success('Removed from wishlist');
+          success(t('wishlist.removedFromWishlist'));
         } else {
           await addToWishlist(id).unwrap();
-          success('Added to wishlist');
+          success(t('wishlist.addedToWishlist'));
         }
       } catch (err) {
         handleError(err, 'Failed to update wishlist');
       }
     },
     [
+      t,
       id,
       isAuthenticated,
       isInWishlist,
@@ -68,7 +68,7 @@ export function useWishlistToggle({
     ]
   );
 
-  return { handleWishlistToggle };
+  return { handleWishlistToggle, isWishlistLoading };
 }
 
 interface UseAddToCartParams {
@@ -95,6 +95,7 @@ export function useAddToCart({
   isInStock,
   setIsAddingToCart,
 }: UseAddToCartParams) {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const [addToCartBackend] = useAddToCartMutation();
@@ -107,7 +108,7 @@ export function useAddToCart({
       event.stopPropagation();
 
       if (!isInStock) {
-        error('This item is out of stock');
+        error(t('common.outOfStock'));
         return;
       }
 
@@ -128,14 +129,15 @@ export function useAddToCart({
           };
           dispatch(addItem(cartItem));
         }
-        success('Added to cart!');
+        success(t('products.addedToCartSuccess'));
       } catch (err) {
-        handleError(err, 'Failed to add to cart');
+        handleError(err, t('products.addToCartError'));
       } finally {
         setTimeout(() => setIsAddingToCart(false), 300);
       }
     },
     [
+      t,
       id,
       name,
       slug,

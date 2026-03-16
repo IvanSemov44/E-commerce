@@ -3,11 +3,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '@/shared/lib/store';
 import { SpinnerIcon, PlusIcon, HeartIcon, StarIcon } from '@/shared/components/icons';
-import {
-  useGetWishlistQuery,
-  useAddToWishlistMutation,
-  useRemoveFromWishlistMutation,
-} from '@/features/wishlist/api';
+import { useGetWishlistQuery } from '@/features/wishlist/api';
 import type { ProductCardProps } from './ProductCard.types';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { useWishlistToggle, useAddToCart, useImageError } from './ProductCard.hooks';
@@ -43,14 +39,9 @@ export const ProductCard = memo(function ProductCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  // Wishlist hooks — derive from cached full wishlist (avoids N+1 per-card requests)
+  // Wishlist — derive from cached full wishlist (avoids N+1 per-card requests)
   const { data: wishlist } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
   const isInWishlist = wishlist?.items.some((item) => item.productId === id) ?? false;
-
-  const [, { isLoading: isAddingToWishlist }] = useAddToWishlistMutation();
-  const [, { isLoading: isRemovingFromWishlist }] = useRemoveFromWishlistMutation();
-
-  const isWishlistLoading = isAddingToWishlist || isRemovingFromWishlist;
 
   // Calculations
   const discountPercentage =
@@ -62,10 +53,9 @@ export const ProductCard = memo(function ProductCard({
   const isInStock = stockQuantity > 0;
 
   // Custom hooks
-  const { handleWishlistToggle } = useWishlistToggle({
+  const { handleWishlistToggle, isWishlistLoading } = useWishlistToggle({
     id,
     isInWishlist,
-    isWishlistLoading,
   });
 
   const { handleAddToCart } = useAddToCart({

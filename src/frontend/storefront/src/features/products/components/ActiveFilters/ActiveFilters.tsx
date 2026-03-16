@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
+import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import type { ActiveFiltersProps } from './ActiveFilters.types';
 import styles from './ActiveFilters.module.css';
 
@@ -39,7 +40,8 @@ export function ActiveFilters({
 
       {(minPrice !== undefined || maxPrice !== undefined) && (
         <div className={`${styles.badge} ${styles.badgePrice}`}>
-          {t('products.price')}: ${minPrice || 0} - ${maxPrice || '∞'}
+          {t('products.price')}: {formatPrice(minPrice || 0)} -{' '}
+          {maxPrice ? formatPrice(maxPrice) : '∞'}
         </div>
       )}
 

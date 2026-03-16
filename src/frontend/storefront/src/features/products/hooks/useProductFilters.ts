@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { useDebounce } from '@/shared/hooks';
+import { VALID_SORT_BY, type SortBy } from '@/features/products/constants';
 import { useFilterState } from './useFilterState';
 import type { FilterStateReturn } from './useFilterState';
 
 export type UseProductFiltersReturn = FilterStateReturn & { debouncedSearch: string };
 
-// Valid sortBy values that match backend validation
-const VALID_SORT_BY = ['newest', 'name', 'price-asc', 'price-desc', 'rating'];
-
-function parseSortBy(value: string | null): string {
-  return value && VALID_SORT_BY.includes(value) ? value : 'newest';
+function parseSortBy(value: string | null): SortBy {
+  return value && (VALID_SORT_BY as readonly string[]).includes(value)
+    ? (value as SortBy)
+    : 'newest';
 }
 
 function parseFloat_(value: string | null): number | undefined {
