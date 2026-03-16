@@ -204,6 +204,7 @@
     "validating": "Валидиране...",
     "itemsCount": "Артикули ({{count}} {{itemText}})",
     "discount": "Отстъпка",
+    "free": "Безплатно",
     "item_one": "продукт",
     "item_other": "продукта"
   },

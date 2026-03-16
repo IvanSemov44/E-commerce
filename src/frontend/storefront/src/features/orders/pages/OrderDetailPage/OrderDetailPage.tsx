@@ -5,10 +5,10 @@ import { useApiErrorHandler } from '@/shared/hooks';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { Button } from '@/shared/components/ui/Button';
 import ErrorAlert from '@/shared/components/ErrorAlert';
+import { OrderTotals } from '@/shared/components';
 import {
   OrderHeader,
   OrderItemsList,
-  OrderTotals,
   ShippingAddress,
   OrderDetailSkeleton,
 } from '@/features/orders/components';

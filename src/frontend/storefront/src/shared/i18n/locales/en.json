@@ -204,6 +204,7 @@
     "validating": "Validating...",
     "itemsCount": "Items ({{count}} {{itemText}})",
     "discount": "Discount",
+    "free": "Free",
     "item_one": "product",
     "item_other": "products"
   },
@@ -252,7 +253,11 @@
       "debit_card": "Debit Card",
       "apple_pay": "Apple Pay",
       "google_pay": "Google Pay"
-    }
+    },
+    "promoCodeRequired": "Please enter a promo code",
+    "promoCodeValidationFailed": "Failed to validate promo code",
+    "orderFailed": "Failed to create order. Please try again.",
+    "stockIssues": "Some items are no longer available: {{issues}}"
   },
   "account": {
     "title": "My Account",

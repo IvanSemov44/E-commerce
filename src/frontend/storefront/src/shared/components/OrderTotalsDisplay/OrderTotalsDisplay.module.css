@@ -1,0 +1,46 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.label {
+  color: var(--color-neutral-500);
+}
+
+.value {
+  font-weight: 500;
+}
+
+.discountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--color-primary-600);
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-neutral-200);
+  margin-top: 0.25rem;
+}
+
+.totalLabel,
+.totalValue {
+  font-weight: 700;
+}
+
+.totalValue {
+  font-size: 1.125rem;
+}
