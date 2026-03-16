@@ -19,7 +19,6 @@ const productApiSlice = baseApi.injectEndpoints({
         minRating,
         isFeatured,
         sortBy,
-        sortOrder,
       }) => {
         const params = new URLSearchParams();
         params.set('page', page.toString());
@@ -31,7 +30,6 @@ const productApiSlice = baseApi.injectEndpoints({
         if (minRating !== undefined) params.set('minRating', minRating.toString());
         if (isFeatured !== undefined) params.set('isFeatured', isFeatured.toString());
         if (sortBy) params.set('sortBy', sortBy);
-        if (sortOrder) params.set('sortOrder', sortOrder);
         return `/products?${params}`;
       },
       transformResponse: (response: ApiResponse<PaginatedResult<Product>>) =>

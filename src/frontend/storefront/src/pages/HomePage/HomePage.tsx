@@ -33,8 +33,9 @@ function ProductGrid({ products }: ProductGridProps) {
           price={product.price}
           compareAtPrice={product.compareAtPrice}
           imageUrl={product.images[0]?.url}
-          rating={Math.round(product.averageRating)}
+          rating={product.averageRating}
           reviewCount={product.reviewCount}
+          stockQuantity={product.stockQuantity}
         />
       ))}
     </div>
@@ -87,14 +88,12 @@ export default function HomePage() {
   const { data: bestsellersData } = useGetProductsQuery({
     pageSize: 4,
     sortBy: 'rating',
-    sortOrder: 'desc',
   });
 
   // Promotions - products with compareAtPrice (on sale)
   const { data: promotionsData } = useGetProductsQuery({
     pageSize: 4,
     sortBy: 'newest',
-    sortOrder: 'desc',
   });
 
   return (
@@ -173,7 +172,7 @@ export default function HomePage() {
           title={t('home.bestSellers')}
           subtitle={t('home.ourMostPopularProducts')}
           products={bestsellersData.items}
-          ctaTo={withQuery(ROUTE_PATHS.products, { sortBy: 'rating', sortOrder: 'desc' })}
+          ctaTo={withQuery(ROUTE_PATHS.products, { sortBy: 'rating' })}
           ctaLabel={t('home.viewAllBestsellers')}
           sectionClassName={styles.bestsellersSection}
         />
