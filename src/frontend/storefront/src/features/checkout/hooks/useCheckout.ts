@@ -9,11 +9,12 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
+import type { RootState } from '@/shared/lib/store';
 import { useLocalStorage } from '@/shared/hooks/useLocalStorage';
 import { selectCartItems, selectCartSubtotal, clearCart } from '@/features/cart/slices/cartSlice';
 import type { CartItem } from '@/features/cart/slices/cartSlice';
-import { authReducer } from '@/features/auth/slices/authSlice';
 import { useCreateOrderMutation } from '@/features/orders/api';
 import { useGetCartQuery, useClearCartMutation } from '@/features/cart/api';
 import { useValidatePromoCodeMutation } from '../api';
@@ -75,9 +76,6 @@ interface UseCheckoutReturn {
   tax: number;
   total: number;
 
-  // Auth state
-  isAuthenticated: boolean;
-
   // Payment method
   paymentMethod: string;
   setPaymentMethod: (method: string) => void;
@@ -88,14 +86,15 @@ interface UseCheckoutReturn {
 
 const CHECKOUT_DRAFT_KEY = 'checkout:shippingDraft';
 
-// Selector for authentication state
-const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) =>
-  state.auth.isAuthenticated;
+// When backend cart items are mapped to CartItem, stock isn't provided by the API
+const DEFAULT_CART_ITEM_MAX_STOCK = 99;
 
-const selectUser = (state: { auth: ReturnType<typeof authReducer> }) => state.auth.user;
+const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
+const selectUser = (state: RootState) => state.auth.user;
 
 // eslint-disable-next-line max-lines-per-function -- Checkout orchestration hook: form state, cart sync, promo codes, order submission, and auth-aware prefill
 export function useCheckout(): UseCheckoutReturn {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const localCartItems = useAppSelector(selectCartItems);
   const localSubtotal = useAppSelector(selectCartSubtotal);
@@ -120,6 +119,7 @@ export function useCheckout(): UseCheckoutReturn {
   // Order state
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [isGuestOrder, setIsGuestOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Payment method state
@@ -142,10 +142,10 @@ export function useCheckout(): UseCheckoutReturn {
       return backendCart.items.map((item) => ({
         id: item.productId,
         name: item.productName,
-        slug: '',
+        slug: '', // not provided by CartItemDto
         price: item.price,
         quantity: item.quantity,
-        maxStock: 99,
+        maxStock: DEFAULT_CART_ITEM_MAX_STOCK,
         image: item.productImage || item.imageUrl || '',
       }));
     }
@@ -178,7 +178,7 @@ export function useCheckout(): UseCheckoutReturn {
         const issueMessages = stockCheckResult.issues
           .map((issue: StockIssue) => `${issue.productName}: ${issue.message}`)
           .join(', ');
-        setError(`Some items are no longer available: ${issueMessages}`);
+        setError(t('checkout.stockIssues', { issues: issueMessages }));
         return;
       }
 
@@ -223,8 +223,7 @@ export function useCheckout(): UseCheckoutReturn {
       setOrderComplete(true);
     } catch (err: unknown) {
       const errorObj = err as { data?: { message?: string }; message?: string };
-      const message =
-        errorObj.data?.message || errorObj.message || 'Failed to create order. Please try again.';
+      const message = errorObj.data?.message || errorObj.message || t('checkout.orderFailed');
       telemetry.track('checkout.error', { message });
       setError(message);
     }
@@ -270,9 +269,6 @@ export function useCheckout(): UseCheckoutReturn {
     }
   }, [isAuthenticated, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Track if this is a guest order (for showing account creation prompt)
-  const [isGuestOrder, setIsGuestOrder] = useState(false);
-
   // Calculate totals with discount
   const discount = promoCodeValidation?.isValid ? promoCodeValidation.discountAmount : 0;
   const { shipping, tax, total } = calculateOrderTotals(subtotal, discount);
@@ -291,7 +287,7 @@ export function useCheckout(): UseCheckoutReturn {
       setPromoCodeValidation({
         isValid: false,
         discountAmount: 0,
-        message: 'Please enter a promo code',
+        message: t('checkout.promoCodeRequired'),
       });
       return;
     }
@@ -314,12 +310,12 @@ export function useCheckout(): UseCheckoutReturn {
       setPromoCodeValidation({
         isValid: false,
         discountAmount: 0,
-        message: 'Failed to validate promo code',
+        message: t('checkout.promoCodeValidationFailed'),
       });
     } finally {
       setValidatingPromoCode(false);
     }
-  }, [promoCode, subtotal, validatePromoCodeMutation]);
+  }, [promoCode, subtotal, t, validatePromoCodeMutation]);
 
   // Remove promo code
   const handleRemovePromoCode = useCallback(() => {
@@ -347,7 +343,6 @@ export function useCheckout(): UseCheckoutReturn {
     shipping,
     tax,
     total,
-    isAuthenticated,
     paymentMethod,
     setPaymentMethod,
     handleSubmit: form.handleSubmit,

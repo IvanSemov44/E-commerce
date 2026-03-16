@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
-import OrderTotalsDisplay from '@/features/orders/components/OrderTotalsDisplay/OrderTotalsDisplay';
+import OrderTotalsDisplay from '@/shared/components/OrderTotalsDisplay/OrderTotalsDisplay';
 import type { OrderSummaryProps } from './OrderSummary.types';
 
 export function OrderSummary({ cartItems, totals, promoCode }: OrderSummaryProps) {
@@ -69,8 +69,6 @@ export function OrderSummary({ cartItems, totals, promoCode }: OrderSummaryProps
         shipping={shipping}
         tax={tax}
         total={total}
-        freeShippingLabel={t('checkout.free')}
-        className="border-t pt-4"
       />
     </div>
   );
