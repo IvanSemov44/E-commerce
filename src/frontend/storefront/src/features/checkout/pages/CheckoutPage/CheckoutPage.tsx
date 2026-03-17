@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { usePerformanceMonitor } from '@/shared/hooks';
 import { useCheckout } from '@/features/checkout/hooks/useCheckout';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { LocationIcon } from '@/shared/components/icons';
 import { Card } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -31,6 +32,7 @@ export default function CheckoutPage() {
     error,
     cartItems,
     subtotal,
+    isLoading,
     discount,
     shipping,
     tax,
@@ -42,6 +44,15 @@ export default function CheckoutPage() {
     setPaymentMethod,
   } = useCheckout();
 
+  // Wait for backend cart to load before evaluating empty state
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.successContent} role="status" aria-label={t('common.loading')} />
+      </div>
+    );
+  }
+
   // Redirect if cart is empty
   if (cartItems.length === 0 && !orderComplete) {
     return (
@@ -52,7 +63,9 @@ export default function CheckoutPage() {
             title={t('cart.emptyCart')}
             description={t('checkout.addItemsBeforeCheckout')}
             action={
-              <Button onClick={() => navigate('/products')}>{t('products.browseProducts')}</Button>
+              <Button onClick={() => navigate(ROUTE_PATHS.products)}>
+                {t('products.browseProducts')}
+              </Button>
             }
           />
         </div>

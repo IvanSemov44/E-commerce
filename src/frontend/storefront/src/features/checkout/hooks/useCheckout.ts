@@ -32,7 +32,7 @@ export function useCheckout(): UseCheckoutReturn {
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
 
   // Get cart and subtotal
-  const { cartItems, subtotal } = useCheckoutCart();
+  const { cartItems, subtotal, isLoading } = useCheckoutCart();
 
   // Get promo code state
   const {
@@ -105,6 +105,7 @@ export function useCheckout(): UseCheckoutReturn {
     isGuestOrder,
     cartItems,
     subtotal,
+    isLoading,
     discount,
     shipping,
     tax,

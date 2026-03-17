@@ -16,6 +16,7 @@ const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 interface UseCheckoutCartReturn {
   cartItems: CartItem[];
   subtotal: number;
+  isLoading: boolean;
 }
 
 export function useCheckoutCart(): UseCheckoutCartReturn {
@@ -24,7 +25,7 @@ export function useCheckoutCart(): UseCheckoutCartReturn {
   const localSubtotal = useAppSelector(selectCartSubtotal);
 
   // Backend cart query (only used when authenticated)
-  const { data: backendCart } = useGetCartQuery(undefined, {
+  const { data: backendCart, isLoading: isBackendCartLoading } = useGetCartQuery(undefined, {
     skip: !isAuthenticated,
   });
 
@@ -60,5 +61,6 @@ export function useCheckoutCart(): UseCheckoutCartReturn {
   return {
     cartItems,
     subtotal,
+    isLoading: isAuthenticated && isBackendCartLoading,
   };
 }

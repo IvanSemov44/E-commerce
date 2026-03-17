@@ -5,8 +5,9 @@
 
 import type { FormEvent } from 'react';
 import type { CartItem } from '@/features/cart/slices/cartSlice';
+import type { CheckoutFormValues } from './schemas/checkoutSchemas';
 
-export type { CheckoutFormValues as ShippingFormData } from './schemas/checkoutSchemas';
+export type ShippingFormData = CheckoutFormValues;
 
 export interface PromoCodeValidation {
   isValid: boolean;
@@ -54,6 +55,7 @@ export interface UseCheckoutReturn {
   // Cart info
   cartItems: CartItem[];
   subtotal: number;
+  isLoading: boolean;
 
   // Totals
   discount: number;
