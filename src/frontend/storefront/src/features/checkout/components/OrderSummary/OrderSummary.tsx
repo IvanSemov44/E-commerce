@@ -1,12 +1,24 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import OrderTotalsDisplay from '@/shared/components/OrderTotalsDisplay/OrderTotalsDisplay';
-import type { OrderSummaryProps } from './OrderSummary.types';
+import { useCheckoutContext } from '../../context/CheckoutContext';
 
-export function OrderSummary({ cartItems, totals, promoCode }: OrderSummaryProps) {
+export function OrderSummary() {
   const { t } = useTranslation();
-  const { subtotal, discount, shipping, tax, total } = totals;
-  const { code, validation, isValidating, onChange, onApply, onRemove } = promoCode;
+  const {
+    cartItems,
+    subtotal,
+    discount,
+    shipping,
+    tax,
+    total,
+    promoCode: code,
+    setPromoCode: onChange,
+    promoCodeValidation: validation,
+    validatingPromoCode: isValidating,
+    handleApplyPromoCode: onApply,
+    handleRemovePromoCode: onRemove,
+  } = useCheckoutContext();
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg">

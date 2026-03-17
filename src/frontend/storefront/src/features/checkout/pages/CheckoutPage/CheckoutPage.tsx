@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { usePerformanceMonitor } from '@/shared/hooks';
-import { useCheckout } from '@/features/checkout/hooks/useCheckout';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { LocationIcon } from '@/shared/components/icons';
 import { Card } from '@/shared/components/ui/Card';
@@ -12,39 +11,24 @@ import TrustSignals from '@/shared/components/TrustSignals';
 import CheckoutForm from '@/features/checkout/components/CheckoutForm';
 import { OrderSummary } from '@/features/checkout/components/OrderSummary';
 import OrderSuccess from '@/features/checkout/components/OrderSuccess';
+import { CheckoutProvider, useCheckoutContext } from '../../context/CheckoutContext';
 import styles from './CheckoutPage.module.css';
 
 export default function CheckoutPage() {
   usePerformanceMonitor();
+  return (
+    <CheckoutProvider>
+      <CheckoutPageContent />
+    </CheckoutProvider>
+  );
+}
+
+function CheckoutPageContent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    formData,
-    setFormData,
-    promoCode,
-    setPromoCode,
-    promoCodeValidation,
-    validatingPromoCode,
-    handleApplyPromoCode,
-    handleRemovePromoCode,
-    orderComplete,
-    orderNumber,
-    error,
-    cartItems,
-    subtotal,
-    isLoading,
-    discount,
-    shipping,
-    tax,
-    total,
-    errors,
-    handleSubmit,
-    isGuestOrder,
-    paymentMethod,
-    setPaymentMethod,
-  } = useCheckout();
+  const { isLoading, cartItems, orderComplete, orderNumber, error, formData, isGuestOrder } =
+    useCheckoutContext();
 
-  // Wait for backend cart to load before evaluating empty state
   if (isLoading) {
     return (
       <div className={styles.container}>
@@ -53,7 +37,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // Redirect if cart is empty
   if (cartItems.length === 0 && !orderComplete) {
     return (
       <div className={styles.container}>
@@ -73,30 +56,25 @@ export default function CheckoutPage() {
     );
   }
 
-  // Success screen
   if (orderComplete) {
     return (
       <OrderSuccess orderNumber={orderNumber} email={formData.email} isGuestOrder={isGuestOrder} />
     );
   }
 
-  // Checkout form
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        {/* Page Header with Progress */}
         <div className={styles.checkoutHeader}>
           <h1 className={styles.checkoutTitle}>{t('checkout.secureCheckout')}</h1>
           <p className={styles.checkoutSubtitle}>{t('checkout.completeOrderSubtitle')}</p>
         </div>
 
-        {/* Trust Signals Bar */}
         <div className={styles.trustSignalsWrapper}>
           <TrustSignals />
         </div>
 
         <div className={styles.grid}>
-          {/* Shipping Form */}
           <div>
             <Card variant="elevated" padding="lg">
               <h2 className={styles.formTitle}>
@@ -104,32 +82,13 @@ export default function CheckoutPage() {
                 {t('checkout.deliveryAddress')}
               </h2>
               {error && <ErrorAlert message={error} />}
-              <CheckoutForm
-                formData={formData}
-                errors={errors}
-                onFormDataChange={setFormData}
-                onSubmit={handleSubmit}
-                selectedPaymentMethod={paymentMethod}
-                onPaymentMethodChange={setPaymentMethod}
-              />
+              <CheckoutForm />
             </Card>
           </div>
 
-          {/* Order Summary */}
           <div className={styles.summary}>
             <Card variant="elevated" padding="lg">
-              <OrderSummary
-                cartItems={cartItems}
-                totals={{ subtotal, discount, shipping, tax, total }}
-                promoCode={{
-                  code: promoCode,
-                  validation: promoCodeValidation,
-                  isValidating: validatingPromoCode,
-                  onChange: setPromoCode,
-                  onApply: handleApplyPromoCode,
-                  onRemove: handleRemovePromoCode,
-                }}
-              />
+              <OrderSummary />
             </Card>
           </div>
         </div>

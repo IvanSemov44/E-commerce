@@ -2,27 +2,22 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import PaymentMethodSelector from '../PaymentMethodSelector/PaymentMethodSelector';
-import type { CheckoutFormProps } from './CheckoutForm.types';
+import { useCheckoutContext } from '../../context/CheckoutContext';
 import { COUNTRIES } from '../../constants/countries';
 
-export default function CheckoutForm({
-  formData,
-  errors,
-  onFormDataChange,
-  onSubmit,
-  selectedPaymentMethod,
-  onPaymentMethodChange,
-}: CheckoutFormProps) {
+export default function CheckoutForm() {
   const { t } = useTranslation();
+  const { formData, errors, setFormData, handleSubmit, paymentMethod, setPaymentMethod } =
+    useCheckoutContext();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    onFormDataChange({ ...formData, [name]: value });
+    setFormData({ [name]: value });
   };
 
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit}
       className="space-y-6"
       aria-label={t('checkout.shippingInfo')}
       noValidate
@@ -97,7 +92,7 @@ export default function CheckoutForm({
           />
         </div>
         <Input
-          label={t('checkout.state') || 'State'}
+          label={t('checkout.state')}
           type="text"
           id="state"
           name="state"
@@ -146,10 +141,7 @@ export default function CheckoutForm({
         )}
       </div>
 
-      <PaymentMethodSelector
-        selectedMethod={selectedPaymentMethod}
-        onMethodChange={onPaymentMethodChange}
-      />
+      <PaymentMethodSelector selectedMethod={paymentMethod} onMethodChange={setPaymentMethod} />
 
       <Button type="submit" className="w-full">
         {t('checkout.placeOrder')}

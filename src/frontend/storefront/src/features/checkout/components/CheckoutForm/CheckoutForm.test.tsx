@@ -2,36 +2,62 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
+import { CheckoutContext } from '../../context/CheckoutContext';
+import type { UseCheckoutReturn } from '../../checkout.types';
 import CheckoutForm from './CheckoutForm';
 
-describe('CheckoutForm', () => {
-  const mockFormData = {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    phone: '+1234567890',
-    streetLine1: '123 Main St',
-    city: 'New York',
-    state: 'NY',
-    postalCode: '10001',
-    country: 'US',
+const mockFormData = {
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  phone: '+1234567890',
+  streetLine1: '123 Main St',
+  city: 'New York',
+  state: 'NY',
+  postalCode: '10001',
+  country: 'US',
+};
+
+function buildContext(overrides: Partial<UseCheckoutReturn> = {}): UseCheckoutReturn {
+  return {
+    formData: mockFormData,
+    setFormData: vi.fn(),
+    errors: {},
+    promoCode: '',
+    setPromoCode: vi.fn(),
+    promoCodeValidation: null,
+    validatingPromoCode: false,
+    handleApplyPromoCode: vi.fn(),
+    handleRemovePromoCode: vi.fn(),
+    orderComplete: false,
+    orderNumber: '',
+    error: null,
+    isGuestOrder: false,
+    cartItems: [],
+    subtotal: 0,
+    isLoading: false,
+    discount: 0,
+    shipping: 0,
+    tax: 0,
+    total: 0,
+    paymentMethod: 'credit_card',
+    setPaymentMethod: vi.fn(),
+    handleSubmit: vi.fn(),
+    ...overrides,
   };
+}
 
+function renderForm(overrides: Partial<UseCheckoutReturn> = {}) {
+  return renderWithProviders(
+    <CheckoutContext.Provider value={buildContext(overrides)}>
+      <CheckoutForm />
+    </CheckoutContext.Provider>
+  );
+}
+
+describe('CheckoutForm', () => {
   it('renders all form fields', () => {
-    const onFormDataChange = vi.fn();
-    const onSubmit = vi.fn();
-
-    renderWithProviders(
-      <CheckoutForm
-        formData={mockFormData}
-        errors={{}}
-        onFormDataChange={onFormDataChange}
-        onSubmit={onSubmit}
-        isAuthenticated={false}
-        selectedPaymentMethod="credit_card"
-        onPaymentMethodChange={vi.fn()}
-      />
-    );
+    renderForm();
 
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
@@ -44,74 +70,38 @@ describe('CheckoutForm', () => {
     expect(screen.getByLabelText(/country/i)).toBeInTheDocument();
   });
 
-  it('updates form data on field change', async () => {
+  it('calls setFormData when a field changes', async () => {
+    const setFormData = vi.fn();
     const user = userEvent.setup();
-    const onFormDataChange = vi.fn();
-    const onSubmit = vi.fn();
-
-    renderWithProviders(
-      <CheckoutForm
-        formData={mockFormData}
-        errors={{}}
-        onFormDataChange={onFormDataChange}
-        onSubmit={onSubmit}
-        isAuthenticated={false}
-        selectedPaymentMethod="credit_card"
-        onPaymentMethodChange={vi.fn()}
-      />
-    );
+    renderForm({ setFormData });
 
     const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jane');
 
-    expect(onFormDataChange).toHaveBeenCalled();
+    expect(setFormData).toHaveBeenCalled();
   });
 
   it('displays validation errors', () => {
-    const errors = {
-      firstName: 'First name is required',
-      email: 'Invalid email address',
-    };
-    const onFormDataChange = vi.fn();
-    const onSubmit = vi.fn();
-
-    renderWithProviders(
-      <CheckoutForm
-        formData={mockFormData}
-        errors={errors}
-        onFormDataChange={onFormDataChange}
-        onSubmit={onSubmit}
-        isAuthenticated={false}
-        selectedPaymentMethod="credit_card"
-        onPaymentMethodChange={vi.fn()}
-      />
-    );
+    renderForm({
+      errors: {
+        firstName: 'First name is required',
+        email: 'Invalid email address',
+      },
+    });
 
     expect(screen.getByText('First name is required')).toBeInTheDocument();
     expect(screen.getByText('Invalid email address')).toBeInTheDocument();
   });
 
-  it('submits form on button click', async () => {
+  it('calls handleSubmit when form is submitted', async () => {
+    const handleSubmit = vi.fn((e) => e.preventDefault());
     const user = userEvent.setup();
-    const onFormDataChange = vi.fn();
-    const onSubmit = vi.fn();
-
-    renderWithProviders(
-      <CheckoutForm
-        formData={mockFormData}
-        errors={{}}
-        onFormDataChange={onFormDataChange}
-        onSubmit={onSubmit}
-        isAuthenticated={false}
-        selectedPaymentMethod="credit_card"
-        onPaymentMethodChange={vi.fn()}
-      />
-    );
+    renderForm({ handleSubmit });
 
     const submitButton = screen.getByRole('button', { name: /place order/i });
     await user.click(submitButton);
 
-    expect(onSubmit).toHaveBeenCalled();
+    expect(handleSubmit).toHaveBeenCalled();
   });
 });
