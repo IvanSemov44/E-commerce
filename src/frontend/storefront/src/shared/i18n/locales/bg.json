@@ -253,7 +253,10 @@
       "debit_card": "Дебитна карта",
       "apple_pay": "Apple Pay",
       "google_pay": "Google Pay"
-    }
+    },
+    "orderFailed": "Неуспешно създаване на поръчка. Моля, опитайте отново.",
+    "stockIssues": "Някои артикули вече не са налични: {{issues}}",
+    "stockCheckFailed": "Неуспешно проверяване на наличност. Моля, опитайте отново."
   },
   "account": {
     "title": "Моят профил",

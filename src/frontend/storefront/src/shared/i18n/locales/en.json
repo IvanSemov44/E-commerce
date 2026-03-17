@@ -257,7 +257,8 @@
     "promoCodeRequired": "Please enter a promo code",
     "promoCodeValidationFailed": "Failed to validate promo code",
     "orderFailed": "Failed to create order. Please try again.",
-    "stockIssues": "Some items are no longer available: {{issues}}"
+    "stockIssues": "Some items are no longer available: {{issues}}",
+    "stockCheckFailed": "Unable to verify item availability. Please try again."
   },
   "account": {
     "title": "My Account",
@@ -281,6 +282,7 @@
     "status": "Status",
     "total": "Total",
     "items": "Items",
+    "viewOrders": "View Orders",
     "viewDetails": "View Details",
     "noOrdersYet": "No orders yet",
     "trackOrder": "Track Order",

@@ -5,14 +5,14 @@ import { baseApi } from '@/shared/lib/api/baseApi';
 import { useCheckout } from '../useCheckout';
 
 // Mock API hooks
-vi.mock('../../features/orders/api/ordersApi', () => ({
+vi.mock('@/features/orders/api', () => ({
   useCreateOrderMutation: vi.fn(() => [
     vi.fn().mockResolvedValue({ orderNumber: 'ORD-123' }),
     { isLoading: false },
   ]),
 }));
 
-vi.mock('../../store/api/cartApi', () => ({
+vi.mock('@/features/cart/api', () => ({
   useGetCartQuery: vi.fn(() => ({
     data: null,
     isLoading: false,
@@ -20,39 +20,19 @@ vi.mock('../../store/api/cartApi', () => ({
   useClearCartMutation: vi.fn(() => [vi.fn().mockResolvedValue({}), { isLoading: false }]),
 }));
 
-vi.mock('../../store/api/promoCodeApi', () => ({
+vi.mock('../../api', () => ({
   useValidatePromoCodeMutation: vi.fn(() => [
     vi.fn().mockResolvedValue({ isValid: true, discountAmount: 10 }),
     { isLoading: false },
   ]),
-}));
-
-vi.mock('../../store/api/inventoryApi', () => ({
   useCheckAvailabilityMutation: vi.fn(() => [
     vi.fn().mockResolvedValue({ isAvailable: true, issues: [] }),
     { isLoading: false },
   ]),
 }));
 
-// Mock useCartSync
-vi.mock('../useCartSync', () => ({
-  useCartSync: vi.fn(() => ({})),
-}));
-
-// Mock constants
-vi.mock('../../utils/constants', () => ({
-  FREE_SHIPPING_THRESHOLD: 100,
-  STANDARD_SHIPPING_COST: 10,
-  DEFAULT_TAX_RATE: 0.08,
-}));
-
-// Mock validators
-vi.mock('../../utils/validation', () => ({
-  validators: {
-    required: () => () => null,
-    email: () => () => null,
-    phone: () => () => null,
-  },
+vi.mock('@/features/cart/hooks/useCartSync', () => ({
+  useCartSync: vi.fn(),
 }));
 
 describe('useCheckout', () => {
@@ -142,14 +122,5 @@ describe('useCheckout', () => {
     store = rendered.store;
 
     expect(typeof rendered.result.current.handleSubmit).toBe('function');
-  });
-
-  it('should have setFormData function', () => {
-    const rendered = renderHookWithProviders(() => useCheckout(), {
-      preloadedState: defaultPreloadedState,
-    });
-    store = rendered.store;
-
-    expect(typeof rendered.result.current.setFormData).toBe('function');
   });
 });

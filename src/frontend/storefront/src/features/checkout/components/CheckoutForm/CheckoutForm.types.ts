@@ -1,14 +1,6 @@
-export interface ShippingFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  streetLine1: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-}
+import type { ShippingFormData } from '../../checkout.types';
+
+export type { ShippingFormData };
 
 export interface CheckoutFormProps {
   formData: ShippingFormData;

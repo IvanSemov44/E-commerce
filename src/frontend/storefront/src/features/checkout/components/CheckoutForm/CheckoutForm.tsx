@@ -3,6 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import PaymentMethodSelector from '../PaymentMethodSelector/PaymentMethodSelector';
 import type { CheckoutFormProps } from './CheckoutForm.types';
+import { COUNTRIES } from '../../constants/countries';
 
 export default function CheckoutForm({
   formData,
@@ -132,11 +133,11 @@ export default function CheckoutForm({
           aria-describedby={errors.country ? 'country-error' : undefined}
         >
           <option value="">{t('checkout.selectCountry')}</option>
-          <option value="US">United States</option>
-          <option value="CA">Canada</option>
-          <option value="UK">United Kingdom</option>
-          <option value="DE">Germany</option>
-          <option value="FR">France</option>
+          {COUNTRIES.map((country) => (
+            <option key={country.code} value={country.code}>
+              {country.name}
+            </option>
+          ))}
         </select>
         {errors.country && (
           <p id="country-error" role="alert" className="text-red-500 text-sm mt-1">

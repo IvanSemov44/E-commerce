@@ -21,17 +21,14 @@ describe('OrderSuccess', () => {
   it('renders confirmation message section', () => {
     render(<OrderSuccess orderNumber="12345" email="test@example.com" isGuestOrder={false} />);
 
-    expect(screen.getByText(/orderSuccess\.message/i)).toBeInTheDocument();
+    expect(screen.getByText(/confirmation email/i)).toBeInTheDocument();
   });
 
   it('renders action links to orders and products', () => {
     render(<OrderSuccess orderNumber="12345" email="customer@example.com" isGuestOrder={false} />);
 
-    expect(screen.getByRole('link', { name: /orderSuccess\.viewOrders/i })).toHaveAttribute(
-      'href',
-      '/orders'
-    );
-    expect(screen.getByRole('link', { name: /orderSuccess\.continueShopping/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'View Orders' })).toHaveAttribute('href', '/orders');
+    expect(screen.getByRole('link', { name: 'Continue Shopping' })).toHaveAttribute(
       'href',
       '/products'
     );
