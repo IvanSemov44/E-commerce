@@ -12,7 +12,7 @@ import useForm from '@/shared/hooks/useForm';
 import { zodValidate } from '@/shared/lib/utils/zodValidate';
 import { checkoutSchema } from '../schemas/checkoutSchemas';
 import type { ShippingFormData } from '../checkout.types';
-import { CHECKOUT_DRAFT_KEY } from '../checkout.types';
+import { CHECKOUT_DRAFT_KEY } from '../constants';
 
 const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 const selectUser = (state: RootState) => state.auth.user;

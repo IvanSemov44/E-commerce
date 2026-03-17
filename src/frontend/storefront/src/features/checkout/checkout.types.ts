@@ -3,9 +3,9 @@
  * Shared type definitions for the checkout feature
  */
 
+import type { FormEvent } from 'react';
 import type { CartItem } from '@/features/cart/slices/cartSlice';
 
-// Re-export CheckoutFormValues as ShippingFormData for backwards compatibility
 export type { CheckoutFormValues as ShippingFormData } from './schemas/checkoutSchemas';
 
 export interface PromoCodeValidation {
@@ -66,7 +66,5 @@ export interface UseCheckoutReturn {
   setPaymentMethod: (method: string) => void;
 
   // Submit handler
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
+  handleSubmit: (e: FormEvent) => Promise<void>;
 }
-
-export const CHECKOUT_DRAFT_KEY = 'checkout:shippingDraft';

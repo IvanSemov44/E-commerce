@@ -20,7 +20,8 @@ import { useCheckoutPromo } from './useCheckoutPromo';
 import { useCheckoutOrder } from './useCheckoutOrder';
 
 import type { UseCheckoutReturn } from '../checkout.types';
-import { CHECKOUT_DRAFT_KEY, type ShippingFormData } from '../checkout.types';
+import { CHECKOUT_DRAFT_KEY } from '../constants';
+import type { ShippingFormData } from '../checkout.types';
 
 const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 
