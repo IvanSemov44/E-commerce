@@ -2,22 +2,22 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import PaymentMethodSelector from '../PaymentMethodSelector/PaymentMethodSelector';
-import { useCheckoutContext } from '../../context/CheckoutContext';
+import { useCheckoutForm } from './CheckoutForm.hooks';
 import { COUNTRIES } from '../../constants/countries';
+import type { CheckoutFormProps } from './CheckoutForm.types';
 
-export default function CheckoutForm() {
+export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
   const { t } = useTranslation();
-  const { formData, errors, setFormData, handleSubmit, paymentMethod, setPaymentMethod } =
-    useCheckoutContext();
+  const { form } = useCheckoutForm({ onSubmit });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ [name]: value });
+    form.setValues({ ...form.values, [name]: value });
   };
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={form.handleSubmit}
       className="space-y-6"
       aria-label={t('checkout.shippingInfo')}
       noValidate
@@ -28,9 +28,9 @@ export default function CheckoutForm() {
           type="text"
           id="firstName"
           name="firstName"
-          value={formData.firstName}
+          value={form.values.firstName}
           onChange={handleChange}
-          error={errors.firstName}
+          error={form.errors.firstName}
           required
         />
         <Input
@@ -38,9 +38,9 @@ export default function CheckoutForm() {
           type="text"
           id="lastName"
           name="lastName"
-          value={formData.lastName}
+          value={form.values.lastName}
           onChange={handleChange}
-          error={errors.lastName}
+          error={form.errors.lastName}
           required
         />
       </div>
@@ -51,9 +51,9 @@ export default function CheckoutForm() {
           type="email"
           id="email"
           name="email"
-          value={formData.email}
+          value={form.values.email}
           onChange={handleChange}
-          error={errors.email}
+          error={form.errors.email}
           required
         />
         <Input
@@ -61,9 +61,9 @@ export default function CheckoutForm() {
           type="tel"
           id="phone"
           name="phone"
-          value={formData.phone}
+          value={form.values.phone}
           onChange={handleChange}
-          error={errors.phone}
+          error={form.errors.phone}
         />
       </div>
 
@@ -72,9 +72,9 @@ export default function CheckoutForm() {
         type="text"
         id="streetLine1"
         name="streetLine1"
-        value={formData.streetLine1}
+        value={form.values.streetLine1}
         onChange={handleChange}
-        error={errors.streetLine1}
+        error={form.errors.streetLine1}
         required
       />
 
@@ -85,9 +85,9 @@ export default function CheckoutForm() {
             type="text"
             id="city"
             name="city"
-            value={formData.city}
+            value={form.values.city}
             onChange={handleChange}
-            error={errors.city}
+            error={form.errors.city}
             required
           />
         </div>
@@ -96,9 +96,9 @@ export default function CheckoutForm() {
           type="text"
           id="state"
           name="state"
-          value={formData.state}
+          value={form.values.state}
           onChange={handleChange}
-          error={errors.state}
+          error={form.errors.state}
           required
         />
         <Input
@@ -106,9 +106,9 @@ export default function CheckoutForm() {
           type="text"
           id="postalCode"
           name="postalCode"
-          value={formData.postalCode}
+          value={form.values.postalCode}
           onChange={handleChange}
-          error={errors.postalCode}
+          error={form.errors.postalCode}
           required
         />
       </div>
@@ -120,12 +120,12 @@ export default function CheckoutForm() {
         <select
           id="country"
           name="country"
-          value={formData.country}
+          value={form.values.country}
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded-lg"
           required
           aria-required="true"
-          aria-describedby={errors.country ? 'country-error' : undefined}
+          aria-describedby={form.errors.country ? 'country-error' : undefined}
         >
           <option value="">{t('checkout.selectCountry')}</option>
           {COUNTRIES.map((country) => (
@@ -134,14 +134,14 @@ export default function CheckoutForm() {
             </option>
           ))}
         </select>
-        {errors.country && (
+        {form.errors.country && (
           <p id="country-error" role="alert" className="text-red-500 text-sm mt-1">
-            {errors.country}
+            {form.errors.country}
           </p>
         )}
       </div>
 
-      <PaymentMethodSelector selectedMethod={paymentMethod} onMethodChange={setPaymentMethod} />
+      <PaymentMethodSelector selectedMethod={payment.method} onMethodChange={payment.onChange} />
 
       <Button type="submit" className="w-full">
         {t('checkout.placeOrder')}

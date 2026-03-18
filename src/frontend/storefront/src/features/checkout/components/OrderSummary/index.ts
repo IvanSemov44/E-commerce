@@ -1,2 +1,2 @@
 export { OrderSummary } from './OrderSummary';
-export type { OrderTotals, PromoCodeState, PromoCodeValidation } from '../../checkout.types';
+export type { OrderSummaryProps } from './OrderSummary.types';

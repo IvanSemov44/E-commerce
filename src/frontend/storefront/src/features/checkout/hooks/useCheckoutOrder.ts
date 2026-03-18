@@ -3,7 +3,7 @@
  * Manages order submission, stock check, cart clearing, and success state
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import type { RootState } from '@/shared/lib/store';
@@ -22,6 +22,7 @@ const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 interface UseCheckoutOrderReturn {
   orderComplete: boolean;
   orderNumber: string;
+  orderEmail: string;
   error: string | null;
   isGuestOrder: boolean;
   handleFormSubmit: (values: ShippingFormData) => Promise<void>;
@@ -49,8 +50,35 @@ export function useCheckoutOrder(options: UseCheckoutOrderOptions): UseCheckoutO
   // Order state
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [orderEmail, setOrderEmail] = useState('');
   const [isGuestOrder, setIsGuestOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const cartItemsPayload = useMemo(
+    () => cartItems.map((item: CartItem) => ({ productId: item.id, quantity: item.quantity })),
+    [cartItems]
+  );
+
+  // Eager stock check on page load — surfaces issues before form submission
+  const hasCheckedStockRef = useRef(false);
+  useEffect(() => {
+    if (cartItems.length === 0 || hasCheckedStockRef.current) return;
+    hasCheckedStockRef.current = true;
+
+    checkAvailabilityMutation({ items: cartItemsPayload })
+      .unwrap()
+      .then((result) => {
+        if (!result.isAvailable) {
+          const issueMessages = result.issues
+            .map((issue: StockIssue) => `${issue.productName}: ${issue.message}`)
+            .join(', ');
+          setError(t('checkout.stockIssues', { issues: issueMessages }));
+        }
+      })
+      .catch(() => {
+        // Silent early check failure — will re-check on submit
+      });
+  }, [cartItems.length, cartItemsPayload, checkAvailabilityMutation, t]);
 
   // Handle order submission (called by useForm after validation)
   const handleFormSubmit = useCallback(
@@ -61,12 +89,7 @@ export function useCheckoutOrder(options: UseCheckoutOrderOptions): UseCheckoutO
       // Step 1: Stock availability check
       let stockCheckResult;
       try {
-        stockCheckResult = await checkAvailabilityMutation({
-          items: cartItems.map((item: CartItem) => ({
-            productId: item.id,
-            quantity: item.quantity,
-          })),
-        }).unwrap();
+        stockCheckResult = await checkAvailabilityMutation({ items: cartItemsPayload }).unwrap();
       } catch {
         setError(t('checkout.stockCheckFailed'));
         return;
@@ -81,53 +104,59 @@ export function useCheckoutOrder(options: UseCheckoutOrderOptions): UseCheckoutO
       }
 
       // Step 2: Order creation
+      const orderData: CreateOrderRequest = {
+        items: cartItemsPayload,
+        shippingAddress: {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          phone: values.phone,
+          streetLine1: values.streetLine1,
+          city: values.city,
+          state: values.state,
+          postalCode: values.postalCode,
+          country: values.country,
+        },
+        paymentMethod: paymentMethod,
+        promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
+        guestEmail: values.email,
+      };
+
+      let result;
       try {
-        const orderData: CreateOrderRequest = {
-          items: cartItems.map((item: CartItem) => ({
-            productId: item.id,
-            quantity: item.quantity,
-          })),
-          shippingAddress: {
-            firstName: values.firstName,
-            lastName: values.lastName,
-            phone: values.phone,
-            streetLine1: values.streetLine1,
-            city: values.city,
-            state: values.state,
-            postalCode: values.postalCode,
-            country: values.country,
-          },
-          paymentMethod: paymentMethod,
-          promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
-          guestEmail: values.email,
-        };
-
-        const result = await createOrder(orderData).unwrap();
-
-        // Clear cart from backend
-        await clearCartApi().unwrap();
-
-        // Clear local cart
-        dispatch(clearCart());
-
-        // Track if this was a guest order for account creation prompt
-        setIsGuestOrder(!isAuthenticated);
-        setOrderNumber(result.orderNumber);
-        telemetry.track('checkout.complete', {
-          orderNumber: result.orderNumber,
-          paymentMethod,
-          isGuest: !isAuthenticated,
-        });
-        setOrderComplete(true);
+        result = await createOrder(orderData).unwrap();
       } catch (err: unknown) {
         const errorObj = err as { data?: { message?: string }; message?: string };
         const message = errorObj.data?.message || errorObj.message || t('checkout.orderFailed');
         telemetry.track('checkout.error', { message });
         setError(message);
+        return;
       }
+
+      // Step 3: Clear carts — non-blocking, order is already confirmed
+      try {
+        await clearCartApi().unwrap();
+      } catch {
+        telemetry.track('checkout.cart_clear_failed', { orderNumber: result.orderNumber });
+      }
+
+      // Only clear local Redux cart for guests; authenticated users have no local cart items
+      if (!isAuthenticated) {
+        dispatch(clearCart());
+      }
+
+      setIsGuestOrder(!isAuthenticated);
+      setOrderNumber(result.orderNumber);
+      setOrderEmail(values.email);
+      telemetry.track('checkout.complete', {
+        orderNumber: result.orderNumber,
+        paymentMethod,
+        isGuest: !isAuthenticated,
+      });
+      setOrderComplete(true);
     },
     [
-      cartItems,
+      cartItemsPayload,
+      cartItems.length,
       subtotal,
       paymentMethod,
       promoCode,
@@ -144,6 +173,7 @@ export function useCheckoutOrder(options: UseCheckoutOrderOptions): UseCheckoutO
   return {
     orderComplete,
     orderNumber,
+    orderEmail,
     error,
     isGuestOrder,
     handleFormSubmit,

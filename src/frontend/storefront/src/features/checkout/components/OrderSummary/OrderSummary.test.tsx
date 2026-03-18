@@ -1,9 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
-import { CheckoutContext } from '../../context/CheckoutContext';
-import type { UseCheckoutReturn } from '../../checkout.types';
 import { OrderSummary } from './OrderSummary';
+import type { OrderSummaryProps } from './OrderSummary.types';
 
 const mockCartItems = [
   {
@@ -26,67 +25,39 @@ const mockCartItems = [
   },
 ];
 
-function buildContext(overrides: Partial<UseCheckoutReturn> = {}): UseCheckoutReturn {
-  return {
-    formData: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      streetLine1: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: '',
-    },
-    setFormData: vi.fn(),
-    errors: {},
-    promoCode: '',
-    setPromoCode: vi.fn(),
-    promoCodeValidation: null,
-    validatingPromoCode: false,
-    handleApplyPromoCode: vi.fn(),
-    handleRemovePromoCode: vi.fn(),
-    orderComplete: false,
-    orderNumber: '',
-    error: null,
-    isGuestOrder: false,
-    cartItems: mockCartItems,
+const defaultProps: OrderSummaryProps = {
+  cart: { items: mockCartItems },
+  totals: {
     subtotal: 109.97,
-    isLoading: false,
     discount: 0,
     shipping: 10,
     tax: 8.8,
     total: 128.77,
-    paymentMethod: 'credit_card',
-    setPaymentMethod: vi.fn(),
-    handleSubmit: vi.fn(),
-    ...overrides,
-  };
-}
-
-function renderSummary(overrides: Partial<UseCheckoutReturn> = {}) {
-  return render(
-    <CheckoutContext.Provider value={buildContext(overrides)}>
-      <OrderSummary />
-    </CheckoutContext.Provider>
-  );
-}
+  },
+  promo: {
+    code: '',
+    validation: null,
+    isValidating: false,
+    onChange: vi.fn(),
+    onApply: vi.fn(),
+    onRemove: vi.fn(),
+  },
+};
 
 describe('OrderSummary', () => {
   it('renders order summary heading', () => {
-    renderSummary();
+    render(<OrderSummary {...defaultProps} />);
     expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument();
   });
 
   it('displays cart items with names and prices', () => {
-    renderSummary();
+    render(<OrderSummary {...defaultProps} />);
     expect(screen.getByText('Product 1')).toBeInTheDocument();
     expect(screen.getByText('Product 2')).toBeInTheDocument();
   });
 
   it('displays totals breakdown', () => {
-    renderSummary();
+    render(<OrderSummary {...defaultProps} />);
     expect(screen.getAllByText(/subtotal/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/shipping/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/tax/i).length).toBeGreaterThan(0);
@@ -94,33 +65,40 @@ describe('OrderSummary', () => {
   });
 
   it('shows discount when discount > 0', () => {
-    renderSummary({
-      discount: 20,
-      total: 108.77,
-      promoCode: 'SAVE20',
-      promoCodeValidation: { isValid: true, discountAmount: 20 },
-    });
+    render(
+      <OrderSummary
+        {...defaultProps}
+        totals={{ ...defaultProps.totals, discount: 20, total: 108.77 }}
+        promo={{
+          ...defaultProps.promo,
+          code: 'SAVE20',
+          validation: { isValid: true, discountAmount: 20 },
+        }}
+      />
+    );
     expect(screen.getByText(/discount/i)).toBeInTheDocument();
   });
 
-  it('calls setPromoCode when promo code input changes', () => {
-    const setPromoCode = vi.fn();
-    renderSummary({ setPromoCode });
+  it('calls onChange when promo code input changes', () => {
+    const onChange = vi.fn();
+    render(<OrderSummary {...defaultProps} promo={{ ...defaultProps.promo, onChange }} />);
 
     const promoInput = screen.getByLabelText(/promoCode|promo code|checkout\.promoCode/i);
     fireEvent.change(promoInput, { target: { value: 'SAVE10' } });
 
-    expect(setPromoCode).toHaveBeenCalledWith('SAVE10');
+    expect(onChange).toHaveBeenCalledWith('SAVE10');
   });
 
-  it('calls handleRemovePromoCode when remove button is clicked', async () => {
-    const handleRemovePromoCode = vi.fn();
+  it('calls onRemove when remove button is clicked', async () => {
+    const onRemove = vi.fn();
     const user = userEvent.setup();
-    renderSummary({ promoCode: 'SAVE10', handleRemovePromoCode });
+    render(
+      <OrderSummary {...defaultProps} promo={{ ...defaultProps.promo, code: 'SAVE10', onRemove }} />
+    );
 
     const removeButton = screen.getByRole('button', { name: /remove/i });
     await user.click(removeButton);
 
-    expect(handleRemovePromoCode).toHaveBeenCalled();
+    expect(onRemove).toHaveBeenCalled();
   });
 });

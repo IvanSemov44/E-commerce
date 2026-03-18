@@ -78,3 +78,5 @@ References/
 
 # React Router generated types
 .react-router/
+
+.fake

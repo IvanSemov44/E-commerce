@@ -1,24 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import OrderTotalsDisplay from '@/shared/components/OrderTotalsDisplay/OrderTotalsDisplay';
-import { useCheckoutContext } from '../../context/CheckoutContext';
+import type { OrderSummaryProps } from './OrderSummary.types';
 
-export function OrderSummary() {
+export function OrderSummary({ cart, totals, promo }: OrderSummaryProps) {
   const { t } = useTranslation();
-  const {
-    cartItems,
-    subtotal,
-    discount,
-    shipping,
-    tax,
-    total,
-    promoCode: code,
-    setPromoCode: onChange,
-    promoCodeValidation: validation,
-    validatingPromoCode: isValidating,
-    handleApplyPromoCode: onApply,
-    handleRemovePromoCode: onRemove,
-  } = useCheckoutContext();
+  const { subtotal, discount, shipping, tax, total } = totals;
+  const { code, validation, isValidating, onChange, onApply, onRemove } = promo;
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg">
@@ -26,7 +14,7 @@ export function OrderSummary() {
 
       {/* Items */}
       <div className="space-y-4 mb-4">
-        {cartItems.map((item) => (
+        {cart.items.map((item) => (
           <div key={item.id} className="flex gap-4">
             {item.image && (
               <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />

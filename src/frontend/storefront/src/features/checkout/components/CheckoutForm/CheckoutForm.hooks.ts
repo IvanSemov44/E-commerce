@@ -1,7 +1,7 @@
 /**
- * useCheckoutForm Hook
- * Manages shipping form state, validation, localStorage draft persistence,
- * and authenticated user pre-fill
+ * CheckoutForm Hooks
+ * Component-specific hook for shipping form state, validation,
+ * localStorage draft persistence, and authenticated user pre-fill
  */
 
 import { useEffect, useRef } from 'react';
@@ -10,24 +10,19 @@ import type { RootState } from '@/shared/lib/store';
 import { useLocalStorage } from '@/shared/hooks/useLocalStorage';
 import useForm from '@/shared/hooks/useForm';
 import { zodValidate } from '@/shared/lib/utils/zodValidate';
-import { checkoutSchema } from '../schemas/checkoutSchemas';
-import type { ShippingFormData } from '../checkout.types';
-import { CHECKOUT_DRAFT_KEY } from '../constants';
+import { checkoutSchema } from '../../schemas/checkoutSchemas';
+import type { ShippingFormData } from '../../checkout.types';
+import { CHECKOUT_DRAFT_KEY } from '../../constants';
 
 const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 const selectUser = (state: RootState) => state.auth.user;
 
 interface UseCheckoutFormOptions {
-  onSubmit?: (values: ShippingFormData) => void | Promise<void>;
+  onSubmit: (values: ShippingFormData) => void | Promise<void>;
 }
 
-interface UseCheckoutFormReturn {
-  form: ReturnType<typeof useForm<ShippingFormData>>;
-  shippingDraft: Partial<ShippingFormData>;
-}
-
-export function useCheckoutForm(options?: UseCheckoutFormOptions): UseCheckoutFormReturn {
-  const { onSubmit } = options ?? {};
+export function useCheckoutForm(options: UseCheckoutFormOptions) {
+  const { onSubmit } = options;
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const user = useAppSelector(selectUser);
 
@@ -54,18 +49,18 @@ export function useCheckoutForm(options?: UseCheckoutFormOptions): UseCheckoutFo
       country: shippingDraft.country ?? '',
     },
     validate: zodValidate(checkoutSchema),
-    onSubmit: onSubmit ?? (() => {}),
+    onSubmit,
   });
 
-  // Persist form values to localStorage as a draft on every change
+  // Persist form values to localStorage as a draft — debounced to avoid writing on every keystroke
   useEffect(() => {
-    setShippingDraft(form.values);
+    const timer = setTimeout(() => setShippingDraft(form.values), 500);
+    return () => clearTimeout(timer);
   }, [form.values, setShippingDraft]);
 
   // Pre-fill form with user data when authenticated
   useEffect(() => {
     if (isAuthenticated && user && !hasPrefilledRef.current) {
-      // Only pre-fill if the form is empty
       const isFormEmpty = !form.values.firstName && !form.values.lastName && !form.values.email;
 
       if (isFormEmpty) {
@@ -79,10 +74,8 @@ export function useCheckoutForm(options?: UseCheckoutFormOptions): UseCheckoutFo
         hasPrefilledRef.current = true;
       }
     }
-  }, [isAuthenticated, user, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user]);
 
-  return {
-    form,
-    shippingDraft,
-  };
+  return { form, clearDraft: () => setShippingDraft({}) };
 }
