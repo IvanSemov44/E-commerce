@@ -1,785 +1,130 @@
 # E-Commerce Platform
 
-This is a full-stack e-commerce platform built with a modern architecture. It features a customer-facing storefront, a separate administration dashboard for management, and a robust backend API. The entire application is containerized with Docker for consistent and easy setup.
-
-## Table of Contents
-
-- [Key Features](#key-features)
-- [Tech Stack](#tech-stack)
-- [Project Architecture](#project-architecture)
-- [For AI Assistants](#for-ai-assistants)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-- [Running the Application](#running-the-application)
-  - [Method 1: Using Docker (Recommended)](#method-1-using-docker-recommended)
-  - [Method 2: Running Services Locally](#method-2-running-services-locally)
-- [Accessing the Applications](#accessing-the-applications)
-- [API Documentation](#api-documentation)
-- [Running Tests](#running-tests)
-
-## Key Features
-
-- **User Authentication:** Secure user registration and login using JWT.
-- **Product Management:** Full CRUD operations for products and categories.
-- **Shopping Cart:** Persistent shopping cart for authenticated users.
-- **Order Processing:** Complete workflow for order creation and management.
-- **Customer Reviews:** Users can leave ratings and reviews on products.
-- **Wishlist:** Ability for users to save items for later.
-- **Promo Codes:** Admins can create and manage discount codes.
-- **Admin Dashboard:** Centralized interface for managing users, products, orders, and inventory.
-
-## Tech Stack
-
-A detailed list of the technologies and major libraries used across the project.
-
-### Backend
-
-- **Framework:** .NET 10, ASP.NET Core
-- **Database:** PostgreSQL with Entity Framework Core
-- **Architecture:** Clean Architecture
-- **API Documentation:** Swagger (Swashbuckle)
-- **Authentication:** JWT (JSON Web Tokens)
-- **Validation:** FluentValidation
-- **Mapping:** AutoMapper
-- **Logging:** Serilog
-
-### Frontend (Admin & Storefront)
-
-- **Framework:** React 19
-- **Language:** TypeScript
-- **Build Tool:** Vite
-- **State Management:** Redux Toolkit
-- **Routing:** React Router
-- **API Client:** Axios
-- **UI (Admin):** Material-UI (MUI)
-
-### Database & Infrastructure
-
-
-
-- **Containerization:** Docker, Docker Compose
-
-- **Database:** PostgreSQL
-
-## For AI Assistants
-
-AI coding assistants should start with `.ai/README.md`.
-
-- Canonical docs hub: `.ai/README.md`
-- Quick start: `.ai/quick-start.md`
-- Feature implementation workflow: `.ai/workflows/adding-feature.md`
-- Database migrations workflow: `.ai/workflows/database-migrations.md`
-- Backend error handling rules: `.ai/backend/error-handling.md`
-- Common mistakes to avoid: `.ai/reference/common-mistakes.md`
-
-
-
-## System Architecture
-
-
-
-
-
-
-
-The diagram below illustrates the high-level architecture of the E-Commerce platform. The system is composed of two independent frontend applications that communicate with a central backend API, which in turn connects to a PostgreSQL database.
-
-
-
-
-
-
+A full-stack e-commerce platform — customer storefront, admin dashboard, and REST API.
 
 ```mermaid
-
-
-
-graph TD
-
-
-
-    subgraph "Clients"
-
-
-
-        A[Storefront App <br>localhost:5173]
-
-
-
-        B[Admin Dashboard <br>localhost:5177]
-
-
-
-    end
-
-
-
-
-
-
-
-    subgraph "Backend"
-
-
-
-        C[Backend API <br>.NET 10 <br>localhost:5000]
-
-
-
-    end
-
-
-
-
-
-
-
-    subgraph "Database"
-
-
-
-        D[(PostgreSQL DB <br>localhost:5432)]
-
-
-
-    end
-
-
-
-
-
-
-
-    A -->|REST API Calls| C
-
-
-
-    B -->|REST API Calls| C
-
-
-
-    C -->|EF Core| D
-
-
-
+graph LR
+    A[Storefront :5173] -->|REST + JWT| C[.NET 10 API :5000]
+    B[Admin :5174] -->|REST + JWT| C
+    C --> D[(PostgreSQL :5432)]
+    C --> E[SendGrid / SMTP]
+    C --> F[Stripe]
 ```
 
+---
 
+## Stack
 
+| | Technology |
+|-|-----------|
+| Backend | .NET 10, ASP.NET Core, Clean Architecture |
+| Frontend | React 19, TypeScript, Redux Toolkit, RTK Query |
+| Database | PostgreSQL + Entity Framework Core |
+| Auth | JWT + Refresh Token Rotation |
+| Payments | Stripe *(integration in progress)* |
+| Email | SendGrid / SMTP (configurable) |
+| Infra | Docker, Serilog, Polly, FluentValidation |
 
+---
 
+## Quick start
 
+```bash
+# 1. Start database
+docker compose up -d
 
-## Project Architecture
+# 2. Backend
+cd src/backend/ECommerce.API && dotnet run
 
+# 3. Storefront
+cd src/frontend/storefront && npm install && npm run dev
 
-
-
-
-
-
-The project follows a modern, decoupled architecture to ensure separation of concerns and maintainability.
-
-
-
-
-
-
-
-### Backend: Clean Architecture
-
-
-
-
-
-
-
-The backend is structured using the principles of **Clean Architecture**. This separates the code into the following layers:
-
-
-
-
-
-
-
--   **`Core`**: Contains domain entities, enums, and core business interfaces. It has no external dependencies.
-
-
-
--   **`Application`**: Contains the application's business logic, services, DTOs, and validation. It depends only on the `Core` layer.
-
-
-
--   **`Infrastructure`**: Handles external concerns like data access (Entity Framework, repositories), file storage, and third-party API integrations. It depends on the `Application` layer.
-
-
-
--   **`API`**: The entry point of the backend, which exposes the application's functionality via a RESTful API. It depends on the `Application` and `Infrastructure` layers.
-
-
-
-
-
-
-
-### Frontend: Dual Applications
-
-
-
-
-
-
-
-The frontend consists of two distinct Single Page Applications (SPAs):
-
-
-
-
-
-
-
--   **`storefront`**: The public-facing website where customers can browse products, manage their cart, and place orders.
-
-
-
--   **`admin`**: A private dashboard for administrators to manage products, categories, orders, users, and view analytics.
-
-
-
-
-
-
-
-## Database Seeding
-
-
-
-
-
-
-
-On startup, the application automatically seeds the database with sample data to provide a functional out-of-the-box experience. This is handled by seeder classes found in the `ECommerce.Infrastructure` project.
-
-
-
-
-
-
-
-The following data is seeded:
-
-
-
--   **Users:** A default admin user and several sample customer accounts.
-
-
-
--   **Categories:** A variety of product categories.
-
-
-
--   **Products:** A range of sample products distributed across the seeded categories.
-
-
-
-
-
-
-
-## API Endpoint Examples
-
-
-
-
-
-
-
-While the full API can be explored via the [Swagger UI](#api-documentation), here are a few examples of common endpoints.
-
-
-
-
-
-
-
-**Get All Products**
-
-
-
-```http
-
-
-
-GET /api/products?PageNumber=1&PageSize=10
-
-
-
+# 4. Admin (optional)
+cd src/frontend/admin && npm install && npm run dev
 ```
 
+Full setup with env vars: [docs/onboarding.md](docs/onboarding.md)
 
+Default admin after seed: `admin@ecommerce.com` / `Admin123!`
 
-*Response:*
+---
 
+## Documentation
 
+### Start here
+| | |
+|-|-|
+| [docs/onboarding.md](docs/onboarding.md) | Run locally in 10 minutes, common issues |
+| [docs/environments.md](docs/environments.md) | Every environment variable for all services |
 
-```json
+### Understand the system
+| | |
+|-|-|
+| [docs/architecture.md](docs/architecture.md) | Layer diagrams, frontend state, system context |
+| [docs/database.md](docs/database.md) | ERD (14 tables), concurrency model, indexes |
+| [docs/data-flow.md](docs/data-flow.md) | Checkout, auth, cart sync sequence diagrams |
 
+### Reference
+| | |
+|-|-|
+| [docs/api-reference.md](docs/api-reference.md) | All 82+ endpoints, auth level, query params |
+| [docs/error-codes-reference.md](docs/error-codes-reference.md) | All error codes + HTTP status mapping |
+| [docs/security.md](docs/security.md) | JWT, RBAC, CSRF, rate limiting, prod checklist |
 
+### Engineering
+| | |
+|-|-|
+| [docs/testing.md](docs/testing.md) | Test pyramid, how to write tests, coverage goals |
+| [docs/performance.md](docs/performance.md) | N+1 prevention, caching, pagination rules |
+| [docs/monitoring.md](docs/monitoring.md) | Logging, health checks, alerts |
 
-{
+### Status & decisions
+| | |
+|-|-|
+| [docs/feature-status.md](docs/feature-status.md) | Completion matrix, known gaps |
+| [docs/senior-dev-next.md](docs/senior-dev-next.md) | Prioritised next steps |
+| [docs/adr/](docs/adr/) | Architecture Decision Records |
 
+### Contributing
+| | |
+|-|-|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Branch naming, PR process, code style |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [CLAUDE.md](CLAUDE.md) | Critical architectural rules |
+| [.ai/](.ai/) | Workflows and patterns |
 
+Full docs index: [docs/README.md](docs/README.md)
 
-  "products": [
+---
 
-
-
-    {
-
-
-
-      "id": "...",
-
-
-
-      "name": "Sample Product",
-
-
-
-      "price": 99.99,
-
-
-
-      "description": "A description of the sample product."
-
-
-
-    }
-
-
-
-  ],
-
-
-
-  "pagination": {
-
-
-
-    "currentPage": 1,
-
-
-
-    "totalPages": 5,
-
-
-
-    "pageSize": 10,
-
-
-
-    "totalCount": 50
-
-
-
-  }
-
-
-
-}
-
-
+## Project structure
 
 ```
-
-
-
-
-
-
-
-**Add Item to Cart**
-
-
-
-```http
-
-
-
-POST /api/cart
-
-
-
+src/
+├── backend/
+│   ├── ECommerce.Core/           Entities, Result<T>, ErrorCodes, interfaces
+│   ├── ECommerce.Application/    Services (17), DTOs, validators
+│   ├── ECommerce.Infrastructure/ Repositories, EF Core, 4 migrations
+│   ├── ECommerce.API/            Controllers (12), middleware, Program.cs
+│   └── ECommerce.Tests/          170+ tests (unit + integration)
+└── frontend/
+    ├── storefront/               Customer SPA — 7 features, RTK Query
+    ├── admin/                    Admin dashboard SPA
+    └── shared/                   Shared components and utilities
 ```
 
+---
 
+## Tests
 
-*Body:*
-
-
-
-```json
-
-
-
-{
-
-
-
-  "productId": "product-id-guid",
-
-
-
-  "quantity": 1
-
-
-
-}
-
-
-
+```bash
+cd src/backend && dotnet test                        # 80+ backend tests
+cd src/frontend/storefront && npm run test           # 90+ frontend tests
+cd src/frontend/storefront && npm run test:e2e       # Playwright E2E
 ```
 
+---
 
+## For AI assistants
 
-
-
-
-
-## Code Style and Linting
-
-
-
-
-
-
-
-### Frontend
-
-
-
-The frontend projects use **ESLint** to enforce code quality and style consistency. To run the linter, navigate to either the `src/frontend/admin` or `src/frontend/storefront` directory and run:
-
-
-
-```sh
-
-
-
-npm run lint
-
-
-
-```
-
-
-
-
-
-
-
-### Backend
-
-
-
-The backend code follows standard C# and ASP.NET Core conventions. Code style is generally maintained by the default settings in Visual Studio or JetBrains Rider.
-
-
-
-
-
-
-
-## Getting Started
-
-
-
-
-
-
-
-### Prerequisites
-
-
-
-
-
-
-
-Ensure you have the following software installed on your local machine:
-
-
-
-
-
-
-
--   [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-
-
-
--   [Node.js](https://nodejs.org/) (v20.x or later recommended)
-
-
-
--   [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-
-
-
-
-
-
-
-## Running the Application
-
-
-
-
-
-
-
-### Method 1: Using Docker (Recommended)
-
-
-
-This is the simplest way to get all services up and running. The configuration is managed by the `docker-compose.yml` file.
-
-
-
-
-
-
-
-1.  **Launch the services:**
-
-
-
-    From the root directory, run the following command:
-
-
-
-    ```sh
-
-
-
-    docker-compose up --build -d
-
-
-
-    ```
-
-
-
-    The first launch will take a few minutes as Docker downloads images and builds the application containers.
-
-
-
-
-
-
-
-### Method 2: Running Services Locally
-
-
-
-This method requires manual configuration of environment variables.
-
-
-
-
-
-
-
-#### Environment Variables
-
-
-
-Before running locally, you must set up the required environment variables.
-
-
-
-
-
-
-
-**Backend Configuration (.NET User Secrets or `appsettings.Development.json`)**
-
-
-
-| Key                                     | Purpose                      | Example Value                                                              |
-
-
-
-| --------------------------------------- | ---------------------------- | -------------------------------------------------------------------------- |
-
-
-
-| `ConnectionStrings:DefaultConnection` | Database connection string.   | `Host=localhost;Database=ECommerceDb;Username=ecommerce;Password=YourPassword123!` |
-
-
-
-| `Jwt:SecretKey`                         | Secret key for signing JWTs. | `your-super-secret-key-min-32-characters-long-must-be-used`                |
-
-
-
-| `Jwt:Issuer`                            | The issuer of the JWT.       | `ecommerce-api`                                                            |
-
-
-
-| `Jwt:Audience`                          | The audience of the JWT.     | `ecommerce-client`                                                         |
-
-
-
-
-
-
-
-**Frontend Configuration (`.env` file)**
-
-
-
-| Variable       | Purpose                   | Example Value                     |
-
-
-
-| -------------- | ------------------------- | --------------------------------- |
-
-
-
-| `VITE_API_URL` | URL of the backend API. | `http://localhost:5000/api` |
-
-
-
-
-
-
-
-#### Execution
-
-
-
-1.  **Run the Backend:**
-
-
-
-    -   Navigate to `src/backend`.
-
-
-
-    -   Ensure you have configured the secrets mentioned above.
-
-
-
-    -   Run `dotnet run --project ECommerce.API`.
-
-
-
-
-
-
-
-2.  **Run the Frontends:**
-
-
-
-    -   For each frontend (`src/frontend/storefront` and `src/frontend/admin`):
-
-
-
-    -   Create a `.env` file from `.env.example`.
-
-
-
-    -   Run `npm install` then `npm run dev`.
-
-
-
-
-
-
-
-## Accessing the Applications
-
-
-
-
-
-
-
-Once the services are running, you can access them at the following URLs:
-
-
-
-
-
-
-
--   **Storefront:** [http://localhost:5173](http://localhost:5173)
-
-
-
--   **Admin Dashboard:** [http://localhost:5177](http://localhost:5177)
-
-
-
--   **Backend API:** [http://localhost:5000](http://localhost:5000)
-
-
-
-
-
-
-
-## API Documentation
-
-
-
-
-
-
-
-The backend API includes Swagger for interactive documentation. When the API is running, you can access the Swagger UI directly at its root URL:
-
-
-
-
-
-
-
--   **Swagger UI:** [http://localhost:5000](http://localhost:5000)
-
-
-
-
-
-
-
-## Running Tests
-
-
-
-
-
-
-
-To run the backend's suite of unit and integration tests, navigate to the `src/backend` directory and run the standard dotnet test command:
-
-
-
-
-
-
-
-```sh
-
-
-
-cd src/backend
-
-
-
-dotnet test
-
-
-
-```
+Start with `CLAUDE.md`, then `.ai/README.md`.

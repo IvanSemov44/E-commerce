@@ -39,24 +39,38 @@ We love pull requests! Please see the sections below on the development workflow
 
 ### Prerequisites
 
--   Ensure you have followed the setup guide in the [README.md](./README.md) to get your local environment running.
--   You have a GitHub account.
+-   Ensure you have followed the setup guide in [docs/onboarding.md](docs/onboarding.md) to get your local environment running.
+-   Read [CLAUDE.md](CLAUDE.md) — the architectural rules that must not be violated.
+-   Read [.ai/reference/common-mistakes.md](.ai/reference/common-mistakes.md) before writing any code.
 
 ### Branching
 
-We use a branching model based on GitFlow. All development happens in feature branches.
+All development happens in feature branches off `main`.
 
-1.  **Fork the repository** on GitHub.
-2.  **Clone your fork** locally: `git clone https://github.com/your-username/E-commerce.git`
-3.  **Create a new feature branch** from the `main` branch:
+1.  **Create a new branch** from the `main` branch:
     ```sh
-    # Example for a new feature
-    git checkout -b feature/amazing-new-feature
-
-    # Example for a bug fix
-    git checkout -b fix/bug-in-cart
+    git checkout -b feat/stripe-integration
+    git checkout -b fix/cart-concurrency
+    git checkout -b refactor/checkout-hooks
+    git checkout -b docs/adr-rtk-query
+    git checkout -b chore/upgrade-dotnet
     ```
-    Use a descriptive name for your branch (e.g., `feature/user-profile-page`, `fix/payment-gateway-error`).
+
+Branch prefixes: `feat/` · `fix/` · `refactor/` · `docs/` · `chore/` · `perf/` · `test/`
+
+### Commit messages
+
+Use conventional commits format:
+
+```
+<type>(<scope>): <short summary under 72 chars>
+
+feat(checkout): add Stripe payment intent creation
+fix(cart): resolve race condition on concurrent add-to-cart
+refactor(products): split god hook into focused hooks
+docs(adr): add ADR for RTK Query decision
+chore(deps): upgrade to .NET 10.0.3
+```
 
 ### Coding Conventions
 
