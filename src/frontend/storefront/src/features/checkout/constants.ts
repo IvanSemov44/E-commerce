@@ -1,8 +1,3 @@
-/**
- * Country constants for checkout forms
- * In production, this should be fetched from an API
- */
-
 export interface Country {
   code: string;
   name: string;
@@ -15,3 +10,5 @@ export const COUNTRIES: Country[] = [
   { code: 'DE', name: 'Germany' },
   { code: 'FR', name: 'France' },
 ];
+
+export const CHECKOUT_DRAFT_KEY = 'checkout:shippingDraft';

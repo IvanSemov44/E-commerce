@@ -17,7 +17,6 @@ interface PaymentMethodSelectorProps {
 
 // Map of method key → icon component from the centralized icon library
 const METHOD_ICONS: Record<string, React.ReactNode> = {
-  stripe: <CreditCardIcon aria-hidden="true" className={styles.icon} fill="currentColor" />,
   credit_card: (
     <CreditCardIcon
       aria-hidden="true"
@@ -51,7 +50,7 @@ const FALLBACK_ICON = (
   />
 );
 
-export default function PaymentMethodSelector({
+export function PaymentMethodSelector({
   selectedMethod,
   onMethodChange,
 }: PaymentMethodSelectorProps) {
@@ -79,7 +78,7 @@ export default function PaymentMethodSelector({
   return (
     <fieldset className={styles.fieldset}>
       <legend className={styles.legend}>{t('checkout.paymentMethodLabel')}</legend>
-      <div role="radiogroup" aria-label={t('checkout.selectPaymentMethod')} className={styles.grid}>
+      <div className={styles.grid}>
         {methods.map((method) => {
           const labelKey = `checkout.paymentOptions.${method}` as const;
           const label = t(labelKey, { defaultValue: method.replace(/_/g, ' ') });
@@ -99,7 +98,6 @@ export default function PaymentMethodSelector({
                 checked={isSelected}
                 onChange={() => onMethodChange(method)}
                 className={styles.radio}
-                aria-label={label}
               />
               <span className={styles.optionContent}>
                 <span className={styles.iconWrapper}>{METHOD_ICONS[method] ?? FALLBACK_ICON}</span>

@@ -1,1 +1,1 @@
-export { default } from './TrustSignals';
+export { TrustSignals } from './TrustSignals';

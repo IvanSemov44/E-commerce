@@ -11,7 +11,7 @@ interface OrderTotalsDisplayProps {
   className?: string;
 }
 
-export default function OrderTotalsDisplay({
+export function OrderTotalsDisplay({
   subtotal,
   shipping,
   tax,

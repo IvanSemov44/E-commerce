@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import OrderTotalsDisplay from './OrderTotalsDisplay';
+import { OrderTotalsDisplay } from './OrderTotalsDisplay';
 
 describe('OrderTotalsDisplay', () => {
   it('displays subtotal label and value', () => {

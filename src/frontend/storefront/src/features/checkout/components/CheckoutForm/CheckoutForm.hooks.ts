@@ -4,78 +4,82 @@
  * localStorage draft persistence, and authenticated user pre-fill
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAppSelector } from '@/shared/lib/store';
-import type { RootState } from '@/shared/lib/store';
+import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useLocalStorage } from '@/shared/hooks/useLocalStorage';
-import useForm from '@/shared/hooks/useForm';
+import { useForm } from '@/shared/hooks/useForm';
 import { zodValidate } from '@/shared/lib/utils/zodValidate';
-import { checkoutSchema } from '../../schemas/checkoutSchemas';
-import type { ShippingFormData } from '../../checkout.types';
-import { CHECKOUT_DRAFT_KEY } from '../../constants';
-
-const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
-const selectUser = (state: RootState) => state.auth.user;
+import { checkoutSchema } from '@/features/checkout/checkoutSchemas';
+import type { ShippingFormData } from '@/features/checkout/types';
+import { CHECKOUT_DRAFT_KEY } from '@/features/checkout/constants';
 
 interface UseCheckoutFormOptions {
   onSubmit: (values: ShippingFormData) => void | Promise<void>;
 }
 
+// All fields empty — used as the base for initial value composition below
+const EMPTY_FORM: ShippingFormData = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  streetLine1: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: '',
+};
+
 export function useCheckoutForm(options: UseCheckoutFormOptions) {
   const { onSubmit } = options;
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const user = useAppSelector(selectUser);
+  const user = useAppSelector(selectCurrentUser);
 
-  // Shipping form draft persisted in localStorage — auto-restored on mount
+  // Reads the saved draft from localStorage (partial — user may have left mid-fill)
   const [shippingDraft, setShippingDraft] = useLocalStorage<Partial<ShippingFormData>>(
     CHECKOUT_DRAFT_KEY,
-    {}
+    {} as Partial<ShippingFormData>
   );
 
-  // Use ref to track if we've already pre-filled to avoid overwriting user edits
-  const hasPrefilledRef = useRef(false);
+  // Resolve initial values once on mount using this priority order:
+  //   1. Saved draft  — restores whatever the user typed last time
+  //   2. User profile — pre-fills contact fields for authenticated users with no draft
+  //   3. Empty form   — fresh guest checkout
+  // Empty deps are intentional: mirrors useState(initialValues) which also only reads
+  // initialValues on the first render. Adding deps would recompute but never apply the result.
+  const initialValues = useMemo((): ShippingFormData => {
+    let values = EMPTY_FORM;
 
-  // Initialize useForm hook — restore any previously saved draft
+    if (isAuthenticated && user) {
+      values = {
+        ...EMPTY_FORM,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      };
+    }
+
+    if (Object.values(shippingDraft).some(Boolean)) {
+      values = { ...EMPTY_FORM, ...shippingDraft };
+    }
+
+    return values;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const form = useForm<ShippingFormData>({
-    initialValues: {
-      firstName: shippingDraft.firstName ?? '',
-      lastName: shippingDraft.lastName ?? '',
-      email: shippingDraft.email ?? '',
-      phone: shippingDraft.phone ?? '',
-      streetLine1: shippingDraft.streetLine1 ?? '',
-      city: shippingDraft.city ?? '',
-      state: shippingDraft.state ?? '',
-      postalCode: shippingDraft.postalCode ?? '',
-      country: shippingDraft.country ?? '',
-    },
+    initialValues,
     validate: zodValidate(checkoutSchema),
     onSubmit,
   });
 
-  // Persist form values to localStorage as a draft — debounced to avoid writing on every keystroke
+  // Save form values to localStorage after 500ms of inactivity — avoids a write on every keystroke
   useEffect(() => {
     const timer = setTimeout(() => setShippingDraft(form.values), 500);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer); // cancel pending write if values change before timer fires
   }, [form.values, setShippingDraft]);
 
-  // Pre-fill form with user data when authenticated
-  useEffect(() => {
-    if (isAuthenticated && user && !hasPrefilledRef.current) {
-      const isFormEmpty = !form.values.firstName && !form.values.lastName && !form.values.email;
-
-      if (isFormEmpty) {
-        form.setValues({
-          ...form.values,
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          email: user.email || '',
-          phone: user.phone || '',
-        });
-        hasPrefilledRef.current = true;
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user]);
-
-  return { form, clearDraft: () => setShippingDraft({}) };
+  return { form };
 }

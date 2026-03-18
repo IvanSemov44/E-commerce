@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { OrderSummary } from './OrderSummary';
-import type { OrderSummaryProps } from './OrderSummary.types';
 
 const mockCartItems = [
   {
@@ -25,8 +24,8 @@ const mockCartItems = [
   },
 ];
 
-const defaultProps: OrderSummaryProps = {
-  cart: { items: mockCartItems },
+const defaultProps = {
+  items: mockCartItems,
   totals: {
     subtotal: 109.97,
     discount: 0,
@@ -54,6 +53,18 @@ describe('OrderSummary', () => {
     render(<OrderSummary {...defaultProps} />);
     expect(screen.getByText('Product 1')).toBeInTheDocument();
     expect(screen.getByText('Product 2')).toBeInTheDocument();
+  });
+
+  it('renders no items when cart is empty', () => {
+    render(<OrderSummary {...defaultProps} items={[]} />);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('does not render image when item has no image', () => {
+    const itemWithoutImage = { ...mockCartItems[0], image: '' };
+    render(<OrderSummary {...defaultProps} items={[itemWithoutImage]} />);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('Product 1')).toBeInTheDocument();
   });
 
   it('displays totals breakdown', () => {
@@ -100,5 +111,52 @@ describe('OrderSummary', () => {
     await user.click(removeButton);
 
     expect(onRemove).toHaveBeenCalled();
+  });
+
+  it('calls onApply when apply button is clicked', async () => {
+    const onApply = vi.fn();
+    const user = userEvent.setup();
+    render(<OrderSummary {...defaultProps} promo={{ ...defaultProps.promo, onApply }} />);
+
+    await user.click(screen.getByRole('button', { name: /apply/i }));
+
+    expect(onApply).toHaveBeenCalled();
+  });
+
+  it('disables apply button while validating', () => {
+    render(
+      <OrderSummary {...defaultProps} promo={{ ...defaultProps.promo, isValidating: true }} />
+    );
+
+    expect(screen.getByRole('button', { name: /applying/i })).toBeDisabled();
+  });
+
+  it('shows invalid promo message when validation fails', () => {
+    render(
+      <OrderSummary
+        {...defaultProps}
+        promo={{
+          ...defaultProps.promo,
+          validation: { isValid: false, discountAmount: 0, message: 'Invalid code' },
+        }}
+      />
+    );
+
+    expect(screen.getByText('Invalid code')).toBeInTheDocument();
+  });
+
+  it('shows valid promo message when validation succeeds', () => {
+    render(
+      <OrderSummary
+        {...defaultProps}
+        promo={{
+          ...defaultProps.promo,
+          code: 'SAVE10',
+          validation: { isValid: true, discountAmount: 10, message: '10% off applied' },
+        }}
+      />
+    );
+
+    expect(screen.getByText('10% off applied')).toBeInTheDocument();
   });
 });

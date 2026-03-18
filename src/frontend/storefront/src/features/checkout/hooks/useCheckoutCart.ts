@@ -6,12 +6,11 @@
 
 import { useMemo } from 'react';
 import { useAppSelector } from '@/shared/lib/store';
-import type { RootState } from '@/shared/lib/store';
+import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import { selectCartItems, selectCartSubtotal } from '@/features/cart/slices/cartSlice';
 import type { CartItem } from '@/features/cart/slices/cartSlice';
 import { useGetCartQuery } from '@/features/cart/api';
 import { useCartSync } from '@/features/cart/hooks/useCartSync';
-const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 
 interface UseCheckoutCartReturn {
   cartItems: CartItem[];

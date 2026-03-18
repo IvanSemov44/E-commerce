@@ -19,14 +19,14 @@ export * from './Skeletons';
 
 // Utility Components
 export { EmptyState } from './ui/EmptyState';
-export { default as ErrorAlert } from './ErrorAlert';
+export { ErrorAlert } from './ErrorAlert';
 export { default as OptimizedImage } from './OptimizedImage';
 export { default as PageHeader } from './PageHeader';
 export { default as PaginatedView } from './Pagination';
 export { default as QueryRenderer } from './QueryRenderer';
-export { default as TrustSignals } from './TrustSignals';
+export { TrustSignals } from './TrustSignals';
 
 // Order display components (shared across cart, checkout, orders)
-export { default as OrderTotalsDisplay } from './OrderTotalsDisplay/OrderTotalsDisplay';
+export { OrderTotalsDisplay } from './OrderTotalsDisplay/OrderTotalsDisplay';
 export { OrderTotals } from './OrderTotals';
 export type { OrderTotalsProps } from './OrderTotals';

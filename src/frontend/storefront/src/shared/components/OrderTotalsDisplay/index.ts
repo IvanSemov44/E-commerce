@@ -1,1 +1,1 @@
-export { default } from './OrderTotalsDisplay';
+export { OrderTotalsDisplay } from './OrderTotalsDisplay';

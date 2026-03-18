@@ -7,7 +7,7 @@ interface UseFormOptions<T> {
   onSubmit: (values: T) => void | Promise<void>;
 }
 
-export default function useForm<T extends object>({
+export function useForm<T extends object>({
   initialValues,
   validate,
   onSubmit,

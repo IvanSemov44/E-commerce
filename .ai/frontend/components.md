@@ -22,38 +22,20 @@ export const MyComponent = ({ title }: MyComponentProps) => <div>{title}</div>;
 export const MyComponent = function MyComponent({ title }: MyComponentProps) { ... };
 ```
 
-### Export pattern — pick based on whether a named import is needed
+### Export pattern — named exports only
 
-**Named export only** (default when the component is consumed by `{ Name }` imports):
+Always use named exports. Default exports are not used in this project.
+
 ```tsx
 // MyComponent.tsx
 export function MyComponent(...) { ... }
 
 // index.ts
 export { MyComponent } from './MyComponent';
+export type { MyComponentProps } from './MyComponent.types';
 ```
 
-**Default export only** (for simple components not needing named access):
-```tsx
-// MyComponent.tsx
-export default function MyComponent(...) { ... }
-
-// index.ts
-export { default } from './MyComponent';
-```
-
-**Both** (only when the component is imported both ways — check actual imports first):
-```tsx
-// MyComponent.tsx
-export function MyComponent(...) { ... }
-export default MyComponent;
-
-// index.ts
-export { MyComponent } from './MyComponent';
-export { default } from './MyComponent';
-```
-
-> Before adding a default export, grep for `import MyComponent from` to confirm it is actually used as a default. If nothing imports it as default, use named only.
+> **When editing any file** that uses `export default`, convert it to a named export as part of that edit. Update all import sites in the same change.
 
 ### Props type — always a named interface in the same file or a `.types.ts` file
 ```tsx
@@ -66,9 +48,7 @@ export function MyComponent({ title, onClose }: MyComponentProps) { ... }
 ```
 
 ### Real examples in this project
-- Named only: `src/frontend/storefront/src/app/SearchBar/SearchBar.tsx`
-- Default only: `src/frontend/storefront/src/app/AnnouncementBar/AnnouncementBar.tsx`
-- Both (named + default): `src/frontend/storefront/src/app/LanguageSwitcher/LanguageSwitcher.tsx`
+- `src/frontend/storefront/src/features/checkout/components/OrderSummary/OrderSummary.tsx` — named export
 
 ## Async State Pattern — guard clauses for loading / error / empty
 
@@ -135,6 +115,9 @@ return (
 - Reusing a component across features with incompatible prop contracts.
 
 ## Checklist
+- [ ] Component uses a named export (`export function`, not `export default`).
+- [ ] `index.ts` uses `export { Name }` not `export { default }`.
+- [ ] Styles use CSS Modules (`.module.css`) — no Tailwind utility classes. When editing a file that uses Tailwind, convert it to CSS Modules in the same change.
 - [ ] Component API is typed and minimal.
 - [ ] Data fetching delegated to RTK Query hooks or feature hooks.
 - [ ] Shared component is domain-agnostic.

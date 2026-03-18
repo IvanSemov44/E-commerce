@@ -6,7 +6,7 @@ interface ErrorAlertProps {
   onDismiss?: () => void;
 }
 
-export default function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
+export function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
   return (
     <Card variant="bordered" padding="md" className="error-container">
       <div>

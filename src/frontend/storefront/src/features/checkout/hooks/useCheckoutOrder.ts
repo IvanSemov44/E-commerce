@@ -6,18 +6,19 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
-import type { RootState } from '@/shared/lib/store';
+import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import { clearCart } from '@/features/cart/slices/cartSlice';
 import type { CartItem } from '@/features/cart/slices/cartSlice';
 import { useCreateOrderMutation } from '@/features/orders/api';
 import { useClearCartMutation } from '@/features/cart/api';
-import { useCheckAvailabilityMutation } from '../api';
-import type { StockIssue } from '../api/inventoryApi';
+import { useCheckAvailabilityMutation } from '@/features/checkout/api';
+import type { StockIssue } from '@/features/checkout/api';
 import type { CreateOrderRequest } from '@/shared/types';
-import type { ShippingFormData, PromoCodeValidation } from '../checkout.types';
+import type { ShippingFormData, PromoCodeValidation } from '@/features/checkout/types';
 import { telemetry } from '@/shared/lib/utils/telemetry';
 
-const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
+const formatStockIssues = (issues: StockIssue[]) =>
+  issues.map((i) => `${i.productName}: ${i.message}`).join(', ');
 
 interface UseCheckoutOrderReturn {
   orderComplete: boolean;
@@ -69,10 +70,7 @@ export function useCheckoutOrder(options: UseCheckoutOrderOptions): UseCheckoutO
       .unwrap()
       .then((result) => {
         if (!result.isAvailable) {
-          const issueMessages = result.issues
-            .map((issue: StockIssue) => `${issue.productName}: ${issue.message}`)
-            .join(', ');
-          setError(t('checkout.stockIssues', { issues: issueMessages }));
+          setError(t('checkout.stockIssues', { issues: formatStockIssues(result.issues) }));
         }
       })
       .catch(() => {
@@ -96,10 +94,7 @@ export function useCheckoutOrder(options: UseCheckoutOrderOptions): UseCheckoutO
       }
 
       if (!stockCheckResult.isAvailable) {
-        const issueMessages = stockCheckResult.issues
-          .map((issue: StockIssue) => `${issue.productName}: ${issue.message}`)
-          .join(', ');
-        setError(t('checkout.stockIssues', { issues: issueMessages }));
+        setError(t('checkout.stockIssues', { issues: formatStockIssues(stockCheckResult.issues) }));
         return;
       }
 
@@ -116,7 +111,7 @@ export function useCheckoutOrder(options: UseCheckoutOrderOptions): UseCheckoutO
           postalCode: values.postalCode,
           country: values.country,
         },
-        paymentMethod: paymentMethod,
+        paymentMethod,
         promoCode: promoCodeValidation?.isValid ? promoCode : undefined,
         guestEmail: values.email,
       };

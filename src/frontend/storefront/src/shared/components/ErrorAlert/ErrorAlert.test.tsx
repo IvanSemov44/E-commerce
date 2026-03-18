@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { HTMLAttributes, ReactNode, SVGProps } from 'react';
-import ErrorAlert from './ErrorAlert';
+import { ErrorAlert } from './ErrorAlert';
 
 interface MockCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;

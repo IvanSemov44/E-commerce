@@ -13,7 +13,7 @@ interface TrustSignalsProps {
   variant?: 'full' | 'compact';
 }
 
-export default function TrustSignals({ variant = 'full' }: TrustSignalsProps) {
+export function TrustSignals({ variant = 'full' }: TrustSignalsProps) {
   const { t } = useTranslation();
 
   const trustSignals: TrustSignal[] = [

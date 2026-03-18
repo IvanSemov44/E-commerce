@@ -1,47 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAppSelector } from '@/shared/lib/store';
-import type { RootState } from '@/shared/lib/store';
+import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import { usePerformanceMonitor } from '@/shared/hooks';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { calculateOrderTotals } from '@/shared/lib/utils/orderCalculations';
 import { telemetry } from '@/shared/lib/utils/telemetry';
 import { LocationIcon } from '@/shared/components/icons';
-import { Card } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { EmptyState } from '@/shared/components/ui/EmptyState';
-import ErrorAlert from '@/shared/components/ErrorAlert';
-import TrustSignals from '@/shared/components/TrustSignals';
-import CheckoutForm from '@/features/checkout/components/CheckoutForm';
-import { OrderSummary } from '@/features/checkout/components/OrderSummary';
-import OrderSuccess from '@/features/checkout/components/OrderSuccess';
-import { useCheckoutCart } from '../../hooks/useCheckoutCart';
-import { useCheckoutPromo } from '../../hooks/useCheckoutPromo';
-import { useCheckoutOrder } from '../../hooks/useCheckoutOrder';
-import { useGetPaymentMethodsQuery } from '../../api';
+import { Button, Card, EmptyState, ErrorAlert, TrustSignals } from '@/shared/components';
+import { CheckoutForm, OrderSummary, OrderSuccess } from '@/features/checkout/components';
+import { useCheckoutCart, useCheckoutPromo, useCheckoutOrder } from '@/features/checkout/hooks';
+import { useGetPaymentMethodsQuery } from '@/features/checkout/api';
+import { CHECKOUT_DRAFT_KEY } from '@/features/checkout/constants';
 import styles from './CheckoutPage.module.css';
 
-const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
-
-export default function CheckoutPage() {
+export function CheckoutPage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
-  // Shared state
+  // Derive selected payment method — falls back to first available if stored value not in list
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const { data: paymentMethodsData } = useGetPaymentMethodsQuery();
-
-  // Sync paymentMethod with the first available method returned by the API
-  useEffect(() => {
-    const methods = paymentMethodsData?.methods ?? [];
-    if (methods.length > 0 && !methods.includes(paymentMethod)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPaymentMethod(methods[0]);
-    }
-  }, [paymentMethodsData]); // eslint-disable-line react-hooks/exhaustive-deps
+  const availableMethods = paymentMethodsData?.methods ?? [];
+  const selectedMethod = availableMethods.includes(paymentMethod)
+    ? paymentMethod
+    : (availableMethods[0] ?? 'credit_card');
 
   // Feature hooks
   const { cartItems, subtotal, isLoading } = useCheckoutCart();
@@ -56,18 +42,21 @@ export default function CheckoutPage() {
     subtotal,
     promoCode: promo.promoCode,
     promoCodeValidation: promo.promoCodeValidation,
-    paymentMethod,
+    paymentMethod: selectedMethod,
   });
 
   const totals = calculateOrderTotals(subtotal, discount);
 
+  // Clear shipping draft from localStorage once order is confirmed
+  useEffect(() => {
+    if (!order.orderComplete) return;
+    localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+  }, [order.orderComplete]);
+
   // Telemetry — fire once on mount
-  const isAuthenticatedRef = useRef(isAuthenticated);
   useEffect(() => {
-    isAuthenticatedRef.current = isAuthenticated;
-  });
-  useEffect(() => {
-    telemetry.track('checkout.view', { isAuthenticated: isAuthenticatedRef.current });
+    telemetry.track('checkout.view', { isAuthenticated });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Guard clauses (loading → empty → success → form)
@@ -110,7 +99,7 @@ export default function CheckoutPage() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.content}>
+      <div>
         <div className={styles.checkoutHeader}>
           <h1 className={styles.checkoutTitle}>{t('checkout.secureCheckout')}</h1>
           <p className={styles.checkoutSubtitle}>{t('checkout.completeOrderSubtitle')}</p>
@@ -130,25 +119,14 @@ export default function CheckoutPage() {
               {order.error && <ErrorAlert message={order.error} />}
               <CheckoutForm
                 onSubmit={order.handleFormSubmit}
-                payment={{ method: paymentMethod, onChange: setPaymentMethod }}
+                payment={{ method: selectedMethod, onChange: setPaymentMethod }}
               />
             </Card>
           </div>
 
           <div className={styles.summary}>
             <Card variant="elevated" padding="lg">
-              <OrderSummary
-                cart={{ items: cartItems }}
-                totals={totals}
-                promo={{
-                  code: promo.promoCode,
-                  validation: promo.promoCodeValidation,
-                  isValidating: promo.validatingPromoCode,
-                  onChange: promo.setPromoCode,
-                  onApply: promo.handleApplyPromoCode,
-                  onRemove: promo.handleRemovePromoCode,
-                }}
-              />
+              <OrderSummary items={cartItems} totals={totals} promo={promo.promoState} />
             </Card>
           </div>
         </div>

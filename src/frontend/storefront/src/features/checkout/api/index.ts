@@ -1,13 +1,5 @@
-export {
-  useCheckAvailabilityMutation,
-  type CheckAvailabilityRequest,
-  type CheckAvailabilityResponse,
-} from './inventoryApi';
+export { useCheckAvailabilityMutation, type StockIssue } from './inventoryApi';
 
-export {
-  useValidatePromoCodeMutation,
-  type ValidatePromoCodeRequest,
-  type ValidatePromoCodeResponse,
-} from './promoCodeApi';
+export { useValidatePromoCodeMutation } from './promoCodeApi';
 
-export { useGetPaymentMethodsQuery, type PaymentMethodsResponse } from './paymentsApi';
+export { useGetPaymentMethodsQuery } from './paymentsApi';

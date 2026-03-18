@@ -5,16 +5,15 @@
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useValidatePromoCodeMutation } from '../api';
-import type { PromoCodeValidation } from '../checkout.types';
+import { useValidatePromoCodeMutation } from '@/features/checkout/api';
+import type { PromoCodeValidation, PromoCodeState } from '@/features/checkout/types';
 
 interface UseCheckoutPromoReturn {
+  // Raw values — used by useCheckoutOrder
   promoCode: string;
-  setPromoCode: (code: string) => void;
   promoCodeValidation: PromoCodeValidation | null;
-  validatingPromoCode: boolean;
-  handleApplyPromoCode: () => Promise<void>;
-  handleRemovePromoCode: () => void;
+  // Shaped for OrderSummary — avoids mapping in CheckoutPage
+  promoState: PromoCodeState;
 }
 
 interface UseCheckoutPromoOptions {
@@ -67,6 +66,12 @@ export function useCheckoutPromo(options: UseCheckoutPromoOptions): UseCheckoutP
     }
   }, [promoCode, subtotal, t, validatePromoCodeMutation]);
 
+  // Clear validation when the user edits the code
+  const handlePromoCodeChange = useCallback((code: string) => {
+    setPromoCode(code);
+    setPromoCodeValidation(null);
+  }, []);
+
   // Remove promo code
   const handleRemovePromoCode = useCallback(() => {
     setPromoCode('');
@@ -75,10 +80,14 @@ export function useCheckoutPromo(options: UseCheckoutPromoOptions): UseCheckoutP
 
   return {
     promoCode,
-    setPromoCode,
     promoCodeValidation,
-    validatingPromoCode,
-    handleApplyPromoCode,
-    handleRemovePromoCode,
+    promoState: {
+      code: promoCode,
+      validation: promoCodeValidation,
+      isValidating: validatingPromoCode,
+      onChange: handlePromoCodeChange,
+      onApply: handleApplyPromoCode,
+      onRemove: handleRemovePromoCode,
+    },
   };
 }

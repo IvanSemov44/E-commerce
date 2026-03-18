@@ -1,9 +1,4 @@
-/**
- * Checkout Types
- * Shared type definitions for the checkout feature
- */
-
-import type { CheckoutFormValues } from './schemas/checkoutSchemas';
+import type { CheckoutFormValues } from '@/features/checkout/checkoutSchemas';
 
 export type ShippingFormData = CheckoutFormValues;
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import useForm from '../useForm';
+import { useForm } from '../useForm';
 import type { FormEvent } from 'react';
 
 interface TestFormValues {

@@ -1,35 +1,39 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
-import PaymentMethodSelector from '../PaymentMethodSelector/PaymentMethodSelector';
+import { PaymentMethodSelector } from '@/features/checkout/components/PaymentMethodSelector';
 import { useCheckoutForm } from './CheckoutForm.hooks';
-import { COUNTRIES } from '../../constants/countries';
-import type { CheckoutFormProps } from './CheckoutForm.types';
+import { COUNTRIES } from '@/features/checkout/constants';
+import type { ShippingFormData } from '@/features/checkout/types';
+import styles from './CheckoutForm.module.css';
 
-export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
+interface CheckoutFormProps {
+  onSubmit: (values: ShippingFormData) => void | Promise<void>;
+  payment: {
+    method: string;
+    onChange: (method: string) => void;
+  };
+}
+
+export function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
   const { t } = useTranslation();
   const { form } = useCheckoutForm({ onSubmit });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    form.setValues({ ...form.values, [name]: value });
-  };
 
   return (
     <form
       onSubmit={form.handleSubmit}
-      className="space-y-6"
+      className={styles.form}
       aria-label={t('checkout.shippingInfo')}
       noValidate
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={styles.row}>
         <Input
           label={t('checkout.firstName')}
           type="text"
           id="firstName"
           name="firstName"
           value={form.values.firstName}
-          onChange={handleChange}
+          onChange={form.handleChange}
           error={form.errors.firstName}
           required
         />
@@ -39,20 +43,20 @@ export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
           id="lastName"
           name="lastName"
           value={form.values.lastName}
-          onChange={handleChange}
+          onChange={form.handleChange}
           error={form.errors.lastName}
           required
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={styles.row}>
         <Input
           label={t('checkout.email')}
           type="email"
           id="email"
           name="email"
           value={form.values.email}
-          onChange={handleChange}
+          onChange={form.handleChange}
           error={form.errors.email}
           required
         />
@@ -62,8 +66,9 @@ export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
           id="phone"
           name="phone"
           value={form.values.phone}
-          onChange={handleChange}
+          onChange={form.handleChange}
           error={form.errors.phone}
+          required
         />
       </div>
 
@@ -73,31 +78,29 @@ export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
         id="streetLine1"
         name="streetLine1"
         value={form.values.streetLine1}
-        onChange={handleChange}
+        onChange={form.handleChange}
         error={form.errors.streetLine1}
         required
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="col-span-2">
-          <Input
-            label={t('checkout.city')}
-            type="text"
-            id="city"
-            name="city"
-            value={form.values.city}
-            onChange={handleChange}
-            error={form.errors.city}
-            required
-          />
-        </div>
+      <div className={styles.addressRow}>
+        <Input
+          label={t('checkout.city')}
+          type="text"
+          id="city"
+          name="city"
+          value={form.values.city}
+          onChange={form.handleChange}
+          error={form.errors.city}
+          required
+        />
         <Input
           label={t('checkout.state')}
           type="text"
           id="state"
           name="state"
           value={form.values.state}
-          onChange={handleChange}
+          onChange={form.handleChange}
           error={form.errors.state}
           required
         />
@@ -107,24 +110,23 @@ export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
           id="postalCode"
           name="postalCode"
           value={form.values.postalCode}
-          onChange={handleChange}
+          onChange={form.handleChange}
           error={form.errors.postalCode}
           required
         />
       </div>
 
-      <div>
-        <label htmlFor="country" className="block text-sm font-medium mb-1">
+      <div className={styles.fieldGroup}>
+        <label htmlFor="country" className={styles.label}>
           {t('checkout.country')}
         </label>
         <select
           id="country"
           name="country"
           value={form.values.country}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border rounded-lg"
+          onChange={form.handleChange}
+          className={styles.select}
           required
-          aria-required="true"
           aria-describedby={form.errors.country ? 'country-error' : undefined}
         >
           <option value="">{t('checkout.selectCountry')}</option>
@@ -135,7 +137,7 @@ export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
           ))}
         </select>
         {form.errors.country && (
-          <p id="country-error" role="alert" className="text-red-500 text-sm mt-1">
+          <p id="country-error" role="alert" className={styles.fieldError}>
             {form.errors.country}
           </p>
         )}
@@ -143,8 +145,8 @@ export default function CheckoutForm({ onSubmit, payment }: CheckoutFormProps) {
 
       <PaymentMethodSelector selectedMethod={payment.method} onMethodChange={payment.onChange} />
 
-      <Button type="submit" className="w-full">
-        {t('checkout.placeOrder')}
+      <Button type="submit" className={styles.submitButton} disabled={form.isSubmitting}>
+        {form.isSubmitting ? t('common.loading') : t('checkout.placeOrder')}
       </Button>
     </form>
   );
