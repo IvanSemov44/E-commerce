@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../api/profileApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { updateUser } from '@/features/auth/slices/authSlice';
-import useForm from '@/shared/hooks/useForm';
+import { useForm } from '@/shared/hooks/useForm';
 import { validators } from '@/shared/lib/utils/validation';
 import type { UserProfile } from '@/shared/types';
 

@@ -4,7 +4,7 @@ import { useRegisterMutation } from '../api/authApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '../slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import useForm from '@/shared/hooks/useForm';
+import { useForm } from '@/shared/hooks/useForm';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
 import { zodValidate } from '@/shared/lib/utils/zodValidate';

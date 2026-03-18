@@ -14,7 +14,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { ProductCard, ProductsGridSkeleton } from '@/features/products/components';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
-import TrustSignals from '@/shared/components/TrustSignals';
+import { TrustSignals } from '@/shared/components/TrustSignals';
 import styles from './HomePage.module.css';
 
 interface ProductGridProps {

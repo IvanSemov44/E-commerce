@@ -1,4 +1,4 @@
-import ErrorAlert from '../ErrorAlert';
+import { ErrorAlert } from '../ErrorAlert';
 import QueryRendererSkeleton from './QueryRendererSkeleton/QueryRendererSkeleton';
 import { EmptyState } from '../ui/EmptyState';
 

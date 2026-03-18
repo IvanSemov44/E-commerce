@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
-import ErrorAlert from '@/shared/components/ErrorAlert';
+import { ErrorAlert } from '@/shared/components/ErrorAlert';
 import { useAppSelector } from '@/shared/lib/store';
 import { selectCartItemById } from '@/features/cart/slices/cartSlice';
 import type { ProductActionsProps } from './ProductActions.types';
