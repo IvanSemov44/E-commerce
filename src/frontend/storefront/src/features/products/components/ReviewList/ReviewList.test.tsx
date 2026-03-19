@@ -7,7 +7,7 @@ vi.mock('@/shared/components/ui/Card', () => ({
 }));
 
 vi.mock('@/shared/components/ErrorAlert', () => ({
-  default: ({ message }: { message: string }) => <div data-testid="error-alert">{message}</div>,
+  ErrorAlert: ({ message }: { message: string }) => <div data-testid="error-alert">{message}</div>,
 }));
 
 vi.mock('@/shared/components/ui/EmptyState', () => ({

@@ -5,8 +5,8 @@ import { GridIcon } from '@/shared/components/icons';
 import {
   useGetFeaturedProductsQuery,
   useGetProductsQuery,
-} from '@/features/products/api/productApi';
-import { useGetTopLevelCategoriesQuery } from '@/features/products/api/categoriesApi';
+  useGetTopLevelCategoriesQuery,
+} from '@/features/products/api';
 import type { Product } from '@/shared/types';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { withQuery } from '@/shared/lib/routing';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCreateReviewMutation } from '@/features/products/api/reviewsApi';
+import { useCreateReviewMutation } from '@/features/products/api';
 import { useTranslation } from 'react-i18next';
 import { useApiErrorHandler } from '@/shared/hooks';
 import { Button } from '@/shared/components/ui/Button';

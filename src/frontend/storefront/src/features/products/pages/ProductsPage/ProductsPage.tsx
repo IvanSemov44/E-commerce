@@ -1,11 +1,10 @@
 import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePerformanceMonitor } from '@/shared/hooks';
-import { useGetProductsQuery } from '@/features/products/api/productApi';
-import { useProductFilters } from '@/features/products/hooks/useProductFilters';
+import { useGetProductsQuery } from '@/features/products/api';
+import { useProductFilters } from '@/features/products/hooks';
 import { Button } from '@/shared/components/ui/Button';
-import { CategoryFilter } from '@/features/products/components/CategoryFilter';
-import { ProductsToolbar } from '@/features/products/components/ProductsToolbar';
+import { CategoryFilter, ProductsToolbar } from '@/features/products/components';
 import PageHeader from '@/shared/components/PageHeader';
 import QueryRenderer from '@/shared/components/QueryRenderer';
 import { GridIcon } from '@/shared/components/icons';

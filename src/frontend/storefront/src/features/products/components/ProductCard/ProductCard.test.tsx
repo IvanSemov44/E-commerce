@@ -1,26 +1,15 @@
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductCard } from './ProductCard';
 
-// Mock the OptimizedImage component to simplify testing
-vi.mock('../../../../../components/ui/OptimizedImage', () => ({
-  default: ({ src, alt }: { src: string; alt: string }) => (
-    <img src={src} alt={alt} data-testid="optimized-image" />
-  ),
-}));
-
-// Mock RTK Query hooks
 const mockAddToWishlist = vi.fn();
 const mockRemoveFromWishlist = vi.fn();
 const mockAddToCartBackend = vi.fn();
 const mockGetWishlist = vi.fn();
 
 vi.mock('@/features/wishlist/api', () => ({
-  useGetWishlistQuery: (...args: unknown[]) => {
-    const result = mockGetWishlist(...args);
-    return { data: result };
-  },
+  useGetWishlistQuery: (...args: unknown[]) => ({ data: mockGetWishlist(...args) }),
   useAddToWishlistMutation: () => [mockAddToWishlist, { isLoading: false }],
   useRemoveFromWishlistMutation: () => [mockRemoveFromWishlist, { isLoading: false }],
 }));
@@ -29,121 +18,155 @@ vi.mock('@/features/cart/api', () => ({
   useAddToCartMutation: () => [mockAddToCartBackend, { isLoading: false }],
 }));
 
-describe('ProductCard', () => {
-  const mockProduct = {
-    id: '123',
-    name: 'Test Product',
-    price: 99.99,
-    compareAtPrice: 129.99,
-    imageUrl: '/test-image.jpg',
-    slug: 'test-product',
-    rating: 4.5,
-    reviewCount: 10,
-    stockQuantity: 10,
-  };
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, unknown>) =>
+      opts ? `${key}:${JSON.stringify(opts)}` : key,
+  }),
+}));
 
-  const renderComponent = (product = mockProduct, isAuthenticated = false) =>
-    renderWithProviders(<ProductCard {...product} />, {
-      preloadedState: {
-        cart: { items: [], lastUpdated: Date.now() },
-        auth: {
-          isAuthenticated,
-          user: isAuthenticated
-            ? {
-                id: '1',
-                email: 'test@test.com',
-                firstName: 'Test',
-                lastName: 'User',
-                role: 'customer',
-              }
-            : null,
-          loading: false,
-          error: null,
-          initialized: true,
-        },
+const mockProduct = {
+  id: '123',
+  name: 'Test Product',
+  price: 99.99,
+  compareAtPrice: 129.99,
+  imageUrl: '/test-image.jpg',
+  slug: 'test-product',
+  rating: 4.5,
+  reviewCount: 10,
+  stockQuantity: 10,
+};
+
+const renderCard = (overrides = {}, isAuthenticated = false) =>
+  renderWithProviders(<ProductCard {...mockProduct} {...overrides} />, {
+    preloadedState: {
+      cart: { items: [], lastUpdated: Date.now() },
+      auth: {
+        isAuthenticated,
+        user: isAuthenticated
+          ? {
+              id: '1',
+              email: 'test@test.com',
+              firstName: 'Test',
+              lastName: 'User',
+              role: 'customer',
+            }
+          : null,
+        loading: false,
+        error: null,
+        initialized: true,
       },
-    });
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockGetWishlist.mockReturnValue({ id: '', items: [], itemCount: 0 }); // Default not in wishlist
-    mockAddToWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
-    mockRemoveFromWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
-    mockAddToCartBackend.mockReturnValue({ unwrap: () => Promise.resolve() });
+    },
   });
 
-  it('renders product details correctly', () => {
-    renderComponent();
+beforeEach(() => {
+  vi.resetAllMocks();
+  mockGetWishlist.mockReturnValue({ id: '', items: [], itemCount: 0 });
+  mockAddToWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
+  mockRemoveFromWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
+  mockAddToCartBackend.mockReturnValue({ unwrap: () => Promise.resolve() });
+});
 
+describe('ProductCard', () => {
+  it('renders product name, price and compare price', () => {
+    renderCard();
     expect(screen.getByText('Test Product')).toBeInTheDocument();
     expect(screen.getByText('$99.99')).toBeInTheDocument();
-    expect(screen.getByText('$129.99')).toBeInTheDocument(); // Original price
+    expect(screen.getByText('$129.99')).toBeInTheDocument();
+  });
+
+  it('renders product image', () => {
+    renderCard();
     expect(screen.getByRole('img')).toHaveAttribute('src', '/test-image.jpg');
   });
 
-  it('shows "Out of Stock" badge when stock is 0', () => {
-    renderComponent({ ...mockProduct, stockQuantity: 0 });
-    expect(screen.getByText(/Sold Out/i)).toBeInTheDocument();
+  it('falls back to default image on image error', () => {
+    renderCard();
+    const img = screen.getByRole('img');
+    fireEvent.error(img);
+    expect(img.getAttribute('src')).toContain('data:image/svg+xml');
   });
 
-  it('navigates to product detail page on click', () => {
-    renderComponent();
-    const link = screen.getByRole('link', { name: /View details for Test Product/i });
-    expect(link).toHaveAttribute('href', '/products/test-product');
+  it('links to product detail page', () => {
+    renderCard();
+    expect(screen.getByRole('link', { name: /View details for Test Product/i })).toHaveAttribute(
+      'href',
+      '/products/test-product'
+    );
   });
 
-  it('dispatches local addToCart action when not authenticated', () => {
-    const { store } = renderComponent();
+  it('shows sold out overlay when out of stock', () => {
+    renderCard({ stockQuantity: 0 });
+    expect(screen.getByText(/products\.soldOut/i)).toBeInTheDocument();
+  });
 
-    const addToCartBtn = screen.getByRole('button', { name: /quick add to cart/i });
-    fireEvent.click(addToCartBtn);
+  it('shows discount badge when discount is >= 10%', () => {
+    renderCard({ price: 99.99, compareAtPrice: 129.99 }); // ~23%
+    expect(screen.getByText('-23%')).toBeInTheDocument();
+  });
 
-    // Check that the item was added to the cart state
-    const cartState = store.getState().cart;
-    expect(cartState.items).toHaveLength(1);
-    expect(cartState.items[0].id).toBe('123');
-    expect(cartState.items[0].quantity).toBe(1);
+  it('does not show discount badge when discount is < 10%', () => {
+    renderCard({ price: 99.99, compareAtPrice: 104.99 }); // ~5%
+    expect(screen.queryByText(/-\d+%/)).not.toBeInTheDocument();
+  });
+
+  it('shows rating badge when rating > 0', () => {
+    renderCard({ rating: 4.5 });
+    expect(screen.getByText('4.5')).toBeInTheDocument();
+  });
+
+  it('does not show rating badge when rating is 0', () => {
+    renderCard({ rating: 0 });
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+  });
+
+  it('disables quick add button when out of stock', () => {
+    renderCard({ stockQuantity: 0 });
+    expect(screen.getByRole('button', { name: /quick add to cart/i })).toBeDisabled();
+  });
+
+  it('adds to local cart when not authenticated', async () => {
+    const { store } = renderCard();
+    fireEvent.click(screen.getByRole('button', { name: /quick add to cart/i }));
+    await waitFor(() => expect(store.getState().cart.items).toHaveLength(1));
+    expect(store.getState().cart.items[0].id).toBe('123');
     expect(mockAddToCartBackend).not.toHaveBeenCalled();
   });
 
-  it('calls backend addToCart mutation when authenticated', async () => {
-    renderComponent(mockProduct, true); // Authenticated
-
-    const addToCartBtn = screen.getByRole('button', { name: /quick add to cart/i });
-    fireEvent.click(addToCartBtn);
-
-    expect(mockAddToCartBackend).toHaveBeenCalledWith({ productId: '123', quantity: 1 });
-  });
-
-  it('disables add to cart button when out of stock', () => {
-    renderComponent({ ...mockProduct, stockQuantity: 0 });
-
-    const addToCartBtn = screen.getByRole('button', { name: /quick add to cart/i });
-    expect(addToCartBtn).toBeDisabled();
-  });
-
-  it('handles wishlist toggle when authenticated', async () => {
-    renderComponent(mockProduct, true);
-
-    const wishlistBtn = screen.getByRole('button', { name: /add to wishlist/i });
-    fireEvent.click(wishlistBtn);
-
-    expect(mockAddToWishlist).toHaveBeenCalledWith('123');
-  });
-
-  it('removes from wishlist if already in wishlist', async () => {
-    mockGetWishlist.mockReturnValue({ id: '', items: [{ productId: '123' }], itemCount: 1 }); // Already in wishlist
-    renderComponent(mockProduct, true);
-
-    const wishlistBtn = screen.getByRole('button', { name: /remove from wishlist/i });
-    fireEvent.click(wishlistBtn);
-
-    expect(mockRemoveFromWishlist).toHaveBeenCalledWith('123');
+  it('calls backend addToCart when authenticated', async () => {
+    renderCard({}, true);
+    fireEvent.click(screen.getByRole('button', { name: /quick add to cart/i }));
+    await waitFor(() =>
+      expect(mockAddToCartBackend).toHaveBeenCalledWith({ productId: '123', quantity: 1 })
+    );
   });
 
   it('does not show wishlist button when not authenticated', () => {
-    renderComponent(mockProduct, false);
+    renderCard({}, false);
+    expect(screen.queryByRole('button', { name: /wishlist/i })).not.toBeInTheDocument();
+  });
 
-    expect(screen.queryByRole('button', { name: /add to wishlist/i })).not.toBeInTheDocument();
+  it('shows add to wishlist button when authenticated and not in wishlist', () => {
+    renderCard({}, true);
+    expect(screen.getByRole('button', { name: /add to wishlist/i })).toBeInTheDocument();
+  });
+
+  it('shows remove from wishlist button when item is in wishlist', () => {
+    mockGetWishlist.mockReturnValue({ id: '', items: [{ productId: '123' }], itemCount: 1 });
+    renderCard({}, true);
+    expect(screen.getByRole('button', { name: /remove from wishlist/i })).toBeInTheDocument();
+  });
+
+  it('calls addToWishlist on toggle when not in wishlist', async () => {
+    renderCard({}, true);
+    fireEvent.click(screen.getByRole('button', { name: /add to wishlist/i }));
+    await waitFor(() => expect(mockAddToWishlist).toHaveBeenCalledWith('123'));
+  });
+
+  it('calls removeFromWishlist on toggle when in wishlist', async () => {
+    mockGetWishlist.mockReturnValue({ id: '', items: [{ productId: '123' }], itemCount: 1 });
+    renderCard({}, true);
+    fireEvent.click(screen.getByRole('button', { name: /remove from wishlist/i }));
+    await waitFor(() => expect(mockRemoveFromWishlist).toHaveBeenCalledWith('123'));
   });
 });

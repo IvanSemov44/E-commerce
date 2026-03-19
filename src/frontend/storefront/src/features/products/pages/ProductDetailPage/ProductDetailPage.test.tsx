@@ -15,13 +15,15 @@ vi.mock('@/features/products/components/ProductActions/ProductActions.hooks', ()
   useWishlistActions: vi.fn(),
 }));
 
-vi.mock('@/features/products/api/reviewsApi', () => ({
-  useCreateReviewMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-  useGetProductReviewsQuery: vi.fn(() => ({ data: [], isLoading: false, error: undefined })),
-  useGetMyReviewsQuery: vi.fn(() => ({ data: [], isLoading: false, error: undefined })),
-  useUpdateReviewMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-  useDeleteReviewMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-}));
+vi.mock('@/features/products/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/products/api')>();
+  return {
+    ...actual,
+    useCreateReviewMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
+    useGetProductReviewsQuery: vi.fn(() => ({ data: [], isLoading: false, error: undefined })),
+    useGetMyReviewsQuery: vi.fn(() => ({ data: [], isLoading: false, error: undefined })),
+  };
+});
 
 vi.mock('@/features/wishlist/api', () => ({
   useGetWishlistQuery: vi.fn(() => ({ data: undefined })),

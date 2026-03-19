@@ -1,12 +1,12 @@
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePerformanceMonitor } from '@/shared/hooks';
-import { useProductData } from '@/features/products/hooks/useProductData';
+import { useProductData } from '@/features/products/hooks';
 import { Card } from '@/shared/components/ui/Card';
 import QueryRenderer from '@/shared/components/QueryRenderer';
-import { ReviewForm } from '@/features/products/components/ReviewForm';
-import { ReviewList } from '@/features/products/components/ReviewList';
 import {
+  ReviewForm,
+  ReviewList,
   ProductImageGallery,
   ProductInfo,
   ProductActions,

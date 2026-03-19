@@ -1,68 +1,31 @@
-import type {
-  Review,
-  CreateReviewRequest,
-  UpdateReviewRequest,
-  ApiResponse,
-  PaginatedResult,
-} from '@/shared/types';
+import type { Review, CreateReviewRequest, ApiResponse, PaginatedResult } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
-
-// Use ProductReview as alias for Review (API convention)
-type ProductReview = Review;
 
 const reviewsApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getProductReviews: builder.query<ProductReview[], string>({
+    getProductReviews: builder.query<Review[], string>({
       query: (productId) => `/reviews/product/${productId}`,
-      transformResponse: (response: ApiResponse<PaginatedResult<ProductReview>>) =>
+      transformResponse: (response: ApiResponse<PaginatedResult<Review>>) =>
         response.data?.items ?? [],
       providesTags: (result) => (result ? [{ type: 'Review' as const, id: 'LIST' }] : []),
     }),
 
-    getMyReviews: builder.query<ProductReview[], void>({
+    getMyReviews: builder.query<Review[], void>({
       query: () => '/reviews/my-reviews',
-      transformResponse: (response: ApiResponse<ProductReview[]>) => response.data || [],
+      transformResponse: (response: ApiResponse<Review[]>) => response.data || [],
       providesTags: (result) => (result ? [{ type: 'Review' as const, id: 'MY_LIST' }] : []),
     }),
 
-    createReview: builder.mutation<ProductReview, CreateReviewRequest>({
+    createReview: builder.mutation<void, CreateReviewRequest>({
       query: (reviewData) => ({
         url: '/reviews',
         method: 'POST',
         body: reviewData,
       }),
-      transformResponse: (response: ApiResponse<ProductReview>) =>
-        response.data || ({} as ProductReview),
-      invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
-    }),
-
-    updateReview: builder.mutation<ProductReview, { reviewId: string; data: UpdateReviewRequest }>({
-      query: ({ reviewId, data }) => ({
-        url: `/reviews/${reviewId}`,
-        method: 'PUT',
-        body: data,
-      }),
-      transformResponse: (response: ApiResponse<ProductReview>) =>
-        response.data || ({} as ProductReview),
-      invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
-    }),
-
-    deleteReview: builder.mutation<void, string>({
-      query: (reviewId) => ({
-        url: `/reviews/${reviewId}`,
-        method: 'DELETE',
-      }),
-      // Keep a consistent API envelope contract, even for empty payload responses.
-      transformResponse: () => undefined,
       invalidatesTags: [{ type: 'Review' as const, id: 'LIST' }],
     }),
   }),
 });
 
-export const {
-  useGetProductReviewsQuery,
-  useGetMyReviewsQuery,
-  useCreateReviewMutation,
-  useUpdateReviewMutation,
-  useDeleteReviewMutation,
-} = reviewsApiSlice;
+export const { useGetProductReviewsQuery, useGetMyReviewsQuery, useCreateReviewMutation } =
+  reviewsApiSlice;

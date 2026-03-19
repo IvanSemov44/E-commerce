@@ -19,6 +19,4 @@ export {
   useGetProductReviewsQuery,
   useGetMyReviewsQuery,
   useCreateReviewMutation,
-  useUpdateReviewMutation,
-  useDeleteReviewMutation,
 } from './reviewsApi';

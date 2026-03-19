@@ -1,29 +1,22 @@
-/**
- * ProductCard Hooks
- * Component-specific hooks for ProductCard functionality
- */
-
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
 import { useApiErrorHandler, useToast } from '@/shared/hooks';
 import { addItem, type CartItem } from '@/features/cart/slices/cartSlice';
-import { useAddToWishlistMutation, useRemoveFromWishlistMutation } from '@/features/wishlist/api';
+import {
+  useGetWishlistQuery,
+  useAddToWishlistMutation,
+  useRemoveFromWishlistMutation,
+} from '@/features/wishlist/api';
 import { useAddToCartMutation } from '@/features/cart/api';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { QUICK_ADD_RESET_MS } from '@/features/products/constants';
 
-interface UseWishlistToggleParams {
-  id: string;
-  isInWishlist: boolean;
-}
-
-/**
- * Hook for handling wishlist toggle functionality
- */
-export function useWishlistToggle({ id, isInWishlist }: UseWishlistToggleParams) {
+export function useWishlistToggle(id: string) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { data: wishlist } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
+  const isInWishlist = wishlist?.items.some((item) => item.productId === id) ?? false;
   const [addToWishlist, { isLoading: isAdding }] = useAddToWishlistMutation();
   const [removeFromWishlist, { isLoading: isRemoving }] = useRemoveFromWishlistMutation();
   const { handleError } = useApiErrorHandler();
@@ -52,7 +45,7 @@ export function useWishlistToggle({ id, isInWishlist }: UseWishlistToggleParams)
           success(t('wishlist.addedToWishlist'));
         }
       } catch (err) {
-        handleError(err, 'Failed to update wishlist');
+        handleError(err, t('wishlist.updateError'));
       }
     },
     [
@@ -69,7 +62,7 @@ export function useWishlistToggle({ id, isInWishlist }: UseWishlistToggleParams)
     ]
   );
 
-  return { handleWishlistToggle, isWishlistLoading };
+  return { handleWishlistToggle, isWishlistLoading, isInWishlist, isAuthenticated };
 }
 
 interface UseAddToCartParams {
@@ -83,9 +76,6 @@ interface UseAddToCartParams {
   setIsAddingToCart: (value: boolean) => void;
 }
 
-/**
- * Hook for handling add to cart functionality
- */
 export function useAddToCart({
   id,
   name,
@@ -102,6 +92,9 @@ export function useAddToCart({
   const [addToCartBackend] = useAddToCartMutation();
   const { handleError } = useApiErrorHandler();
   const { success, error } = useToast();
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(resetTimerRef.current), []);
 
   const handleAddToCart = useCallback(
     async (event: React.MouseEvent) => {
@@ -134,7 +127,7 @@ export function useAddToCart({
       } catch (err) {
         handleError(err, t('products.addToCartError'));
       } finally {
-        setTimeout(() => setIsAddingToCart(false), QUICK_ADD_RESET_MS);
+        resetTimerRef.current = setTimeout(() => setIsAddingToCart(false), QUICK_ADD_RESET_MS);
       }
     },
     [
@@ -157,15 +150,4 @@ export function useAddToCart({
   );
 
   return { handleAddToCart };
-}
-
-/**
- * Hook for handling image error state
- */
-export function useImageError(setImageError: (value: boolean) => void) {
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-  }, [setImageError]);
-
-  return { handleImageError };
 }

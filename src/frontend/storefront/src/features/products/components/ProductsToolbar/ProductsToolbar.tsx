@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { SearchBar } from '@/app/SearchBar';
-import { ActiveFilters } from '@/features/products/components/ActiveFilters';
+import { ActiveFilters } from '@/features/products/components';
 import { RefreshIcon } from '@/shared/components/icons';
 import { useDebounce } from '@/shared/hooks';
 import { SEARCH_DEBOUNCE_MS, type SortBy } from '@/features/products/constants';

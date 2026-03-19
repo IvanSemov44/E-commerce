@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import QueryRenderer from './QueryRenderer';
 
 vi.mock('../ErrorAlert', () => ({
-  default: ({ message }: { message: string }) => <div data-testid="error-alert">{message}</div>,
+  ErrorAlert: ({ message }: { message: string }) => <div data-testid="error-alert">{message}</div>,
 }));
 
 vi.mock('./QueryRendererSkeleton/QueryRendererSkeleton', () => ({

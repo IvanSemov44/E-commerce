@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router';
-import { useGetTopLevelCategoriesQuery } from '@/features/products/api/categoriesApi';
+import { useGetTopLevelCategoriesQuery } from '@/features/products/api';
 import { useTranslation } from 'react-i18next';
 import styles from './CategoryFilter.module.css';
 

@@ -1,25 +1,24 @@
 import { memo, useState } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useAppSelector } from '@/shared/lib/store';
 import { SpinnerIcon, PlusIcon, HeartIcon, StarIcon } from '@/shared/components/icons';
-import { useGetWishlistQuery } from '@/features/wishlist/api';
-import type { ProductCardProps } from './ProductCard.types';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
-import { useWishlistToggle, useAddToCart, useImageError } from './ProductCard.hooks';
+import { useWishlistToggle, useAddToCart } from './ProductCard.hooks';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './ProductCard.module.css';
 
-/**
- * ProductCard Component
- *
- * A polished, production-ready product card with:
- * - Smooth hover animations and micro-interactions
- * - Quick add to cart with visual feedback
- * - Wishlist functionality
- * - Responsive design
- * - Full accessibility support
- */
+interface ProductCardProps {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  compareAtPrice?: number;
+  imageUrl: string;
+  rating?: number;
+  reviewCount?: number;
+  stockQuantity: number;
+}
+
 // eslint-disable-next-line complexity -- JSX conditional rendering inflates the branch count; logic is delegated to custom hooks
 export const ProductCard = memo(function ProductCard({
   id,
@@ -33,15 +32,10 @@ export const ProductCard = memo(function ProductCard({
   stockQuantity,
 }: ProductCardProps) {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-
-  // Wishlist — derive from cached full wishlist (avoids N+1 per-card requests)
-  const { data: wishlist } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
-  const isInWishlist = wishlist?.items.some((item) => item.productId === id) ?? false;
 
   // Calculations
   const discountPercentage =
@@ -53,10 +47,8 @@ export const ProductCard = memo(function ProductCard({
   const isInStock = stockQuantity > 0;
 
   // Custom hooks
-  const { handleWishlistToggle, isWishlistLoading } = useWishlistToggle({
-    id,
-    isInWishlist,
-  });
+  const { handleWishlistToggle, isWishlistLoading, isInWishlist, isAuthenticated } =
+    useWishlistToggle(id);
 
   const { handleAddToCart } = useAddToCart({
     id,
@@ -69,9 +61,8 @@ export const ProductCard = memo(function ProductCard({
     setIsAddingToCart,
   });
 
-  const { handleImageError } = useImageError(setImageError);
-
-  const imageSrc = imageError ? DEFAULT_PRODUCT_IMAGE : imageUrl || DEFAULT_PRODUCT_IMAGE;
+  const handleImageError = () => setImageError(true);
+  const imageSrc = (!imageError && imageUrl) || DEFAULT_PRODUCT_IMAGE;
 
   return (
     <article

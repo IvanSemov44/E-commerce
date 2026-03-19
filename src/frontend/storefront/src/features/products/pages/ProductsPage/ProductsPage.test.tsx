@@ -3,26 +3,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductsPage } from './ProductsPage';
-import * as productApiModule from '@/features/products/api/productApi';
-import * as categoriesApiModule from '@/features/products/api/categoriesApi';
+import * as productApiModule from '@/features/products/api';
 
-vi.mock('@/features/products/api/productApi', () => ({
-  useGetProductsQuery: vi.fn(),
-  useGetProductBySlugQuery: vi.fn(() => ({ data: undefined, isLoading: false, error: undefined })),
-  useGetProductByIdQuery: vi.fn(() => ({ data: undefined, isLoading: false, error: undefined })),
-  useGetFeaturedProductsQuery: vi.fn(() => ({
-    data: undefined,
-    isLoading: false,
-    error: undefined,
-  })),
-}));
-
-vi.mock('@/features/products/api/categoriesApi', () => ({
-  useGetTopLevelCategoriesQuery: vi.fn(),
-  useGetCategoriesQuery: vi.fn(() => ({ data: [], isLoading: false, error: undefined })),
-  useGetCategoryByIdQuery: vi.fn(() => ({ data: undefined, isLoading: false, error: undefined })),
-  useGetCategoryBySlugQuery: vi.fn(() => ({ data: undefined, isLoading: false, error: undefined })),
-}));
+vi.mock('@/features/products/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/products/api')>();
+  return {
+    ...actual,
+    useGetProductsQuery: vi.fn(),
+    useGetTopLevelCategoriesQuery: vi.fn(),
+  };
+});
 
 vi.mock('@/features/wishlist/api', () => ({
   useGetWishlistQuery: vi.fn(() => ({ data: undefined })),
@@ -45,7 +35,7 @@ const mockProducts = [
     name: 'Test Widget',
     slug: 'test-widget',
     price: 19.99,
-    images: [{ url: '/img.jpg', altText: 'Test', isPrimary: true, displayOrder: 0 }],
+    images: [{ id: 'img-1', url: '/img.jpg', altText: 'Test', isPrimary: true }],
     stockQuantity: 5,
     averageRating: 4.2,
     reviewCount: 3,
@@ -82,7 +72,7 @@ const render = (
 describe('ProductsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(categoriesApiModule.useGetTopLevelCategoriesQuery).mockReturnValue({
+    vi.mocked(productApiModule.useGetTopLevelCategoriesQuery).mockReturnValue({
       data: [],
       isLoading: false,
       error: undefined,

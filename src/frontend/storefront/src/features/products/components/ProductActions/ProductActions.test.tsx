@@ -51,7 +51,7 @@ const makeProduct = (overrides: Partial<ProductDetail> = {}): ProductDetail => (
   name: 'Test Product',
   slug: 'test-product',
   price: 29.99,
-  images: [{ url: '/test.jpg', altText: 'Test', isPrimary: true, displayOrder: 0 }],
+  images: [{ id: 'img-1', url: '/test.jpg', altText: 'Test', isPrimary: true }],
   stockQuantity: 10,
   lowStockThreshold: 3,
   averageRating: 4.5,
@@ -215,5 +215,47 @@ describe('ProductActions', () => {
 
     const increaseButton = screen.getByRole('button', { name: '+' });
     expect(increaseButton).toBeDisabled();
+  });
+
+  it('calls setQuantity with minimum of 1 when decreasing at quantity 1', async () => {
+    const user = userEvent.setup();
+    const setQuantity = vi.fn();
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({
+      ...defaultCartHook,
+      quantity: 1,
+      setQuantity,
+    });
+
+    render();
+
+    await user.click(screen.getByRole('button', { name: '−' }));
+
+    expect(setQuantity).toHaveBeenCalledWith(1);
+  });
+
+  it('shows in wishlist button text when item is in wishlist', async () => {
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useWishlistActions).mockReturnValue({
+      ...defaultWishlistHook,
+      isInWishlist: true,
+    });
+
+    render();
+
+    expect(screen.getByRole('button', { name: /in wishlist/i })).toBeInTheDocument();
+  });
+
+  it('calls toggleWishlist when wishlist button is clicked', async () => {
+    const user = userEvent.setup();
+    const toggleWishlist = vi.fn();
+    const hooks = await import('./ProductActions.hooks');
+    vi.mocked(hooks.useWishlistActions).mockReturnValue({ ...defaultWishlistHook, toggleWishlist });
+
+    render();
+
+    await user.click(screen.getByRole('button', { name: /wishlist/i }));
+
+    expect(toggleWishlist).toHaveBeenCalled();
   });
 });

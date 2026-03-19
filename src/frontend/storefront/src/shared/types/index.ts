@@ -39,13 +39,6 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  user?: AuthUser;
-  token?: string;
-}
-
 // ============================================
 // Cart Types
 // ============================================
@@ -120,7 +113,7 @@ export interface ProductImage {
   isPrimary: boolean;
 }
 
-export interface ProductCategory {
+interface ProductCategory {
   id: string;
   name: string;
   slug: string;
@@ -196,7 +189,7 @@ export interface Address {
   country: string;
 }
 
-export interface CreateOrderItemRequest {
+interface CreateOrderItemRequest {
   productId: string;
   quantity: number;
 }
@@ -282,18 +275,6 @@ export interface Category {
   subcategories?: Category[];
 }
 
-export interface CategoryDetailDto {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  imageUrl?: string;
-  parentCategoryId?: string;
-  parent?: Category;
-  children?: Category[];
-  productCount?: number;
-}
-
 // ============================================
 // Error Types
 // ============================================
@@ -302,19 +283,6 @@ export interface ApiError {
   message: string;
   status?: number;
   errors?: Record<string, string[]>;
-}
-
-// ============================================
-// Local Cart State Types (Redux)
-// ============================================
-
-export interface LocalCartItem {
-  id: string;
-  name: string;
-  price: number;
-  compareAtPrice?: number;
-  quantity: number;
-  imageUrl?: string;
 }
 
 // ============================================

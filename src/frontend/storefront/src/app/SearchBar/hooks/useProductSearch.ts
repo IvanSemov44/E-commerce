@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useGetProductsQuery } from '@/features/products/api/productApi';
+import { useGetProductsQuery } from '@/features/products/api';
 import type { SearchResult } from '../SearchBar.types';
 
 const MIN_LENGTH = 2;

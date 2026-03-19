@@ -4,7 +4,19 @@ import {
   DEFAULT_PRODUCTS_PAGE_SIZE,
   FEATURED_PRODUCTS_PAGE_SIZE,
 } from '@/features/products/constants';
-import type { GetProductsQueryParams } from '@/features/products/types';
+import type { SortBy } from '@/features/products/constants';
+
+interface GetProductsQueryParams {
+  page?: number;
+  pageSize?: number;
+  categoryId?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  isFeatured?: boolean;
+  sortBy?: SortBy;
+}
 
 const productApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({

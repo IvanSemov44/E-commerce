@@ -1,5 +1,17 @@
-import type { Category, CategoryDetailDto, ApiResponse } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
+import type { Category, ApiResponse } from '@/shared/types';
+
+interface CategoryDetailDto {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
+  parentCategoryId?: string;
+  parent?: Category;
+  children?: Category[];
+  productCount?: number;
+}
 
 const categoriesApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({

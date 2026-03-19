@@ -12,6 +12,7 @@ export { ReviewForm } from './ReviewForm';
 export { ReviewList } from './ReviewList';
 export { StarRating } from './StarRating';
 export { CategoryFilter } from './CategoryFilter';
+export { ProductsToolbar } from './ProductsToolbar';
 
 // Skeletons
 export { ProductSkeleton } from './ProductSkeleton';
