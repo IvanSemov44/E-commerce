@@ -5,7 +5,7 @@ interface WishlistSkeletonProps {
   count?: number;
 }
 
-export default function WishlistSkeleton({ count = 8 }: WishlistSkeletonProps) {
+export function WishlistSkeleton({ count = 8 }: WishlistSkeletonProps) {
   return (
     <div className={styles.grid}>
       {Array.from({ length: count }).map((_, i) => (

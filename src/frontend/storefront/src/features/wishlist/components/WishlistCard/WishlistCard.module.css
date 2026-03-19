@@ -45,6 +45,31 @@
   margin: 0;
 }
 
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary-600);
+}
+
+.comparePrice {
+  font-size: 0.875rem;
+  color: var(--color-gray-400);
+  text-decoration: line-through;
+}
+
+.outOfStock {
+  font-size: 0.875rem;
+  color: var(--color-error-600);
+  font-weight: 500;
+  margin: 0;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;

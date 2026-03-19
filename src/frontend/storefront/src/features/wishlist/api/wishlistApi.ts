@@ -1,5 +1,23 @@
-import type { WishlistResponse, ApiResponse } from '@/shared/types';
+import type { ApiResponse } from '@/shared/types';
 import { baseApi } from '@/shared/lib/api/baseApi';
+
+interface WishlistItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  price: number;
+  compareAtPrice?: number;
+  stockQuantity: number;
+  isAvailable: boolean;
+  addedAt: string;
+}
+
+interface WishlistResponse {
+  id: string;
+  items: WishlistItem[];
+  itemCount: number;
+}
 
 const wishlistApiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,47 +28,21 @@ const wishlistApiSlice = baseApi.injectEndpoints({
       providesTags: ['Wishlist'],
     }),
 
-    checkInWishlist: builder.query<boolean, string>({
-      query: (productId) => `/wishlist/contains/${productId}`,
-      transformResponse: (response: ApiResponse<boolean>) => response.data || false,
-      providesTags: (_result, _error, productId) => [{ type: 'WishlistCheck', id: productId }],
-    }),
-
-    addToWishlist: builder.mutation<WishlistResponse, string>({
+    addToWishlist: builder.mutation<void, string>({
       query: (productId) => ({
         url: '/wishlist/add',
         method: 'POST',
         body: { productId },
       }),
-      transformResponse: (response: ApiResponse<WishlistResponse>) =>
-        response.data || { id: '', items: [], itemCount: 0 },
-      async onQueryStarted(productId, { dispatch, queryFulfilled }) {
-        const patchResult = dispatch(
-          wishlistApiSlice.util.updateQueryData('checkInWishlist', productId, () => true)
-        );
-        try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
-        }
-      },
-      invalidatesTags: (_result, _error, productId) => [
-        'Wishlist',
-        { type: 'WishlistCheck', id: productId },
-      ],
+      invalidatesTags: ['Wishlist'],
     }),
 
-    removeFromWishlist: builder.mutation<WishlistResponse, string>({
+    removeFromWishlist: builder.mutation<void, string>({
       query: (productId) => ({
         url: `/wishlist/remove/${productId}`,
         method: 'DELETE',
       }),
-      transformResponse: (response: ApiResponse<WishlistResponse>) =>
-        response.data || { id: '', items: [], itemCount: 0 },
       async onQueryStarted(productId, { dispatch, queryFulfilled }) {
-        const checkPatch = dispatch(
-          wishlistApiSlice.util.updateQueryData('checkInWishlist', productId, () => false)
-        );
         const listPatch = dispatch(
           wishlistApiSlice.util.updateQueryData('getWishlist', undefined, (draft) => {
             const idx = draft.items.findIndex((item) => item.productId === productId);
@@ -63,30 +55,13 @@ const wishlistApiSlice = baseApi.injectEndpoints({
         try {
           await queryFulfilled;
         } catch {
-          checkPatch.undo();
           listPatch.undo();
         }
       },
-      invalidatesTags: (_result, _error, productId) => [
-        'Wishlist',
-        { type: 'WishlistCheck', id: productId },
-      ],
-    }),
-
-    clearWishlist: builder.mutation<void, void>({
-      query: () => ({
-        url: '/wishlist/clear',
-        method: 'POST',
-      }),
       invalidatesTags: ['Wishlist'],
     }),
   }),
 });
 
-export const {
-  useGetWishlistQuery,
-  useCheckInWishlistQuery,
-  useAddToWishlistMutation,
-  useRemoveFromWishlistMutation,
-  useClearWishlistMutation,
-} = wishlistApiSlice;
+export const { useGetWishlistQuery, useAddToWishlistMutation, useRemoveFromWishlistMutation } =
+  wishlistApiSlice;

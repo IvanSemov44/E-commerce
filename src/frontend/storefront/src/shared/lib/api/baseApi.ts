@@ -84,7 +84,6 @@ export const baseApi = createApi({
     'Profile',
     'Review',
     'Wishlist',
-    'WishlistCheck',
     'Categories',
     'Products',
     'User',

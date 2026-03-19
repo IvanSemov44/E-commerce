@@ -1,179 +1,131 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
-import WishlistCard from './WishlistCard';
-import { authSlice } from '@/features/auth/slices/authSlice';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderWithProviders } from '@/shared/lib/test/test-utils';
+import * as wishlistApi from '@/features/wishlist/api';
+import * as cartApi from '@/features/cart/api';
+import { WishlistCard } from './WishlistCard';
 
-// Mock RTK Query hooks
-const mockRemoveFromWishlist = vi.fn();
-const mockAddToCart = vi.fn();
-
-vi.mock('../../api/wishlistApi', () => ({
-  useRemoveFromWishlistMutation: () => [mockRemoveFromWishlist, { isLoading: false }],
+vi.mock('@/features/wishlist/api', () => ({
+  useRemoveFromWishlistMutation: vi.fn(() => [vi.fn()]),
 }));
 
-vi.mock('@/features/cart/api/cartApi', () => ({
-  useAddToCartMutation: () => [mockAddToCart, { isLoading: false }],
+vi.mock('@/features/cart/api', () => ({
+  useAddToCartMutation: vi.fn(() => [vi.fn()]),
 }));
 
-// Mock API error handler
 const mockHandleError = vi.fn();
 vi.mock('@/shared/hooks', () => ({
-  useApiErrorHandler: () => ({
-    handleError: mockHandleError,
-  }),
+  useApiErrorHandler: vi.fn(() => ({ handleError: mockHandleError })),
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+const defaultProps = {
+  productId: 'p1',
+  productName: 'Test Product',
+  price: 29.99,
+  image: '/test.jpg',
+};
+
 describe('WishlistCard', () => {
-  const mockProps = {
-    productId: '123',
-    productName: 'Test Product',
-    image: '/test-image.jpg',
-  };
-
-  const renderComponent = (props = mockProps) => {
-    const store = configureStore({
-      reducer: {
-        auth: authSlice.reducer,
-      },
-      preloadedState: {
-        auth: {
-          isAuthenticated: true,
-          user: {
-            id: '1',
-            email: 'test@test.com',
-            firstName: 'Test',
-            lastName: 'User',
-            role: 'customer',
-          },
-          loading: false,
-          error: null,
-          initialized: true,
-        },
-      },
-    });
-
-    return render(
-      <Provider store={store}>
-        <WishlistCard {...props} />
-      </Provider>
-    );
-  };
+  let mockRemove: ReturnType<typeof vi.fn>;
+  let mockAddToCart: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockRemoveFromWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
-    mockAddToCart.mockReturnValue({ unwrap: () => Promise.resolve() });
+    vi.resetAllMocks();
+    mockHandleError.mockReset();
+    mockRemove = vi.fn().mockReturnValue({ unwrap: () => Promise.resolve() });
+    mockAddToCart = vi.fn().mockReturnValue({ unwrap: () => Promise.resolve() });
+    vi.mocked(wishlistApi.useRemoveFromWishlistMutation).mockReturnValue([mockRemove] as never);
+    vi.mocked(cartApi.useAddToCartMutation).mockReturnValue([mockAddToCart] as never);
   });
 
-  it('renders product name correctly', () => {
-    renderComponent();
+  it('renders product name', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} />);
     expect(screen.getByText('Test Product')).toBeInTheDocument();
   });
 
   it('renders product image when provided', () => {
-    renderComponent();
-    const image = screen.getByAltText('Test Product');
-    expect(image).toBeInTheDocument();
-    expect(image).toHaveAttribute('src', '/test-image.jpg');
+    renderWithProviders(<WishlistCard {...defaultProps} />);
+    expect(screen.getByAltText('Test Product')).toHaveAttribute('src', '/test.jpg');
   });
 
-  it('renders placeholder SVG when image is not provided', () => {
-    renderComponent({ ...mockProps, image: '' });
-    // Check that SVG placeholder is rendered
-    const svg = document.querySelector('svg');
-    expect(svg).toBeInTheDocument();
+  it('renders placeholder icon when image is empty string', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} image="" />);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(document.querySelector('svg')).toBeInTheDocument();
   });
 
-  it('renders "Add to Cart" button', () => {
-    renderComponent();
+  it('renders placeholder icon when image is undefined', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} image={undefined} />);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(document.querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('renders formatted price', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} price={29.99} />);
+    expect(screen.getByText('$29.99')).toBeInTheDocument();
+  });
+
+  it('renders Add to Cart and Remove buttons', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} />);
     expect(screen.getByText('wishlist.addToCart')).toBeInTheDocument();
-  });
-
-  it('renders "Remove" button', () => {
-    renderComponent();
     expect(screen.getByText('wishlist.remove')).toBeInTheDocument();
   });
 
-  it('calls removeFromWishlist when remove button is clicked', async () => {
-    renderComponent();
-
-    const removeButton = screen.getByText('wishlist.remove');
-    fireEvent.click(removeButton);
-
-    await waitFor(() => {
-      expect(mockRemoveFromWishlist).toHaveBeenCalledWith('123');
-    });
+  it('calls removeFromWishlist when Remove is clicked', async () => {
+    renderWithProviders(<WishlistCard {...defaultProps} />);
+    fireEvent.click(screen.getByText('wishlist.remove'));
+    await waitFor(() => expect(mockRemove).toHaveBeenCalledWith('p1'));
   });
 
-  it('calls addToCart when add to cart button is clicked', async () => {
-    renderComponent();
-
-    const addToCartButton = screen.getByText('wishlist.addToCart');
-    fireEvent.click(addToCartButton);
-
-    await waitFor(() => {
-      expect(mockAddToCart).toHaveBeenCalledWith({ productId: '123', quantity: 1 });
-    });
+  it('calls addToCart when Add to Cart is clicked', async () => {
+    renderWithProviders(<WishlistCard {...defaultProps} />);
+    fireEvent.click(screen.getByText('wishlist.addToCart'));
+    await waitFor(() =>
+      expect(mockAddToCart).toHaveBeenCalledWith({ productId: 'p1', quantity: 1 })
+    );
   });
 
-  it('handles remove error gracefully', async () => {
+  it('disables Add to Cart and shows out of stock when isAvailable is false', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} isAvailable={false} />);
+    expect(screen.getByText('wishlist.addToCart').closest('button')).toBeDisabled();
+    expect(screen.getByText('wishlist.outOfStock')).toBeInTheDocument();
+  });
+
+  it('shows compareAtPrice when provided', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} compareAtPrice={49.99} />);
+    expect(screen.getByText('$49.99')).toBeInTheDocument();
+  });
+
+  it('does not show compareAtPrice when not provided', () => {
+    renderWithProviders(<WishlistCard {...defaultProps} />);
+    expect(screen.queryByText(/\$49/)).not.toBeInTheDocument();
+  });
+
+  it('calls handleError when remove fails', async () => {
     const error = new Error('Remove failed');
-    mockRemoveFromWishlist.mockReturnValue({
-      unwrap: () => Promise.reject(error),
-    });
+    mockRemove.mockReturnValue({ unwrap: () => Promise.reject(error) });
 
-    renderComponent();
+    renderWithProviders(<WishlistCard {...defaultProps} />);
+    fireEvent.click(screen.getByText('wishlist.remove'));
 
-    const removeButton = screen.getByText('wishlist.remove');
-    fireEvent.click(removeButton);
-
-    await waitFor(() => {
-      expect(mockHandleError).toHaveBeenCalledWith(error, 'common.errorOccurred');
-    });
+    await waitFor(() =>
+      expect(mockHandleError).toHaveBeenCalledWith(error, 'common.errorOccurred')
+    );
   });
 
-  it('handles add to cart error gracefully', async () => {
+  it('calls handleError when addToCart fails', async () => {
     const error = new Error('Add to cart failed');
-    mockAddToCart.mockReturnValue({
-      unwrap: () => Promise.reject(error),
-    });
+    mockAddToCart.mockReturnValue({ unwrap: () => Promise.reject(error) });
 
-    renderComponent();
+    renderWithProviders(<WishlistCard {...defaultProps} />);
+    fireEvent.click(screen.getByText('wishlist.addToCart'));
 
-    const addToCartButton = screen.getByText('wishlist.addToCart');
-    fireEvent.click(addToCartButton);
-
-    await waitFor(() => {
-      expect(mockHandleError).toHaveBeenCalledWith(error, 'common.errorOccurred');
-    });
-  });
-
-  it('renders with empty image string (placeholder)', () => {
-    renderComponent({ ...mockProps, image: '' });
-    // Empty string should render placeholder SVG
-    const svg = document.querySelector('svg');
-    expect(svg).toBeInTheDocument();
-  });
-
-  it('has correct CSS classes applied', () => {
-    const { container } = renderComponent();
-
-    // Check for main card container
-    const card = container.querySelector('[class*="card"]');
-    expect(card).toBeInTheDocument();
-
-    // Check for image placeholder
-    const imagePlaceholder = container.querySelector('[class*="imagePlaceholder"]');
-    expect(imagePlaceholder).toBeInTheDocument();
-
-    // Check for content container
-    const content = container.querySelector('[class*="content"]');
-    expect(content).toBeInTheDocument();
-
-    // Check for actions container
-    const actions = container.querySelector('[class*="actions"]');
-    expect(actions).toBeInTheDocument();
+    await waitFor(() =>
+      expect(mockHandleError).toHaveBeenCalledWith(error, 'common.errorOccurred')
+    );
   });
 });

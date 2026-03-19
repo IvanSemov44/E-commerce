@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useAppSelector } from '@/shared/lib/store';
 import { selectCartItemCount } from '@/features/cart/slices/cartSlice';
 import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
-import { useGetCartQuery } from '@/features/cart/api/cartApi';
-import { useGetWishlistQuery } from '@/features/wishlist/api/wishlistApi';
+import { useGetCartQuery } from '@/features/cart/api';
+import { useGetWishlistQuery } from '@/features/wishlist/api';
 
 export function useHeaderData() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);

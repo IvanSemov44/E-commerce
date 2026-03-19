@@ -1,4 +1,2 @@
-export { default as WishlistCard } from './WishlistCard/WishlistCard';
-
-// Skeletons
-export { default as WishlistSkeleton } from './WishlistSkeleton/WishlistSkeleton';
+export { WishlistCard } from './WishlistCard/WishlistCard';
+export { WishlistSkeleton } from './WishlistSkeleton/WishlistSkeleton';

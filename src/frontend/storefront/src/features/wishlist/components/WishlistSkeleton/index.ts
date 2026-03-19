@@ -1,1 +1,1 @@
-export { default } from './WishlistSkeleton';
+export { WishlistSkeleton } from './WishlistSkeleton';

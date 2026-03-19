@@ -1,1 +1,1 @@
-export { default } from '@/features/wishlist/pages/WishlistPage/WishlistPage';
+export { WishlistPage as default } from '@/features/wishlist';
