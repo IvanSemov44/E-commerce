@@ -287,16 +287,7 @@
   }
 }
 
-/* Dark mode wishlist button */
-[data-theme='dark'] .wishlistButton {
-  background-color: rgba(28, 28, 36, 0.9);
-}
-
 [data-theme='dark'] .wishlistButton:hover:not(:disabled) {
-  background-color: var(--surface-tertiary);
-}
-
-[data-theme='dark'] .wishlistButton.active {
   background-color: var(--surface-tertiary);
 }
 

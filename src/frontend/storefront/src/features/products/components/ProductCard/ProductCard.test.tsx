@@ -87,6 +87,11 @@ describe('ProductCard', () => {
     expect(img.getAttribute('src')).toContain('data:image/svg+xml');
   });
 
+  it('falls back to default image when imageUrl is empty', () => {
+    renderCard({ imageUrl: '' });
+    expect(screen.getByRole('img').getAttribute('src')).toContain('data:image/svg+xml');
+  });
+
   it('links to product detail page', () => {
     renderCard();
     expect(screen.getByRole('link', { name: /View details for Test Product/i })).toHaveAttribute(
@@ -118,6 +123,16 @@ describe('ProductCard', () => {
   it('does not show rating badge when rating is 0', () => {
     renderCard({ rating: 0 });
     expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+  });
+
+  it('shows review count when rating and reviewCount are both > 0', () => {
+    renderCard({ rating: 4.5, reviewCount: 10 });
+    expect(screen.getByText(/products\.review/)).toBeInTheDocument();
+  });
+
+  it('does not show review count when reviewCount is 0', () => {
+    renderCard({ rating: 4.5, reviewCount: 0 });
+    expect(screen.queryByText(/products\.review/)).not.toBeInTheDocument();
   });
 
   it('disables quick add button when out of stock', () => {
