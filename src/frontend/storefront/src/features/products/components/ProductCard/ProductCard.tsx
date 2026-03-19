@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { SpinnerIcon, PlusIcon, HeartIcon, StarIcon } from '@/shared/components/icons';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
+import { useAppSelector } from '@/shared/lib/store';
 import { useWishlistToggle, useAddToCart } from './ProductCard.hooks';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './ProductCard.module.css';
@@ -35,7 +36,6 @@ export const ProductCard = memo(function ProductCard({
 
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Calculations
   const discountPercentage =
@@ -44,21 +44,19 @@ export const ProductCard = memo(function ProductCard({
       : 0;
 
   const showDiscountBadge = discountPercentage >= 10;
-  const isInStock = stockQuantity > 0;
+
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   // Custom hooks
-  const { handleWishlistToggle, isWishlistLoading, isInWishlist, isAuthenticated } =
-    useWishlistToggle(id);
+  const { handleWishlistToggle, isWishlistLoading, isInWishlist } = useWishlistToggle(id);
 
-  const { handleAddToCart } = useAddToCart({
+  const { handleAddToCart, isAddingToCart, isInStock } = useAddToCart({
     id,
     name,
     slug,
     price,
     imageUrl,
     stockQuantity,
-    isInStock,
-    setIsAddingToCart,
   });
 
   const handleImageError = () => setImageError(true);

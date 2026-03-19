@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
 import { useApiErrorHandler, useToast } from '@/shared/hooks';
@@ -20,49 +20,28 @@ export function useWishlistToggle(id: string) {
   const [addToWishlist, { isLoading: isAdding }] = useAddToWishlistMutation();
   const [removeFromWishlist, { isLoading: isRemoving }] = useRemoveFromWishlistMutation();
   const { handleError } = useApiErrorHandler();
-  const { success, error } = useToast();
+  const { success } = useToast();
 
   const isWishlistLoading = isAdding || isRemoving;
 
-  const handleWishlistToggle = useCallback(
-    async (event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
+  const handleWishlistToggle = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
 
-      if (!isAuthenticated) {
-        error(t('wishlist.signInRequired'));
-        return;
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(id).unwrap();
+        success(t('wishlist.removedFromWishlist'));
+      } else {
+        await addToWishlist(id).unwrap();
+        success(t('wishlist.addedToWishlist'));
       }
+    } catch (err) {
+      handleError(err, t('wishlist.updateError'));
+    }
+  };
 
-      if (isWishlistLoading) return;
-
-      try {
-        if (isInWishlist) {
-          await removeFromWishlist(id).unwrap();
-          success(t('wishlist.removedFromWishlist'));
-        } else {
-          await addToWishlist(id).unwrap();
-          success(t('wishlist.addedToWishlist'));
-        }
-      } catch (err) {
-        handleError(err, t('wishlist.updateError'));
-      }
-    },
-    [
-      t,
-      id,
-      isAuthenticated,
-      isInWishlist,
-      isWishlistLoading,
-      addToWishlist,
-      removeFromWishlist,
-      handleError,
-      success,
-      error,
-    ]
-  );
-
-  return { handleWishlistToggle, isWishlistLoading, isInWishlist, isAuthenticated };
+  return { handleWishlistToggle, isWishlistLoading, isInWishlist };
 }
 
 interface UseAddToCartParams {
@@ -72,8 +51,6 @@ interface UseAddToCartParams {
   price: number;
   imageUrl: string;
   stockQuantity: number;
-  isInStock: boolean;
-  setIsAddingToCart: (value: boolean) => void;
 }
 
 export function useAddToCart({
@@ -83,71 +60,44 @@ export function useAddToCart({
   price,
   imageUrl,
   stockQuantity,
-  isInStock,
-  setIsAddingToCart,
 }: UseAddToCartParams) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const [addToCartBackend] = useAddToCartMutation();
   const { handleError } = useApiErrorHandler();
-  const { success, error } = useToast();
-  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const { success } = useToast();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const isInStock = stockQuantity > 0;
 
-  useEffect(() => () => clearTimeout(resetTimerRef.current), []);
+  const handleAddToCart = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
 
-  const handleAddToCart = useCallback(
-    async (event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
+    setIsAddingToCart(true);
 
-      if (!isInStock) {
-        error(t('common.outOfStock'));
-        return;
+    try {
+      if (isAuthenticated) {
+        await addToCartBackend({ productId: id, quantity: 1 }).unwrap();
+      } else {
+        const cartItem: CartItem = {
+          id,
+          name,
+          slug,
+          price,
+          quantity: 1,
+          maxStock: stockQuantity,
+          image: imageUrl || DEFAULT_PRODUCT_IMAGE,
+        };
+        dispatch(addItem(cartItem));
       }
+      success(t('products.addedToCartSuccess'));
+    } catch (err) {
+      handleError(err, t('products.addToCartError'));
+    } finally {
+      setTimeout(() => setIsAddingToCart(false), QUICK_ADD_RESET_MS);
+    }
+  };
 
-      setIsAddingToCart(true);
-
-      try {
-        if (isAuthenticated) {
-          await addToCartBackend({ productId: id, quantity: 1 }).unwrap();
-        } else {
-          const cartItem: CartItem = {
-            id,
-            name,
-            slug,
-            price,
-            quantity: 1,
-            maxStock: stockQuantity,
-            image: imageUrl || DEFAULT_PRODUCT_IMAGE,
-          };
-          dispatch(addItem(cartItem));
-        }
-        success(t('products.addedToCartSuccess'));
-      } catch (err) {
-        handleError(err, t('products.addToCartError'));
-      } finally {
-        resetTimerRef.current = setTimeout(() => setIsAddingToCart(false), QUICK_ADD_RESET_MS);
-      }
-    },
-    [
-      t,
-      id,
-      name,
-      slug,
-      price,
-      imageUrl,
-      stockQuantity,
-      isInStock,
-      isAuthenticated,
-      addToCartBackend,
-      dispatch,
-      setIsAddingToCart,
-      handleError,
-      success,
-      error,
-    ]
-  );
-
-  return { handleAddToCart };
+  return { handleAddToCart, isAddingToCart, isInStock };
 }
