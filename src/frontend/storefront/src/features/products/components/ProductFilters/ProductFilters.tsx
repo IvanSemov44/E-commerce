@@ -1,18 +1,15 @@
 import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { parseOptionalFloat } from '@/features/products/utils/parsing';
 import styles from './ProductFilters.module.css';
-
-function parseFloat_(value: string | null): number | undefined {
-  return value ? parseFloat(value) : undefined;
-}
 
 export function ProductFilters() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const minPrice = parseFloat_(searchParams.get('minPrice'));
-  const maxPrice = parseFloat_(searchParams.get('maxPrice'));
-  const minRating = parseFloat_(searchParams.get('minRating'));
+  const minPrice = parseOptionalFloat(searchParams.get('minPrice'));
+  const maxPrice = parseOptionalFloat(searchParams.get('maxPrice'));
+  const minRating = parseOptionalFloat(searchParams.get('minRating'));
   const isFeatured = searchParams.get('isFeatured') === 'true';
 
   const setParam = (key: string, value: string | undefined) => {

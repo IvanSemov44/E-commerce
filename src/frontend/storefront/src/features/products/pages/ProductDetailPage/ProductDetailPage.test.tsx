@@ -4,15 +4,9 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductDetailPage } from './ProductDetailPage';
 import * as useProductDataModule from '@/features/products/hooks/useProductData';
-import * as productActionsHooks from '@/features/products/components/ProductActions/ProductActions.hooks';
 
 vi.mock('@/features/products/hooks/useProductData', () => ({
   useProductData: vi.fn(),
-}));
-
-vi.mock('@/features/products/components/ProductActions/ProductActions.hooks', () => ({
-  useCartActions: vi.fn(),
-  useWishlistActions: vi.fn(),
 }));
 
 vi.mock('@/features/products/api', async (importOriginal) => {
@@ -65,23 +59,6 @@ const mockReviews = [
   },
 ];
 
-const defaultCartHook = {
-  quantity: 1,
-  setQuantity: vi.fn(),
-  addedToCart: false,
-  cartError: null,
-  dismissCartError: vi.fn(),
-  addToCart: vi.fn(),
-  isAdding: false,
-};
-
-const defaultWishlistHook = {
-  isInWishlist: false,
-  toggleWishlist: vi.fn(),
-  isAdding: false,
-  isRemoving: false,
-};
-
 const authAuthenticated = {
   isAuthenticated: true,
   user: { id: '1', email: 'a@b.com', firstName: 'A', lastName: 'B', role: 'customer' },
@@ -114,8 +91,6 @@ const render = (
 describe('ProductDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(productActionsHooks.useCartActions).mockReturnValue({ ...defaultCartHook });
-    vi.mocked(productActionsHooks.useWishlistActions).mockReturnValue({ ...defaultWishlistHook });
   });
 
   it('shows skeleton while product is loading', () => {

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SpinnerIcon, PlusIcon, HeartIcon, StarIcon } from '@/shared/components/icons';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { useAppSelector } from '@/shared/lib/store';
-import { useWishlistToggle, useAddToCart } from './ProductCard.hooks';
+import { useWishlistToggle, useCartActions } from '@/features/products/hooks';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import styles from './ProductCard.module.css';
 
@@ -48,15 +48,16 @@ export const ProductCard = memo(function ProductCard({
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   // Custom hooks
-  const { handleWishlistToggle, isWishlistLoading, isInWishlist } = useWishlistToggle(id);
+  const { toggleWishlist, isWishlistLoading, isInWishlist } = useWishlistToggle(id);
 
-  const { handleAddToCart, isAddingToCart, isInStock } = useAddToCart({
+  const { addToCart, addedToCart, isAdding, isInStock } = useCartActions({
     id,
     name,
     slug,
     price,
-    imageUrl,
+    compareAtPrice,
     stockQuantity,
+    images: [{ url: imageUrl }],
   });
 
   const handleImageError = () => setImageError(true);
@@ -90,12 +91,16 @@ export const ProductCard = memo(function ProductCard({
           >
             <button
               type="button"
-              onClick={handleAddToCart}
-              className={`${styles.quickAddButton} ${isAddingToCart ? styles.adding : ''}`}
-              disabled={!isInStock || isAddingToCart}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void addToCart();
+              }}
+              className={`${styles.quickAddButton} ${isAdding || addedToCart ? styles.adding : ''}`}
+              disabled={!isInStock || isAdding || addedToCart}
               aria-label="Quick add to cart"
             >
-              {isAddingToCart ? (
+              {isAdding ? (
                 <SpinnerIcon className={styles.spinner} aria-hidden="true" />
               ) : (
                 <PlusIcon aria-hidden="true" />
@@ -118,7 +123,11 @@ export const ProductCard = memo(function ProductCard({
           {isAuthenticated && (
             <button
               type="button"
-              onClick={handleWishlistToggle}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void toggleWishlist();
+              }}
               className={`${styles.wishlistButton} ${isInWishlist ? styles.active : ''}`}
               disabled={isWishlistLoading}
               aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}

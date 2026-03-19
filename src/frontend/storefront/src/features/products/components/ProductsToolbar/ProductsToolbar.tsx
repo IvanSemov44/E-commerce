@@ -6,25 +6,27 @@ import { ActiveFilters } from '@/features/products/components';
 import { RefreshIcon } from '@/shared/components/icons';
 import { useDebounce } from '@/shared/hooks';
 import { SEARCH_DEBOUNCE_MS, type SortBy } from '@/features/products/constants';
-import { parseOptionalFloat, parseSortBy } from '@/features/products/utils/parsing';
+import type { ProductFiltersState } from '@/features/products/hooks';
 import styles from './ProductsToolbar.module.css';
 
 interface ProductsToolbarProps {
   isRefetching: boolean;
+  filters: ProductFiltersState;
 }
 
-export function ProductsToolbar({ isRefetching }: ProductsToolbarProps) {
+export function ProductsToolbar({ isRefetching, filters }: ProductsToolbarProps) {
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
 
-  // Read current filter values from URL (for ActiveFilters badge)
-  const urlSearch = searchParams.get('search') ?? '';
-  const selectedCategoryId = searchParams.get('categoryId') ?? undefined;
-  const minPrice = parseOptionalFloat(searchParams.get('minPrice'));
-  const maxPrice = parseOptionalFloat(searchParams.get('maxPrice'));
-  const minRating = parseOptionalFloat(searchParams.get('minRating'));
-  const isFeatured = searchParams.get('isFeatured') === 'true' ? true : undefined;
-  const sortBy = parseSortBy(searchParams.get('sortBy'));
+  const {
+    search: urlSearch,
+    selectedCategoryId,
+    minPrice,
+    maxPrice,
+    minRating,
+    isFeatured,
+    sortBy,
+  } = filters;
 
   // Local search: debounce → write to URL
   const [searchInput, setSearchInput] = useState(urlSearch);

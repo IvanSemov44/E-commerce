@@ -6,7 +6,7 @@ const reviewsApiSlice = baseApi.injectEndpoints({
     getProductReviews: builder.query<Review[], string>({
       query: (productId) => `/reviews/product/${productId}`,
       transformResponse: (response: ApiResponse<PaginatedResult<Review>>) =>
-        response.data?.items ?? [],
+        response.data?.items || [],
       providesTags: (result) => (result ? [{ type: 'Review' as const, id: 'LIST' }] : []),
     }),
 

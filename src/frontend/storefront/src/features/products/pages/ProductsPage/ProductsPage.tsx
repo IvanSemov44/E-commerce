@@ -70,7 +70,7 @@ export function ProductsPage() {
 
         {/* Main Content */}
         <div className={styles.content}>
-          <ProductsToolbar isRefetching={isFetching && !isLoading} />
+          <ProductsToolbar isRefetching={isFetching && !isLoading} filters={filters} />
 
           <QueryRenderer
             isLoading={isLoading}

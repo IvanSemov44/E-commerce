@@ -17,11 +17,33 @@ vi.mock('@/features/products/components/ActiveFilters', () => ({
   ActiveFilters: () => <div data-testid="active-filters" />,
 }));
 
-function renderToolbar(isRefetching = false, url = '/') {
+import type { ProductFiltersState } from '@/features/products/hooks';
+
+const defaultFilters: ProductFiltersState = {
+  page: 1,
+  search: '',
+  selectedCategoryId: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+  minRating: undefined,
+  isFeatured: false,
+  sortBy: 'newest',
+  hasActiveFilters: false,
+};
+
+function renderToolbar(isRefetching = false, filters: Partial<ProductFiltersState> = {}) {
   return render(
-    <MemoryRouter initialEntries={[url]}>
+    <MemoryRouter>
       <Routes>
-        <Route path="*" element={<ProductsToolbar isRefetching={isRefetching} />} />
+        <Route
+          path="*"
+          element={
+            <ProductsToolbar
+              isRefetching={isRefetching}
+              filters={{ ...defaultFilters, ...filters }}
+            />
+          }
+        />
       </Routes>
     </MemoryRouter>
   );
@@ -59,14 +81,14 @@ describe('ProductsToolbar', () => {
     expect(screen.queryByText('common.updating')).not.toBeInTheDocument();
   });
 
-  it('reflects sortBy value from URL in select', () => {
-    renderToolbar(false, '/?sortBy=price-asc');
+  it('reflects sortBy value from filters prop in select', () => {
+    renderToolbar(false, { sortBy: 'price-asc' });
 
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('price-asc');
   });
 
-  it('defaults sort to "newest" when no URL param', () => {
-    renderToolbar(false, '/');
+  it('defaults sort to "newest" when not specified', () => {
+    renderToolbar();
 
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('newest');
   });

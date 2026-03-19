@@ -6,9 +6,9 @@ import { ProductActions } from './ProductActions';
 import type { ProductDetail } from '@/shared/types';
 
 // Mock the smart hooks so we control all cart/wishlist behavior
-vi.mock('./ProductActions.hooks', () => ({
+vi.mock('@/features/products/hooks', () => ({
   useCartActions: vi.fn(),
-  useWishlistActions: vi.fn(),
+  useWishlistToggle: vi.fn(),
 }));
 
 const defaultCartHook = {
@@ -19,11 +19,13 @@ const defaultCartHook = {
   dismissCartError: vi.fn(),
   addToCart: vi.fn(),
   isAdding: false,
+  isInStock: true,
 };
 
 const defaultWishlistHook = {
   isInWishlist: false,
   toggleWishlist: vi.fn(),
+  isWishlistLoading: false,
   isAdding: false,
   isRemoving: false,
 };
@@ -61,10 +63,11 @@ const makeProduct = (overrides: Partial<ProductDetail> = {}): ProductDetail => (
   ...overrides,
 });
 
+type PreloadedState = NonNullable<Parameters<typeof renderWithProviders>[1]>['preloadedState'];
+
 const render = (
   productOverrides: Partial<ProductDetail> = {},
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preloadedState: any = { auth: authAuthenticated, cart: emptyCart }
+  preloadedState: PreloadedState = { auth: authAuthenticated, cart: emptyCart }
 ) =>
   renderWithProviders(<ProductActions product={makeProduct(productOverrides)} />, {
     preloadedState,
@@ -74,9 +77,9 @@ const render = (
 describe('ProductActions', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    const hooks = await import('./ProductActions.hooks');
+    const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook });
-    vi.mocked(hooks.useWishlistActions).mockReturnValue({ ...defaultWishlistHook });
+    vi.mocked(hooks.useWishlistToggle).mockReturnValue({ ...defaultWishlistHook });
   });
 
   it('displays in stock status', () => {
@@ -108,7 +111,7 @@ describe('ProductActions', () => {
   it('calls setQuantity when quantity increases', async () => {
     const user = userEvent.setup();
     const setQuantity = vi.fn();
-    const hooks = await import('./ProductActions.hooks');
+    const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, setQuantity });
 
     render();
@@ -157,12 +160,49 @@ describe('ProductActions', () => {
   });
 
   it('shows added confirmation', async () => {
-    const hooks = await import('./ProductActions.hooks');
+    const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, addedToCart: true });
 
     render();
 
     expect(screen.getByText(/added to cart/i)).toBeInTheDocument();
+  });
+
+  it('calls addToCart when add to cart button is clicked', async () => {
+    const user = userEvent.setup();
+    const addToCart = vi.fn();
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, addToCart });
+
+    render();
+
+    await user.click(screen.getByRole('button', { name: /add to cart/i }));
+
+    expect(addToCart).toHaveBeenCalled();
+  });
+
+  it('disables add to cart when isAdding is true', async () => {
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, isAdding: true });
+
+    render();
+
+    expect(screen.getByRole('button', { name: /add to cart/i })).toBeDisabled();
+  });
+
+  it('disables add to cart when addedToCart is true', async () => {
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, addedToCart: true });
+
+    render();
+
+    expect(screen.getByRole('button', { name: /added to cart/i })).toBeDisabled();
+  });
+
+  it('does not show low stock warning when out of stock', () => {
+    render({ stockQuantity: 0, lowStockThreshold: 3 });
+
+    expect(screen.queryByText(/only/i)).not.toBeInTheDocument();
   });
 
   it('renders wishlist button when authenticated', () => {
@@ -178,7 +218,7 @@ describe('ProductActions', () => {
   });
 
   it('shows error message when cart error exists', async () => {
-    const hooks = await import('./ProductActions.hooks');
+    const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({
       ...defaultCartHook,
       cartError: 'Failed to add to cart',
@@ -192,7 +232,7 @@ describe('ProductActions', () => {
   it('calls dismissCartError when error is dismissed', async () => {
     const user = userEvent.setup();
     const dismissCartError = vi.fn();
-    const hooks = await import('./ProductActions.hooks');
+    const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({
       ...defaultCartHook,
       cartError: 'Failed to add',
@@ -208,7 +248,7 @@ describe('ProductActions', () => {
   });
 
   it('disables increase button at max stock', async () => {
-    const hooks = await import('./ProductActions.hooks');
+    const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, quantity: 10 });
 
     render({ stockQuantity: 10 });
@@ -220,7 +260,7 @@ describe('ProductActions', () => {
   it('calls setQuantity with minimum of 1 when decreasing at quantity 1', async () => {
     const user = userEvent.setup();
     const setQuantity = vi.fn();
-    const hooks = await import('./ProductActions.hooks');
+    const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({
       ...defaultCartHook,
       quantity: 1,
@@ -235,8 +275,8 @@ describe('ProductActions', () => {
   });
 
   it('shows in wishlist button text when item is in wishlist', async () => {
-    const hooks = await import('./ProductActions.hooks');
-    vi.mocked(hooks.useWishlistActions).mockReturnValue({
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useWishlistToggle).mockReturnValue({
       ...defaultWishlistHook,
       isInWishlist: true,
     });
@@ -246,11 +286,32 @@ describe('ProductActions', () => {
     expect(screen.getByRole('button', { name: /in wishlist/i })).toBeInTheDocument();
   });
 
+  it('disables wishlist button when isAdding is true', async () => {
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useWishlistToggle).mockReturnValue({ ...defaultWishlistHook, isAdding: true });
+
+    render();
+
+    expect(screen.getByRole('button', { name: /wishlist/i })).toBeDisabled();
+  });
+
+  it('disables wishlist button when isRemoving is true', async () => {
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useWishlistToggle).mockReturnValue({
+      ...defaultWishlistHook,
+      isRemoving: true,
+    });
+
+    render();
+
+    expect(screen.getByRole('button', { name: /wishlist/i })).toBeDisabled();
+  });
+
   it('calls toggleWishlist when wishlist button is clicked', async () => {
     const user = userEvent.setup();
     const toggleWishlist = vi.fn();
-    const hooks = await import('./ProductActions.hooks');
-    vi.mocked(hooks.useWishlistActions).mockReturnValue({ ...defaultWishlistHook, toggleWishlist });
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useWishlistToggle).mockReturnValue({ ...defaultWishlistHook, toggleWishlist });
 
     render();
 

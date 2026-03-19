@@ -3,30 +3,29 @@ import { Button } from '@/shared/components/ui/Button';
 import { ErrorAlert } from '@/shared/components/ErrorAlert';
 import { useAppSelector } from '@/shared/lib/store';
 import { selectCartItemById } from '@/features/cart/slices/cartSlice';
-import type { ProductActionsProps } from './ProductActions.types';
-import { useCartActions, useWishlistActions } from './ProductActions.hooks';
-import { isInStock, isStockLow } from './ProductActions.utils';
+import { useCartActions, useWishlistToggle } from '@/features/products/hooks';
+import type { ProductDetail } from '@/shared/types';
 import styles from './ProductActions.module.css';
 
-export function ProductActions({ product }: ProductActionsProps) {
+export function ProductActions({ product }: { product: ProductDetail }) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const cartItem = useAppSelector(selectCartItemById(product.id));
 
   const cart = useCartActions(product);
-  const wishlist = useWishlistActions(product.id);
+  const wishlist = useWishlistToggle(product.id);
 
   return (
     <div className={styles.actions}>
       <div className={styles.stockSection}>
         <p
-          className={`${styles.stockLabel} ${isInStock(product.stockQuantity) ? styles.inStock : styles.outOfStock}`}
+          className={`${styles.stockLabel} ${product.stockQuantity > 0 ? styles.inStock : styles.outOfStock}`}
         >
           {product.stockQuantity === 0
             ? t('common.outOfStock')
             : t('products.inStockCount', { count: product.stockQuantity })}
         </p>
-        {isStockLow(product.stockQuantity, product.lowStockThreshold) && (
+        {product.stockQuantity > 0 && product.stockQuantity <= product.lowStockThreshold && (
           <p className={styles.lowStockWarning}>
             {t('products.lowStockWarning', { count: product.stockQuantity })}
           </p>
@@ -79,7 +78,7 @@ export function ProductActions({ product }: ProductActionsProps) {
       <div className={styles.buttonGroup}>
         <Button
           onClick={cart.addToCart}
-          disabled={!isInStock(product.stockQuantity) || cart.addedToCart || cart.isAdding}
+          disabled={product.stockQuantity === 0 || cart.addedToCart || cart.isAdding}
           size="lg"
         >
           {product.stockQuantity === 0
