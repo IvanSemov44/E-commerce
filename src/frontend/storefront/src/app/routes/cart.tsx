@@ -1,1 +1,1 @@
-export { default } from '@/features/cart/pages/CartPage/CartPage';
+export { CartPage as default } from '@/features/cart/CartPage/CartPage';
