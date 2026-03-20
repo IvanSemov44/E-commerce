@@ -2,23 +2,17 @@ import React from 'react';
 import { Link } from 'react-router';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
+import { useCartItemActions } from '@/features/cart/hooks';
 import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
 import styles from './CartItem.module.css';
 
 interface CartItemProps {
   item: CartItemType;
-  onUpdateQuantity: (id: string, quantity: number) => void;
-  onRemove: (id: string) => void;
   readOnly?: boolean;
 }
 
-export const CartItem = React.memo(function CartItem({
-  item,
-  onUpdateQuantity,
-  onRemove,
-  readOnly = false,
-}: CartItemProps) {
-  // Use default image if item.image is empty or undefined
+export const CartItem = React.memo(function CartItem({ item, readOnly = false }: CartItemProps) {
+  const { handleUpdateQuantity, handleRemove } = useCartItemActions(item.id);
   const imageSrc = item.image || DEFAULT_PRODUCT_IMAGE;
 
   return (
@@ -50,14 +44,14 @@ export const CartItem = React.memo(function CartItem({
         {!readOnly && (
           <div className={styles.quantityContainer}>
             <button
-              onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+              onClick={() => void handleUpdateQuantity(item.quantity - 1)}
               className={styles.quantityButton}
             >
               −
             </button>
             <span className={styles.quantityDisplay}>{item.quantity}</span>
             <button
-              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+              onClick={() => void handleUpdateQuantity(item.quantity + 1)}
               disabled={item.quantity >= item.maxStock}
               className={styles.quantityButton}
             >
@@ -76,7 +70,7 @@ export const CartItem = React.memo(function CartItem({
       <div className={styles.rightSection}>
         <div className={styles.subtotal}>{formatPrice(item.price * item.quantity)}</div>
         {!readOnly && (
-          <button onClick={() => onRemove(item.id)} className={styles.removeButton}>
+          <button onClick={() => void handleRemove()} className={styles.removeButton}>
             Remove
           </button>
         )}

@@ -139,14 +139,4 @@ describe('useCart', () => {
     expect(rendered.result.current.totals.tax).toBe(0);
     expect(rendered.result.current.totals.total).toBe(0);
   });
-
-  it('should provide update and remove handlers', () => {
-    const rendered = renderHookWithProviders(() => useCart(), {
-      preloadedState: defaultPreloadedState,
-    });
-    store = rendered.store;
-
-    expect(typeof rendered.result.current.handleUpdateQuantity).toBe('function');
-    expect(typeof rendered.result.current.handleRemove).toBe('function');
-  });
 });

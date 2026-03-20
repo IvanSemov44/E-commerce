@@ -1,8 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CartItemList } from './CartItemList';
 import type { DisplayCartItem } from '../CartItemList';
+
+vi.mock('@/features/cart/hooks', () => ({
+  useCartItemActions: vi.fn(),
+}));
 
 const mockItems: DisplayCartItem[] = [
   {
@@ -26,17 +30,20 @@ const mockItems: DisplayCartItem[] = [
   },
 ];
 
-const defaultProps = {
-  items: mockItems,
-  onUpdateQuantity: vi.fn(),
-  onRemove: vi.fn(),
-};
-
 describe('CartItemList', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const hooks = await import('@/features/cart/hooks');
+    vi.mocked(hooks.useCartItemActions).mockReturnValue({
+      handleUpdateQuantity: vi.fn(),
+      handleRemove: vi.fn(),
+    });
+  });
+
   it('renders cart title', () => {
     render(
       <BrowserRouter>
-        <CartItemList {...defaultProps} />
+        <CartItemList items={mockItems} />
       </BrowserRouter>
     );
 
@@ -46,7 +53,7 @@ describe('CartItemList', () => {
   it('renders all cart items', () => {
     render(
       <BrowserRouter>
-        <CartItemList {...defaultProps} />
+        <CartItemList items={mockItems} />
       </BrowserRouter>
     );
 
@@ -57,18 +64,17 @@ describe('CartItemList', () => {
   it('displays correct item count in title', () => {
     render(
       <BrowserRouter>
-        <CartItemList {...defaultProps} />
+        <CartItemList items={mockItems} />
       </BrowserRouter>
     );
 
-    const heading = screen.getByRole('heading');
-    expect(heading).toHaveTextContent('2');
+    expect(screen.getByRole('heading')).toHaveTextContent('2');
   });
 
   it('renders empty list when no items', () => {
     render(
       <BrowserRouter>
-        <CartItemList {...defaultProps} items={[]} />
+        <CartItemList items={[]} />
       </BrowserRouter>
     );
 
@@ -78,7 +84,7 @@ describe('CartItemList', () => {
   it('renders items in correct order', () => {
     render(
       <BrowserRouter>
-        <CartItemList {...defaultProps} />
+        <CartItemList items={mockItems} />
       </BrowserRouter>
     );
 

@@ -12,45 +12,42 @@ import styles from './CartPage.module.css';
 
 export function CartPage() {
   const { t } = useTranslation();
-  const { displayItems, totals, isLoading, handleUpdateQuantity, handleRemove } = useCart();
+  const { displayItems, totals, isLoading } = useCart();
 
   return (
     <div className={styles.container}>
       <div className={styles.content}>
         <PageHeader title={t('cart.title')} />
 
-        <QueryRenderer
-          isLoading={isLoading}
-          error={null}
-          data={displayItems.length > 0 ? displayItems : undefined}
-          loadingSkeleton={{ custom: <CartSkeleton /> }}
-          emptyState={{
-            icon: <ShoppingCartIcon />,
-            title: t('cart.emptyCart'),
-            action: (
-              <Link to={ROUTE_PATHS.products}>
-                <Button size="lg">{t('cart.continueShopping')}</Button>
-              </Link>
-            ),
-          }}
-        >
-          {(items) => (
-            <div className={styles.grid}>
-              <CartItemList
-                items={items}
-                onUpdateQuantity={handleUpdateQuantity}
-                onRemove={handleRemove}
-              />
-              <CartSummary
-                subtotal={totals.subtotal}
-                shipping={totals.shipping}
-                tax={totals.tax}
-                total={totals.total}
-                freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
-              />
-            </div>
+        <div className={styles.grid}>
+          <QueryRenderer
+            isLoading={isLoading}
+            error={null}
+            data={displayItems.length > 0 ? displayItems : undefined}
+            loadingSkeleton={{ custom: <CartSkeleton /> }}
+            emptyState={{
+              icon: <ShoppingCartIcon />,
+              title: t('cart.emptyCart'),
+              action: (
+                <Link to={ROUTE_PATHS.products}>
+                  <Button size="lg">{t('cart.continueShopping')}</Button>
+                </Link>
+              ),
+            }}
+          >
+            {(items) => <CartItemList items={items} />}
+          </QueryRenderer>
+
+          {displayItems.length > 0 && (
+            <CartSummary
+              subtotal={totals.subtotal}
+              shipping={totals.shipping}
+              tax={totals.tax}
+              total={totals.total}
+              freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
+            />
           )}
-        </QueryRenderer>
+        </div>
       </div>
     </div>
   );

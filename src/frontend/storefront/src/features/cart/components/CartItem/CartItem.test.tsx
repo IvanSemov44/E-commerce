@@ -1,9 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
 import { CartItem } from './CartItem';
 import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
+
+vi.mock('@/features/cart/hooks', () => ({
+  useCartItemActions: vi.fn(),
+}));
+
+const defaultActions = {
+  handleUpdateQuantity: vi.fn(),
+  handleRemove: vi.fn(),
+};
 
 const mockItem: CartItemType = {
   id: '1',
@@ -19,12 +29,18 @@ const mockItem: CartItemType = {
 const renderCartItem = (props: Partial<React.ComponentProps<typeof CartItem>> = {}) => {
   return render(
     <BrowserRouter>
-      <CartItem item={mockItem} onUpdateQuantity={vi.fn()} onRemove={vi.fn()} {...props} />
+      <CartItem item={mockItem} {...props} />
     </BrowserRouter>
   );
 };
 
 describe('CartItem', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const hooks = await import('@/features/cart/hooks');
+    vi.mocked(hooks.useCartItemActions).mockReturnValue({ ...defaultActions });
+  });
+
   it('renders item details correctly', () => {
     renderCartItem();
 
@@ -45,39 +61,40 @@ describe('CartItem', () => {
     expect(screen.getByText('$59.98')).toBeInTheDocument();
   });
 
-  it('calls onUpdateQuantity when quantity buttons are clicked', async () => {
+  it('calls handleUpdateQuantity when quantity buttons are clicked', async () => {
     const user = userEvent.setup();
-    const onUpdateQuantity = vi.fn();
-    renderCartItem({ onUpdateQuantity });
+    const handleUpdateQuantity = vi.fn();
+    const hooks = await import('@/features/cart/hooks');
+    vi.mocked(hooks.useCartItemActions).mockReturnValue({
+      ...defaultActions,
+      handleUpdateQuantity,
+    });
 
-    const increaseButton = screen.getByRole('button', { name: '+' });
-    await user.click(increaseButton);
+    renderCartItem();
 
-    expect(onUpdateQuantity).toHaveBeenCalledWith('1', 3);
+    await user.click(screen.getByRole('button', { name: '+' }));
+    expect(handleUpdateQuantity).toHaveBeenCalledWith(3);
 
-    const decreaseButton = screen.getByRole('button', { name: '−' });
-    await user.click(decreaseButton);
-
-    expect(onUpdateQuantity).toHaveBeenCalledWith('1', 1);
+    await user.click(screen.getByRole('button', { name: '−' }));
+    expect(handleUpdateQuantity).toHaveBeenCalledWith(1);
   });
 
-  it('calls onRemove when remove button is clicked', async () => {
+  it('calls handleRemove when remove button is clicked', async () => {
     const user = userEvent.setup();
-    const onRemove = vi.fn();
-    renderCartItem({ onRemove });
+    const handleRemove = vi.fn();
+    const hooks = await import('@/features/cart/hooks');
+    vi.mocked(hooks.useCartItemActions).mockReturnValue({ ...defaultActions, handleRemove });
 
-    const removeButton = screen.getByRole('button', { name: /remove/i });
-    await user.click(removeButton);
+    renderCartItem();
 
-    expect(onRemove).toHaveBeenCalledWith('1');
+    await user.click(screen.getByRole('button', { name: /remove/i }));
+    expect(handleRemove).toHaveBeenCalled();
   });
 
   it('disables increase button when max stock is reached', () => {
-    const maxStockItem = { ...mockItem, quantity: 10, maxStock: 10 };
-    renderCartItem({ item: maxStockItem });
+    renderCartItem({ item: { ...mockItem, quantity: 10, maxStock: 10 } });
 
-    const increaseButton = screen.getByRole('button', { name: '+' });
-    expect(increaseButton).toBeDisabled();
+    expect(screen.getByRole('button', { name: '+' })).toBeDisabled();
     expect(screen.getByText('Max stock reached')).toBeInTheDocument();
   });
 
@@ -93,13 +110,11 @@ describe('CartItem', () => {
   it('renders image with product link', () => {
     renderCartItem();
 
-    const imageLinks = screen.getAllByRole('link', { name: /test product/i });
-    expect(imageLinks.length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: /test product/i }).length).toBeGreaterThan(0);
   });
 
   it('handles item without compareAtPrice', () => {
-    const itemWithoutCompare = { ...mockItem, compareAtPrice: undefined };
-    renderCartItem({ item: itemWithoutCompare });
+    renderCartItem({ item: { ...mockItem, compareAtPrice: undefined } });
 
     expect(screen.getByText('$29.99')).toBeInTheDocument();
     expect(screen.queryByText('$39.99')).not.toBeInTheDocument();

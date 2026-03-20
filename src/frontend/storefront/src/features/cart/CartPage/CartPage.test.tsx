@@ -37,8 +37,15 @@ const defaultPreloadedState = {
 const render = () => renderWithProviders(<CartPage />, { preloadedState: defaultPreloadedState });
 
 describe('CartPage', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    const hooks = await import('@/features/cart/hooks/useCart');
+    vi.mocked(hooks.useCart).mockReturnValue({
+      displayItems: [],
+      totals: defaultTotals,
+      isLoading: false,
+      isAuthenticated: false,
+    });
   });
 
   it('shows skeleton while loading', () => {
@@ -47,8 +54,6 @@ describe('CartPage', () => {
       totals: defaultTotals,
       isLoading: true,
       isAuthenticated: false,
-      handleUpdateQuantity: vi.fn(),
-      handleRemove: vi.fn(),
     });
 
     render();
@@ -63,8 +68,6 @@ describe('CartPage', () => {
       totals: defaultTotals,
       isLoading: false,
       isAuthenticated: false,
-      handleUpdateQuantity: vi.fn(),
-      handleRemove: vi.fn(),
     });
 
     render();
@@ -78,8 +81,6 @@ describe('CartPage', () => {
       totals: { subtotal: 59.98, shipping: 0, tax: 5.4, total: 65.38 },
       isLoading: false,
       isAuthenticated: false,
-      handleUpdateQuantity: vi.fn(),
-      handleRemove: vi.fn(),
     });
 
     render();
@@ -87,18 +88,75 @@ describe('CartPage', () => {
     expect(screen.getByText('Test Product')).toBeInTheDocument();
   });
 
-  it('renders checkout link when items are present', () => {
+  it('renders cart summary when items are present', () => {
     vi.mocked(useCartModule.useCart).mockReturnValue({
       displayItems: [mockItem],
-      totals: { subtotal: 59.98, shipping: 0, tax: 5.4, total: 65.38 },
+      totals: { subtotal: 59.98, shipping: 10, tax: 5.4, total: 75.38 },
       isLoading: false,
       isAuthenticated: false,
-      handleUpdateQuantity: vi.fn(),
-      handleRemove: vi.fn(),
     });
 
     render();
 
+    expect(screen.getByRole('link', { name: 'cart.proceedToCheckout' })).toBeInTheDocument();
+  });
+
+  it('does not render cart summary when cart is empty', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [],
+      totals: defaultTotals,
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.queryByRole('link', { name: 'cart.proceedToCheckout' })).not.toBeInTheDocument();
+  });
+
+  it('shows continue shopping link in empty state', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [],
+      totals: defaultTotals,
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.getByRole('link', { name: 'cart.continueShopping' })).toBeInTheDocument();
+  });
+
+  it('renders multiple items', () => {
+    const items = [
+      { ...mockItem, id: '1', name: 'Product 1' },
+      { ...mockItem, id: '2', name: 'Product 2' },
+    ];
+
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: items,
+      totals: { subtotal: 119.96, shipping: 10, tax: 10.8, total: 140.76 },
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.getByText('Product 1')).toBeInTheDocument();
+    expect(screen.getByText('Product 2')).toBeInTheDocument();
+  });
+
+  it('renders authenticated user state', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [mockItem],
+      totals: { subtotal: 59.98, shipping: 10, tax: 5.4, total: 75.38 },
+      isLoading: false,
+      isAuthenticated: true,
+    });
+
+    render();
+
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'cart.proceedToCheckout' })).toBeInTheDocument();
   });
 });

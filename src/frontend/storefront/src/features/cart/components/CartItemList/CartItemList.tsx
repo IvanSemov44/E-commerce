@@ -16,11 +16,9 @@ export interface DisplayCartItem {
 
 export interface CartItemListProps {
   items: DisplayCartItem[];
-  onUpdateQuantity: (id: string, quantity: number) => void;
-  onRemove: (id: string) => void;
 }
 
-export function CartItemList({ items, onUpdateQuantity, onRemove }: CartItemListProps) {
+export function CartItemList({ items }: CartItemListProps) {
   const { t } = useTranslation();
   const itemText = items.length === 1 ? t('cart.item_one') : t('cart.item_other');
 
@@ -29,12 +27,7 @@ export function CartItemList({ items, onUpdateQuantity, onRemove }: CartItemList
       <h2 className={styles.title}>{t('cart.itemsCount', { count: items.length, itemText })}</h2>
       <div className={styles.itemsList}>
         {items.map((item) => (
-          <CartItem
-            key={item.id}
-            item={item}
-            onUpdateQuantity={onUpdateQuantity}
-            onRemove={onRemove}
-          />
+          <CartItem key={item.id} item={item} />
         ))}
       </div>
     </Card>
