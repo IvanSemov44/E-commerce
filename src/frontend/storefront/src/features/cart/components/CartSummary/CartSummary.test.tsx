@@ -59,13 +59,13 @@ describe('CartSummary', () => {
   it('shows free shipping message when below threshold', () => {
     renderCartSummary({ subtotal: 100, freeShippingThreshold: 150 });
 
-    expect(screen.getByText(/add \$50\.00 more for free shipping/i)).toBeInTheDocument();
+    expect(screen.getByText('cart.freeShippingRemaining')).toBeInTheDocument();
   });
 
   it('does not show free shipping message when above threshold', () => {
     renderCartSummary({ subtotal: 200, freeShippingThreshold: 150 });
 
-    expect(screen.queryByText(/add.*more for free shipping/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('cart.freeShippingRemaining')).not.toBeInTheDocument();
   });
 
   it('does not show free shipping message when subtotal is zero', () => {
@@ -86,5 +86,43 @@ describe('CartSummary', () => {
 
     const shopLink = screen.getByRole('link', { name: /continue shopping/i });
     expect(shopLink).toHaveAttribute('href', '/products');
+  });
+
+  it('does not show free shipping message when subtotal equals threshold', () => {
+    renderCartSummary({ subtotal: 150, freeShippingThreshold: 150 });
+
+    expect(screen.queryByText('cart.freeShippingRemaining')).not.toBeInTheDocument();
+  });
+
+  it('displays zero tax correctly', () => {
+    renderCartSummary({ tax: 0 });
+
+    expect(screen.getByText('$0.00')).toBeInTheDocument();
+  });
+
+  it('displays large subtotal with correct formatting', () => {
+    renderCartSummary({ subtotal: 9999.99 });
+
+    expect(screen.getByText('$9999.99')).toBeInTheDocument();
+  });
+
+  it('calculates and displays correct total with all values', () => {
+    renderCartSummary({ subtotal: 100, shipping: 15, tax: 9.2, total: 124.2 });
+
+    expect(screen.getByText('$124.20')).toBeInTheDocument();
+  });
+
+  it('checkout button has correct href path', () => {
+    renderCartSummary();
+
+    const checkoutButton = screen.getByRole('link', { name: /proceed to checkout/i });
+    expect(checkoutButton).toHaveAttribute('href', '/checkout');
+  });
+
+  it('continue shopping button has correct href path', () => {
+    renderCartSummary();
+
+    const shopButton = screen.getByRole('link', { name: /continue shopping/i });
+    expect(shopButton).toHaveAttribute('href', '/products');
   });
 });

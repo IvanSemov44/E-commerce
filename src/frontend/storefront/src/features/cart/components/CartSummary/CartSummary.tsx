@@ -31,7 +31,7 @@ export function CartSummary({
 
       {showFreeShippingMessage && (
         <div className={styles.shippingMessage}>
-          Add ${freeShippingRemaining.toFixed(2)} more for free shipping!
+          {t('cart.freeShippingRemaining', { amount: freeShippingRemaining.toFixed(2) })}
         </div>
       )}
 

@@ -1,21 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/ui/Card';
-import { CartItem } from '../CartItem/CartItem';
+import { CartItem } from '@/features/cart/components/CartItem/CartItem';
+import type { CartItem as CartItemType } from '@/features/cart/types';
 import styles from './CartItemList.module.css';
 
-export interface DisplayCartItem {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  quantity: number;
-  maxStock: number;
-  image: string;
-  compareAtPrice?: number;
-}
-
 export interface CartItemListProps {
-  items: DisplayCartItem[];
+  items: CartItemType[];
 }
 
 export function CartItemList({ items }: CartItemListProps) {

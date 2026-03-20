@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import { useCartItemActions } from '@/features/cart/hooks';
-import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
+import type { CartItem as CartItemType } from '@/features/cart/types';
 import styles from './CartItem.module.css';
 
 interface CartItemProps {

@@ -63,4 +63,18 @@ describe('CartSkeleton', () => {
       expect(skeleton).toHaveAttribute('aria-label', 'Loading');
     });
   });
+
+  it('each cart item contains both info and actions sections', () => {
+    const { container } = render(<CartSkeleton />);
+    const cartItemsContainer = container.querySelector('[class*="cartItems"]');
+    const cartItems = cartItemsContainer?.querySelectorAll(':scope > [class*="cartItem"]');
+    expect(cartItems?.length).toBe(3);
+
+    cartItems?.forEach((item) => {
+      const itemInfo = item.querySelector('[class*="cartItemInfo"]');
+      const itemActions = item.querySelector('[class*="cartItemActions"]');
+      expect(itemInfo).toBeInTheDocument();
+      expect(itemActions).toBeInTheDocument();
+    });
+  });
 });

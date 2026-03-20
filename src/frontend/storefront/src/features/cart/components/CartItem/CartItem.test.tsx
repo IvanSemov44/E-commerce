@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { CartItem } from './CartItem';
-import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
+import type { CartItem as CartItemType } from '@/features/cart/types';
 
 vi.mock('@/features/cart/hooks', () => ({
   useCartItemActions: vi.fn(),
@@ -118,5 +118,80 @@ describe('CartItem', () => {
 
     expect(screen.getByText('$29.99')).toBeInTheDocument();
     expect(screen.queryByText('$39.99')).not.toBeInTheDocument();
+  });
+
+  it('prevents quantity decrease below 1', async () => {
+    const user = userEvent.setup();
+    const handleUpdateQuantity = vi.fn();
+    const hooks = await import('@/features/cart/hooks');
+    vi.mocked(hooks.useCartItemActions).mockReturnValue({
+      ...defaultActions,
+      handleUpdateQuantity,
+    });
+
+    renderCartItem({ item: { ...mockItem, quantity: 1 } });
+
+    await user.click(screen.getByRole('button', { name: '−' }));
+    expect(handleUpdateQuantity).toHaveBeenCalledWith(0);
+  });
+
+  it('enables increase button when quantity is below max', () => {
+    renderCartItem({ item: { ...mockItem, quantity: 5, maxStock: 10 } });
+
+    expect(screen.getByRole('button', { name: '+' })).not.toBeDisabled();
+    expect(screen.queryByText('Max stock reached')).not.toBeInTheDocument();
+  });
+
+  it('uses default image when image is empty or missing', () => {
+    renderCartItem({ item: { ...mockItem, image: '' } });
+
+    const images = screen.getAllByRole('img');
+    expect(images.length).toBeGreaterThan(0);
+  });
+
+  it('handles zero price correctly', () => {
+    renderCartItem({ item: { ...mockItem, price: 0, quantity: 1 } });
+
+    expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0);
+  });
+
+  it('handles very large price correctly', () => {
+    renderCartItem({ item: { ...mockItem, price: 9999.99, quantity: 1 } });
+
+    expect(screen.getAllByText('$9999.99').length).toBeGreaterThan(0);
+  });
+
+  it('does not show max stock warning in read-only mode', () => {
+    renderCartItem({
+      item: { ...mockItem, quantity: 10, maxStock: 10 },
+      readOnly: true,
+    });
+
+    expect(screen.queryByText('Max stock reached')).not.toBeInTheDocument();
+  });
+
+  it('both product name and image link to product page', () => {
+    renderCartItem();
+
+    const links = screen.getAllByRole('link', { name: /test product/i });
+    expect(links.length).toBe(2);
+    links.forEach((link) => {
+      expect(link).toHaveAttribute('href', '/products/test-product');
+    });
+  });
+
+  it('shows strikethrough price only with compareAtPrice', () => {
+    renderCartItem();
+
+    const strikethroughElement = screen.getByText('$39.99');
+    expect(strikethroughElement.className).toContain('strikethrough');
+  });
+
+  it('disables increase button and shows max stock warning when at max', () => {
+    renderCartItem({ item: { ...mockItem, quantity: 10, maxStock: 10 } });
+
+    const increaseButton = screen.getByRole('button', { name: '+' });
+    expect(increaseButton).toBeDisabled();
+    expect(screen.getByText('Max stock reached')).toBeInTheDocument();
   });
 });

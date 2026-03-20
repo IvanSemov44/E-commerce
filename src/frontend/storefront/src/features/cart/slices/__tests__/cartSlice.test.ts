@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { cartReducer, addItem, removeItem, updateQuantity, clearCart } from '../cartSlice';
-import type { CartState, CartItem } from '../cartSlice';
+import type { CartState } from '../cartSlice';
+import type { CartItem } from '../../types';
 
 describe('cartSlice', () => {
   let initialState: CartState;

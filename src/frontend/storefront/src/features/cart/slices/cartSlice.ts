@@ -2,17 +2,9 @@ import { createSlice, createSelector } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/shared/lib/store';
 import { logger } from '@/shared/lib/utils/logger';
+import type { CartItem } from '../types';
 
-export interface CartItem {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  quantity: number;
-  maxStock: number;
-  image: string;
-  compareAtPrice?: number;
-}
+export type { CartItem };
 
 export interface CartState {
   items: CartItem[];

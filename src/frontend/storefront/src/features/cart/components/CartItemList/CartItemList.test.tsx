@@ -2,13 +2,13 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CartItemList } from './CartItemList';
-import type { DisplayCartItem } from '../CartItemList';
+import type { CartItem } from '@/features/cart/types';
 
 vi.mock('@/features/cart/hooks', () => ({
   useCartItemActions: vi.fn(),
 }));
 
-const mockItems: DisplayCartItem[] = [
+const mockItems: CartItem[] = [
   {
     id: '1',
     name: 'Laptop',
@@ -90,5 +90,19 @@ describe('CartItemList', () => {
 
     const items = screen.getAllByText(/Laptop|Mouse/);
     expect(items[0]).toHaveTextContent('Laptop');
+  });
+
+  it('uses singular item text when cart has one item', () => {
+    const singleItem = [mockItems[0]];
+
+    render(
+      <BrowserRouter>
+        <CartItemList items={singleItem} />
+      </BrowserRouter>
+    );
+
+    const heading = screen.getByRole('heading');
+    expect(heading.textContent).toContain('1');
+    expect(heading.textContent).toMatch(/product/i);
   });
 });
