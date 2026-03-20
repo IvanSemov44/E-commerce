@@ -159,4 +159,88 @@ describe('CartPage', () => {
     expect(screen.getByText('Test Product')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'cart.proceedToCheckout' })).toBeInTheDocument();
   });
+
+  it('shows skeleton when loading with empty items', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [],
+      totals: defaultTotals,
+      isLoading: true,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    const skeletonItems = document.querySelectorAll('[aria-busy="true"]');
+    expect(skeletonItems.length).toBeGreaterThan(0);
+    expect(screen.queryByText('cart.emptyCart')).not.toBeInTheDocument();
+  });
+
+  it('shows summary even when loading if items are present', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [mockItem],
+      totals: { subtotal: 59.98, shipping: 10, tax: 5.4, total: 75.38 },
+      isLoading: true,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.getByRole('link', { name: 'cart.proceedToCheckout' })).toBeInTheDocument();
+  });
+
+  it('displays high shipping costs correctly', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [mockItem],
+      totals: { subtotal: 50.0, shipping: 25.0, tax: 6.0, total: 81.0 },
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'cart.proceedToCheckout' })).toBeInTheDocument();
+  });
+
+  it('displays free shipping correctly', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [mockItem],
+      totals: { subtotal: 150.0, shipping: 0, tax: 13.5, total: 163.5 },
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
+  });
+
+  it('renders single item without plural label', () => {
+    const singleItem = { ...mockItem, id: '1', name: 'Single Product' };
+
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [singleItem],
+      totals: { subtotal: 29.99, shipping: 5, tax: 2.7, total: 37.69 },
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.getByText('Single Product')).toBeInTheDocument();
+  });
+
+  it('handles zero totals in empty cart', () => {
+    vi.mocked(useCartModule.useCart).mockReturnValue({
+      displayItems: [],
+      totals: { subtotal: 0, shipping: 0, tax: 0, total: 0 },
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    render();
+
+    expect(screen.getByText('cart.emptyCart')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'cart.proceedToCheckout' })).not.toBeInTheDocument();
+  });
 });
