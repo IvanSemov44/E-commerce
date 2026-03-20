@@ -10,7 +10,7 @@ import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { FREE_SHIPPING_THRESHOLD } from '@/shared/lib/utils/constants';
 import styles from './CartPage.module.css';
 
-export default function CartPage() {
+export function CartPage() {
   const { t } = useTranslation();
   const { displayItems, totals, isLoading, handleUpdateQuantity, handleRemove } = useCart();
 

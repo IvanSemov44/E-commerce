@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { describe, it, expect } from 'vitest';
-import CartSummary from '../CartSummary';
+import { CartSummary } from '../CartSummary';
 
 const renderCartSummary = (props: Partial<React.ComponentProps<typeof CartSummary>> = {}) => {
   const defaultProps = {

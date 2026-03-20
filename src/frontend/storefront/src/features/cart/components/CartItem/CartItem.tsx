@@ -12,7 +12,7 @@ interface CartItemProps {
   readOnly?: boolean;
 }
 
-const CartItem = React.memo(function CartItem({
+export const CartItem = React.memo(function CartItem({
   item,
   onUpdateQuantity,
   onRemove,
@@ -84,5 +84,3 @@ const CartItem = React.memo(function CartItem({
     </div>
   );
 });
-
-export default CartItem;

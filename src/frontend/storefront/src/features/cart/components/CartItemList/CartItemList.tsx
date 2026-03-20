@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/ui/Card';
-import CartItem from '../CartItem/CartItem';
+import { CartItem } from '../CartItem/CartItem';
 import styles from './CartItemList.module.css';
 
 export interface DisplayCartItem {
@@ -20,7 +20,7 @@ export interface CartItemListProps {
   onRemove: (id: string) => void;
 }
 
-export default function CartItemList({ items, onUpdateQuantity, onRemove }: CartItemListProps) {
+export function CartItemList({ items, onUpdateQuantity, onRemove }: CartItemListProps) {
   const { t } = useTranslation();
   const itemText = items.length === 1 ? t('cart.item_one') : t('cart.item_other');
 

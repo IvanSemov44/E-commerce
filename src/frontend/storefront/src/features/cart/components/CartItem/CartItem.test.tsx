@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router';
 import { describe, it, expect, vi } from 'vitest';
-import CartItem from '../CartItem';
+import { CartItem } from './CartItem';
 import type { CartItem as CartItemType } from '@/features/cart/slices/cartSlice';
 
 const mockItem: CartItemType = {

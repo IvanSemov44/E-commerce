@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonLabelRow } from '@/shared/components/Skeletons';
 import styles from './CartSkeleton.module.css';
 
-export default function CartSkeleton() {
+export function CartSkeleton() {
   return (
     <div className={styles.cartContainer}>
       <div className={styles.cartItems}>

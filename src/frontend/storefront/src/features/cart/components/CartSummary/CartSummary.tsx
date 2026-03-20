@@ -14,7 +14,7 @@ interface CartSummaryProps {
   freeShippingThreshold: number;
 }
 
-export default function CartSummary({
+export function CartSummary({
   subtotal,
   shipping,
   tax,

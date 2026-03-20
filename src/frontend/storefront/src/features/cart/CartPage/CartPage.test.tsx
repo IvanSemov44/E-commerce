@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
-import CartPage from './CartPage';
+import { CartPage } from './CartPage';
 import * as useCartModule from '@/features/cart/hooks/useCart';
 
 vi.mock('@/features/cart/hooks/useCart', () => ({

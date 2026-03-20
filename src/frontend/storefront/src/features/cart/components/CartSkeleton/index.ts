@@ -1,1 +1,1 @@
-export { default } from './CartSkeleton';
+export { CartSkeleton } from './CartSkeleton';

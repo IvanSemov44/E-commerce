@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import CartSkeleton from './CartSkeleton';
+import { CartSkeleton } from './CartSkeleton';
 
 describe('CartSkeleton', () => {
   it('renders cart container', () => {

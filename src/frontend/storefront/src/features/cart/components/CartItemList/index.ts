@@ -1,2 +1,2 @@
-export { default } from './CartItemList';
+export { CartItemList } from './CartItemList';
 export type { CartItemListProps, DisplayCartItem } from './CartItemList';

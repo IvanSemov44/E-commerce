@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { describe, it, expect, vi } from 'vitest';
-import CartItemList from '../CartItemList';
+import { CartItemList } from './CartItemList';
 import type { DisplayCartItem } from '../CartItemList';
 
 const mockItems: DisplayCartItem[] = [
