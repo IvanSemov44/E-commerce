@@ -3,7 +3,7 @@ import { Card } from '@/shared/components/ui/Card';
 import CartItem from '../CartItem/CartItem';
 import styles from './CartItemList.module.css';
 
-interface DisplayCartItem {
+export interface DisplayCartItem {
   id: string;
   name: string;
   slug: string;
@@ -12,10 +12,9 @@ interface DisplayCartItem {
   maxStock: number;
   image: string;
   compareAtPrice?: number;
-  cartItemId?: string;
 }
 
-interface CartItemListProps {
+export interface CartItemListProps {
   items: DisplayCartItem[];
   onUpdateQuantity: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;

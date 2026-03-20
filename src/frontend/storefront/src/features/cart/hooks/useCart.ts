@@ -85,7 +85,7 @@ export function useCart(): UseCartReturn {
         price: item.price,
         quantity: item.quantity,
         maxStock: 99, // Default max stock
-        image: item.productImage || item.imageUrl || '',
+        image: item.productImage ?? item.imageUrl ?? '',
       }));
     }
     return localCartItems.map((item) => ({
