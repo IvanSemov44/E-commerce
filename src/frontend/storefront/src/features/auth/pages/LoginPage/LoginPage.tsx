@@ -1,17 +1,17 @@
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useLoginMutation } from '../api/authApi';
+import { useLoginMutation } from '@/features/auth/api/authApi';
 import { useAppDispatch } from '@/shared/lib/store';
-import { loginSuccess } from '../slices/authSlice';
+import { loginSuccess } from '@/features/auth/slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { useForm } from '@/shared/hooks/useForm';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
 import { zodValidate } from '@/shared/lib/utils/zodValidate';
-import { createLoginSchema } from '../schemas/authSchemas';
-import styles from './Login.module.css';
+import { createLoginSchema } from '@/features/auth/schemas/authSchemas';
+import styles from './LoginPage.module.css';
 
-export default function Login() {
+export function LoginPage() {
   const { t } = useTranslation();
   const [login, { isLoading }] = useLoginMutation();
   const dispatch = useAppDispatch();

@@ -172,6 +172,20 @@
   padding-right: var(--space-10);
 }
 
+/* Trailing element (e.g. password toggle button) */
+.trailing {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.inputWithTrailing {
+  padding-right: var(--space-10);
+}
+
 /* =============================================================================
    Error Message
    ============================================================================= */

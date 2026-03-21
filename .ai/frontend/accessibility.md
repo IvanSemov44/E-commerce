@@ -16,6 +16,7 @@ Ensure interactive UI remains keyboard-usable, screen-reader friendly, and regre
 ## Real Code References
 - Global focus styles: `src/frontend/storefront/src/index.css`
 - Accessible input labeling: `src/frontend/storefront/src/shared/components/ui/Input/Input.tsx`
+- Raw checkbox with validation ARIA: `src/frontend/storefront/src/features/auth/pages/RegisterPage/RegisterPage.tsx`
 - Payment method radiogroup semantics: `src/frontend/storefront/src/features/checkout/components/PaymentMethodSelector/PaymentMethodSelector.tsx`
 - Accessibility component tests:
   - `src/frontend/storefront/src/shared/components/ui/Input/__tests__/Input.test.tsx`
@@ -25,6 +26,11 @@ Ensure interactive UI remains keyboard-usable, screen-reader friendly, and regre
 - Use `aria-live` for async status updates where users need announcement feedback.
 - Mark decorative icons as `aria-hidden="true"`.
 - Keep keyboard focus order aligned with visual flow.
+- The `Input` component wires `aria-invalid` and `aria-describedby` automatically. For raw
+  `<input type="checkbox">` with validation, add these manually — see `.ai/frontend/auth-forms.md`
+  (Raw Checkbox Accessibility section).
+- Use `aria-invalid={value || undefined}` not `aria-invalid={false}` — the attribute must be
+  absent when valid, not set to `false`.
 
 ## Common Mistakes
 - Clickable elements without labels.

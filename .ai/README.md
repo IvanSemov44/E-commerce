@@ -67,6 +67,7 @@ This is the canonical AI documentation for this repository. All assistant-specif
   - `.ai/frontend/hooks.md`
   - `.ai/frontend/routing.md`
   - `.ai/frontend/forms.md`
+  - `.ai/frontend/auth-forms.md`
   - `.ai/frontend/accessibility.md`
 - Avoid known pitfalls:
   - `.ai/reference/common-mistakes.md`

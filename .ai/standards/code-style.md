@@ -6,6 +6,20 @@ Owner: @ivans
 ## Purpose
 Define cross-project style conventions that improve consistency and readability.
 
+## Import Rules
+
+**Same folder → relative. Different folder → `@/` alias. Never `../`.**
+
+| Scenario | Style | Example |
+|---|---|---|
+| Same folder | `./` | `import styles from './Button.module.css'` |
+| Barrel re-exporting siblings | `./` | `export { Button } from './Button'` |
+| Different folder, same feature | `@/` | `import { authApi } from '@/features/auth/api/authApi'` |
+| Cross-feature or shared | `@/` | `import { useForm } from '@/shared/hooks/useForm'` |
+| Never | `../` | ❌ `import x from '../../somewhere'` |
+
+The rule of thumb: if you need to go up one level or more (`../`), use `@/` instead.
+
 ## General Rules
 1. Follow established project formatter/linter output.
 2. Use clear names over abbreviations.

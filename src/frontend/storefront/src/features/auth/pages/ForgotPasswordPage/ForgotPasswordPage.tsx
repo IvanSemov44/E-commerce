@@ -1,31 +1,35 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useForgotPasswordMutation } from '../api/authApi';
+import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
+import { useForm } from '@/shared/hooks/useForm';
+import { zodValidate } from '@/shared/lib/utils/zodValidate';
+import { createForgotPasswordSchema } from '@/features/auth/schemas/authSchemas';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { Button, Input, Card } from '@/shared/components/ui';
-import styles from './ForgotPassword.module.css';
+import styles from './ForgotPasswordPage.module.css';
 
-export default function ForgotPassword() {
+export function ForgotPasswordPage() {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const { toast } = useToast();
   const { handleError } = useApiErrorHandler();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      await forgotPassword({ email }).unwrap();
-      setSuccess(true);
-      toast.success(t('forgotPassword.resetLinkSent'));
-    } catch (err) {
-      handleError(err, t('common.error'));
-    }
-  };
+  const form = useForm({
+    initialValues: { email: '' },
+    validate: zodValidate(createForgotPasswordSchema(t)),
+    onSubmit: async (values) => {
+      try {
+        await forgotPassword({ email: values.email }).unwrap();
+        setSuccess(true);
+        toast.success(t('forgotPassword.resetLinkSent'));
+      } catch (err) {
+        handleError(err, t('common.error'));
+      }
+    },
+  });
 
   return (
     <div className={styles.container}>
@@ -46,19 +50,23 @@ export default function ForgotPassword() {
           <>
             <p className={styles.description}>{t('forgotPassword.subtitle')}</p>
 
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form onSubmit={form.handleSubmit} className={styles.form}>
               <Input
                 label={t('forgotPassword.emailLabel')}
                 type="email"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                disabled={!email || isLoading}
+                name="email"
+                value={form.values.email}
+                onChange={form.handleChange}
+                error={form.errors.email}
+                disabled={isLoading}
                 required
                 placeholder={t('forgotPassword.emailPlaceholder')}
               />
 
-              <Button type="submit" disabled={isLoading} size="lg">
-                {isLoading ? t('forgotPassword.sending') : t('forgotPassword.sendResetLink')}
+              <Button type="submit" disabled={isLoading || form.isSubmitting} size="lg">
+                {isLoading || form.isSubmitting
+                  ? t('forgotPassword.sending')
+                  : t('forgotPassword.sendResetLink')}
               </Button>
             </form>
 
