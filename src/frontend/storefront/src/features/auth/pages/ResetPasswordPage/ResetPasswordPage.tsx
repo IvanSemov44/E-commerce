@@ -1,48 +1,35 @@
-import { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useResetPasswordMutation } from '@/features/auth/api/authApi';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import { useToast, useApiErrorHandler } from '@/shared/hooks';
-import { useForm } from '@/shared/hooks/useForm';
-import { zodValidate } from '@/shared/lib/utils/zodValidate';
-import { createResetPasswordSchema } from '@/features/auth/schemas/authSchemas';
 import { Button, Input, Card } from '@/shared/components/ui';
+import { PasswordStrengthIndicator } from '@/features/auth/components/PasswordStrengthIndicator/PasswordStrengthIndicator';
+import { PasswordToggleButton } from '@/features/auth/components/PasswordToggleButton/PasswordToggleButton';
+import { useResetPasswordForm } from './useResetPasswordForm';
 import styles from './ResetPasswordPage.module.css';
 
 export function ResetPasswordPage() {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [success, setSuccess] = useState(false);
-  const [resetPassword, { isLoading }] = useResetPasswordMutation();
-  const { toast } = useToast();
-  const { handleError } = useApiErrorHandler();
-
-  const email = searchParams.get('email') ?? '';
-  const token = searchParams.get('token') ?? '';
-
-  const form = useForm({
-    initialValues: { password: '', confirmPassword: '' },
-    validate: zodValidate(createResetPasswordSchema(t)),
-    onSubmit: async (values) => {
-      try {
-        await resetPassword({ email, token, newPassword: values.password }).unwrap();
-        setSuccess(true);
-        toast.success(t('resetPassword.passwordResetSuccess'));
-        navigate(ROUTE_PATHS.login);
-      } catch (err) {
-        handleError(err, t('resetPassword.failed'));
-      }
-    },
-  });
+  const {
+    values,
+    fieldErrors,
+    password,
+    confirmPassword,
+    submitted,
+    hasValidParams,
+    handleChange,
+    handleBlur,
+    action,
+    isPending,
+  } = useResetPasswordForm();
 
   return (
     <div className={styles.container}>
       <Card variant="elevated" padding="lg" className={styles.card}>
-        <h1 className={styles.title}>{t('resetPassword.title')}</h1>
+        <h1 id="reset-password-title" className={styles.title}>
+          {t('resetPassword.title')}
+        </h1>
 
-        {success ? (
+        {submitted ? (
           <div className={styles.centered}>
             <div className={styles.successBox}>
               <p className={styles.successTitle}>{t('resetPassword.successTitle')}</p>
@@ -54,39 +41,66 @@ export function ResetPasswordPage() {
           </div>
         ) : (
           <>
-            {email && token ? (
+            {hasValidParams ? (
               <>
                 <p className={styles.description}>{t('resetPassword.subtitle')}</p>
 
-                <form onSubmit={form.handleSubmit} className={styles.form}>
+                <form
+                  action={action}
+                  noValidate
+                  aria-labelledby="reset-password-title"
+                  className={styles.form}
+                >
                   <Input
                     label={t('resetPassword.newPassword')}
-                    type="password"
+                    type={password.inputType}
                     name="password"
-                    value={form.values.password}
-                    onChange={form.handleChange}
-                    error={form.errors.password}
-                    disabled={isLoading}
+                    value={values.password}
+                    autoComplete="new-password"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={fieldErrors.password}
+                    disabled={isPending}
                     required
                     placeholder={t('resetPassword.newPasswordPlaceholder')}
+                    trailingElement={
+                      <PasswordToggleButton
+                        show={password.show}
+                        ariaLabel={password.ariaLabel}
+                        onClick={password.toggle}
+                      />
+                    }
                   />
+
+                  <PasswordStrengthIndicator password={values.password} />
 
                   <Input
                     label={t('resetPassword.confirmNewPassword')}
-                    type="password"
+                    type={confirmPassword.inputType}
                     name="confirmPassword"
-                    value={form.values.confirmPassword}
-                    onChange={form.handleChange}
-                    error={form.errors.confirmPassword}
-                    disabled={isLoading}
+                    value={values.confirmPassword}
+                    autoComplete="new-password"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={fieldErrors.confirmPassword}
+                    disabled={isPending}
                     required
                     placeholder={t('resetPassword.confirmPasswordPlaceholder')}
+                    trailingElement={
+                      <PasswordToggleButton
+                        show={confirmPassword.show}
+                        ariaLabel={confirmPassword.ariaLabel}
+                        onClick={confirmPassword.toggle}
+                      />
+                    }
                   />
 
-                  <Button type="submit" disabled={isLoading || form.isSubmitting} size="lg">
-                    {isLoading || form.isSubmitting
-                      ? t('resetPassword.resetting')
-                      : t('resetPassword.resetPasswordBtn')}
+                  <Button type="submit" disabled={isPending} size="lg">
+                    {isPending ? t('resetPassword.resetting') : t('resetPassword.resetPasswordBtn')}
                   </Button>
                 </form>
               </>
