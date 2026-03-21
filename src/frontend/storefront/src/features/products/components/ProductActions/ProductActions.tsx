@@ -1,17 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/shared/components/ui/Button';
+import { Button, QuantityControl } from '@/shared/components/ui';
 import { ErrorAlert } from '@/shared/components/ErrorAlert';
 import { useAppSelector } from '@/shared/lib/store';
-import { selectCartItemById } from '@/features/cart/slices/cartSlice';
 import { useCartActions, useWishlistToggle } from '@/features/products/hooks';
 import type { ProductDetail } from '@/shared/types';
 import styles from './ProductActions.module.css';
 
 export function ProductActions({ product }: { product: ProductDetail }) {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const cartItem = useAppSelector(selectCartItemById(product.id));
-
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
   const cart = useCartActions(product);
   const wishlist = useWishlistToggle(product.id);
 
@@ -35,35 +32,15 @@ export function ProductActions({ product }: { product: ProductDetail }) {
       <div className={styles.quantitySection}>
         <label className={styles.quantityLabel}>{t('productDetail.quantity')}:</label>
         <div className={styles.quantityControls}>
-          <div className={styles.quantityButtonGroup}>
-            <button
-              onClick={() => cart.setQuantity(Math.max(1, cart.quantity - 1))}
-              className={styles.quantityButton}
-            >
-              −
-            </button>
-            <input
-              type="number"
-              value={cart.quantity}
-              onChange={(e) => {
-                const val = parseInt(e.target.value) || 1;
-                cart.setQuantity(Math.min(product.stockQuantity, Math.max(1, val)));
-              }}
-              className={styles.quantityInput}
-              min="1"
-              max={product.stockQuantity}
-            />
-            <button
-              onClick={() => cart.setQuantity(Math.min(product.stockQuantity, cart.quantity + 1))}
-              disabled={cart.quantity >= product.stockQuantity}
-              className={styles.quantityButton}
-            >
-              +
-            </button>
-          </div>
-          {cartItem && (
+          <QuantityControl
+            value={cart.quantity}
+            max={product.stockQuantity}
+            onChange={cart.setQuantity}
+            editable
+          />
+          {cart.inCartQuantity && (
             <span className={styles.cartHint}>
-              ({cartItem.quantity} {t('productDetail.inCart')})
+              ({cart.inCartQuantity} {t('productDetail.inCart')})
             </span>
           )}
         </div>

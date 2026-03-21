@@ -20,6 +20,7 @@ const defaultCartHook = {
   addToCart: vi.fn(),
   isAdding: false,
   isInStock: true,
+  inCartQuantity: undefined,
 };
 
 const defaultWishlistHook = {
@@ -38,15 +39,13 @@ const authAuthenticated = {
   initialized: true,
 };
 
-const authUnauthenticated = {
+const authGuest = {
   isAuthenticated: false,
   user: null,
   loading: false,
   error: null,
   initialized: true,
 };
-
-const emptyCart = { items: [], lastUpdated: 0 };
 
 const makeProduct = (overrides: Partial<ProductDetail> = {}): ProductDetail => ({
   id: 'test-product',
@@ -63,14 +62,9 @@ const makeProduct = (overrides: Partial<ProductDetail> = {}): ProductDetail => (
   ...overrides,
 });
 
-type PreloadedState = NonNullable<Parameters<typeof renderWithProviders>[1]>['preloadedState'];
-
-const render = (
-  productOverrides: Partial<ProductDetail> = {},
-  preloadedState: PreloadedState = { auth: authAuthenticated, cart: emptyCart }
-) =>
+const render = (productOverrides: Partial<ProductDetail> = {}, auth = authAuthenticated) =>
   renderWithProviders(<ProductActions product={makeProduct(productOverrides)} />, {
-    preloadedState,
+    preloadedState: { auth, cart: { items: [], lastUpdated: 0 } },
     withRouter: false,
   });
 
@@ -104,8 +98,8 @@ describe('ProductActions', () => {
     render();
 
     expect(screen.getByDisplayValue('1')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '−' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '+' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Decrease quantity' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Increase quantity' })).toBeInTheDocument();
   });
 
   it('calls setQuantity when quantity increases', async () => {
@@ -116,32 +110,16 @@ describe('ProductActions', () => {
 
     render();
 
-    await user.click(screen.getByRole('button', { name: '+' }));
+    await user.click(screen.getByRole('button', { name: 'Increase quantity' }));
 
     expect(setQuantity).toHaveBeenCalledWith(2);
   });
 
-  it('shows cart hint when item is in cart', () => {
-    render(
-      {},
-      {
-        auth: authAuthenticated,
-        cart: {
-          items: [
-            {
-              id: 'test-product',
-              quantity: 2,
-              name: 'Test',
-              slug: 'test-product',
-              price: 10,
-              maxStock: 10,
-              image: '/test.jpg',
-            },
-          ],
-          lastUpdated: 0,
-        },
-      }
-    );
+  it('shows cart hint when item is in cart', async () => {
+    const hooks = await import('@/features/products/hooks');
+    vi.mocked(hooks.useCartActions).mockReturnValue({ ...defaultCartHook, inCartQuantity: 2 });
+
+    render();
 
     expect(screen.getByText(/2 in cart/i)).toBeInTheDocument();
   });
@@ -206,13 +184,13 @@ describe('ProductActions', () => {
   });
 
   it('renders wishlist button when authenticated', () => {
-    render({}, { auth: authAuthenticated, cart: emptyCart });
+    render();
 
     expect(screen.getByRole('button', { name: /wishlist/i })).toBeInTheDocument();
   });
 
   it('does not render wishlist button when not authenticated', () => {
-    render({}, { auth: authUnauthenticated, cart: emptyCart });
+    render({}, authGuest);
 
     expect(screen.queryByRole('button', { name: /wishlist/i })).not.toBeInTheDocument();
   });
@@ -253,25 +231,20 @@ describe('ProductActions', () => {
 
     render({ stockQuantity: 10 });
 
-    const increaseButton = screen.getByRole('button', { name: '+' });
+    const increaseButton = screen.getByRole('button', { name: 'Increase quantity' });
     expect(increaseButton).toBeDisabled();
   });
 
-  it('calls setQuantity with minimum of 1 when decreasing at quantity 1', async () => {
-    const user = userEvent.setup();
-    const setQuantity = vi.fn();
+  it('disables decrease button at minimum quantity of 1', async () => {
     const hooks = await import('@/features/products/hooks');
     vi.mocked(hooks.useCartActions).mockReturnValue({
       ...defaultCartHook,
       quantity: 1,
-      setQuantity,
     });
 
     render();
 
-    await user.click(screen.getByRole('button', { name: '−' }));
-
-    expect(setQuantity).toHaveBeenCalledWith(1);
+    expect(screen.getByRole('button', { name: 'Decrease quantity' })).toBeDisabled();
   });
 
   it('shows in wishlist button text when item is in wishlist', async () => {

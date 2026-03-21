@@ -4,8 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CartItemList } from './CartItemList';
 import type { CartItem } from '@/features/cart/types';
 
-vi.mock('@/features/cart/hooks', () => ({
-  useCartItemActions: vi.fn(),
+// CartItem's Redux/RTK Query dependencies are irrelevant to CartItemList behavior.
+// Mock CartItem to isolate the list component tests.
+vi.mock('@/features/cart/components/CartItem/CartItem', () => ({
+  CartItem: ({ item }: { item: CartItem }) => <div data-testid="cart-item">{item.name}</div>,
 }));
 
 const mockItems: CartItem[] = [
@@ -31,13 +33,8 @@ const mockItems: CartItem[] = [
 ];
 
 describe('CartItemList', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    const hooks = await import('@/features/cart/hooks');
-    vi.mocked(hooks.useCartItemActions).mockReturnValue({
-      handleUpdateQuantity: vi.fn(),
-      handleRemove: vi.fn(),
-    });
   });
 
   it('renders cart title', () => {
@@ -88,8 +85,9 @@ describe('CartItemList', () => {
       </BrowserRouter>
     );
 
-    const items = screen.getAllByText(/Laptop|Mouse/);
+    const items = screen.getAllByTestId('cart-item');
     expect(items[0]).toHaveTextContent('Laptop');
+    expect(items[1]).toHaveTextContent('Mouse');
   });
 
   it('uses singular item text when cart has one item', () => {

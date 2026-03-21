@@ -2,7 +2,9 @@ import React from 'react';
 import { Link } from 'react-router';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
-import { useCartItemActions } from '@/features/cart/hooks';
+import { useCartOperations } from '@/features/cart/hooks';
+import { useToast } from '@/shared/hooks';
+import { QuantityControl } from '@/shared/components/ui';
 import type { CartItem as CartItemType } from '@/features/cart/types';
 import styles from './CartItem.module.css';
 
@@ -12,8 +14,28 @@ interface CartItemProps {
 }
 
 export const CartItem = React.memo(function CartItem({ item, readOnly = false }: CartItemProps) {
-  const { handleUpdateQuantity, handleRemove } = useCartItemActions(item.id);
+  const { update, remove } = useCartOperations();
+  const { success, error: showError } = useToast();
+
   const imageSrc = item.image || DEFAULT_PRODUCT_IMAGE;
+
+  async function handleUpdateQuantity(quantity: number) {
+    try {
+      await update(item.id, quantity);
+      success('Cart updated');
+    } catch {
+      showError('Failed to update cart');
+    }
+  }
+
+  async function handleRemove() {
+    try {
+      await remove(item.id);
+      success('Item removed from cart');
+    } catch {
+      showError('Failed to remove item');
+    }
+  }
 
   return (
     <div className={styles.container}>
@@ -42,25 +64,11 @@ export const CartItem = React.memo(function CartItem({ item, readOnly = false }:
         </div>
 
         {!readOnly && (
-          <div className={styles.quantityContainer}>
-            <button
-              onClick={() => void handleUpdateQuantity(item.quantity - 1)}
-              className={styles.quantityButton}
-            >
-              −
-            </button>
-            <span className={styles.quantityDisplay}>{item.quantity}</span>
-            <button
-              onClick={() => void handleUpdateQuantity(item.quantity + 1)}
-              disabled={item.quantity >= item.maxStock}
-              className={styles.quantityButton}
-            >
-              +
-            </button>
-            {item.quantity >= item.maxStock && (
-              <span className={styles.maxStockWarning}>Max stock reached</span>
-            )}
-          </div>
+          <QuantityControl
+            value={item.quantity}
+            max={item.maxStock}
+            onChange={(qty) => void handleUpdateQuantity(qty)}
+          />
         )}
 
         {readOnly && <div className={styles.readOnlyQuantity}>Quantity: {item.quantity}</div>}

@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
-import { addItem, selectCartItemById } from '@/features/cart/slices/cartSlice';
-import { useAddToCartMutation } from '@/features/cart/api';
+import { useAppSelector } from '@/shared/lib/store';
+import { selectCartItemById } from '@/features/cart/slices/cartSlice';
+import { useCartOperations } from '@/features/cart/hooks';
 import { DEFAULT_PRODUCT_IMAGE } from '@/shared/lib/utils/constants';
 import { ADDED_TO_CART_RESET_MS } from '@/features/products/constants';
 import { logger } from '@/shared/lib/utils/logger';
@@ -19,39 +19,47 @@ export interface ProductForCart {
 
 export function useCartActions(product: ProductForCart) {
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const cartItem = useAppSelector(selectCartItemById(product.id));
-  const [addToCartBackend, { isLoading: isAdding }] = useAddToCartMutation();
+  const { add } = useCartOperations();
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  // Only read local Redux cart for guests — authenticated cart lives on the backend
+  const localCartItem = useAppSelector((state) =>
+    isAuthenticated ? undefined : selectCartItemById(product.id)(state)
+  );
 
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [cartError, setCartError] = useState<string | null>(null);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  // React 19: useTransition tracks the async add operation;
+  // isPending stays true until the promise resolves (no manual isAdding state needed)
+  const [isAdding, startTransition] = useTransition();
+
   useEffect(() => () => clearTimeout(resetTimerRef.current), []);
 
   const dismissCartError = () => setCartError(null);
   const isInStock = product.stockQuantity > 0;
 
-  const addToCart = async () => {
-    setCartError(null);
-    const currentInCart = cartItem?.quantity ?? 0;
-    const totalQuantity = currentInCart + quantity;
+  const addToCart = () => {
+    startTransition(async () => {
+      setCartError(null);
 
-    if (totalQuantity > product.stockQuantity) {
-      setCartError(
-        t('products.stockLimitError', {
-          available: product.stockQuantity,
-          inCart: currentInCart,
-        })
-      );
-      return;
-    }
+      // Guest: validate stock client-side (backend validates for authenticated users)
+      if (!isAuthenticated) {
+        const currentInCart = localCartItem?.quantity ?? 0;
+        if (currentInCart + quantity > product.stockQuantity) {
+          setCartError(
+            t('products.stockLimitError', {
+              available: product.stockQuantity,
+              inCart: currentInCart,
+            })
+          );
+          return;
+        }
+      }
 
-    try {
-      dispatch(
-        addItem({
+      try {
+        await add({
           id: product.id,
           name: product.name,
           slug: product.slug,
@@ -60,22 +68,18 @@ export function useCartActions(product: ProductForCart) {
           maxStock: product.stockQuantity,
           image: product.images[0]?.url || DEFAULT_PRODUCT_IMAGE,
           compareAtPrice: product.compareAtPrice,
-        })
-      );
+        });
 
-      if (isAuthenticated) {
-        await addToCartBackend({ productId: product.id, quantity }).unwrap();
+        setAddedToCart(true);
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = setTimeout(() => setAddedToCart(false), ADDED_TO_CART_RESET_MS);
+        setQuantity(1);
+      } catch (error: unknown) {
+        logger.error('useCartActions', 'Failed to add to cart', error);
+        const err = error as { data?: { message?: string }; message?: string };
+        setCartError(err?.data?.message ?? err?.message ?? t('products.addToCartError'));
       }
-
-      setAddedToCart(true);
-      clearTimeout(resetTimerRef.current);
-      resetTimerRef.current = setTimeout(() => setAddedToCart(false), ADDED_TO_CART_RESET_MS);
-      setQuantity(1);
-    } catch (error: unknown) {
-      logger.error('useCartActions', 'Failed to add to cart', error);
-      const err = error as { data?: { message?: string }; message?: string };
-      setCartError(err?.data?.message ?? err?.message ?? t('products.addToCartError'));
-    }
+    });
   };
 
   return {
@@ -87,5 +91,6 @@ export function useCartActions(product: ProductForCart) {
     addToCart,
     isAdding,
     isInStock,
+    inCartQuantity: localCartItem?.quantity,
   };
 }

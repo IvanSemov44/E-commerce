@@ -45,7 +45,7 @@ export const ProductCard = memo(function ProductCard({
 
   const showDiscountBadge = discountPercentage >= 10;
 
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
 
   // Custom hooks
   const { toggleWishlist, isWishlistLoading, isInWishlist } = useWishlistToggle(id);

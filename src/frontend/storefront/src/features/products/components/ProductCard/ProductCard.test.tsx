@@ -16,6 +16,8 @@ vi.mock('@/features/wishlist/api', () => ({
 
 vi.mock('@/features/cart/api', () => ({
   useAddToCartMutation: () => [mockAddToCartBackend, { isLoading: false }],
+  useUpdateCartItemMutation: () => [vi.fn()],
+  useRemoveFromCartMutation: () => [vi.fn()],
 }));
 
 vi.mock('react-i18next', () => ({

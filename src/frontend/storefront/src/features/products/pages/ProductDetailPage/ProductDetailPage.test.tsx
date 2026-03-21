@@ -27,6 +27,8 @@ vi.mock('@/features/wishlist/api', () => ({
 
 vi.mock('@/features/cart/api', () => ({
   useAddToCartMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
+  useUpdateCartItemMutation: () => [vi.fn()],
+  useRemoveFromCartMutation: () => [vi.fn()],
 }));
 
 vi.mock('@/shared/hooks', async (importOriginal) => {

@@ -4,8 +4,14 @@ import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { CheckoutPage } from './CheckoutPage';
 
 // ── hook mocks ────────────────────────────────────────────────────────────────
-vi.mock('@/features/checkout/hooks/useCheckoutCart', () => ({
-  useCheckoutCart: vi.fn(() => ({ cartItems: [], subtotal: 0, isLoading: false })),
+vi.mock('@/features/cart/hooks', () => ({
+  useCart: vi.fn(() => ({
+    displayItems: [],
+    totals: { subtotal: 0, shipping: 0, tax: 0, total: 0 },
+    isLoading: false,
+    isAuthenticated: false,
+  })),
+  useCartSync: vi.fn(() => ({ isLoading: false })),
 }));
 
 vi.mock('@/features/checkout/hooks/useCheckoutPromo', () => ({
@@ -76,18 +82,32 @@ vi.mock('@/shared/components/TrustSignals', () => ({
 }));
 
 // ── imports after mocks ───────────────────────────────────────────────────────
-import * as cartHook from '@/features/checkout/hooks/useCheckoutCart';
+import * as cartHooks from '@/features/cart/hooks';
 import * as orderHook from '@/features/checkout/hooks/useCheckoutOrder';
 import * as telemetry from '@/shared/lib/utils/telemetry';
+
+const mockCartItems = [
+  {
+    id: 'p1',
+    name: 'Widget',
+    slug: 'widget',
+    price: 20,
+    quantity: 1,
+    maxStock: 5,
+    image: '',
+  },
+];
 
 describe('CheckoutPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(cartHook.useCheckoutCart).mockReturnValue({
-      cartItems: [],
-      subtotal: 0,
+    vi.mocked(cartHooks.useCart).mockReturnValue({
+      displayItems: [],
+      totals: { subtotal: 0, shipping: 0, tax: 0, total: 0 },
       isLoading: false,
+      isAuthenticated: false,
     });
+    vi.mocked(cartHooks.useCartSync).mockReturnValue({ isLoading: false });
     vi.mocked(orderHook.useCheckoutOrder).mockReturnValue({
       orderComplete: false,
       orderNumber: '',
@@ -99,10 +119,11 @@ describe('CheckoutPage', () => {
   });
 
   it('shows loading indicator while cart is loading', () => {
-    vi.mocked(cartHook.useCheckoutCart).mockReturnValue({
-      cartItems: [],
-      subtotal: 0,
+    vi.mocked(cartHooks.useCart).mockReturnValue({
+      displayItems: [],
+      totals: { subtotal: 0, shipping: 0, tax: 0, total: 0 },
       isLoading: true,
+      isAuthenticated: false,
     });
 
     renderWithProviders(<CheckoutPage />);
@@ -117,20 +138,11 @@ describe('CheckoutPage', () => {
   });
 
   it('renders checkout form and order summary when cart has items', () => {
-    vi.mocked(cartHook.useCheckoutCart).mockReturnValue({
-      cartItems: [
-        {
-          id: 'p1',
-          name: 'Widget',
-          slug: 'widget',
-          price: 20,
-          quantity: 1,
-          maxStock: 5,
-          image: '',
-        },
-      ],
-      subtotal: 20,
+    vi.mocked(cartHooks.useCart).mockReturnValue({
+      displayItems: mockCartItems,
+      totals: { subtotal: 20, shipping: 0, tax: 0, total: 20 },
       isLoading: false,
+      isAuthenticated: false,
     });
 
     renderWithProviders(<CheckoutPage />);
@@ -140,20 +152,11 @@ describe('CheckoutPage', () => {
   });
 
   it('renders OrderSuccess when order is complete', () => {
-    vi.mocked(cartHook.useCheckoutCart).mockReturnValue({
-      cartItems: [
-        {
-          id: 'p1',
-          name: 'Widget',
-          slug: 'widget',
-          price: 20,
-          quantity: 1,
-          maxStock: 5,
-          image: '',
-        },
-      ],
-      subtotal: 20,
+    vi.mocked(cartHooks.useCart).mockReturnValue({
+      displayItems: mockCartItems,
+      totals: { subtotal: 20, shipping: 0, tax: 0, total: 20 },
       isLoading: false,
+      isAuthenticated: false,
     });
 
     vi.mocked(orderHook.useCheckoutOrder).mockReturnValue({
@@ -187,20 +190,11 @@ describe('CheckoutPage', () => {
   });
 
   it('shows error alert when order has an error', () => {
-    vi.mocked(cartHook.useCheckoutCart).mockReturnValue({
-      cartItems: [
-        {
-          id: 'p1',
-          name: 'Widget',
-          slug: 'widget',
-          price: 20,
-          quantity: 1,
-          maxStock: 5,
-          image: '',
-        },
-      ],
-      subtotal: 20,
+    vi.mocked(cartHooks.useCart).mockReturnValue({
+      displayItems: mockCartItems,
+      totals: { subtotal: 20, shipping: 0, tax: 0, total: 20 },
       isLoading: false,
+      isAuthenticated: false,
     });
 
     vi.mocked(orderHook.useCheckoutOrder).mockReturnValue({

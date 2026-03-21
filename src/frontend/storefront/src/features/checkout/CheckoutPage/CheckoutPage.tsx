@@ -10,7 +10,8 @@ import { telemetry } from '@/shared/lib/utils/telemetry';
 import { LocationIcon } from '@/shared/components/icons';
 import { Button, Card, EmptyState, ErrorAlert, TrustSignals } from '@/shared/components';
 import { CheckoutForm, OrderSummary, OrderSuccess } from '@/features/checkout/components';
-import { useCheckoutCart, useCheckoutPromo, useCheckoutOrder } from '@/features/checkout/hooks';
+import { useCheckoutPromo, useCheckoutOrder } from '@/features/checkout/hooks';
+import { useCart } from '@/features/cart/hooks';
 import { useGetPaymentMethodsQuery } from '@/features/checkout/api';
 import { CHECKOUT_DRAFT_KEY } from '@/features/checkout/constants';
 import styles from './CheckoutPage.module.css';
@@ -30,7 +31,8 @@ export function CheckoutPage() {
     : (availableMethods[0] ?? 'credit_card');
 
   // Feature hooks
-  const { cartItems, subtotal, isLoading } = useCheckoutCart();
+  const { displayItems: cartItems, totals: cartTotals, isLoading } = useCart();
+  const subtotal = cartTotals.subtotal;
   const promo = useCheckoutPromo({ subtotal });
 
   const discount = promo.promoCodeValidation?.isValid

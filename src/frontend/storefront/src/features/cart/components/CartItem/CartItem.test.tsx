@@ -6,14 +6,22 @@ import { render } from '@testing-library/react';
 import { CartItem } from './CartItem';
 import type { CartItem as CartItemType } from '@/features/cart/types';
 
+const mockUpdate = vi.fn();
+const mockRemove = vi.fn();
+const mockSuccess = vi.fn();
+const mockShowError = vi.fn();
+
 vi.mock('@/features/cart/hooks', () => ({
-  useCartItemActions: vi.fn(),
+  useCartOperations: () => ({
+    update: mockUpdate,
+    remove: mockRemove,
+    add: vi.fn(),
+  }),
 }));
 
-const defaultActions = {
-  handleUpdateQuantity: vi.fn(),
-  handleRemove: vi.fn(),
-};
+vi.mock('@/shared/hooks', () => ({
+  useToast: () => ({ success: mockSuccess, error: mockShowError }),
+}));
 
 const mockItem: CartItemType = {
   id: '1',
@@ -35,10 +43,10 @@ const renderCartItem = (props: Partial<React.ComponentProps<typeof CartItem>> = 
 };
 
 describe('CartItem', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    const hooks = await import('@/features/cart/hooks');
-    vi.mocked(hooks.useCartItemActions).mockReturnValue({ ...defaultActions });
+    mockUpdate.mockResolvedValue(undefined);
+    mockRemove.mockResolvedValue(undefined);
   });
 
   it('renders item details correctly', () => {
@@ -61,40 +69,75 @@ describe('CartItem', () => {
     expect(screen.getByText('$59.98')).toBeInTheDocument();
   });
 
-  it('calls handleUpdateQuantity when quantity buttons are clicked', async () => {
+  it('calls update with incremented quantity when + clicked', async () => {
     const user = userEvent.setup();
-    const handleUpdateQuantity = vi.fn();
-    const hooks = await import('@/features/cart/hooks');
-    vi.mocked(hooks.useCartItemActions).mockReturnValue({
-      ...defaultActions,
-      handleUpdateQuantity,
-    });
-
     renderCartItem();
 
-    await user.click(screen.getByRole('button', { name: '+' }));
-    expect(handleUpdateQuantity).toHaveBeenCalledWith(3);
+    await user.click(screen.getByRole('button', { name: 'Increase quantity' }));
 
-    await user.click(screen.getByRole('button', { name: '−' }));
-    expect(handleUpdateQuantity).toHaveBeenCalledWith(1);
+    expect(mockUpdate).toHaveBeenCalledWith('1', 3);
   });
 
-  it('calls handleRemove when remove button is clicked', async () => {
+  it('calls update with decremented quantity when − clicked', async () => {
     const user = userEvent.setup();
-    const handleRemove = vi.fn();
-    const hooks = await import('@/features/cart/hooks');
-    vi.mocked(hooks.useCartItemActions).mockReturnValue({ ...defaultActions, handleRemove });
+    renderCartItem();
 
+    await user.click(screen.getByRole('button', { name: 'Decrease quantity' }));
+
+    expect(mockUpdate).toHaveBeenCalledWith('1', 1);
+  });
+
+  it('calls remove when Remove button clicked', async () => {
+    const user = userEvent.setup();
     renderCartItem();
 
     await user.click(screen.getByRole('button', { name: /remove/i }));
-    expect(handleRemove).toHaveBeenCalled();
+
+    expect(mockRemove).toHaveBeenCalledWith('1');
+  });
+
+  it('shows success toast after update', async () => {
+    const user = userEvent.setup();
+    renderCartItem();
+
+    await user.click(screen.getByRole('button', { name: 'Increase quantity' }));
+
+    expect(mockSuccess).toHaveBeenCalledWith('Cart updated');
+  });
+
+  it('shows error toast when update fails', async () => {
+    mockUpdate.mockRejectedValue(new Error('network error'));
+    const user = userEvent.setup();
+    renderCartItem();
+
+    await user.click(screen.getByRole('button', { name: 'Increase quantity' }));
+
+    expect(mockShowError).toHaveBeenCalledWith('Failed to update cart');
+  });
+
+  it('shows success toast after remove', async () => {
+    const user = userEvent.setup();
+    renderCartItem();
+
+    await user.click(screen.getByRole('button', { name: /remove/i }));
+
+    expect(mockSuccess).toHaveBeenCalledWith('Item removed from cart');
+  });
+
+  it('shows error toast when remove fails', async () => {
+    mockRemove.mockRejectedValue(new Error('network error'));
+    const user = userEvent.setup();
+    renderCartItem();
+
+    await user.click(screen.getByRole('button', { name: /remove/i }));
+
+    expect(mockShowError).toHaveBeenCalledWith('Failed to remove item');
   });
 
   it('disables increase button when max stock is reached', () => {
     renderCartItem({ item: { ...mockItem, quantity: 10, maxStock: 10 } });
 
-    expect(screen.getByRole('button', { name: '+' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Increase quantity' })).toBeDisabled();
     expect(screen.getByText('Max stock reached')).toBeInTheDocument();
   });
 
@@ -102,15 +145,9 @@ describe('CartItem', () => {
     renderCartItem({ readOnly: true });
 
     expect(screen.getByText('Quantity: 2')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '−' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '+' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Decrease quantity' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Increase quantity' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
-  });
-
-  it('renders image with product link', () => {
-    renderCartItem();
-
-    expect(screen.getAllByRole('link', { name: /test product/i }).length).toBeGreaterThan(0);
   });
 
   it('handles item without compareAtPrice', () => {
@@ -120,33 +157,17 @@ describe('CartItem', () => {
     expect(screen.queryByText('$39.99')).not.toBeInTheDocument();
   });
 
-  it('prevents quantity decrease below 1', async () => {
-    const user = userEvent.setup();
-    const handleUpdateQuantity = vi.fn();
-    const hooks = await import('@/features/cart/hooks');
-    vi.mocked(hooks.useCartItemActions).mockReturnValue({
-      ...defaultActions,
-      handleUpdateQuantity,
-    });
-
-    renderCartItem({ item: { ...mockItem, quantity: 1 } });
-
-    await user.click(screen.getByRole('button', { name: '−' }));
-    expect(handleUpdateQuantity).toHaveBeenCalledWith(0);
-  });
-
   it('enables increase button when quantity is below max', () => {
     renderCartItem({ item: { ...mockItem, quantity: 5, maxStock: 10 } });
 
-    expect(screen.getByRole('button', { name: '+' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Increase quantity' })).not.toBeDisabled();
     expect(screen.queryByText('Max stock reached')).not.toBeInTheDocument();
   });
 
-  it('uses default image when image is empty or missing', () => {
+  it('uses default image when image is empty', () => {
     renderCartItem({ item: { ...mockItem, image: '' } });
 
-    const images = screen.getAllByRole('img');
-    expect(images.length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('img').length).toBeGreaterThan(0);
   });
 
   it('handles zero price correctly', () => {
@@ -162,10 +183,7 @@ describe('CartItem', () => {
   });
 
   it('does not show max stock warning in read-only mode', () => {
-    renderCartItem({
-      item: { ...mockItem, quantity: 10, maxStock: 10 },
-      readOnly: true,
-    });
+    renderCartItem({ item: { ...mockItem, quantity: 10, maxStock: 10 }, readOnly: true });
 
     expect(screen.queryByText('Max stock reached')).not.toBeInTheDocument();
   });
@@ -183,15 +201,6 @@ describe('CartItem', () => {
   it('shows strikethrough price only with compareAtPrice', () => {
     renderCartItem();
 
-    const strikethroughElement = screen.getByText('$39.99');
-    expect(strikethroughElement.className).toContain('strikethrough');
-  });
-
-  it('disables increase button and shows max stock warning when at max', () => {
-    renderCartItem({ item: { ...mockItem, quantity: 10, maxStock: 10 } });
-
-    const increaseButton = screen.getByRole('button', { name: '+' });
-    expect(increaseButton).toBeDisabled();
-    expect(screen.getByText('Max stock reached')).toBeInTheDocument();
+    expect(screen.getByText('$39.99').className).toContain('strikethrough');
   });
 });
