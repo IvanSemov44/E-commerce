@@ -6,9 +6,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
-import { selectCartItems, removeItem } from '../slices/cartSlice';
+import { selectCartItems, clearCart } from '../slices/cartSlice';
 import { useGetCartQuery, useAddToCartMutation } from '../api/cartApi';
-import { useErrorHandler } from '@/shared/hooks/useErrorHandler';
 import { logger } from '@/shared/lib/utils/logger';
 import type { AddToCartRequest } from '@/shared/types';
 
@@ -21,14 +20,16 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const localCartItems = useAppSelector(selectCartItems);
-  const { handleError } = useErrorHandler();
+  // Ref so the sync always reads current local items without needing them as a dep.
+  // This prevents the effect from re-running when clearCart() empties the local cart.
+  const localCartItemsRef = useRef(localCartItems);
+  localCartItemsRef.current = localCartItems;
   const syncInProgressRef = useRef(false);
 
   // Backend cart query - httpOnly cookies handle authentication
   const {
     data: backendCart,
     isLoading: cartLoading,
-    error: cartError,
     refetch: refetchCart,
   } = useGetCartQuery(undefined, {
     skip: !isAuthenticated || !enabled,
@@ -52,18 +53,16 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
 
       try {
         // Get items from local cart that aren't in backend cart
-        const backendProductIds = new Set(backendCart.items.map((item) => item.productId));
-        const itemsToSync = localCartItems.filter((item) => !backendProductIds.has(item.id));
-
-        if (itemsToSync.length === 0) {
-          syncInProgressRef.current = false;
-          return;
-        }
+        // Note: local items use 'id' for productId, backend items use 'productId' field
+        const backendProductIds = new Set((backendCart.items ?? []).map((item) => item.productId));
+        const itemsToSync = localCartItemsRef.current.filter(
+          (item) => !backendProductIds.has(item.id)
+        );
 
         let syncedCount = 0;
         const failedItems: string[] = [];
 
-        // Sync each local item to backend individually
+        // Sync each local item that isn't already in the backend
         for (const item of itemsToSync) {
           try {
             const syncPayload: AddToCartRequest = {
@@ -74,10 +73,7 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
             await addToCart(syncPayload).unwrap();
             syncedCount++;
           } catch (error: unknown) {
-            // Product not found or other error - remove from local cart
             logger.warn('useCartSync', `Failed to sync item ${item.name} (${item.id})`, error);
-            handleError(error);
-            dispatch(removeItem(item.id));
             failedItems.push(item.name);
           }
         }
@@ -96,30 +92,20 @@ export function useCartSync(options: UseCartSyncOptions = {}) {
         }
       } catch (error) {
         logger.error('useCartSync', 'Cart sync failed', error);
-        handleError(error);
       } finally {
+        // Backend is always source of truth — clear local cart even if sync partially failed
+        dispatch(clearCart());
         syncInProgressRef.current = false;
       }
     };
 
     syncCart();
-  }, [
-    enabled,
-    isAuthenticated,
-    backendCart,
-    cartLoading,
-    localCartItems,
-    addToCart,
-    refetchCart,
-    dispatch,
-    handleError,
-  ]);
+     
+    // reading it via ref prevents the effect from re-running when clearCart() empties the cart,
+    // which would otherwise create an infinite sync loop.
+  }, [enabled, isAuthenticated, backendCart, cartLoading, addToCart, refetchCart, dispatch]);
 
   return {
-    backendCart,
     isLoading: cartLoading,
-    error: cartError,
-    isSyncing: syncInProgressRef.current,
-    refetch: refetchCart,
   };
 }

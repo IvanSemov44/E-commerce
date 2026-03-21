@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import Header from './Header';
 
@@ -48,6 +48,10 @@ vi.mock('@/features/cart/slices/cartSlice', async () => {
 
 vi.mock('@/features/cart/api/cartApi', () => ({
   useGetCartQuery: (...args: unknown[]) => getCartQueryMock(...args),
+}));
+
+vi.mock('@/features/auth/api/authApi', () => ({
+  useLogoutMutation: () => [vi.fn().mockResolvedValue({}), {}],
 }));
 
 vi.mock('@/features/wishlist/api/wishlistApi', () => ({
@@ -183,7 +187,7 @@ describe('Header', () => {
     expect(screen.queryByRole('button', { name: 'Sign In' })).not.toBeInTheDocument();
   });
 
-  it('opens user menu and logs out from desktop menu', () => {
+  it('opens user menu and logs out from desktop menu', async () => {
     mockState.auth = {
       isAuthenticated: true,
       user: { firstName: 'Ivan', email: 'ivan@example.com' },
@@ -198,8 +202,10 @@ describe('Header', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: /sign out/i, hidden: true })[0]);
 
+    // dispatch(logout()) runs inside logoutApi().finally() — flush microtasks
+    await act(async () => {});
+
     expect(dispatchMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'auth/logout' }));
-    expect(navigateMock).toHaveBeenCalledWith('/');
   });
 
   it('toggles mobile menu and shows mobile auth links for guests', () => {
@@ -211,7 +217,7 @@ describe('Header', () => {
     expect(screen.getByRole('link', { name: /sign up/i })).toBeInTheDocument();
   });
 
-  it('logs out from mobile menu for authenticated user', () => {
+  it('logs out from mobile menu for authenticated user', async () => {
     mockState.auth = {
       isAuthenticated: true,
       user: { firstName: 'Ivan', email: 'ivan@example.com' },
@@ -222,8 +228,10 @@ describe('Header', () => {
     fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
     fireEvent.click(screen.getAllByRole('button', { name: /sign out/i })[0]);
 
+    // dispatch(logout()) runs inside logoutApi().finally() — flush microtasks
+    await act(async () => {});
+
     expect(dispatchMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'auth/logout' }));
-    expect(navigateMock).toHaveBeenCalledWith('/');
   });
 
   it('requests cart and wishlist with authenticated skip flags', () => {

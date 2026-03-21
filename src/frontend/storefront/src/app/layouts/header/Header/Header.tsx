@@ -1,8 +1,9 @@
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/shared/lib/store';
 import { logout, selectIsAuthenticated } from '@/features/auth/slices/authSlice';
+import { useLogoutMutation } from '@/features/auth/api/authApi';
 import { HEADER_NAV_ITEMS, ROUTE_PATHS } from '@/shared/constants/navigation';
 import { HeartIcon, ShoppingCartIcon, MenuIcon, CloseIcon } from '@/shared/components/icons';
 import { Button } from '@/shared/components/ui/Button';
@@ -17,17 +18,18 @@ import styles from './Header.module.css';
 export default function Header() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const { cartItemCount, wishlistItemCount } = useHeaderData();
+  const [logoutApi] = useLogoutMutation();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleLogout = (onClose: () => void) => {
-    dispatch(logout());
     onClose();
-    navigate(ROUTE_PATHS.home);
+    // Fire and forget — clear cookie server-side then clear local state.
+    // ProtectedLayout handles the redirect to /login via <Navigate>.
+    void logoutApi().finally(() => dispatch(logout()));
   };
 
   return (

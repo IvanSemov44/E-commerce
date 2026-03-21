@@ -1,20 +1,12 @@
 import { useMemo } from 'react';
 import { useAppSelector } from '@/shared/lib/store';
+import type { RootState } from '@/shared/lib/store';
 import { selectCartItems, selectCartSubtotal } from '../slices/cartSlice';
-import { authReducer } from '@/features/auth/slices/authSlice';
 import { useGetCartQuery } from '../api/cartApi';
-import { useCartSync } from './useCartSync';
 import { calculateOrderTotals } from '@/shared/lib/utils/orderCalculations';
+import type { CartItem } from '../types';
 
-interface DisplayItem {
-  id: string; // For authenticated: cartItemId, for guest: productId
-  name: string;
-  slug: string;
-  price: number;
-  quantity: number;
-  maxStock: number;
-  image: string;
-}
+const EMPTY_ITEMS: CartItem[] = [];
 
 interface CartTotals {
   subtotal: number;
@@ -24,73 +16,56 @@ interface CartTotals {
 }
 
 interface UseCartReturn {
-  displayItems: DisplayItem[];
+  displayItems: CartItem[];
   totals: CartTotals;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
 
-// Selector for authentication state
-const selectIsAuthenticated = (state: { auth: ReturnType<typeof authReducer> }) =>
-  state.auth.isAuthenticated;
-
 export function useCart(): UseCartReturn {
-  const localCartItems = useAppSelector(selectCartItems);
-  const localSubtotal = useAppSelector(selectCartSubtotal);
-  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isAuthenticated = useAppSelector((state: RootState) => state.auth.isAuthenticated);
+
+  // Only select local cart when guest (avoid unnecessary updates when authenticated)
+  const localCartItems = useAppSelector((state: RootState) =>
+    isAuthenticated ? EMPTY_ITEMS : selectCartItems(state)
+  );
+  const localSubtotal = useAppSelector((state: RootState) =>
+    isAuthenticated ? 0 : selectCartSubtotal(state)
+  );
 
   // Backend cart query (only used when authenticated)
   const { data: backendCart, isLoading: isCartLoading } = useGetCartQuery(undefined, {
     skip: !isAuthenticated,
   });
 
-  // Sync local cart with backend on login
-  const { isLoading: isSyncLoading } = useCartSync({
-    enabled: isAuthenticated,
-  });
-
-  // Determine which cart to display
-  const displayItems: DisplayItem[] = useMemo(() => {
-    if (isAuthenticated && backendCart?.items) {
-      return backendCart.items.map((item) => ({
-        id: item.id, // Backend returns 'id' as the cart item ID
+  const { displayItems, totals } = useMemo(() => {
+    if (isAuthenticated && backendCart) {
+      const items: CartItem[] = backendCart.items.map((item) => ({
+        id: item.id,
         name: item.productName,
-        slug: '', // Not available in CartItemDto
+        slug: '', // TODO: Backend should provide product slug for navigation
         price: item.price,
         quantity: item.quantity,
-        maxStock: 99, // Default max stock
+        maxStock: 999, // Backend doesn't provide max stock; use high default
         image: item.productImage ?? item.imageUrl ?? '',
       }));
+      const subtotal = backendCart.subtotal;
+      const { shipping, tax, total } = calculateOrderTotals(subtotal);
+      return { displayItems: items, totals: { subtotal, shipping, tax, total } };
     }
-    return localCartItems.map((item) => ({
-      id: item.id,
-      name: item.name,
-      slug: item.slug,
-      price: item.price,
-      quantity: item.quantity,
-      maxStock: item.maxStock,
-      image: item.image,
-    }));
-  }, [isAuthenticated, backendCart, localCartItems]);
 
-  // Calculate subtotal
-  const subtotal = useMemo(() => {
-    if (isAuthenticated && backendCart?.items) {
-      return backendCart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    }
-    return localSubtotal;
-  }, [isAuthenticated, backendCart, localSubtotal]);
-
-  // Calculate totals
-  const totals: CartTotals = useMemo(() => {
+    const subtotal = localSubtotal;
     const { shipping, tax, total } = calculateOrderTotals(subtotal);
-    return { subtotal, shipping, tax, total };
-  }, [subtotal]);
+    return {
+      displayItems: localCartItems,
+      totals: { subtotal, shipping, tax, total },
+    };
+  }, [isAuthenticated, backendCart, localCartItems, localSubtotal]);
 
   return {
     displayItems,
     totals,
-    isLoading: isCartLoading || isSyncLoading,
+    isLoading: isCartLoading,
     isAuthenticated,
   };
 }
