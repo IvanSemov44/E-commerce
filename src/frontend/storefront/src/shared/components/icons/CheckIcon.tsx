@@ -3,7 +3,7 @@ interface CheckIconProps {
   size?: number;
 }
 
-export default function CheckIcon({ className, size = 24 }: CheckIconProps) {
+export function CheckIcon({ className, size = 24 }: CheckIconProps) {
   return (
     <svg
       className={className}

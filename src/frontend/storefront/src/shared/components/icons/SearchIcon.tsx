@@ -3,7 +3,7 @@ interface SearchIconProps {
   size?: number;
 }
 
-export default function SearchIcon({ className, size = 24 }: SearchIconProps) {
+export function SearchIcon({ className, size = 24 }: SearchIconProps) {
   return (
     <svg
       className={className}

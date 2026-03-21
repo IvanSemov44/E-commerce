@@ -3,7 +3,7 @@ interface YouTubeIconProps {
   size?: number;
 }
 
-export default function YouTubeIcon({ className, size = 20 }: YouTubeIconProps) {
+export function YouTubeIcon({ className, size = 20 }: YouTubeIconProps) {
   return (
     <svg
       className={className}

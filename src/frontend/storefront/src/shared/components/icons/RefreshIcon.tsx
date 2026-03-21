@@ -3,7 +3,7 @@ interface RefreshIconProps {
   size?: number;
 }
 
-export default function RefreshIcon({ className, size = 24 }: RefreshIconProps) {
+export function RefreshIcon({ className, size = 24 }: RefreshIconProps) {
   return (
     <svg
       className={className}

@@ -3,7 +3,7 @@ interface PackageIconProps {
   size?: number;
 }
 
-export default function PackageIcon({ className, size = 24 }: PackageIconProps) {
+export function PackageIcon({ className, size = 24 }: PackageIconProps) {
   return (
     <svg
       className={className}

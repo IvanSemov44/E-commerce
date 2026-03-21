@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-export default function SpinnerIcon(props: SVGProps<SVGSVGElement>) {
+export function SpinnerIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...props}>
       <circle

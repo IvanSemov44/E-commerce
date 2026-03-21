@@ -1,67 +1,59 @@
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useLoginMutation } from '@/features/auth/api/authApi';
-import { useAppDispatch } from '@/shared/lib/store';
-import { loginSuccess } from '@/features/auth/slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
-import { useForm } from '@/shared/hooks/useForm';
-import { useToast, useApiErrorHandler } from '@/shared/hooks';
 import { Button, Input, Card } from '@/shared/components/ui';
-import { zodValidate } from '@/shared/lib/utils/zodValidate';
-import { createLoginSchema } from '@/features/auth/schemas/authSchemas';
+import { PasswordToggleButton } from '@/features/auth/components/PasswordToggleButton/PasswordToggleButton';
+import { useLoginForm } from './useLoginForm';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
   const { t } = useTranslation();
-  const [login, { isLoading }] = useLoginMutation();
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { handleError } = useApiErrorHandler();
-
-  const form = useForm({
-    initialValues: { email: '', password: '' },
-    validate: zodValidate(createLoginSchema(t)),
-    onSubmit: async (values) => {
-      try {
-        const response = await login(values).unwrap();
-        if (response.success && response.user) {
-          dispatch(loginSuccess(response.user));
-          toast.success(t('auth.loginSuccess'));
-          navigate(ROUTE_PATHS.home);
-        } else {
-          toast.error(response.message || t('auth.loginError'));
-        }
-      } catch (err) {
-        handleError(err, t('auth.loginError'));
-      }
-    },
-  });
+  const { values, fieldErrors, password, handleChange, handleBlur, action, isPending } =
+    useLoginForm();
 
   return (
     <div className={styles.container}>
       <Card variant="elevated" padding="lg" className={styles.card}>
-        <h1 className={styles.title}>{t('auth.login')}</h1>
+        <h1 id="login-title" className={styles.title}>
+          {t('auth.login')}
+        </h1>
 
-        <form onSubmit={form.handleSubmit} className={styles.form}>
+        <form action={action} noValidate aria-labelledby="login-title" className={styles.form}>
           <Input
             label={t('auth.email')}
             type="email"
             name="email"
-            value={form.values.email}
-            onChange={form.handleChange}
-            error={form.errors.email}
+            value={values.email}
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={fieldErrors.email}
+            disabled={isPending}
             required
           />
 
           <Input
             label={t('auth.password')}
-            type="password"
+            type={password.inputType}
             name="password"
-            value={form.values.password}
-            onChange={form.handleChange}
-            error={form.errors.password}
+            value={values.password}
+            autoComplete="current-password"
+            autoCapitalize="none"
+            spellCheck={false}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={fieldErrors.password}
+            disabled={isPending}
             required
+            trailingElement={
+              <PasswordToggleButton
+                show={password.show}
+                ariaLabel={password.ariaLabel}
+                onClick={password.toggle}
+              />
+            }
           />
 
           <div className={styles.forgotPassword}>
@@ -70,8 +62,8 @@ export function LoginPage() {
             </Link>
           </div>
 
-          <Button type="submit" disabled={isLoading || form.isSubmitting} size="lg">
-            {isLoading || form.isSubmitting ? t('auth.loggingIn') : t('auth.login')}
+          <Button type="submit" disabled={isPending} size="lg">
+            {isPending ? t('auth.loggingIn') : t('auth.login')}
           </Button>
         </form>
 
@@ -79,7 +71,7 @@ export function LoginPage() {
           <p className={styles.footerText}>
             {t('auth.dontHaveAccount')}{' '}
             <Link to={ROUTE_PATHS.register} className={styles.footerLink}>
-              {t('auth.loginHere')}
+              {t('auth.registerHere')}
             </Link>
           </p>
         </div>

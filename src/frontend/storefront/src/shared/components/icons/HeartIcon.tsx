@@ -4,7 +4,7 @@ interface HeartIconProps {
   size?: number;
 }
 
-export default function HeartIcon({ className, filled = false, size = 24 }: HeartIconProps) {
+export function HeartIcon({ className, filled = false, size = 24 }: HeartIconProps) {
   return (
     <svg
       className={className}

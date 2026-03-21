@@ -3,7 +3,7 @@ interface UserIconProps {
   size?: number;
 }
 
-export default function UserIcon({ className, size = 24 }: UserIconProps) {
+export function UserIcon({ className, size = 24 }: UserIconProps) {
   return (
     <svg
       className={className}

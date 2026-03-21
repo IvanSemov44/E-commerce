@@ -3,7 +3,7 @@ interface LinkedInIconProps {
   size?: number;
 }
 
-export default function LinkedInIcon({ className, size = 20 }: LinkedInIconProps) {
+export function LinkedInIcon({ className, size = 20 }: LinkedInIconProps) {
   return (
     <svg
       className={className}

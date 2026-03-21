@@ -3,7 +3,7 @@ interface GridIconProps {
   size?: number;
 }
 
-export default function GridIcon({ className, size = 24 }: GridIconProps) {
+export function GridIcon({ className, size = 24 }: GridIconProps) {
   return (
     <svg
       className={className}

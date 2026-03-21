@@ -3,7 +3,7 @@ interface InstagramIconProps {
   size?: number;
 }
 
-export default function InstagramIcon({ className, size = 20 }: InstagramIconProps) {
+export function InstagramIcon({ className, size = 20 }: InstagramIconProps) {
   return (
     <svg
       className={className}

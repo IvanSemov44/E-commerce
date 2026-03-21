@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-export default function CreditCardIcon(props: SVGProps<SVGSVGElement>) {
+export function CreditCardIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" {...props}>
       <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />

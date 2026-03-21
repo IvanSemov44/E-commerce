@@ -3,7 +3,7 @@ interface FacebookIconProps {
   size?: number;
 }
 
-export default function FacebookIcon({ className, size = 20 }: FacebookIconProps) {
+export function FacebookIcon({ className, size = 20 }: FacebookIconProps) {
   return (
     <svg
       className={className}

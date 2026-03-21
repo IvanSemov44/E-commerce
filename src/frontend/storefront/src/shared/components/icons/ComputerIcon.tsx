@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-export default function ComputerIcon(props: SVGProps<SVGSVGElement>) {
+export function ComputerIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
       <path

@@ -3,7 +3,7 @@ interface TwitterIconProps {
   size?: number;
 }
 
-export default function TwitterIcon({ className, size = 20 }: TwitterIconProps) {
+export function TwitterIcon({ className, size = 20 }: TwitterIconProps) {
   return (
     <svg
       className={className}

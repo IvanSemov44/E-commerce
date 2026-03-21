@@ -3,7 +3,7 @@ interface TruckIconProps {
   size?: number;
 }
 
-export default function TruckIcon({ className, size = 24 }: TruckIconProps) {
+export function TruckIcon({ className, size = 24 }: TruckIconProps) {
   return (
     <svg
       className={className}

@@ -21,4 +21,4 @@ function LogoutIcon({ className }: LogoutIconProps) {
   );
 }
 
-export default LogoutIcon;
+export { LogoutIcon };

@@ -3,7 +3,7 @@ interface ShoppingCartIconProps {
   size?: number;
 }
 
-export default function ShoppingCartIcon({ className, size = 24 }: ShoppingCartIconProps) {
+export function ShoppingCartIcon({ className, size = 24 }: ShoppingCartIconProps) {
   return (
     <svg
       className={className}

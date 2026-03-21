@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-export default function ErrorIcon(props: SVGProps<SVGSVGElement>) {
+export function ErrorIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" {...props}>
       <path

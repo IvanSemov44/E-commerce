@@ -3,7 +3,7 @@ interface ShieldIconProps {
   size?: number;
 }
 
-export default function ShieldIcon({ className, size = 24 }: ShieldIconProps) {
+export function ShieldIcon({ className, size = 24 }: ShieldIconProps) {
   return (
     <svg
       className={className}

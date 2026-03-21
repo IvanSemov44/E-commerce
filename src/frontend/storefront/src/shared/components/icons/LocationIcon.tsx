@@ -22,4 +22,4 @@ function LocationIcon({ className }: LocationIconProps) {
   );
 }
 
-export default LocationIcon;
+export { LocationIcon };

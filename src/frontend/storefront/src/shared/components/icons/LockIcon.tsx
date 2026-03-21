@@ -3,7 +3,7 @@ interface LockIconProps {
   size?: number;
 }
 
-export default function LockIcon({ className, size = 24 }: LockIconProps) {
+export function LockIcon({ className, size = 24 }: LockIconProps) {
   return (
     <svg
       className={className}
