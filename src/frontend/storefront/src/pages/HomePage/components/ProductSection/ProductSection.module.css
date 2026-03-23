@@ -1,0 +1,10 @@
+/**
+ * ProductSection Styles
+ * 
+ * A section component for displaying a group of products with a header and CTA.
+ */
+
+.sectionCta {
+  text-align: center;
+  margin-top: var(--space-8);
+}
