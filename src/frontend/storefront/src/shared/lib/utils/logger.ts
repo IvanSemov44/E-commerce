@@ -84,15 +84,3 @@ export const logger = {
     }
   },
 };
-
-// Export a no-op logger for production use
-export const noopLogger = {
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  group: () => {},
-  metric: () => {},
-};
-
-export default logger;
