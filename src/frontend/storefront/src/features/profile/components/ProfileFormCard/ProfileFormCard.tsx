@@ -1,7 +1,7 @@
 import { useProfileForm } from './useProfileForm';
 import { Card } from '@/shared/components/ui/Card';
-import { ProfileHeader } from '../ProfileHeader/ProfileHeader';
-import { ProfileForm } from '../ProfileForm/ProfileForm';
+import { ProfileHeader } from './ProfileHeader';
+import { ProfileForm } from './ProfileForm';
 
 export function ProfileFormCard() {
   const {
