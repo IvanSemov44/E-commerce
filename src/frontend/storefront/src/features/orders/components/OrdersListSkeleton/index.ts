@@ -1,1 +1,1 @@
-export { default } from './OrdersListSkeleton';
+export { OrdersListSkeleton } from './OrdersListSkeleton';

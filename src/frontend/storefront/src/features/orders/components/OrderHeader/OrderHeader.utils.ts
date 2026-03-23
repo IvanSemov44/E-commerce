@@ -1,4 +1,4 @@
-import type { OrderHeaderProps } from './OrderHeader.types';
+import type { OrderHeaderProps } from './OrderHeader';
 
 /**
  * Get CSS class for status badge based on order status

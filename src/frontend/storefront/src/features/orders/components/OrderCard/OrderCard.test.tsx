@@ -1,8 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { describe, it, expect } from 'vitest';
-import OrderCard from './OrderCard';
-import type { Order } from './OrderCard.types';
+import { OrderCard } from './OrderCard';
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  items: { productName: string }[];
+}
 
 const mockOrder: Order = {
   id: '123',

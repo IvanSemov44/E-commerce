@@ -32,12 +32,13 @@ export function MyComponent(...) { ... }
 
 // index.ts
 export { MyComponent } from './MyComponent';
-export type { MyComponentProps } from './MyComponent.types';
 ```
 
 > **When editing any file** that uses `export default`, convert it to a named export as part of that edit. Update all import sites in the same change.
 
-### Props type — always a named interface in the same file or a `.types.ts` file
+### Props type — always a named interface in the same file as the component
+
+Types that are only used by the component should be defined directly in the component file. Only create a separate `.types.ts` file if the type needs to be reused externally.
 ```tsx
 interface MyComponentProps {
   title: string;

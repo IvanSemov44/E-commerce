@@ -1,13 +1,19 @@
 import { useState, useMemo, useActionState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGetProfileQuery, useUpdateProfileMutation } from '../../api/profileApi';
+import { useGetProfileQuery, useUpdateProfileMutation } from '@/features/profile/api/profileApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { updateUser } from '@/features/auth/slices/authSlice';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
+import { parseBackendFieldErrors } from '@/shared/lib/utils/parseBackendFieldErrors';
 import { createProfileSchema } from './profileSchemas';
 import type { ProfileFormValues } from './profileSchemas';
 
 type FieldErrors = Partial<Record<keyof ProfileFormValues, string>>;
+
+const CODE_TO_FIELD: Partial<Record<string, keyof ProfileFormValues>> = {
+  DUPLICATE_EMAIL: 'email',
+  DUPLICATE_PHONE: 'phone',
+};
 
 const INITIAL_VALUES: ProfileFormValues = {
   firstName: '',
@@ -85,7 +91,12 @@ export function useProfileForm() {
       toast.success(t('profile.savedSuccess'));
       setIsEditMode(false);
     } catch (err) {
-      handleError(err, t('profile.savedFailed'));
+      const parsedErrors = parseBackendFieldErrors(err, CODE_TO_FIELD);
+      if (parsedErrors) {
+        setFieldErrors(parsedErrors);
+      } else {
+        handleError(err, t('profile.savedFailed'));
+      }
     }
 
     return null;

@@ -1,7 +1,15 @@
 import { useTranslation } from 'react-i18next';
-import type { OrderHeaderProps } from './OrderHeader.types';
 
-export default function OrderHeader({
+export interface OrderHeaderProps {
+  orderNumber: string;
+  createdAt: string;
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  canCancel: boolean;
+  isCancelling: boolean;
+  onCancel: () => Promise<void> | void;
+}
+
+export function OrderHeader({
   orderNumber,
   createdAt,
   status,

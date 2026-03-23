@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonLabelRow } from '@/shared/components/Skeletons';
 import styles from './OrderDetailSkeleton.module.css';
 
-export default function OrderDetailSkeleton() {
+export function OrderDetailSkeleton() {
   return (
     <div className={styles.container}>
       <div className={styles.backButtonRow}>

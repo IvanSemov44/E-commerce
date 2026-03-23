@@ -1,9 +1,25 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { formatPrice } from '@/shared/lib/utils/priceFormatter';
-import type { OrderCardProps } from './OrderCard.types';
 import { formatOrderDate, getStatusClassName } from './OrderCard.utils';
 import styles from './OrderCard.module.css';
+
+interface OrderItemSummary {
+  productName: string;
+}
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  items: OrderItemSummary[];
+}
+
+interface OrderCardProps {
+  order: Order;
+}
 
 /**
  * OrderCard Component
@@ -11,7 +27,7 @@ import styles from './OrderCard.module.css';
  * Displays a summary card for a single order in the order history.
  * Shows order number, status, total amount, and a preview of items.
  */
-export default function OrderCard({ order }: OrderCardProps) {
+export function OrderCard({ order }: OrderCardProps) {
   const { t } = useTranslation();
 
   const formattedDate = formatOrderDate(order.createdAt);

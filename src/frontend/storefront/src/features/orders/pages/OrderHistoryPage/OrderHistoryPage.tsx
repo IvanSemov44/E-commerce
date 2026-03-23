@@ -18,7 +18,7 @@ interface OrderForDisplay {
   items: Array<{ productName: string }>;
 }
 
-export default function OrderHistoryPage() {
+export function OrderHistoryPage() {
   const { t } = useTranslation();
   const { data: ordersData, isLoading, isFetching, error } = useGetOrdersQuery();
   const orders: OrderForDisplay[] = (ordersData || []).map((order) => ({

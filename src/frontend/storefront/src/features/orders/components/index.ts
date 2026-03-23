@@ -2,8 +2,8 @@
 export { OrderHeader } from './OrderHeader';
 export { OrderItemsList } from './OrderItemsList';
 export { ShippingAddress } from './ShippingAddress';
-export { default as OrderCard } from './OrderCard';
+export { OrderCard } from './OrderCard';
 
 // Skeletons
-export { default as OrdersListSkeleton } from './OrdersListSkeleton/OrdersListSkeleton';
-export { default as OrderDetailSkeleton } from './OrderDetailSkeleton/OrderDetailSkeleton';
+export { OrdersListSkeleton } from './OrdersListSkeleton/OrdersListSkeleton';
+export { OrderDetailSkeleton } from './OrderDetailSkeleton/OrderDetailSkeleton';

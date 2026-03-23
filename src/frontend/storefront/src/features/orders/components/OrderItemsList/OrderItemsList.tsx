@@ -1,6 +1,10 @@
-import type { OrderItemsListProps } from './OrderItemsList.types';
+import type { OrderItem } from '@/shared/types';
 
-export default function OrderItemsList({ items }: OrderItemsListProps) {
+interface OrderItemsListProps {
+  items: OrderItem[];
+}
+
+export function OrderItemsList({ items }: OrderItemsListProps) {
   return (
     <div>
       {items.map((item) => (

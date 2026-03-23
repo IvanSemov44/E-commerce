@@ -5,7 +5,7 @@ interface OrdersListSkeletonProps {
   count?: number;
 }
 
-export default function OrdersListSkeleton({ count = 6 }: OrdersListSkeletonProps) {
+export function OrdersListSkeleton({ count = 6 }: OrdersListSkeletonProps) {
   return (
     <div className={styles.list}>
       {Array.from({ length: count }).map((_, i) => (

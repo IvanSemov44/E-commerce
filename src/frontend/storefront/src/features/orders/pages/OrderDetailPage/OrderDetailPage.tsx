@@ -14,7 +14,7 @@ import {
 } from '@/features/orders/components';
 import styles from './OrderDetailPage.module.css';
 
-export default function OrderDetailPage() {
+export function OrderDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
@@ -89,13 +89,9 @@ export default function OrderDetailPage() {
           <ShippingAddress address={order.shippingAddress} />
 
           {order.trackingNumber && (
-            <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <p className="text-sm font-medium text-purple-700 mb-1">
-                {t('orders.trackingNumber')}
-              </p>
-              <p className="text-base font-semibold text-purple-900 font-mono">
-                {order.trackingNumber}
-              </p>
+            <div className={styles.trackingContainer}>
+              <p className={styles.trackingLabel}>{t('orders.trackingNumber')}</p>
+              <p className={styles.trackingValue}>{order.trackingNumber}</p>
             </div>
           )}
         </div>

@@ -1,6 +1,10 @@
-import type { ShippingAddressProps } from './ShippingAddress.types';
+import type { Address } from '@/shared/types';
 
-export default function ShippingAddress({ address }: ShippingAddressProps) {
+interface ShippingAddressProps {
+  address: Address;
+}
+
+export function ShippingAddress({ address }: ShippingAddressProps) {
   return (
     <div className="bg-gray-50 p-4 rounded-lg">
       <h3 className="font-medium mb-2">Shipping Address</h3>

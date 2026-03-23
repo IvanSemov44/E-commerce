@@ -1,2 +1,1 @@
-export { default as OrderHeader } from './OrderHeader';
-export type { OrderHeaderProps } from './OrderHeader.types';
+export { OrderHeader } from './OrderHeader';

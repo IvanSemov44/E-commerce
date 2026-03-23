@@ -13,3 +13,25 @@
     padding: 1rem;
   }
 }
+
+.trackingContainer {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg, 8px);
+}
+
+.trackingLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.trackingValue {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-family: monospace;
+}
