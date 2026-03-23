@@ -87,7 +87,7 @@ export function HomePage() {
           title={t('home.featuredProducts')}
           subtitle={t('home.featuredProductsSubtitle')}
           products={featured.items}
-          ctaTo={ROUTE_PATHS.products}
+          ctaTo={withQuery(ROUTE_PATHS.products)}
           ctaLabel={t('home.viewAllFeatured')}
           sectionClassName={styles.featuredSection}
         />
