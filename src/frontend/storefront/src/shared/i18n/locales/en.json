@@ -401,6 +401,8 @@
     "savedSuccess": "Profile updated successfully",
     "failedToLoad": "Failed to load profile. Please try again later.",
     "invalidImageUrl": "Invalid image URL",
+    "avatarUrl": "Avatar URL",
+    "savedFailed": "Failed to update profile. Please try again.",
     "firstName": "First Name",
     "lastName": "Last Name",
     "email": "Email",
@@ -450,7 +452,8 @@
     "verified": "Verified"
   },
   "validation": {
-    "isRequired": "{{field}} is required"
+    "isRequired": "{{field}} is required",
+    "phoneInvalid": "Invalid phone number"
   },
   "errors": {
     "404": "Page Not Found",

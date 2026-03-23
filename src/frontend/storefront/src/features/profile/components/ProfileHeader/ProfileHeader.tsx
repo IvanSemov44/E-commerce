@@ -2,7 +2,7 @@ import { Button } from '@/shared/components/ui/Button';
 import type { ProfileHeaderProps } from './ProfileHeader.types';
 import styles from './ProfileHeader.module.css';
 
-export default function ProfileHeader({ isEditMode, onEditClick }: ProfileHeaderProps) {
+export function ProfileHeader({ isEditMode, onEditClick }: ProfileHeaderProps) {
   return (
     <header className={styles.header}>
       <div>

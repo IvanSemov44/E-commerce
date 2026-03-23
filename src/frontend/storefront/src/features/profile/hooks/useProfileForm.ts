@@ -1,137 +1,41 @@
-/**
- * useProfileForm Hook
- * Manages profile form state and submission logic
- */
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useMemo, useActionState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGetProfileQuery, useUpdateProfileMutation } from '../api/profileApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { updateUser } from '@/features/auth/slices/authSlice';
-import { useForm } from '@/shared/hooks/useForm';
-import { validators } from '@/shared/lib/utils/validation';
-import type { UserProfile } from '@/shared/types';
+import { useToast, useApiErrorHandler } from '@/shared/hooks';
+import { createProfileSchema } from '../schemas/profileSchemas';
+import type { ProfileFormValues } from '../schemas/profileSchemas';
 
-export interface ProfileFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  avatarUrl?: string;
-}
+type FieldErrors = Partial<Record<keyof ProfileFormValues, string>>;
 
-export interface UseProfileFormReturn {
-  profile: UserProfile | undefined;
-  formData: ProfileFormData;
-  isEditMode: boolean;
-  successMessage: string;
-  errorMessage: string;
-  isLoading: boolean;
-  isUpdating: boolean;
-  error: unknown;
-  errors: Partial<Record<keyof ProfileFormData, string>>;
-  handleChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => void;
-  setFormData: (data: ProfileFormData) => void;
-  setIsEditMode: (mode: boolean) => void;
-  setErrorMessage: (msg: string) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
-  handleCancel: () => void;
-}
-
-// Validation function for profile form
-const validateProfileForm = (
-  values: ProfileFormData
-): Partial<Record<keyof ProfileFormData, string>> => {
-  const errors: Partial<Record<keyof ProfileFormData, string>> = {};
-
-  const firstNameError = validators.required('First name')(values.firstName);
-  if (firstNameError) errors.firstName = firstNameError;
-
-  const lastNameError = validators.required('Last name')(values.lastName);
-  if (lastNameError) errors.lastName = lastNameError;
-
-  if (values.phone && values.phone.trim()) {
-    const phoneError = validators.phone(values.phone);
-    if (phoneError) errors.phone = phoneError;
-  }
-
-  return errors;
+const INITIAL_VALUES: ProfileFormValues = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  avatarUrl: '',
 };
 
-/**
- * Custom hook for managing profile form state and submission
- * Handles:
- * - Profile data fetching
- * - Form data sync with profile
- * - Edit mode toggle
- * - Form validation
- * - Profile submission
- * - Error/success messaging
- * - Auth state update
- */
-export const useProfileForm = (): UseProfileFormReturn => {
+export function useProfileForm() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { data: profile, isLoading, error } = useGetProfileQuery();
-  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+  const [updateProfile] = useUpdateProfileMutation();
+  const { toast } = useToast();
+  const { handleError } = useApiErrorHandler();
 
+  const schema = useMemo(() => createProfileSchema(t), [t]);
+  const [values, setValues] = useState<ProfileFormValues>(INITIAL_VALUES);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isEditMode, setIsEditMode] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const syncedProfileIdRef = useRef<string | undefined>(undefined);
-  // Handle form submission
-  const handleFormSubmit = async (values: ProfileFormData) => {
-    setErrorMessage('');
-    setSuccessMessage('');
+  const syncedRef = useRef<string | undefined>(undefined);
 
-    try {
-      const result = await updateProfile({
-        firstName: values.firstName,
-        lastName: values.lastName,
-        phone: values.phone || undefined,
-        avatarUrl: values.avatarUrl || undefined,
-      }).unwrap();
-
-      // Update auth state with new user data
-      dispatch(
-        updateUser({
-          ...result,
-          phone: result.phone,
-          avatarUrl: result.avatarUrl,
-        })
-      );
-
-      setSuccessMessage('Profile updated successfully');
-      setIsEditMode(false);
-
-      // Auto-clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-    } catch (err: unknown) {
-      const error = err as { data?: { message?: string } };
-      setErrorMessage(error.data?.message || 'Failed to update profile');
-    }
-  };
-
-  // Initialize useForm hook
-  const form = useForm<ProfileFormData>({
-    initialValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      avatarUrl: '',
-    },
-    validate: validateProfileForm,
-    onSubmit: handleFormSubmit,
-  });
-
-  // Sync profile data to form when profile first loads (guard against infinite loop)
   useEffect(() => {
-    if (profile && profile.id !== syncedProfileIdRef.current) {
-      syncedProfileIdRef.current = profile.id;
-      form.setValues({
+    if (profile && profile.id !== syncedRef.current) {
+      syncedRef.current = profile.id;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setValues({
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
         email: profile.email || '',
@@ -139,17 +43,59 @@ export const useProfileForm = (): UseProfileFormReturn => {
         avatarUrl: profile.avatarUrl || '',
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
-  // Handle form cancel
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setValues((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name as keyof ProfileFormValues]: undefined }));
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const name = e.target.name as keyof ProfileFormValues;
+    const result = schema.safeParse(values);
+    const fieldIssue = result.success
+      ? undefined
+      : result.error.issues.find((issue) => issue.path[0] === name);
+    setFieldErrors((prev) => ({ ...prev, [name]: fieldIssue?.message }));
+  };
+
+  const [, action, isPending] = useActionState(async () => {
+    const result = schema.safeParse(values);
+
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof ProfileFormValues;
+        if (field !== undefined && !errors[field]) errors[field] = issue.message;
+      }
+      setFieldErrors(errors);
+      return null;
+    }
+
+    try {
+      const updated = await updateProfile({
+        firstName: result.data.firstName,
+        lastName: result.data.lastName,
+        phone: result.data.phone || undefined,
+        avatarUrl: result.data.avatarUrl || undefined,
+      }).unwrap();
+
+      dispatch(updateUser({ ...updated, phone: updated.phone, avatarUrl: updated.avatarUrl }));
+      toast.success(t('profile.savedSuccess'));
+      setIsEditMode(false);
+    } catch (err) {
+      handleError(err, t('profile.savedFailed'));
+    }
+
+    return null;
+  }, null);
+
   const handleCancel = () => {
     setIsEditMode(false);
-    setErrorMessage('');
-
-    // Reset form to original profile data
+    setFieldErrors({});
     if (profile) {
-      form.setValues({
+      setValues({
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
         email: profile.email || '',
@@ -157,29 +103,20 @@ export const useProfileForm = (): UseProfileFormReturn => {
         avatarUrl: profile.avatarUrl || '',
       });
     }
-    form.reset();
-  };
-
-  // Adapter for backward compatibility with ProfileForm
-  const setFormData = (data: ProfileFormData) => {
-    form.setValues(data);
   };
 
   return {
     profile,
-    formData: form.values,
+    values,
+    fieldErrors,
     isEditMode,
-    successMessage,
-    errorMessage,
     isLoading,
-    isUpdating,
+    isPending,
     error,
-    errors: form.errors,
-    handleChange: form.handleChange,
-    setFormData,
+    handleChange,
+    handleBlur,
+    action,
     setIsEditMode,
-    setErrorMessage,
-    handleSubmit: form.handleSubmit,
     handleCancel,
   };
-};
+}

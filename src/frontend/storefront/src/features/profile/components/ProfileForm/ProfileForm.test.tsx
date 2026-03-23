@@ -3,196 +3,115 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import ProfileForm from './ProfileForm';
 
-describe('ProfileForm', () => {
-  const mockFormData = {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    phone: '+1-555-123-4567',
-    avatarUrl: 'https://example.com/avatar.jpg',
-  };
+const mockValues = {
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  phone: '+1-555-123-4567',
+  avatarUrl: 'https://example.com/avatar.jpg',
+};
 
+const baseProps = {
+  values: mockValues,
+  fieldErrors: {},
+  isEditMode: false,
+  isPending: false,
+  action: vi.fn(),
+  onCancel: vi.fn(),
+  onChange: vi.fn(),
+  onBlur: vi.fn(),
+};
+
+describe('ProfileForm', () => {
   it('renders form fields with values', () => {
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={false}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+    render(<ProfileForm {...baseProps} />);
 
     expect(screen.getByDisplayValue('John')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Doe')).toBeInTheDocument();
     expect(screen.getByDisplayValue('john@example.com')).toBeInTheDocument();
   });
 
-  it('disables fields in view mode', () => {
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={false}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+  it('disables editable fields in view mode', () => {
+    render(<ProfileForm {...baseProps} isEditMode={false} />);
 
     expect(screen.getByDisplayValue('John')).toBeDisabled();
     expect(screen.getByDisplayValue('Doe')).toBeDisabled();
   });
 
-  it('enables fields in edit mode', () => {
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={true}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+  it('enables editable fields in edit mode', () => {
+    render(<ProfileForm {...baseProps} isEditMode={true} />);
 
     expect(screen.getByDisplayValue('John')).not.toBeDisabled();
     expect(screen.getByDisplayValue('Doe')).not.toBeDisabled();
   });
 
-  it('shows action buttons when in edit mode', () => {
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={true}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+  it('email field is always disabled', () => {
+    render(<ProfileForm {...baseProps} isEditMode={true} />);
+
+    expect(screen.getByDisplayValue('john@example.com')).toBeDisabled();
+  });
+
+  it('shows action buttons in edit mode', () => {
+    render(<ProfileForm {...baseProps} isEditMode={true} />);
 
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
   });
 
   it('hides action buttons in view mode', () => {
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={false}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+    render(<ProfileForm {...baseProps} isEditMode={false} />);
 
     expect(screen.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save changes/i })).not.toBeInTheDocument();
   });
 
-  it('calls onFormDataChange on field input', async () => {
-    const user = userEvent.setup();
-    const onFormDataChange = vi.fn();
+  it('disables buttons and shows updating text while pending', () => {
+    render(<ProfileForm {...baseProps} isEditMode={true} isPending={true} />);
 
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={true}
-        isUpdating={false}
-        onFormDataChange={onFormDataChange}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
-
-    const firstNameInput = screen.getByDisplayValue('John');
-    await user.clear(firstNameInput);
-    await user.type(firstNameInput, 'Jane');
-
-    expect(onFormDataChange).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /updating/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
   });
 
-  it('calls onSubmit when save button clicked', async () => {
+  it('calls onChange when a field value changes', async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn();
+    const onChange = vi.fn();
+    render(<ProfileForm {...baseProps} isEditMode={true} onChange={onChange} />);
 
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={true}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={onSubmit}
-        onCancel={vi.fn()}
-      />
-    );
+    await user.type(screen.getByDisplayValue('John'), 'x');
 
-    const saveButton = screen.getByRole('button', { name: /save changes/i });
-    await user.click(saveButton);
-
-    expect(onSubmit).toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalled();
   });
 
   it('calls onCancel when cancel button clicked', async () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
+    render(<ProfileForm {...baseProps} isEditMode={true} onCancel={onCancel} />);
 
-    render(
-      <ProfileForm
-        formData={mockFormData}
-        isEditMode={true}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={onCancel}
-      />
-    );
-
-    const cancelButton = screen.getByRole('button', { name: /cancel/i });
-    await user.click(cancelButton);
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
 
     expect(onCancel).toHaveBeenCalled();
   });
 
-  it('disables buttons while updating', () => {
+  it('displays field errors', () => {
     render(
       <ProfileForm
-        formData={mockFormData}
+        {...baseProps}
         isEditMode={true}
-        isUpdating={true}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
+        fieldErrors={{ firstName: 'First Name is required' }}
       />
     );
 
-    expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
+    expect(screen.getByText('First Name is required')).toBeInTheDocument();
   });
 
-  it('validates avatar URL on blur', async () => {
+  it('calls onBlur when a field loses focus', async () => {
     const user = userEvent.setup();
-    const onAvatarError = vi.fn();
+    const onBlur = vi.fn();
+    render(<ProfileForm {...baseProps} isEditMode={true} onBlur={onBlur} />);
 
-    render(
-      <ProfileForm
-        formData={{ ...mockFormData, avatarUrl: 'invalid-url' }}
-        isEditMode={true}
-        isUpdating={false}
-        onFormDataChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-        onAvatarError={onAvatarError}
-      />
-    );
-
-    const avatarInput = screen.getByDisplayValue('invalid-url');
-    avatarInput.focus();
+    await user.click(screen.getByDisplayValue('John'));
     await user.tab();
 
-    expect(onAvatarError).toHaveBeenCalled();
+    expect(onBlur).toHaveBeenCalled();
   });
 });

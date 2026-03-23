@@ -1,64 +1,40 @@
 import { useTranslation } from 'react-i18next';
-import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { useGetProfileQuery } from '@/features/profile/api/profileApi';
 import { Card } from '@/shared/components/ui/Card';
 import PageHeader from '@/shared/components/PageHeader';
-import { ErrorAlert } from '@/shared/components/ErrorAlert';
-import ProfileHeader from '@/features/profile/components/ProfileHeader';
-import ProfileForm from '@/features/profile/components/ProfileForm';
-import ProfileMessages from '@/features/profile/components/ProfileMessages';
-import AccountDetails from '@/features/profile/components/AccountDetails';
-import ProfileSkeleton from '@/features/profile/components/ProfileSkeleton';
+import QueryRenderer from '@/shared/components/QueryRenderer';
+import { AccountDetails } from '@/features/profile/components/AccountDetails/AccountDetails';
+import { ProfileSkeleton } from '@/features/profile/components/ProfileSkeleton/ProfileSkeleton';
+import { ProfileFormCard } from '@/features/profile/components/ProfileFormCard/ProfileFormCard';
 import styles from './ProfilePage.module.css';
 
-export default function ProfilePage() {
+export function ProfilePage() {
   const { t } = useTranslation();
-  const {
-    profile,
-    formData,
-    isEditMode,
-    successMessage,
-    errorMessage,
-    isLoading,
-    isUpdating,
-    error,
-    setFormData,
-    setIsEditMode,
-    setErrorMessage,
-    handleSubmit,
-    handleCancel,
-  } = useProfileForm();
+  const { data: profile, isLoading, error } = useGetProfileQuery();
 
   return (
     <div className={styles.container}>
       <PageHeader title={t('profile.title')} />
-
-      {error ? (
-        <ErrorAlert message={t('profile.failedToLoad')} />
-      ) : isLoading ? (
-        <Card variant="elevated" padding="lg">
-          <ProfileSkeleton />
-        </Card>
-      ) : (
-        <div className={styles.content}>
-          <Card variant="elevated" padding="lg">
-            <ProfileHeader isEditMode={isEditMode} onEditClick={() => setIsEditMode(true)} />
-
-            <ProfileMessages successMessage={successMessage} errorMessage={errorMessage} />
-
-            <ProfileForm
-              formData={formData}
-              isEditMode={isEditMode}
-              isUpdating={isUpdating}
-              onFormDataChange={setFormData}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              onAvatarError={() => setErrorMessage(t('profile.invalidImageUrl'))}
-            />
-          </Card>
-
-          {profile && <AccountDetails memberSince={profile.email} />}
-        </div>
-      )}
+      <QueryRenderer
+        isLoading={isLoading}
+        error={error}
+        data={profile}
+        loadingSkeleton={{
+          custom: (
+            <Card variant="elevated" padding="lg">
+              <ProfileSkeleton />
+            </Card>
+          ),
+        }}
+        errorMessage={t('profile.failedToLoad')}
+      >
+        {(profile) => (
+          <div className={styles.content}>
+            <ProfileFormCard />
+            <AccountDetails memberSince={profile.email} />
+          </div>
+        )}
+      </QueryRenderer>
     </div>
   );
 }

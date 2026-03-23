@@ -4,7 +4,6 @@ import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import { useProfileForm } from '../useProfileForm';
 
-// Mock API
 vi.mock('../../api/profileApi', () => ({
   useGetProfileQuery: vi.fn(() => ({
     data: {
@@ -21,18 +20,10 @@ vi.mock('../../api/profileApi', () => ({
     vi.fn().mockResolvedValue({ data: {} }),
     { isLoading: false },
   ]),
-  useChangePasswordMutation: vi.fn(() => [
-    vi.fn().mockResolvedValue({ data: {} }),
-    { isLoading: false },
-  ]),
 }));
 
 describe('useProfileForm', () => {
   let store: ReturnType<typeof renderHookWithProviders>['store'];
-
-  afterEach(() => {
-    store?.dispatch(baseApi.util.resetApiState());
-  });
 
   const defaultPreloadedState = {
     auth: {
@@ -55,27 +46,32 @@ describe('useProfileForm', () => {
     vi.clearAllMocks();
   });
 
-  it('should initialize with formData', () => {
+  afterEach(() => {
+    store?.dispatch(baseApi.util.resetApiState());
+  });
+
+  it('initialises with profile data synced into values', () => {
     const rendered = renderHookWithProviders(() => useProfileForm(), {
       preloadedState: defaultPreloadedState,
     });
     store = rendered.store;
 
-    expect(rendered.result.current.formData.firstName).toBeDefined();
+    expect(rendered.result.current.values.firstName).toBeDefined();
     expect(rendered.result.current.isEditMode).toBe(false);
     expect(rendered.result.current.isLoading).toBe(false);
   });
 
-  it('should have handleSubmit function', () => {
+  it('exposes action and isPending for form submission', () => {
     const rendered = renderHookWithProviders(() => useProfileForm(), {
       preloadedState: defaultPreloadedState,
     });
     store = rendered.store;
 
-    expect(typeof rendered.result.current.handleSubmit).toBe('function');
+    expect(typeof rendered.result.current.action).toBe('function');
+    expect(typeof rendered.result.current.isPending).toBe('boolean');
   });
 
-  it('should have handleCancel function', () => {
+  it('exposes handleCancel', () => {
     const rendered = renderHookWithProviders(() => useProfileForm(), {
       preloadedState: defaultPreloadedState,
     });
@@ -84,7 +80,7 @@ describe('useProfileForm', () => {
     expect(typeof rendered.result.current.handleCancel).toBe('function');
   });
 
-  it('should set edit mode', () => {
+  it('toggles edit mode via setIsEditMode', () => {
     const rendered = renderHookWithProviders(() => useProfileForm(), {
       preloadedState: defaultPreloadedState,
     });
@@ -97,23 +93,21 @@ describe('useProfileForm', () => {
     expect(rendered.result.current.isEditMode).toBe(true);
   });
 
-  it('should set form data', () => {
+  it('handleCancel resets edit mode and clears field errors', () => {
     const rendered = renderHookWithProviders(() => useProfileForm(), {
       preloadedState: defaultPreloadedState,
     });
     store = rendered.store;
 
     act(() => {
-      rendered.result.current.setFormData({
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane@example.com',
-        phone: '9876543210',
-        avatarUrl: '',
-      });
+      rendered.result.current.setIsEditMode(true);
     });
 
-    expect(rendered.result.current.formData.firstName).toBe('Jane');
-    expect(rendered.result.current.formData.lastName).toBe('Smith');
+    act(() => {
+      rendered.result.current.handleCancel();
+    });
+
+    expect(rendered.result.current.isEditMode).toBe(false);
+    expect(rendered.result.current.fieldErrors).toEqual({});
   });
 });

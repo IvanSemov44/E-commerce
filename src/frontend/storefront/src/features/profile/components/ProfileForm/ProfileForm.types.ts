@@ -1,17 +1,15 @@
-export interface ProfileFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  avatarUrl?: string;
-}
+import type { ChangeEvent, FocusEvent } from 'react';
+import type { ProfileFormValues } from '../../schemas/profileSchemas';
+
+export type ProfileFieldErrors = Partial<Record<keyof ProfileFormValues, string>>;
 
 export interface ProfileFormProps {
-  formData: ProfileFormData;
+  values: ProfileFormValues;
+  fieldErrors: ProfileFieldErrors;
   isEditMode: boolean;
-  isUpdating: boolean;
-  onFormDataChange: (data: ProfileFormData) => void;
-  onSubmit: (e: React.FormEvent) => Promise<void> | void;
+  isPending: boolean;
+  action: (payload?: unknown) => void;
   onCancel: () => void;
-  onAvatarError?: () => void;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onBlur: (e: FocusEvent<HTMLInputElement>) => void;
 }

@@ -1,7 +1,7 @@
 import styles from './AccountDetails.module.css';
 import type { AccountDetailsProps } from './AccountDetails.types';
 
-export default function AccountDetails({ memberSince }: AccountDetailsProps) {
+export function AccountDetails({ memberSince }: AccountDetailsProps) {
   const parsed = new Date(memberSince);
   const dateText = Number.isNaN(parsed.getTime()) ? memberSince : parsed.toLocaleDateString();
 

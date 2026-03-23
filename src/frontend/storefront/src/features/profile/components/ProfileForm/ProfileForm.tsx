@@ -1,81 +1,85 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
-import type { ProfileFormData, ProfileFormProps } from './ProfileForm.types';
+import type { ProfileFormProps } from './ProfileForm.types';
 import styles from './ProfileForm.module.css';
 
-export default function ProfileForm({
-  formData,
+export function ProfileForm({
+  values,
+  fieldErrors,
   isEditMode,
-  isUpdating,
-  onFormDataChange,
-  onSubmit,
+  isPending,
+  action,
   onCancel,
-  onAvatarError,
+  onChange,
+  onBlur,
 }: ProfileFormProps) {
-  const updateField = (field: keyof ProfileFormData, value: string) => {
-    onFormDataChange({ ...formData, [field]: value });
-  };
-
-  const handleAvatarBlur = () => {
-    if (!formData.avatarUrl) return;
-    try {
-      new URL(formData.avatarUrl);
-    } catch {
-      onAvatarError?.();
-    }
-  };
+  const { t } = useTranslation();
 
   return (
-    <form className={styles.form} onSubmit={onSubmit}>
+    <form action={action} className={styles.form} noValidate>
       <div className={styles.grid}>
         <div className={styles.field}>
           <Input
-            label="First Name"
-            value={formData.firstName}
-            onChange={(e) => updateField('firstName', e.target.value)}
-            disabled={!isEditMode || isUpdating}
+            label={t('profile.firstName')}
+            name="firstName"
+            value={values.firstName}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={fieldErrors.firstName}
+            disabled={!isEditMode || isPending}
+            required
           />
         </div>
         <div className={styles.field}>
           <Input
-            label="Last Name"
-            value={formData.lastName}
-            onChange={(e) => updateField('lastName', e.target.value)}
-            disabled={!isEditMode || isUpdating}
+            label={t('profile.lastName')}
+            name="lastName"
+            value={values.lastName}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={fieldErrors.lastName}
+            disabled={!isEditMode || isPending}
+            required
           />
         </div>
         <div className={styles.field}>
-          <Input label="Email" value={formData.email} disabled />
+          <Input label={t('profile.email')} name="email" value={values.email} disabled />
         </div>
         <div className={styles.field}>
           <Input
-            label="Phone"
-            value={formData.phone}
-            onChange={(e) => updateField('phone', e.target.value)}
-            disabled={!isEditMode || isUpdating}
+            label={t('profile.phone')}
+            name="phone"
+            value={values.phone ?? ''}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={fieldErrors.phone}
+            disabled={!isEditMode || isPending}
           />
         </div>
         <div className={styles.field}>
           <Input
-            label="Avatar URL"
-            value={formData.avatarUrl}
-            onChange={(e) => updateField('avatarUrl', e.target.value)}
-            onBlur={handleAvatarBlur}
-            disabled={!isEditMode || isUpdating}
+            label={t('profile.avatarUrl')}
+            name="avatarUrl"
+            value={values.avatarUrl ?? ''}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={fieldErrors.avatarUrl}
+            disabled={!isEditMode || isPending}
           />
         </div>
       </div>
 
-      {isEditMode ? (
+      {isEditMode && (
         <div className={styles.actions}>
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={isUpdating}>
-            Cancel
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={isPending}>
+            {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={isUpdating}>
-            {isUpdating ? 'Saving...' : 'Save Changes'}
+          <Button type="submit" disabled={isPending}>
+            {isPending ? t('common.updating') : t('profile.saveChanges')}
           </Button>
         </div>
-      ) : null}
+      )}
     </form>
   );
 }
