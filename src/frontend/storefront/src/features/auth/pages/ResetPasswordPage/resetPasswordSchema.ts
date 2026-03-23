@@ -7,7 +7,7 @@ export const createResetPasswordSchema = (t: TFunction) =>
     .object({
       password: passwordField(t),
       confirmPassword: z.string().min(1, {
-        error: `${t('auth.confirmPassword')} ${t('common.required').toLowerCase()}`,
+        error: t('validation.isRequired', { field: t('auth.confirmPassword') }),
         abort: true,
       }),
     })

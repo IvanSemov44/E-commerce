@@ -6,7 +6,7 @@ import { useAppDispatch } from '@/shared/lib/store';
 import { loginSuccess } from '@/features/auth/slices/authSlice';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
-import { parseBackendFieldErrors } from '@/shared/lib/utils';
+import { parseBackendFieldErrors, isApiError } from '@/shared/lib/utils';
 import { usePasswordVisibility } from '@/features/auth/hooks/usePasswordVisibility';
 import { createLoginSchema } from './loginSchema';
 import type { LoginFormValues } from './loginSchema';
@@ -67,11 +67,9 @@ export function useLoginForm() {
         toast.success(t('auth.loginSuccess'));
         navigate(ROUTE_PATHS.home);
       } else {
-        const errorMessage =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (response as Record<string, any>).errorDetails?.message ||
-          response.message ||
-          t('auth.loginError');
+        const errorMessage = isApiError(response)
+          ? response.errorDetails.message
+          : response.message || t('auth.loginError');
         toast.error(errorMessage);
       }
     } catch (err) {

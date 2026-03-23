@@ -8,14 +8,14 @@ export const createRegisterSchema = (t: TFunction) =>
       firstName: z
         .string()
         .min(1, {
-          error: `${t('profile.firstName')} ${t('common.required').toLowerCase()}`,
+          error: t('validation.isRequired', { field: t('profile.firstName') }),
           abort: true,
         })
         .max(50, t('auth.nameMaxLength', { max: 50 })),
       lastName: z
         .string()
         .min(1, {
-          error: `${t('profile.lastName')} ${t('common.required').toLowerCase()}`,
+          error: t('validation.isRequired', { field: t('profile.lastName') }),
           abort: true,
         })
         .max(50, t('auth.nameMaxLength', { max: 50 })),
@@ -23,7 +23,7 @@ export const createRegisterSchema = (t: TFunction) =>
       password: passwordField(t),
       confirmPassword: z
         .string()
-        .min(1, `${t('auth.confirmPassword')} ${t('common.required').toLowerCase()}`),
+        .min(1, t('validation.isRequired', { field: t('auth.confirmPassword') })),
       termsAccepted: z.boolean(),
     })
     .refine((data) => data.password === data.confirmPassword, {

@@ -449,6 +449,9 @@
     "pciDss": "PCI DSS",
     "verified": "Verified"
   },
+  "validation": {
+    "isRequired": "{{field}} is required"
+  },
   "errors": {
     "404": "Page Not Found",
     "500": "Server Error",
