@@ -1,8 +1,16 @@
 import { useTranslation } from 'react-i18next';
+import type { Product } from '@/shared/types';
 import { ProductCard } from '../ProductCard/ProductCard';
 import PaginatedView from '@/shared/components/Pagination';
-import type { ProductGridProps } from './ProductGrid.types';
 import styles from './ProductGrid.module.css';
+
+interface ProductGridProps {
+  products: Product[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}
 
 export function ProductGrid({
   products,
