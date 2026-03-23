@@ -11,9 +11,8 @@ import type { Product } from '@/shared/types';
 import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { withQuery } from '@/shared/lib/routing';
 import { Button } from '@/shared/components/ui/Button';
-import { ProductCard, ProductsGridSkeleton } from '@/features/products/components';
+import { ProductCard } from '@/features/products/components';
 import PageHeader from '@/shared/components/PageHeader';
-import QueryRenderer from '@/shared/components/QueryRenderer';
 import { TrustSignals } from '@/shared/components/TrustSignals';
 import styles from './HomePage.module.css';
 
@@ -77,11 +76,7 @@ function ProductSection({
 export default function HomePage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
-  const {
-    data: featured,
-    isLoading,
-    error,
-  } = useGetFeaturedProductsQuery({ page: 1, pageSize: 10 });
+  const { data: featured } = useGetFeaturedProductsQuery({ page: 1, pageSize: 10 });
   const { data: categories } = useGetTopLevelCategoriesQuery();
 
   // Bestsellers - products sorted by review count (popularity)
@@ -144,26 +139,17 @@ export default function HomePage() {
       )}
 
       {/* Featured Products */}
-      <section className={styles.featuredSection} aria-label={t('home.featuredProducts')}>
-        <PageHeader
+      {featured?.items && featured.items.length > 0 && (
+        <ProductSection
+          ariaLabel={t('home.featuredProducts')}
           title={t('home.featuredProducts')}
           subtitle={t('home.featuredProductsSubtitle')}
+          products={featured.items}
+          ctaTo={ROUTE_PATHS.products}
+          ctaLabel={t('home.viewAllFeatured')}
+          sectionClassName={styles.featuredSection}
         />
-
-        <QueryRenderer
-          isLoading={isLoading}
-          error={error}
-          data={featured?.items}
-          loadingSkeleton={{ custom: <ProductsGridSkeleton count={10} /> }}
-          errorMessage={t('products.failedToLoadProducts')}
-          emptyState={{
-            icon: <GridIcon />,
-            title: t('products.noProducts'),
-          }}
-        >
-          {(featuredItems) => <ProductGrid products={featuredItems} />}
-        </QueryRenderer>
-      </section>
+      )}
 
       {/* Bestsellers Section */}
       {bestsellersData?.items && bestsellersData.items.length > 0 && (
