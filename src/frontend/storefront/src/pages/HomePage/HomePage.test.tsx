@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import HomePage from './HomePage';
+import { HomePage } from './HomePage';
 
 // Mock dependencies
 vi.mock('react-i18next', () => ({
@@ -41,7 +41,6 @@ vi.mock('@/shared/components/PageHeader', () => ({
 }));
 
 vi.mock('@/shared/components/TrustSignals', () => ({
-  __esModule: true,
   TrustSignals: ({ variant }: { variant: string }) => (
     <div data-testid="trust-signals" data-variant={variant}>
       Trust Signals

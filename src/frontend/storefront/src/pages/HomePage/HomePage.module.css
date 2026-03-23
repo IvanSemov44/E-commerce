@@ -1,11 +1,11 @@
 /**
  * Home Page Styles
  * 
- * Modern, engaging home page with:
+ * Used styles for:
  * - Hero section with gradient background
- * - Featured products grid
- * - Smooth animations
- * - Responsive design
+ * - Trust signals section
+ * - Categories showcase
+ * - Product sections (featured, bestsellers, promotions)
  */
 
 /* =============================================================================
@@ -91,26 +91,6 @@
    Hero Typography
    ============================================================================= */
 
-.heroBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1-5) var(--space-4);
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-primary-400);
-  margin-bottom: var(--space-6);
-  animation: fadeIn var(--duration-300) var(--ease-out);
-}
-
-.heroBadge svg {
-  width: 1rem;
-  height: 1rem;
-}
-
 .heroTitle {
   font-size: var(--text-4xl);
   line-height: var(--leading-tight);
@@ -150,79 +130,6 @@
   .heroSubtitle {
     font-size: var(--text-xl);
   }
-}
-
-/* =============================================================================
-   Hero CTA Buttons
-   ============================================================================= */
-
-.heroCta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  justify-content: center;
-  align-items: center;
-}
-
-@media (min-width: 480px) {
-  .heroCta {
-    flex-direction: row;
-    gap: var(--space-4);
-  }
-}
-
-.primaryCta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3-5) var(--space-8);
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  color: var(--text-inverse, #ffffff);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  text-decoration: none;
-  cursor: pointer;
-  transition: var(--transition-transform), var(--transition-shadow);
-  box-shadow: var(--shadow-primary);
-}
-
-.primaryCta:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-primary-lg);
-}
-
-.primaryCta svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  transition: transform var(--duration-200) var(--ease-out);
-}
-
-.primaryCta:hover svg {
-  transform: translateX(4px);
-}
-
-.secondaryCta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3-5) var(--space-6);
-  background: transparent;
-  color: var(--text-inverse, #ffffff);
-  border: 1.5px solid var(--color-neutral-600);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-base);
-  font-weight: var(--font-medium);
-  text-decoration: none;
-  cursor: pointer;
-  transition: var(--transition-colors), var(--transition-transform);
-}
-
-.secondaryCta:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: var(--color-neutral-500);
-  transform: translateY(-2px);
 }
 
 /* =============================================================================
@@ -272,100 +179,6 @@
     padding: var(--space-24) 0;
     padding-left: var(--space-8);
     padding-right: var(--space-8);
-  }
-}
-
-/* =============================================================================
-   Section Header
-   ============================================================================= */
-
-.sectionHeader {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-bottom: var(--space-10);
-  text-align: center;
-}
-
-@media (min-width: 768px) {
-  .sectionHeader {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
-  }
-}
-
-.sectionTitle {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
-}
-
-@media (min-width: 768px) {
-  .sectionTitle {
-    font-size: var(--text-3xl);
-  }
-}
-
-.sectionSubtitle {
-  font-size: var(--text-base);
-  color: var(--text-secondary);
-}
-
-.sectionLink {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-brand);
-  font-weight: var(--font-medium);
-  font-size: var(--text-sm);
-  text-decoration: none;
-  transition: var(--transition-colors), var(--transition-transform);
-}
-
-.sectionLink:hover {
-  color: var(--color-brand-hover);
-}
-
-.sectionLink svg {
-  width: 1rem;
-  height: 1rem;
-  transition: transform var(--duration-200) var(--ease-out);
-}
-
-.sectionLink:hover svg {
-  transform: translateX(4px);
-}
-
-/* =============================================================================
-   Products Grid
-   ============================================================================= */
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: var(--space-6);
-  margin-bottom: var(--space-12);
-}
-
-@media (min-width: 480px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-8);
-  }
-}
-
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -442,147 +255,11 @@
   height: 2rem;
 }
 
-.categoryIcon {
-  width: 3rem;
-  height: 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary-100), var(--color-primary-200));
-  border-radius: var(--radius-lg);
-  color: var(--color-brand);
-}
-
-.categoryIcon svg {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
 .categoryName {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--text-primary);
   text-align: center;
-}
-
-/* =============================================================================
-   Features Section
-   ============================================================================= */
-
-.featuresSection {
-  padding: var(--space-16) 0;
-  background-color: var(--surface-secondary);
-}
-
-.featuresGrid {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: var(--space-8);
-  max-width: var(--container-2xl);
-  margin: 0 auto;
-  padding: 0 var(--space-4);
-}
-
-@media (min-width: 768px) {
-  .featuresGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-10);
-    padding: 0 var(--space-6);
-  }
-}
-
-@media (min-width: 1024px) {
-  .featuresGrid {
-    padding: 0 var(--space-8);
-  }
-}
-
-.featureCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: var(--space-6);
-}
-
-.featureIcon {
-  width: 4rem;
-  height: 4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  border-radius: var(--radius-xl);
-  color: var(--text-inverse, #ffffff);
-  margin-bottom: var(--space-4);
-  box-shadow: var(--shadow-primary);
-}
-
-.featureIcon svg {
-  width: 2rem;
-  height: 2rem;
-}
-
-.featureTitle {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin-bottom: var(--space-2);
-}
-
-.featureDescription {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-relaxed);
-}
-
-/* =============================================================================
-   Animations
-   ============================================================================= */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* =============================================================================
-   Loading State
-   ============================================================================= */
-
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-12);
-}
-
-.loadingSpinner {
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 3px solid var(--border-default);
-  border-right-color: var(--color-brand);
-  border-radius: 50%;
-  animation: spin 0.75s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* =============================================================================
@@ -644,11 +321,25 @@
 }
 
 /* =============================================================================
-   Section CTA
+   Animations
    ============================================================================= */
 
-.sectionCta {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--space-8);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

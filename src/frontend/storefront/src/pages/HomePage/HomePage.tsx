@@ -15,7 +15,7 @@ import PageHeader from '@/shared/components/PageHeader';
 import { TrustSignals } from '@/shared/components/TrustSignals';
 import styles from './HomePage.module.css';
 
-export default function HomePage() {
+export function HomePage() {
   usePerformanceMonitor();
   const { t } = useTranslation();
   const { data: featured } = useGetFeaturedProductsQuery({ page: 1, pageSize: 10 });
