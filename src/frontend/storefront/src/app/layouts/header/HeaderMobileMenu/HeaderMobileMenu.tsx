@@ -20,7 +20,7 @@ interface HeaderMobileMenuProps {
   onLogout: () => void;
 }
 
-export default function HeaderMobileMenu({ onClose, onLogout }: HeaderMobileMenuProps) {
+export function HeaderMobileMenu({ onClose, onLogout }: HeaderMobileMenuProps) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const user = useAppSelector(selectCurrentUser);
   const { cartItemCount, wishlistItemCount } = useHeaderData();

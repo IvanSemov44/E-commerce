@@ -6,7 +6,7 @@ import styles from './AppShellSkeleton.module.css';
  * Mirrors the real AppShell header layout so the transition
  * to actual content causes zero layout shift.
  */
-export default function AppShellSkeleton() {
+export function AppShellSkeleton() {
   return (
     <div className={styles.shell} aria-busy="true" aria-label="Loading application">
       {/* AnnouncementBar placeholder */}

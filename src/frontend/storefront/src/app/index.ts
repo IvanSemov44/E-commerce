@@ -6,17 +6,17 @@
  *
  * Usage:
  *   import { Header, Footer } from '@/app/layouts';
- *   import AnnouncementBar from '@/app/AnnouncementBar';
+ *   import { AnnouncementBar } from '@/app/AnnouncementBar';
  */
 
 // Layout Components
 export { Header, Footer } from './layouts';
 
 // App Shell Components
-export { default as AnnouncementBar } from './AnnouncementBar';
-export { default as CookieConsent } from './CookieConsent';
-export { default as ErrorBoundary } from './ErrorBoundary';
-export { default as ErrorPage } from './ErrorPage';
+export { AnnouncementBar } from './AnnouncementBar';
+export { CookieConsent } from './CookieConsent';
+export { ErrorBoundary } from './ErrorBoundary';
+export { ErrorPage } from './ErrorPage';
 // UI Utility Components (app-level)
 export { ThemeToggle } from './ThemeToggle';
 export { LanguageSwitcher } from './LanguageSwitcher';

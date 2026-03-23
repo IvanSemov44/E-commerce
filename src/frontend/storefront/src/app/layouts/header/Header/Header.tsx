@@ -10,12 +10,12 @@ import { Button } from '@/shared/components/ui/Button';
 import { ThemeToggle } from '@/app/ThemeToggle';
 import { LanguageSwitcher } from '@/app/LanguageSwitcher';
 import { SearchBar } from '@/app/SearchBar';
-import HeaderUserMenu from '../HeaderUserMenu';
-import HeaderMobileMenu from '../HeaderMobileMenu';
+import { HeaderUserMenu } from '../HeaderUserMenu';
+import { HeaderMobileMenu } from '../HeaderMobileMenu';
 import { useHeaderData } from '../useHeaderData';
 import styles from './Header.module.css';
 
-export default function Header() {
+export function Header() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);

@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from '@/features/auth/slices/authSlice';
 import { cartReducer } from '@/features/cart/slices/cartSlice';
-import toastReducer from '@/app/Toast/toastSlice';
+import { toastReducer } from '@/app/Toast/toastSlice';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import { cartPersistenceMiddleware } from './middleware/cartPersistence';
 

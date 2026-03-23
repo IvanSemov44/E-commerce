@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ToastContainer from './ToastContainer';
+import { ToastContainer } from './ToastContainer';
 
 const dispatchMock = vi.fn();
 const useAppSelectorMock = vi.fn();
@@ -11,7 +11,7 @@ vi.mock('@/shared/lib/store', () => ({
 }));
 
 vi.mock('./Toast', () => ({
-  default: ({
+  Toast: ({
     toast,
     onDismiss,
   }: {

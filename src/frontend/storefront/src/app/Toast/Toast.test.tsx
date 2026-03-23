@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import Toast from './Toast';
+import { Toast } from './Toast';
 
 afterEach(() => {
   vi.useRealTimers();

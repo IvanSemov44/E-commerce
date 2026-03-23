@@ -1,4 +1,4 @@
-export { default as TopLoadingBar } from './TopLoadingBar/TopLoadingBar';
-export { default as RouteLoadingFallback } from './RouteLoadingFallback/RouteLoadingFallback';
-export { default as AppShellSkeleton } from './AppShellSkeleton/AppShellSkeleton';
-export { default as AppBootstrapLoading } from './AppBootstrapLoading/AppBootstrapLoading';
+export { TopLoadingBar } from './TopLoadingBar/TopLoadingBar';
+export { RouteLoadingFallback } from './RouteLoadingFallback/RouteLoadingFallback';
+export { AppShellSkeleton } from './AppShellSkeleton/AppShellSkeleton';
+export { AppBootstrapLoading } from './AppBootstrapLoading/AppBootstrapLoading';

@@ -90,6 +90,8 @@ export default function ProtectedLayout() {
 }
 ```
 
+> **Note on exports:** Route module components use `export default` — this is a React Router framework requirement for file-based routing (`flatRoutes()`). This is the **only** place in the frontend where `export default` is allowed. All other components must use named exports (`export function`).
+
 ### Adding a new route (post-migration)
 Create a file. That is the only step. No `AppRoutes.tsx` to touch.
 

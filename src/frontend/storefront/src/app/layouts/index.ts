@@ -8,7 +8,7 @@
  * These are app-level components that define the overall layout.
  */
 
-export { default as Header } from './header/Header';
-export { default as Footer } from './footer/Footer';
-export { default as HeaderMobileMenu } from './header/HeaderMobileMenu';
-export { default as HeaderUserMenu } from './header/HeaderUserMenu';
+export { Header } from './header/Header';
+export { Footer } from './footer/Footer';
+export { HeaderMobileMenu } from './header/HeaderMobileMenu';
+export { HeaderUserMenu } from './header/HeaderUserMenu';

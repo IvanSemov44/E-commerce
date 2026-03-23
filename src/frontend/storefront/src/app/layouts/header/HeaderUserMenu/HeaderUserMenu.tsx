@@ -14,12 +14,7 @@ interface HeaderUserMenuProps {
   onLogout: () => void;
 }
 
-export default function HeaderUserMenu({
-  isOpen,
-  onToggle,
-  onClose,
-  onLogout,
-}: HeaderUserMenuProps) {
+export function HeaderUserMenu({ isOpen, onToggle, onClose, onLogout }: HeaderUserMenuProps) {
   const user = useAppSelector(selectCurrentUser);
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);

@@ -1,1 +1,1 @@
-export { default } from './HeaderUserMenu';
+export { HeaderUserMenu } from './HeaderUserMenu';

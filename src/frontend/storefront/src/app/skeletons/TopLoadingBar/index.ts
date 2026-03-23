@@ -1,1 +1,1 @@
-export { default } from './TopLoadingBar';
+export { TopLoadingBar } from './TopLoadingBar';

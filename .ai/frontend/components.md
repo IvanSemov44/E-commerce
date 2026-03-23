@@ -36,6 +36,8 @@ export { MyComponent } from './MyComponent';
 
 > **When editing any file** that uses `export default`, convert it to a named export as part of that edit. Update all import sites in the same change.
 
+> **Exception — React Router route modules:** Files inside `src/app/routes/` are consumed by `flatRoutes()` (React Router Framework Mode). The route component **must** use `export default` — this is a framework requirement. Do **not** convert route module default exports to named exports.
+
 ### Props type — always a named interface in the same file as the component
 
 Types that are only used by the component should be defined directly in the component file. Only create a separate `.types.ts` file if the type needs to be reused externally.

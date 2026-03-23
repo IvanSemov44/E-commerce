@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router';
-import ErrorPage from './ErrorPage';
+import { ErrorPage } from './ErrorPage';
 
 const renderErrorPage = (props = {}) => {
   const defaultProps = {

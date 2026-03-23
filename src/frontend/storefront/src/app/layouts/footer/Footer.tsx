@@ -5,7 +5,7 @@ import { FOOTER_SOCIAL_LINKS } from './socialLinks';
 import { useNewsletterSubscription } from './useNewsletterSubscription';
 import styles from './Footer.module.css';
 
-export default function Footer() {
+export function Footer() {
   const { t } = useTranslation();
   const { email, isSubmitting, setEmail, handleNewsletterSubmit } = useNewsletterSubscription({
     invalidEmailMessage: t('footer.emailInvalid'),

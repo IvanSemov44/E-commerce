@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonCard, SkeletonLabelRow } from '@/shared/components/Skeletons';
 import styles from './RouteLoadingFallback.module.css';
 
-export default function RouteLoadingFallback() {
+export function RouteLoadingFallback() {
   return (
     <div className={styles.container} role="status" aria-live="polite" aria-label="Loading route">
       <SkeletonLabelRow

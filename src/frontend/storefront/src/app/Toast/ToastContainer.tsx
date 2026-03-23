@@ -5,10 +5,10 @@
 
 import { useAppSelector, useAppDispatch } from '@/shared/lib/store';
 import { removeToast } from './toastSlice';
-import Toast from './Toast';
+import { Toast } from './Toast';
 import styles from './Toast.module.css';
 
-export default function ToastContainer() {
+export function ToastContainer() {
   const toasts = useAppSelector((state) => state.toast.toasts);
   const dispatch = useAppDispatch();
 

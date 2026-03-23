@@ -13,7 +13,7 @@ interface ErrorPageProps {
   onReset: () => void;
 }
 
-export default function ErrorPage({ error, isDevelopment, onReset }: ErrorPageProps) {
+export function ErrorPage({ error, isDevelopment, onReset }: ErrorPageProps) {
   const navigate = useNavigate();
 
   const handleGoHome = () => {

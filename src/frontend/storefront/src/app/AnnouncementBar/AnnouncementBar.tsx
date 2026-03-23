@@ -10,7 +10,7 @@ interface AnnouncementBarProps {
   dismissible?: boolean;
 }
 
-export default function AnnouncementBar({
+export function AnnouncementBar({
   message,
   link = '/products',
   linkText,

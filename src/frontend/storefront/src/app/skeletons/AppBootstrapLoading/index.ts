@@ -1,1 +1,1 @@
-export { default } from './AppBootstrapLoading';
+export { AppBootstrapLoading } from './AppBootstrapLoading';

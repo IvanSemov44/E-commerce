@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import Header from './Header';
+import { Header } from './Header';
 
 const dispatchMock = vi.fn();
 const navigateMock = vi.fn();
@@ -87,7 +87,7 @@ vi.mock('@/app/SearchBar', () => ({
 
 // Stub HeaderUserMenu — isolate from its own Redux + i18n dependencies
 vi.mock('../HeaderUserMenu', () => ({
-  default: ({
+  HeaderUserMenu: ({
     isOpen,
     onToggle,
     onLogout,
@@ -113,7 +113,7 @@ vi.mock('../HeaderUserMenu', () => ({
 
 // Stub HeaderMobileMenu — isolate from its own Redux + i18n dependencies
 vi.mock('../HeaderMobileMenu', () => ({
-  default: ({ onClose, onLogout }: { onClose: () => void; onLogout: () => void }) => (
+  HeaderMobileMenu: ({ onClose, onLogout }: { onClose: () => void; onLogout: () => void }) => (
     <div>
       <a href="/login" onClick={onClose}>
         Sign In

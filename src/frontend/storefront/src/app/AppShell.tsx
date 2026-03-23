@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import AnnouncementBar from '@/app/AnnouncementBar';
+import { AnnouncementBar } from '@/app/AnnouncementBar';
 import { Header, Footer } from '@/app/layouts';
 import { AppBootstrapLoading } from '@/app/skeletons';
 
@@ -8,7 +8,7 @@ interface AppShellProps {
   isInitializing: boolean;
 }
 
-export default function AppShell({ children, isInitializing }: AppShellProps) {
+export function AppShell({ children, isInitializing }: AppShellProps) {
   if (isInitializing) {
     return <AppBootstrapLoading />;
   }

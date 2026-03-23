@@ -5,7 +5,7 @@ import styles from './CookieConsent.module.css';
 
 const COOKIE_CONSENT_KEY = 'cookie-consent';
 
-export default function CookieConsent() {
+export function CookieConsent() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

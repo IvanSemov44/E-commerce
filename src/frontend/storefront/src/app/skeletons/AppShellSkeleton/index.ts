@@ -1,1 +1,1 @@
-export { default } from './AppShellSkeleton';
+export { AppShellSkeleton } from './AppShellSkeleton';

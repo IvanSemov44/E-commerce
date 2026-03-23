@@ -12,7 +12,7 @@ interface ToastProps {
   onDismiss: (id: string) => void;
 }
 
-export default function Toast({ toast, onDismiss }: ToastProps) {
+export function Toast({ toast, onDismiss }: ToastProps) {
   useEffect(() => {
     if (!toast.duration || toast.duration <= 0) return;
 

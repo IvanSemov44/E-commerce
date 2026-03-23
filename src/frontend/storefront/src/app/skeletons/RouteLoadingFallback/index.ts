@@ -1,1 +1,1 @@
-export { default } from './RouteLoadingFallback';
+export { RouteLoadingFallback } from './RouteLoadingFallback';
