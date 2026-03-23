@@ -1,5 +1,5 @@
 import type { ChangeEvent, FocusEvent } from 'react';
-import type { ProfileFormValues } from '../../schemas/profileSchemas';
+import type { ProfileFormValues } from '../ProfileFormCard/profileSchemas';
 
 export type ProfileFieldErrors = Partial<Record<keyof ProfileFormValues, string>>;
 

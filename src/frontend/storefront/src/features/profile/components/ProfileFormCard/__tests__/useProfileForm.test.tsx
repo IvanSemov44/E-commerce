@@ -4,7 +4,7 @@ import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import { useProfileForm } from '../useProfileForm';
 
-vi.mock('../../api/profileApi', () => ({
+vi.mock('../../../api/profileApi', () => ({
   useGetProfileQuery: vi.fn(() => ({
     data: {
       id: '1',
@@ -58,7 +58,6 @@ describe('useProfileForm', () => {
 
     expect(rendered.result.current.values.firstName).toBeDefined();
     expect(rendered.result.current.isEditMode).toBe(false);
-    expect(rendered.result.current.isLoading).toBe(false);
   });
 
   it('exposes action and isPending for form submission', () => {

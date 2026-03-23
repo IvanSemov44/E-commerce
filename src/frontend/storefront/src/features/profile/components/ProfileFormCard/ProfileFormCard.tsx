@@ -1,4 +1,4 @@
-import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { useProfileForm } from './useProfileForm';
 import { Card } from '@/shared/components/ui/Card';
 import { ProfileHeader } from '../ProfileHeader/ProfileHeader';
 import { ProfileForm } from '../ProfileForm/ProfileForm';

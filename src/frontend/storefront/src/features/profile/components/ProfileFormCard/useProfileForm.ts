@@ -1,11 +1,11 @@
 import { useState, useMemo, useActionState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGetProfileQuery, useUpdateProfileMutation } from '../api/profileApi';
+import { useGetProfileQuery, useUpdateProfileMutation } from '../../api/profileApi';
 import { useAppDispatch } from '@/shared/lib/store';
 import { updateUser } from '@/features/auth/slices/authSlice';
 import { useToast, useApiErrorHandler } from '@/shared/hooks';
-import { createProfileSchema } from '../schemas/profileSchemas';
-import type { ProfileFormValues } from '../schemas/profileSchemas';
+import { createProfileSchema } from './profileSchemas';
+import type { ProfileFormValues } from './profileSchemas';
 
 type FieldErrors = Partial<Record<keyof ProfileFormValues, string>>;
 
@@ -20,7 +20,7 @@ const INITIAL_VALUES: ProfileFormValues = {
 export function useProfileForm() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const { data: profile, isLoading, error } = useGetProfileQuery();
+  const { data: profile } = useGetProfileQuery();
   const [updateProfile] = useUpdateProfileMutation();
   const { toast } = useToast();
   const { handleError } = useApiErrorHandler();
@@ -106,13 +106,10 @@ export function useProfileForm() {
   };
 
   return {
-    profile,
     values,
     fieldErrors,
     isEditMode,
-    isLoading,
     isPending,
-    error,
     handleChange,
     handleBlur,
     action,
