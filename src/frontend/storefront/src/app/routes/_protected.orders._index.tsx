@@ -1,1 +1,1 @@
-export { default } from '@/features/orders/pages/OrderHistoryPage/OrderHistoryPage';
+export { OrderHistoryPage as default } from '@/features/orders/pages/OrderHistoryPage/OrderHistoryPage';

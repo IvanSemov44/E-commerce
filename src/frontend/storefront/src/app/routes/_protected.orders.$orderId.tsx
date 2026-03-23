@@ -1,1 +1,1 @@
-export { default } from '@/features/orders/pages/OrderDetailPage/OrderDetailPage';
+export { OrderDetailPage as default } from '@/features/orders/pages/OrderDetailPage/OrderDetailPage';
