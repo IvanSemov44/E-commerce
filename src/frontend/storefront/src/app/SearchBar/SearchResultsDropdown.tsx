@@ -1,4 +1,5 @@
 import { SpinnerIcon } from '@/shared/components/icons';
+import { formatPrice } from '@/shared/lib/utils/priceFormatter';
 import type { SearchResult } from './SearchBar.types';
 import styles from './SearchBar.module.css';
 
@@ -11,10 +12,6 @@ interface SearchResultsDropdownProps {
   listboxId: string;
   onResultClick: (result: SearchResult) => void;
   onViewAll: () => void;
-}
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
 }
 
 export function SearchResultsDropdown({
