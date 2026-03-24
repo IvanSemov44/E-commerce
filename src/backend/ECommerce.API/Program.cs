@@ -1,6 +1,7 @@
 ﻿using ECommerce.API.ActionFilters;
 using ECommerce.API.Extensions;
 using ECommerce.Application.Interfaces;
+using MediatR;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -61,6 +62,21 @@ builder.Services.AddResiliencePolicies();
 
 // Application Services
 builder.Services.AddApplicationServices(builder.Configuration);
+
+// MediatR
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+
+    // Uncomment each line when that bounded context's Application project is created:
+    // Phase 1: cfg.RegisterServicesFromAssembly(typeof(CreateProductCommand).Assembly);
+    // Phase 2: cfg.RegisterServicesFromAssembly(typeof(RegisterUserCommand).Assembly);
+    // Phase 3: cfg.RegisterServicesFromAssembly(typeof(ReduceStockCommand).Assembly);
+    // Phase 4: cfg.RegisterServicesFromAssembly(typeof(AddToCartCommand).Assembly);
+    // Phase 5: cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
+    // Phase 6: cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
+    // Phase 7: cfg.RegisterServicesFromAssembly(typeof(PlaceOrderCommand).Assembly);
+});
 
 // Controllers & Validation
 builder.Services.AddControllers();

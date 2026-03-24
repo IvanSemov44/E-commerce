@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
@@ -34,6 +35,7 @@
     <ProjectReference Include="..\ECommerce.Core\ECommerce.Core.csproj" />
     <ProjectReference Include="..\ECommerce.Application\ECommerce.Application.csproj" />
     <ProjectReference Include="..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
+    <ProjectReference Include="..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>
