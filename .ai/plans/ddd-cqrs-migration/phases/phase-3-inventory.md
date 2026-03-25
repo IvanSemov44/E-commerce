@@ -188,6 +188,8 @@ public class InventoryItem : AggregateRoot
 
 **Key insight**: `LowStockDetectedEvent` is only raised when stock CROSSES the threshold (from above to below), not on every reduction. `previous.Quantity > LowStockThreshold && Stock.Quantity <= LowStockThreshold` — this is a classic "state transition" check.
 
+**Tester handoff after Step 1:** Once the `InventoryItem` aggregate and value objects are delivered, the tester writes domain unit tests in `ECommerce.Inventory.Tests/Domain/`. See `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 2.
+
 ---
 
 ## Step 2: Application Project — Event Handlers
@@ -263,6 +265,8 @@ Implementation lives in `Inventory.Infrastructure/Services/EmailService.cs` (cal
 
 **This is the resolution to the Notifications gap**: There is no Notifications bounded context. Email is a side effect handled by each context's event handlers calling `IEmailService`. If you need a full Notifications system (notification preferences, templates, history), add it as Phase 9 — but that's a separate decision.
 
+**Tester handoff after Step 2:** Once the command/query handlers and event handlers are delivered, the tester writes handler unit tests in `ECommerce.Inventory.Tests/Handlers/`. See `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 3.
+
 ---
 
 ## Step 3: Data Migration
@@ -310,7 +314,21 @@ Also update the `GetProductsQuery` in Catalog that hardcoded `InStock = true` in
 
 ## Definition of Done
 
-- [ ] Characterization tests written against old InventoryService
+Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+**Characterization (integration — slow):**
+- [ ] Characterization tests written and PASSING against OLD service (before any migration)
+- [ ] Characterization tests still PASSING after cutover to new handlers
+
+**Domain unit tests (fast — written after Step 1):**
+- [ ] `ECommerce.Inventory.Tests/Domain/InventoryItemTests.cs` written and PASSING
+- Covers: Reduce/Increase/Adjust invariants, LowStockDetected threshold crossing, StockLevel validation
+
+**Handler unit tests (fast — written after Step 2):**
+- [ ] `ECommerce.Inventory.Tests/Handlers/` tests written and PASSING
+- Covers: ReduceStockCommand, ReplenishStockCommand, event handler exception swallowing
+
+**Code:**
 - [ ] `InventoryItem` aggregate with `Reduce`, `Increase`, `Adjust` domain methods
 - [ ] `StockLevel` value object with `Reduce` and `Increase` behavior
 - [ ] Domain events defined: `StockReducedEvent`, `LowStockDetectedEvent`, `StockReplenishedEvent`

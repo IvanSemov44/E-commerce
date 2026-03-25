@@ -257,11 +257,28 @@ When an order is placed, the cart must be cleared. This handler lives in Shoppin
 // }
 ```
 
+**Tester handoff after Step 2:** Once both aggregates (`Cart` and `Wishlist`) and their handlers are delivered, the tester writes domain unit tests and handler unit tests in `ECommerce.Shopping.Tests/`. See `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 2 (domain) and Prompt 3 (handlers).
+
 ---
 
 ## Definition of Done
 
-- [ ] Characterization tests written against old CartService and WishlistService
+Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+**Characterization (integration — slow):**
+- [ ] Characterization tests written and PASSING against OLD service (before any migration)
+- [ ] Characterization tests still PASSING after cutover to new handlers
+
+**Domain unit tests (fast — written after Step 2):**
+- [ ] `ECommerce.Shopping.Tests/Domain/CartTests.cs` written and PASSING
+- [ ] `ECommerce.Shopping.Tests/Domain/WishlistTests.cs` written and PASSING
+- Covers: AddItem idempotency, quantity limits, CartItem snapshot price, Wishlist no-op remove
+
+**Handler unit tests (fast — written after handlers are delivered):**
+- [ ] `ECommerce.Shopping.Tests/Handlers/` tests written and PASSING
+- Covers: AddToCartCommand, RemoveFromCartCommand, AddToWishlistCommand orchestration
+
+**Code:**
 - [ ] `Cart` aggregate with `AddItem` (idempotent), `UpdateItemQuantity`, `RemoveItem`, `Clear`
 - [ ] `CartItem` as child entity with snapshot unit price
 - [ ] `Wishlist` aggregate with idempotent `AddProduct` and no-op `RemoveProduct`

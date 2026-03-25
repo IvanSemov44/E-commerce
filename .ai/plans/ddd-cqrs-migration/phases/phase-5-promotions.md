@@ -291,11 +291,27 @@ public class MinimumOrderSpecification : PromoCodeSpecification
 
 **Don't implement this unless it's needed.** The current `IsValidNow()` method is sufficient. Add Specification when you have 3+ independent validation rules that need to be combined, tested independently, or reused separately.
 
+**Tester handoff after Step 1:** Once the `PromoCode` aggregate, value objects, `DiscountCalculator` domain service, and handlers are delivered, the tester writes domain unit tests and handler unit tests in `ECommerce.Promotions.Tests/`. See `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 2 (domain) and Prompt 3 (handlers).
+
 ---
 
 ## Definition of Done
 
-- [ ] Characterization tests written against old PromoCodeService
+Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+**Characterization (integration — slow):**
+- [ ] Characterization tests written and PASSING against OLD service (before any migration)
+- [ ] Characterization tests still PASSING after cutover to new handlers
+
+**Domain unit tests (fast — written after Step 1):**
+- [ ] `ECommerce.Promotions.Tests/Domain/PromoCodeTests.cs` written and PASSING
+- Covers: RecordUsage limits, Deactivate, IsValidNow, DiscountValue.Calculate, DateRange.IsActive
+
+**Handler unit tests (fast — written after handlers are delivered):**
+- [ ] `ECommerce.Promotions.Tests/Handlers/` tests written and PASSING
+- Covers: ApplyPromoCodeCommand, DiscountCalculator integration in handler
+
+**Code:**
 - [ ] `PromoCode` aggregate with `RecordUsage`, `Deactivate`, `IsValidNow`
 - [ ] `DiscountValue` VO with `Calculate(subtotal)` behavior
 - [ ] `DateRange` VO with `IsActive(now)` behavior

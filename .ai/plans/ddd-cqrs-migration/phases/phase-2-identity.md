@@ -339,11 +339,27 @@ Notice: `_hasher.Verify()` and `_jwt.GenerateAccessToken()` are infrastructure. 
 
 **Why does `Address` have an `internal` constructor?** Only `User.AddAddress(...)` should create addresses. If the constructor were `public`, infrastructure code could bypass the aggregate root and create orphan addresses.
 
+**Tester handoff after Step 1:** Once the `User` aggregate, value objects, and handlers are delivered, the tester writes domain unit tests and handler unit tests in `ECommerce.Identity.Tests/`. See prompts in `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 2 (domain) and Prompt 3 (handlers).
+
 ---
 
 ## Definition of Done
 
-- [ ] Characterization tests written and passing against old AuthService + UserService
+Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+**Characterization (integration — slow):**
+- [ ] Characterization tests written and PASSING against OLD service (before any migration)
+- [ ] Characterization tests still PASSING after cutover to new handlers
+
+**Domain unit tests (fast — written after domain aggregates are delivered):**
+- [ ] `ECommerce.Identity.Tests/Domain/UserTests.cs` written and PASSING
+- Covers: Register, VerifyEmail, ChangePassword, AddAddress invariants, value object validation
+
+**Handler unit tests (fast — written after handlers are delivered):**
+- [ ] `ECommerce.Identity.Tests/Handlers/` tests written and PASSING
+- Covers: LoginCommand, RegisterCommand orchestration, correct Result returned
+
+**Code:**
 - [ ] `Email`, `PersonName`, `PasswordHash` value objects with validation
 - [ ] `User` aggregate with `Register`, `VerifyEmail`, `ChangePassword`, `AddAddress`, `AddRefreshToken` domain methods
 - [ ] `Address` and `RefreshToken` as child entities (not value objects)

@@ -5,6 +5,25 @@ Read `theory/07-testing-ddd.md` for the theory. Use the files here to actually d
 
 ---
 
+## Related Documents
+
+| Document | Purpose |
+|----------|---------|
+| `theory/07-testing-ddd.md` | Theory behind each test level — read this first |
+| `testing/tester-prompt-template.md` | Ready-to-paste prompts for the tester (4 prompts) |
+| `testing/characterization-checklist.md` | Per-endpoint matrix and 5-scenario rule |
+| `phases/phase-1-catalog.md` | Phase 1 step plan with tester handoff notes |
+| `phases/phase-2-identity.md` | Phase 2 — same structure |
+| `phases/phase-3-inventory.md` | Phase 3 |
+| `phases/phase-4-shopping.md` | Phase 4 |
+| `phases/phase-5-promotions.md` | Phase 5 |
+| `phases/phase-6-reviews.md` | Phase 6 |
+| `phases/phase-7-ordering.md` | Phase 7 |
+
+Each phase doc marks exactly **when** to hand off to the tester ("Tester handoff after Step X") and lists test checkpoints in its Definition of Done.
+
+---
+
 ## Project Structure Decision
 
 Two separate test projects — different speed, different purpose:

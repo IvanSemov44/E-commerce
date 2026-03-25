@@ -234,11 +234,27 @@ public async Task<Result<ReviewDto>> Handle(CreateReviewCommand command, Cancell
 }
 ```
 
+**Tester handoff after Step 4:** Once the `Review` aggregate, value objects, and all handlers are delivered, the tester writes domain unit tests and handler unit tests in `ECommerce.Reviews.Tests/`. See `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 2 (domain) and Prompt 3 (handlers).
+
 ---
 
 ## Definition of Done
 
-- [ ] Characterization tests written against old ReviewService
+Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+**Characterization (integration — slow):**
+- [ ] Characterization tests written and PASSING against OLD service (before any migration)
+- [ ] Characterization tests still PASSING after cutover to new handlers
+
+**Domain unit tests (fast — written after Step 1):**
+- [ ] `ECommerce.Reviews.Tests/Domain/ReviewTests.cs` written and PASSING
+- Covers: Edit within/outside edit window, Approve, Rating/ReviewContent validation, temporal parameter pattern
+
+**Handler unit tests (fast — written after handlers are delivered):**
+- [ ] `ECommerce.Reviews.Tests/Handlers/` tests written and PASSING
+- Covers: SubmitReviewCommand one-review-per-user enforcement, ApproveReviewCommand orchestration
+
+**Code:**
 - [ ] `Review` aggregate with `Edit` (with edit window), `Approve`, `MarkAsVerifiedPurchase`
 - [ ] `Rating` and `ReviewContent` value objects with validation
 - [ ] `Edit()` receives `DateTime now` as parameter (no clock injection)

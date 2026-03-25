@@ -311,6 +311,8 @@ public class OrderItem : Entity
 }
 ```
 
+**Tester handoff after Step 1:** Once the `Order` aggregate, `OrderStatus` enumeration class, and value objects are delivered, the tester writes domain unit tests in `ECommerce.Ordering.Tests/Domain/`. See `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 2.
+
 ---
 
 ## Step 2: PlaceOrder — The Most Complex Command
@@ -433,6 +435,8 @@ public class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand, Resul
 
 This is why event handlers MUST catch exceptions (Rule 17). If the email handler fails, the order is already saved — that's correct. The email can be retried. The order must not be rolled back because an email failed.
 
+**Tester handoff after Step 2:** Once `PlaceOrderCommand` handler is delivered, the tester writes handler unit tests in `ECommerce.Ordering.Tests/Handlers/`. See `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 3.
+
 ---
 
 ## Step 3: Wire Up All Event Handler Stubs
@@ -493,7 +497,21 @@ public class ClearCartOnOrderPlacedHandler : INotificationHandler<OrderPlacedEve
 
 ## Definition of Done
 
-- [ ] Characterization tests written against old OrderService
+Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+**Characterization (integration — slow):**
+- [ ] Characterization tests written and PASSING against OLD service (before any migration)
+- [ ] Characterization tests still PASSING after cutover to new handlers
+
+**Domain unit tests (fast — written after Step 1):**
+- [ ] `ECommerce.Ordering.Tests/Domain/OrderTests.cs` written and PASSING
+- Covers: Place/Confirm/Ship/Deliver/Cancel state transitions, invalid transitions throw, OrderItem snapshot, PaymentInfo validation
+
+**Handler unit tests (fast — written after Step 2):**
+- [ ] `ECommerce.Ordering.Tests/Handlers/` tests written and PASSING
+- Covers: PlaceOrderCommand orchestration (cart check, promo calc, snapshot), event handler stubs
+
+**Code:**
 - [ ] `OrderStatus` Enumeration class with `CanTransitionTo()`
 - [ ] `Order` aggregate with `Place`, `Confirm`, `Ship`, `Deliver`, `Cancel` (all via `TransitionTo`)
 - [ ] `OrderItem` as immutable snapshot (name + price copied at order time)
