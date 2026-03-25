@@ -4,6 +4,7 @@ using ECommerce.Application;
 using ECommerce.Application.Configuration;
 using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
+using ECommerce.SharedKernel.Domain;
 using ECommerce.Application.Validators.Cart;
 using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure;
@@ -296,6 +297,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         // MediatRUnitOfWork — used by MediatR handlers, old code knows nothing about it.
         services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, MediatRUnitOfWork>();
+        // Domain event dispatcher for publishing domain events after save
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         // HTTP context accessor
         services.AddHttpContextAccessor();

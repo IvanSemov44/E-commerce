@@ -650,11 +650,11 @@ public override async Task<int> SaveChangesAsync(CancellationToken cancellationT
 **Why this order matters**: If you dispatch events before saving, and the save then fails (e.g., DB constraint violation), the event handlers have already run and possibly sent emails or modified other aggregates. That is a consistency disaster. Events after save = events only for things that actually happened.
 
 ### Verification
-- [ ] `dotnet build` succeeds
-- [ ] DomainEventDispatcher is registered in DI
-- [ ] UnitOfWork.SaveChangesAsync stamps `UpdatedAt` before persisting
-- [ ] Domain events are dispatched after `base.SaveChangesAsync()` succeeds
-- [ ] No existing functionality is broken
+- [x] `dotnet build` succeeds
+- [x] DomainEventDispatcher is registered in DI
+- [x] AppDbContext.SaveChangesAsync stamps `UpdatedAt` before persisting
+- [x] Domain events are dispatched after `base.SaveChangesAsync()` succeeds
+- [x] No existing functionality is broken
 - [ ] (Optional) Write a test: create an aggregate with an event, save, verify the event was dispatched
 
 ---
@@ -705,8 +705,8 @@ After completing all steps:
 - [x] MediatR is installed and configured in API
 - [x] Pipeline behaviors exist: Logging, PerformanceBehavior, Validation, Transaction (in that order)
 - [x] `ITransactionalCommand` imported from SharedKernel, not defined in API
-- [ ] `UnitOfWork.SaveChangesAsync` stamps `UpdatedAt`, then saves, then dispatches domain events
-- [ ] Domain event dispatcher is implemented and hooked into save
+- [x] `UnitOfWork.SaveChangesAsync` stamps `UpdatedAt`, then saves, then dispatches domain events
+- [x] Domain event dispatcher is implemented and hooked into save
 - [x] `dotnet build` succeeds for entire solution
 - [ ] `dotnet test` passes (if tests exist)
 - [ ] App runs and all existing functionality works
