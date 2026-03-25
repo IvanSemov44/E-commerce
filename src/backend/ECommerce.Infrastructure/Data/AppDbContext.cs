@@ -78,12 +78,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
             entry.Property(nameof(Entity.UpdatedAt)).CurrentValue = utcNow;
         }
 
+        // Collect and clear domain events before saving to avoid re-entry
+        var aggregates = ChangeTracker.Entries<AggregateRoot>()
+            .Where(e => e.Entity.DomainEvents.Count != 0)
+            .Select(e => e.Entity)
+            .ToList();
+
+        var events = aggregates
+            .SelectMany(a => a.DomainEvents)
+            .ToList();
+
+        foreach (var aggregate in aggregates)
+            aggregate.ClearDomainEvents();
+
         var result = await base.SaveChangesAsync(cancellationToken);
 
-        if (_dispatcher != null)
-        {
-            await _dispatcher.DispatchEventsAsync(cancellationToken);
-        }
+        if (_dispatcher != null && events.Count != 0)
+            await _dispatcher.DispatchEventsAsync(events, cancellationToken);
 
         return result;
     }
