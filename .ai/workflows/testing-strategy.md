@@ -69,3 +69,15 @@ npm run test:e2e
 - Merging behavior changes without regression tests.
 - Treating flaky tests as acceptable instead of fixing root cause.
 - Forgetting E2E when auth/cart/checkout flow changed.
+
+## DDD Migration Testing
+For the DDD/CQRS migration, a separate testing guide applies.
+See: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+Three additional test levels are introduced:
+- **Characterization tests** — written before migrating each service (captures current behavior)
+- **Domain unit tests** — written after each aggregate is built (pure C#, no DB)
+- **Handler unit tests** — written after each handler is built (mocked repos)
+
+Tester prompt templates: `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md`
+Per-endpoint checklist: `.ai/plans/ddd-cqrs-migration/testing/characterization-checklist.md`

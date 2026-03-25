@@ -168,7 +168,7 @@ public class ProductsController : ControllerBase
         {
             var statusCode = failure.Code switch
             {
-                "DUPLICATE_PRODUCT_SLUG" => StatusCodes.Status409Conflict,
+                "DUPLICATE_PRODUCT_SLUG" => StatusCodes.Status422UnprocessableEntity,
                 _ => StatusCodes.Status400BadRequest
             };
             return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
@@ -215,7 +215,7 @@ public class ProductsController : ControllerBase
         {
             var statusCode = failure.Code switch
             {
-                "DUPLICATE_PRODUCT_SLUG" => StatusCodes.Status409Conflict,
+                "DUPLICATE_PRODUCT_SLUG" => StatusCodes.Status422UnprocessableEntity,
                 "PRODUCT_NOT_FOUND" => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status400BadRequest
             };

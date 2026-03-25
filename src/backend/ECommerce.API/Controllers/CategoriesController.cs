@@ -164,7 +164,14 @@ public class CategoriesController : ControllerBase
                 ApiResponse<CategoryDetailDto>.Ok(success.Data, "Category created successfully"));
         }
         if (result is Result<CategoryDetailDto>.Failure failure)
-            return Conflict(ApiResponse<object>.Failure(failure.Message, failure.Code));
+        {
+            var statusCode = failure.Code switch
+            {
+                "DUPLICATE_CATEGORY_SLUG" => StatusCodes.Status422UnprocessableEntity,
+                _ => StatusCodes.Status409Conflict
+            };
+            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Message, failure.Code));
+        }
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
     }
 
@@ -204,7 +211,7 @@ public class CategoriesController : ControllerBase
         {
             var statusCode = failure.Code switch
             {
-                "DUPLICATE_CATEGORY_SLUG" => StatusCodes.Status409Conflict,
+                "DUPLICATE_CATEGORY_SLUG" => StatusCodes.Status422UnprocessableEntity,
                 "CATEGORY_NOT_FOUND" => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status400BadRequest
             };
@@ -246,7 +253,7 @@ public class CategoriesController : ControllerBase
         {
             var statusCode = failure.Code switch
             {
-                "CATEGORY_HAS_PRODUCTS" => StatusCodes.Status400BadRequest,
+                "CATEGORY_HAS_PRODUCTS" => StatusCodes.Status422UnprocessableEntity,
                 "CATEGORY_NOT_FOUND" => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status400BadRequest
             };
