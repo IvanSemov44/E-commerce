@@ -116,6 +116,19 @@ See `context-map.md` for full analysis.
 - Extract each context into separate solution folders
 - Replace in-process events with integration events where needed
 
+## Technical Debt
+
+During the migration, old and new code coexist. This creates deliberate, tracked debt.
+
+See `debt/README.md` for the full debt register — every naming conflict, every dual registration, and the exact cleanup step for each.
+
+Key items:
+- **Naming conflicts** — `IProductRepository`, `Product`, `Category`, etc. exist in both Core and the new context projects during transition. Resolved at each phase's cutover step.
+- **Dual `IUnitOfWork`** — old `Core.IUnitOfWork → UnitOfWork` and new `SharedKernel.IUnitOfWork → MediatRUnitOfWork` coexist until Phase 7 complete.
+- **AutoMapper vulnerability** — cannot remove until all old services are gone (Phase 7).
+
+---
+
 ## Multi-AI Workflow
 
 This migration uses 4 AI roles. See `prompts/roles.md` for full definitions.

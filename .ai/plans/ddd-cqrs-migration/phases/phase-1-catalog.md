@@ -59,6 +59,8 @@ Minimum tests per endpoint:
 
 ## Step 2: Domain Project
 
+> **Naming conflict starts here.** `ECommerce.Catalog.Domain` will define `Product`, `Category`, `IProductRepository`, `ICategoryRepository` — all names that already exist in `ECommerce.Core`. Both coexist until cutover. See `debt/README.md` items D-01, D-02, D-04 for how to handle this.
+
 ### Project setup
 
 ```bash
