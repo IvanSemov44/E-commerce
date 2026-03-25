@@ -1,0 +1,135 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ECommerce.Catalog.Domain.Aggregates.Product.Events;
+using ECommerce.Catalog.Domain.Errors;
+using ECommerce.Catalog.Domain.ValueObjects;
+using ECommerce.SharedKernel.Domain;
+using ECommerce.SharedKernel.Results;
+
+namespace ECommerce.Catalog.Domain.Aggregates.Product;
+
+public sealed class Product : AggregateRoot
+{
+    public ProductName Name { get; private set; } = null!;
+    public Slug Slug { get; private set; } = null!;
+    public Money Price { get; private set; } = null!;
+    public Money? CompareAtPrice { get; private set; }
+    public Sku Sku { get; private set; } = null!;
+    public string? Description { get; private set; }
+    public ProductStatus Status { get; private set; }
+    public bool IsFeatured { get; private set; }
+    public bool IsDeleted { get; private set; }
+    public Guid CategoryId { get; private set; }
+
+    private readonly List<ProductImage> _images = new();
+    public IReadOnlyCollection<ProductImage> Images => _images.AsReadOnly();
+
+    private Product() { }
+
+    public static Result<Product> Create(
+        string nameRaw,
+        decimal priceAmount,
+        string priceCurrency,
+        string skuRaw,
+        Guid categoryId,
+        string? description = null,
+        decimal? compareAtPriceAmount = null)
+    {
+        var nameResult = ProductName.Create(nameRaw);
+        if (!nameResult.IsSuccess) return Result<Product>.Fail(nameResult.GetErrorOrThrow());
+
+        var priceResult = Money.Create(priceAmount, priceCurrency);
+        if (!priceResult.IsSuccess) return Result<Product>.Fail(priceResult.GetErrorOrThrow());
+
+        var skuResult = Sku.Create(skuRaw);
+        if (!skuResult.IsSuccess) return Result<Product>.Fail(skuResult.GetErrorOrThrow());
+
+        var slugResult = Slug.Create(nameRaw);
+        if (!slugResult.IsSuccess) return Result<Product>.Fail(slugResult.GetErrorOrThrow());
+
+        Money? compareAtPrice = null;
+        if (compareAtPriceAmount.HasValue)
+        {
+            var compareResult = Money.Create(compareAtPriceAmount.Value, priceCurrency);
+            if (!compareResult.IsSuccess) return Result<Product>.Fail(compareResult.GetErrorOrThrow());
+            compareAtPrice = compareResult.GetDataOrThrow();
+        }
+
+        var name = nameResult.GetDataOrThrow();
+
+        Product product = new()
+        {
+            Name = name,
+            Slug = slugResult.GetDataOrThrow(),
+            Price = priceResult.GetDataOrThrow(),
+            CompareAtPrice = compareAtPrice,
+            Sku = skuResult.GetDataOrThrow(),
+            Description = description,
+            Status = ProductStatus.Draft,
+            IsFeatured = false,
+            IsDeleted = false,
+            CategoryId = categoryId,
+        };
+
+        product.AddDomainEvent(new ProductCreatedEvent(product.Id, name.Value, categoryId));
+        return Result<Product>.Ok(product);
+    }
+
+    // Takes pre-validated value objects — callers use ProductName.Create() etc. first.
+    // Slug derivation from a valid ProductName.Value cannot fail.
+    public void UpdateDetails(ProductName name, string? description, Guid categoryId)
+    {
+        Name = name;
+        Slug = Slug.Create(name.Value).GetDataOrThrow();
+        Description = description;
+        CategoryId = categoryId;
+    }
+
+    public void UpdatePrice(Money newPrice)
+    {
+        var oldPrice = Price;
+        Price = newPrice;
+        AddDomainEvent(new ProductPriceChangedEvent(Id, oldPrice, newPrice));
+    }
+
+    public void Activate()
+    {
+        if (Status == ProductStatus.Active) return;
+        Status = ProductStatus.Active;
+    }
+
+    public Result Deactivate()
+    {
+        if (Status == ProductStatus.Discontinued)
+            return Result.Fail(CatalogErrors.ProductDiscontinued);
+        Status = ProductStatus.Inactive;
+        AddDomainEvent(new ProductDeactivatedEvent(Id));
+        return Result.Ok();
+    }
+
+    public void Delete()
+    {
+        IsDeleted = true;
+    }
+
+    public Result AddImage(string url, string? altText)
+    {
+        if (_images.Count >= 10)
+            return Result.Fail(CatalogErrors.ProductMaxImages);
+        bool isPrimary = _images.Count == 0;
+        int order = _images.Count;
+        _images.Add(new ProductImage(Guid.NewGuid(), Id, url, altText, isPrimary, order));
+        return Result.Ok();
+    }
+
+    public Result SetPrimaryImage(Guid imageId)
+    {
+        ProductImage? image = _images.FirstOrDefault(i => i.Id == imageId);
+        if (image is null)
+            return Result.Fail(CatalogErrors.ProductImageNotFound);
+        foreach (ProductImage img in _images) img.SetPrimary(false);
+        image.SetPrimary(true);
+        return Result.Ok();
+    }
+}

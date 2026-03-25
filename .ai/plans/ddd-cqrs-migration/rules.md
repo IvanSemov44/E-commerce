@@ -16,6 +16,17 @@
 
 5. **Collections are read-only externally.** Expose `IReadOnlyCollection<T>`, not `List<T>`. Mutation only through aggregate root methods.
 
+   **Child entities are `internal`.** Child entities inside an aggregate are `internal sealed class`, not `public`. This enforces the aggregate boundary at compile time — code outside the `{Context}.Domain` assembly cannot reference child entities directly at all. The aggregate root stays `public`.
+
+   ```csharp
+   public sealed class Product : AggregateRoot { }      // ✅ public — repositories return this
+   internal sealed class ProductImage : Entity { }       // ✅ internal — unreachable from outside Domain
+
+   public class ProductImage : Entity { }                // ❌ — aggregate boundary is just a convention, not enforced
+   ```
+
+   The Infrastructure project needs access for EF Core entity configuration. Grant it via `[assembly: InternalsVisibleTo("ECommerce.{Context}.Infrastructure")]` in the Domain project's `Properties/AssemblyInfo.cs`.
+
 6. **Aggregate root raises events.** Only the root calls `AddDomainEvent(...)`. Child entities signal the root, and the root decides whether to raise an event.
 
 7. **No dependencies in aggregates.** Aggregates don't inject services. They take all needed data as method parameters. If an aggregate needs external data to make a decision, the handler fetches it and passes it in.
@@ -24,7 +35,38 @@
 
 8. **Immutable.** No setters. Once created, a value object never changes. To "change" it, create a new one.
 
-9. **Validated at creation.** A `Money` value object with amount -50 should be impossible to create. Validate in the constructor or factory method. If invalid, throw `DomainException`.
+   **Sealed.** All value objects and aggregate roots must be `sealed`. Value objects: subclassing breaks value-equality semantics (`record` equality and `GetEqualityComponents()` both assume a fixed set of properties). Aggregate roots: subclassing could bypass the invariants the root enforces.
+
+   ```csharp
+   public sealed record ProductName { ... }          // ✅
+   public sealed class Money : ValueObject { ... }   // ✅
+   public sealed class Product : AggregateRoot { }   // ✅
+
+   public record ProductName { ... }                 // ❌ — subclassable, equality unsafe
+   public class Product : AggregateRoot { }          // ❌ — invariants can be bypassed
+   ```
+
+   Base classes (`AggregateRoot`, `Entity`, `ValueObject`) in SharedKernel must NOT be sealed — they exist to be inherited.
+
+9. **Validated at creation. Return `Result<T>`, never throw.** A `Money` value object with amount -50 should be impossible to create. Validate in the factory method and return `Result<T>.Fail(ContextErrors.X)` for invalid input. Domain validation is expected flow — not exceptional. Exceptions are reserved for infrastructure failures (DB down, null ref bugs).
+
+   ```csharp
+   // ✅ correct
+   public static Result<Money> Create(decimal amount, string currency)
+   {
+       if (amount < 0) return Result<Money>.Fail(CatalogErrors.MoneyNegative);
+       return Result<Money>.Ok(new Money(amount, currency));
+   }
+
+   // ❌ wrong — throws for expected business conditions
+   public static Money Create(decimal amount, string currency)
+   {
+       if (amount < 0) throw new CatalogDomainException("MONEY_NEGATIVE", "...");
+       return new Money(amount, currency);
+   }
+   ```
+
+   All error definitions for a context live in a single `{Context}Errors.cs` static class with `readonly DomainError` fields. No magic strings at throw sites.
 
 10. **Equality by value.** Two `Money(100, "USD")` are equal. Override `Equals` and `GetHashCode` (or use records).
 
@@ -143,7 +185,7 @@
 | Domain Event | `{Noun}{PastVerb}Event` | `ProductCreatedEvent` |
 | Event Handler | `{WhatItDoes}On{Event}Handler` | `SendEmailOnOrderPlacedHandler` |
 | Value Object | Business name | `Money`, `Email`, `Slug` |
-| Domain Exception | `{Context}DomainException` | `CatalogDomainException` |
+| Domain Errors (values) | `{Context}Errors` | `CatalogErrors` |
 | Aggregate Root | Business name | `Product`, `Order`, `Cart` |
 
 ## File Organization (per bounded context)
@@ -158,8 +200,8 @@ ECommerce.{Context}.Domain/
 │           └── {Event}.cs
 ├── ValueObjects/
 │   └── {ValueObject}.cs
-├── Exceptions/
-│   └── {Context}DomainException.cs
+├── Errors/
+│   └── {Context}Errors.cs            (static class with DomainError fields — one per validation rule)
 ├── Interfaces/
 │   └── I{AggregateRoot}Repository.cs
 └── Services/

@@ -146,11 +146,13 @@ public class Product : AggregateRoot
     private readonly List<ProductImage> _images = new();
     public IReadOnlyCollection<ProductImage> Images => _images.AsReadOnly();
 
-    public void AddImage(string url, string altText)
+    public Result AddImage(string url, string altText)
     {
         // Root enforces invariant: max 10 images
+        // NOTE: In this project we return Result<T>, not throw — see rules.md Rule 9.
+        // The throw is shown here for conceptual clarity.
         if (_images.Count >= 10)
-            throw new DomainException("Product cannot have more than 10 images");
+            return Result.Fail(CatalogErrors.ProductMaxImages);
 
         var image = new ProductImage(url, altText);
 

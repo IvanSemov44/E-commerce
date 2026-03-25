@@ -61,45 +61,48 @@ public class Cart : AggregateRoot
         };
     }
 
-    public void AddItem(Guid productId, int quantity, decimal unitPrice, string currency)
+    public Result AddItem(Guid productId, int quantity, decimal unitPrice, string currency)
     {
         if (quantity <= 0)
-            throw new ShoppingDomainException("QUANTITY_INVALID", "Quantity must be positive.");
+            return Result.Fail(ShoppingErrors.QuantityInvalid);
 
         // Idempotency: if product already in cart, increase quantity
-        var existing = _items.FirstOrDefault(i => i.ProductId == productId);
+        CartItem? existing = _items.FirstOrDefault(i => i.ProductId == productId);
         if (existing is not null)
         {
             existing.IncreaseQuantity(quantity);
             AddDomainEvent(new CartItemQuantityUpdatedEvent(Id, productId, existing.Quantity));
-            return;
+            return Result.Ok();
         }
 
         if (_items.Count >= 50)
-            throw new ShoppingDomainException("CART_FULL", "Cart cannot contain more than 50 distinct items.");
+            return Result.Fail(ShoppingErrors.CartFull);
 
         _items.Add(CartItem.Create(Guid.NewGuid(), Id, productId, quantity, unitPrice, currency));
         AddDomainEvent(new ItemAddedToCartEvent(Id, productId, quantity));
+        return Result.Ok();
     }
 
-    public void UpdateItemQuantity(Guid cartItemId, int newQuantity)
+    public Result UpdateItemQuantity(Guid cartItemId, int newQuantity)
     {
         if (newQuantity <= 0)
-            throw new ShoppingDomainException("QUANTITY_INVALID", "Quantity must be positive.");
+            return Result.Fail(ShoppingErrors.QuantityInvalid);
 
-        var item = _items.FirstOrDefault(i => i.Id == cartItemId)
-            ?? throw new ShoppingDomainException("CART_ITEM_NOT_FOUND", "Cart item not found.");
+        CartItem? item = _items.FirstOrDefault(i => i.Id == cartItemId);
+        if (item is null) return Result.Fail(ShoppingErrors.CartItemNotFound);
 
         item.SetQuantity(newQuantity);
         AddDomainEvent(new CartItemQuantityUpdatedEvent(Id, item.ProductId, newQuantity));
+        return Result.Ok();
     }
 
-    public void RemoveItem(Guid cartItemId)
+    public Result RemoveItem(Guid cartItemId)
     {
-        var item = _items.FirstOrDefault(i => i.Id == cartItemId)
-            ?? throw new ShoppingDomainException("CART_ITEM_NOT_FOUND", "Cart item not found.");
+        CartItem? item = _items.FirstOrDefault(i => i.Id == cartItemId);
+        if (item is null) return Result.Fail(ShoppingErrors.CartItemNotFound);
 
         _items.Remove(item);
+        return Result.Ok();
     }
 
     public void Clear()
@@ -161,8 +164,8 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, Result<
 
     public async Task<Result<CartDto>> Handle(AddToCartCommand command, CancellationToken ct)
     {
-        var userId = _currentUser.UserId
-            ?? return Result<CartDto>.Unauthorized();
+        if (_currentUser.UserId is not Guid userId)
+            return Result<CartDto>.Fail(ErrorCodes.Unauthorized, "Authentication required.");
 
         // Cross-context validation: product must exist
         // During Phases 1-7 we use the shared DB. In Phase 8 this becomes an API call.
@@ -214,12 +217,13 @@ public class Wishlist : AggregateRoot
         UpdatedAt = DateTime.UtcNow
     };
 
-    public void AddProduct(Guid productId)
+    public Result AddProduct(Guid productId)
     {
-        if (_productIds.Contains(productId)) return;  // idempotent
+        if (_productIds.Contains(productId)) return Result.Ok();  // idempotent
         if (_productIds.Count >= 100)
-            throw new ShoppingDomainException("WISHLIST_FULL", "Wishlist cannot exceed 100 items.");
+            return Result.Fail(ShoppingErrors.WishlistFull);
         _productIds.Add(productId);
+        return Result.Ok();
     }
 
     public void RemoveProduct(Guid productId)

@@ -40,11 +40,11 @@ public record Rating
 
     private Rating(int value) => Value = value;
 
-    public static Rating Create(int value)
+    public static Result<Rating> Create(int value)
     {
         if (value < 1 || value > 5)
-            throw new ReviewsDomainException("RATING_RANGE", "Rating must be between 1 and 5.");
-        return new Rating(value);
+            return Result<Rating>.Fail(ReviewsErrors.RatingRange);
+        return Result<Rating>.Ok(new Rating(value));
     }
 }
 
@@ -56,20 +56,20 @@ public record ReviewContent
 
     private ReviewContent(string title, string body) { Title = title; Body = body; }
 
-    public static ReviewContent Create(string title, string body)
+    public static Result<ReviewContent> Create(string title, string body)
     {
         if (string.IsNullOrWhiteSpace(title))
-            throw new ReviewsDomainException("REVIEW_TITLE_EMPTY", "Review title cannot be empty.");
+            return Result<ReviewContent>.Fail(ReviewsErrors.ReviewTitleEmpty);
         if (title.Trim().Length > 100)
-            throw new ReviewsDomainException("REVIEW_TITLE_LONG", "Review title cannot exceed 100 characters.");
+            return Result<ReviewContent>.Fail(ReviewsErrors.ReviewTitleLong);
         if (string.IsNullOrWhiteSpace(body))
-            throw new ReviewsDomainException("REVIEW_BODY_EMPTY", "Review body cannot be empty.");
+            return Result<ReviewContent>.Fail(ReviewsErrors.ReviewBodyEmpty);
         if (body.Trim().Length < 10)
-            throw new ReviewsDomainException("REVIEW_BODY_SHORT", "Review must be at least 10 characters.");
+            return Result<ReviewContent>.Fail(ReviewsErrors.ReviewBodyShort);
         if (body.Trim().Length > 2000)
-            throw new ReviewsDomainException("REVIEW_BODY_LONG", "Review cannot exceed 2000 characters.");
+            return Result<ReviewContent>.Fail(ReviewsErrors.ReviewBodyLong);
 
-        return new ReviewContent(title.Trim(), body.Trim());
+        return Result<ReviewContent>.Ok(new ReviewContent(title.Trim(), body.Trim()));
     }
 }
 ```
@@ -115,19 +115,18 @@ public class Review : AggregateRoot
         };
     }
 
-    public void Edit(Rating newRating, ReviewContent newContent, DateTime now)
+    public Result Edit(Rating newRating, ReviewContent newContent, DateTime now)
     {
         if (Status == ReviewStatus.Approved)
-            throw new ReviewsDomainException("REVIEW_APPROVED", "Cannot edit an approved review.");
+            return Result.Fail(ReviewsErrors.ReviewApproved);
 
-        var editDeadline = CreatedAt.Add(EditWindow);
+        DateTime editDeadline = CreatedAt.Add(EditWindow);
         if (now > editDeadline)
-            throw new ReviewsDomainException(
-                "REVIEW_EDIT_WINDOW_EXPIRED",
-                $"Reviews can only be edited within {EditWindow.Days} days of creation.");
+            return Result.Fail(ReviewsErrors.ReviewEditWindowExpired);
 
         Rating = newRating;
         Content = newContent;
+        return Result.Ok();
     }
 
     public void Approve()

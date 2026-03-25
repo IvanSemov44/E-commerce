@@ -69,29 +69,29 @@ public record StockLevel
 
     private StockLevel(int quantity) => Quantity = quantity;
 
-    public static StockLevel Create(int quantity)
+    public static Result<StockLevel> Create(int quantity)
     {
         if (quantity < 0)
-            throw new InventoryDomainException("STOCK_NEGATIVE", "Stock quantity cannot be negative.");
-        return new StockLevel(quantity);
+            return Result<StockLevel>.Fail(InventoryErrors.StockNegative);
+        return Result<StockLevel>.Ok(new StockLevel(quantity));
     }
 
     public static StockLevel Zero => new(0);
 
-    public StockLevel Reduce(int amount)
+    public Result<StockLevel> Reduce(int amount)
     {
         if (amount <= 0)
-            throw new InventoryDomainException("REDUCE_AMOUNT_INVALID", "Amount to reduce must be positive.");
+            return Result<StockLevel>.Fail(InventoryErrors.ReduceAmountInvalid);
         if (Quantity - amount < 0)
-            throw new InventoryDomainException("INSUFFICIENT_STOCK", "Insufficient stock to reduce.");
-        return new StockLevel(Quantity - amount);
+            return Result<StockLevel>.Fail(InventoryErrors.InsufficientStock);
+        return Result<StockLevel>.Ok(new StockLevel(Quantity - amount));
     }
 
-    public StockLevel Increase(int amount)
+    public Result<StockLevel> Increase(int amount)
     {
         if (amount <= 0)
-            throw new InventoryDomainException("INCREASE_AMOUNT_INVALID", "Amount to increase must be positive.");
-        return new StockLevel(Quantity + amount);
+            return Result<StockLevel>.Fail(InventoryErrors.IncreaseAmountInvalid);
+        return Result<StockLevel>.Ok(new StockLevel(Quantity + amount));
     }
 }
 ```
@@ -138,50 +138,62 @@ public class InventoryItem : AggregateRoot
 
     private InventoryItem() { }
 
-    public static InventoryItem Create(Guid productId, int initialQuantity, int lowStockThreshold)
+    public static Result<InventoryItem> Create(Guid productId, int initialQuantity, int lowStockThreshold)
     {
         if (lowStockThreshold < 0)
-            throw new InventoryDomainException("THRESHOLD_NEGATIVE", "Low stock threshold cannot be negative.");
+            return Result<InventoryItem>.Fail(InventoryErrors.ThresholdNegative);
 
-        var item = new InventoryItem
+        var stockResult = StockLevel.Create(initialQuantity);
+        if (!stockResult.IsSuccess) return Result<InventoryItem>.Fail(stockResult.GetErrorOrThrow());
+
+        InventoryItem item = new()
         {
-            Id = Guid.NewGuid(),
             ProductId = productId,
-            Stock = StockLevel.Create(initialQuantity),
+            Stock = stockResult.GetDataOrThrow(),
             LowStockThreshold = lowStockThreshold,
             TrackInventory = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
 
-        return item;
+        return Result<InventoryItem>.Ok(item);
     }
 
-    public void Reduce(int amount, string reason)
+    public Result Reduce(int amount, string reason)
     {
         var previous = Stock;
-        Stock = Stock.Reduce(amount);  // throws if insufficient
+        var reduceResult = Stock.Reduce(amount);
+        if (!reduceResult.IsSuccess) return Result.Fail(reduceResult.GetErrorOrThrow());
 
+        Stock = reduceResult.GetDataOrThrow();
         _log.Add(InventoryLog.Create(Id, -amount, reason, Stock.Quantity));
         AddDomainEvent(new StockReducedEvent(Id, ProductId, amount, Stock.Quantity, reason));
 
         // Check low stock AFTER reducing
         if (Stock.Quantity <= LowStockThreshold && previous.Quantity > LowStockThreshold)
             AddDomainEvent(new LowStockDetectedEvent(ProductId, Stock.Quantity, LowStockThreshold));
+
+        return Result.Ok();
     }
 
-    public void Increase(int amount, string reason)
+    public Result Increase(int amount, string reason)
     {
-        Stock = Stock.Increase(amount);
+        var increaseResult = Stock.Increase(amount);
+        if (!increaseResult.IsSuccess) return Result.Fail(increaseResult.GetErrorOrThrow());
+
+        Stock = increaseResult.GetDataOrThrow();
         _log.Add(InventoryLog.Create(Id, amount, reason, Stock.Quantity));
         AddDomainEvent(new StockReplenishedEvent(ProductId, amount, Stock.Quantity));
+        return Result.Ok();
     }
 
-    public void Adjust(int newQuantity, string reason)
+    public Result Adjust(int newQuantity, string reason)
     {
-        var delta = newQuantity - Stock.Quantity;
-        Stock = StockLevel.Create(newQuantity);
+        var stockResult = StockLevel.Create(newQuantity);
+        if (!stockResult.IsSuccess) return Result.Fail(stockResult.GetErrorOrThrow());
+
+        int delta = newQuantity - Stock.Quantity;
+        Stock = stockResult.GetDataOrThrow();
         _log.Add(InventoryLog.Create(Id, delta, reason, Stock.Quantity));
+        return Result.Ok();
     }
 }
 ```

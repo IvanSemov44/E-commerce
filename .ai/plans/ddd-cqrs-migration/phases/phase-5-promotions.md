@@ -47,20 +47,20 @@ public record PromoCodeString
 
     private PromoCodeString(string value) => Value = value;
 
-    public static PromoCodeString Create(string raw)
+    public static Result<PromoCodeString> Create(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            throw new PromotionsDomainException("CODE_EMPTY", "Promo code cannot be empty.");
+            return Result<PromoCodeString>.Fail(PromotionsErrors.CodeEmpty);
 
         var normalized = raw.Trim().ToUpperInvariant();
 
         if (normalized.Length < 3 || normalized.Length > 20)
-            throw new PromotionsDomainException("CODE_LENGTH", "Promo code must be 3-20 characters.");
+            return Result<PromoCodeString>.Fail(PromotionsErrors.CodeLength);
 
         if (!System.Text.RegularExpressions.Regex.IsMatch(normalized, @"^[A-Z0-9\-]+$"))
-            throw new PromotionsDomainException("CODE_CHARS", "Promo code can only contain letters, digits, and hyphens.");
+            return Result<PromoCodeString>.Fail(PromotionsErrors.CodeChars);
 
-        return new PromoCodeString(normalized);
+        return Result<PromoCodeString>.Ok(new PromoCodeString(normalized));
     }
 }
 
@@ -73,18 +73,18 @@ public class DiscountValue : ValueObject
     private DiscountValue() { }
     private DiscountValue(DiscountType type, decimal amount) { Type = type; Amount = amount; }
 
-    public static DiscountValue Percentage(decimal percent)
+    public static Result<DiscountValue> Percentage(decimal percent)
     {
         if (percent <= 0 || percent > 100)
-            throw new PromotionsDomainException("DISCOUNT_PERCENT_RANGE", "Percentage must be between 1 and 100.");
-        return new DiscountValue(DiscountType.Percentage, percent);
+            return Result<DiscountValue>.Fail(PromotionsErrors.DiscountPercentRange);
+        return Result<DiscountValue>.Ok(new DiscountValue(DiscountType.Percentage, percent));
     }
 
-    public static DiscountValue Fixed(decimal amount)
+    public static Result<DiscountValue> Fixed(decimal amount)
     {
         if (amount <= 0)
-            throw new PromotionsDomainException("DISCOUNT_AMOUNT_POSITIVE", "Fixed discount must be positive.");
-        return new DiscountValue(DiscountType.Fixed, amount);
+            return Result<DiscountValue>.Fail(PromotionsErrors.DiscountAmountPositive);
+        return Result<DiscountValue>.Ok(new DiscountValue(DiscountType.Fixed, amount));
     }
 
     // Domain behavior: compute the actual discount amount for a given subtotal
@@ -114,11 +114,11 @@ public class DateRange : ValueObject
     private DateRange() { }
     private DateRange(DateTime start, DateTime end) { Start = start; End = end; }
 
-    public static DateRange Create(DateTime start, DateTime end)
+    public static Result<DateRange> Create(DateTime start, DateTime end)
     {
         if (start >= end)
-            throw new PromotionsDomainException("DATE_RANGE_INVALID", "Start date must be before end date.");
-        return new DateRange(start, end);
+            return Result<DateRange>.Fail(PromotionsErrors.DateRangeInvalid);
+        return Result<DateRange>.Ok(new DateRange(start, end));
     }
 
     public bool Contains(DateTime date) => date >= Start && date <= End;
@@ -175,10 +175,10 @@ public class PromoCode : AggregateRoot
         IsActive && ValidPeriod.IsActive(now) && (MaxUses is null || UsedCount < MaxUses);
 
     // Domain method: record a use (called when an order is placed)
-    public void RecordUsage()
+    public Result RecordUsage()
     {
         if (!IsValidNow(DateTime.UtcNow))
-            throw new PromotionsDomainException("PROMO_NOT_VALID", "Promo code is no longer valid.");
+            return Result.Fail(PromotionsErrors.PromoNotValid);
 
         UsedCount++;
 
@@ -191,6 +191,8 @@ public class PromoCode : AggregateRoot
         {
             AddDomainEvent(new PromoCodeAppliedEvent(Id, Code.Value));
         }
+
+        return Result.Ok();
     }
 
     public void Deactivate()
@@ -209,22 +211,21 @@ public class PromoCode : AggregateRoot
 public class DiscountCalculator
 {
     // Takes the aggregate and external data as parameters — no injection
-    public DiscountCalculation Calculate(PromoCode promoCode, decimal subtotal, DateTime now)
+    public Result<DiscountCalculation> Calculate(PromoCode promoCode, decimal subtotal, DateTime now)
     {
         if (!promoCode.IsValidNow(now))
-            throw new PromotionsDomainException("PROMO_NOT_VALID", "Promo code is not valid.");
+            return Result<DiscountCalculation>.Fail(PromotionsErrors.PromoNotValid);
 
         if (promoCode.MinimumOrderAmount.HasValue && subtotal < promoCode.MinimumOrderAmount.Value)
-            throw new PromotionsDomainException("PROMO_MIN_ORDER",
-                $"Minimum order amount of {promoCode.MinimumOrderAmount} required for this code.");
+            return Result<DiscountCalculation>.Fail(PromotionsErrors.PromoMinOrder);
 
-        var discountAmount = promoCode.Discount.Calculate(subtotal);
+        decimal discountAmount = promoCode.Discount.Calculate(subtotal);
 
-        return new DiscountCalculation(
+        return Result<DiscountCalculation>.Ok(new DiscountCalculation(
             PromoCodeId: promoCode.Id,
             Code: promoCode.Code.Value,
             DiscountAmount: discountAmount,
-            FinalAmount: subtotal - discountAmount);
+            FinalAmount: subtotal - discountAmount));
     }
 }
 

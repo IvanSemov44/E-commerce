@@ -18,26 +18,28 @@ C# records automatically generate value equality based on all their properties. 
 
 ```csharp
 // Email is equal if the address string is equal — that's all
-public record Email
+public sealed record Email
 {
     public string Value { get; }
 
     private Email(string value) => Value = value;
 
-    public static Email Create(string raw)
+    public static Result<Email> Create(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            throw new CatalogDomainException("EMAIL_EMPTY", "Email cannot be empty.");
+            return Result<Email>.Fail(IdentityErrors.EmailEmpty);
 
         var normalized = raw.Trim().ToLowerInvariant();
 
         if (!normalized.Contains('@'))
-            throw new CatalogDomainException("EMAIL_INVALID", "Email is not valid.");
+            return Result<Email>.Fail(IdentityErrors.EmailInvalid);
 
-        return new Email(normalized);
+        return Result<Email>.Ok(new Email(normalized));
     }
 }
 ```
+
+> Value object factories **always return `Result<T>`**. Domain validation is expected flow — not exceptional. See rules.md Rule 9.
 
 **Why `record` works here:**
 - `Email("a@b.com") == Email("a@b.com")` is `true` — records compare properties automatically
@@ -62,7 +64,7 @@ builder.Property(u => u.Email)
 Sometimes you need custom equality — for example, `Address` where equality might mean only street + city + country match (not the optional `Line2`). The `ValueObject` base class from SharedKernel lets you define exactly which components count:
 
 ```csharp
-public class Address : ValueObject
+public sealed class Address : ValueObject
 {
     public string Street { get; }
     public string City { get; }
@@ -77,12 +79,12 @@ public class Address : ValueObject
         PostalCode = postalCode;
     }
 
-    public static Address Create(string street, string city, string country, string? postalCode = null)
+    public static Result<Address> Create(string street, string city, string country, string? postalCode = null)
     {
-        if (string.IsNullOrWhiteSpace(street)) throw new IdentityDomainException("Street required.");
-        if (string.IsNullOrWhiteSpace(city)) throw new IdentityDomainException("City required.");
-        if (string.IsNullOrWhiteSpace(country)) throw new IdentityDomainException("Country required.");
-        return new Address(street, city, country, postalCode);
+        if (string.IsNullOrWhiteSpace(street)) return Result<Address>.Fail(IdentityErrors.AddressStreetEmpty);
+        if (string.IsNullOrWhiteSpace(city)) return Result<Address>.Fail(IdentityErrors.AddressCityEmpty);
+        if (string.IsNullOrWhiteSpace(country)) return Result<Address>.Fail(IdentityErrors.AddressCountryEmpty);
+        return Result<Address>.Ok(new Address(street, city, country, postalCode));
     }
 
     // PostalCode is NOT included — two addresses are equal even with different postal codes
@@ -395,8 +397,8 @@ builder.Services.AddAutoMapper(typeof(CatalogMappingProfile).Assembly);
 
 | Type | C# Type | Where | Why |
 |------|---------|-------|-----|
-| Simple value object | `record` | Domain/ValueObjects/ | Built-in value equality, immutable |
-| Complex value object | `class : ValueObject` | Domain/ValueObjects/ | Custom equality via GetEqualityComponents |
+| Simple value object | `sealed record` | Domain/ValueObjects/ | Built-in value equality, immutable, no subclassing |
+| Complex value object | `sealed class : ValueObject` | Domain/ValueObjects/ | Custom equality via GetEqualityComponents, no subclassing |
 | Struct | Avoid | — | EF Core issues, can't inherit, mutable traps |
 | Simple status | `enum` with `.HasConversion<string>()` | Domain or SharedKernel | Simple, store as string in DB |
 | Status with behavior | Enumeration class | Domain | Can hold CanTransitionTo() logic |

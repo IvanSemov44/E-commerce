@@ -111,16 +111,38 @@ You are writing domain unit tests for the [CONTEXT] bounded context.
 ### Aggregate factory methods
 - Valid input → aggregate created with correct state
 - Valid input → correct domain event raised
-- Each invalid input → throws the correct DomainException with correct error code
+- Each invalid input → returns `Result` with `IsSuccess == false` and correct `Error.Code`
 
 ### Aggregate domain methods (UpdatePrice, Deactivate, AddImage, etc.)
-- Success path → state changed correctly
+- Success path → state changed correctly, returns `Result.Ok()` or `Result<T>.Ok(value)`
 - Success path → correct domain event raised (if any)
-- Invariant violated → throws DomainException
+- Invariant violated → returns `Result` with `IsSuccess == false` and correct `Error.Code`
 
 ### Value object validation
-- Valid inputs → created successfully
-- Each invalid input (empty, null, negative, too long, wrong format) → throws DomainException
+- Valid inputs → `IsSuccess == true`, value is correct
+- Each invalid input (empty, null, negative, too long, wrong format) → `IsSuccess == false`, `Error.Code` matches `{Context}Errors.*`
+
+## Assertion pattern for failures
+
+```csharp
+// Arrange
+// Act
+Result<ProductName> result = ProductName.Create("");
+
+// Assert
+Assert.IsFalse(result.IsSuccess);
+Assert.AreEqual("PRODUCT_NAME_EMPTY", result.GetErrorOrThrow().Code);
+```
+
+For aggregate methods that return non-generic `Result`:
+```csharp
+// Act
+Result result = product.Deactivate();
+
+// Assert
+Assert.IsFalse(result.IsSuccess);
+Assert.AreEqual("PRODUCT_DISCONTINUED", result.GetErrorOrThrow().Code);
+```
 
 ## Pattern for each test
 [TestMethod]

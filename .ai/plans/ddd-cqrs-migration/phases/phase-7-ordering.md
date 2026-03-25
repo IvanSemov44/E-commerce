@@ -96,9 +96,12 @@ public class OrderStatus : ValueObject
     private OrderStatus() { }  // EF Core
     private OrderStatus(int id, string name) { Id = id; Name = name; }
 
-    public static OrderStatus FromName(string name) =>
-        All.Values.FirstOrDefault(s => s.Name == name)
-            ?? throw new OrderingDomainException("STATUS_UNKNOWN", $"Unknown order status: {name}");
+    public static Result<OrderStatus> FromName(string name)
+    {
+        OrderStatus? status = All.Values.FirstOrDefault(s => s.Name == name);
+        if (status is null) return Result<OrderStatus>.Fail(OrderingErrors.StatusUnknown);
+        return Result<OrderStatus>.Ok(status);
+    }
 
     public bool CanTransitionTo(OrderStatus next)
     {
@@ -152,13 +155,13 @@ public class PaymentInfo : ValueObject
         PaidAt = paidAt;
     }
 
-    public static PaymentInfo Create(string reference, string method, decimal amount, DateTime paidAt)
+    public static Result<PaymentInfo> Create(string reference, string method, decimal amount, DateTime paidAt)
     {
         if (string.IsNullOrWhiteSpace(reference))
-            throw new OrderingDomainException("PAYMENT_REF_EMPTY", "Payment reference cannot be empty.");
+            return Result<PaymentInfo>.Fail(OrderingErrors.PaymentRefEmpty);
         if (amount <= 0)
-            throw new OrderingDomainException("PAYMENT_AMOUNT_INVALID", "Payment amount must be positive.");
-        return new PaymentInfo(reference, method, amount, paidAt);
+            return Result<PaymentInfo>.Fail(OrderingErrors.PaymentAmountInvalid);
+        return Result<PaymentInfo>.Ok(new PaymentInfo(reference, method, amount, paidAt));
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()
@@ -194,7 +197,7 @@ public class Order : AggregateRoot
 
     private Order() { }
 
-    public static Order Place(
+    public static Result<Order> Place(
         Guid userId,
         ShippingAddress shippingAddress,
         IReadOnlyList<OrderItemData> items,
@@ -205,17 +208,16 @@ public class Order : AggregateRoot
         Guid? promoCodeId = null)
     {
         if (!items.Any())
-            throw new OrderingDomainException("ORDER_EMPTY", "Order must have at least one item.");
+            return Result<Order>.Fail(OrderingErrors.OrderEmpty);
 
-        var subtotal = items.Sum(i => i.UnitPrice * i.Quantity);
-        var total = subtotal + shippingCost + taxAmount - discountAmount;
+        decimal subtotal = items.Sum(i => i.UnitPrice * i.Quantity);
+        decimal total = subtotal + shippingCost + taxAmount - discountAmount;
 
         if (total <= 0)
-            throw new OrderingDomainException("ORDER_TOTAL_INVALID", "Order total must be positive.");
+            return Result<Order>.Fail(OrderingErrors.OrderTotalInvalid);
 
-        var order = new Order
+        Order order = new()
         {
-            Id = Guid.NewGuid(),
             OrderNumber = GenerateOrderNumber(),
             UserId = userId,
             ShippingAddress = shippingAddress,
@@ -227,49 +229,54 @@ public class Order : AggregateRoot
             ShippingCost = shippingCost,
             TaxAmount = taxAmount,
             Total = total,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
 
-        foreach (var item in items)
+        foreach (OrderItemData item in items)
             order._items.Add(OrderItem.Create(Guid.NewGuid(), order.Id, item));
 
         order.AddDomainEvent(new OrderPlacedEvent(order.Id, userId, order.Total, order.Items));
-        return order;
+        return Result<Order>.Ok(order);
     }
 
-    public void Confirm()
+    public Result Confirm()
     {
-        TransitionTo(OrderStatus.Confirmed);
+        var result = TransitionTo(OrderStatus.Confirmed);
+        if (!result.IsSuccess) return result;
         AddDomainEvent(new OrderConfirmedEvent(Id, UserId));
+        return Result.Ok();
     }
 
-    public void Ship(string trackingNumber)
+    public Result Ship(string trackingNumber)
     {
-        TransitionTo(OrderStatus.Shipped);
+        var result = TransitionTo(OrderStatus.Shipped);
+        if (!result.IsSuccess) return result;
         AddDomainEvent(new OrderShippedEvent(Id, UserId, trackingNumber));
+        return Result.Ok();
     }
 
-    public void Deliver()
+    public Result Deliver()
     {
-        TransitionTo(OrderStatus.Delivered);
+        var result = TransitionTo(OrderStatus.Delivered);
+        if (!result.IsSuccess) return result;
         AddDomainEvent(new OrderDeliveredEvent(Id, UserId,
             _items.Select(i => i.ProductId).ToList()));
+        return Result.Ok();
     }
 
-    public void Cancel(string reason)
+    public Result Cancel(string reason)
     {
-        TransitionTo(OrderStatus.Cancelled);
+        var result = TransitionTo(OrderStatus.Cancelled);
+        if (!result.IsSuccess) return result;
         AddDomainEvent(new OrderCancelledEvent(Id, UserId, reason));
+        return Result.Ok();
     }
 
-    private void TransitionTo(OrderStatus newStatus)
+    private Result TransitionTo(OrderStatus newStatus)
     {
         if (!Status.CanTransitionTo(newStatus))
-            throw new OrderingDomainException(
-                "ORDER_INVALID_TRANSITION",
-                $"Cannot transition order from {Status} to {newStatus}.");
+            return Result.Fail(OrderingErrors.OrderInvalidTransition);
         Status = newStatus;
+        return Result.Ok();
     }
 
     private static string GenerateOrderNumber() =>

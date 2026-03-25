@@ -50,21 +50,21 @@ public record Email
 
     private Email(string value) => Value = value;
 
-    public static Email Create(string raw)
+    public static Result<Email> Create(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            throw new IdentityDomainException("EMAIL_EMPTY", "Email cannot be empty.");
+            return Result<Email>.Fail(IdentityErrors.EmailEmpty);
 
         var normalized = raw.Trim().ToLowerInvariant();
 
         if (normalized.Length > 256)
-            throw new IdentityDomainException("EMAIL_TOO_LONG", "Email cannot exceed 256 characters.");
+            return Result<Email>.Fail(IdentityErrors.EmailTooLong);
 
         // Basic structural check — real validation via MX lookup is infrastructure
         if (!normalized.Contains('@') || normalized.IndexOf('.', normalized.IndexOf('@')) < 0)
-            throw new IdentityDomainException("EMAIL_INVALID", "Email format is not valid.");
+            return Result<Email>.Fail(IdentityErrors.EmailInvalid);
 
-        return new Email(normalized);
+        return Result<Email>.Ok(new Email(normalized));
     }
 }
 ```
@@ -81,16 +81,16 @@ public class PersonName : ValueObject
     private PersonName() { }  // EF Core
     private PersonName(string first, string last) { First = first; Last = last; }
 
-    public static PersonName Create(string first, string last)
+    public static Result<PersonName> Create(string first, string last)
     {
         if (string.IsNullOrWhiteSpace(first))
-            throw new IdentityDomainException("NAME_FIRST_EMPTY", "First name cannot be empty.");
+            return Result<PersonName>.Fail(IdentityErrors.NameFirstEmpty);
         if (string.IsNullOrWhiteSpace(last))
-            throw new IdentityDomainException("NAME_LAST_EMPTY", "Last name cannot be empty.");
+            return Result<PersonName>.Fail(IdentityErrors.NameLastEmpty);
         if (first.Trim().Length > 100 || last.Trim().Length > 100)
-            throw new IdentityDomainException("NAME_TOO_LONG", "Name part cannot exceed 100 characters.");
+            return Result<PersonName>.Fail(IdentityErrors.NameTooLong);
 
-        return new PersonName(first.Trim(), last.Trim());
+        return Result<PersonName>.Ok(new PersonName(first.Trim(), last.Trim()));
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()
@@ -112,24 +112,25 @@ public record PasswordHash
     private PasswordHash(string hash) => Hash = hash;
 
     // Called by Infrastructure's IPasswordHasher after hashing
-    public static PasswordHash FromHash(string hash)
+    public static Result<PasswordHash> FromHash(string hash)
     {
         if (string.IsNullOrWhiteSpace(hash))
-            throw new IdentityDomainException("PASSWORD_HASH_EMPTY", "Password hash cannot be empty.");
-        return new PasswordHash(hash);
+            return Result<PasswordHash>.Fail(IdentityErrors.PasswordHashEmpty);
+        return Result<PasswordHash>.Ok(new PasswordHash(hash));
     }
 
     // Domain enforces the password policy BEFORE hashing
-    public static void ValidateRawPassword(string raw)
+    public static Result ValidateRawPassword(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            throw new IdentityDomainException("PASSWORD_EMPTY", "Password cannot be empty.");
+            return Result.Fail(IdentityErrors.PasswordEmpty);
         if (raw.Length < 8)
-            throw new IdentityDomainException("PASSWORD_TOO_SHORT", "Password must be at least 8 characters.");
+            return Result.Fail(IdentityErrors.PasswordTooShort);
         if (!raw.Any(char.IsUpper))
-            throw new IdentityDomainException("PASSWORD_NO_UPPER", "Password must contain an uppercase letter.");
+            return Result.Fail(IdentityErrors.PasswordNoUpper);
         if (!raw.Any(char.IsDigit))
-            throw new IdentityDomainException("PASSWORD_NO_DIGIT", "Password must contain a digit.");
+            return Result.Fail(IdentityErrors.PasswordNoDigit);
+        return Result.Ok();
     }
 }
 ```
@@ -192,35 +193,34 @@ public class User : AggregateRoot
 
     private User() { }
 
+    // Takes pre-validated value objects — handlers call Email.Create(), PersonName.Create() first.
     public static User Register(Email email, PersonName name, PasswordHash passwordHash)
     {
-        var user = new User
+        User user = new()
         {
-            Id = Guid.NewGuid(),
             Email = email,
             Name = name,
             PasswordHash = passwordHash,
             Role = UserRole.Customer,
             IsEmailVerified = false,
             EmailVerificationToken = Guid.NewGuid().ToString("N"),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
 
         user.AddDomainEvent(new UserRegisteredEvent(user.Id, email.Value));
         return user;
     }
 
-    public void VerifyEmail(string token)
+    public Result VerifyEmail(string token)
     {
         if (IsEmailVerified)
-            throw new IdentityDomainException("EMAIL_ALREADY_VERIFIED", "Email is already verified.");
+            return Result.Fail(IdentityErrors.EmailAlreadyVerified);
         if (EmailVerificationToken != token)
-            throw new IdentityDomainException("EMAIL_TOKEN_INVALID", "Verification token is invalid.");
+            return Result.Fail(IdentityErrors.EmailTokenInvalid);
 
         IsEmailVerified = true;
         EmailVerificationToken = null;
         AddDomainEvent(new EmailVerifiedEvent(Id));
+        return Result.Ok();
     }
 
     public void ChangePassword(PasswordHash newHash)
@@ -231,12 +231,12 @@ public class User : AggregateRoot
             token.Revoke("Password changed");
     }
 
-    public void AddAddress(string street, string city, string country, string? postalCode)
+    public Result AddAddress(string street, string city, string country, string? postalCode)
     {
         if (_addresses.Count >= 5)
-            throw new IdentityDomainException("ADDRESS_LIMIT", "Cannot have more than 5 addresses.");
+            return Result.Fail(IdentityErrors.AddressLimit);
 
-        var address = new Address(Guid.NewGuid(), street, city, country, postalCode);
+        Address address = new(Guid.NewGuid(), street, city, country, postalCode);
 
         if (_addresses.Count == 0)
         {
@@ -245,15 +245,18 @@ public class User : AggregateRoot
         }
 
         _addresses.Add(address);
+        return Result.Ok();
     }
 
-    public void SetDefaultShippingAddress(Guid addressId)
+    public Result SetDefaultShippingAddress(Guid addressId)
     {
-        var address = _addresses.FirstOrDefault(a => a.Id == addressId)
-            ?? throw new IdentityDomainException("ADDRESS_NOT_FOUND", "Address not found.");
+        Address? address = _addresses.FirstOrDefault(a => a.Id == addressId);
+        if (address is null)
+            return Result.Fail(IdentityErrors.AddressNotFound);
 
-        foreach (var a in _addresses) a.SetDefaultShipping(false);
+        foreach (Address a in _addresses) a.SetDefaultShipping(false);
         address.SetDefaultShipping(true);
+        return Result.Ok();
     }
 
     public RefreshToken AddRefreshToken(string token, DateTime expiresAt)
@@ -305,8 +308,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthToke
 
     public async Task<Result<AuthTokenDto>> Handle(LoginCommand command, CancellationToken ct)
     {
-        // 1. Find user by email
-        var user = await _users.GetByEmailAsync(Email.Create(command.Email), ct);
+        // 1. Parse and find user by email
+        var emailResult = Email.Create(command.Email);
+        if (!emailResult.IsSuccess) return Result<AuthTokenDto>.Fail(IdentityErrors.InvalidCredentials.Code, IdentityErrors.InvalidCredentials.Message);
+        var user = await _users.GetByEmailAsync(emailResult.GetDataOrThrow(), ct);
         if (user is null)
             return Result<AuthTokenDto>.Fail(ErrorCodes.Identity.InvalidCredentials, "Invalid email or password.");
 

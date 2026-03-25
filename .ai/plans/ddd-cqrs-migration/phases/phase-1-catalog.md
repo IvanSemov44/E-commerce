@@ -97,13 +97,13 @@ public record ProductName
 
     private ProductName(string value) => Value = value;
 
-    public static ProductName Create(string raw)
+    public static Result<ProductName> Create(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            throw new CatalogDomainException("PRODUCT_NAME_EMPTY", "Product name cannot be empty.");
+            return Result<ProductName>.Fail(CatalogErrors.ProductNameEmpty);
         if (raw.Trim().Length > 200)
-            throw new CatalogDomainException("PRODUCT_NAME_TOO_LONG", "Product name cannot exceed 200 characters.");
-        return new ProductName(raw.Trim());
+            return Result<ProductName>.Fail(CatalogErrors.ProductNameTooLong);
+        return Result<ProductName>.Ok(new ProductName(raw.Trim()));
     }
 }
 ```
@@ -116,12 +116,12 @@ public record Slug
 
     private Slug(string value) => Value = value;
 
-    public static Slug Create(string raw)
+    public static Result<Slug> Create(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            throw new CatalogDomainException("SLUG_EMPTY", "Slug cannot be empty.");
+            return Result<Slug>.Fail(CatalogErrors.SlugEmpty);
 
-        var slug = raw.Trim().ToLowerInvariant()
+        string slug = raw.Trim().ToLowerInvariant()
             .Replace(" ", "-")
             .Replace("_", "-");
 
@@ -130,9 +130,9 @@ public record Slug
         slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-").Trim('-');
 
         if (slug.Length == 0)
-            throw new CatalogDomainException("SLUG_INVALID", "Slug produced no valid characters.");
+            return Result<Slug>.Fail(CatalogErrors.SlugInvalid);
 
-        return new Slug(slug);
+        return Result<Slug>.Ok(new Slug(slug));
     }
 }
 ```
@@ -151,20 +151,20 @@ public class Money : ValueObject
         Currency = currency;
     }
 
-    public static Money Create(decimal amount, string currency)
+    public static Result<Money> Create(decimal amount, string currency)
     {
         if (amount < 0)
-            throw new CatalogDomainException("MONEY_NEGATIVE", "Amount cannot be negative.");
+            return Result<Money>.Fail(CatalogErrors.MoneyNegative);
         if (string.IsNullOrWhiteSpace(currency) || currency.Length != 3)
-            throw new CatalogDomainException("MONEY_INVALID_CURRENCY", "Currency must be a 3-letter ISO code.");
-        return new Money(amount, currency.ToUpperInvariant());
+            return Result<Money>.Fail(CatalogErrors.MoneyInvalidCurrency);
+        return Result<Money>.Ok(new Money(amount, currency.ToUpperInvariant()));
     }
 
-    public Money Add(Money other)
+    public Result<Money> Add(Money other)
     {
         if (Currency != other.Currency)
-            throw new CatalogDomainException("MONEY_CURRENCY_MISMATCH", "Cannot add money with different currencies.");
-        return new Money(Amount + other.Amount, Currency);
+            return Result<Money>.Fail(CatalogErrors.MoneyCurrencyMismatch);
+        return Result<Money>.Ok(new Money(Amount + other.Amount, Currency));
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()
@@ -214,32 +214,63 @@ public class Product : AggregateRoot
 
     private Product() { }  // EF Core
 
-    public static Product Create(
-        ProductName name,
-        Money price,
-        Sku sku,
+    // Factory takes raw primitive inputs — validates everything and returns Result<Product>.
+    public static Result<Product> Create(
+        string nameRaw,
+        decimal priceAmount,
+        string priceCurrency,
+        string skuRaw,
         Guid categoryId,
         string? description = null,
-        Money? compareAtPrice = null)
+        decimal? compareAtPriceAmount = null)
     {
-        var product = new Product
+        var nameResult = ProductName.Create(nameRaw);
+        if (!nameResult.IsSuccess) return Result<Product>.Fail(nameResult.GetErrorOrThrow());
+
+        var priceResult = Money.Create(priceAmount, priceCurrency);
+        if (!priceResult.IsSuccess) return Result<Product>.Fail(priceResult.GetErrorOrThrow());
+
+        var skuResult = Sku.Create(skuRaw);
+        if (!skuResult.IsSuccess) return Result<Product>.Fail(skuResult.GetErrorOrThrow());
+
+        var slugResult = Slug.Create(nameRaw);
+        if (!slugResult.IsSuccess) return Result<Product>.Fail(slugResult.GetErrorOrThrow());
+
+        Money? compareAtPrice = null;
+        if (compareAtPriceAmount.HasValue)
         {
-            Id = Guid.NewGuid(),
+            var compareResult = Money.Create(compareAtPriceAmount.Value, priceCurrency);
+            if (!compareResult.IsSuccess) return Result<Product>.Fail(compareResult.GetErrorOrThrow());
+            compareAtPrice = compareResult.GetDataOrThrow();
+        }
+
+        var name = nameResult.GetDataOrThrow();
+        Product product = new()
+        {
             Name = name,
-            Slug = Slug.Create(name.Value),
-            Price = price,
+            Slug = slugResult.GetDataOrThrow(),
+            Price = priceResult.GetDataOrThrow(),
             CompareAtPrice = compareAtPrice,
-            Sku = sku,
+            Sku = skuResult.GetDataOrThrow(),
             Description = description,
             Status = ProductStatus.Draft,
             IsFeatured = false,
+            IsDeleted = false,
             CategoryId = categoryId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
 
         product.AddDomainEvent(new ProductCreatedEvent(product.Id, name.Value, categoryId));
-        return product;
+        return Result<Product>.Ok(product);
+    }
+
+    // Takes pre-validated value objects — callers call ProductName.Create() etc. first.
+    // Slug derivation from a valid ProductName.Value cannot fail.
+    public void UpdateDetails(ProductName name, string? description, Guid categoryId)
+    {
+        Name = name;
+        Slug = Slug.Create(name.Value).GetDataOrThrow();
+        Description = description;
+        CategoryId = categoryId;
     }
 
     public void UpdatePrice(Money newPrice)
@@ -249,45 +280,38 @@ public class Product : AggregateRoot
         AddDomainEvent(new ProductPriceChangedEvent(Id, oldPrice, newPrice));
     }
 
-    public void UpdateDetails(ProductName name, string? description, Guid categoryId)
-    {
-        Name = name;
-        Slug = Slug.Create(name.Value);
-        Description = description;
-        CategoryId = categoryId;
-    }
-
     public void Activate()
     {
         if (Status == ProductStatus.Active) return;
         Status = ProductStatus.Active;
     }
 
-    public void Deactivate()
+    public Result Deactivate()
     {
         if (Status == ProductStatus.Discontinued)
-            throw new CatalogDomainException("PRODUCT_DISCONTINUED", "Cannot deactivate a discontinued product.");
+            return Result.Fail(CatalogErrors.ProductDiscontinued);
         Status = ProductStatus.Inactive;
         AddDomainEvent(new ProductDeactivatedEvent(Id));
+        return Result.Ok();
     }
 
-    public void AddImage(string url, string? altText)
+    public Result AddImage(string url, string? altText)
     {
         if (_images.Count >= 10)
-            throw new CatalogDomainException("PRODUCT_MAX_IMAGES", "Product cannot have more than 10 images.");
-
-        var isPrimary = _images.Count == 0;  // First image is always primary
-        var order = _images.Count;
+            return Result.Fail(CatalogErrors.ProductMaxImages);
+        bool isPrimary = _images.Count == 0;
+        int order = _images.Count;
         _images.Add(new ProductImage(Guid.NewGuid(), Id, url, altText, isPrimary, order));
+        return Result.Ok();
     }
 
-    public void SetPrimaryImage(Guid imageId)
+    public Result SetPrimaryImage(Guid imageId)
     {
-        var image = _images.FirstOrDefault(i => i.Id == imageId)
-            ?? throw new CatalogDomainException("IMAGE_NOT_FOUND", "Image not found on this product.");
-
-        foreach (var img in _images) img.SetPrimary(false);
+        ProductImage? image = _images.FirstOrDefault(i => i.Id == imageId);
+        if (image is null) return Result.Fail(CatalogErrors.ProductImageNotFound);
+        foreach (ProductImage img in _images) img.SetPrimary(false);
         image.SetPrimary(true);
+        return Result.Ok();
     }
 }
 ```
@@ -335,34 +359,40 @@ public class Category : AggregateRoot
 
     private Category() { }  // EF Core
 
-    public static Category Create(CategoryName name, Guid? parentId = null)
+    public static Result<Category> Create(string nameRaw, Guid? parentId = null)
     {
-        var category = new Category
+        var nameResult = CategoryName.Create(nameRaw);
+        if (!nameResult.IsSuccess) return Result<Category>.Fail(nameResult.GetErrorOrThrow());
+
+        var slugResult = Slug.Create(nameRaw);
+        if (!slugResult.IsSuccess) return Result<Category>.Fail(slugResult.GetErrorOrThrow());
+
+        var name = nameResult.GetDataOrThrow();
+        Category category = new()
         {
-            Id = Guid.NewGuid(),
             Name = name,
-            Slug = Slug.Create(name.Value),
+            Slug = slugResult.GetDataOrThrow(),
             ParentId = parentId,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
 
         category.AddDomainEvent(new CategoryCreatedEvent(category.Id, name.Value));
-        return category;
+        return Result<Category>.Ok(category);
     }
 
+    // Takes a pre-validated CategoryName — callers use CategoryName.Create() first.
     public void Rename(CategoryName newName)
     {
         Name = newName;
-        Slug = Slug.Create(newName.Value);
+        Slug = Slug.Create(newName.Value).GetDataOrThrow();
     }
 
-    public void MoveTo(Guid? newParentId)
+    public Result MoveTo(Guid? newParentId)
     {
         if (newParentId == Id)
-            throw new CatalogDomainException("CATEGORY_CIRCULAR", "Category cannot be its own parent.");
+            return Result.Fail(CatalogErrors.CategoryCircularParent);
         ParentId = newParentId;
+        return Result.Ok();
     }
 }
 ```
