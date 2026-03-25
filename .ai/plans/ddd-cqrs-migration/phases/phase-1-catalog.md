@@ -391,6 +391,10 @@ public interface ICategoryRepository
 
 ---
 
+**Tester handoff after Step 2:** Once aggregates and value objects are delivered, the tester writes domain unit tests in `ECommerce.Catalog.Tests/Domain/`. See prompt in `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 2.
+
+---
+
 ## Step 3: Application Project
 
 ```bash
@@ -601,6 +605,10 @@ public static class ProductMappingExtensions
 
 ---
 
+**Tester handoff after Step 3:** Once handlers are delivered, the tester writes handler unit tests in `ECommerce.Catalog.Tests/Handlers/`. See prompt in `.ai/plans/ddd-cqrs-migration/testing/tester-prompt-template.md` → Prompt 3.
+
+---
+
 ## Step 4: Infrastructure Project
 
 ```bash
@@ -755,7 +763,22 @@ cfg.RegisterServicesFromAssembly(typeof(CreateProductCommand).Assembly);
 
 ## Definition of Done
 
-- [ ] Characterization tests written and passing (both old and new handlers)
+Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
+
+**Characterization (integration — slow):**
+- [ ] Characterization tests written and PASSING against OLD service (before any migration)
+- [ ] Characterization tests still PASSING after cutover to new handlers
+
+**Domain unit tests (fast — written after Step 2):**
+- [ ] `ECommerce.Catalog.Tests/Domain/ProductTests.cs` written and PASSING
+- [ ] `ECommerce.Catalog.Tests/Domain/CategoryTests.cs` written and PASSING
+- Covers: factory methods, invariants, domain events, value object validation
+
+**Handler unit tests (fast — written after Step 3):**
+- [ ] `ECommerce.Catalog.Tests/Handlers/` tests written and PASSING for all command + query handlers
+- Covers: correct repo called, UoW saved, correct Result returned
+
+**Code:**
 - [ ] `ECommerce.Catalog.Domain` created — no EF Core references
 - [ ] Product aggregate with factory, domain methods, events
 - [ ] Category aggregate with factory and domain methods
@@ -767,7 +790,6 @@ cfg.RegisterServicesFromAssembly(typeof(CreateProductCommand).Assembly);
 - [ ] Old `ProductService` and `CategoryService` deleted
 - [ ] Controllers dispatch via MediatR
 - [ ] `dotnet build` clean, no compiler warnings
-- [ ] All characterization tests still passing after cutover
 
 ## What You Learned in Phase 1
 
