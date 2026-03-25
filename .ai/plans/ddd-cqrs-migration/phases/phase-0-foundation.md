@@ -247,11 +247,11 @@ public interface ITransactionalCommand { }
 
 ### Verification
 After this step:
-- [ ] `dotnet build` succeeds for SharedKernel project
-- [ ] SharedKernel has NO dependencies on other projects
-- [ ] SharedKernel has NO NuGet packages except MediatR (for `INotification`)
-- [ ] All 8 files created (Entity, AggregateRoot, ValueObject, IDomainEvent, DomainEventBase, DomainException, IUnitOfWork, ITransactionalCommand)
-- [ ] All existing projects still compile and work
+- [x] `dotnet build` succeeds for SharedKernel project
+- [x] SharedKernel has NO dependencies on other projects
+- [x] SharedKernel has NO NuGet packages except MediatR (for `INotification`)
+- [x] All 8 files created (Entity, AggregateRoot, ValueObject, IDomainEvent, DomainEventBase, DomainException, IUnitOfWork, ITransactionalCommand)
+- [x] All existing projects still compile and work
 
 ---
 
@@ -293,9 +293,9 @@ dotnet add src/backend/ECommerce.API/ECommerce.API.csproj reference src/backend/
 ```
 
 ### Verification
-- [ ] `dotnet build` succeeds for entire solution
-- [ ] MediatR is resolvable from DI (add a health check or startup validation)
-- [ ] No existing functionality is broken
+- [x] `dotnet build` succeeds for entire solution
+- [x] MediatR is resolvable from DI (add a health check or startup validation)
+- [x] No existing functionality is broken
 
 ---
 
@@ -538,11 +538,11 @@ builder.Services.AddMediatR(cfg =>
 ```
 
 ### Verification
-- [ ] `dotnet build` succeeds
-- [ ] All 4 behaviors exist: LoggingBehavior, PerformanceBehavior, ValidationBehavior, TransactionBehavior
-- [ ] All 4 behaviors are registered in `Program.cs` in the correct order
-- [ ] `ITransactionalCommand` referenced from `ECommerce.SharedKernel.Interfaces`, not defined inline
-- [ ] No existing functionality is broken
+- [x] `dotnet build` succeeds
+- [x] All 4 behaviors exist: LoggingBehavior, PerformanceBehavior, ValidationBehavior, TransactionBehavior
+- [x] All 4 behaviors are registered in `Program.cs` in the correct order
+- [x] `ITransactionalCommand` referenced from `ECommerce.SharedKernel.Interfaces`, not defined inline
+- [x] No existing functionality is broken
 - [ ] (Optional) Write a simple test command to verify the pipeline fires in correct order
 
 ---
@@ -701,16 +701,16 @@ public class InvalidateCacheOnProductUpdatedHandler : INotificationHandler<Produ
 
 After completing all steps:
 
-- [ ] `ECommerce.SharedKernel` project exists with all 8 files (Entity, AggregateRoot, ValueObject, IDomainEvent, DomainEventBase, DomainException, IUnitOfWork, ITransactionalCommand)
-- [ ] MediatR is installed and configured in API
-- [ ] Pipeline behaviors exist: Logging, PerformanceBehavior, Validation, Transaction (in that order)
-- [ ] `ITransactionalCommand` imported from SharedKernel, not defined in API
+- [x] `ECommerce.SharedKernel` project exists with all 8 files (Entity, AggregateRoot, ValueObject, IDomainEvent, DomainEventBase, DomainException, IUnitOfWork, ITransactionalCommand)
+- [x] MediatR is installed and configured in API
+- [x] Pipeline behaviors exist: Logging, PerformanceBehavior, Validation, Transaction (in that order)
+- [x] `ITransactionalCommand` imported from SharedKernel, not defined in API
 - [ ] `UnitOfWork.SaveChangesAsync` stamps `UpdatedAt`, then saves, then dispatches domain events
 - [ ] Domain event dispatcher is implemented and hooked into save
-- [ ] `dotnet build` succeeds for entire solution
+- [x] `dotnet build` succeeds for entire solution
 - [ ] `dotnet test` passes (if tests exist)
 - [ ] App runs and all existing functionality works
-- [ ] No entity or service was modified
+- [x] No entity or service was modified
 
 **Duration estimate**: This is a setup phase. Focus on understanding each piece, not speed.
 

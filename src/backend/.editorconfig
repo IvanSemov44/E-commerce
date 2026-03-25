@@ -40,6 +40,18 @@ dotnet_naming_rule.private_fields_should_be_camel_case.style    = prefix_undersc
 
 dotnet_naming_symbols.private_fields.applicable_kinds            = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities  = private
+dotnet_naming_symbols.private_fields.required_modifiers          = !const
+
+# Private constants: PascalCase  (C# convention — constants are not fields)
+dotnet_naming_rule.private_constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.private_constants_should_be_pascal_case.symbols  = private_constants
+dotnet_naming_rule.private_constants_should_be_pascal_case.style    = pascal_case_style
+
+dotnet_naming_symbols.private_constants.applicable_kinds            = field
+dotnet_naming_symbols.private_constants.applicable_accessibilities  = private
+dotnet_naming_symbols.private_constants.required_modifiers          = const
+
+dotnet_naming_style.pascal_case_style.capitalization                = pascal_case
 
 dotnet_naming_style.prefix_underscore.capitalization             = camel_case
 dotnet_naming_style.prefix_underscore.required_prefix            = _
@@ -98,8 +110,8 @@ dotnet_diagnostic.CS1573.severity = none
 #   Protected fields in Repository<T> are part of the intended inheritance contract.
 dotnet_diagnostic.CA1051.severity = none
 
-# IDE0290: Use primary constructor — suggestion only, not enforced
-dotnet_diagnostic.IDE0290.severity = suggestion
+# IDE0290: Use primary constructor — enforced for consistency across all classes
+dotnet_diagnostic.IDE0290.severity = warning
 
 # IDE0305: Use collection expression — too noisy for existing code
 dotnet_diagnostic.IDE0305.severity = none

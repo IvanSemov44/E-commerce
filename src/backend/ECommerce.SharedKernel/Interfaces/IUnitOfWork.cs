@@ -1,4 +1,4 @@
-﻿namespace ECommerce.SharedKernel.Interfaces;
+namespace ECommerce.SharedKernel.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {

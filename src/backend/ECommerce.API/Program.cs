@@ -1,6 +1,8 @@
 ﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.Behaviors;
 using ECommerce.API.Extensions;
 using ECommerce.Application.Interfaces;
+using FluentValidation;
 using MediatR;
 
 // ============================================================================
@@ -76,7 +78,16 @@ builder.Services.AddMediatR(cfg =>
     // Phase 5: cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
     // Phase 6: cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
     // Phase 7: cfg.RegisterServicesFromAssembly(typeof(PlaceOrderCommand).Assembly);
+
+    // Pipeline order matters: outermost first
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 });
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
 // Controllers & Validation
 builder.Services.AddControllers();

@@ -292,8 +292,10 @@ public static class ServiceCollectionExtensions
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
 
-        // Unit of Work
+        // Old UnitOfWork — used by existing services, untouched.
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        // MediatRUnitOfWork — used by MediatR handlers, old code knows nothing about it.
+        services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, MediatRUnitOfWork>();
 
         // HTTP context accessor
         services.AddHttpContextAccessor();
