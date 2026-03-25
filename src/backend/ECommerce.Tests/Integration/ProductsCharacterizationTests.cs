@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ECommerce.Application.DTOs.Common;
@@ -34,9 +35,9 @@ public class ProductsCharacterizationTests
     private static StringContent Serialize(object dto) =>
         new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
-    private static async Task<ApiResponse<T>?> Deserialize<T>(HttpResponseMessage response)
+    private static async Task<ApiResponse<T>?> Deserialize<T>(HttpResponseMessage response, CancellationToken cancellationToken)
     {
-        string content = await response.Content.ReadAsStringAsync();
+        string content = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
     }
 
@@ -69,7 +70,7 @@ public class ProductsCharacterizationTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res);
+        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res, TestContext.CancellationToken);
         Assert.IsTrue(api != null && api.Success && api.Data!.TryGetProperty("id", out _));
     }
 
@@ -141,7 +142,7 @@ public class ProductsCharacterizationTests
 
         // Assert category created
         Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes);
+        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
         Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
 
         // Arrange (product)
@@ -153,7 +154,7 @@ public class ProductsCharacterizationTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.Created, res.StatusCode);
-        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res);
+        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res, TestContext.CancellationToken);
         Assert.IsTrue(api != null && api.Success && api.Data!.GetProperty("name").GetString() == "NewProduct");
     }
 
@@ -198,7 +199,7 @@ public class ProductsCharacterizationTests
 
         // Assert category created
         Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes);
+        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
         Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
 
         // Arrange (product)
@@ -212,7 +213,7 @@ public class ProductsCharacterizationTests
         // Assert
         Assert.AreEqual(HttpStatusCode.Created, r1.StatusCode);
         Assert.AreEqual((HttpStatusCode)422, r2.StatusCode);
-        ApiResponse<object>? api = await Deserialize<object>(r2);
+        ApiResponse<object>? api = await Deserialize<object>(r2, TestContext.CancellationToken);
         Assert.IsFalse(api!.Success);
         Assert.AreEqual(ErrorCodes.DuplicateProductSlug, api.ErrorDetails!.Code);
     }
@@ -258,7 +259,7 @@ public class ProductsCharacterizationTests
 
         // Assert category created
         Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes);
+        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
         Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
 
         // Arrange (create product)
@@ -269,7 +270,7 @@ public class ProductsCharacterizationTests
 
         // Assert product created
         Assert.AreEqual(HttpStatusCode.Created, r.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(r);
+        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(r, TestContext.CancellationToken);
         Guid id = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
 
         // Arrange (update)
@@ -280,7 +281,7 @@ public class ProductsCharacterizationTests
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res);
+        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res, TestContext.CancellationToken);
         Assert.AreEqual("UpdatedName", api!.Data!.GetProperty("name").GetString());
     }
 
@@ -353,7 +354,7 @@ public class ProductsCharacterizationTests
 
         // Assert category created
         Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes);
+        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
         Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
 
         // Arrange (product)
@@ -364,7 +365,7 @@ public class ProductsCharacterizationTests
 
         // Assert product created
         Assert.AreEqual(HttpStatusCode.Created, r.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(r);
+        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(r, TestContext.CancellationToken);
         Guid id = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
 
         // Act (delete)
