@@ -253,7 +253,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.AreEqual("NewName", dto.Name);
-        Assert.IsTrue(products.UpdateCallCount >= 1);
+        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -339,7 +339,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.AreEqual(20m, dto.Price);
-        Assert.IsTrue(products.UpdateCallCount >= 1);
+        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -384,7 +384,7 @@ public class CommandHandlerTests
 
         Assert.IsTrue(res.IsSuccess);
         Assert.AreEqual("Active", res.GetDataOrThrow().Status);
-        Assert.IsTrue(products.UpdateCallCount >= 1);
+        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -415,7 +415,7 @@ public class CommandHandlerTests
 
         Assert.IsTrue(res.IsSuccess);
         Assert.AreEqual("Inactive", res.GetDataOrThrow().Status);
-        Assert.IsTrue(products.UpdateCallCount >= 1);
+        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -463,7 +463,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.IsTrue(dto.Images.Any());
-        Assert.IsTrue(products.UpdateCallCount >= 1);
+        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -513,7 +513,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.IsTrue(dto.Images.Any(i => i.Id == id && i.IsPrimary));
-        Assert.IsTrue(products.UpdateCallCount >= 1);
+        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -586,7 +586,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.AreEqual("Renamed", dto.Name);
-        Assert.IsTrue(categories.UpdateCallCount >= 1);
+        Assert.IsGreaterThanOrEqualTo(1, categories.UpdateCallCount);
     }
 
     [TestMethod]

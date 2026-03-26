@@ -290,7 +290,7 @@ public class QueryHandlerTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.IsTrue(result.GetDataOrThrow().Count >= 2);
+        Assert.IsGreaterThanOrEqualTo(2, result.GetDataOrThrow().Count);
     }
 
     [TestMethod]
@@ -302,6 +302,6 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetLowStockProductsQuery(5), CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(0, result.GetDataOrThrow().Count);
+        Assert.IsEmpty(result.GetDataOrThrow());
     }
 }
