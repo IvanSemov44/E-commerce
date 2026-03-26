@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
@@ -24,9 +24,13 @@ public class AddProductImageCommandHandler(
         if (!addResult.IsSuccess)
             return Result<ProductDetailDto>.Fail(addResult.GetErrorOrThrow());
 
+        await _products.UpdateAsync(product, cancellationToken);
+
         var category = await _categories.GetByIdAsync(product.CategoryId, cancellationToken);
         if (category is null)
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.CategoryNotFound);
+
+        await _products.UpdateAsync(product, cancellationToken);
 
         return Result<ProductDetailDto>.Ok(product.ToDetailDto(category.Name.Value));
     }

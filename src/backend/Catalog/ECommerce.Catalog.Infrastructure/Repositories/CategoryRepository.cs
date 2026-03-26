@@ -54,6 +54,7 @@ public class CategoryRepository(AppDbContext _db) : ICategoryRepository
         existing.Name = category.Name.Value;
         existing.Slug = category.Slug.Value;
         existing.IsActive = category.IsActive;
+        existing.ParentId = category.ParentId;
 
         _db.Categories.Update(existing);
     }
@@ -74,6 +75,7 @@ public class CategoryRepository(AppDbContext _db) : ICategoryRepository
         catType.GetProperty("Name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, CategoryName.Create(core.Name).GetDataOrThrow());
         catType.GetProperty("Slug", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, Slug.Create(core.Slug).GetDataOrThrow());
         catType.GetProperty("IsActive", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.IsActive);
+        catType.GetProperty("ParentId", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(domain, core.ParentId);
         catType.GetProperty("CreatedAt", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.CreatedAt);
         catType.GetProperty("UpdatedAt", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.UpdatedAt);
         return domain;
@@ -87,6 +89,7 @@ public class CategoryRepository(AppDbContext _db) : ICategoryRepository
             Name = domain.Name.Value,
             Slug = domain.Slug.Value,
             IsActive = domain.IsActive,
+            ParentId = domain.ParentId,
             CreatedAt = domain.CreatedAt,
             UpdatedAt = domain.UpdatedAt
         };

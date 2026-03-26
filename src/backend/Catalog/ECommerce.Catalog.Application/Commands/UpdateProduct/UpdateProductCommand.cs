@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using MediatR;
 using ECommerce.SharedKernel.Results;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Catalog.Application.DTOs.Products;
 
 namespace ECommerce.Catalog.Application.Commands.UpdateProduct;
@@ -10,4 +11,4 @@ public record UpdateProductCommand(
     string Name,
     string? Description,
     Guid CategoryId
-) : IRequest<Result<ProductDetailDto>>;
+) : IRequest<Result<ProductDetailDto>>, ITransactionalCommand;

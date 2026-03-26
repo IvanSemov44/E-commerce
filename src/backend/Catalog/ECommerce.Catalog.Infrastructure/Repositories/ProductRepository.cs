@@ -84,7 +84,12 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
 
     public async Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken cancellationToken = default)
     {
-        return Array.Empty<Product>();
+        var cores = await _db.Products
+            .AsNoTracking()
+            .Where(p => p.StockQuantity <= threshold && p.IsActive)
+            .Include(p => p.Images)
+            .ToListAsync(cancellationToken);
+        return cores.Select(MapToDomain).ToList();
     }
 
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)

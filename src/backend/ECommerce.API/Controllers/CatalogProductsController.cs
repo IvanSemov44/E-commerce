@@ -1,9 +1,11 @@
+using System.Collections.Frozen;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.ActionFilters;
+using ECommerce.API.Extensions;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Products;
@@ -21,6 +23,7 @@ using ECommerce.Catalog.Application.Queries.GetProductBySlug;
 using ECommerce.Catalog.Application.Queries.GetProducts;
 using ECommerce.Catalog.Application.Queries.GetProductsByCategory;
 using ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
+using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
 using ECommerce.Catalog.Application.Queries.SearchProducts;
 using CatalogCommon = ECommerce.Catalog.Application.DTOs.Common;
 
@@ -32,26 +35,41 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
 {
     private readonly IMediator _mediator = mediator;
 
-    private IActionResult Problem(DomainError error) => error.Code switch
+    private static readonly FrozenSet<string> _notFound = FrozenSet.Create(
+        "PRODUCT_NOT_FOUND", "CATEGORY_NOT_FOUND", "IMAGE_NOT_FOUND");
+
+    private static readonly FrozenSet<string> _conflict = FrozenSet.Create(
+        "SKU_ALREADY_EXISTS");
+
+    private static readonly FrozenSet<string> _unprocessable = FrozenSet.Create(
+        "PRODUCT_NAME_EMPTY", "PRODUCT_NAME_TOO_LONG",
+        "SKU_EMPTY",          "SKU_TOO_LONG",
+        "MONEY_NEGATIVE",     "MONEY_INVALID_CURRENCY", "MONEY_CURRENCY_MISMATCH",
+        "WEIGHT_NEGATIVE",    "STOCK_QUANTITY_NEGATIVE",
+        "PRODUCT_DISCONTINUED", "PRODUCT_MAX_IMAGES");
+
+    private IActionResult Problem(DomainError error)
     {
-        "PRODUCT_NOT_FOUND" or "CATEGORY_NOT_FOUND" or "IMAGE_NOT_FOUND"
-            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "SKU_ALREADY_EXISTS"
-            => Conflict(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "PRODUCT_NAME_EMPTY" or "PRODUCT_NAME_TOO_LONG"
-        or "SKU_EMPTY" or "SKU_TOO_LONG"
-        or "MONEY_NEGATIVE" or "MONEY_INVALID_CURRENCY" or "MONEY_CURRENCY_MISMATCH"
-        or "WEIGHT_NEGATIVE" or "STOCK_QUANTITY_NEGATIVE"
-        or "PRODUCT_DISCONTINUED" or "PRODUCT_MAX_IMAGES"
-            => UnprocessableEntity(ApiResponse<object>.Failure(error.Message, error.Code)),
-        _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
-    };
+        var body = ApiResponse<object>.Failure(error.Message, error.Code);
+        if (_notFound.Contains(error.Code))       return NotFound(body);
+        if (_conflict.Contains(error.Code))       return Conflict(body);
+        if (_unprocessable.Contains(error.Code))  return UnprocessableEntity(body);
+        return BadRequest(body);
+    }
 
     // -------------------------------------------------------------------------
     // Queries
     // -------------------------------------------------------------------------
 
-    /// <summary>Returns a paged list of products.</summary>
+    /// <summary>
+    /// Returns a paged list of products.
+    /// </summary>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="pageSize">The page size (default: 20, max: 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A paginated list of product DTOs.</returns>
+    /// <response code="200">Products retrieved successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -61,36 +79,57 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductsQuery(page, pageSize), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(result.GetDataOrThrow(), "Products retrieved"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(data, "Products retrieved")),
+            Problem);
     }
 
-    /// <summary>Returns a single product by ID. Returns 404 if not found.</summary>
+    /// <summary>
+    /// Returns a single product by ID.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The product details.</returns>
+    /// <response code="200">Product retrieved successfully.</response>
+    /// <response code="404">Product not found.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductById(Guid id, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductByIdQuery(id), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<ProductDetailDto>.Ok(result.GetDataOrThrow(), "Product retrieved"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Product retrieved")),
+            Problem);
     }
 
-    /// <summary>Returns a single product by slug. Returns 404 if not found.</summary>
+    /// <summary>
+    /// Returns a single product by slug.
+    /// </summary>
+    /// <param name="slug">The product slug.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The product details.</returns>
+    /// <response code="200">Product retrieved successfully.</response>
+    /// <response code="404">Product not found.</response>
     [HttpGet("slug/{slug}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductBySlug(string slug, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductBySlugQuery(slug), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<ProductDetailDto>.Ok(result.GetDataOrThrow(), "Product retrieved"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Product retrieved")),
+            Problem);
     }
 
-    /// <summary>Returns featured products up to the given limit.</summary>
+    /// <summary>
+    /// Returns featured products up to the given limit.
+    /// </summary>
+    /// <param name="limit">Maximum number of featured products to return (default: 10).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of featured product DTOs.</returns>
+    /// <response code="200">Featured products retrieved successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
     [HttpGet("featured")]
     [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -99,12 +138,42 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetFeaturedProductsQuery(limit), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<List<ProductDto>>.Ok(result.GetDataOrThrow(), "Featured products retrieved"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<List<ProductDto>>.Ok(data, "Featured products retrieved")),
+            Problem);
     }
 
-    /// <summary>Searches products by text query. Returns paged results.</summary>
+    /// <summary>
+    /// Returns products with stock at or below the given threshold.
+    /// </summary>
+    /// <param name="threshold">Stock threshold to consider low (default: 10).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of products with low stock.</returns>
+    /// <response code="200">Low stock products retrieved successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
+    [HttpGet("low-stock")]
+    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetLowStockProducts(
+        [FromQuery, Range(1, int.MaxValue)] int threshold = 10,
+        CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetLowStockProductsQuery(threshold), ct);
+        return result.ToActionResult(
+            data => Ok(ApiResponse<List<ProductDto>>.Ok(data, "Low stock products retrieved")),
+            Problem);
+    }
+
+    /// <summary>
+    /// Searches products by text query. Returns paged results.
+    /// </summary>
+    /// <param name="q">Search query text.</param>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="pageSize">The page size (default: 20, max: 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Paged search results of products.</returns>
+    /// <response code="200">Search results returned successfully.</response>
+    /// <response code="400">Invalid search parameters.</response>
     [HttpGet("search")]
     [ProducesResponseType(typeof(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -115,12 +184,21 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new SearchProductsQuery(q ?? string.Empty, page, pageSize), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(result.GetDataOrThrow(), "Search results"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(data, "Search results")),
+            Problem);
     }
 
-    /// <summary>Returns paged products belonging to a category.</summary>
+    /// <summary>
+    /// Returns paged products belonging to a category.
+    /// </summary>
+    /// <param name="categoryId">The category ID to filter products by.</param>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="pageSize">The page size (default: 20, max: 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Paged list of products in the specified category.</returns>
+    /// <response code="200">Products by category returned successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
     [HttpGet("by-category/{categoryId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -131,12 +209,22 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductsByCategoryQuery(categoryId, page, pageSize), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(result.GetDataOrThrow(), "Products by category"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(data, "Products by category")),
+            Problem);
     }
 
-    /// <summary>Returns paged products within a price range.</summary>
+    /// <summary>
+    /// Returns paged products within a price range.
+    /// </summary>
+    /// <param name="min">Minimum price (inclusive).</param>
+    /// <param name="max">Maximum price (inclusive).</param>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="pageSize">The page size (default: 20, max: 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Paged list of products within the specified price range.</returns>
+    /// <response code="200">Products by price range returned successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
     [HttpGet("by-price")]
     [ProducesResponseType(typeof(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -148,16 +236,27 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductsByPriceRangeQuery(min, max, page, pageSize), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(result.GetDataOrThrow(), "Products by price range"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(data, "Products by price range")),
+            Problem);
     }
 
     // -------------------------------------------------------------------------
     // Commands
     // -------------------------------------------------------------------------
 
-    /// <summary>Creates a new product. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Creates a new product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="command">Product creation command payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The newly created product.</returns>
+    /// <response code="201">Product created successfully.</response>
+    /// <response code="400">Invalid product data.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to create products.</response>
+    /// <response code="409">Product with the same SKU already exists.</response>
+    /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
@@ -170,15 +269,24 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(command, ct);
-        if (result.IsSuccess)
-        {
-            var dto = result.GetDataOrThrow();
-            return CreatedAtAction(nameof(GetProductById), new { id = dto.Id }, ApiResponse<ProductDetailDto>.Ok(dto, "Product created"));
-        }
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            dto => CreatedAtAction(nameof(GetProductById), new { id = dto.Id }, ApiResponse<ProductDetailDto>.Ok(dto, "Product created")),
+            Problem);
     }
 
-    /// <summary>Updates an existing product. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Updates an existing product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="command">Product update command payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated product.</returns>
+    /// <response code="200">Product updated successfully.</response>
+    /// <response code="400">Invalid product data.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to update products.</response>
+    /// <response code="404">Product not found.</response>
+    /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
@@ -191,12 +299,21 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<ProductDetailDto>.Ok(result.GetDataOrThrow(), "Product updated"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Product updated")),
+            Problem);
     }
 
-    /// <summary>Deletes a product permanently. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Deletes a product permanently. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Deletion result.</returns>
+    /// <response code="200">Product deleted successfully.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to delete products.</response>
+    /// <response code="404">Product not found.</response>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -204,12 +321,24 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new DeleteProductCommand(id), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<object>.Ok(new { },"Product deleted"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            () => Ok(ApiResponse<object>.Ok(new { }, "Product deleted")),
+            Problem);
     }
 
-    /// <summary>Updates the price of a product. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Updates the price of a product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="command">Price update command payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated product.</returns>
+    /// <response code="200">Price updated successfully.</response>
+    /// <response code="400">Invalid price data.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to update price.</response>
+    /// <response code="404">Product not found.</response>
+    /// <response code="422">Unprocessable price data (validation errors).</response>
     [HttpPut("{id:guid}/price")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
@@ -222,12 +351,20 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<ProductDetailDto>.Ok(result.GetDataOrThrow(), "Price updated"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Price updated")),
+            Problem);
     }
 
-    /// <summary>Activates a product. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Activates a product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Activation result.</returns>
+    /// <response code="200">Product activated successfully.</response>
+    /// <response code="404">Product not found.</response>
+    /// <response code="422">Activation cannot be performed (e.g. product is discontinued).</response>
     [HttpPost("{id:guid}/activate")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -236,12 +373,20 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> ActivateProduct(Guid id, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new ActivateProductCommand(id), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<object>.Ok(new { },"Product activated"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            _ => Ok(ApiResponse<object>.Ok(new { }, "Product activated")),
+            Problem);
     }
 
-    /// <summary>Deactivates a product. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Deactivates a product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Deactivation result.</returns>
+    /// <response code="200">Product deactivated successfully.</response>
+    /// <response code="404">Product not found.</response>
+    /// <response code="422">Deactivation cannot be performed.</response>
     [HttpPost("{id:guid}/deactivate")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -250,12 +395,24 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> DeactivateProduct(Guid id, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new DeactivateProductCommand(id), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<object>.Ok(new { },"Product deactivated"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            _ => Ok(ApiResponse<object>.Ok(new { }, "Product deactivated")),
+            Problem);
     }
 
-    /// <summary>Adds an image to a product. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Adds an image to a product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="command">Image addition command payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The product with the newly added image.</returns>
+    /// <response code="200">Image added successfully.</response>
+    /// <response code="400">Invalid image data.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">User does not have permission to add images.</response>
+    /// <response code="404">Product not found.</response>
+    /// <response code="422">Unprocessable image data (e.g. max images reached).</response>
     [HttpPost("{id:guid}/images")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
@@ -268,12 +425,20 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(command with { ProductId = id }, ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<ProductDetailDto>.Ok(result.GetDataOrThrow(), "Image added"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Image added")),
+            Problem);
     }
 
-    /// <summary>Sets the primary image of a product. Requires Admin or SuperAdmin role.</summary>
+    /// <summary>
+    /// Sets the primary image of a product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="imageId">The image ID to set as primary.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The product with the primary image updated.</returns>
+    /// <response code="200">Primary image set successfully.</response>
+    /// <response code="404">Product or image not found.</response>
     [HttpPost("{id:guid}/images/{imageId:guid}/primary")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
@@ -281,8 +446,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> SetPrimaryImage(Guid id, Guid imageId, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new SetPrimaryImageCommand(id, imageId), ct);
-        if (result.IsSuccess)
-            return Ok(ApiResponse<ProductDetailDto>.Ok(result.GetDataOrThrow(), "Primary image set"));
-        return Problem(result.GetErrorOrThrow());
+        return result.ToActionResult(
+            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Primary image set")),
+            Problem);
     }
 }

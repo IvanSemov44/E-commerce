@@ -8,6 +8,7 @@ using ECommerce.Catalog.Application.Queries.GetProducts;
 using ECommerce.Catalog.Application.Queries.GetFeaturedProducts;
 using ECommerce.Catalog.Application.Queries.GetCategories;
 using ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
+using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
 using ECommerce.Catalog.Domain.ValueObjects;
 
 namespace ECommerce.Catalog.Tests.Application;
@@ -20,6 +21,8 @@ public class QueryHandlerTests
     sealed class FakeProductRepository : IProductRepository
     {
         public List<Product> Store = new();
+        public int UpdateCallCount;
+        public Dictionary<Guid,int> Stock = new();
 
         public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
@@ -67,7 +70,8 @@ public class QueryHandlerTests
 
         public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default)
         {
-            return Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
+            var items = Store.Where(p => Stock.TryGetValue(p.Id, out var q) && q <= threshold).ToList();
+            return Task.FromResult<IReadOnlyList<Product>>(items);
         }
 
         public Task AddAsync(Product product, CancellationToken ct = default)
@@ -78,6 +82,7 @@ public class QueryHandlerTests
 
         public Task UpdateAsync(Product product, CancellationToken ct = default)
         {
+            UpdateCallCount++;
             return Task.CompletedTask;
         }
 
@@ -91,6 +96,7 @@ public class QueryHandlerTests
     sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<Category> Store = new();
+        public int UpdateCallCount;
         public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
         public Task<Category?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Slug.Value == slug));
         public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
@@ -102,7 +108,11 @@ public class QueryHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Category category, CancellationToken ct = default) => Task.CompletedTask;
+        public Task UpdateAsync(Category category, CancellationToken ct = default)
+        {
+            UpdateCallCount++;
+            return Task.CompletedTask;
+        }
 
         public Task DeleteAsync(Category category, CancellationToken ct = default)
         {
@@ -262,5 +272,36 @@ public class QueryHandlerTests
 
         Assert.IsFalse(res.IsSuccess);
         Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task GetLowStockProductsQueryHandler_Handle_ProductsBelowThreshold_ReturnsMatchingProducts()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var p1 = CreateValidProduct(categories, products);
+        var p2 = CreateValidProduct(categories, products);
+        // mark both as low stock
+        products.Stock[p1.Id] = 2;
+        products.Stock[p2.Id] = 3;
+        var handler = new GetLowStockProductsQueryHandler(products);
+
+        var query = new GetLowStockProductsQuery(5);
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.IsTrue(result.GetDataOrThrow().Count >= 2);
+    }
+
+    [TestMethod]
+    public async Task GetLowStockProductsQueryHandler_Handle_NoProductsBelowThreshold_ReturnsEmptyList()
+    {
+        var products = new FakeProductRepository();
+        var handler = new GetLowStockProductsQueryHandler(products);
+
+        var result = await handler.Handle(new GetLowStockProductsQuery(5), CancellationToken.None);
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.AreEqual(0, result.GetDataOrThrow().Count);
     }
 }

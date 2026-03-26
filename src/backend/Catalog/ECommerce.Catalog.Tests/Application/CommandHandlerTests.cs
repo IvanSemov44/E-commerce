@@ -25,6 +25,7 @@ public class CommandHandlerTests
     sealed class FakeProductRepository : IProductRepository
     {
         public List<Product> Store = new();
+            public int UpdateCallCount;
 
         public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
@@ -79,10 +80,11 @@ public class CommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Product product, CancellationToken ct = default)
-        {
-            return Task.CompletedTask;
-        }
+            public Task UpdateAsync(Product product, CancellationToken ct = default)
+            {
+                UpdateCallCount++;
+                return Task.CompletedTask;
+            }
 
         public Task DeleteAsync(Product product, CancellationToken ct = default)
         {
@@ -95,6 +97,7 @@ public class CommandHandlerTests
     {
         public List<Category> Store = new();
         public bool HasProductsReturn;
+            public int UpdateCallCount;
 
         public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
@@ -127,10 +130,11 @@ public class CommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Category category, CancellationToken ct = default)
-        {
-            return Task.CompletedTask;
-        }
+            public Task UpdateAsync(Category category, CancellationToken ct = default)
+            {
+                UpdateCallCount++;
+                return Task.CompletedTask;
+            }
 
         public Task DeleteAsync(Category category, CancellationToken ct = default)
         {
@@ -249,6 +253,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.AreEqual("NewName", dto.Name);
+        Assert.IsTrue(products.UpdateCallCount >= 1);
     }
 
     [TestMethod]
@@ -263,6 +268,18 @@ public class CommandHandlerTests
 
         Assert.IsFalse(res.IsSuccess);
         Assert.AreEqual("PRODUCT_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task UpdateProductCommandHandler_Handle_ProductNotFound_DoesNotCallUpdateAsync()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var handler = new UpdateProductCommandHandler(products, categories);
+
+        await handler.Handle(new UpdateProductCommand(Guid.NewGuid(), "N", null, Guid.NewGuid()), CancellationToken.None);
+
+        Assert.AreEqual(0, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -322,6 +339,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.AreEqual(20m, dto.Price);
+        Assert.IsTrue(products.UpdateCallCount >= 1);
     }
 
     [TestMethod]
@@ -366,6 +384,7 @@ public class CommandHandlerTests
 
         Assert.IsTrue(res.IsSuccess);
         Assert.AreEqual("Active", res.GetDataOrThrow().Status);
+        Assert.IsTrue(products.UpdateCallCount >= 1);
     }
 
     [TestMethod]
@@ -396,6 +415,7 @@ public class CommandHandlerTests
 
         Assert.IsTrue(res.IsSuccess);
         Assert.AreEqual("Inactive", res.GetDataOrThrow().Status);
+        Assert.IsTrue(products.UpdateCallCount >= 1);
     }
 
     [TestMethod]
@@ -443,6 +463,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.IsTrue(dto.Images.Any());
+        Assert.IsTrue(products.UpdateCallCount >= 1);
     }
 
     [TestMethod]
@@ -492,6 +513,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.IsTrue(dto.Images.Any(i => i.Id == id && i.IsPrimary));
+        Assert.IsTrue(products.UpdateCallCount >= 1);
     }
 
     [TestMethod]
@@ -564,6 +586,7 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.AreEqual("Renamed", dto.Name);
+        Assert.IsTrue(categories.UpdateCallCount >= 1);
     }
 
     [TestMethod]

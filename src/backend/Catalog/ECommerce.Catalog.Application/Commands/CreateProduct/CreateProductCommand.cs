@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using MediatR;
 using ECommerce.SharedKernel.Results;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Catalog.Application.DTOs.Products;
 
 namespace ECommerce.Catalog.Application.Commands.CreateProduct;
@@ -13,4 +14,4 @@ public record CreateProductCommand(
     Guid CategoryId,
     string? Description = null,
     decimal? CompareAtPrice = null
-) : IRequest<Result<ProductDetailDto>>;
+) : IRequest<Result<ProductDetailDto>>, ITransactionalCommand;

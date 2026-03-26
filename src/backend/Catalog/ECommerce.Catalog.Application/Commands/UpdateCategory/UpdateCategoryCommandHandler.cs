@@ -30,6 +30,8 @@ public class UpdateCategoryCommandHandler(
         if (!moveResult.IsSuccess)
             return Result<CategoryDto>.Fail(moveResult.GetErrorOrThrow());
 
+        await _categories.UpdateAsync(category, cancellationToken);
+
         return Result<CategoryDto>.Ok(category.ToDto());
     }
 }

@@ -32,7 +32,11 @@ public class UpdateProductCommandHandler(
         var productName = nameResult.GetDataOrThrow();
         product.UpdateDetails(productName, command.Description, command.CategoryId);
 
+        await _products.UpdateAsync(product, cancellationToken);
+
         var dto = product.ToDetailDto(category.Name.Value);
+
+        await _products.UpdateAsync(product, cancellationToken);
 
         return Result<ProductDetailDto>.Ok(dto);
     }
