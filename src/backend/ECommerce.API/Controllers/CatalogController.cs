@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerce.SharedKernel.Results;
@@ -45,7 +46,7 @@ public class CatalogController(IMediator mediator) : ControllerBase
     };
 
     [HttpGet("products")]
-    public async Task<IActionResult> GetProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> GetProducts([FromQuery, Range(1, int.MaxValue)] int page = 1, [FromQuery, Range(1, 100)] int pageSize = 20, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductsQuery(page, pageSize), ct);
         if (result.IsSuccess)
@@ -81,16 +82,16 @@ public class CatalogController(IMediator mediator) : ControllerBase
     }
 
     [HttpGet("products/search")]
-    public async Task<IActionResult> SearchProducts([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> SearchProducts([FromQuery] string? q, [FromQuery, Range(1, int.MaxValue)] int page = 1, [FromQuery, Range(1, 100)] int pageSize = 20, CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new SearchProductsQuery(q, page, pageSize), ct);
+        var result = await _mediator.Send(new SearchProductsQuery(q ?? string.Empty, page, pageSize), ct);
         if (result.IsSuccess)
             return Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(result.GetDataOrThrow(), "Search results"));
         return Problem(result.GetErrorOrThrow());
     }
 
     [HttpGet("products/by-category/{categoryId:guid}")]
-    public async Task<IActionResult> GetProductsByCategory(Guid categoryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> GetProductsByCategory(Guid categoryId, [FromQuery, Range(1, int.MaxValue)] int page = 1, [FromQuery, Range(1, 100)] int pageSize = 20, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductsByCategoryQuery(categoryId, page, pageSize), ct);
         if (result.IsSuccess)
@@ -99,7 +100,7 @@ public class CatalogController(IMediator mediator) : ControllerBase
     }
 
     [HttpGet("products/by-price")]
-    public async Task<IActionResult> GetProductsByPriceRange([FromQuery] decimal min, [FromQuery] decimal max, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> GetProductsByPriceRange([FromQuery] decimal min, [FromQuery] decimal max, [FromQuery, Range(1, int.MaxValue)] int page = 1, [FromQuery, Range(1, 100)] int pageSize = 20, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetProductsByPriceRangeQuery(min, max, page, pageSize), ct);
         if (result.IsSuccess)
