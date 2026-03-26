@@ -1,17 +1,17 @@
-﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using ECommerce.SharedKernel.Results;
+using Microsoft.AspNetCore.Mvc;
+using MediatR;
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
-using CatalogCategory = ECommerce.Catalog.Application.DTOs.Categories.CategoryDto;
-using CatalogCommon = ECommerce.Catalog.Application.DTOs.Common;
+using ECommerce.SharedKernel.Results;
+using ECommerce.Catalog.Application.Commands.CreateCategory;
+using ECommerce.Catalog.Application.Commands.DeleteCategory;
+using ECommerce.Catalog.Application.Commands.UpdateCategory;
 using ECommerce.Catalog.Application.Queries.GetCategories;
 using ECommerce.Catalog.Application.Queries.GetCategoryById;
 using ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
-using ECommerce.Catalog.Application.Commands.CreateCategory;
-using ECommerce.Catalog.Application.Commands.UpdateCategory;
-using ECommerce.API.ActionFilters;
+using CategoryDto = ECommerce.Catalog.Application.DTOs.Categories.CategoryDto;
 
 namespace ECommerce.API.Controllers;
 
@@ -32,132 +32,99 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
         _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
     };
 
-    /// <summary>
-    /// Retrieves all categories available in the catalog.
-    /// Returns categories as a flat collection; clients may reconstruct hierarchy from the parent references.
-    /// </summary>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>A collection of category DTOs.</returns>
-    /// <response code="200">Categories retrieved successfully.</response>
-    /// <response code="400">Invalid request parameters.</response>
+    // -------------------------------------------------------------------------
+    // Queries
+    // -------------------------------------------------------------------------
+
+    /// <summary>Returns all categories as a flat list.</summary>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CatalogCategory>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetCategories(CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetCategoriesQuery(), ct);
         if (result.IsSuccess)
-            return Ok(ApiResponse<IEnumerable<CatalogCategory>>.Ok(result.GetDataOrThrow(), "Categories retrieved"));
+            return Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(result.GetDataOrThrow(), "Categories retrieved"));
         return Problem(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Retrieves a single category by its identifier, including basic relationships.
-    /// </summary>
-    /// <param name="id">Category unique identifier (GUID).</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Category DTO with details and parent/child references.</returns>
-    /// <response code="200">Category retrieved successfully.</response>
-    /// <response code="404">Category not found.</response>
+    /// <summary>Returns a single category by ID. Returns 404 if not found.</summary>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(ApiResponse<CatalogCategory>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryById(Guid id, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetCategoryByIdQuery(id), ct);
         if (result.IsSuccess)
-            return Ok(ApiResponse<CatalogCategory>.Ok(result.GetDataOrThrow(), "Category retrieved"));
+            return Ok(ApiResponse<CategoryDto>.Ok(result.GetDataOrThrow(), "Category retrieved"));
         return Problem(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Retrieves a category by its URL-friendly slug.
-    /// </summary>
-    /// <param name="slug">Category slug (URL-friendly identifier).</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Category DTO matching the provided slug.</returns>
-    /// <response code="200">Category retrieved successfully.</response>
-    /// <response code="404">Category not found.</response>
+    /// <summary>Returns a single category by slug. Returns 404 if not found.</summary>
     [HttpGet("slug/{slug}")]
-    [ProducesResponseType(typeof(ApiResponse<CatalogCategory>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryBySlug(string slug, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetCategoryBySlugQuery(slug), ct);
         if (result.IsSuccess)
-            return Ok(ApiResponse<CatalogCategory>.Ok(result.GetDataOrThrow(), "Category retrieved"));
+            return Ok(ApiResponse<CategoryDto>.Ok(result.GetDataOrThrow(), "Category retrieved"));
         return Problem(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Creates a new category. Requires `Admin` or `SuperAdmin` role.
-    /// </summary>
-    /// <param name="command">Command with new category details (name, slug, parentId).</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The created category details.</returns>
-    /// <response code="201">Category created successfully.</response>
-    /// <response code="400">Invalid input data.</response>
-    /// <response code="422">Business validation failed (e.g., duplicate slug).</response>
+    // -------------------------------------------------------------------------
+    // Commands
+    // -------------------------------------------------------------------------
+
+    /// <summary>Creates a new category. Requires Admin or SuperAdmin role.</summary>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<CatalogCategory>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
-    public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryCommand command, CancellationToken ct = default)
+    public async Task<IActionResult> CreateCategory(
+        [FromBody] CreateCategoryCommand command,
+        CancellationToken ct = default)
     {
         var result = await _mediator.Send(command, ct);
         if (result.IsSuccess)
         {
             var dto = result.GetDataOrThrow();
-            return CreatedAtAction(nameof(GetCategoryById), new { id = dto.Id }, ApiResponse<CatalogCategory>.Ok(dto, "Category created"));
+            return CreatedAtAction(nameof(GetCategoryById), new { id = dto.Id }, ApiResponse<CategoryDto>.Ok(dto, "Category created"));
         }
         return Problem(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Updates an existing category. Requires `Admin` or `SuperAdmin` role.
-    /// </summary>
-    /// <param name="id">Category identifier (GUID) to update.</param>
-    /// <param name="command">Update command containing new category values.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The updated category details.</returns>
-    /// <response code="200">Category updated successfully.</response>
-    /// <response code="404">Category not found.</response>
-    /// <response code="400">Invalid request data.</response>
+    /// <summary>Updates an existing category. Requires Admin or SuperAdmin role.</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<CatalogCategory>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryCommand command, CancellationToken ct = default)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> UpdateCategory(
+        Guid id,
+        [FromBody] UpdateCategoryCommand command,
+        CancellationToken ct = default)
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
         if (result.IsSuccess)
-            return Ok(ApiResponse<CatalogCategory>.Ok(result.GetDataOrThrow(), "Category updated"));
+            return Ok(ApiResponse<CategoryDto>.Ok(result.GetDataOrThrow(), "Category updated"));
         return Problem(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Deletes the specified category. Requires `Admin` or `SuperAdmin` role.
-    /// Categories with dependent products or child categories cannot be deleted.
-    /// </summary>
-    /// <param name="id">Category identifier (GUID) to delete.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Deletion result or failure reason.</returns>
-    /// <response code="200">Category deleted successfully.</response>
-    /// <response code="400">Category cannot be deleted due to business rules.</response>
-    /// <response code="404">Category not found.</response>
+    /// <summary>Deletes a category. Returns 409 if it has products. Requires Admin or SuperAdmin role.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new ECommerce.Catalog.Application.Commands.DeleteCategory.DeleteCategoryCommand(id), ct);
+        var result = await _mediator.Send(new DeleteCategoryCommand(id), ct);
         if (result.IsSuccess)
-            return Ok(ApiResponse<object>.Ok(new object(), "Category deleted"));
+            return Ok(ApiResponse<object>.Ok(new { }, "Category deleted"));
         return Problem(result.GetErrorOrThrow());
     }
 }
