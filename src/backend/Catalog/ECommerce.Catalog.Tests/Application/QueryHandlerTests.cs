@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ECommerce.SharedKernel.Results;
+﻿using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Domain.Interfaces;
@@ -14,6 +8,7 @@ using ECommerce.Catalog.Application.Queries.GetProducts;
 using ECommerce.Catalog.Application.Queries.GetFeaturedProducts;
 using ECommerce.Catalog.Application.Queries.GetCategories;
 using ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
+using ECommerce.Catalog.Domain.ValueObjects;
 
 namespace ECommerce.Catalog.Tests.Application;
 
@@ -22,24 +17,78 @@ public class QueryHandlerTests
 {
     private static T Unwrap<T>(Result<T> r) => r.GetDataOrThrow();
 
-    class FakeProductRepository : IProductRepository
+    sealed class FakeProductRepository : IProductRepository
     {
         public List<Product> Store = new();
-        public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
-        public Task<Product?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(p => p.Slug.Value == slug));
-        public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.Sku.Value == sku));
-        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.Slug.Value == slug));
-        public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
-        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, Guid? categoryId = null, string? search = null, decimal? minPrice = null, decimal? maxPrice = null, CancellationToken ct = default)
-            => Task.FromResult<(IReadOnlyList<Product>, int)>((Store.Skip((page-1)*pageSize).Take(pageSize).ToList(), Store.Count));
-        public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
-        public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
-        public Task AddAsync(Product product, CancellationToken ct = default) { Store.Add(product); return Task.CompletedTask; }
-        public Task UpdateAsync(Product product, CancellationToken ct = default) => Task.CompletedTask;
-        public Task DeleteAsync(Product product, CancellationToken ct = default) { Store.Remove(product); return Task.CompletedTask; }
+
+        public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
+        }
+
+        public Task<Product?> GetBySlugAsync(string slug, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.FirstOrDefault(p => p.Slug.Value == slug));
+        }
+
+        public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Any(p => p.Sku.Value == sku));
+        }
+
+        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Any(p => p.Slug.Value == slug));
+        }
+
+        public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
+        }
+
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
+            int page,
+            int pageSize,
+            Guid? categoryId = null,
+            string? search = null,
+            decimal? minPrice = null,
+            decimal? maxPrice = null,
+            CancellationToken ct = default)
+        {
+            var items = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var total = Store.Count;
+            return Task.FromResult<(IReadOnlyList<Product>, int)>((items, total));
+        }
+
+        public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)
+        {
+            return Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
+        }
+
+        public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default)
+        {
+            return Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
+        }
+
+        public Task AddAsync(Product product, CancellationToken ct = default)
+        {
+            Store.Add(product);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Product product, CancellationToken ct = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(Product product, CancellationToken ct = default)
+        {
+            Store.Remove(product);
+            return Task.CompletedTask;
+        }
     }
 
-    class FakeCategoryRepository : ICategoryRepository
+    sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<Category> Store = new();
         public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
@@ -47,12 +96,22 @@ public class QueryHandlerTests
         public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
         public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.Any(c => c.Slug.Value == slug));
         public Task<bool> HasProductsAsync(Guid categoryId, CancellationToken ct = default) => Task.FromResult(false);
-        public Task AddAsync(Category category, CancellationToken ct = default) { Store.Add(category); return Task.CompletedTask; }
+        public Task AddAsync(Category category, CancellationToken ct = default)
+        {
+            Store.Add(category);
+            return Task.CompletedTask;
+        }
+
         public Task UpdateAsync(Category category, CancellationToken ct = default) => Task.CompletedTask;
-        public Task DeleteAsync(Category category, CancellationToken ct = default) { Store.Remove(category); return Task.CompletedTask; }
+
+        public Task DeleteAsync(Category category, CancellationToken ct = default)
+        {
+            Store.Remove(category);
+            return Task.CompletedTask;
+        }
     }
 
-    private Product CreateValidProduct(FakeCategoryRepository categories, FakeProductRepository products, Guid? categoryId = null)
+    private static Product CreateValidProduct(FakeCategoryRepository categories, FakeProductRepository products, Guid? categoryId = null)
     {
         var catId = categoryId ?? Guid.NewGuid();
         var category = Unwrap(Category.Create("Cat", null));
@@ -64,15 +123,15 @@ public class QueryHandlerTests
         }
         categories.Store.Add(category);
 
-        var name = Unwrap(ECommerce.Catalog.Domain.ValueObjects.ProductName.Create("P"));
-        var price = Unwrap(ECommerce.Catalog.Domain.ValueObjects.Money.Create(10m, "USD"));
-        var sku = Unwrap(ECommerce.Catalog.Domain.ValueObjects.Sku.Create(Guid.NewGuid().ToString()));
+        var name = Unwrap(ProductName.Create("P"));
+        var price = Unwrap(Money.Create(10m, "USD"));
+        var sku = Unwrap(Sku.Create(Guid.NewGuid().ToString()));
         var product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, category.Id));
         products.Store.Add(product);
         return product;
     }
 
-    private Category CreateValidCategory(FakeCategoryRepository categories, Guid? parentId = null)
+    private static Category CreateValidCategory(FakeCategoryRepository categories, Guid? parentId = null)
     {
         var res = Category.Create("Cat", parentId);
         var cat = Unwrap(res);
@@ -88,7 +147,7 @@ public class QueryHandlerTests
         var product = CreateValidProduct(categories, products);
         var handler = new GetProductByIdQueryHandler(products, categories);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetProductById.GetProductByIdQuery(product.Id);
+        var q = new GetProductByIdQuery(product.Id);
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
@@ -102,7 +161,7 @@ public class QueryHandlerTests
         var categories = new FakeCategoryRepository();
         var handler = new GetProductByIdQueryHandler(products, categories);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetProductById.GetProductByIdQuery(Guid.NewGuid());
+        var q = new GetProductByIdQuery(Guid.NewGuid());
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
@@ -117,7 +176,7 @@ public class QueryHandlerTests
         var product = CreateValidProduct(categories, products);
         var handler = new GetProductBySlugQueryHandler(products, categories);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetProductBySlug.GetProductBySlugQuery(product.Slug.Value);
+        var q = new GetProductBySlugQuery(product.Slug.Value);
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
@@ -132,13 +191,13 @@ public class QueryHandlerTests
         for (int i = 0; i < 5; i++) CreateValidProduct(categories, products);
         var handler = new GetProductsQueryHandler(products);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetProducts.GetProductsQuery(1, 10);
+        var q = new GetProductsQuery(1, 10);
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
         var paged = res.GetDataOrThrow();
         Assert.AreEqual(5, paged.TotalCount);
-        Assert.AreEqual(5, paged.Items.Count);
+        Assert.HasCount(5, paged.Items);
     }
 
     [TestMethod]
@@ -149,12 +208,12 @@ public class QueryHandlerTests
         for (int i = 0; i < 3; i++) CreateValidProduct(categories, products);
         var handler = new GetFeaturedProductsQueryHandler(products);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetFeaturedProducts.GetFeaturedProductsQuery(2);
+        var q = new GetFeaturedProductsQuery(2);
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
         var list = res.GetDataOrThrow();
-        Assert.AreEqual(2, list.Count);
+        Assert.HasCount(2, list);
     }
 
     [TestMethod]
@@ -166,7 +225,7 @@ public class QueryHandlerTests
         var child = CreateValidCategory(categories, root.Id);
         var handler = new GetCategoriesQueryHandler(categories);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetCategories.GetCategoriesQuery();
+        var q = new GetCategoriesQuery();
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
@@ -184,7 +243,7 @@ public class QueryHandlerTests
         var cat = CreateValidCategory(categories);
         var handler = new GetCategoryBySlugQueryHandler(categories);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetCategoryBySlug.GetCategoryBySlugQuery(cat.Slug.Value);
+        var q = new GetCategoryBySlugQuery(cat.Slug.Value);
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
@@ -198,7 +257,7 @@ public class QueryHandlerTests
         var categories = new FakeCategoryRepository();
         var handler = new GetCategoryBySlugQueryHandler(categories);
 
-        var q = new ECommerce.Catalog.Application.Queries.GetCategoryBySlug.GetCategoryBySlugQuery("no-such-slug");
+        var q = new GetCategoryBySlugQuery("no-such-slug");
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);

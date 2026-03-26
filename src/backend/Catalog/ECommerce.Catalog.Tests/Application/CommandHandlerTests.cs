@@ -1,6 +1,7 @@
 ﻿using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Aggregates.Category;
+using ECommerce.Catalog.Domain.ValueObjects;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Application.Commands.CreateProduct;
 using ECommerce.Catalog.Application.Commands.UpdateProduct;
@@ -24,32 +25,118 @@ public class CommandHandlerTests
     sealed class FakeProductRepository : IProductRepository
     {
         public List<Product> Store = new();
-        public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
-        public Task<Product?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(p => p.Slug.Value == slug));
-        public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.Sku.Value == sku));
-        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.Slug.Value == slug));
-        public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
-        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, Guid? categoryId = null, string? search = null, decimal? minPrice = null, decimal? maxPrice = null, CancellationToken ct = default)
-            => Task.FromResult<(IReadOnlyList<Product>, int)>((Store.AsReadOnly(), Store.Count));
-        public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
-        public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
-        public Task AddAsync(Product product, CancellationToken ct = default) { Store.Add(product); return Task.CompletedTask; }
-        public Task UpdateAsync(Product product, CancellationToken ct = default) => Task.CompletedTask;
-        public Task DeleteAsync(Product product, CancellationToken ct = default) { Store.Remove(product); return Task.CompletedTask; }
+
+        public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
+        }
+
+        public Task<Product?> GetBySlugAsync(string slug, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.FirstOrDefault(p => p.Slug.Value == slug));
+        }
+
+        public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Any(p => p.Sku.Value == sku));
+        }
+
+        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Any(p => p.Slug.Value == slug));
+        }
+
+        public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
+        }
+
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
+            int page,
+            int pageSize,
+            Guid? categoryId = null,
+            string? search = null,
+            decimal? minPrice = null,
+            decimal? maxPrice = null,
+            CancellationToken ct = default)
+        {
+            return Task.FromResult<(IReadOnlyList<Product>, int)>((Store.AsReadOnly(), Store.Count));
+        }
+
+        public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)
+        {
+            return Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
+        }
+
+        public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default)
+        {
+            return Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
+        }
+
+        public Task AddAsync(Product product, CancellationToken ct = default)
+        {
+            Store.Add(product);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Product product, CancellationToken ct = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(Product product, CancellationToken ct = default)
+        {
+            Store.Remove(product);
+            return Task.CompletedTask;
+        }
     }
 
     sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<Category> Store = new();
         public bool HasProductsReturn;
-        public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
-        public Task<Category?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Slug.Value == slug));
-        public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
-        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.Any(c => c.Slug.Value == slug));
-        public Task<bool> HasProductsAsync(Guid categoryId, CancellationToken ct = default) => Task.FromResult(HasProductsReturn);
-        public Task AddAsync(Category category, CancellationToken ct = default) { Store.Add(category); return Task.CompletedTask; }
-        public Task UpdateAsync(Category category, CancellationToken ct = default) => Task.CompletedTask;
-        public Task DeleteAsync(Category category, CancellationToken ct = default) { Store.Remove(category); return Task.CompletedTask; }
+
+        public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
+        }
+
+        public Task<Category?> GetBySlugAsync(string slug, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.FirstOrDefault(c => c.Slug.Value == slug));
+        }
+
+        public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default)
+        {
+            return Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
+        }
+
+        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Any(c => c.Slug.Value == slug));
+        }
+
+        public Task<bool> HasProductsAsync(Guid categoryId, CancellationToken ct = default)
+        {
+            return Task.FromResult(HasProductsReturn);
+        }
+
+        public Task AddAsync(Category category, CancellationToken ct = default)
+        {
+            Store.Add(category);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Category category, CancellationToken ct = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(Category category, CancellationToken ct = default)
+        {
+            Store.Remove(category);
+            return Task.CompletedTask;
+        }
     }
 
     private static Product CreateValidProduct(FakeCategoryRepository categories, FakeProductRepository products, Guid? categoryId = null)
@@ -69,9 +156,9 @@ public class CommandHandlerTests
         }
         categories.Store.Add(category);
 
-        var name = Unwrap(ECommerce.Catalog.Domain.ValueObjects.ProductName.Create("P"));
-        var price = Unwrap(ECommerce.Catalog.Domain.ValueObjects.Money.Create(10m, "USD"));
-        var sku = Unwrap(ECommerce.Catalog.Domain.ValueObjects.Sku.Create("SKU1"));
+        var name = Unwrap(ProductName.Create("P"));
+        var price = Unwrap(Money.Create(10m, "USD"));
+        var sku = Unwrap(Sku.Create("SKU1"));
         var product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, category.Id));
         products.Store.Add(product);
         return product;
@@ -318,7 +405,7 @@ public class CommandHandlerTests
         var categories = new FakeCategoryRepository();
         var product = CreateValidProduct(categories, products);
         var backing = typeof(Product).GetField("<Status>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        backing!.SetValue(product, ECommerce.Catalog.Domain.Aggregates.Product.ProductStatus.Discontinued);
+        backing!.SetValue(product, ProductStatus.Discontinued);
 
         var handler = new DeactivateProductCommandHandler(products, categories);
         var cmd = new DeactivateProductCommand(product.Id);

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -36,6 +36,8 @@
     <ProjectReference Include="..\ECommerce.Application\ECommerce.Application.csproj" />
     <ProjectReference Include="..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
     <ProjectReference Include="..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
+    <ProjectReference Include="..\Catalog\ECommerce.Catalog.Application\ECommerce.Catalog.Application.csproj" />
+    <ProjectReference Include="..\Catalog\ECommerce.Catalog.Infrastructure\ECommerce.Catalog.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
