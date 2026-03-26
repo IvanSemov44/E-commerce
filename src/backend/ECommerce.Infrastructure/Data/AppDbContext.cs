@@ -3,6 +3,7 @@ using ECommerce.Infrastructure.Data.Configurations;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerce.SharedKernel.Domain;
@@ -51,6 +52,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
         // Apply all entity configurations from the Configurations namespace
         // Each configuration class handles its own entity's mapping and conventions
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserConfiguration).Assembly);
+
+        // Attempt to apply catalog configuration mappings from the Catalog Infrastructure assembly
+        // We load by name to avoid creating a compile-time project reference and circular deps.
+        try
+        {
+            var asm = Assembly.Load("ECommerce.Catalog.Infrastructure");
+            modelBuilder.ApplyConfigurationsFromAssembly(asm);
+        }
+        catch
+        {
+            // Catalog infra assembly not present in some contexts (safe to ignore)
+        }
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

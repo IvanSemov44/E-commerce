@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Application", "Catalog\ECommerce.Catalog.Application\ECommerce.Catalog.Application.csproj", "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Infrastructure", "Catalog\ECommerce.Catalog.Infrastructure\ECommerce.Catalog.Infrastructure.csproj", "{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,18 @@ Global
 		{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}.Release|x64.Build.0 = Release|Any CPU
 		{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}.Release|x86.ActiveCfg = Release|Any CPU
 		{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}.Release|x86.Build.0 = Release|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Debug|x64.Build.0 = Debug|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Debug|x86.Build.0 = Debug|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Release|x64.ActiveCfg = Release|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Release|x64.Build.0 = Release|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Release|x86.ActiveCfg = Release|Any CPU
+		{B13E7C1A-9F2B-4D7A-8B2F-3A4E5D6F7A8B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
