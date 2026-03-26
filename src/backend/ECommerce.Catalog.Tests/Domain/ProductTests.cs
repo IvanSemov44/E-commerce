@@ -272,6 +272,54 @@ public class ProductTests
     }
 
     [TestMethod]
+    public void Create_EmptyName_ReturnsFailureWithProductNameEmptyCode()
+    {
+        // Arrange
+        Guid categoryId = Guid.NewGuid();
+        // Act
+        var result = Product.Create("", 10m, "USD", "SKU-001", categoryId);
+        // Assert
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual("PRODUCT_NAME_EMPTY", result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public void Create_NegativePrice_ReturnsFailureWithMoneyNegativeCode()
+    {
+        // Arrange
+        Guid categoryId = Guid.NewGuid();
+        // Act
+        var result = Product.Create("Valid", -1m, "USD", "SKU-001", categoryId);
+        // Assert
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual("MONEY_NEGATIVE", result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public void Create_InvalidCurrency_ReturnsFailureWithMoneyInvalidCurrencyCode()
+    {
+        // Arrange
+        Guid categoryId = Guid.NewGuid();
+        // Act
+        var result = Product.Create("Valid", 5m, "US", "SKU-001", categoryId);
+        // Assert
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual("MONEY_INVALID_CURRENCY", result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public void Create_EmptySku_ReturnsFailureWithSkuEmptyCode()
+    {
+        // Arrange
+        Guid categoryId = Guid.NewGuid();
+        // Act
+        var result = Product.Create("Valid", 5m, "USD", "", categoryId);
+        // Assert
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual("SKU_EMPTY", result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
     public void Create_ValidInputs_SlugDerivedFromName()
     {
         // Arrange
@@ -434,6 +482,19 @@ public class ProductTests
     }
 
     [TestMethod]
+    public void UpdatePrice_NewPrice_PriceIsUpdated()
+    {
+        // Arrange
+        var createRes = Product.Create("Valid Name", 5m, "USD", "SKU-001", Guid.NewGuid());
+        var product = createRes.GetDataOrThrow();
+        var newPrice = Money.Create(20m, "USD").GetDataOrThrow();
+        // Act
+        product.UpdatePrice(newPrice);
+        // Assert
+        Assert.AreEqual(20m, product.Price.Amount);
+    }
+
+    [TestMethod]
     public void UpdateDetails_NewName_SlugRegeneratedFromNewName()
     {
         // Arrange
@@ -448,6 +509,45 @@ public class ProductTests
         // Assert
         Slug expected = Unwrap(Slug.Create(newName.Value));
         Assert.AreEqual(expected.Value, product.Slug.Value);
+    }
+
+    [TestMethod]
+    public void UpdateDetails_NewName_NameIsUpdated()
+    {
+        // Arrange
+        var createRes = Product.Create("Valid Name", 10m, "USD", "SKU-001", Guid.NewGuid());
+        var product = createRes.GetDataOrThrow();
+        var newCategoryId = Guid.NewGuid();
+        // Act
+        product.UpdateDetails(ProductName.Create("New Name").GetDataOrThrow(), "desc", newCategoryId);
+        // Assert
+        Assert.AreEqual("New Name", product.Name.Value);
+    }
+
+    [TestMethod]
+    public void UpdateDetails_NewDescription_DescriptionIsUpdated()
+    {
+        // Arrange
+        var createRes = Product.Create("Valid Name", 10m, "USD", "SKU-001", Guid.NewGuid());
+        var product = createRes.GetDataOrThrow();
+        var newCategoryId = product.CategoryId;
+        // Act
+        product.UpdateDetails(ProductName.Create(product.Name.Value).GetDataOrThrow(), "new desc", newCategoryId);
+        // Assert
+        Assert.AreEqual("new desc", product.Description);
+    }
+
+    [TestMethod]
+    public void UpdateDetails_NewCategoryId_CategoryIdIsUpdated()
+    {
+        // Arrange
+        var createRes = Product.Create("Valid Name", 10m, "USD", "SKU-001", Guid.NewGuid());
+        var product = createRes.GetDataOrThrow();
+        var newCategoryId = Guid.NewGuid();
+        // Act
+        product.UpdateDetails(ProductName.Create(product.Name.Value).GetDataOrThrow(), product.Description, newCategoryId);
+        // Assert
+        Assert.AreEqual(newCategoryId, product.CategoryId);
     }
 
     [TestMethod]

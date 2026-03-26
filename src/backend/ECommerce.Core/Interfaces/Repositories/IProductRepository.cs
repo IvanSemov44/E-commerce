@@ -124,4 +124,9 @@ public interface IProductRepository : IRepository<Product>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>True if stock was successfully reduced; false if insufficient stock available.</returns>
     Task<bool> TryReduceStockAsync(Guid productId, int quantity, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets products with stock less than or equal to the provided threshold.
+    /// </summary>
+    Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold, bool trackChanges = false, CancellationToken cancellationToken = default);
 }

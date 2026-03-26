@@ -100,6 +100,16 @@ public class ProductRepository : Repository<Product>, IProductRepository
         }
     }
 
+    public async Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold, bool trackChanges = false, CancellationToken cancellationToken = default)
+    {
+        var query = trackChanges ? DbSet : DbSet.AsNoTracking();
+        return await query
+            .Where(p => p.StockQuantity <= threshold && p.IsActive)
+            .Include(p => p.Category)
+            .Include(p => p.Images)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null, CancellationToken cancellationToken = default)
     {
         var exists = await DbSet

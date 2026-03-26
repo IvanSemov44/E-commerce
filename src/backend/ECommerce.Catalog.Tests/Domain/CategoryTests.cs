@@ -82,6 +82,28 @@ public class CategoryTests
     }
 
     [TestMethod]
+    public void Create_EmptyName_ReturnsFailureWithCategoryNameEmptyCode()
+    {
+        // Act
+        var result = Category.Create("");
+        // Assert
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual("CATEGORY_NAME_EMPTY", result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public void Create_NameTooLong_ReturnsFailureWithCategoryNameTooLongCode()
+    {
+        // Arrange
+        string raw = new string('a', 101);
+        // Act
+        var result = Category.Create(raw);
+        // Assert
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual("CATEGORY_NAME_TOO_LONG", result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
     public void Create_WithParentId_ParentIdIsSet()
     {
         // Arrange

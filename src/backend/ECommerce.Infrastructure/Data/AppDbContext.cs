@@ -91,7 +91,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
         foreach (var aggregate in aggregates)
             aggregate.ClearDomainEvents();
 
-        var result = await base.SaveChangesAsync(cancellationToken);
+        int result = await base.SaveChangesAsync(cancellationToken);
 
         if (_dispatcher != null && events.Count != 0)
             await _dispatcher.DispatchEventsAsync(events, cancellationToken);
