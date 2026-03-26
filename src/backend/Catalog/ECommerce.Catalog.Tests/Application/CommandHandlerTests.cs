@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ECommerce.SharedKernel.Results;
+﻿using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Domain.Interfaces;
@@ -19,7 +13,6 @@ using ECommerce.Catalog.Application.Commands.SetPrimaryImage;
 using ECommerce.Catalog.Application.Commands.CreateCategory;
 using ECommerce.Catalog.Application.Commands.UpdateCategory;
 using ECommerce.Catalog.Application.Commands.DeleteCategory;
-using ECommerce.Catalog.Application.Errors;
 
 namespace ECommerce.Catalog.Tests.Application;
 
@@ -28,7 +21,7 @@ public class CommandHandlerTests
 {
     private static T Unwrap<T>(Result<T> r) => r.GetDataOrThrow();
 
-    class FakeProductRepository : IProductRepository
+    sealed class FakeProductRepository : IProductRepository
     {
         public List<Product> Store = new();
         public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
@@ -45,10 +38,10 @@ public class CommandHandlerTests
         public Task DeleteAsync(Product product, CancellationToken ct = default) { Store.Remove(product); return Task.CompletedTask; }
     }
 
-    class FakeCategoryRepository : ICategoryRepository
+    sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<Category> Store = new();
-        public bool HasProductsReturn = false;
+        public bool HasProductsReturn;
         public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
         public Task<Category?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Slug.Value == slug));
         public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
@@ -59,7 +52,7 @@ public class CommandHandlerTests
         public Task DeleteAsync(Category category, CancellationToken ct = default) { Store.Remove(category); return Task.CompletedTask; }
     }
 
-    private Product CreateValidProduct(FakeCategoryRepository categories, FakeProductRepository products, Guid? categoryId = null)
+    private static Product CreateValidProduct(FakeCategoryRepository categories, FakeProductRepository products, Guid? categoryId = null)
     {
         var catId = categoryId ?? Guid.NewGuid();
         var category = Unwrap(Category.Create("Cat", null));
@@ -84,7 +77,7 @@ public class CommandHandlerTests
         return product;
     }
 
-    private Category CreateValidCategory(FakeCategoryRepository categories, Guid? parentId = null)
+    private static Category CreateValidCategory(FakeCategoryRepository categories, Guid? parentId = null)
     {
         var res = Category.Create("Cat", parentId);
         var cat = Unwrap(res);
