@@ -15,11 +15,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Tests", "ECommerc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.SharedKernel", "ECommerce.SharedKernel\ECommerce.SharedKernel.csproj", "{F1094E51-A2A6-4EC8-8A56-773E879FE099}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Domain", "ECommerce.Catalog.Domain\ECommerce.Catalog.Domain.csproj", "{95FA1BC2-4B18-4730-92CC-1FA2757AAA5C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Domain", "Catalog\ECommerce.Catalog.Domain\ECommerce.Catalog.Domain.csproj", "{95FA1BC2-4B18-4730-92CC-1FA2757AAA5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Tests", "ECommerce.Catalog.Tests\ECommerce.Catalog.Tests.csproj", "{4BE335FC-8DEA-4379-B24C-B4BC779D2C4F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Tests", "Catalog\ECommerce.Catalog.Tests\ECommerce.Catalog.Tests.csproj", "{4BE335FC-8DEA-4379-B24C-B4BC779D2C4F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Application", "ECommerce.Catalog.Application\ECommerce.Catalog.Application.csproj", "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Catalog.Application", "Catalog\ECommerce.Catalog.Application\ECommerce.Catalog.Application.csproj", "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
