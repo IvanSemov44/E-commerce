@@ -1,0 +1,207 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using ECommerce.SharedKernel.Results;
+using ECommerce.Catalog.Domain.Aggregates.Product;
+using ECommerce.Catalog.Domain.Aggregates.Category;
+using ECommerce.Catalog.Domain.Interfaces;
+using ECommerce.Catalog.Application.Queries.GetProductById;
+using ECommerce.Catalog.Application.Queries.GetProductBySlug;
+using ECommerce.Catalog.Application.Queries.GetProducts;
+using ECommerce.Catalog.Application.Queries.GetFeaturedProducts;
+using ECommerce.Catalog.Application.Queries.GetCategories;
+using ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
+
+namespace ECommerce.Catalog.Tests.Application;
+
+[TestClass]
+public class QueryHandlerTests
+{
+    private static T Unwrap<T>(Result<T> r) => r.GetDataOrThrow();
+
+    class FakeProductRepository : IProductRepository
+    {
+        public List<Product> Store = new();
+        public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
+        public Task<Product?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(p => p.Slug.Value == slug));
+        public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.Sku.Value == sku));
+        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.Slug.Value == slug));
+        public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default) => Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, Guid? categoryId = null, string? search = null, decimal? minPrice = null, decimal? maxPrice = null, CancellationToken ct = default)
+            => Task.FromResult<(IReadOnlyList<Product>, int)>((Store.Skip((page-1)*pageSize).Take(pageSize).ToList(), Store.Count));
+        public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
+        public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
+        public Task AddAsync(Product product, CancellationToken ct = default) { Store.Add(product); return Task.CompletedTask; }
+        public Task UpdateAsync(Product product, CancellationToken ct = default) => Task.CompletedTask;
+        public Task DeleteAsync(Product product, CancellationToken ct = default) { Store.Remove(product); return Task.CompletedTask; }
+    }
+
+    class FakeCategoryRepository : ICategoryRepository
+    {
+        public List<Category> Store = new();
+        public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
+        public Task<Category?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Slug.Value == slug));
+        public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
+        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.Any(c => c.Slug.Value == slug));
+        public Task<bool> HasProductsAsync(Guid categoryId, CancellationToken ct = default) => Task.FromResult(false);
+        public Task AddAsync(Category category, CancellationToken ct = default) { Store.Add(category); return Task.CompletedTask; }
+        public Task UpdateAsync(Category category, CancellationToken ct = default) => Task.CompletedTask;
+        public Task DeleteAsync(Category category, CancellationToken ct = default) { Store.Remove(category); return Task.CompletedTask; }
+    }
+
+    private Product CreateValidProduct(FakeCategoryRepository categories, FakeProductRepository products, Guid? categoryId = null)
+    {
+        var catId = categoryId ?? Guid.NewGuid();
+        var category = Unwrap(Category.Create("Cat", null));
+        if (categoryId != null)
+        {
+            var existing = categories.Store.FirstOrDefault(c => c.Id == catId);
+            if (existing is not null)
+                category = existing;
+        }
+        categories.Store.Add(category);
+
+        var name = Unwrap(ECommerce.Catalog.Domain.ValueObjects.ProductName.Create("P"));
+        var price = Unwrap(ECommerce.Catalog.Domain.ValueObjects.Money.Create(10m, "USD"));
+        var sku = Unwrap(ECommerce.Catalog.Domain.ValueObjects.Sku.Create(Guid.NewGuid().ToString()));
+        var product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, category.Id));
+        products.Store.Add(product);
+        return product;
+    }
+
+    private Category CreateValidCategory(FakeCategoryRepository categories, Guid? parentId = null)
+    {
+        var res = Category.Create("Cat", parentId);
+        var cat = Unwrap(res);
+        categories.Store.Add(cat);
+        return cat;
+    }
+
+    [TestMethod]
+    public async Task GetProductById_ExistingId_ReturnsProductDetailDto()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var product = CreateValidProduct(categories, products);
+        var handler = new GetProductByIdQueryHandler(products, categories);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetProductById.GetProductByIdQuery(product.Id);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        Assert.AreEqual(product.Id, res.GetDataOrThrow().Id);
+    }
+
+    [TestMethod]
+    public async Task GetProductById_UnknownId_ReturnsProductNotFoundError()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var handler = new GetProductByIdQueryHandler(products, categories);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetProductById.GetProductByIdQuery(Guid.NewGuid());
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("PRODUCT_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task GetProductBySlug_ExistingSlug_ReturnsProductDetailDto()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var product = CreateValidProduct(categories, products);
+        var handler = new GetProductBySlugQueryHandler(products, categories);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetProductBySlug.GetProductBySlugQuery(product.Slug.Value);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        Assert.AreEqual(product.Slug.Value, res.GetDataOrThrow().Slug);
+    }
+
+    [TestMethod]
+    public async Task GetProducts_ReturnsPagedResult()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        for (int i = 0; i < 5; i++) CreateValidProduct(categories, products);
+        var handler = new GetProductsQueryHandler(products);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetProducts.GetProductsQuery(1, 10);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var paged = res.GetDataOrThrow();
+        Assert.AreEqual(5, paged.TotalCount);
+        Assert.AreEqual(5, paged.Items.Count);
+    }
+
+    [TestMethod]
+    public async Task GetFeaturedProducts_ReturnsListOfDtos()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        for (int i = 0; i < 3; i++) CreateValidProduct(categories, products);
+        var handler = new GetFeaturedProductsQueryHandler(products);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetFeaturedProducts.GetFeaturedProductsQuery(2);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var list = res.GetDataOrThrow();
+        Assert.AreEqual(2, list.Count);
+    }
+
+    [TestMethod]
+    public async Task GetCategories_ReturnsRootCategoriesOnly()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var root = CreateValidCategory(categories);
+        var child = CreateValidCategory(categories, root.Id);
+        var handler = new GetCategoriesQueryHandler(categories);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetCategories.GetCategoriesQuery();
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var list = res.GetDataOrThrow();
+        Assert.IsTrue(list.All(c => c.ParentId == null));
+        Assert.IsTrue(list.Any(c => c.Id == root.Id));
+        Assert.IsFalse(list.Any(c => c.Id == child.Id));
+    }
+
+    [TestMethod]
+    public async Task GetCategoryBySlug_ExistingSlug_ReturnsCategoryDto()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var cat = CreateValidCategory(categories);
+        var handler = new GetCategoryBySlugQueryHandler(categories);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetCategoryBySlug.GetCategoryBySlugQuery(cat.Slug.Value);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        Assert.AreEqual(cat.Id, res.GetDataOrThrow().Id);
+    }
+
+    [TestMethod]
+    public async Task GetCategoryBySlug_UnknownSlug_ReturnsCategoryNotFoundError()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var handler = new GetCategoryBySlugQueryHandler(categories);
+
+        var q = new ECommerce.Catalog.Application.Queries.GetCategoryBySlug.GetCategoryBySlugQuery("no-such-slug");
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+}

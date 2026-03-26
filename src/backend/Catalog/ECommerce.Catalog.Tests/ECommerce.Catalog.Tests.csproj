@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ECommerce.Catalog.Domain\ECommerce.Catalog.Domain.csproj" />
     <ProjectReference Include="..\..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
+    <ProjectReference Include="..\ECommerce.Catalog.Application\ECommerce.Catalog.Application.csproj" />
   </ItemGroup>
 
 </Project>
