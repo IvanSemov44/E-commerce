@@ -19,7 +19,7 @@ using CategoryDto = ECommerce.Catalog.Application.DTOs.Categories.CategoryDto;
 namespace ECommerce.API.Controllers;
 
 [ApiController]
-[Route("api/catalog/categories")]
+[Route("api/categories")]
 public class CatalogCategoriesController(IMediator mediator) : ControllerBase
 {
     private readonly IMediator _mediator = mediator;

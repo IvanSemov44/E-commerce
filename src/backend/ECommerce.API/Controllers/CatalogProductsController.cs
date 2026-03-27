@@ -32,7 +32,7 @@ using CatalogCommon = ECommerce.Catalog.Application.DTOs.Common;
 namespace ECommerce.API.Controllers;
 
 [ApiController]
-[Route("api/catalog/products")]
+[Route("api/products")]
 public class CatalogProductsController(IMediator mediator) : ControllerBase
 {
     private readonly IMediator _mediator = mediator;
