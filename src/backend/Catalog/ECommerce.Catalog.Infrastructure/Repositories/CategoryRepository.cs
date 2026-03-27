@@ -66,6 +66,30 @@ public class CategoryRepository(AppDbContext _db) : ICategoryRepository
         _db.Categories.Remove(existing);
     }
 
+    public async Task<(IReadOnlyList<Category> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+
+        var query = _db.Categories.AsNoTracking().Where(c => c.IsActive).OrderBy(c => c.Name);
+        var total = await query.CountAsync(cancellationToken);
+        var cores = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var items = cores.Select(MapToDomain).ToList();
+        return (items, total);
+    }
+
+    public async Task<(IReadOnlyList<Category> Items, int TotalCount)> GetTopLevelPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+
+        var query = _db.Categories.AsNoTracking().Where(c => c.IsActive && c.ParentId == null).OrderBy(c => c.Name);
+        var total = await query.CountAsync(cancellationToken);
+        var cores = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var items = cores.Select(MapToDomain).ToList();
+        return (items, total);
+    }
+
     private static Category MapToDomain(CoreCategory core)
     {
         var ctor = typeof(Category).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null)!;

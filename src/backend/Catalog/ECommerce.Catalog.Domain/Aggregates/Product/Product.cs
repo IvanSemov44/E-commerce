@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ECommerce.Catalog.Domain.Aggregates.Product.Events;
@@ -20,6 +20,7 @@ public sealed class Product : AggregateRoot
     public ProductStatus Status { get; private set; }
     public bool IsFeatured { get; private set; }
     public bool IsDeleted { get; private set; }
+    public int StockQuantity { get; private set; }
     public Guid CategoryId { get; private set; }
 
     private readonly List<ProductImage> _images = new();
@@ -68,6 +69,7 @@ public sealed class Product : AggregateRoot
             Description = description,
             Status = ProductStatus.Draft,
             IsFeatured = false,
+            StockQuantity = 0,
             IsDeleted = false,
             CategoryId = categoryId,
         };
@@ -93,10 +95,11 @@ public sealed class Product : AggregateRoot
         AddDomainEvent(new ProductPriceChangedEvent(Id, oldPrice, newPrice));
     }
 
-    public void Activate()
+    public Result Activate()
     {
-        if (Status == ProductStatus.Active) return;
+        if (Status == ProductStatus.Active) return Result.Ok();
         Status = ProductStatus.Active;
+        return Result.Ok();
     }
 
     public Result Deactivate()
@@ -130,6 +133,14 @@ public sealed class Product : AggregateRoot
             return Result.Fail(CatalogErrors.ProductImageNotFound);
         foreach (ProductImage img in _images) img.SetPrimary(false);
         image.SetPrimary(true);
+        return Result.Ok();
+    }
+
+    public Result SetStock(int quantity)
+    {
+        if (quantity < 0)
+            return Result.Fail(CatalogErrors.StockQuantityNegative);
+        StockQuantity = quantity;
         return Result.Ok();
     }
 }

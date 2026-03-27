@@ -1,11 +1,13 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Extensions;
+using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.SharedKernel.Results;
+using ECommerce.Catalog.Application.DTOs.Common;
 using ECommerce.Catalog.Application.Commands.CreateCategory;
 using ECommerce.Catalog.Application.Commands.DeleteCategory;
 using ECommerce.Catalog.Application.Commands.UpdateCategory;
@@ -38,20 +40,51 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Returns all categories as a flat list.
+    /// Returns paginated categories (root-level by default in catalog).
     /// </summary>
+    /// <param name="pageNumber">Page number (default 1).</param>
+    /// <param name="pageSize">Page size (default 20, max 100).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>All categories.</returns>
+    /// <returns>Paged categories.</returns>
     /// <response code="200">Categories retrieved successfully.</response>
     /// <response code="400">Invalid request.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ECommerce.Catalog.Application.DTOs.Common.PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetCategories(CancellationToken ct = default)
+    public async Task<IActionResult> GetCategories(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetCategoriesQuery(), ct);
+        (pageNumber, pageSize) = PaginationRequestNormalizer.Normalize(pageNumber, pageSize);
+
+        var result = await _mediator.Send(new GetCategoriesQuery(pageNumber, pageSize), ct);
         return result.ToActionResult(
-            data => Ok(ApiResponse<IEnumerable<CategoryDto>>.Ok(data, "Categories retrieved")),
+            data => Ok(ApiResponse<ECommerce.Catalog.Application.DTOs.Common.PaginatedResult<CategoryDto>>.Ok(data, "Categories retrieved")),
+            Problem);
+    }
+
+    /// <summary>
+    /// Returns paginated top-level categories (ParentId == null).
+    /// </summary>
+    /// <param name="pageNumber">Page number (default 1).</param>
+    /// <param name="pageSize">Page size (default 20, max 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Paged top-level categories.</returns>
+    /// <response code="200">Top-level categories retrieved successfully.</response>
+    [HttpGet("top-level")]
+    [ProducesResponseType(typeof(ApiResponse<ECommerce.Catalog.Application.DTOs.Common.PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTopLevelCategories(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        (pageNumber, pageSize) = PaginationRequestNormalizer.Normalize(pageNumber, pageSize);
+
+        var result = await _mediator.Send(new ECommerce.Catalog.Application.Queries.GetTopLevelCategories.GetTopLevelCategoriesQuery(pageNumber, pageSize), ct);
+        return result.ToActionResult(
+            data => Ok(ApiResponse<ECommerce.Catalog.Application.DTOs.Common.PaginatedResult<CategoryDto>>.Ok(data, "Top-level categories retrieved")),
             Problem);
     }
 

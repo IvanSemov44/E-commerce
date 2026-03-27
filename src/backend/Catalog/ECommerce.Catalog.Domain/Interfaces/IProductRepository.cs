@@ -17,8 +17,10 @@ public interface IProductRepository
         int page, int pageSize,
         Guid? categoryId = null, string? search = null,
         decimal? minPrice = null, decimal? maxPrice = null,
+        decimal? minRating = null, bool? isFeatured = null, string? sortBy = null,
         CancellationToken ct = default);
     Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default);
+        Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFeaturedPagedAsync(int page, int pageSize, CancellationToken ct = default);
     // TODO Phase 3: move to Inventory context once InventoryItem aggregate exists
     Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default);
     Task AddAsync(Product product, CancellationToken ct = default);

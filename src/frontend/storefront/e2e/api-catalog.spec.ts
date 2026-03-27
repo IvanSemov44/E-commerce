@@ -24,9 +24,6 @@ const API_BASE = process.env.VITE_API_URL
 // Fake GUIDs — guaranteed not to exist in any seeded DB
 const NONEXISTENT_GUID = '00000000-0000-0000-0000-999999999999';
 
-// Used only in auth tests where the ID is irrelevant (we expect 401 before ID is resolved)
-const ANY_GUID = '00000000-0000-0000-0000-000000000001';
-
 test.describe('Catalog API Migration', () => {
   let apiContext: APIRequestContext;
 
@@ -113,16 +110,19 @@ test.describe('Catalog API Migration', () => {
 
     const body = await response.json();
     expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(body.data).toHaveProperty('totalCount');
+    expect(body.data).toHaveProperty('page');
+    expect(body.data).toHaveProperty('pageSize');
   });
 
   test('GET /products/featured respects limit parameter', async () => {
-    const response = await apiContext.get('products/featured?limit=5');
+    const response = await apiContext.get('products/featured?pageSize=5');
 
     expect(response.ok()).toBe(true);
 
     const body = await response.json();
-    expect(body.data.length).toBeLessThanOrEqual(5);
+    expect(body.data.items.length).toBeLessThanOrEqual(5);
   });
 
   // ===========================================================================
@@ -210,7 +210,7 @@ test.describe('Catalog API Migration', () => {
 
     const body = await response.json();
     expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
+    expect(Array.isArray(body.data.items)).toBe(true);
   });
 
   test('GET /categories items have expected shape', async () => {
@@ -219,8 +219,8 @@ test.describe('Catalog API Migration', () => {
     expect(response.ok()).toBe(true);
 
     const body = await response.json();
-    if (body.data.length > 0) {
-      const category = body.data[0];
+    if (body.data.items.length > 0) {
+      const category = body.data.items[0];
       expect(category).toHaveProperty('id');
       expect(category).toHaveProperty('name');
       expect(category).toHaveProperty('slug');
@@ -252,56 +252,8 @@ test.describe('Catalog API Migration', () => {
   });
 });
 
-test.describe('Catalog API - Authentication Required', () => {
-  let apiContext: APIRequestContext;
-
-  test.beforeEach(async () => {
-    apiContext = await request.newContext({ baseURL: API_BASE });
-  });
-
-  test.afterEach(async () => {
-    await apiContext.dispose();
-  });
-
-  test('POST /products without auth returns 401', async () => {
-    const response = await apiContext.post('products', {
-      data: { name: 'Test', price: 9.99, currency: 'USD', sku: 'T-001', categoryId: ANY_GUID },
-    });
-
-    expect(response.status()).toBe(401);
-  });
-
-  test('POST /products with invalid token returns 401', async () => {
-    const response = await apiContext.post('products', {
-      data: { name: 'Test', price: 9.99, currency: 'USD', sku: 'T-001', categoryId: ANY_GUID },
-      headers: { Authorization: 'Bearer invalid-token' },
-    });
-
-    expect(response.status()).toBe(401);
-  });
-
-  test('POST /categories without auth returns 401', async () => {
-    const response = await apiContext.post('categories', {
-      data: { name: 'Test Category' },
-    });
-
-    expect(response.status()).toBe(401);
-  });
-
-  test('PUT /products/{id} without auth returns 401', async () => {
-    const response = await apiContext.put(`products/${ANY_GUID}`, {
-      data: { name: 'Updated' },
-    });
-
-    expect(response.status()).toBe(401);
-  });
-
-  test('DELETE /products/{id} without auth returns 401', async () => {
-    const response = await apiContext.delete(`products/${ANY_GUID}`);
-
-    expect(response.status()).toBe(401);
-  });
-});
+/* Authentication-required write endpoint tests removed from storefront spec.
+   These admin/write tests are covered in src/frontend/admin/e2e/api-catalog-admin.spec.ts */
 
 test.describe('Catalog API - Response Format Consistency', () => {
   let apiContext: APIRequestContext;
@@ -315,7 +267,7 @@ test.describe('Catalog API - Response Format Consistency', () => {
   });
 
   test('successful GET endpoints return { success, data }', async () => {
-    const endpoints = ['/products', '/products/featured', '/categories'];
+    const endpoints = ['products', 'products/featured', 'categories'];
 
     for (const endpoint of endpoints) {
       const response = await apiContext.get(endpoint);
@@ -337,5 +289,124 @@ test.describe('Catalog API - Response Format Consistency', () => {
     expect(body.success).toBe(false);
     expect(body.errorDetails).toHaveProperty('code');
     expect(body.errorDetails).toHaveProperty('message');
+  });
+});
+
+test.describe('Catalog Gap Coverage', () => {
+  let apiContext: APIRequestContext;
+
+  test.beforeEach(async () => {
+    apiContext = await request.newContext({ baseURL: API_BASE });
+  });
+
+  test.afterEach(async () => {
+    await apiContext.dispose();
+  });
+
+  // ===========================================================================
+  // Group 1 — GET /catalog/categories/top-level
+  // ===========================================================================
+
+  test('GET /catalog/categories/top-level returns 200 with array of categories', async () => {
+    const response = await apiContext.get('catalog/categories/top-level');
+
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(body.data).toHaveProperty('totalCount');
+
+    if (body.data.items.length > 0) {
+      for (const category of body.data.items) {
+        expect(category).toHaveProperty('id');
+        expect(category).toHaveProperty('name');
+        expect(category).toHaveProperty('slug');
+        expect(category.parentId).toBeNull();
+      }
+    }
+  });
+
+  // Group 2 — PUT /catalog/products/{id}/stock (moved to admin tests)
+
+  // ===========================================================================
+  // Group 3 — GET /catalog/products filter params
+  // ===========================================================================
+
+  test('GET /catalog/products?categoryId= returns 200 with filtered array', async () => {
+    const response = await apiContext.get(`catalog/products?categoryId=${NONEXISTENT_GUID}`);
+
+    expect(response.ok()).toBe(true);
+
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(body.data).toHaveProperty('totalCount');
+    expect(body.data).toHaveProperty('page');
+    expect(body.data).toHaveProperty('pageSize');
+  });
+
+  test('GET /catalog/products?search= returns 200', async () => {
+    const response = await apiContext.get('catalog/products?search=nonexistentproductxyz');
+
+    expect(response.ok()).toBe(true);
+
+    const body = await response.json();
+    expect(Array.isArray(body.data.items)).toBe(true);
+  });
+
+  test('GET /catalog/products?minPrice=&maxPrice= returns 200', async () => {
+    const response = await apiContext.get('catalog/products?minPrice=0&maxPrice=9999');
+
+    expect(response.ok()).toBe(true);
+
+    const body = await response.json();
+    expect(Array.isArray(body.data.items)).toBe(true);
+  });
+
+  test('GET /catalog/products?isFeatured=true returns 200', async () => {
+    const response = await apiContext.get('catalog/products?isFeatured=true');
+
+    expect(response.ok()).toBe(true);
+
+    const body = await response.json();
+    expect(Array.isArray(body.data.items)).toBe(true);
+  });
+
+  test('GET /catalog/products?sortBy= returns 200', async () => {
+    const response = await apiContext.get('catalog/products?sortBy=price_asc');
+
+    expect(response.ok()).toBe(true);
+
+    const body = await response.json();
+    expect(Array.isArray(body.data.items)).toBe(true);
+  });
+
+  // ===========================================================================
+  // Group 4 — GET /catalog/products/featured pagination
+  // ===========================================================================
+
+  test('GET /catalog/products/featured?page=1&pageSize=5 returns paginated shape', async () => {
+    const response = await apiContext.get('catalog/products/featured?page=1&pageSize=5');
+
+    expect(response.ok()).toBe(true);
+
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(typeof body.data.totalCount).toBe('number');
+    expect(typeof body.data.page).toBe('number');
+    expect(typeof body.data.pageSize).toBe('number');
+    expect(body.data.page).toBe(1);
+    expect(body.data.pageSize).toBe(5);
+  });
+
+  test('GET /catalog/products/featured?page=2&pageSize=5 page 2 returns consistent shape', async () => {
+    const response = await apiContext.get('catalog/products/featured?page=2&pageSize=5');
+
+    expect(response.ok()).toBe(true);
+
+    const body = await response.json();
+    expect(body.data.page).toBe(2);
   });
 });

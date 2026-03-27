@@ -9,6 +9,7 @@ using ECommerce.Catalog.Application.Commands.DeleteProduct;
 using ECommerce.Catalog.Application.Commands.UpdateProductPrice;
 using ECommerce.Catalog.Application.Commands.ActivateProduct;
 using ECommerce.Catalog.Application.Commands.DeactivateProduct;
+using ECommerce.Catalog.Application.Commands.UpdateProductStock;
 using ECommerce.Catalog.Application.Commands.AddProductImage;
 using ECommerce.Catalog.Application.Commands.SetPrimaryImage;
 using ECommerce.Catalog.Application.Commands.CreateCategory;
@@ -59,6 +60,9 @@ public class CommandHandlerTests
             string? search = null,
             decimal? minPrice = null,
             decimal? maxPrice = null,
+            decimal? minRating = null,
+            bool? isFeatured = null,
+            string? sortBy = null,
             CancellationToken ct = default)
         {
             return Task.FromResult<(IReadOnlyList<Product>, int)>((Store.AsReadOnly(), Store.Count));
@@ -67,6 +71,13 @@ public class CommandHandlerTests
         public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)
         {
             return Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
+        }
+
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFeaturedPagedAsync(
+            int page, int pageSize, CancellationToken ct = default)
+        {
+            var items = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return Task.FromResult<(IReadOnlyList<Product>, int)>((items, Store.Count));
         }
 
         public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default)
@@ -112,6 +123,19 @@ public class CommandHandlerTests
         public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default)
         {
             return Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
+        }
+        public Task<(IReadOnlyList<Category> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+        {
+            var items = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var total = Store.Count;
+            return Task.FromResult<(IReadOnlyList<Category>, int)>((items, total));
+        }
+        public Task<(IReadOnlyList<Category> Items, int TotalCount)> GetTopLevelPagedAsync(int page, int pageSize, CancellationToken ct = default)
+        {
+            var filtered = Store.Where(c => c.ParentId == null).ToList();
+            var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var total = filtered.Count;
+            return Task.FromResult<(IReadOnlyList<Category>, int)>((items, total));
         }
 
         public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
@@ -377,14 +401,14 @@ public class CommandHandlerTests
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
         var product = CreateValidProduct(categories, products);
-        var handler = new ActivateProductCommandHandler(products, categories);
+        var handler = new ActivateProductCommandHandler(products);
 
         var cmd = new ActivateProductCommand(product.Id);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        Assert.AreEqual("Active", res.GetDataOrThrow().Status);
         Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
+        Assert.AreEqual(ProductStatus.Active, product.Status);
     }
 
     [TestMethod]
@@ -392,7 +416,7 @@ public class CommandHandlerTests
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
-        var handler = new ActivateProductCommandHandler(products, categories);
+        var handler = new ActivateProductCommandHandler(products);
 
         var cmd = new ActivateProductCommand(Guid.NewGuid());
         var res = await handler.Handle(cmd, CancellationToken.None);
@@ -408,14 +432,14 @@ public class CommandHandlerTests
         var categories = new FakeCategoryRepository();
         var product = CreateValidProduct(categories, products);
         product.Activate();
-        var handler = new DeactivateProductCommandHandler(products, categories);
+        var handler = new DeactivateProductCommandHandler(products);
 
         var cmd = new DeactivateProductCommand(product.Id);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        Assert.AreEqual("Inactive", res.GetDataOrThrow().Status);
         Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
+        Assert.AreEqual(ProductStatus.Inactive, product.Status);
     }
 
     [TestMethod]
@@ -427,7 +451,7 @@ public class CommandHandlerTests
         var backing = typeof(Product).GetField("<Status>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         backing!.SetValue(product, ProductStatus.Discontinued);
 
-        var handler = new DeactivateProductCommandHandler(products, categories);
+        var handler = new DeactivateProductCommandHandler(products);
         var cmd = new DeactivateProductCommand(product.Id);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
@@ -440,13 +464,56 @@ public class CommandHandlerTests
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
-        var handler = new DeactivateProductCommandHandler(products, categories);
+        var handler = new DeactivateProductCommandHandler(products);
 
         var cmd = new DeactivateProductCommand(Guid.NewGuid());
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
         Assert.AreEqual("PRODUCT_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task UpdateProductStockCommandHandler_Handle_ValidCommand_UpdatesStockAndReturnsOk()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var product = CreateValidProduct(categories, products);
+        var handler = new UpdateProductStockCommandHandler(products);
+
+        var cmd = new UpdateProductStockCommand(product.Id, 25, "restock");
+        var res = await handler.Handle(cmd, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
+    }
+
+    [TestMethod]
+    public async Task UpdateProductStockCommandHandler_Handle_ProductNotFound_ReturnsProductNotFoundError()
+    {
+        var products = new FakeProductRepository();
+        var handler = new UpdateProductStockCommandHandler(products);
+
+        var cmd = new UpdateProductStockCommand(Guid.NewGuid(), 10, "reason");
+        var res = await handler.Handle(cmd, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("PRODUCT_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task UpdateProductStockCommandHandler_Handle_NegativeQuantity_ReturnsStockQuantityNegativeError()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var product = CreateValidProduct(categories, products);
+        var handler = new UpdateProductStockCommandHandler(products);
+
+        var cmd = new UpdateProductStockCommand(product.Id, -1, "bad");
+        var res = await handler.Handle(cmd, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("STOCK_QUANTITY_NEGATIVE", res.GetErrorOrThrow().Code);
     }
 
     [TestMethod]

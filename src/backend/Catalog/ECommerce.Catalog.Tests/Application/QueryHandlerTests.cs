@@ -8,6 +8,11 @@ using ECommerce.Catalog.Application.Queries.GetProducts;
 using ECommerce.Catalog.Application.Queries.GetFeaturedProducts;
 using ECommerce.Catalog.Application.Queries.GetCategories;
 using ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
+using ECommerce.Catalog.Application.Queries.GetCategoryById;
+using ECommerce.Catalog.Application.Queries.GetProductsByCategory;
+using ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
+using ECommerce.Catalog.Application.Queries.SearchProducts;
+using ECommerce.Catalog.Application.Queries.GetTopLevelCategories;
 using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
 using ECommerce.Catalog.Domain.ValueObjects;
 
@@ -56,6 +61,9 @@ public class QueryHandlerTests
             string? search = null,
             decimal? minPrice = null,
             decimal? maxPrice = null,
+            decimal? minRating = null,
+            bool? isFeatured = null,
+            string? sortBy = null,
             CancellationToken ct = default)
         {
             var items = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -66,6 +74,13 @@ public class QueryHandlerTests
         public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)
         {
             return Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
+        }
+
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFeaturedPagedAsync(
+            int page, int pageSize, CancellationToken ct = default)
+        {
+            var items = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return Task.FromResult<(IReadOnlyList<Product>, int)>((items, Store.Count));
         }
 
         public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default)
@@ -100,6 +115,19 @@ public class QueryHandlerTests
         public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
         public Task<Category?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Slug.Value == slug));
         public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
+        public Task<(IReadOnlyList<Category> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+        {
+            var items = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var total = Store.Count;
+            return Task.FromResult<(IReadOnlyList<Category>, int)>((items, total));
+        }
+        public Task<(IReadOnlyList<Category> Items, int TotalCount)> GetTopLevelPagedAsync(int page, int pageSize, CancellationToken ct = default)
+        {
+            var filtered = Store.Where(c => c.ParentId == null).ToList();
+            var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var total = filtered.Count;
+            return Task.FromResult<(IReadOnlyList<Category>, int)>((items, total));
+        }
         public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.Any(c => c.Slug.Value == slug));
         public Task<bool> HasProductsAsync(Guid categoryId, CancellationToken ct = default) => Task.FromResult(false);
         public Task AddAsync(Category category, CancellationToken ct = default)
@@ -194,6 +222,20 @@ public class QueryHandlerTests
     }
 
     [TestMethod]
+    public async Task GetProductBySlug_UnknownSlug_ReturnsProductNotFoundError()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var handler = new GetProductBySlugQueryHandler(products, categories);
+
+        var q = new GetProductBySlugQuery("no-such-slug");
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("PRODUCT_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
     public async Task GetProducts_ReturnsPagedResult()
     {
         var products = new FakeProductRepository();
@@ -218,16 +260,73 @@ public class QueryHandlerTests
         for (int i = 0; i < 3; i++) CreateValidProduct(categories, products);
         var handler = new GetFeaturedProductsQueryHandler(products);
 
-        var q = new GetFeaturedProductsQuery(2);
+        var q = new GetFeaturedProductsQuery(Page: 1, PageSize: 2);
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var list = res.GetDataOrThrow();
-        Assert.HasCount(2, list);
+        var paged = res.GetDataOrThrow();
+        Assert.HasCount(2, paged.Items);
+        Assert.AreEqual(3, paged.TotalCount);
+        Assert.AreEqual(1, paged.Page);
+        Assert.AreEqual(2, paged.PageSize);
     }
 
     [TestMethod]
-    public async Task GetCategories_ReturnsRootCategoriesOnly()
+    public async Task GetProductsByCategory_ReturnsPagedResults()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var cat = CreateValidCategory(categories);
+        for (int i = 0; i < 3; i++) CreateValidProduct(categories, products, cat.Id);
+        var handler = new GetProductsByCategoryQueryHandler(products);
+
+        var q = new GetProductsByCategoryQuery(cat.Id, 1, 10);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var paged = res.GetDataOrThrow();
+        Assert.AreEqual(3, paged.TotalCount);
+        Assert.HasCount(3, paged.Items);
+    }
+
+    [TestMethod]
+    public async Task GetProductsByPriceRange_ReturnsPagedResults()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        for (int i = 0; i < 2; i++) CreateValidProduct(categories, products);
+        var handler = new GetProductsByPriceRangeQueryHandler(products);
+
+        var q = new GetProductsByPriceRangeQuery(0m, 1000m, 1, 10);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var paged = res.GetDataOrThrow();
+        Assert.AreEqual(2, paged.TotalCount);
+        Assert.HasCount(2, paged.Items);
+    }
+
+    [TestMethod]
+    public async Task SearchProducts_ReturnsPagedResults()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        for (int i = 0; i < 2; i++) CreateValidProduct(categories, products);
+        var handler = new SearchProductsQueryHandler(products);
+
+        var q = new SearchProductsQuery("anything", 1, 10);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var paged = res.GetDataOrThrow();
+        Assert.AreEqual(2, paged.TotalCount);
+        Assert.HasCount(2, paged.Items);
+    }
+
+    // GetCategoriesQuery returns all categories (paginated).
+    // Root-only filtering is handled by GetTopLevelCategoriesQuery.
+    [TestMethod]
+    public async Task GetCategories_ReturnsAllCategoriesPaged()
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
@@ -239,10 +338,11 @@ public class QueryHandlerTests
         var res = await handler.Handle(q, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var list = res.GetDataOrThrow();
-        Assert.IsTrue(list.All(c => c.ParentId == null));
-        Assert.IsTrue(list.Any(c => c.Id == root.Id));
-        Assert.IsFalse(list.Any(c => c.Id == child.Id));
+        var page = res.GetDataOrThrow();
+        Assert.AreEqual(2, page.TotalCount);
+        Assert.HasCount(2, page.Items);
+        Assert.IsTrue(page.Items.Any(c => c.Id == root.Id));
+        Assert.IsTrue(page.Items.Any(c => c.Id == child.Id));
     }
 
     [TestMethod]
@@ -272,6 +372,71 @@ public class QueryHandlerTests
 
         Assert.IsFalse(res.IsSuccess);
         Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task GetCategoryById_ExistingId_ReturnsCategoryDto()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var cat = CreateValidCategory(categories);
+        var handler = new GetCategoryByIdQueryHandler(categories);
+
+        var q = new GetCategoryByIdQuery(cat.Id);
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        Assert.AreEqual(cat.Id, res.GetDataOrThrow().Id);
+    }
+
+    [TestMethod]
+    public async Task GetCategoryById_UnknownId_ReturnsCategoryNotFoundError()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var handler = new GetCategoryByIdQueryHandler(categories);
+
+        var q = new GetCategoryByIdQuery(Guid.NewGuid());
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task GetTopLevelCategories_ReturnsOnlyRootCategories()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var root = CreateValidCategory(categories);
+        var child = CreateValidCategory(categories, root.Id);
+        var handler = new GetTopLevelCategoriesQueryHandler(categories);
+
+        var q = new GetTopLevelCategoriesQuery();
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var page = res.GetDataOrThrow();
+        var list = page.Items;
+        Assert.IsTrue(list.All(c => c.ParentId == null));
+        Assert.IsTrue(list.Any(c => c.Id == root.Id));
+        Assert.IsFalse(list.Any(c => c.Id == child.Id));
+    }
+
+    [TestMethod]
+    public async Task GetTopLevelCategories_EmptyStore_ReturnsEmptyList()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var handler = new GetTopLevelCategoriesQueryHandler(categories);
+
+        var q = new GetTopLevelCategoriesQuery();
+        var res = await handler.Handle(q, CancellationToken.None);
+
+        Assert.IsTrue(res.IsSuccess);
+        var page = res.GetDataOrThrow();
+        var list = page.Items;
+        Assert.IsEmpty(list);
     }
 
     [TestMethod]

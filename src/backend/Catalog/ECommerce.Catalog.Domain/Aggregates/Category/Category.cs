@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ECommerce.Catalog.Domain.Aggregates.Category.Events;
 using ECommerce.Catalog.Domain.Errors;
 using ECommerce.Catalog.Domain.ValueObjects;
@@ -19,10 +19,12 @@ public sealed class Category : AggregateRoot
     public static Result<Category> Create(string nameRaw, Guid? parentId = null)
     {
         var nameResult = CategoryName.Create(nameRaw);
-        if (!nameResult.IsSuccess) return Result<Category>.Fail(nameResult.GetErrorOrThrow());
+        if (!nameResult.IsSuccess)
+            return Result<Category>.Fail(nameResult.GetErrorOrThrow());
 
         var slugResult = Slug.Create(nameRaw);
-        if (!slugResult.IsSuccess) return Result<Category>.Fail(slugResult.GetErrorOrThrow());
+        if (!slugResult.IsSuccess)
+            return Result<Category>.Fail(slugResult.GetErrorOrThrow());
 
         var name = nameResult.GetDataOrThrow();
         var slug = slugResult.GetDataOrThrow();

@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:e2e:api:admin": "playwright test --config playwright.api.config.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

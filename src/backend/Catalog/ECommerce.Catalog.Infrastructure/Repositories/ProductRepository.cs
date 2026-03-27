@@ -40,12 +40,16 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
         string? search = null,
         decimal? minPrice = null,
         decimal? maxPrice = null,
+        decimal? minRating = null, bool? isFeatured = null, string? sortBy = null,
         CancellationToken cancellationToken = default)
     {
         var query = _db.Products.AsNoTracking().Where(p => p.IsActive);
 
         if (categoryId.HasValue)
             query = query.Where(p => p.CategoryId == categoryId.Value);
+
+        if (isFeatured.HasValue)
+            query = query.Where(p => p.IsFeatured == isFeatured.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -58,9 +62,46 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
         if (maxPrice.HasValue)
             query = query.Where(p => p.Price <= maxPrice.Value);
 
+        if (minRating.HasValue)
+        {
+            // Filter by average rating (scalar subquery)
+            var rating = (double)minRating.Value;
+            query = query.Where(p => _db.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating) >= rating);
+        }
+
+        // Sorting
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            switch (sortBy.Trim().ToLowerInvariant())
+            {
+                case "name":
+                    query = query.OrderBy(p => p.Name);
+                    break;
+                case "price-asc":
+                    query = query.OrderBy(p => p.Price);
+                    break;
+                case "price-desc":
+                    query = query.OrderByDescending(p => p.Price);
+                    break;
+                case "rating":
+                    query = query.OrderByDescending(p => _db.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating));
+                    break;
+                case "newest":
+                    query = query.OrderByDescending(p => p.CreatedAt);
+                    break;
+                default:
+                    query = query.OrderBy(p => p.Name);
+                    break;
+            }
+        }
+        else
+        {
+            query = query.OrderBy(p => p.Name);
+        }
+
         var total = await query.CountAsync(cancellationToken);
+
         var coreItems = await query
-            .OrderBy(p => p.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Include(p => p.Images)
@@ -80,6 +121,23 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
             .Include(p => p.Images)
             .ToListAsync(cancellationToken);
         return cores.Select(MapToDomain).ToList();
+    }
+
+    public async Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFeaturedPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _db.Products.AsNoTracking().Where(p => p.IsFeatured && p.IsActive);
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var coreItems = await query
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(p => p.Images)
+            .ToListAsync(cancellationToken);
+
+        var items = coreItems.Select(MapToDomain).ToList();
+        return (items, total);
     }
 
     public async Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken cancellationToken = default)
@@ -155,6 +213,7 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
         prodType.GetProperty("Description", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.Description);
         prodType.GetProperty("Status", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.IsActive ? ProductStatus.Active : ProductStatus.Inactive);
         prodType.GetProperty("IsFeatured", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.IsFeatured);
+        prodType.GetProperty("StockQuantity", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.StockQuantity);
         prodType.GetProperty("IsDeleted", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, false);
         prodType.GetProperty("CategoryId", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, core.CategoryId ?? Guid.Empty);
 
@@ -190,6 +249,7 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
             Sku = domain.Sku.Value,
             Description = domain.Description,
             IsFeatured = domain.IsFeatured,
+            StockQuantity = domain.StockQuantity,
             IsActive = domain.Status == ProductStatus.Active,
             CategoryId = domain.CategoryId,
             CreatedAt = domain.CreatedAt,

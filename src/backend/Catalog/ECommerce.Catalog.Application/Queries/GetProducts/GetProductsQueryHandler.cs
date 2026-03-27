@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +20,17 @@ public class GetProductsQueryHandler(
         int page = Math.Max(1, request.Page);
         int pageSize = Math.Max(1, request.PageSize);
 
-        var (items, total) = await _products.GetPagedAsync(page, pageSize, ct: cancellationToken);
+        var (items, total) = await _products.GetPagedAsync(
+            page,
+            pageSize,
+            request.CategoryId,
+            request.Search,
+            request.MinPrice,
+            request.MaxPrice,
+            request.MinRating,
+            request.IsFeatured,
+            request.SortBy,
+            cancellationToken);
 
         var dtos = items.Select(p => p.ToDto(string.Empty)).ToList();
 

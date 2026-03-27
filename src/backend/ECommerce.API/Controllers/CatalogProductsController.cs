@@ -1,4 +1,4 @@
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -23,6 +23,8 @@ using ECommerce.Catalog.Application.Queries.GetProductBySlug;
 using ECommerce.Catalog.Application.Queries.GetProducts;
 using ECommerce.Catalog.Application.Queries.GetProductsByCategory;
 using ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
+using ECommerce.Application.DTOs.Inventory;
+using ECommerce.Catalog.Application.Commands.UpdateProductStock;
 using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
 using ECommerce.Catalog.Application.Queries.SearchProducts;
 using CatalogCommon = ECommerce.Catalog.Application.DTOs.Common;
@@ -76,9 +78,16 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> GetProducts(
         [FromQuery, Range(1, int.MaxValue)] int page = 1,
         [FromQuery, Range(1, 100)] int pageSize = 20,
+        [FromQuery] Guid? categoryId = null,
+        [FromQuery] string? search = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] decimal? minRating = null,
+        [FromQuery] bool? isFeatured = null,
+        [FromQuery] string? sortBy = null,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetProductsQuery(page, pageSize), ct);
+        var result = await _mediator.Send(new GetProductsQuery(page, pageSize, categoryId, search, minPrice, maxPrice, minRating, isFeatured, sortBy), ct);
         return result.ToActionResult(
             data => Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(data, "Products retrieved")),
             Problem);
@@ -123,23 +132,22 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    /// Returns featured products up to the given limit.
+    /// Returns paged featured products.
     /// </summary>
-    /// <param name="limit">Maximum number of featured products to return (default: 10).</param>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="pageSize">The page size (default: 10).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>List of featured product DTOs.</returns>
-    /// <response code="200">Featured products retrieved successfully.</response>
-    /// <response code="400">Invalid request parameters.</response>
     [HttpGet("featured")]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetFeaturedProducts(
-        [FromQuery] int limit = 10,
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, 100)] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetFeaturedProductsQuery(limit), ct);
+        var result = await _mediator.Send(new GetFeaturedProductsQuery(page, pageSize), ct);
         return result.ToActionResult(
-            data => Ok(ApiResponse<List<ProductDto>>.Ok(data, "Featured products retrieved")),
+            data => Ok(ApiResponse<CatalogCommon.PaginatedResult<ProductDto>>.Ok(data, "Featured products retrieved")),
             Problem);
     }
 
@@ -357,6 +365,27 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
+    /// Updates the stock quantity of a product. Requires Admin or SuperAdmin role.
+    /// </summary>
+    /// <param name="id">The product ID.</param>
+    /// <param name="request">Stock update payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpPut("{id:guid}/stock")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    [ValidationFilter]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> UpdateProductStock(Guid id, [FromBody] AdjustStockRequest request, CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new UpdateProductStockCommand(id, request.Quantity, request.Reason ?? string.Empty), ct);
+        return result.ToActionResult(
+            () => Ok(ApiResponse<object>.Ok(new { }, "Product stock updated")),
+            Problem);
+    }
+
+    /// <summary>
     /// Activates a product. Requires Admin or SuperAdmin role.
     /// </summary>
     /// <param name="id">The product ID.</param>
@@ -374,7 +403,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(new ActivateProductCommand(id), ct);
         return result.ToActionResult(
-            _ => Ok(ApiResponse<object>.Ok(new { }, "Product activated")),
+            () => Ok(ApiResponse<object>.Ok(new { }, "Product activated")),
             Problem);
     }
 
@@ -396,7 +425,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(new DeactivateProductCommand(id), ct);
         return result.ToActionResult(
-            _ => Ok(ApiResponse<object>.Ok(new { }, "Product deactivated")),
+            () => Ok(ApiResponse<object>.Ok(new { }, "Product deactivated")),
             Problem);
     }
 

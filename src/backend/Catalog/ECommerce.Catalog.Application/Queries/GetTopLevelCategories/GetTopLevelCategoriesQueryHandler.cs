@@ -9,15 +9,15 @@ using ECommerce.Catalog.Application.DTOs.Common;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetCategories;
+namespace ECommerce.Catalog.Application.Queries.GetTopLevelCategories;
 
-public class GetCategoriesQueryHandler(
+public class GetTopLevelCategoriesQueryHandler(
     ICategoryRepository _categories
-) : IRequestHandler<GetCategoriesQuery, Result<PaginatedResult<CategoryDto>>>
+) : IRequestHandler<GetTopLevelCategoriesQuery, Result<PaginatedResult<CategoryDto>>>
 {
-    public async Task<Result<PaginatedResult<CategoryDto>>> Handle(GetCategoriesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PaginatedResult<CategoryDto>>> Handle(GetTopLevelCategoriesQuery request, CancellationToken cancellationToken)
     {
-        var (items, total) = await _categories.GetPagedAsync(request.Page, request.PageSize, cancellationToken);
+        var (items, total) = await _categories.GetTopLevelPagedAsync(request.Page, request.PageSize, cancellationToken);
         var dtos = items.Select(c => c.ToDto()).ToList();
 
         var page = new PaginatedResult<CategoryDto>

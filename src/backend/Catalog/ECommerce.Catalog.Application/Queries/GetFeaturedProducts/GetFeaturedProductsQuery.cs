@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Products;
+using ECommerce.Catalog.Application.DTOs.Common;
 
 namespace ECommerce.Catalog.Application.Queries.GetFeaturedProducts;
 
-public record GetFeaturedProductsQuery(int Limit = 10) : IRequest<Result<List<ProductDto>>>;
+public record GetFeaturedProductsQuery(int Page = 1, int PageSize = 10) : IRequest<Result<PaginatedResult<ProductDto>>>;
