@@ -8,7 +8,6 @@ public static class ProductMappingExtensions
 {
     public static ProductDto ToDto(this Product product, string categoryName)
     {
-        var primary = product.Images.FirstOrDefault(i => i.IsPrimary) ?? product.Images.FirstOrDefault();
         return new ProductDto
         {
             Id = product.Id,
@@ -16,8 +15,22 @@ public static class ProductMappingExtensions
             Slug = product.Slug.Value,
             Price = product.Price.Amount,
             Currency = product.Price.Currency,
-            PrimaryImageUrl = primary?.Url,
+            CompareAtPrice = product.CompareAtPrice?.Amount,
+            Description = product.Description,
+            Images = product.Images.Select(i => new ProductImageDto
+            {
+                Id = i.Id,
+                Url = i.Url,
+                AltText = i.AltText,
+                IsPrimary = i.IsPrimary,
+                DisplayOrder = i.DisplayOrder,
+            }).ToList(),
+            StockQuantity = product.StockQuantity,
+            IsFeatured = product.IsFeatured,
+            CategoryId = product.CategoryId,
             CategoryName = categoryName,
+            AverageRating = 0,
+            ReviewCount = 0,
             IsActive = product.Status == ProductStatus.Active,
         };
     }
