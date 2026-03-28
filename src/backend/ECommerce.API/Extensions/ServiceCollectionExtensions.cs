@@ -306,8 +306,7 @@ public static class ServiceCollectionExtensions
         // Domain services
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IProductService, ProductService>();
-        services.AddScoped<ICategoryService, CategoryService>();
+
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddSingleton<IPaymentStore, InMemoryPaymentStore>();
         services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();

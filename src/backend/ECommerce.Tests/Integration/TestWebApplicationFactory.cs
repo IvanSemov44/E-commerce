@@ -185,7 +185,20 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     });
                 }
 
-                // Seed a test product
+                // Seed a category that the test product belongs to
+                var categoryId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+                if (!db.Categories.Any())
+                {
+                    db.Categories.Add(new Category
+                    {
+                        Id = categoryId,
+                        Name = "Test Category",
+                        Slug = "test-category",
+                        IsActive = true
+                    });
+                }
+
+                // Seed a test product (belongs to the category above)
                 var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
                 if (!db.Products.Any())
                 {
@@ -196,7 +209,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                         Slug = "integration-product",
                         Price = 10.0m,
                         StockQuantity = 100,
-                        IsActive = true
+                        IsActive = true,
+                        Sku = "TEST-SKU-001",
+                        CategoryId = categoryId
                     });
                 }
 

@@ -8,5 +8,6 @@ namespace ECommerce.Catalog.Application.Commands.CreateCategory;
 
 public record CreateCategoryCommand(
     string Name,
-    Guid? ParentId
+    string? Slug = null,
+    Guid? ParentId = null
 ) : IRequest<Result<CategoryDto>>, ITransactionalCommand;

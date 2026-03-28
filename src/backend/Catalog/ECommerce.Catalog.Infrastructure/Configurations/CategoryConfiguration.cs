@@ -1,4 +1,5 @@
 ﻿using ECommerce.Catalog.Domain.Aggregates.Category;
+using ECommerce.Catalog.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -12,15 +13,18 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.ToTable("Categories");
         builder.HasKey(c => c.Id);
 
-        builder.OwnsOne(c => c.Name, nb => {
-            nb.Property(n => n.Value).HasColumnName("Name").IsRequired().HasMaxLength(200);
-        });
+        builder.Property(c => c.Name)
+            .HasConversion(n => n.Value, v => CategoryName.Create(v).GetDataOrThrow())
+            .HasColumnName("Name")
+            .IsRequired()
+            .HasMaxLength(200);
 
-        builder.OwnsOne(c => c.Slug, sb => {
-            sb.Property(s => s.Value).HasColumnName("Slug").IsRequired().HasMaxLength(250);
-        });
-
-        builder.HasIndex(c => EF.Property<string>(c, "Slug")).IsUnique();
+        builder.Property(c => c.Slug)
+            .HasConversion(s => s.Value, v => Slug.Create(v).GetDataOrThrow())
+            .HasColumnName("Slug")
+            .IsRequired()
+            .HasMaxLength(250);
+        builder.HasIndex(c => c.Slug).IsUnique();
 
         builder.Property(c => c.ParentId).HasColumnName("ParentId");
         builder.Property(c => c.IsActive).HasColumnName("IsActive");

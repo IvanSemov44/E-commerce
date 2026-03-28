@@ -9,9 +9,11 @@ namespace ECommerce.Catalog.Application.Commands.CreateProduct;
 public record CreateProductCommand(
     string Name,
     decimal Price,
-    string Currency,
-    string Sku,
     Guid CategoryId,
+    string? Slug = null,
+    string? Sku = null,
+    string Currency = "USD",
+    int? StockQuantity = null,
     string? Description = null,
     decimal? CompareAtPrice = null
 ) : IRequest<Result<ProductDetailDto>>, ITransactionalCommand;

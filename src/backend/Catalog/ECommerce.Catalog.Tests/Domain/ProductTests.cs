@@ -266,7 +266,7 @@ public class ProductTests
         Sku sku = Unwrap(Sku.Create("SKU1"));
         Guid categoryId = Guid.NewGuid();
         // Act
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Assert
         Assert.AreEqual(ProductStatus.Draft, product.Status);
     }
@@ -277,7 +277,7 @@ public class ProductTests
         // Arrange
         Guid categoryId = Guid.NewGuid();
         // Act
-        var result = Product.Create("", 10m, "USD", "SKU-001", categoryId);
+        var result = Product.Create("", 10m, "USD", categoryId, "SKU-001");
         // Assert
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual("PRODUCT_NAME_EMPTY", result.GetErrorOrThrow().Code);
@@ -289,7 +289,7 @@ public class ProductTests
         // Arrange
         Guid categoryId = Guid.NewGuid();
         // Act
-        var result = Product.Create("Valid", -1m, "USD", "SKU-001", categoryId);
+        var result = Product.Create("Valid", -1m, "USD", categoryId, "SKU-001");
         // Assert
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual("MONEY_NEGATIVE", result.GetErrorOrThrow().Code);
@@ -301,22 +301,22 @@ public class ProductTests
         // Arrange
         Guid categoryId = Guid.NewGuid();
         // Act
-        var result = Product.Create("Valid", 5m, "US", "SKU-001", categoryId);
+        var result = Product.Create("Valid", 5m, "US", categoryId, "SKU-001");
         // Assert
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual("MONEY_INVALID_CURRENCY", result.GetErrorOrThrow().Code);
     }
 
     [TestMethod]
-    public void Create_EmptySku_ReturnsFailureWithSkuEmptyCode()
+    public void Create_EmptySku_SucceedsWithNullSku()
     {
-        // Arrange
+        // Arrange — Sku is now optional; empty/null means "no SKU assigned yet"
         Guid categoryId = Guid.NewGuid();
         // Act
-        var result = Product.Create("Valid", 5m, "USD", "", categoryId);
+        var result = Product.Create("Valid", 5m, "USD", categoryId, "");
         // Assert
-        Assert.IsFalse(result.IsSuccess);
-        Assert.AreEqual("SKU_EMPTY", result.GetErrorOrThrow().Code);
+        Assert.IsTrue(result.IsSuccess);
+        Assert.IsNull(result.GetDataOrThrow().Sku);
     }
 
     [TestMethod]
@@ -328,7 +328,7 @@ public class ProductTests
         Sku sku = Unwrap(Sku.Create("S1"));
         Guid categoryId = Guid.NewGuid();
         // Act
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Assert
         Slug expected = Unwrap(Slug.Create(name.Value));
         Assert.AreEqual(expected.Value, product.Slug.Value);
@@ -343,7 +343,7 @@ public class ProductTests
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
         // Act
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Assert
         bool hasEvent = product.DomainEvents.OfType<ProductCreatedEvent>().Any();
         Assert.IsTrue(hasEvent);
@@ -358,7 +358,7 @@ public class ProductTests
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
         // Act
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Assert
         Assert.IsFalse(product.Images.Any());
     }
@@ -371,7 +371,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Act
         product.Activate();
         // Assert
@@ -386,7 +386,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         product.Activate();
         // Act
         product.Activate();
@@ -402,7 +402,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         product.Activate();
         // Act
         product.Deactivate();
@@ -418,7 +418,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         product.Activate();
         // Act
         product.Deactivate();
@@ -435,7 +435,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         System.Reflection.FieldInfo? backing = typeof(Product).GetField("<Status>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         if (backing is null) Assert.Inconclusive("Could not locate backing field for Status");
         // Act
@@ -453,7 +453,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(5m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         Money newPrice = Unwrap(Money.Create(10m, "USD"));
         // Act
         product.UpdatePrice(newPrice);
@@ -470,7 +470,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(5m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         Money newPrice = Unwrap(Money.Create(10m, "USD"));
         // Act
         product.UpdatePrice(newPrice);
@@ -485,7 +485,7 @@ public class ProductTests
     public void UpdatePrice_NewPrice_PriceIsUpdated()
     {
         // Arrange
-        var createRes = Product.Create("Valid Name", 5m, "USD", "SKU-001", Guid.NewGuid());
+        var createRes = Product.Create("Valid Name", 5m, "USD", Guid.NewGuid(), "SKU-001");
         var product = createRes.GetDataOrThrow();
         var newPrice = Money.Create(20m, "USD").GetDataOrThrow();
         // Act
@@ -502,7 +502,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         ProductName newName = Unwrap(ProductName.Create("Brand New"));
         // Act
         product.UpdateDetails(newName, "desc", categoryId);
@@ -515,7 +515,7 @@ public class ProductTests
     public void UpdateDetails_NewName_NameIsUpdated()
     {
         // Arrange
-        var createRes = Product.Create("Valid Name", 10m, "USD", "SKU-001", Guid.NewGuid());
+        var createRes = Product.Create("Valid Name", 10m, "USD", Guid.NewGuid(), "SKU-001");
         var product = createRes.GetDataOrThrow();
         var newCategoryId = Guid.NewGuid();
         // Act
@@ -528,7 +528,7 @@ public class ProductTests
     public void UpdateDetails_NewDescription_DescriptionIsUpdated()
     {
         // Arrange
-        var createRes = Product.Create("Valid Name", 10m, "USD", "SKU-001", Guid.NewGuid());
+        var createRes = Product.Create("Valid Name", 10m, "USD", Guid.NewGuid(), "SKU-001");
         var product = createRes.GetDataOrThrow();
         var newCategoryId = product.CategoryId;
         // Act
@@ -541,7 +541,7 @@ public class ProductTests
     public void UpdateDetails_NewCategoryId_CategoryIdIsUpdated()
     {
         // Arrange
-        var createRes = Product.Create("Valid Name", 10m, "USD", "SKU-001", Guid.NewGuid());
+        var createRes = Product.Create("Valid Name", 10m, "USD", Guid.NewGuid(), "SKU-001");
         var product = createRes.GetDataOrThrow();
         var newCategoryId = Guid.NewGuid();
         // Act
@@ -558,7 +558,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Act
         product.AddImage("http://img", "alt");
         // Assert
@@ -574,7 +574,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         product.AddImage("http://img1", "a1");
         // Act
         product.AddImage("http://img2", "a2");
@@ -591,7 +591,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         for (int i = 0; i < 10; i++) product.AddImage($"http://{i}", null);
         // Act & Assert
         var addRes = product.AddImage("http://too-many", null);
@@ -606,7 +606,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         product.AddImage("http://a", null);
         product.AddImage("http://b", null);
         Guid imageId = product.Images.Skip(1).First().Id;
@@ -625,7 +625,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Act & Assert
         var setRes = product.SetPrimaryImage(Guid.NewGuid());
         Assert.IsFalse(setRes.IsSuccess);
@@ -639,7 +639,7 @@ public class ProductTests
         Money price = Unwrap(Money.Create(1m, "USD"));
         Sku sku = Unwrap(Sku.Create("S"));
         Guid categoryId = Guid.NewGuid();
-        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, categoryId));
+        Product product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, categoryId, sku.Value));
         // Act
         product.Delete();
         // Assert

@@ -16,13 +16,13 @@ public sealed class Category : AggregateRoot
 
     private Category() { }
 
-    public static Result<Category> Create(string nameRaw, Guid? parentId = null)
+    public static Result<Category> Create(string nameRaw, Guid? parentId = null, string? slugRaw = null)
     {
         var nameResult = CategoryName.Create(nameRaw);
         if (!nameResult.IsSuccess)
             return Result<Category>.Fail(nameResult.GetErrorOrThrow());
 
-        var slugResult = Slug.Create(nameRaw);
+        var slugResult = Slug.Create(slugRaw ?? nameRaw);
         if (!slugResult.IsSuccess)
             return Result<Category>.Fail(slugResult.GetErrorOrThrow());
 

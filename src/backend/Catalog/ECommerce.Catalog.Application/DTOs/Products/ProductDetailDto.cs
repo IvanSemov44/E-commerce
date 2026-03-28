@@ -10,7 +10,7 @@ public class ProductDetailDto
     public decimal Price { get; init; }
     public string Currency { get; init; } = string.Empty;
     public decimal? CompareAtPrice { get; init; }
-    public string Sku { get; init; } = string.Empty;
+    public string? Sku { get; init; }
     public string? Description { get; init; }
     public string Status { get; init; } = string.Empty;
     public bool IsFeatured { get; init; }

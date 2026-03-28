@@ -1,4 +1,5 @@
 ﻿using ECommerce.Catalog.Domain.Aggregates.Product;
+using ECommerce.Catalog.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -12,16 +13,19 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.ToTable("Products");
         builder.HasKey(p => p.Id);
 
-        builder.OwnsOne(p => p.Name, nb => {
-            nb.Property(n => n.Value).HasColumnName("Name").IsRequired().HasMaxLength(200);
-        });
+        builder.Property(p => p.Name)
+            .HasConversion(n => n.Value, v => ProductName.Create(v).GetDataOrThrow())
+            .HasColumnName("Name")
+            .IsRequired()
+            .HasMaxLength(200);
 
-        builder.OwnsOne(p => p.Slug, sb => {
-            sb.Property(s => s.Value).HasColumnName("Slug").IsRequired().HasMaxLength(250);
-        });
+        builder.Property(p => p.Slug)
+            .HasConversion(s => s.Value, v => Slug.Create(v).GetDataOrThrow())
+            .HasColumnName("Slug")
+            .IsRequired()
+            .HasMaxLength(250);
 
-        // Index on slug (unique)
-        builder.HasIndex(p => EF.Property<string>(p, "Slug")).IsUnique();
+        builder.HasIndex(p => p.Slug).IsUnique();
 
         builder.OwnsOne(p => p.Price, pb => {
             pb.Property(m => m.Amount).HasColumnName("Price").IsRequired();
@@ -33,12 +37,16 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             cb.Property(m => m.Currency).HasColumnName("CompareAtPriceCurrency");
         });
 
-        builder.OwnsOne(p => p.Sku, kb => {
-            kb.Property(s => s.Value).HasColumnName("Sku").IsRequired().HasMaxLength(100);
-        });
-
-        // Unique index on SKU
-        builder.HasIndex(p => EF.Property<string>(p, "Sku")).IsUnique();
+        // Sku is optional — null means no SKU assigned yet.
+        // The converter handles null on both sides so EF doesn't NPE on nullable Sku.
+        builder.Property(p => p.Sku)
+            .HasConversion(
+                s => s == null ? null : s.Value,
+                v => v == null ? null : Sku.Create(v).GetDataOrThrow())
+            .HasColumnName("Sku")
+            .IsRequired(false)
+            .HasMaxLength(100);
+        builder.HasIndex(p => p.Sku).IsUnique().HasFilter("\"Sku\" IS NOT NULL");
 
         builder.Property(p => p.Description).HasColumnName("Description").IsRequired(false);
 

@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
@@ -21,7 +22,8 @@ public class UpdateProductCommandHandler(
         if (product is null)
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.ProductNotFound);
 
-        var category = await _categories.GetByIdAsync(command.CategoryId, cancellationToken);
+        Guid categoryId = command.CategoryId ?? product.CategoryId;
+        var category = await _categories.GetByIdAsync(categoryId, cancellationToken);
         if (category is null)
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.CategoryNotFound);
 
@@ -29,15 +31,8 @@ public class UpdateProductCommandHandler(
         if (!nameResult.IsSuccess)
             return Result<ProductDetailDto>.Fail(nameResult.GetErrorOrThrow());
 
-        var productName = nameResult.GetDataOrThrow();
-        product.UpdateDetails(productName, command.Description, command.CategoryId);
+        product.UpdateDetails(nameResult.GetDataOrThrow(), command.Description, categoryId);
 
-        await _products.UpdateAsync(product, cancellationToken);
-
-        var dto = product.ToDetailDto(category.Name.Value);
-
-        await _products.UpdateAsync(product, cancellationToken);
-
-        return Result<ProductDetailDto>.Ok(dto);
+        return Result<ProductDetailDto>.Ok(product.ToDetailDto(category.Name.Value));
     }
 }

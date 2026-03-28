@@ -166,13 +166,96 @@
 
 43. **Record value objects use value converters, not owned entities.** A single-property record (Email, Slug, Sku, ProductName) maps to one column via `HasConversion(to, from)`. Never use `OwnsOne()` for single-property records — it creates ugly shadow columns and fights with private constructors.
 
+   **Critical corollary — unique indexes on value objects:** With `HasConversion`, the property is a first-class column and `HasIndex` works normally:
+   ```csharp
+   builder.Property(p => p.Slug)
+       .HasConversion(s => s.Value, v => Slug.Create(v).GetDataOrThrow())
+       .HasColumnName("Slug");
+   builder.HasIndex(p => p.Slug).IsUnique();  // ✅ works
+   ```
+   With `OwnsOne`, EF's shadow property name is `Slug_Value` (not `Slug`), so `EF.Property<string>(p, "Slug")` in `HasIndex` silently references a non-existent property — the unique constraint is never applied. This is a silent data integrity bug.
+
 44. **Multi-property value objects use `OwnsOne()` with explicit column names.** For `class : ValueObject` with multiple properties (Money, PersonName, DateRange), use `builder.OwnsOne(...)` and always call `.HasColumnName(...)` on each property. Never rely on EF's auto-generated `PropertyName_FieldName` format.
 
 45. **Enums are always stored as strings.** Every enum property must have `.HasConversion<string>()` in its EF configuration. Never store enums as integers (data corruption risk on reorder).
 
+   **Common mistake — shadow property with wrong type:**
+   ```csharp
+   builder.Property<int>("Status").HasColumnName("Status");   // ❌ int, silent data corruption
+   builder.Property(p => p.Status).HasConversion<string>();  // ✅ correct
+   ```
+   Using `Property<int>("Status")` creates a shadow property that ignores the actual enum type and stores integers.
+
 46. **Aggregate private parameterless constructors must be empty.** EF Core calls the private `()` constructor to materialize from the database. It must do nothing — no validation, no events, no defaults. All of that lives in the factory method (`Create`/`Register`/`Place`).
 
 47. **Back collection properties with private fields.** Aggregate collections must use a `private readonly List<T> _field` backing field and expose `IReadOnlyCollection<T>` via property. EF Core accesses the backing field during materialization.
+
+   **`UpdateAsync` is not needed for EF-tracked aggregates.** When a handler calls `GetByIdAsync`, EF Core tracks the returned aggregate. Domain method calls mutate the tracked entity. `_uow.SaveChangesAsync()` persists the diff automatically. Calling `_repository.UpdateAsync(aggregate)` before `SaveChangesAsync` is redundant — it causes an extra DB round-trip and risks missing fields in a manual mapping. Repository `UpdateAsync` should only exist if using a disconnected pattern (e.g. loading from cache). In the standard handler pattern:
+   ```csharp
+   // ✅ correct — load, mutate via domain method, save
+   var product = await _products.GetByIdAsync(id, ct);
+   product.UpdatePrice(newPrice);          // EF tracks the change
+   await _uow.SaveChangesAsync(ct);        // persists the diff
+
+   // ❌ wrong — extra round-trip, manual mapping, misses fields
+   var product = await _products.GetByIdAsync(id, ct);
+   product.UpdatePrice(newPrice);
+   await _products.UpdateAsync(product, ct);  // loads from DB again and copies fields
+   await _uow.SaveChangesAsync(ct);
+   ```
+
+## Validation Rules
+
+Three distinct layers. Each has one job. Nothing bleeds into the next layer.
+
+```
+HTTP request
+    ↓
+[FromBody] binding           ← null / wrong types → 400 (ModelState, framework)
+    ↓
+ValidationBehavior           ← IValidator<TCommand> → empty strings, ranges, required fields → 400
+    ↓
+Handler existence checks     ← does the referenced entity exist? → 404
+    ↓
+Aggregate domain methods     ← business invariants, state machine rules → Result.Fail → 422 / 409
+```
+
+48. **Every write command has a FluentValidation validator.** Create `{CommandName}CommandValidator : AbstractValidator<{CommandName}Command>` in the same folder as the command. Validate input shape: not-empty strings, positive numbers, valid GUIDs. If there is nothing to validate (e.g. a delete command with only an `Id`), skip the validator — but every command that accepts user-typed strings or numbers needs one.
+
+49. **`ValidationBehavior` returns `Result.Fail`, it does not throw.** Throwing `ValidationException` from the pipeline requires the global exception middleware to handle that specific exception type. If the middleware does not list `ValidationException` explicitly, it falls through to 500. The safe approach that works with the Result pattern used everywhere else:
+   ```csharp
+   if (failures.Any())
+   {
+       var first = failures.First();
+       return CreateFailureResult<TResponse>(new DomainError("VALIDATION_FAILED", first.ErrorMessage));
+   }
+   ```
+   This keeps the entire request pipeline exception-free for expected failures. Exceptions are reserved for infrastructure failures (DB down, null ref bugs).
+
+50. **Domain aggregates enforce business invariants, not input shape.**
+
+51. **Two error files per context — know which layer owns which error.**
+   - `{Context}Errors.cs` in the **Domain** project — value object validation failures, invariant violations. These fire when the data itself is structurally invalid: `NameEmpty`, `PriceMustBePositive`, `SlugInvalid`.
+   - `{Context}ApplicationErrors.cs` in the **Application** project — cross-entity checks in handlers: `ProductNotFound`, `SkuAlreadyExists`, `CategoryHasProducts`. These fire when the operation cannot proceed because of how entities relate to each other.
+   - Rule of thumb: if the error comes from inside `ValueObject.Create()` or `Aggregate.DomainMethod()` → Domain errors. If the error comes from a repository check or existence check in the handler → Application errors.
+
+52. **Authorization: controller guards authentication, handler guards ownership.**
+   - `[Authorize(Roles = "Admin")]` on the controller action → handles 401 (not logged in) and 403 (wrong role) at the HTTP layer. Use this for all-or-nothing role access (only admins can create products).
+   - `ICurrentUserService` in the handler → use for ownership checks where a user can only act on their OWN data (a user can only update their OWN profile, not another user's). Check at the top of the handler before loading anything.
+   - Do NOT duplicate: if the controller already guards a role, the handler does NOT also check that role. The controller is the outer guard for HTTP; the handler only adds checks for cross-user scenarios.
+
+53. **`record` vs `class : ValueObject` — when to use which.**
+   - `sealed record` → single-property value objects (`Email`, `Slug`, `Sku`, `ProductName`). .NET record equality compares all properties by value automatically. One property = no ambiguity.
+   - `sealed class : ValueObject` → multi-property value objects (`Money`, `PersonName`, `DateRange`). Override `GetEqualityComponents()` to define what makes two instances equal.
+   - Never use `class : ValueObject` for single-property VOs — the `record` is simpler and has less ceremony.
+
+54. **Domain event handlers run inside the save transaction — keep them fast and non-throwing.**
+   Domain events are dispatched by `IDomainEventDispatcher` inside `SaveChangesAsync`, after the DB write but within the same transaction scope. If an event handler throws, the transaction rolls back and the aggregate save is undone. Therefore:
+   - Event handlers that do infrastructure work (email, external HTTP, cache) must swallow exceptions and log — never re-throw (Rule 17 applies here for this exact reason).
+   - Event handlers that do secondary DB writes (e.g. create an audit log entry) are fine to throw — the rollback is correct behavior if the secondary write fails.
+   - Heavy work (sending emails, calling Stripe) belongs in a background job triggered by the event, not executed synchronously inside the handler.
+
+55. **InMemory database does not enforce unique constraints.** `HasIndex(...).IsUnique()` is silently ignored by the EF Core InMemory provider. Characterization tests that use InMemory will not catch duplicate slug/sku/email violations at the DB level. The handler's existence checks (e.g. `SlugExistsAsync`) must be present and tested explicitly. For full constraint validation, use Testcontainers with a real Postgres instance in integration tests. If `Product.Create("")` returns `Result.Fail(CatalogErrors.NameEmpty)`, that is correct — the domain enforces its own invariants. But the FluentValidation validator should have already caught the empty string before the handler ever called `Product.Create`. An empty string reaching the aggregate is a gap in the validation layer, not proof that the domain is doing the right job. Both layers must exist and each must do its own job.
 
 ## Naming Conventions
 

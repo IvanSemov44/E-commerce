@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
-using ECommerce.API.ActionFilters;
 using ECommerce.API.Extensions;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.SharedKernel.Results;
@@ -48,7 +47,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
         "SKU_EMPTY",          "SKU_TOO_LONG",
         "MONEY_NEGATIVE",     "MONEY_INVALID_CURRENCY", "MONEY_CURRENCY_MISMATCH",
         "WEIGHT_NEGATIVE",    "STOCK_QUANTITY_NEGATIVE",
-        "PRODUCT_DISCONTINUED", "PRODUCT_MAX_IMAGES");
+        "PRODUCT_DISCONTINUED", "PRODUCT_MAX_IMAGES",
+        "DUPLICATE_PRODUCT_SLUG");
 
     private IActionResult Problem(DomainError error)
     {
@@ -267,7 +267,6 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
@@ -297,7 +296,6 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
@@ -349,7 +347,6 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable price data (validation errors).</response>
     [HttpPut("{id:guid}/price")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
@@ -372,7 +369,6 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     [HttpPut("{id:guid}/stock")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -444,7 +440,6 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable image data (e.g. max images reached).</response>
     [HttpPost("{id:guid}/images")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]

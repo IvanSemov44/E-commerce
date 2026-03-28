@@ -120,7 +120,7 @@ try
         // This catches missing dependencies and circular references early
         _ = scope.ServiceProvider.GetRequiredService<IOrderService>();
         _ = scope.ServiceProvider.GetRequiredService<IAuthService>();
-        _ = scope.ServiceProvider.GetRequiredService<IProductService>();
+
         _ = scope.ServiceProvider.GetRequiredService<ICartService>();
         _ = scope.ServiceProvider.GetRequiredService<IPaymentService>();
     }

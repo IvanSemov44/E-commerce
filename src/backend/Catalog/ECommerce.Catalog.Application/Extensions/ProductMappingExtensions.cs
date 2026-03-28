@@ -45,7 +45,7 @@ public static class ProductMappingExtensions
             Price = product.Price.Amount,
             Currency = product.Price.Currency,
             CompareAtPrice = product.CompareAtPrice?.Amount,
-            Sku = product.Sku.Value,
+            Sku = product.Sku?.Value,
             Description = product.Description,
             Status = product.Status.ToString(),
             IsFeatured = product.IsFeatured,

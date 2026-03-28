@@ -15,7 +15,7 @@ public sealed class Product : AggregateRoot
     public Slug Slug { get; private set; } = null!;
     public Money Price { get; private set; } = null!;
     public Money? CompareAtPrice { get; private set; }
-    public Sku Sku { get; private set; } = null!;
+    public Sku? Sku { get; private set; }
     public string? Description { get; private set; }
     public ProductStatus Status { get; private set; }
     public bool IsFeatured { get; private set; }
@@ -32,8 +32,9 @@ public sealed class Product : AggregateRoot
         string nameRaw,
         decimal priceAmount,
         string priceCurrency,
-        string skuRaw,
         Guid categoryId,
+        string? skuRaw = null,
+        string? slugRaw = null,
         string? description = null,
         decimal? compareAtPriceAmount = null)
     {
@@ -43,10 +44,15 @@ public sealed class Product : AggregateRoot
         var priceResult = Money.Create(priceAmount, priceCurrency);
         if (!priceResult.IsSuccess) return Result<Product>.Fail(priceResult.GetErrorOrThrow());
 
-        var skuResult = Sku.Create(skuRaw);
-        if (!skuResult.IsSuccess) return Result<Product>.Fail(skuResult.GetErrorOrThrow());
+        Sku? sku = null;
+        if (!string.IsNullOrWhiteSpace(skuRaw))
+        {
+            var skuResult = Sku.Create(skuRaw);
+            if (!skuResult.IsSuccess) return Result<Product>.Fail(skuResult.GetErrorOrThrow());
+            sku = skuResult.GetDataOrThrow();
+        }
 
-        var slugResult = Slug.Create(nameRaw);
+        var slugResult = Slug.Create(slugRaw ?? nameRaw);
         if (!slugResult.IsSuccess) return Result<Product>.Fail(slugResult.GetErrorOrThrow());
 
         Money? compareAtPrice = null;
@@ -65,7 +71,7 @@ public sealed class Product : AggregateRoot
             Slug = slugResult.GetDataOrThrow(),
             Price = priceResult.GetDataOrThrow(),
             CompareAtPrice = compareAtPrice,
-            Sku = skuResult.GetDataOrThrow(),
+            Sku = sku,
             Description = description,
             Status = ProductStatus.Draft,
             IsFeatured = false,

@@ -30,8 +30,6 @@ public class AddProductImageCommandHandler(
         if (category is null)
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.CategoryNotFound);
 
-        await _products.UpdateAsync(product, cancellationToken);
-
         return Result<ProductDetailDto>.Ok(product.ToDetailDto(category.Name.Value));
     }
 }

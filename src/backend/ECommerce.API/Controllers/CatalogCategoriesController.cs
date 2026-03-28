@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
-using ECommerce.API.ActionFilters;
 using ECommerce.API.Extensions;
 using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Common;
@@ -28,9 +27,8 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     {
         "CATEGORY_NOT_FOUND"
             => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "CATEGORY_HAS_PRODUCTS"
-            => Conflict(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "CATEGORY_NAME_EMPTY" or "CATEGORY_NAME_TOO_LONG" or "CATEGORY_CIRCULAR"
+        "CATEGORY_HAS_PRODUCTS" or "DUPLICATE_CATEGORY_SLUG"
+            or "CATEGORY_NAME_EMPTY" or "CATEGORY_NAME_TOO_LONG" or "CATEGORY_CIRCULAR"
             => UnprocessableEntity(ApiResponse<object>.Failure(error.Message, error.Code)),
         _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
     };
@@ -143,7 +141,6 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable category data (validation errors).</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
@@ -172,7 +169,6 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable category data (validation errors).</response>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]

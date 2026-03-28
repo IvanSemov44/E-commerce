@@ -164,7 +164,7 @@ public class QueryHandlerTests
         var name = Unwrap(ProductName.Create("P"));
         var price = Unwrap(Money.Create(10m, "USD"));
         var sku = Unwrap(Sku.Create(Guid.NewGuid().ToString()));
-        var product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, category.Id));
+        var product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, category.Id, sku.Value));
         products.Store.Add(product);
         return product;
     }

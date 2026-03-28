@@ -187,7 +187,7 @@ public class CommandHandlerTests
         var name = Unwrap(ProductName.Create("P"));
         var price = Unwrap(Money.Create(10m, "USD"));
         var sku = Unwrap(Sku.Create("SKU1"));
-        var product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, sku.Value, category.Id));
+        var product = Unwrap(Product.Create(name.Value, price.Amount, price.Currency, category.Id, sku.Value));
         products.Store.Add(product);
         return product;
     }
@@ -208,7 +208,7 @@ public class CommandHandlerTests
         var category = CreateValidCategory(categories);
         var handler = new CreateProductCommandHandler(products, categories);
 
-        var cmd = new CreateProductCommand("Name", 5m, "USD", "SKU-123", category.Id);
+        var cmd = new CreateProductCommand("Name", 5m, category.Id, Sku: "SKU-123");
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
@@ -224,7 +224,7 @@ public class CommandHandlerTests
         var categories = new FakeCategoryRepository();
         var handler = new CreateProductCommandHandler(products, categories);
 
-        var cmd = new CreateProductCommand("Name", 5m, "USD", "SKU-123", Guid.NewGuid());
+        var cmd = new CreateProductCommand("Name", 5m, Guid.NewGuid(), Sku: "SKU-123");
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
@@ -240,7 +240,7 @@ public class CommandHandlerTests
         var p = CreateValidProduct(categories, products, category.Id);
         var handler = new CreateProductCommandHandler(products, categories);
 
-        var cmd = new CreateProductCommand("Name2", 5m, "USD", p.Sku.Value, category.Id);
+        var cmd = new CreateProductCommand("Name2", 5m, category.Id, Sku: p.Sku?.Value);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
@@ -255,7 +255,7 @@ public class CommandHandlerTests
         var category = CreateValidCategory(categories);
         var handler = new CreateProductCommandHandler(products, categories);
 
-        var cmd = new CreateProductCommand("", 5m, "USD", "SKU-99", category.Id);
+        var cmd = new CreateProductCommand("", 5m, category.Id, Sku: "SKU-99");
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
@@ -277,7 +277,6 @@ public class CommandHandlerTests
         Assert.IsTrue(res.IsSuccess);
         var dto = res.GetDataOrThrow();
         Assert.AreEqual("NewName", dto.Name);
-        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]

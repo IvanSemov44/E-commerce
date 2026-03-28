@@ -169,7 +169,7 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
         existing.Slug = product.Slug.Value;
         existing.Price = product.Price.Amount;
         existing.CompareAtPrice = product.CompareAtPrice?.Amount;
-        existing.Sku = product.Sku.Value;
+        existing.Sku = product.Sku?.Value;
         existing.Description = product.Description;
         existing.IsFeatured = product.IsFeatured;
         existing.IsActive = product.Status == ProductStatus.Active;
@@ -203,7 +203,7 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
         Money? compare = null;
         if (core.CompareAtPrice.HasValue)
             compare = Money.Create(core.CompareAtPrice.Value, "USD").GetDataOrThrow();
-        var sku = Sku.Create(core.Sku ?? string.Empty).GetDataOrThrow();
+        var sku = string.IsNullOrWhiteSpace(core.Sku) ? null : Sku.Create(core.Sku).GetDataOrThrow();
 
         prodType.GetProperty("Name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, name);
         prodType.GetProperty("Slug", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(domain, slug);
@@ -246,7 +246,7 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
             Slug = domain.Slug.Value,
             Price = domain.Price.Amount,
             CompareAtPrice = domain.CompareAtPrice?.Amount,
-            Sku = domain.Sku.Value,
+            Sku = domain.Sku?.Value,
             Description = domain.Description,
             IsFeatured = domain.IsFeatured,
             StockQuantity = domain.StockQuantity,
