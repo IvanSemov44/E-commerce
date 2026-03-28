@@ -248,6 +248,7 @@ public class ProductsControllerTests
             Name = "New Test Product",
             Slug = "new-test-product-" + Guid.NewGuid().ToString().Substring(0, 8),
             Price = 49.99m,
+            CategoryId = "66666666-6666-6666-6666-666666666666",
             StockQuantity = 50
         };
 

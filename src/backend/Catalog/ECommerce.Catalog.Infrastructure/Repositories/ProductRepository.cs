@@ -54,7 +54,10 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLowerInvariant();
-            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{s}%") || EF.Functions.ILike(p.Sku ?? string.Empty, $"%{s}%") );
+            if (_db.Database.ProviderName?.Contains("Npgsql") == true)
+                query = query.Where(p => EF.Functions.ILike(p.Name, $"%{s}%") || EF.Functions.ILike(p.Sku ?? string.Empty, $"%{s}%"));
+            else
+                query = query.Where(p => p.Name.ToLower().Contains(s) || (p.Sku != null && p.Sku.ToLower().Contains(s)));
         }
 
         if (minPrice.HasValue)
