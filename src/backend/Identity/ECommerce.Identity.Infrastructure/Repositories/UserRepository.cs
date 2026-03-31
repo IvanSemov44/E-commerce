@@ -47,6 +47,26 @@ public class UserRepository(AppDbContext _db) : IUserRepository
 
     public async Task UpdateAsync(DomainUser user, CancellationToken cancellationToken = default)
     {
+        // Check if the entity is already tracked (e.g., from GetByEmailAsync/GetByIdAsync)
+        var tracked = _db.Users.Local.FirstOrDefault(u => u.Id == user.Id);
+        if (tracked is not null)
+        {
+            // Entity is already tracked - just update scalar properties.
+            // EF Core's change tracking will persist the changes on SaveChanges.
+            tracked.Email             = user.Email.Value;
+            tracked.FirstName         = user.Name.First;
+            tracked.LastName          = user.Name.Last;
+            tracked.PasswordHash      = user.PasswordHash.Hash;
+            tracked.Phone             = user.PhoneNumber;
+            tracked.Role              = (ECommerce.Core.Enums.UserRole)(int)user.Role;
+            tracked.IsEmailVerified   = user.IsEmailVerified;
+            tracked.EmailVerificationToken = user.EmailVerificationToken;
+            tracked.PasswordResetToken     = user.PasswordResetToken;
+            tracked.PasswordResetExpires   = user.PasswordResetExpiry;
+            return;
+        }
+
+        // Entity not tracked - query from database
         var existing = await _db.Users
             .Include(u => u.Addresses)
             .Include(u => u.RefreshTokens)
@@ -70,16 +90,14 @@ public class UserRepository(AppDbContext _db) : IUserRepository
         existing.PasswordResetToken     = user.PasswordResetToken;
         existing.PasswordResetExpires   = user.PasswordResetExpiry;
 
-        // Sync refresh tokens: remove revoked, add new ones
+        // Sync refresh tokens
         var existingTokenValues = existing.RefreshTokens.Select(t => t.Token).ToHashSet();
         var domainTokenValues   = user.RefreshTokens.Select(t => t.Token).ToHashSet();
 
-        // Remove tokens no longer in domain
         var toRemove = existing.RefreshTokens.Where(t => !domainTokenValues.Contains(t.Token)).ToList();
         foreach (var rt in toRemove)
             existing.RefreshTokens.Remove(rt);
 
-        // Update revoked status for existing tokens; add new ones
         foreach (var domainRt in user.RefreshTokens)
         {
             var existingRt = existing.RefreshTokens.FirstOrDefault(t => t.Token == domainRt.Token);
@@ -100,8 +118,7 @@ public class UserRepository(AppDbContext _db) : IUserRepository
             }
         }
 
-        // Sync addresses: best-effort bridge between Core and Domain schemas.
-        // TODO Phase 3: add dedicated identity address table to remove this schema mismatch.
+        // Sync addresses
         var existingAddressIds = existing.Addresses.Select(a => a.Id).ToHashSet();
         var domainAddressIds   = user.Addresses.Select(a => a.Id).ToHashSet();
 
@@ -138,8 +155,6 @@ public class UserRepository(AppDbContext _db) : IUserRepository
                 });
             }
         }
-
-        _db.Users.Update(existing);
     }
 
     public Task DeleteAsync(DomainUser user, CancellationToken cancellationToken = default)

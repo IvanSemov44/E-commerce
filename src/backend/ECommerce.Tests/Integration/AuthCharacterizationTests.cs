@@ -84,7 +84,7 @@ public class AuthCharacterizationTests
     {
         using var client = _factory.CreateUnauthenticatedClient();
         // Use the seeded test user email (already exists in TestWebApplicationFactory seed)
-        var payload = new { Email = "integration@test", Password = "SecurePass1!", FirstName = "Jane", LastName = "Doe" };
+        var payload = new { Email = "integration@test.com", Password = "SecurePass1!", FirstName = "Jane", LastName = "Doe" };
 
         var res = await client.PostAsync("/api/auth/register", Json(payload), TestContext.CancellationToken);
 
@@ -99,15 +99,21 @@ public class AuthCharacterizationTests
     [TestMethod]
     public async Task Login_ValidCredentials_Returns200WithToken()
     {
-        // Use the seeded admin user (TestWebApplicationFactory seeds admin@test)
+        // First register a new user, then log in with that user
         using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { Email = "admin@test", Password = "TestPassword123!" };
+        var email = $"login-test-{Guid.NewGuid():N}@example.com";
+        var password = "SecurePass1!";
+        var registerPayload = new { Email = email, Password = password, FirstName = "Login", LastName = "Test" };
 
-        var res = await client.PostAsync("/api/auth/login", Json(payload), TestContext.CancellationToken);
+        var registerRes = await client.PostAsync("/api/auth/register", Json(registerPayload), TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.OK, registerRes.StatusCode);
+
+        // Now log in with the registered user
+        var loginPayload = new { Email = email, Password = password };
+        var res = await client.PostAsync("/api/auth/login", Json(loginPayload), TestContext.CancellationToken);
         string body = await res.Content.ReadAsStringAsync();
 
         Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        // Tokens are set as httpOnly cookies, so check for cookies or success response shape
         var hasAccessTokenCookie = res.Headers.TryGetValues("Set-Cookie", out var cookies)
             && cookies.Any(c => c.Contains("accessToken"));
         var hasSuccessResponse = body.Contains("\"success\":true") || body.Contains("\"Success\":true");
@@ -118,10 +124,17 @@ public class AuthCharacterizationTests
     [TestMethod]
     public async Task Login_WrongPassword_Returns401()
     {
+        // First register a new user, then try to log in with wrong password
         using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { Email = "admin@test", Password = "WrongPass999!" };
+        var email = $"wrong-pass-{Guid.NewGuid():N}@example.com";
+        var password = "SecurePass1!";
+        var registerPayload = new { Email = email, Password = password, FirstName = "Wrong", LastName = "Pass" };
 
-        var res = await client.PostAsync("/api/auth/login", Json(payload), TestContext.CancellationToken);
+        var registerRes = await client.PostAsync("/api/auth/register", Json(registerPayload), TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.OK, registerRes.StatusCode);
+
+        var loginPayload = new { Email = email, Password = "WrongPass999!" };
+        var res = await client.PostAsync("/api/auth/login", Json(loginPayload), TestContext.CancellationToken);
 
         Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
     }

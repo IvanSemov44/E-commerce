@@ -1,9 +1,12 @@
-﻿using ECommerce.API.ActionFilters;
-using ECommerce.Application.DTOs.Common;
+﻿using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Users;
-using ECommerce.Application.Interfaces;
-using ECommerce.Core.Constants;
-using ECommerce.Core.Results;
+using ECommerce.Identity.Application.Commands.ChangePassword;
+using ECommerce.Identity.Application.Commands.UpdateProfile;
+using ECommerce.Identity.Application.Commands.UpdateUserPreferences;
+using ECommerce.Identity.Application.Queries.GetCurrentUser;
+using ECommerce.Identity.Application.Queries.GetUserPreferences;
+using ECommerce.API.ActionFilters;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,189 +14,130 @@ namespace ECommerce.API.Controllers;
 
 /// <summary>
 /// Controller for managing user profile operations.
+/// Dispatches to Identity CQRS handlers via IMediator.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Profile")]
 [Authorize]
-public class ProfileController : ControllerBase
+public class ProfileController(IMediator mediator, ILogger<ProfileController> logger) : ControllerBase
 {
-    private readonly IUserService _userService;
-    private readonly ICurrentUserService _currentUser;
-    private readonly ILogger<ProfileController> _logger;
-
-    public ProfileController(IUserService userService, ICurrentUserService currentUser, ILogger<ProfileController> logger)
+    private Guid? GetUserId()
     {
-        _userService = userService;
-        _currentUser = currentUser;
-        _logger = logger;
+        var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        return claim != null && Guid.TryParse(claim.Value, out var id) ? id : null;
     }
 
-    /// <summary>
-    /// Retrieves the authenticated user's profile information.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The user's profile details.</returns>
-    /// <response code="200">Profile retrieved successfully.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="404">User profile not found.</response>
+    private IActionResult MapError(ECommerce.SharedKernel.Results.DomainError error) => error.Code switch
+    {
+        "INVALID_CREDENTIALS" or "TOKEN_INVALID" or "TOKEN_REVOKED"
+            => Unauthorized(ApiResponse<object>.Failure(error.Message, error.Code)),
+        "USER_NOT_FOUND"
+            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
+        "VALIDATION_FAILED"
+            => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
+        _ => UnprocessableEntity(ApiResponse<object>.Failure(error.Message, error.Code))
+    };
+
+    /// <summary>Retrieves the authenticated user's profile information.</summary>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ECommerce.Identity.Application.DTOs.UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProfile(CancellationToken ct)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = GetUserId();
         if (!userId.HasValue)
-            return Unauthorized(ApiResponse<UserProfileDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Retrieving profile for user {UserId}", userId.Value);
+        logger.LogInformation("Retrieving profile for user {UserId}", userId.Value);
+        var result = await mediator.Send(new GetCurrentUserQuery(userId.Value), ct);
+        if (!result.IsSuccess) return MapError(result.GetErrorOrThrow());
 
-        var result = await _userService.GetUserProfileAsync(userId.Value, cancellationToken: cancellationToken);
-        return result is Result<UserProfileDto>.Success success
-            ? Ok(ApiResponse<UserProfileDto>.Ok(success.Data, "Profile retrieved successfully"))
-            : result is Result<UserProfileDto>.Failure failure
-                ? BadRequest(ApiResponse<UserProfileDto>.Failure(failure.Message, failure.Code))
-                : BadRequest(ApiResponse<UserProfileDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
+        return Ok(ApiResponse<ECommerce.Identity.Application.DTOs.UserProfileDto>.Ok(result.GetDataOrThrow(), "Profile retrieved successfully"));
     }
 
-    /// <summary>
-    /// Updates the authenticated user's profile information.
-    /// </summary>
-    /// <param name="updateProfileDto">The updated profile details.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The updated user profile.</returns>
-    /// <response code="200">Profile updated successfully.</response>
-    /// <response code="400">Invalid profile data.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="404">User profile not found.</response>
+    /// <summary>Updates the authenticated user's profile information.</summary>
     [HttpPut]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ECommerce.Identity.Application.DTOs.UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto, CancellationToken ct)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = GetUserId();
         if (!userId.HasValue)
-            return Unauthorized(ApiResponse<UserProfileDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Updating profile for user {UserId}", userId.Value);
+        logger.LogInformation("Updating profile for user {UserId}", userId.Value);
+        var result = await mediator.Send(new UpdateProfileCommand(userId.Value, dto.FirstName, dto.LastName, dto.Phone), ct);
+        if (!result.IsSuccess) return MapError(result.GetErrorOrThrow());
 
-        var result = await _userService.UpdateUserProfileAsync(userId.Value, updateProfileDto, cancellationToken: cancellationToken);
-        return result is Result<UserProfileDto>.Success success
-            ? Ok(ApiResponse<UserProfileDto>.Ok(success.Data, "Profile updated successfully"))
-            : result is Result<UserProfileDto>.Failure failure
-                ? BadRequest(ApiResponse<UserProfileDto>.Failure(failure.Message, failure.Code))
-                : BadRequest(ApiResponse<UserProfileDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
+        return Ok(ApiResponse<ECommerce.Identity.Application.DTOs.UserProfileDto>.Ok(result.GetDataOrThrow(), "Profile updated successfully"));
     }
 
-    /// <summary>
-    /// Retrieves the authenticated user's preferences.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The user's preferences.</returns>
-    /// <response code="200">Preferences retrieved successfully.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="404">User not found.</response>
+    /// <summary>Retrieves the authenticated user's preferences.</summary>
     [HttpGet("preferences")]
-    [ProducesResponseType(typeof(ApiResponse<UserPreferencesDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ECommerce.Identity.Application.DTOs.UserPreferencesDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPreferences(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPreferences(CancellationToken ct)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = GetUserId();
         if (!userId.HasValue)
-            return Unauthorized(ApiResponse<UserPreferencesDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Retrieving preferences for user {UserId}", userId.Value);
+        logger.LogInformation("Retrieving preferences for user {UserId}", userId.Value);
+        var result = await mediator.Send(new GetUserPreferencesQuery(userId.Value), ct);
+        if (!result.IsSuccess) return MapError(result.GetErrorOrThrow());
 
-        var result = await _userService.GetUserPreferencesAsync(userId.Value, cancellationToken: cancellationToken);
-
-        if (result is Result<UserPreferencesDto>.Success success)
-            return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences retrieved successfully"));
-
-        if (result is Result<UserPreferencesDto>.Failure failure)
-            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return Ok(ApiResponse<ECommerce.Identity.Application.DTOs.UserPreferencesDto>.Ok(result.GetDataOrThrow(), "Preferences retrieved successfully"));
     }
 
-    /// <summary>
-    /// Updates the authenticated user's preferences.
-    /// </summary>
-    /// <param name="dto">The updated preferences.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The updated user preferences.</returns>
-    /// <response code="200">Preferences updated successfully.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="404">User not found.</response>
+    /// <summary>Updates the authenticated user's preferences.</summary>
     [HttpPut("preferences")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<UserPreferencesDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ECommerce.Identity.Application.DTOs.UserPreferencesDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdatePreferences([FromBody] UserPreferencesDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdatePreferences([FromBody] ECommerce.Application.DTOs.Users.UserPreferencesDto dto, CancellationToken ct)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = GetUserId();
         if (!userId.HasValue)
-            return Unauthorized(ApiResponse<UserPreferencesDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Updating preferences for user {UserId}", userId.Value);
+        logger.LogInformation("Updating preferences for user {UserId}", userId.Value);
+        var result = await mediator.Send(new UpdateUserPreferencesCommand(
+            userId.Value, dto.EmailNotifications, dto.SmsNotifications, dto.PushNotifications,
+            dto.Language, dto.Currency, dto.NewsletterSubscribed), ct);
+        if (!result.IsSuccess) return MapError(result.GetErrorOrThrow());
 
-        var result = await _userService.UpdateUserPreferencesAsync(userId.Value, dto, cancellationToken: cancellationToken);
-
-        if (result is Result<UserPreferencesDto>.Success success)
-            return Ok(ApiResponse<UserPreferencesDto>.Ok(success.Data, "Preferences updated successfully"));
-
-        if (result is Result<UserPreferencesDto>.Failure failure)
-            return NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code));
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return Ok(ApiResponse<ECommerce.Identity.Application.DTOs.UserPreferencesDto>.Ok(result.GetDataOrThrow(), "Preferences updated successfully"));
     }
 
-    /// <summary>
-    /// Changes the authenticated user's password.
-    /// </summary>
-    /// <param name="dto">The password change request.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Success message.</returns>
-    /// <response code="200">Password changed successfully.</response>
-    /// <response code="400">Invalid request or mismatched passwords.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="404">User not found.</response>
+    /// <summary>Changes the authenticated user's password.</summary>
     [HttpPost("change-password")]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken ct)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = GetUserId();
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Changing password for user {UserId}", userId.Value);
+        logger.LogInformation("Changing password for user {UserId}", userId.Value);
 
-        // Validate that new passwords match
         if (dto.NewPassword != dto.ConfirmPassword)
-        {
             return BadRequest(ApiResponse<object>.Failure("New password and confirmation do not match", "PASSWORD_MISMATCH"));
-        }
 
-        var result = await _userService.ChangePasswordAsync(userId.Value, dto.OldPassword, dto.NewPassword, cancellationToken: cancellationToken);
-        if (result is Result<Unit>.Failure failure)
-        {
-            return failure.Code == ErrorCodes.UserNotFound
-                ? NotFound(ApiResponse<object>.Failure(failure.Message, failure.Code))
-                : BadRequest(ApiResponse<object>.Failure(failure.Message, failure.Code));
-        }
+        var result = await mediator.Send(new ChangePasswordCommand(userId.Value, dto.OldPassword, dto.NewPassword), ct);
+        if (!result.IsSuccess) return MapError(result.GetErrorOrThrow());
+
         return Ok(ApiResponse<object>.Ok(new object(), "Password changed successfully"));
     }
 }
-

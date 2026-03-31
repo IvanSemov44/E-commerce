@@ -305,7 +305,6 @@ public static class ServiceCollectionExtensions
 
         // Domain services
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IAuthService, AuthService>();
 
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddSingleton<IPaymentStore, InMemoryPaymentStore>();
@@ -314,7 +313,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IWishlistService, WishlistService>();
-        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IInventoryService, InventoryService>();

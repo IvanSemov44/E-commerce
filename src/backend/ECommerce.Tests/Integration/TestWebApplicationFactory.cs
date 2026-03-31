@@ -162,12 +162,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     db.Users.Add(new User
                     {
                         Id = userId,
-                        Email = "integration@test",
+                        Email = "integration@test.com",
                         FirstName = "Integration",
                         LastName = "User",
                         Role = Core.Enums.UserRole.Customer,
-                        PasswordHash = passwordHash
+                        PasswordHash = passwordHash,
+                        IsEmailVerified = true,
+                        CreatedAt = DateTime.UtcNow
                     });
+                    db.SaveChanges(); // Save immediately to ensure proper tracking
                 }
 
                 // Seed an admin user
@@ -177,12 +180,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     db.Users.Add(new User
                     {
                         Id = adminId,
-                        Email = "admin@test",
+                        Email = "admin@test.com",
                         FirstName = "Admin",
                         LastName = "User",
                         Role = Core.Enums.UserRole.Admin,
-                        PasswordHash = passwordHash
+                        PasswordHash = passwordHash,
+                        IsEmailVerified = true,
+                        CreatedAt = DateTime.UtcNow
                     });
+                    db.SaveChanges(); // Save immediately to ensure proper tracking
                 }
 
                 // Seed a category that the test product belongs to
@@ -274,8 +280,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim(ClaimTypes.Name, roles.Contains("Admin") ? "admin@test" : "integration@test"),
-            new Claim(ClaimTypes.Email, roles.Contains("Admin") ? "admin@test" : "integration@test")
+            new Claim(ClaimTypes.Name, roles.Contains("Admin") ? "admin@test.com" : "integration@test.com"),
+            new Claim(ClaimTypes.Email, roles.Contains("Admin") ? "admin@test.com" : "integration@test.com")
         };
 
         // Add role claims

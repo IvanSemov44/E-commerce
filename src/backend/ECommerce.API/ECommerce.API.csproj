@@ -9,8 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="MediatR" Version="14.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
@@ -38,6 +39,8 @@
     <ProjectReference Include="..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
     <ProjectReference Include="..\Catalog\ECommerce.Catalog.Application\ECommerce.Catalog.Application.csproj" />
     <ProjectReference Include="..\Catalog\ECommerce.Catalog.Infrastructure\ECommerce.Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\Identity\ECommerce.Identity.Application\ECommerce.Identity.Application.csproj" />
+    <ProjectReference Include="..\Identity\ECommerce.Identity.Infrastructure\ECommerce.Identity.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

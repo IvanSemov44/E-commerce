@@ -6,6 +6,7 @@ using FluentValidation;
 using MediatR;
 using ECommerce.Catalog.Infrastructure;
 using ECommerce.Catalog.Application.Commands.CreateProduct;
+using ECommerce.Identity.Infrastructure;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -70,6 +71,9 @@ builder.Services.AddApplicationServices(builder.Configuration);
 // Catalog Infrastructure
 builder.Services.AddCatalogInfrastructure();
 
+// Identity Infrastructure
+builder.Services.AddIdentityInfrastructure();
+
 // MediatR
 builder.Services.AddMediatR(cfg =>
 {
@@ -77,7 +81,7 @@ builder.Services.AddMediatR(cfg =>
 
     // Uncomment each line when that bounded context's Application project is created:
     cfg.RegisterServicesFromAssembly(typeof(CreateProductCommand).Assembly);
-    // Phase 2: cfg.RegisterServicesFromAssembly(typeof(RegisterUserCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
     // Phase 3: cfg.RegisterServicesFromAssembly(typeof(ReduceStockCommand).Assembly);
     // Phase 4: cfg.RegisterServicesFromAssembly(typeof(AddToCartCommand).Assembly);
     // Phase 5: cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
@@ -119,7 +123,7 @@ try
         // Validate each critical service can be instantiated
         // This catches missing dependencies and circular references early
         _ = scope.ServiceProvider.GetRequiredService<IOrderService>();
-        _ = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        _ = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         _ = scope.ServiceProvider.GetRequiredService<ICartService>();
         _ = scope.ServiceProvider.GetRequiredService<IPaymentService>();
