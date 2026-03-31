@@ -195,7 +195,7 @@ public sealed record PasswordHash
 
 ### 4. Create AssemblyInfo for InternalsVisibleTo
 
-EF Core needs to access `internal` child entities from the Infrastructure project to configure mappings. Grant this at the assembly level (Rule 5).
+Child entity constructors and mutation methods are `internal`. Both Infrastructure (EF Core configurations) and Application (mapping extensions that read Address properties) need visibility. Grant both.
 
 **File: `Identity/ECommerce.Identity.Domain/Properties/AssemblyInfo.cs`**
 
@@ -203,6 +203,7 @@ EF Core needs to access `internal` child entities from the Infrastructure projec
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("ECommerce.Identity.Infrastructure")]
+[assembly: InternalsVisibleTo("ECommerce.Identity.Application")]
 ```
 
 ### 5. Create child entities
@@ -216,9 +217,9 @@ namespace ECommerce.Identity.Domain.Aggregates.User;
 
 // Child entity — NOT a value object. A user has many addresses.
 // Each address has identity: you can say "delete THIS address."
-// internal sealed: enforces aggregate boundary at compile time (Rule 5).
-// Only User.AddAddress() can create addresses.
-internal sealed class Address : Entity
+// public sealed matches Catalog ProductImage pattern: type is visible,
+// but the internal constructor enforces that only User.AddAddress() can create instances.
+public sealed class Address : Entity
 {
     public string  Street    { get; private set; } = null!;
     public string  City      { get; private set; } = null!;
@@ -250,9 +251,9 @@ using ECommerce.SharedKernel.Domain;
 
 namespace ECommerce.Identity.Domain.Aggregates.User;
 
-// internal sealed: enforces aggregate boundary at compile time (Rule 5).
+// public sealed with internal constructor — same pattern as Catalog ProductImage.
 // Only User.AddRefreshToken() can create refresh tokens.
-internal sealed class RefreshToken : Entity
+public sealed class RefreshToken : Entity
 {
     public Guid     UserId    { get; private set; }
     public string   Token     { get; private set; } = null!;
@@ -273,6 +274,19 @@ internal sealed class RefreshToken : Entity
         Token     = token;
         ExpiresAt = expiresAt;
         CreatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Reconstitution constructor — used by Infrastructure only.</summary>
+    internal RefreshToken(Guid id, Guid userId, string token, DateTime expiresAt,
+        DateTime createdAt, bool isRevoked, string? revokedReason)
+    {
+        Id            = id;
+        UserId        = userId;
+        Token         = token;
+        ExpiresAt     = expiresAt;
+        CreatedAt     = createdAt;
+        IsRevoked     = isRevoked;
+        RevokedReason = revokedReason;
     }
 
     internal void Revoke(string reason)
@@ -347,20 +361,65 @@ public sealed class User : AggregateRoot
 
     private User() { } // EF Core
 
-    // Takes pre-validated value objects. Caller (RegisterCommandHandler) validates first.
-    public static User Register(Email email, PersonName name, PasswordHash passwordHash)
+    // ── Reconstitution (Infrastructure only) ───────────────────────────────────
+
+    /// <summary>Rebuilds a User aggregate from persisted state. Called by UserRepository.</summary>
+    internal static User Reconstitute(
+        Guid id, Email email, PersonName name, PasswordHash passwordHash,
+        string? phoneNumber, UserRole role, bool isEmailVerified,
+        string? emailVerificationToken, string? passwordResetToken, DateTime? passwordResetExpiry)
     {
+        return new User
+        {
+            Id = id, Email = email, Name = name, PasswordHash = passwordHash,
+            PhoneNumber = phoneNumber, Role = role, IsEmailVerified = isEmailVerified,
+            EmailVerificationToken = emailVerificationToken,
+            PasswordResetToken = passwordResetToken, PasswordResetExpiry = passwordResetExpiry,
+        };
+    }
+
+    /// <summary>Adds an address from persisted state. Called by UserRepository after Reconstitute.</summary>
+    internal void AddReconstitutedAddress(Guid id, string street, string city, string country,
+        string? postalCode, bool isDefaultShipping, bool isDefaultBilling)
+    {
+        var address = new Address(id, street, city, country, postalCode);
+        address.SetDefaultShipping(isDefaultShipping);
+        address.SetDefaultBilling(isDefaultBilling);
+        _addresses.Add(address);
+    }
+
+    /// <summary>Adds a refresh token from persisted state. Called by UserRepository after Reconstitute.</summary>
+    internal void AddReconstitutedRefreshToken(Guid id, string token, DateTime expiresAt,
+        DateTime createdAt, bool isRevoked, string? revokedReason)
+    {
+        _refreshTokens.Add(new RefreshToken(id, Id, token, expiresAt, createdAt, isRevoked, revokedReason));
+    }
+
+    // ── Factory ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates a new User. The aggregate validates Email and PersonName internally.
+    /// Caller (RegisterCommandHandler) is responsible for uniqueness check before calling this.
+    /// </summary>
+    public static Result<User> Register(string rawEmail, string firstName, string lastName, PasswordHash passwordHash)
+    {
+        var emailResult = Email.Create(rawEmail);
+        if (!emailResult.IsSuccess) return Result<User>.Fail(emailResult.GetErrorOrThrow());
+
+        var nameResult = PersonName.Create(firstName, lastName);
+        if (!nameResult.IsSuccess) return Result<User>.Fail(nameResult.GetErrorOrThrow());
+
         var user = new User
         {
-            Email                  = email,
-            Name                   = name,
+            Email                  = emailResult.GetDataOrThrow(),
+            Name                   = nameResult.GetDataOrThrow(),
             PasswordHash           = passwordHash,
             Role                   = UserRole.Customer,
             IsEmailVerified        = false,
             EmailVerificationToken = Guid.NewGuid().ToString("N"),
         };
-        user.AddDomainEvent(new UserRegisteredEvent(user.Id, email.Value));
-        return user;
+        user.AddDomainEvent(new UserRegisteredEvent(user.Id, user.Email.Value));
+        return Result<User>.Ok(user);
     }
 
     public Result VerifyEmail(string token)
@@ -457,6 +516,15 @@ public sealed class User : AggregateRoot
     public RefreshToken? GetActiveRefreshToken(string token)
         => _refreshTokens.FirstOrDefault(t => t.Token == token && t.IsActive);
 
+    /// <summary>Revokes the token matching the given value. Returns true if found.</summary>
+    public bool RevokeRefreshToken(string token)
+    {
+        var rt = _refreshTokens.FirstOrDefault(t => t.Token == token);
+        if (rt is null) return false;
+        rt.Revoke("Rotated");
+        return true;
+    }
+
     public void RevokeAllRefreshTokens(string reason)
     {
         foreach (var t in _refreshTokens) t.Revoke(reason);
@@ -481,6 +549,12 @@ public interface IUserRepository
     Task<bool>   EmailExistsAsync(string email, CancellationToken cancellationToken = default);
     Task<User?>  GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default);
     Task AddAsync(User user, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Syncs domain User changes back to the tracked Core entity.
+    /// Required in Phase 2 (two DB models). Handlers call this before SaveChangesAsync.
+    /// Drops in Phase 3 when domain entity IS the EF entity.
+    /// </summary>
+    Task UpdateAsync(User user, CancellationToken cancellationToken = default);
     Task DeleteAsync(User user, CancellationToken cancellationToken = default);
 }
 ```
@@ -502,10 +576,13 @@ dotnet build  # Entire solution still builds
 - [ ] No `using Microsoft.EntityFrameworkCore` anywhere in Domain
 - [ ] `Email` (`sealed record`), `PersonName` (`sealed class : ValueObject`), `PasswordHash` (`sealed record`) — all created with `Result<T>` factory methods and sealed
 - [ ] `User` aggregate is `sealed class`; has `Register`, `VerifyEmail`, `ChangePassword`, `UpdateProfile`, `AddAddress`, `SetDefaultShippingAddress`, `DeleteAddress`, `AddRefreshToken`, `GetActiveRefreshToken` methods
-- [ ] `Address` and `RefreshToken` are `internal sealed class` — only User can create them
-- [ ] `Properties/AssemblyInfo.cs` with `InternalsVisibleTo("ECommerce.Identity.Infrastructure")` so EF Core can configure internal entities
+- [ ] `Address` and `RefreshToken` are `public sealed class` with `internal` constructor — type is visible, instantiation is locked to the aggregate (same pattern as Catalog `ProductImage`)
+- [ ] `Properties/AssemblyInfo.cs` with `InternalsVisibleTo` for both `ECommerce.Identity.Infrastructure` and `ECommerce.Identity.Application`
+- [ ] `User.Register` takes raw strings `(string rawEmail, string firstName, string lastName, PasswordHash)` and returns `Result<User>` — validates Email/PersonName internally
+- [ ] `User` has `Reconstitute`, `AddReconstitutedAddress`, `AddReconstitutedRefreshToken` internal methods for Infrastructure reconstitution
+- [ ] `User` has `RevokeRefreshToken(string token)` method
 - [ ] `UserRole` enum defined
 - [ ] 3 domain events defined as records
-- [ ] `IUserRepository` interface has all 6 methods including `GetByRefreshTokenAsync` and `DeleteAsync`
+- [ ] `IUserRepository` interface has all 7 methods: `GetByIdAsync`, `GetByEmailAsync`, `EmailExistsAsync`, `GetByRefreshTokenAsync`, `AddAsync`, `UpdateAsync`, `DeleteAsync`
 - [ ] `IdentityErrors` has NO `EmailTaken` or `UserNotFound` — those live in `IdentityApplicationErrors` (step-2)
 - [ ] `dotnet build` passes for Domain project and entire solution
