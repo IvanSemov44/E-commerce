@@ -37,23 +37,30 @@ public sealed class User : AggregateRoot
     // ── Factory ─────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Creates a new user with pre-validated value objects.
+    /// Creates a new user from raw values. The aggregate is the sole guardian
+    /// of invariants — it creates and validates value objects internally.
     /// Caller (RegisterCommandHandler) is responsible for uniqueness checks.
     /// </summary>
-    public static User Create(Email email, PersonName name, PasswordHash passwordHash)
+    public static Result<User> Register(string rawEmail, string firstName, string lastName, PasswordHash passwordHash)
     {
+        var emailResult = Email.Create(rawEmail);
+        if (!emailResult.IsSuccess) return Result<User>.Fail(emailResult.GetErrorOrThrow());
+
+        var nameResult = PersonName.Create(firstName, lastName);
+        if (!nameResult.IsSuccess) return Result<User>.Fail(nameResult.GetErrorOrThrow());
+
         var user = new User
         {
-            Email = email,
-            Name = name,
+            Email = emailResult.GetDataOrThrow(),
+            Name = nameResult.GetDataOrThrow(),
             PasswordHash = passwordHash,
             Role = UserRole.Customer,
             IsEmailVerified = false,
             EmailVerificationToken = Guid.NewGuid().ToString("N"),
         };
 
-        user.AddDomainEvent(new UserRegisteredEvent(user.Id, email.Value));
-        return user;
+        user.AddDomainEvent(new UserRegisteredEvent(user.Id, user.Email.Value));
+        return Result<User>.Ok(user);
     }
 
     // ── Email Verification ──────────────────────────────────────────────────────
@@ -168,6 +175,18 @@ public sealed class User : AggregateRoot
 
     public RefreshToken? GetActiveRefreshToken(string token) =>
         _refreshTokens.FirstOrDefault(t => t.Token == token && t.IsActive);
+
+    /// <summary>
+    /// Revokes a specific refresh token by its value.
+    /// Returns true if the token was found and revoked, false otherwise.
+    /// </summary>
+    public bool RevokeRefreshToken(string token)
+    {
+        var refreshToken = _refreshTokens.FirstOrDefault(t => t.Token == token);
+        if (refreshToken is null) return false;
+        refreshToken.Revoke("Rotated");
+        return true;
+    }
 
     public void RevokeAllRefreshTokens(string reason)
     {
