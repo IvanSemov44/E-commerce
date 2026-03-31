@@ -21,6 +21,7 @@ public class ForgotPasswordCommandHandler(
 
         var token = Guid.NewGuid().ToString("N");
         user.SetPasswordResetToken(token, DateTime.UtcNow.AddHours(1));
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
 
         // TODO: raise PasswordResetRequestedEvent to trigger email via event handler

@@ -27,6 +27,21 @@ public sealed class RefreshToken : Entity
         ExpiresAt = expiresAt;
     }
 
+    /// <summary>
+    /// Reconstitutes a refresh token from persisted state.
+    /// Used by Infrastructure to rebuild from EF Core entities.
+    /// </summary>
+    internal RefreshToken(Guid id, Guid userId, string token, DateTime expiresAt, DateTime createdAt, bool isRevoked, string? revokedReason)
+    {
+        Id = id;
+        UserId = userId;
+        Token = token;
+        ExpiresAt = expiresAt;
+        CreatedAt = createdAt;
+        IsRevoked = isRevoked;
+        RevokedReason = revokedReason;
+    }
+
     internal void Revoke(string reason)
     {
         IsRevoked = true;

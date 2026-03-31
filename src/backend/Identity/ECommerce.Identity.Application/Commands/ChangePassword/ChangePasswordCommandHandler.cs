@@ -31,6 +31,7 @@ public class ChangePasswordCommandHandler(
         if (!hashResult.IsSuccess) return Result.Fail(hashResult.GetErrorOrThrow());
 
         user.ChangePassword(hashResult.GetDataOrThrow());
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
         return Result.Ok();
     }

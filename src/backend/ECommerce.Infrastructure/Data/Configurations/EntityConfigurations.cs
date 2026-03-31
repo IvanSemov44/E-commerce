@@ -330,7 +330,7 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
 
         entity.HasOne(e => e.User)
-            .WithMany()
+            .WithMany(u => u.RefreshTokens)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }

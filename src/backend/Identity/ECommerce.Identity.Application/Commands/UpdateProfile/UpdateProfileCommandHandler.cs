@@ -23,6 +23,7 @@ public class UpdateProfileCommandHandler(
         if (!nameResult.IsSuccess) return Result<UserProfileDto>.Fail(nameResult.GetErrorOrThrow());
 
         user.UpdateProfile(nameResult.GetDataOrThrow(), command.PhoneNumber);
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
         return Result<UserProfileDto>.Ok(user.ToProfileDto());
     }

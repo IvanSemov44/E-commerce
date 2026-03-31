@@ -40,14 +40,13 @@ public class RegisterCommandHandler(
 
         var user = userResult.GetDataOrThrow();
 
-        // 5. Persist
-        await users.AddAsync(user, ct);
-        await uow.SaveChangesAsync(ct);
-
-        // 6. Generate tokens
+        // 5. Generate tokens and attach refresh token to aggregate before persisting
         var accessToken = jwt.GenerateAccessToken(user);
-        var rawRefresh = jwt.GenerateRefreshToken();
+        var rawRefresh  = jwt.GenerateRefreshToken();
         user.AddRefreshToken(rawRefresh, DateTime.UtcNow.AddDays(30));
+
+        // 6. Persist user + refresh token in one save
+        await users.AddAsync(user, ct);
         await uow.SaveChangesAsync(ct);
 
         return Result<AuthTokenDto>.Ok(new AuthTokenDto(accessToken, rawRefresh, user.Id));

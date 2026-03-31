@@ -21,6 +21,7 @@ public class AddAddressCommandHandler(
         var result = user.AddAddress(command.Street, command.City, command.Country, command.PostalCode);
         if (!result.IsSuccess) return Result<UserProfileDto>.Fail(result.GetErrorOrThrow());
 
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
         return Result<UserProfileDto>.Ok(user.ToProfileDto());
     }

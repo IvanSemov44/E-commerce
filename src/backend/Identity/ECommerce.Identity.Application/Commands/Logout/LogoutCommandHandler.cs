@@ -18,6 +18,7 @@ public class LogoutCommandHandler(
 
         // Idempotent: silently succeed even if token not found
         user.RevokeRefreshToken(command.RefreshToken);
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
         return Result.Ok();
     }

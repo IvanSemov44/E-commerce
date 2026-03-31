@@ -19,6 +19,7 @@ public class VerifyEmailCommandHandler(
         var result = user.VerifyEmail(command.Token);
         if (!result.IsSuccess) return result;
 
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
         return Result.Ok();
     }

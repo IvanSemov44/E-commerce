@@ -34,6 +34,7 @@ public class ResetPasswordCommandHandler(
 
         user.ChangePassword(hashResult.GetDataOrThrow());
         user.ClearPasswordResetToken();
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
         return Result.Ok();
     }

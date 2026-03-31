@@ -33,6 +33,7 @@ public class LoginCommandHandler(
         var accessToken = jwt.GenerateAccessToken(user);
         var rawRefresh = jwt.GenerateRefreshToken();
         user.AddRefreshToken(rawRefresh, DateTime.UtcNow.AddDays(30));
+        await users.UpdateAsync(user, ct);
         await uow.SaveChangesAsync(ct);
 
         return Result<AuthTokenDto>.Ok(new AuthTokenDto(accessToken, rawRefresh, user.Id));

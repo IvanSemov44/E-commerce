@@ -37,6 +37,38 @@ public sealed class User : AggregateRoot
     // ── Factory ─────────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Reconstitutes a User aggregate from persisted state.
+    /// Used by Infrastructure to rebuild aggregates from EF Core entities.
+    /// All value objects are assumed to be pre-validated (already stored in DB).
+    /// </summary>
+    internal static User Reconstitute(
+        Guid id,
+        Email email,
+        PersonName name,
+        PasswordHash passwordHash,
+        string? phoneNumber,
+        UserRole role,
+        bool isEmailVerified,
+        string? emailVerificationToken,
+        string? passwordResetToken,
+        DateTime? passwordResetExpiry)
+    {
+        return new User
+        {
+            Id = id,
+            Email = email,
+            Name = name,
+            PasswordHash = passwordHash,
+            PhoneNumber = phoneNumber,
+            Role = role,
+            IsEmailVerified = isEmailVerified,
+            EmailVerificationToken = emailVerificationToken,
+            PasswordResetToken = passwordResetToken,
+            PasswordResetExpiry = passwordResetExpiry,
+        };
+    }
+
+    /// <summary>
     /// Creates a new user from raw values. The aggregate is the sole guardian
     /// of invariants — it creates and validates value objects internally.
     /// Caller (RegisterCommandHandler) is responsible for uniqueness checks.
@@ -160,6 +192,31 @@ public sealed class User : AggregateRoot
     // ── Refresh Token Management ────────────────────────────────────────────────
 
     private const int MaxRefreshTokens = 5;
+
+    /// <summary>
+    /// Adds an address from persisted state (reconstitution).
+    /// Used by Infrastructure to rebuild from EF Core entities.
+    /// </summary>
+    internal void AddReconstitutedAddress(
+        Guid id, string street, string city, string country, string? postalCode,
+        bool isDefaultShipping, bool isDefaultBilling)
+    {
+        var address = new Address(id, street, city, country, postalCode);
+        address.SetDefaultShipping(isDefaultShipping);
+        address.SetDefaultBilling(isDefaultBilling);
+        _addresses.Add(address);
+    }
+
+    /// <summary>
+    /// Adds a refresh token that was previously persisted (reconstitution).
+    /// Used by Infrastructure to rebuild from EF Core entities.
+    /// </summary>
+    internal void AddReconstitutedRefreshToken(
+        Guid id, string token, DateTime expiresAt, DateTime createdAt, bool isRevoked, string? revokedReason)
+    {
+        var rt = new RefreshToken(id, Id, token, expiresAt, createdAt, isRevoked, revokedReason);
+        _refreshTokens.Add(rt);
+    }
 
     public RefreshToken AddRefreshToken(string token, DateTime expiresAt)
     {
