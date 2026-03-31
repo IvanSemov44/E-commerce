@@ -10,7 +10,9 @@ using ECommerce.Identity.Application.Commands.DeleteAccount;
 using ECommerce.Identity.Application.Commands.VerifyEmail;
 using ECommerce.Identity.Application.Commands.ForgotPassword;
 using ECommerce.Identity.Application.Commands.ResetPassword;
+using ECommerce.Identity.Application.Commands.UpdateUserPreferences;
 using ECommerce.Identity.Application.Queries.GetCurrentUser;
+using ECommerce.Identity.Application.Queries.GetUserPreferences;
 using ECommerce.Identity.Application.Interfaces;
 using ECommerce.Identity.Domain.Aggregates.User;
 using ECommerce.Identity.Domain.Errors;
@@ -673,6 +675,73 @@ public class CommandHandlerTests
             CancellationToken.None);
 
         Assert.IsFalse(result.IsSuccess);
+    }
+
+    // ── GetUserPreferencesQueryHandler ────────────────────────────────────────
+
+    [TestMethod]
+    public async Task GetUserPreferencesHandler_ExistingUser_ReturnsDefaults()
+    {
+        var repo = new FakeUserRepository();
+        var user = SeedUser(repo, "user@example.com");
+        var handler = new GetUserPreferencesQueryHandler(repo);
+
+        var result = await handler.Handle(
+            new GetUserPreferencesQuery(user.Id),
+            CancellationToken.None);
+
+        Assert.IsTrue(result.IsSuccess);
+        var prefs = result.GetDataOrThrow();
+        Assert.IsTrue(prefs.EmailNotifications);
+        Assert.IsFalse(prefs.SmsNotifications);
+        Assert.AreEqual("en", prefs.Language);
+    }
+
+    [TestMethod]
+    public async Task GetUserPreferencesHandler_UnknownUser_ReturnsUserNotFound()
+    {
+        var handler = new GetUserPreferencesQueryHandler(new FakeUserRepository());
+
+        var result = await handler.Handle(
+            new GetUserPreferencesQuery(Guid.NewGuid()),
+            CancellationToken.None);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityApplicationErrors.UserNotFound.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── UpdateUserPreferencesCommandHandler ───────────────────────────────────
+
+    [TestMethod]
+    public async Task UpdateUserPreferencesHandler_ValidCommand_ReturnsUpdatedDto()
+    {
+        var repo = new FakeUserRepository();
+        var user = SeedUser(repo);
+        var handler = new UpdateUserPreferencesCommandHandler(repo, new FakeUnitOfWork());
+
+        var result = await handler.Handle(
+            new UpdateUserPreferencesCommand(user.Id, false, true, false, "bg", "BGN", true),
+            CancellationToken.None);
+
+        Assert.IsTrue(result.IsSuccess);
+        var prefs = result.GetDataOrThrow();
+        Assert.IsFalse(prefs.EmailNotifications);
+        Assert.IsTrue(prefs.SmsNotifications);
+        Assert.AreEqual("bg", prefs.Language);
+        Assert.AreEqual("BGN", prefs.Currency);
+    }
+
+    [TestMethod]
+    public async Task UpdateUserPreferencesHandler_UserNotFound_ReturnsUserNotFound()
+    {
+        var handler = new UpdateUserPreferencesCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+
+        var result = await handler.Handle(
+            new UpdateUserPreferencesCommand(Guid.NewGuid(), true, false, true, "en", "USD", false),
+            CancellationToken.None);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityApplicationErrors.UserNotFound.Code, result.GetErrorOrThrow().Code);
     }
 
     // ── GetCurrentUserQueryHandler ────────────────────────────────────────────
