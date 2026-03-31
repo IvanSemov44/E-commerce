@@ -1,4 +1,4 @@
-using ECommerce.Identity.Domain.Interfaces;
+﻿using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
 using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +28,7 @@ public class UserRepository(AppDbContext _db) : IUserRepository
     }
 
     public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
-        => _db.Users.AnyAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken); // ToLowerInvariant normalised before DB compare
+        => _db.Users.AnyAsync(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase), cancellationToken); // ToLowerInvariant normalised before DB compare
 
     public async Task<DomainUser?> GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {

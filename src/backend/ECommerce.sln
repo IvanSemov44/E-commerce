@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Identity.Applicat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Identity.Infrastructure", "Identity\ECommerce.Identity.Infrastructure\ECommerce.Identity.Infrastructure.csproj", "{C24E5D2B-B589-43C7-B816-0EB3767B5AEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Identity.Tests", "Identity\ECommerce.Identity.Tests\ECommerce.Identity.Tests.csproj", "{2D4E27AF-3139-45D7-992F-4547C2D48A25}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -197,6 +199,18 @@ Global
 		{C24E5D2B-B589-43C7-B816-0EB3767B5AEF}.Release|x64.Build.0 = Release|Any CPU
 		{C24E5D2B-B589-43C7-B816-0EB3767B5AEF}.Release|x86.ActiveCfg = Release|Any CPU
 		{C24E5D2B-B589-43C7-B816-0EB3767B5AEF}.Release|x86.Build.0 = Release|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Debug|x64.Build.0 = Debug|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Debug|x86.Build.0 = Debug|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Release|x64.ActiveCfg = Release|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Release|x64.Build.0 = Release|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Release|x86.ActiveCfg = Release|Any CPU
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -205,5 +219,6 @@ Global
 		{A9F01436-758B-4AA6-8AEB-59A7F76F041C} = {2FA89949-C014-61E3-9766-4043502A0423}
 		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D} = {2FA89949-C014-61E3-9766-4043502A0423}
 		{C24E5D2B-B589-43C7-B816-0EB3767B5AEF} = {2FA89949-C014-61E3-9766-4043502A0423}
+		{2D4E27AF-3139-45D7-992F-4547C2D48A25} = {2FA89949-C014-61E3-9766-4043502A0423}
 	EndGlobalSection
 EndGlobal
