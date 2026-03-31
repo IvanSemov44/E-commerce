@@ -27,6 +27,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Identity", "Identity", "{2F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Identity.Domain", "Identity\ECommerce.Identity.Domain\ECommerce.Identity.Domain.csproj", "{A9F01436-758B-4AA6-8AEB-59A7F76F041C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Identity.Application", "Identity\ECommerce.Identity.Application\ECommerce.Identity.Application.csproj", "{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -169,11 +171,24 @@ Global
 		{A9F01436-758B-4AA6-8AEB-59A7F76F041C}.Release|x64.Build.0 = Release|Any CPU
 		{A9F01436-758B-4AA6-8AEB-59A7F76F041C}.Release|x86.ActiveCfg = Release|Any CPU
 		{A9F01436-758B-4AA6-8AEB-59A7F76F041C}.Release|x86.Build.0 = Release|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Debug|x64.Build.0 = Debug|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Debug|x86.Build.0 = Debug|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Release|x64.ActiveCfg = Release|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Release|x64.Build.0 = Release|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Release|x86.ActiveCfg = Release|Any CPU
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A9F01436-758B-4AA6-8AEB-59A7F76F041C} = {2FA89949-C014-61E3-9766-4043502A0423}
+		{0F8CC040-C2BA-4931-8F81-2052A5B1C34D} = {2FA89949-C014-61E3-9766-4043502A0423}
 	EndGlobalSection
 EndGlobal
