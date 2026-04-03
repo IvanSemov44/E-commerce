@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
+    <ProjectReference Include="..\ECommerce.Inventory.Domain\ECommerce.Inventory.Domain.csproj" />
+    <ProjectReference Include="..\ECommerce.Inventory.Application\ECommerce.Inventory.Application.csproj" />
+    <ProjectReference Include="..\..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
