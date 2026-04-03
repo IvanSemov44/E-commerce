@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,7 +17,7 @@ public class InventoryCharacterizationTests
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     // Seeded product ID from TestWebApplicationFactory (matches seed data)
-    private static readonly Guid SeededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid _seededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     public TestContext TestContext { get; set; } = null!;
 
@@ -112,7 +112,7 @@ public class InventoryCharacterizationTests
         // [AllowAnonymous] — must not return 401/403
         using var client = _factory.CreateUnauthenticatedClient();
 
-        var res = await client.GetAsync($"/api/inventory/{SeededProductId}", TestContext.CancellationToken);
+        var res = await client.GetAsync($"/api/inventory/{_seededProductId}", TestContext.CancellationToken);
 
         Assert.IsFalse(
             res.StatusCode == HttpStatusCode.Unauthorized || res.StatusCode == HttpStatusCode.Forbidden,
@@ -138,7 +138,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateUnauthenticatedClient();
 
         var res = await client.GetAsync(
-            $"/api/inventory/{SeededProductId}/available?quantity=1",
+            $"/api/inventory/{_seededProductId}/available?quantity=1",
             TestContext.CancellationToken);
 
         Assert.IsFalse(
@@ -154,7 +154,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateAdminClient();
 
         var res = await client.GetAsync(
-            $"/api/inventory/{SeededProductId}/history",
+            $"/api/inventory/{_seededProductId}/history",
             TestContext.CancellationToken);
 
         Assert.IsTrue(
@@ -168,7 +168,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateUnauthenticatedClient();
 
         var res = await client.GetAsync(
-            $"/api/inventory/{SeededProductId}/history",
+            $"/api/inventory/{_seededProductId}/history",
             TestContext.CancellationToken);
 
         Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
@@ -182,7 +182,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateUnauthenticatedClient();
 
         var res = await client.PostAsync(
-            $"/api/inventory/{SeededProductId}/adjust",
+            $"/api/inventory/{_seededProductId}/adjust",
             Json(new { Quantity = 10, Reason = "correction" }),
             TestContext.CancellationToken);
 
@@ -196,7 +196,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateAuthenticatedClient();
 
         var res = await client.PostAsync(
-            $"/api/inventory/{SeededProductId}/adjust",
+            $"/api/inventory/{_seededProductId}/adjust",
             Json(new { Quantity = 10, Reason = "correction" }),
             TestContext.CancellationToken);
 
@@ -209,7 +209,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateAdminClient();
 
         var res = await client.PostAsync(
-            $"/api/inventory/{SeededProductId}/adjust",
+            $"/api/inventory/{_seededProductId}/adjust",
             Json(new { }),
             TestContext.CancellationToken);
 
@@ -226,7 +226,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateUnauthenticatedClient();
 
         var res = await client.PostAsync(
-            $"/api/inventory/{SeededProductId}/restock",
+            $"/api/inventory/{_seededProductId}/restock",
             Json(new { Quantity = 5, Reason = "restock" }),
             TestContext.CancellationToken);
 
@@ -240,7 +240,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateAuthenticatedClient();
 
         var res = await client.PostAsync(
-            $"/api/inventory/{SeededProductId}/restock",
+            $"/api/inventory/{_seededProductId}/restock",
             Json(new { Quantity = 5, Reason = "restock" }),
             TestContext.CancellationToken);
 
@@ -254,7 +254,7 @@ public class InventoryCharacterizationTests
     {
         // [AllowAnonymous] — must not return 401/403
         using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { Items = new[] { new { ProductId = SeededProductId, Quantity = 1 } } };
+        var payload = new { Items = new[] { new { ProductId = _seededProductId, Quantity = 1 } } };
 
         var res = await client.PostAsync(
             "/api/inventory/check-availability",
@@ -270,7 +270,7 @@ public class InventoryCharacterizationTests
     public async Task CheckStockAvailability_ValidRequest_Returns200()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { Items = new[] { new { ProductId = SeededProductId, Quantity = 1 } } };
+        var payload = new { Items = new[] { new { ProductId = _seededProductId, Quantity = 1 } } };
 
         var res = await client.PostAsync(
             "/api/inventory/check-availability",
@@ -288,7 +288,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateUnauthenticatedClient();
 
         var res = await client.PutAsync(
-            $"/api/inventory/{SeededProductId}",
+            $"/api/inventory/{_seededProductId}",
             Json(new { Quantity = 100, Reason = "update" }),
             TestContext.CancellationToken);
 
@@ -302,7 +302,7 @@ public class InventoryCharacterizationTests
         using var client = _factory.CreateAuthenticatedClient();
 
         var res = await client.PutAsync(
-            $"/api/inventory/{SeededProductId}",
+            $"/api/inventory/{_seededProductId}",
             Json(new { Quantity = 100, Reason = "update" }),
             TestContext.CancellationToken);
 
@@ -315,7 +315,7 @@ public class InventoryCharacterizationTests
     public async Task BulkUpdateStock_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { Updates = new[] { new { ProductId = SeededProductId, Quantity = 5 } } };
+        var payload = new { Updates = new[] { new { ProductId = _seededProductId, Quantity = 5 } } };
 
         var res = await client.PutAsync(
             "/api/inventory/bulk-update",
@@ -330,7 +330,7 @@ public class InventoryCharacterizationTests
     {
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
-        var payload = new { Updates = new[] { new { ProductId = SeededProductId, Quantity = 5 } } };
+        var payload = new { Updates = new[] { new { ProductId = _seededProductId, Quantity = 5 } } };
 
         var res = await client.PutAsync(
             "/api/inventory/bulk-update",
