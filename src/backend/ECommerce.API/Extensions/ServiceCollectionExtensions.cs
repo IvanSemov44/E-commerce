@@ -10,6 +10,7 @@ using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
+using ECommerce.Inventory.Infrastructure;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Antiforgery;
@@ -314,6 +315,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IWishlistService, WishlistService>();
         services.AddScoped<IDashboardService, DashboardService>();
+
+        // Inventory (Phase 3 - DDD extract)
+        services.AddInventoryInfrastructure();
+
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IWebhookVerificationService, WebhookVerificationService>();
