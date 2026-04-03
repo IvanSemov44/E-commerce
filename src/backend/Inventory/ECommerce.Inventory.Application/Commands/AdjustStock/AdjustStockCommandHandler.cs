@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Inventory.Application.DTOs;
@@ -9,22 +10,36 @@ namespace ECommerce.Inventory.Application.Commands.AdjustStock;
 
 public class AdjustStockCommandHandler(
     IInventoryItemRepository _repo,
-    IUnitOfWork _uow
+    IUnitOfWork _uow,
+    ILogger<AdjustStockCommandHandler> _logger
 ) : IRequestHandler<AdjustStockCommand, Result<StockAdjustmentResultDto>>
 {
     public async Task<Result<StockAdjustmentResultDto>> Handle(
         AdjustStockCommand command, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Adjusting stock for product {ProductId} to {NewQuantity}",
+            command.ProductId, command.NewQuantity);
+
         var item = await _repo.GetByProductIdAsync(command.ProductId, cancellationToken);
         if (item is null)
+        {
+            _logger.LogWarning("Product {ProductId} not found", command.ProductId);
             return Result<StockAdjustmentResultDto>.Fail(InventoryApplicationErrors.InventoryItemNotFound);
+        }
 
         var previousQty = item.Stock.Quantity;
         var result = item.Adjust(command.NewQuantity, command.Reason);
         if (!result.IsSuccess)
+        {
+            _logger.LogWarning("Failed to adjust stock for product {ProductId}: {Error}",
+                command.ProductId, result.GetErrorOrThrow().Message);
             return Result<StockAdjustmentResultDto>.Fail(result.GetErrorOrThrow());
+        }
 
         await _uow.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Stock adjusted for product {ProductId}: {PreviousQty} -> {NewQty}",
+            command.ProductId, previousQty, item.Stock.Quantity);
 
         return Result<StockAdjustmentResultDto>.Ok(new StockAdjustmentResultDto(
             command.ProductId,
