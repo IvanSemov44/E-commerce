@@ -1,5 +1,6 @@
 ﻿using ECommerce.Core.Entities;
 using ECommerce.Infrastructure.Data.Configurations;
+using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -16,6 +17,16 @@ namespace ECommerce.Infrastructure.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDispatcher? dispatcher = null) : DbContext(options), IDataProtectionKeyContext
 {
     private readonly IDomainEventDispatcher? _dispatcher = dispatcher;
+
+    // Bounded context modules register their EF configuration assemblies here
+    // so AppDbContext can apply them without a direct project reference.
+    private static readonly List<System.Reflection.Assembly> _additionalConfigurationAssemblies = new();
+
+    public static void RegisterConfigurationAssembly(System.Reflection.Assembly assembly)
+    {
+        if (!_additionalConfigurationAssemblies.Contains(assembly))
+            _additionalConfigurationAssemblies.Add(assembly);
+    }
 
     // Users and Authentication
     public DbSet<User> Users { get; set; } = null!;
@@ -38,8 +49,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
     public DbSet<PromoCode> PromoCodes { get; set; } = null!;
 
-    // Inventory
-    public DbSet<InventoryLog> InventoryLogs { get; set; } = null!;
+    // Inventory - Legacy from Core
+    public DbSet<ECommerce.Core.Entities.InventoryLog> InventoryLogs { get; set; } = null!;
+
+    // Inventory - DDD extract (Phase 3)
+    public DbSet<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryItem> InventoryItems { get; set; } = null!;
 
     // Data Protection Keys for persistent key storage
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
@@ -51,6 +65,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
         // Apply all entity configurations from the Configurations namespace
         // Each configuration class handles its own entity's mapping and conventions
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserConfiguration).Assembly);
+
+        // Apply configurations from additional assemblies registered by bounded context modules
+        foreach (var assembly in _additionalConfigurationAssemblies)
+            modelBuilder.ApplyConfigurationsFromAssembly(assembly);
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

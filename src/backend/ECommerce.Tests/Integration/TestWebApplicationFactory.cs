@@ -27,7 +27,7 @@ namespace ECommerce.Tests.Integration;
 /// <summary>
 /// Conditional authentication handler that can enable/disable authentication based on configuration.
 /// </summary>
-public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, System.Text.Encodings.Web.UrlEncoder encoder, ISystemClock clock) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder, clock)
 {
     public const string TestUserId = "11111111-1111-1111-1111-111111111111";
     public const string TestAdminUserId = "33333333-3333-3333-3333-333333333333";
@@ -37,11 +37,6 @@ public class ConditionalTestAuthHandler : AuthenticationHandler<AuthenticationSc
     public static bool IsAuthenticationEnabled { get; set; } = true;
     public static string CurrentUserId { get; set; } = TestUserId;
     public static string CurrentUserRole { get; set; } = "Customer";
-
-    public ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, System.Text.Encodings.Web.UrlEncoder encoder, ISystemClock clock)
-        : base(options, logger, encoder, clock)
-    {
-    }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
