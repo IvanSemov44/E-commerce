@@ -25,16 +25,30 @@ const API_BASE = process.env.VITE_API_URL
 const ADMIN_EMAIL = 'admin@example.com';
 const ADMIN_PASSWORD = 'Admin123';
 
-/** Login and return the Bearer token. Fails the test if login fails. */
-async function loginAndGetToken(ctx: APIRequestContext): Promise<string> {
+/**
+ * Login using cookie-based auth. Cookies are stored automatically in the
+ * APIRequestContext — subsequent requests on the same context are authenticated.
+ * Also fires a safe GET to trigger XSRF-TOKEN cookie generation (needed for mutations).
+ */
+async function loginWithCookies(ctx: APIRequestContext): Promise<void> {
   const res = await ctx.post('auth/login', {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
   });
   expect(res.ok(), `Login failed with status ${res.status()}`).toBe(true);
   const body = await res.json();
-  const token = body.data?.token ?? body.data?.accessToken ?? body.data?.access_token;
-  expect(token, 'Login response must contain a token').toBeTruthy();
-  return token as string;
+  expect(body.success, 'Login response should have success=true').toBe(true);
+  // Fire a safe GET so the CSRF middleware sets the XSRF-TOKEN cookie
+  await ctx.get('auth/me');
+}
+
+/**
+ * Returns headers required for mutating requests (PUT/POST/DELETE).
+ * Reads the XSRF-TOKEN cookie that was set by a prior GET request.
+ */
+async function getCsrfHeaders(ctx: APIRequestContext): Promise<{ 'X-XSRF-TOKEN': string }> {
+  const state = await ctx.storageState();
+  const xsrf = state.cookies.find((c) => c.name === 'XSRF-TOKEN')?.value ?? '';
+  return { 'X-XSRF-TOKEN': xsrf };
 }
 
 test.describe('Identity API — Auth & Profile', () => {
@@ -97,7 +111,9 @@ test.describe('Identity API — Auth & Profile', () => {
   // POST /auth/login
   // ===========================================================================
 
-  test('POST /auth/login — valid credentials returns 200 with token', async () => {
+  test('POST /auth/login — valid credentials returns 200 with user data', async () => {
+    // Tokens are set as httpOnly cookies, not returned in the body.
+    // The response body contains user profile data.
     const response = await apiContext.post('auth/login', {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
@@ -105,8 +121,8 @@ test.describe('Identity API — Auth & Profile', () => {
     expect(response.ok(), `Expected 200 OK, got ${response.status()}`).toBe(true);
     const body = await response.json();
     expect(body.success).toBe(true);
-    const hasToken = body.data?.token ?? body.data?.accessToken ?? body.data?.access_token;
-    expect(hasToken).toBeTruthy();
+    expect(body.data).toHaveProperty('email');
+    expect(body.data.email).toBe(ADMIN_EMAIL);
   });
 
   test('POST /auth/login — wrong password returns 401', async () => {
@@ -172,23 +188,14 @@ test.describe('Identity API — Auth & Profile', () => {
   });
 
   test('GET /auth/me — valid token returns 200 with email field', async () => {
-    const token = await loginAndGetToken(apiContext);
+    await loginWithCookies(apiContext);
 
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiContext.get('auth/me');
+    expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
 
-    try {
-      const response = await ctx.get('auth/me');
-      expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
-
-      const body = await response.json();
-      expect(body.success).toBe(true);
-      expect(body.data).toHaveProperty('email');
-    } finally {
-      await ctx.dispose();
-    }
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.data).toHaveProperty('email');
   });
 
   // ===========================================================================
@@ -202,26 +209,17 @@ test.describe('Identity API — Auth & Profile', () => {
   });
 
   test('GET /profile — valid token returns 200 with expected shape', async () => {
-    const token = await loginAndGetToken(apiContext);
+    await loginWithCookies(apiContext);
 
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiContext.get('profile');
+    expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
 
-    try {
-      const response = await ctx.get('profile');
-      expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
-
-      const body = await response.json();
-      expect(body.success).toBe(true);
-      // Profile must expose at minimum: email
-      const data = body.data;
-      const hasEmail = data?.email ?? data?.Email;
-      expect(hasEmail).toBeTruthy();
-    } finally {
-      await ctx.dispose();
-    }
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    // Profile must expose at minimum: email
+    const data = body.data;
+    const hasEmail = data?.email ?? data?.Email;
+    expect(hasEmail).toBeTruthy();
   });
 
   // ===========================================================================
@@ -237,41 +235,25 @@ test.describe('Identity API — Auth & Profile', () => {
   });
 
   test('PUT /profile — valid token and data returns 200', async () => {
-    const token = await loginAndGetToken(apiContext);
+    await loginWithCookies(apiContext);
 
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` },
+    const response = await apiContext.put('profile', {
+      data: { firstName: 'Updated', lastName: 'Admin' },
+      headers: await getCsrfHeaders(apiContext),
     });
 
-    try {
-      const response = await ctx.put('profile', {
-        data: { firstName: 'Updated', lastName: 'Admin' },
-      });
-
-      expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
-    } finally {
-      await ctx.dispose();
-    }
+    expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
   });
 
   test('PUT /profile — missing required fields returns 400', async () => {
-    const token = await loginAndGetToken(apiContext);
+    await loginWithCookies(apiContext);
 
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` },
+    const response = await apiContext.put('profile', {
+      data: {}, // missing firstName and lastName
+      headers: await getCsrfHeaders(apiContext),
     });
 
-    try {
-      const response = await ctx.put('profile', {
-        data: {}, // missing firstName and lastName
-      });
-
-      expect(response.status()).toBe(400);
-    } finally {
-      await ctx.dispose();
-    }
+    expect(response.status()).toBe(400);
   });
 
   // ===========================================================================
@@ -287,38 +269,24 @@ test.describe('Identity API — Auth & Profile', () => {
   });
 
   test('POST /profile/change-password — missing fields returns 400', async () => {
-    const token = await loginAndGetToken(apiContext);
+    await loginWithCookies(apiContext);
 
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` },
+    const response = await apiContext.post('profile/change-password', {
+      data: {},
+      headers: await getCsrfHeaders(apiContext),
     });
-
-    try {
-      const response = await ctx.post('profile/change-password', { data: {} });
-      expect(response.status()).toBe(400);
-    } finally {
-      await ctx.dispose();
-    }
+    expect(response.status()).toBe(400);
   });
 
   test('POST /profile/change-password — wrong old password returns 4xx', async () => {
-    const token = await loginAndGetToken(apiContext);
+    await loginWithCookies(apiContext);
 
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` },
+    const response = await apiContext.post('profile/change-password', {
+      data: { oldPassword: 'DefinitelyWrong999', newPassword: 'NewPass1!' },
+      headers: await getCsrfHeaders(apiContext),
     });
 
-    try {
-      const response = await ctx.post('profile/change-password', {
-        data: { oldPassword: 'DefinitelyWrong999', newPassword: 'NewPass1!' },
-      });
-
-      expect(response.status()).toBeGreaterThanOrEqual(400);
-      expect(response.status()).toBeLessThan(500);
-    } finally {
-      await ctx.dispose();
-    }
+    expect(response.status()).toBeGreaterThanOrEqual(400);
+    expect(response.status()).toBeLessThan(500);
   });
 });

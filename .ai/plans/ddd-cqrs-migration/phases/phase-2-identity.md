@@ -353,26 +353,31 @@ Notice: `_hasher.Verify()` and `_jwt.GenerateAccessToken()` are infrastructure. 
 Full testing guide: `.ai/plans/ddd-cqrs-migration/testing/README.md`
 
 **Characterization (integration — slow):**
-- [ ] Characterization tests written and PASSING against OLD service (before any migration)
-- [ ] Characterization tests still PASSING after cutover to new handlers
+- [x] Characterization tests written and PASSING against OLD service (before any migration)
+- [x] Characterization tests still PASSING after cutover to new handlers
 
 **Domain unit tests (fast — written after domain aggregates are delivered):**
-- [ ] `ECommerce.Identity.Tests/Domain/UserTests.cs` written and PASSING
+- [x] `ECommerce.Identity.Tests/Domain/UserTests.cs` written and PASSING
 - Covers: Register, VerifyEmail, ChangePassword, AddAddress invariants, value object validation
 
 **Handler unit tests (fast — written after handlers are delivered):**
-- [ ] `ECommerce.Identity.Tests/Handlers/` tests written and PASSING
+- [x] `ECommerce.Identity.Tests/Application/CommandHandlerTests.cs` written and PASSING (90 tests total)
 - Covers: LoginCommand, RegisterCommand orchestration, correct Result returned
 
 **Code:**
-- [ ] `Email`, `PersonName`, `PasswordHash` value objects with validation
-- [ ] `User` aggregate with `Register`, `VerifyEmail`, `ChangePassword`, `AddAddress`, `AddRefreshToken` domain methods
-- [ ] `Address` and `RefreshToken` as child entities (not value objects)
-- [ ] `IPasswordHasher` and `IJwtTokenService` interfaces in Application (not Domain)
-- [ ] Implementations in Infrastructure
-- [ ] `LoginCommand` handler orchestrates without domain knowing about hashing
-- [ ] EF configurations: Email as `HasConversion`, PersonName as `OwnsOne`
-- [ ] Old `AuthService`, `UserService` deleted after characterization tests pass on new handlers
+- [x] `Email`, `PersonName`, `PasswordHash` value objects with validation
+- [x] `User` aggregate with `Register`, `VerifyEmail`, `ChangePassword`, `AddAddress`, `AddRefreshToken` domain methods
+- [x] `Address` and `RefreshToken` as child entities (not value objects)
+- [x] `IPasswordHasher` and `IJwtTokenService` interfaces in Application (not Domain)
+- [x] Implementations in Infrastructure
+- [x] `LoginCommand` handler orchestrates without domain knowing about hashing
+- [x] EF configurations: Email as `HasConversion`, PersonName as `OwnsOne`
+- [x] Old `AuthService`, `UserService` deleted after characterization tests pass on new handlers
+
+**Status: COMPLETE — 2026-04-03**
+- 90 Identity unit tests passing
+- 15 AuthControllerTests + 12 ProfileControllerTests + 13 AuthCharacterization + 9 ProfileCharacterization passing
+- 49/49 E2E API tests passing (api-auth.spec.ts + api-catalog.spec.ts)
 
 ## What You Learned in Phase 2
 

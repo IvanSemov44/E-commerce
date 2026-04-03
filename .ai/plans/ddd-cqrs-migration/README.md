@@ -51,9 +51,9 @@ Before starting any implementation, read in this order:
 
 | # | Context | Key Aggregates | Why This Order |
 |---|---------|----------------|----------------|
-| 0 | Foundation | SharedKernel, MediatR | Infrastructure needed by everything |
-| 1 | **Catalog** | Product, Category | Simplest, most referenced, best to learn on |
-| 2 | **Identity** | User | Deep dive into Value Objects |
+| 0 | Foundation ✅ | SharedKernel, MediatR | Infrastructure needed by everything |
+| 1 | **Catalog** ✅ | Product, Category | Simplest, most referenced, best to learn on |
+| 2 | **Identity** ✅ | User | Deep dive into Value Objects |
 | 3 | **Inventory** | InventoryItem | Introduces Domain Events |
 | 4 | **Shopping** | Cart, Wishlist | Aggregate Root with child entities |
 | 5 | **Promotions** | PromoCode | Domain Services pattern |

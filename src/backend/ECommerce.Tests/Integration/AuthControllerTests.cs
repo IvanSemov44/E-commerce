@@ -298,7 +298,7 @@ public class AuthControllerTests
         using var client = _factory.CreateUnauthenticatedClient();
         var loginDto = new
         {
-            Email = "integration@test",  // Use seeded test user
+            Email = "integration@test.com",  // Use seeded test user
             Password = "TestPassword123!"
         };
 
