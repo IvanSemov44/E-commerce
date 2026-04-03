@@ -1,43 +1,32 @@
-﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.ActionFilters;
 using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
-using ECommerce.Application.Interfaces;
-using ECommerce.Core.Results;
+using ECommerce.Inventory.Application.Commands.IncreaseStock;
+using ECommerce.Inventory.Application.Commands.ReduceStock;
+using ECommerce.Inventory.Application.Commands.AdjustStock;
+using ECommerce.Inventory.Application.Queries.GetInventory;
+using ECommerce.Inventory.Application.Queries.GetInventoryByProductId;
+using ECommerce.Inventory.Application.Queries.GetInventoryHistory;
+using ECommerce.Inventory.Application.Queries.GetLowStockItems;
+using ECommerce.SharedKernel.Results;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;
 
-/// <summary>
-/// Controller for inventory and stock management operations.
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Inventory")]
 [Authorize(Roles = "Admin,SuperAdmin")]
-public class InventoryController : ControllerBase
+public class InventoryController(IMediator mediator) : ControllerBase
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly ICurrentUserService _currentUser;
-    private readonly ILogger<InventoryController> _logger;
+    private readonly IMediator _mediator = mediator;
 
-    public InventoryController(
-        IInventoryService inventoryService,
-        ICurrentUserService currentUser,
-        ILogger<InventoryController> logger)
-    {
-        _inventoryService = inventoryService;
-        _currentUser = currentUser;
-        _logger = logger;
-    }
-
-    /// <summary>
-    /// Get all inventory with pagination and filters.
-    /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<object>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -49,22 +38,16 @@ public class InventoryController : ControllerBase
         [FromQuery] InventoryQueryParameters parameters,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Retrieving inventory (page: {Page}, pageSize: {PageSize}, search: {Search}, lowStockOnly: {LowStockOnly})",
-            parameters.Page, parameters.PageSize, parameters.Search, parameters.LowStockOnly);
+        var result = await _mediator.Send(
+            new GetInventoryQuery(parameters.Page, parameters.PageSize, parameters.Search, parameters.LowStockOnly ?? false), cancellationToken);
 
-        var inventory = await _inventoryService.GetAllInventoryAsync(parameters, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<PaginatedResult<InventoryDto>>.Ok(inventory, "Inventory retrieved successfully"));
+        return result.IsSuccess
+            ? Ok(ApiResponse<List<object>>.Ok(result.GetDataOrThrow().Cast<object>().ToList(), "Inventory retrieved successfully"))
+            : MapInventoryResult(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Get products with low stock.
-    /// </summary>
-    /// <param name="threshold">Optional threshold value (default from config).</param>
-    /// <param name="page">Page number (minimum 1).</param>
-    /// <param name="pageSize">Page size (minimum 1, maximum 100).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("low-stock")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<LowStockAlertDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<object>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -78,19 +61,13 @@ public class InventoryController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
+        var result = await _mediator.Send(new GetLowStockItemsQuery(threshold), cancellationToken);
 
-        _logger.LogInformation("Retrieving low stock products with threshold: {Threshold}", threshold);
-        var result = await _inventoryService.GetLowStockProductsAsync(page, pageSize, threshold, cancellationToken: cancellationToken);
-
-        return Ok(ApiResponse<PaginatedResult<LowStockAlertDto>>.Ok(result, "Low stock products retrieved successfully"));
+        return result.IsSuccess
+            ? Ok(ApiResponse<List<object>>.Ok(result.GetDataOrThrow().Cast<object>().ToList(), "Low stock products retrieved successfully"))
+            : MapInventoryResult(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Get inventory for a specific product.
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("{productId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -103,26 +80,13 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetProductStock(Guid productId, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Retrieving stock for product {ProductId}", productId);
+        var result = await _mediator.Send(new GetInventoryByProductIdQuery(productId), cancellationToken);
 
-        var stockCheck = await _inventoryService.CheckStockAvailabilityAsync(
-            new List<StockCheckItemDto> { new() { ProductId = productId, Quantity = 0 } },
-            cancellationToken);
-
-        if (stockCheck.Issues.Any(i => i.Message == "Product not found"))
-            return NotFound(ApiResponse<object>.Failure("Product not found", "PRODUCT_NOT_FOUND"));
-
-        var isAvailable = await _inventoryService.IsStockAvailableAsync(productId, 1, cancellationToken);
-        var result = new { ProductId = productId, IsAvailable = isAvailable };
-        return Ok(ApiResponse<object>.Ok(result, "Product stock retrieved successfully"));
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Product stock retrieved successfully"))
+            : MapInventoryResult(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Check if a specific quantity of a product is available.
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <param name="quantity">The quantity to check.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("{productId:guid}/available")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<dynamic>), StatusCodes.Status200OK)]
@@ -135,18 +99,18 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CheckAvailableQuantity(Guid productId, [FromQuery] int quantity, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Checking availability for product {ProductId} with quantity {Quantity}", productId, quantity);
+        var result = await _mediator.Send(new GetInventoryByProductIdQuery(productId), cancellationToken);
+        if (!result.IsSuccess) return MapInventoryResult(result.GetErrorOrThrow());
 
-        var isAvailable = await _inventoryService.IsStockAvailableAsync(productId, quantity, cancellationToken);
-        var result = new { ProductId = productId, RequestedQuantity = quantity, IsAvailable = isAvailable };
-        return Ok(ApiResponse<object>.Ok(result, "Availability check completed"));
+        var item = result.GetDataOrThrow();
+        var isAvailable = item.Quantity >= quantity;
+        return Ok(ApiResponse<object>.Ok(
+            new { ProductId = productId, RequestedQuantity = quantity, IsAvailable = isAvailable },
+            "Availability check completed"));
     }
 
-    /// <summary>
-    /// Get inventory history for a specific product.
-    /// </summary>
     [HttpGet("{productId}/history")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryLogDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<object>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -160,24 +124,16 @@ public class InventoryController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
+        var result = await _mediator.Send(new GetInventoryHistoryQuery(productId, page, pageSize), cancellationToken);
 
-        _logger.LogInformation("Retrieving inventory history for product {ProductId} (page: {Page}, pageSize: {PageSize})",
-            productId, page, pageSize);
-
-        var history = await _inventoryService.GetInventoryHistoryAsync(productId, page, pageSize, cancellationToken: cancellationToken);
-        return Ok(ApiResponse<PaginatedResult<InventoryLogDto>>.Ok(history, "Inventory history retrieved successfully"));
+        return result.IsSuccess
+            ? Ok(ApiResponse<List<object>>.Ok(result.GetDataOrThrow().Cast<object>().ToList(), "Inventory history retrieved successfully"))
+            : MapInventoryResult(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Adjust stock quantity for a product.
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <param name="request">Stock adjustment request.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("{productId}/adjust")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -187,50 +143,17 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AdjustStock(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var result = await _mediator.Send(
+            new AdjustStockCommand(productId, request.Quantity, request.Reason ?? "adjustment"), cancellationToken);
 
-        _logger.LogInformation("Adjusting stock for product {ProductId} to {Quantity} (User: {UserId})",
-            productId, request.Quantity, userId);
-
-        // Capture current quantity before adjustment to compute the delta
-        var current = await _inventoryService.GetProductByIdAsync(productId, cancellationToken);
-        if (current is Result<InventoryDto>.Failure notFound)
-        {
-            return NotFound(ApiResponse<object>.Failure(notFound.Message, notFound.Code));
-        }
-        var previousQty = ((Result<InventoryDto>.Success)current).Data.StockQuantity;
-
-        await _inventoryService.AdjustStockAsync(
-            productId,
-            request.Quantity,
-            request.Reason,
-            request.Notes,
-            userId,
-            cancellationToken: cancellationToken
-        );
-
-        var quantityChanged = request.Quantity - previousQty;
-
-        var response = new StockAdjustmentResponseDto
-        {
-            ProductId = productId,
-            NewQuantity = request.Quantity,
-            QuantityChanged = quantityChanged,
-            AdjustedAt = DateTime.UtcNow
-        };
-
-        return Ok(ApiResponse<StockAdjustmentResponseDto>.Ok(response, "Stock adjusted successfully"));
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Stock adjusted successfully"))
+            : MapInventoryResult(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Increase stock (restock) for a product.
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <param name="request">Restock request.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("{productId}/restock")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -240,43 +163,18 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RestockProduct(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var result = await _mediator.Send(
+            new IncreaseStockCommand(productId, request.Quantity, request.Reason ?? "restock"), cancellationToken);
 
-        _logger.LogInformation("Restocking product {ProductId} with {Quantity} units (User: {UserId})",
-            productId, request.Quantity, userId);
-
-        await _inventoryService.IncreaseStockAsync(
-            productId,
-            request.Quantity,
-            request.Reason ?? "restock",
-            null,
-            userId,
-            cancellationToken: cancellationToken
-        );
-
-        var restocked = await _inventoryService.GetProductByIdAsync(productId, cancellationToken);
-        var newQuantity = restocked is Result<InventoryDto>.Success success ? success.Data.StockQuantity : 0;
-
-        var response = new StockAdjustmentResponseDto
-        {
-            ProductId = productId,
-            NewQuantity = newQuantity,
-            QuantityChanged = request.Quantity,
-            AdjustedAt = DateTime.UtcNow
-        };
-
-        return Ok(ApiResponse<StockAdjustmentResponseDto>.Ok(response, $"Stock increased by {request.Quantity} units"));
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), $"Stock increased by {request.Quantity} units"))
+            : MapInventoryResult(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Check stock availability for items (used by storefront before checkout).
-    /// </summary>
-    /// <param name="request">Stock check request.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("check-availability")]
     [AllowAnonymous]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<StockCheckResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -286,23 +184,34 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CheckStockAvailability([FromBody] StockCheckRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Checking stock availability for {ItemCount} items", request.Items.Count);
+        var issues = new List<object>();
+        bool allAvailable = true;
 
-        var result = await _inventoryService.CheckStockAvailabilityAsync(request.Items, cancellationToken: cancellationToken);
-        var message = result.IsAvailable ? "All items are available" : "Some items have stock issues";
+        foreach (var item in request.Items)
+        {
+            var result = await _mediator.Send(new GetInventoryByProductIdQuery(item.ProductId), cancellationToken);
+            if (!result.IsSuccess)
+            {
+                issues.Add(new { item.ProductId, Message = "Product not found" });
+                allAvailable = false;
+                continue;
+            }
+            var inv = result.GetDataOrThrow();
+            if (inv.Quantity < item.Quantity)
+            {
+                issues.Add(new { item.ProductId, Available = inv.Quantity, Requested = item.Quantity, Message = "Insufficient stock" });
+                allAvailable = false;
+            }
+        }
 
-        return Ok(ApiResponse<StockCheckResponse>.Ok(result, message));
+        return Ok(ApiResponse<object>.Ok(
+            new { IsAvailable = allAvailable, Issues = issues },
+            allAvailable ? "All items are available" : "Some items have stock issues"));
     }
 
-    /// <summary>
-    /// Updates stock for a specific product (admin only).
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <param name="request">The stock update request.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("{productId:guid}")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<StockAdjustmentResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -312,37 +221,17 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateProductStock(Guid productId, [FromBody] AdjustStockRequest request, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
-        _logger.LogInformation("Updating stock for product {ProductId} to {Quantity} (User: {UserId})", productId, request.Quantity, userId);
+        var result = await _mediator.Send(
+            new AdjustStockCommand(productId, request.Quantity, request.Reason ?? "stock_update"), cancellationToken);
 
-        await _inventoryService.AdjustStockAsync(
-            productId,
-            request.Quantity,
-            request.Reason ?? "stock_update",
-            request.Notes,
-            userId,
-            cancellationToken: cancellationToken
-        );
-
-        var response = new StockAdjustmentResponseDto
-        {
-            ProductId = productId,
-            NewQuantity = request.Quantity,
-            QuantityChanged = request.Quantity,
-            AdjustedAt = DateTime.UtcNow
-        };
-
-        return Ok(ApiResponse<StockAdjustmentResponseDto>.Ok(response, "Product stock updated successfully"));
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Product stock updated successfully"))
+            : MapInventoryResult(result.GetErrorOrThrow());
     }
 
-    /// <summary>
-    /// Bulk updates stock for multiple products (admin only).
-    /// </summary>
-    /// <param name="request">Bulk update request containing list of updates.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("bulk-update")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<StockAdjustmentResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<object>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -352,39 +241,32 @@ public class InventoryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> BulkUpdateStock([FromBody] BulkStockUpdateRequest request, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
-        _logger.LogInformation("Bulk updating stock for {ProductCount} products (User: {UserId})", request.Updates.Count, userId);
-
-        var responses = new List<StockAdjustmentResponseDto>();
+        var responses = new List<object>();
         foreach (var update in request.Updates)
         {
-            await _inventoryService.AdjustStockAsync(
-                update.ProductId,
-                update.Quantity,
-                "bulk_update",
-                null,
-                userId,
-                cancellationToken: cancellationToken
-            );
-
-            responses.Add(new StockAdjustmentResponseDto
-            {
-                ProductId = update.ProductId,
-                NewQuantity = update.Quantity,
-                QuantityChanged = update.Quantity,
-                AdjustedAt = DateTime.UtcNow
-            });
+            var result = await _mediator.Send(
+                new AdjustStockCommand(update.ProductId, update.Quantity, "bulk_update"), cancellationToken);
+            if (result.IsSuccess) responses.Add(result.GetDataOrThrow());
         }
 
-        var result = new PaginatedResult<StockAdjustmentResponseDto>
-        {
-            Items = responses,
-            TotalCount = responses.Count,
-            Page = 1,
-            PageSize = responses.Count
-        };
-
-        return Ok(ApiResponse<PaginatedResult<StockAdjustmentResponseDto>>.Ok(result, "Stock updated successfully"));
+        return Ok(ApiResponse<List<object>>.Ok(
+            responses,
+            "Stock updated successfully"));
     }
-}
 
+    private IActionResult MapInventoryResult(DomainError error) => error.Code switch
+    {
+        "INVENTORY_ITEM_NOT_FOUND"
+            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
+
+        "INSUFFICIENT_STOCK" or "STOCK_NEGATIVE"
+        or "REDUCE_AMOUNT_INVALID" or "INCREASE_AMOUNT_INVALID"
+        or "THRESHOLD_NEGATIVE"
+            => UnprocessableEntity(ApiResponse<object>.Failure(error.Message, error.Code)),
+
+        "VALIDATION_FAILED"
+            => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
+
+        _ => StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", error.Code))
+    };
+}

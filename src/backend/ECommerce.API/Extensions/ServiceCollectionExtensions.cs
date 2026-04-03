@@ -320,6 +320,7 @@ public static class ServiceCollectionExtensions
         services.AddInventoryInfrastructure();
 
         services.AddScoped<IPromoCodeService, PromoCodeService>();
+        // IInventoryService kept for OrderService compatibility
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IWebhookVerificationService, WebhookVerificationService>();
 
