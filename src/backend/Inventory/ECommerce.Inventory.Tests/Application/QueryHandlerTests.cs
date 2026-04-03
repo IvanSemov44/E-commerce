@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -26,7 +26,7 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetInventoryQuery(), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(0, result.GetDataOrThrow().Count);
+        Assert.IsEmpty(result.GetDataOrThrow());
     }
 
     [TestMethod]
@@ -40,7 +40,7 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetInventoryQuery(), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(2, result.GetDataOrThrow().Count);
+        Assert.HasCount(2, result.GetDataOrThrow());
     }
 
     [TestMethod]
@@ -54,7 +54,7 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetInventoryQuery(LowStockOnly: true), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(1, result.GetDataOrThrow().Count);
+        Assert.HasCount(1, result.GetDataOrThrow());
         Assert.IsTrue(result.GetDataOrThrow()[0].IsLowStock);
     }
 
@@ -117,7 +117,7 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetInventoryHistoryQuery(productId), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(2, result.GetDataOrThrow().Count);
+        Assert.HasCount(2, result.GetDataOrThrow());
     }
 
     [TestMethod]
@@ -143,6 +143,6 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetLowStockItemsQuery(ThresholdOverride: 20), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(2, result.GetDataOrThrow().Count);
+        Assert.HasCount(2, result.GetDataOrThrow());
     }
 }

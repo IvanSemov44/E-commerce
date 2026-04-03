@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -35,7 +35,7 @@ public class EventHandlerTests
         var productId = Guid.NewGuid();
         await handler.Handle(new LowStockDetectedEvent(productId, 5, 10), default);
 
-        Assert.AreEqual(1, email.Calls.Count);
+        Assert.HasCount(1, email.Calls);
         Assert.AreEqual(productId, email.Calls[0].ProductId);
         Assert.AreEqual(5, email.Calls[0].CurrentStock);
         Assert.AreEqual(10, email.Calls[0].Threshold);
@@ -63,7 +63,7 @@ public class EventHandlerTests
 
         await handler.Handle(new LowStockDetectedEvent(Guid.NewGuid(), 2, 10), default);
 
-        Assert.AreEqual(0, email.Calls.Count);
+        Assert.IsEmpty(email.Calls);
     }
 }
 
