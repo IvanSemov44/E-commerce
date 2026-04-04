@@ -43,6 +43,14 @@ jobs:
   # Backend tests
   backend-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: shard-a
+            test_filter: '(FullyQualifiedName~AddToCartCreateOrderTests|FullyQualifiedName~AuthControllerTests|FullyQualifiedName~CartControllerTests|FullyQualifiedName~DashboardControllerTests|FullyQualifiedName~HealthCheckEndpointsTests|FullyQualifiedName~InventoryControllerTests|FullyQualifiedName~OrdersControllerTests|FullyQualifiedName~ProductsControllerTests|FullyQualifiedName~ProfileControllerTests|FullyQualifiedName~WishlistControllerTests)'
+          - shard: shard-b
+            test_filter: '(FullyQualifiedName~AuthCharacterizationTests|FullyQualifiedName~CartCharacterizationTests|FullyQualifiedName~CategoriesCharacterizationTests|FullyQualifiedName~CategoriesControllerTests|FullyQualifiedName~InventoryCharacterizationTests|FullyQualifiedName~PaymentsControllerTests|FullyQualifiedName~ProductsCharacterizationTests|FullyQualifiedName~ProfileCharacterizationTests|FullyQualifiedName~PromoCodesControllerTests|FullyQualifiedName~ReviewsControllerTests|FullyQualifiedName~WishlistCharacterizationTests)'
     services:
       postgres:
         image: postgres:alpine
@@ -73,7 +81,7 @@ jobs:
         run: dotnet build src/backend/ECommerce.sln --no-restore
       
       - name: Test
-        run: dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --no-restore --verbosity normal
+        run: dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --settings src/backend/ECommerce.Tests/.runsettings --no-build --filter "${{ matrix.test_filter }}" --verbosity normal
         env:
           ConnectionStrings__DefaultConnection: 'Host=localhost;Database=ECommerceTestDb;Username=test;Password=test'
           
@@ -81,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: backend-test-results
+          name: backend-test-results-${{ matrix.shard }}
           path: |
             src/backend/ECommerce.Tests/TestResults/
             **/*.trx
