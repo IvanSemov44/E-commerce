@@ -150,7 +150,7 @@ public class AuthController(
         {
             // Fire-and-forget merge; don't block login on merge failure
             _ = mediator.Send(new MergeCartCommand(data.UserId, sessionId), ct)
-                .ContinueWith(_ => Response.Cookies.Delete("CartSession"));
+                .ContinueWith(_ => Response.Cookies.Delete("CartSession"), ct);
         }
 
         // Fetch user profile to include in response
