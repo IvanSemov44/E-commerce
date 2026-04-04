@@ -98,18 +98,21 @@ public class CartController : ControllerBase
 
     /// <summary>
     /// Adds a product to the shopping cart or increments its quantity if already present.
+    /// BREAKING CHANGE (Phase 4): Now requires authentication (was AllowAnonymous).
     /// </summary>
     /// <param name="dto">The product and quantity to add.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The updated shopping cart.</returns>
     /// <response code="200">Item added to cart successfully.</response>
     /// <response code="400">Invalid request data.</response>
+    /// <response code="401">User not authenticated.</response>
     /// <response code="404">Product not found or insufficient stock.</response>
     [HttpPost("add-item")]
-    [AllowAnonymous]
+    [Authorize]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> AddToCart([FromBody] AddToCartDto dto, CancellationToken cancellationToken)
@@ -135,6 +138,7 @@ public class CartController : ControllerBase
 
     /// <summary>
     /// Updates the quantity of a specific item in the shopping cart.
+    /// BREAKING CHANGE (Phase 4): Now requires authentication (was AllowAnonymous).
     /// </summary>
     /// <param name="cartItemId">The cart item ID.</param>
     /// <param name="dto">The updated quantity.</param>
@@ -142,13 +146,15 @@ public class CartController : ControllerBase
     /// <returns>The updated shopping cart.</returns>
     /// <response code="200">Cart item updated successfully.</response>
     /// <response code="400">Invalid quantity or insufficient stock.</response>
+    /// <response code="401">User not authenticated.</response>
     /// <response code="404">Cart item not found.</response>
     [HttpPut("update-item/{cartItemId:guid}")]
     [HttpPut("items/{cartItemId:guid}")]
-    [AllowAnonymous]
+    [Authorize]
     [ValidationFilter]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CartDto>>> UpdateCartItem(Guid cartItemId, [FromBody] UpdateCartItemDto dto, CancellationToken cancellationToken)
