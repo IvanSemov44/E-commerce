@@ -5,17 +5,14 @@ const API_BASE = process.env.VITE_API_URL
   : 'http://localhost:5000/api/';
 
 const ADMIN_EMAIL = 'admin@test.com';
-const ADMIN_PASSWORD = 'Admin123!';
+const ADMIN_PASSWORD = 'TestPassword123!';
 
-async function loginAndGetToken(ctx: APIRequestContext): Promise<string> {
+async function loginAndGetToken(ctx: APIRequestContext): Promise<APIRequestContext> {
   const res = await ctx.post('auth/login', {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
   });
   expect(res.ok(), `Login failed with status ${res.status()}`).toBe(true);
-  const body = await res.json();
-  const token = body.data?.token ?? body.data?.accessToken ?? body.data?.access_token;
-  expect(token, 'Login response must contain a token').toBeTruthy();
-  return token as string;
+  return ctx;
 }
 
 test.describe('Cart API', () => {
@@ -36,24 +33,17 @@ test.describe('Cart API', () => {
   });
 
   test('GET /cart — valid token returns 200 with cart shape', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` },
-    });
+    // Login with the context (which preserves cookies)
+    const ctx = await loginAndGetToken(apiContext);
 
-    try {
-      const response = await ctx.get('cart');
-      expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
+    const response = await ctx.get('cart');
+    expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
 
-      const body = await response.json();
-      expect(body.success).toBe(true);
-      const data = body.data;
-      const hasItems = Array.isArray(data?.items) || Array.isArray(data?.Items);
-      expect(hasItems, 'Cart data must have items array').toBe(true);
-    } finally {
-      await ctx.dispose();
-    }
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    const data = body.data;
+    const hasItems = Array.isArray(data?.items) || Array.isArray(data?.Items);
+    expect(hasItems, 'Cart data must have items array').toBe(true);
   });
 
   // POST /cart/get-or-create — anonymous
