@@ -8,6 +8,7 @@ using ECommerce.Catalog.Infrastructure;
 using ECommerce.Catalog.Application.Commands.CreateProduct;
 using ECommerce.Identity.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
+using ECommerce.Promotions.Application.Commands.CreatePromoCode;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -88,7 +89,7 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
     // Phase 3: cfg.RegisterServicesFromAssembly(typeof(ReduceStockCommand).Assembly);
     // Phase 4: cfg.RegisterServicesFromAssembly(typeof(AddToCartCommand).Assembly);
-    // Phase 5: cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
     // Phase 6: cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
     // Phase 7: cfg.RegisterServicesFromAssembly(typeof(PlaceOrderCommand).Assembly);
 

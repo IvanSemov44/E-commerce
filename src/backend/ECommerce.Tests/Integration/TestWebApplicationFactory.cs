@@ -112,6 +112,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            // Register Promotions configuration assembly before replacing DbContext
+            // This ensures the PromoCode entity configuration is available
+            ECommerce.Infrastructure.Data.AppDbContext.RegisterConfigurationAssembly(
+                typeof(ECommerce.Promotions.Infrastructure.DependencyInjection).Assembly);
+
             // Replace AppDbContext with InMemory DB
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
             if (descriptor != null) services.Remove(descriptor);

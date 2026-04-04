@@ -93,9 +93,13 @@ public class PromoCodeCharacterizationTests
     public async Task GetAllPromoCodes_AdminRole_Returns200WithPaginatedShape()
     {
         using var client = _factory.CreateAdminClient();
-        var body = JsonSerializer.Deserialize<JsonElement>(
-            await (await client.GetAsync("/api/promo-codes?page=1&pageSize=10")).Content.ReadAsStringAsync(), _json);
-        Assert.IsTrue(body.TryGetProperty("data", out var data));
+        var response = await client.GetAsync("/api/promo-codes?page=1&pageSize=10");
+        var responseBody = await response.Content.ReadAsStringAsync();
+        System.Diagnostics.Debug.WriteLine($"Status: {response.StatusCode}");
+        System.Diagnostics.Debug.WriteLine($"Response: {responseBody}");
+
+        var body = JsonSerializer.Deserialize<JsonElement>(responseBody, _json);
+        Assert.IsTrue(body.TryGetProperty("data", out var data), $"'data' property not found. Response keys: {string.Join(", ", body.EnumerateObject().Select(p => p.Name))}");
         Assert.IsTrue(data.TryGetProperty("items", out _));
         Assert.IsTrue(data.TryGetProperty("totalCount", out _));
     }
