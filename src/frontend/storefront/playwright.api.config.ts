@@ -7,7 +7,12 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['api-catalog.spec.ts', 'api-auth.spec.ts'],
+  testMatch: [
+    'api-catalog.spec.ts',
+    'api-auth.spec.ts',
+    'api-promo-codes.spec.ts',
+    'api-reviews.spec.ts',
+  ],
 
   /* Run tests in files in parallel */
   fullyParallel: true,

@@ -1,6 +1,8 @@
 ﻿using Bogus;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
+using ECommerce.Promotions.Domain.Aggregates.PromoCode;
+using ECommerce.Promotions.Domain.ValueObjects;
 
 namespace ECommerce.Tests.Helpers;
 
@@ -89,22 +91,37 @@ public static class TestDataFactory
         decimal? minOrderAmount = null,
         decimal? maxDiscountAmount = null)
     {
-        return new PromoCode
+        var promoCode = PromoCodeString.Create(code ?? _faker.Random.AlphaNumeric(8).ToUpperInvariant()).GetDataOrThrow();
+        var discountResult = Enum.Parse<DiscountType>(discountType, ignoreCase: true) == DiscountType.Percentage
+            ? DiscountValue.Percentage(discountValue)
+            : DiscountValue.Fixed(discountValue);
+        var discount = discountResult.GetDataOrThrow();
+
+        DateRange? validPeriod = null;
+        if (startDate.HasValue && endDate.HasValue)
         {
-            Id = Guid.NewGuid(),
-            Code = code ?? _faker.Random.AlphaNumeric(8).ToUpperInvariant(),
-            DiscountType = Enum.Parse<DiscountType>(discountType, ignoreCase: true),
-            DiscountValue = discountValue,
-            MinOrderAmount = minOrderAmount,
-            MaxDiscountAmount = maxDiscountAmount,
-            MaxUses = maxUses,
-            UsedCount = usedCount,
-            StartDate = startDate,
-            EndDate = endDate,
-            IsActive = isActive,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            validPeriod = DateRange.Create(startDate.Value, endDate.Value).GetDataOrThrow();
+        }
+
+        var promo = PromoCode.Create(
+            promoCode,
+            discount,
+            validPeriod,
+            maxUses,
+            minOrderAmount,
+            maxDiscountAmount);
+
+        if (!isActive)
+        {
+            promo.Deactivate();
+        }
+
+        for (var usage = 0; usage < usedCount; usage++)
+        {
+            promo.RecordUsage();
+        }
+
+        return promo;
     }
 
     public static Order CreateOrder(

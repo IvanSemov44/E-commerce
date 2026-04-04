@@ -103,6 +103,10 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 // Also register validators from the Catalog application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(CreateProductCommand).Assembly);
+// Also register validators from the Promotions application assembly
+builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Promotions.Application.Commands.CreatePromoCode.CreatePromoCodeCommand).Assembly);
+// Also register validators from the Identity application assembly
+builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
 
 // Controllers & Validation
 builder.Services.AddControllers();

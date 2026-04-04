@@ -7,21 +7,21 @@ namespace ECommerce.Promotions.Infrastructure.Persistence.Repositories;
 
 public class PromoCodeRepository(AppDbContext db) : IPromoCodeRepository
 {
-    public async Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    public Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await db.PromoCodes2
+        return db.PromoCodes
             .FirstOrDefaultAsync(p => p.Id == id, ct);
     }
 
-    public async Task<PromoCode?> GetByCodeAsync(string normalizedCode, CancellationToken ct = default)
+    public Task<PromoCode?> GetByCodeAsync(string normalizedCode, CancellationToken ct = default)
     {
-        return await db.PromoCodes2
+        return db.PromoCodes
             .FirstOrDefaultAsync(p => p.Code.Value == normalizedCode, ct);
     }
 
     public async Task<(List<PromoCode> Items, int TotalCount)> GetActiveAsync(int page, int pageSize, CancellationToken ct = default)
     {
-        var query = db.PromoCodes2.Where(p => p.IsActive);
+        var query = db.PromoCodes.Where(p => p.IsActive);
 
         var totalCount = await query.CountAsync(ct);
 
@@ -36,7 +36,7 @@ public class PromoCodeRepository(AppDbContext db) : IPromoCodeRepository
 
     public async Task<(List<PromoCode> Items, int TotalCount)> GetAllAsync(int page, int pageSize, string? search, bool? isActive, CancellationToken ct = default)
     {
-        var query = db.PromoCodes2.AsQueryable();
+        var query = db.PromoCodes.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -61,11 +61,11 @@ public class PromoCodeRepository(AppDbContext db) : IPromoCodeRepository
 
     public async Task UpsertAsync(PromoCode promoCode, CancellationToken ct = default)
     {
-        var existing = await db.PromoCodes2.FindAsync([promoCode.Id], cancellationToken: ct);
+        var existing = await db.PromoCodes.FindAsync([promoCode.Id], cancellationToken: ct);
 
         if (existing is null)
         {
-            await db.PromoCodes2.AddAsync(promoCode, ct);
+            await db.PromoCodes.AddAsync(promoCode, ct);
         }
         else
         {
@@ -77,11 +77,11 @@ public class PromoCodeRepository(AppDbContext db) : IPromoCodeRepository
 
     public async Task DeleteAsync(PromoCode promoCode, CancellationToken ct = default)
     {
-        var existing = await db.PromoCodes2.FindAsync([promoCode.Id], cancellationToken: ct);
+        var existing = await db.PromoCodes.FindAsync([promoCode.Id], cancellationToken: ct);
 
         if (existing is not null)
         {
-            db.PromoCodes2.Remove(existing);
+            db.PromoCodes.Remove(existing);
             await db.SaveChangesAsync(ct);
         }
     }

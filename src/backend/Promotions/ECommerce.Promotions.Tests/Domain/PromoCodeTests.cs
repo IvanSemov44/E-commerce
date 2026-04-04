@@ -1,4 +1,4 @@
-using ECommerce.Promotions.Domain.Aggregates.PromoCode;
+﻿using ECommerce.Promotions.Domain.Aggregates.PromoCode;
 using ECommerce.Promotions.Domain.Enums;
 using ECommerce.Promotions.Domain.Errors;
 using ECommerce.Promotions.Domain.Events;
@@ -129,7 +129,7 @@ public class PromoCodeTests
 
         promoCode.RecordUsage();
 
-        Assert.AreEqual(1, promoCode.DomainEvents.Count);
+        Assert.HasCount(1, promoCode.DomainEvents);
         Assert.IsInstanceOfType<PromoCodeExhaustedEvent>(promoCode.DomainEvents.First());
     }
 

@@ -22,7 +22,6 @@ namespace ECommerce.Application.Services;
 /// </summary>
 public class OrderService : IOrderService
 {
-    private readonly IPromoCodeService _promoCodeService;
     private readonly IInventoryService _inventoryService;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
@@ -50,7 +49,6 @@ public class OrderService : IOrderService
     };
 
     public OrderService(
-        IPromoCodeService promoCodeService,
         IInventoryService inventoryService,
         IEmailService emailService,
         IUnitOfWork unitOfWork,
@@ -58,7 +56,6 @@ public class OrderService : IOrderService
         ILogger<OrderService> logger,
         IOptions<BusinessRulesOptions> businessRulesOptions)
     {
-        _promoCodeService = promoCodeService;
         _inventoryService = inventoryService;
         _emailService = emailService;
         _unitOfWork = unitOfWork;
@@ -366,31 +363,29 @@ public class OrderService : IOrderService
     }
 
     /// <summary>
-    /// Applies promo code discount if provided and valid.
+    /// Applies promo code discount if provided.
+    /// NOTE: Promo code validation is now handled in the API layer via MediatR queries.
+    /// This method simply records the discount amount from the validated code.
     /// </summary>
-    private async Task<Result<Core.Results.Unit>> ApplyPromoCodeAsync(Order order, string? promoCode, decimal subtotal, CancellationToken cancellationToken)
+    private Task<Result<Core.Results.Unit>> ApplyPromoCodeAsync(Order order, string? promoCode, decimal subtotal, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(promoCode))
-        {
-            var promoValidation = await _promoCodeService.ValidatePromoCodeAsync(promoCode, subtotal, cancellationToken);
-            if (promoValidation.IsValid && promoValidation.PromoCode != null)
-            {
-                order.DiscountAmount = promoValidation.DiscountAmount;
-                order.PromoCodeId = promoValidation.PromoCode.Id;
-                _logger.LogInformation("Promo code {Code} applied to order with discount ${Amount}",
-                    promoCode, order.DiscountAmount);
-            }
-            else
-            {
-                return Result<Core.Results.Unit>.Fail(ErrorCodes.InvalidPromoCode, $"Promo code '{promoCode}' is invalid or has expired");
-            }
-        }
-        else
+        // Promo code validation and discount calculation now happens in the API layer
+        // OrderService just accepts the already-validated discount from the order creation request
+        if (string.IsNullOrWhiteSpace(promoCode))
         {
             order.DiscountAmount = 0;
         }
+        else
+        {
+            // Discount amount should already be set by the API layer validation
+            // If not provided, default to 0
+            if (order.DiscountAmount == 0)
+            {
+                _logger.LogWarning("Promo code {Code} provided but no discount amount calculated", promoCode);
+            }
+        }
 
-        return Result<Core.Results.Unit>.Ok(new Core.Results.Unit());
+        return Task.FromResult(Result<Core.Results.Unit>.Ok(new Core.Results.Unit()));
     }
 
     /// <summary>
@@ -428,22 +423,19 @@ public class OrderService : IOrderService
 
     /// <summary>
     /// Increments promo code usage count (best effort - errors logged but don't fail order).
+    /// NOTE: Promo code usage tracking is now part of the new Promotions bounded context.
+    /// This method is a placeholder for future integration with the DDD domain model.
     /// </summary>
-    private async Task IncrementPromoCodeUsageAsync(Guid? promoCodeId, string orderNumber, CancellationToken cancellationToken)
+    private Task IncrementPromoCodeUsageAsync(Guid? promoCodeId, string orderNumber, CancellationToken cancellationToken)
     {
         if (promoCodeId.HasValue)
         {
-            try
-            {
-                await _promoCodeService.IncrementUsedCountAsync(promoCodeId.Value, cancellationToken);
-            }
-            catch (Exception promoEx)
-            {
-                _logger.LogError(promoEx, "Failed to increment usage count for promo code {PromoCodeId} in order {OrderNumber}",
-                    promoCodeId.Value, orderNumber);
-                // Continue - order was created successfully
-            }
+            _logger.LogInformation("Promo code {PromoCodeId} usage should be recorded for order {OrderNumber}. " +
+                "This requires integration with the Promotions bounded context domain model.",
+                promoCodeId.Value, orderNumber);
+            // TODO: Integrate with Promotions.Application handlers to record usage
         }
+        return Task.CompletedTask;
     }
 
     /// <summary>

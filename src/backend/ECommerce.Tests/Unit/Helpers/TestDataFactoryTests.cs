@@ -1,4 +1,5 @@
 ﻿using ECommerce.Core.Enums;
+using ECommerce.Promotions.Domain.Enums;
 using ECommerce.Tests.Helpers;
 
 namespace ECommerce.Tests.Unit.Helpers;
@@ -51,9 +52,9 @@ public class TestDataFactoryTests
         // Assert
         promoCode.Should().NotBeNull();
         promoCode.Id.Should().NotBeEmpty();
-        promoCode.Code.Should().NotBeNullOrWhiteSpace();
-        promoCode.DiscountType.Should().Be(DiscountType.Percentage);
-        promoCode.DiscountValue.Should().Be(10);
+        promoCode.Code.Value.Should().NotBeNullOrWhiteSpace();
+        promoCode.Discount.Type.Should().Be(ECommerce.Promotions.Domain.Enums.DiscountType.Percentage);
+        promoCode.Discount.Amount.Should().Be(10);
         promoCode.IsActive.Should().BeTrue();
     }
 

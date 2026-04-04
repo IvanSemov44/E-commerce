@@ -295,6 +295,7 @@ public static class ServiceCollectionExtensions
         // FluentValidation
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<ECommerce.Promotions.Application.Validators.ValidatePromoCodeRequestDtoValidator>();
 
         // Old UnitOfWork — used by existing services, untouched.
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -328,7 +329,6 @@ public static class ServiceCollectionExtensions
         services.AddPromotionsInfrastructure();
         AppDbContext.RegisterConfigurationAssembly(typeof(ECommerce.Promotions.Infrastructure.Persistence.Configurations.PromoCodeConfiguration).Assembly);
 
-        services.AddScoped<IPromoCodeService, PromoCodeService>();
         // IInventoryService kept for OrderService compatibility
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IWebhookVerificationService, WebhookVerificationService>();

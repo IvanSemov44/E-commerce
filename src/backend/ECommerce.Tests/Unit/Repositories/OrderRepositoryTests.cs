@@ -85,17 +85,22 @@ public class OrderRepositoryTests
         };
         _context.Addresses.AddRange(address1, address2);
 
-        var promoCode = new PromoCode
+        // Create new domain-driven PromoCode
+        var codeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE10");
+        var discountResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(10);
+        var dateRangeResult = ECommerce.Promotions.Domain.ValueObjects.DateRange.Create(
+            DateTime.UtcNow.AddDays(-10),
+            DateTime.UtcNow.AddDays(10));
+
+        ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode? promoCode = null;
+        if (codeResult.IsSuccess && discountResult.IsSuccess && dateRangeResult.IsSuccess)
         {
-            Id = Guid.NewGuid(),
-            Code = "SAVE10",
-            DiscountType = DiscountType.Percentage,
-            DiscountValue = 10,
-            IsActive = true,
-            StartDate = DateTime.UtcNow.AddDays(-10),
-            EndDate = DateTime.UtcNow.AddDays(10)
-        };
-        _context.PromoCodes.Add(promoCode);
+            promoCode = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode.Create(
+                codeResult.GetDataOrThrow(),
+                discountResult.GetDataOrThrow(),
+                dateRangeResult.GetDataOrThrow());
+            _context.PromoCodes.Add(promoCode);
+        }
 
         var orders = new List<Order>
         {
@@ -156,8 +161,7 @@ public class OrderRepositoryTests
                 BillingAddress = address2,
                 Status = OrderStatus.Delivered,
                 PaymentStatus = PaymentStatus.Paid,
-                PromoCodeId = promoCode.Id,
-                PromoCode = promoCode,
+                PromoCodeId = promoCode?.Id,
                 TotalAmount = 750.00m,
                 CreatedAt = DateTime.UtcNow.AddDays(-2)
             }
@@ -214,9 +218,7 @@ public class OrderRepositoryTests
 
         // Assert
         result.Should().NotBeNull();
-        // PromoCode navigation property is not loaded (optimization: not exposed in DTOs)
-        result!.PromoCodeId.Should().NotBeEmpty();
-        result.PromoCode.Should().BeNull(); // Not loaded by repository
+        result!.PromoCodeId.Should().NotBeNull();
     }
 
     [TestMethod]

@@ -9,7 +9,6 @@ using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.DTOs.Reviews;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Users;
-using ECommerce.Application.DTOs.PromoCodes;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Categories;
 using ECommerce.Application.DTOs;
@@ -131,17 +130,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsAvailable, opt => opt.MapFrom(src => src.IsActive && src.StockQuantity > 0))
             .ForMember(dest => dest.AddedAt, opt => opt.Ignore())
             .ForMember(dest => dest.Id, opt => opt.Ignore());
-
-        // PromoCode mappings
-        CreateMap<PromoCode, PromoCodeDto>()
-            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLowerInvariant()));
-        CreateMap<PromoCode, PromoCodeDetailDto>()
-            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.DiscountType.ToString().ToLowerInvariant()));
-        CreateMap<CreatePromoCodeDto, PromoCode>()
-            .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => Enum.Parse<ECommerce.Core.Enums.DiscountType>(src.DiscountType, ignoreCase: true)));
-        CreateMap<UpdatePromoCodeDto, PromoCode>()
-            .ForMember(dest => dest.DiscountType, opt => opt.Ignore())
-            .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
         // Inventory mappings
         CreateMap<Product, InventoryDto>()

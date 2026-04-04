@@ -209,22 +209,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 if (inventoryResult.IsSuccess)
                     db.InventoryItems.Add(inventoryResult.GetDataOrThrow());
 
-                db.PromoCodes.Add(new PromoCode
+                // Seed new domain-driven PromoCode
+                var codeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE20");
+                var discountResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(20);
+                if (codeResult.IsSuccess && discountResult.IsSuccess)
                 {
-                    Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
-                    Code = "SAVE20",
-                    DiscountType = ECommerce.Core.Enums.DiscountType.Percentage,
-                    DiscountValue = 20,
-                    IsActive = true,
-                    MaxUses = null,
-                    UsedCount = 0,
-                    MinOrderAmount = null,
-                    MaxDiscountAmount = null,
-                    StartDate = null,
-                    EndDate = null,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                });
+                    var newPromoCode = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode.Create(
+                        codeResult.GetDataOrThrow(),
+                        discountResult.GetDataOrThrow(),
+                        null); // No date range for this promo code
+                    db.PromoCodes.Add(newPromoCode);
+                }
 
                 var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
                 db.Orders.Add(new Order

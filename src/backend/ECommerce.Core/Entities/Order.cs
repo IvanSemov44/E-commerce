@@ -43,6 +43,5 @@ public class Order : BaseEntity, IConcurrencyToken
     public virtual User? User { get; set; }
     public virtual Address? ShippingAddress { get; set; }
     public virtual Address? BillingAddress { get; set; }
-    public virtual PromoCode? PromoCode { get; set; }
     public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 }

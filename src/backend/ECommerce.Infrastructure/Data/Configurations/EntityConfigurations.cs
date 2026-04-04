@@ -164,28 +164,6 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 }
 
 /// <summary>
-/// Configuration for PromoCode entity.
-/// PromoCodes NEED optimistic concurrency for usage count updates.
-/// PromoCode implements IConcurrencyToken for RowVersion support.
-/// </summary>
-public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
-{
-    public void Configure(EntityTypeBuilder<PromoCode> entity)
-    {
-        entity.HasKey(e => e.Id);
-        entity.HasIndex(e => e.Code).IsUnique();
-
-        entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
-        entity.Property(e => e.DiscountValue).HasPrecision(10, 2);
-        entity.Property(e => e.MinOrderAmount).HasPrecision(10, 2);
-        entity.Property(e => e.MaxDiscountAmount).HasPrecision(10, 2);
-
-        // Enable RowVersion for optimistic concurrency - critical for usage limits
-        entity.Property(e => e.RowVersion).IsRowVersion();
-    }
-}
-
-/// <summary>
 /// Configuration for Order entity.
 /// Orders NEED optimistic concurrency for status and payment updates.
 /// Order implements IConcurrencyToken for RowVersion support.
@@ -215,10 +193,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        entity.HasOne(e => e.PromoCode)
-            .WithMany(e => e.Orders)
-            .HasForeignKey(e => e.PromoCodeId)
-            .OnDelete(DeleteBehavior.SetNull);
+        // PromoCodeId is a foreign key to the new Promotions bounded context
+        // The relationship is not configured here as PromoCode is now a DDD aggregate
+        entity.Property(e => e.PromoCodeId)
+            .IsRequired(false);
     }
 }
 
