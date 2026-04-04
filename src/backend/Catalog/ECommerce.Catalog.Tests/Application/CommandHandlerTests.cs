@@ -40,7 +40,7 @@ public class CommandHandlerTests
 
         public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default)
         {
-            return Task.FromResult(Store.Any(p => p.Sku.Value == sku));
+            return Task.FromResult(Store.Any(p => p.Sku?.Value == sku));
         }
 
         public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
@@ -240,7 +240,7 @@ public class CommandHandlerTests
         var p = CreateValidProduct(categories, products, category.Id);
         var handler = new CreateProductCommandHandler(products, categories);
 
-        var cmd = new CreateProductCommand("Name2", 5m, category.Id, Sku: p.Sku?.Value);
+        var cmd = new CreateProductCommand("Name2", 5m, category.Id, Sku: p.Sku!.Value);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);

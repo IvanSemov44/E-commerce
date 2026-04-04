@@ -41,7 +41,7 @@ public class QueryHandlerTests
 
         public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default)
         {
-            return Task.FromResult(Store.Any(p => p.Sku.Value == sku));
+            return Task.FromResult(Store.Any(p => p.Sku?.Value == sku));
         }
 
         public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
