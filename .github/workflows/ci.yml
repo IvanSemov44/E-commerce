@@ -86,7 +86,7 @@ jobs:
           ConnectionStrings__DefaultConnection: 'Host=localhost;Database=ECommerceTestDb;Username=test;Password=test'
           
       - name: Upload backend test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-test-results-${{ matrix.shard }}
@@ -117,7 +117,7 @@ jobs:
         run: npm run build
         
       - name: Upload storefront build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: storefront-build
           path: src/frontend/storefront/dist/
@@ -145,7 +145,7 @@ jobs:
         run: npm run test:run
         
       - name: Upload unit test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: storefront-unit-test-results
@@ -230,7 +230,7 @@ jobs:
           VITE_API_URL: 'http://localhost:5000'
       
       - name: Upload E2E test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: storefront-e2e-test-results
@@ -261,7 +261,7 @@ jobs:
         run: npm run build
         
       - name: Upload admin build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: admin-build
           path: src/frontend/admin/dist/
@@ -289,7 +289,7 @@ jobs:
         run: npm run test:run
         
       - name: Upload unit test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: admin-unit-test-results
