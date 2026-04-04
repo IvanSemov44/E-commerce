@@ -20,12 +20,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
 
     // Bounded context modules register their EF configuration assemblies here
     // so AppDbContext can apply them without a direct project reference.
-    private static readonly List<System.Reflection.Assembly> _additionalConfigurationAssemblies = new();
+    private static readonly HashSet<System.Reflection.Assembly> _additionalConfigurationAssemblies = new();
+    private static readonly object _configurationAssemblyLock = new();
 
     public static void RegisterConfigurationAssembly(System.Reflection.Assembly assembly)
     {
-        if (!_additionalConfigurationAssemblies.Contains(assembly))
+        lock (_configurationAssemblyLock)
+        {
             _additionalConfigurationAssemblies.Add(assembly);
+        }
     }
 
     // Users and Authentication
@@ -67,7 +70,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserConfiguration).Assembly);
 
         // Apply configurations from additional assemblies registered by bounded context modules
-        foreach (var assembly in _additionalConfigurationAssemblies)
+        System.Reflection.Assembly[] additionalAssemblies;
+        lock (_configurationAssemblyLock)
+        {
+            additionalAssemblies = _additionalConfigurationAssemblies.ToArray();
+        }
+
+        foreach (var assembly in additionalAssemblies)
             modelBuilder.ApplyConfigurationsFromAssembly(assembly);
     }
 
@@ -95,6 +104,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
             entry.Property(nameof(Entity.CreatedAt)).CurrentValue = utcNow;
             entry.Property(nameof(Entity.UpdatedAt)).CurrentValue = utcNow;
         }
+
+        // Inventory domain logs are append-only. In EF InMemory + owned collection scenarios,
+        // newly appended logs can be tracked as Modified instead of Added, which leads to
+        // false DbUpdateConcurrencyException (attempted update of a non-existent row).
+        // Normalize these entries to Added before save.
+        var modifiedInventoryLogs = ChangeTracker
+            .Entries<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryLog>()
+            .Where(e => e.State == EntityState.Modified)
+            .ToList();
+
+        foreach (var entry in modifiedInventoryLogs)
+            entry.State = EntityState.Added;
 
         // Collect and clear domain events before saving to avoid re-entry
         var aggregates = ChangeTracker.Entries<AggregateRoot>()

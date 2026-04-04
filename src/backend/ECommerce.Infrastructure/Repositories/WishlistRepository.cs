@@ -92,8 +92,21 @@ public class WishlistRepository : Repository<Wishlist>, IWishlistRepository
     /// </summary>
     public async Task ClearByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        await DbSet
-            .Where(w => w.UserId == userId)
-            .ExecuteDeleteAsync(cancellationToken);
+        try
+        {
+            await DbSet
+                .Where(w => w.UserId == userId)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            // InMemory provider used in integration tests does not support ExecuteDeleteAsync.
+            var entries = await DbSet
+                .Where(w => w.UserId == userId)
+                .ToListAsync(cancellationToken);
+
+            if (entries.Count > 0)
+                DbSet.RemoveRange(entries);
+        }
     }
 }
