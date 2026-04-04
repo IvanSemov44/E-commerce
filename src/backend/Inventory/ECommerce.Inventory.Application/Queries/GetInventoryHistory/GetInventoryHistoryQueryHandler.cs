@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Inventory.Application.DTOs;
 using ECommerce.Inventory.Application.Errors;
@@ -12,7 +12,7 @@ public class GetInventoryHistoryQueryHandler(IInventoryItemRepository _repo)
     public async Task<Result<List<InventoryLogEntryDto>>> Handle(
         GetInventoryHistoryQuery query, CancellationToken cancellationToken)
     {
-        var item = await _repo.GetByProductIdAsync(query.ProductId, cancellationToken);
+        var item = await _repo.GetByProductIdWithLogsAsync(query.ProductId, cancellationToken);
         if (item is null)
             return Result<List<InventoryLogEntryDto>>.Fail(InventoryApplicationErrors.InventoryItemNotFound);
 

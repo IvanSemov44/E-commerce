@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -17,6 +17,9 @@ sealed class FakeInventoryItemRepository : IInventoryItemRepository
         => Task.FromResult(Store.FirstOrDefault(i => i.Id == id));
 
     public Task<InventoryItem?> GetByProductIdAsync(Guid productId, CancellationToken ct = default)
+        => Task.FromResult(Store.FirstOrDefault(i => i.ProductId == productId));
+
+    public Task<InventoryItem?> GetByProductIdWithLogsAsync(Guid productId, CancellationToken ct = default)
         => Task.FromResult(Store.FirstOrDefault(i => i.ProductId == productId));
 
     public Task<List<InventoryItem>> GetAllAsync(CancellationToken ct = default)

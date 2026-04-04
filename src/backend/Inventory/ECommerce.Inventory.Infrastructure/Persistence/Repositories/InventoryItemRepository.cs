@@ -1,4 +1,4 @@
-using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
+﻿using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using ECommerce.Inventory.Domain.Interfaces;
 using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +13,10 @@ public class InventoryItemRepository(AppDbContext _db) : IInventoryItemRepositor
             .FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public async Task<InventoryItem?> GetByProductIdAsync(Guid productId, CancellationToken ct = default)
+        => await _db.InventoryItems
+            .FirstOrDefaultAsync(i => i.ProductId == productId, ct);
+
+    public async Task<InventoryItem?> GetByProductIdWithLogsAsync(Guid productId, CancellationToken ct = default)
         => await _db.InventoryItems
             .Include("_logEntries")
             .FirstOrDefaultAsync(i => i.ProductId == productId, ct);

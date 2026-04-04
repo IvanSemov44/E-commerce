@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
