@@ -12,6 +12,7 @@ using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
 using ECommerce.Inventory.Infrastructure;
 using ECommerce.Shopping.Infrastructure;
+using ECommerce.Promotions.Infrastructure;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Antiforgery;
@@ -322,6 +323,10 @@ public static class ServiceCollectionExtensions
 
         // Shopping (Phase 4 - DDD extract)
         services.AddShoppingInfrastructure();
+
+        // Promotions (Phase 5 - DDD extract)
+        services.AddPromotionsInfrastructure();
+        AppDbContext.RegisterConfigurationAssembly(typeof(ECommerce.Promotions.Infrastructure.Persistence.Configurations.PromoCodeConfiguration).Assembly);
 
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         // IInventoryService kept for OrderService compatibility

@@ -51,6 +51,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     public DbSet<Order> Orders { get; set; } = null!;
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
     public DbSet<PromoCode> PromoCodes { get; set; } = null!;
+    public DbSet<ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode> PromoCodes2 { get; set; } = null!;
 
     // Inventory - Legacy from Core
     public DbSet<ECommerce.Core.Entities.InventoryLog> InventoryLogs { get; set; } = null!;
