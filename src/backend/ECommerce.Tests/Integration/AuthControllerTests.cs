@@ -26,6 +26,7 @@ public class AuthControllerTests
     [TestCleanup]
     public void Cleanup()
     {
+        TestWebApplicationFactory.ResetAuthState();
         _factory?.Dispose();
     }
 

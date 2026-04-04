@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Core.Entities;
 using ECommerce.Application.Interfaces;
+using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using BCrypt.Net;
 using Microsoft.Extensions.Hosting;
 
@@ -85,6 +86,9 @@ public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOpti
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
+    private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Reset auth state at the beginning of each WebHost configuration
@@ -101,6 +105,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Issuer", "test");
         builder.UseSetting("Jwt:Audience", "test");
         builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=localhost;Database=TestDb;Username=test;Password=testpassword");
+        builder.UseSetting("Serilog:MinimumLevel:Default", "Fatal");
+        builder.UseSetting("RateLimiting:GlobalLimit", "100000");
+        builder.UseSetting("RateLimiting:AuthLimit", "100000");
+        builder.UseSetting("RateLimiting:PasswordResetLimit", "100000");
 
         builder.ConfigureTestServices(services =>
         {
@@ -125,7 +133,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseInMemoryDatabase("IntegrationTestsDb");
+                options.UseInMemoryDatabase(_databaseName);
                 options.UseInternalServiceProvider(inMemoryServiceProvider);
                 // Suppress transaction warnings for InMemory provider (doesn't support transactions)
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
@@ -144,118 +152,95 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             {
                 var scopedServices = scope.ServiceProvider;
                 var db = scopedServices.GetRequiredService<AppDbContext>();
-                db.Database.EnsureDeleted();
                 db.Database.EnsureCreated();
 
-                // Generate proper BCrypt hash for test password
-                string passwordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+                // Precomputed once per process to avoid repeated hash cost on startup
+                string passwordHash = _testPasswordHash;
 
-                // Seed a customer user
                 var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
-                if (!db.Users.Any(u => u.Id == userId))
-                {
-                    db.Users.Add(new User
-                    {
-                        Id = userId,
-                        Email = "integration@test.com",
-                        FirstName = "Integration",
-                        LastName = "User",
-                        Role = Core.Enums.UserRole.Customer,
-                        PasswordHash = passwordHash,
-                        IsEmailVerified = true,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                    db.SaveChanges(); // Save immediately to ensure proper tracking
-                }
-
-                // Seed an admin user
                 var adminId = Guid.Parse(ConditionalTestAuthHandler.TestAdminUserId);
-                if (!db.Users.Any(u => u.Id == adminId))
+                db.Users.Add(new User
                 {
-                    db.Users.Add(new User
-                    {
-                        Id = adminId,
-                        Email = "admin@test.com",
-                        FirstName = "Admin",
-                        LastName = "User",
-                        Role = Core.Enums.UserRole.Admin,
-                        PasswordHash = passwordHash,
-                        IsEmailVerified = true,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                    db.SaveChanges(); // Save immediately to ensure proper tracking
-                }
+                    Id = userId,
+                    Email = "integration@test.com",
+                    FirstName = "Integration",
+                    LastName = "User",
+                    Role = Core.Enums.UserRole.Customer,
+                    PasswordHash = passwordHash,
+                    IsEmailVerified = true,
+                    CreatedAt = DateTime.UtcNow
+                });
 
-                // Seed a category that the test product belongs to
+                db.Users.Add(new User
+                {
+                    Id = adminId,
+                    Email = "admin@test.com",
+                    FirstName = "Admin",
+                    LastName = "User",
+                    Role = Core.Enums.UserRole.Admin,
+                    PasswordHash = passwordHash,
+                    IsEmailVerified = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+
                 var categoryId = Guid.Parse("66666666-6666-6666-6666-666666666666");
-                if (!db.Categories.Any())
+                db.Categories.Add(new Category
                 {
-                    db.Categories.Add(new Category
-                    {
-                        Id = categoryId,
-                        Name = "Test Category",
-                        Slug = "test-category",
-                        IsActive = true
-                    });
-                }
+                    Id = categoryId,
+                    Name = "Test Category",
+                    Slug = "test-category",
+                    IsActive = true
+                });
 
-                // Seed a test product (belongs to the category above)
                 var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-                if (!db.Products.Any())
+                db.Products.Add(new Product
                 {
-                    db.Products.Add(new Product
-                    {
-                        Id = productId,
-                        Name = "IntegrationProduct",
-                        Slug = "integration-product",
-                        Price = 10.0m,
-                        StockQuantity = 100,
-                        IsActive = true,
-                        Sku = "TEST-SKU-001",
-                        CategoryId = categoryId
-                    });
-                }
+                    Id = productId,
+                    Name = "IntegrationProduct",
+                    Slug = "integration-product",
+                    Price = 10.0m,
+                    StockQuantity = 100,
+                    IsActive = true,
+                    Sku = "TEST-SKU-001",
+                    CategoryId = categoryId
+                });
 
-                // Seed a test promo code (SAVE20 - 20% discount)
-                if (!db.PromoCodes.Any(p => p.Code == "SAVE20"))
+                var inventoryResult = InventoryItem.Create(productId, 100, 10);
+                if (inventoryResult.IsSuccess)
+                    db.InventoryItems.Add(inventoryResult.GetDataOrThrow());
+
+                db.PromoCodes.Add(new PromoCode
                 {
-                    db.PromoCodes.Add(new PromoCode
-                    {
-                        Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
-                        Code = "SAVE20",
-                        DiscountType = ECommerce.Core.Enums.DiscountType.Percentage,
-                        DiscountValue = 20,
-                        IsActive = true,
-                        MaxUses = null,
-                        UsedCount = 0,
-                        MinOrderAmount = null,
-                        MaxDiscountAmount = null,
-                        StartDate = null,
-                        EndDate = null,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    });
-                }
+                    Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
+                    Code = "SAVE20",
+                    DiscountType = ECommerce.Core.Enums.DiscountType.Percentage,
+                    DiscountValue = 20,
+                    IsActive = true,
+                    MaxUses = null,
+                    UsedCount = 0,
+                    MinOrderAmount = null,
+                    MaxDiscountAmount = null,
+                    StartDate = null,
+                    EndDate = null,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
 
-                // Seed a test order for payment processing tests
                 var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
-                if (!db.Orders.Any(o => o.Id == orderId))
+                db.Orders.Add(new Order
                 {
-                    db.Orders.Add(new Order
-                    {
-                        Id = orderId,
-                        OrderNumber = "TEST-ORDER-001",
-                        UserId = userId,
-                        Status = Core.Enums.OrderStatus.Pending,
-                        PaymentStatus = Core.Enums.PaymentStatus.Paid,  // Pre-paid for refund testing
-                        Subtotal = 100.00m,
-                        DiscountAmount = 0.00m,
-                        ShippingAmount = 10.00m,
-                        TaxAmount = 0.00m,
-                        TotalAmount = 100.00m,
-                        Currency = "USD"
-                    });
-                }
+                    Id = orderId,
+                    OrderNumber = "TEST-ORDER-001",
+                    UserId = userId,
+                    Status = Core.Enums.OrderStatus.Pending,
+                    PaymentStatus = Core.Enums.PaymentStatus.Paid,  // Pre-paid for refund testing
+                    Subtotal = 100.00m,
+                    DiscountAmount = 0.00m,
+                    ShippingAmount = 10.00m,
+                    TaxAmount = 0.00m,
+                    TotalAmount = 100.00m,
+                    Currency = "USD"
+                });
 
                 db.SaveChanges();
             }

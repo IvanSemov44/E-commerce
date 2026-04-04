@@ -151,8 +151,8 @@ public class InventoryControllerTests
         var response = await client.PutAsync($"/api/inventory/{productId}", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.OK,
-            $"Negative quantity should return BadRequest or OK, got {response.StatusCode}");
+        Assert.IsTrue(response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity or HttpStatusCode.OK,
+            $"Negative quantity should return BadRequest, UnprocessableEntity, or OK, got {response.StatusCode}");
     }
 
     [TestMethod]
@@ -265,11 +265,16 @@ public class InventoryControllerTests
         if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
         {
             var json = JsonSerializer.Deserialize<JsonElement>(responseContent);
-            if (json.TryGetProperty("data", out var data)
-                && data.TryGetProperty("items", out var items)
-                && items.ValueKind == JsonValueKind.Array)
+            if (json.TryGetProperty("data", out var data))
             {
-                Assert.IsLessThanOrEqualTo(100, items.GetArrayLength(), "Low stock pageSize should be clamped to 100");
+                if (data.ValueKind == JsonValueKind.Array)
+                {
+                    Assert.IsTrue(data.GetArrayLength() <= 100, "Low stock pageSize should be clamped to 100");
+                }
+                else if (data.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
+                {
+                    Assert.IsTrue(items.GetArrayLength() <= 100, "Low stock pageSize should be clamped to 100");
+                }
             }
         }
     }

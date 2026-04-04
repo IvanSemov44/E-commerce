@@ -71,14 +71,9 @@ internal sealed class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumera
     IQueryProvider IQueryable.Provider => new TestAsyncQueryProvider<T>(this);
 }
 
-internal sealed class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
+internal sealed class TestAsyncEnumerator<T>(IEnumerator<T> inner) : IAsyncEnumerator<T>
 {
-    private readonly IEnumerator<T> _inner;
-
-    public TestAsyncEnumerator(IEnumerator<T> inner)
-    {
-        _inner = inner;
-    }
+    private readonly IEnumerator<T> _inner = inner;
 
     public ValueTask<bool> MoveNextAsync()
     {

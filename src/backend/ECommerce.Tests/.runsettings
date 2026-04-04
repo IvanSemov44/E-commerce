@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
   <RunConfiguration>
-    <!-- MaxCpus=1 required due to TestWebApplicationFactory resource contention -->
-    <!-- Integration tests share InMemory DB causing race conditions with parallel execution -->
-    <MaxCpus>1</MaxCpus>
+    <!-- Use all available logical CPUs for faster test execution. -->
+    <!-- Keep integration tests isolated (factory/db per test/class) to avoid contention. -->
+    <MaxCpus>0</MaxCpus>
   </RunConfiguration>
 </RunSettings>

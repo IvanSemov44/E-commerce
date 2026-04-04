@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -20,6 +20,7 @@ public class AddToCartCreateOrderTests
     public void Cleanup()
     {
         TestWebApplicationFactory.ResetAuthState();
+        _factory?.Dispose();
     }
 
     [TestMethod]

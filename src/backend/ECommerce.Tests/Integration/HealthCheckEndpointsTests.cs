@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using ECommerce.Application.DTOs.Common;
@@ -13,18 +13,17 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class HealthCheckEndpointsTests
 {
-    private TestWebApplicationFactory _factory = null!;
+    private static TestWebApplicationFactory _factory = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _factory = new TestWebApplicationFactory();
+        _factory ??= new TestWebApplicationFactory();
     }
 
     [TestCleanup]
     public void Cleanup()
     {
-        _factory?.Dispose();
     }
 
     #region /health endpoint tests

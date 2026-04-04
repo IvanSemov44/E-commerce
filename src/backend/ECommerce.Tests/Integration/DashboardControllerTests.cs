@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -11,13 +11,13 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class DashboardControllerTests
 {
-    private TestWebApplicationFactory _factory = null!;
+    private static TestWebApplicationFactory _factory = null!;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     [TestInitialize]
     public void Setup()
     {
-        _factory = new TestWebApplicationFactory();
+        _factory ??= new TestWebApplicationFactory();
     }
 
     [TestCleanup]
@@ -27,7 +27,6 @@ public class DashboardControllerTests
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
         ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-        _factory?.Dispose();
     }
 
     #region Dashboard Stats Tests
