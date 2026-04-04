@@ -12,6 +12,7 @@ export default defineConfig({
     'api-auth.spec.ts',
     'api-promo-codes.spec.ts',
     'api-reviews.spec.ts',
+    'api-orders.spec.ts',
   ],
 
   /* Run tests in files in parallel */
