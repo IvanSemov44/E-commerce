@@ -22,7 +22,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
 
     <!-- Test Data Generation -->
-    <PackageReference Include="Bogus" Version="35.6.1" />
+    <PackageReference Include="Bogus" Version="35.6.5" />
 
     <!-- BCrypt for password hashing -->
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
