@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <!-- Test Framework -->
-    <PackageReference Include="MSTest" Version="4.0.1" />
+    <PackageReference Include="MSTest" Version="4.1.0" />
 
     <!-- Mocking -->
     <PackageReference Include="Moq" Version="4.20.72" />
