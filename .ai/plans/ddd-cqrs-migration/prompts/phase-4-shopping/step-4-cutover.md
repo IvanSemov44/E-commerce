@@ -53,9 +53,20 @@ Document this in the controller with a `// TODO Phase 8` comment.
 
 ---
 
+## DTOs (defined at top of CartController.cs or in separate file)
+
+```csharp
+namespace ECommerce.API.Controllers.DTOs;
+
+public record AddToCartDto(Guid ProductId, int Quantity);
+public record UpdateCartItemDto(int Quantity);
+```
+
+---
+
 ## Task 1: Rewrite CartController
 
-Keep all existing route paths, HTTP methods, and route aliases. Replace `ICartService` with `IMediator`.
+Keep all existing route paths, HTTP methods, and route aliases. Replace `ICartService` with `IMediator`. Trust `[Authorize]` to enforce auth (no manual checks).
 
 ```csharp
 using ECommerce.Shopping.Application.Commands.AddToCart;
@@ -65,134 +76,234 @@ using ECommerce.Shopping.Application.Commands.UpdateCartItemQuantity;
 using ECommerce.Shopping.Application.Queries.GetCart;
 using ECommerce.Shopping.Application.Queries.ValidateCart;
 using ECommerce.Shopping.Application.DTOs;
+using ECommerce.API.Controllers.DTOs;
 using ECommerce.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class CartController(IMediator _mediator, ICurrentUserService _currentUser) : ControllerBase
+public class CartController(
+    IMediator _mediator,
+    ICurrentUserService _currentUser,
+    ILogger<CartController> _logger) : ControllerBase
 {
     // ── GET /api/cart ──────────────────────────────────────────────────────
+    /// <summary>Get the authenticated user's cart (load-or-create).</summary>
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> GetCart(CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId; // [Authorize] guarantees non-null
+        _logger.LogInformation("Getting cart for user {UserId}", userId);
 
-        var result = await _mediator.Send(new GetCartQuery(userId), ct);
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Cart retrieved successfully"))
-            : MapResult(result.GetErrorOrThrow());
+        try
+        {
+            var result = await _mediator.Send(new GetCartQuery(userId), ct);
+            return result.IsSuccess
+                ? Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart retrieved successfully"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving cart for user {UserId}", userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
     // ── POST /api/cart/get-or-create ───────────────────────────────────────
+    /// <summary>Get or create cart. Anonymous users receive empty stub.</summary>
     [HttpPost("get-or-create")]
     [AllowAnonymous]
     public async Task<IActionResult> GetOrCreateCart(CancellationToken ct)
     {
         if (_currentUser.UserIdOrNull is Guid userId)
         {
+            _logger.LogInformation("Getting cart for authenticated user {UserId}", userId);
             var result = await _mediator.Send(new GetCartQuery(userId), ct);
             return result.IsSuccess
-                ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Cart retrieved or created successfully"))
+                ? Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart retrieved successfully"))
                 : MapResult(result.GetErrorOrThrow());
         }
 
-        // Anonymous: return empty cart stub
-        // TODO Phase 8: implement session-based anonymous cart
-        return Ok(ApiResponse<object>.Ok(
-            new { Id = Guid.Empty, UserId = (Guid?)null, Items = Array.Empty<object>(), Subtotal = 0m },
-            "Cart retrieved or created successfully"));
+        // Anonymous user: return empty cart without DB hit
+        _logger.LogDebug("Returning empty cart for anonymous user");
+        var emptyCart = new CartDto(Guid.Empty, Guid.Empty, [], 0m);
+        return Ok(ApiResponse<CartDto>.Ok(emptyCart, "Cart retrieved successfully"));
     }
 
     // ── POST /api/cart/add-item ────────────────────────────────────────────
+    /// <summary>Add item to cart. BREAKING: now requires authentication (was anonymous in Phase 3).</summary>
     [HttpPost("add-item")]
-    [Authorize]           // Phase 4: anonymous add deferred (was AllowAnonymous)
+    [Authorize]
     [ValidationFilter]
     public async Task<IActionResult> AddToCart(
         [FromBody] AddToCartDto dto, CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId;
+        _logger.LogInformation("Adding item {ProductId} (qty={Quantity}) to cart for user {UserId}", 
+            dto.ProductId, dto.Quantity, userId);
 
-        var result = await _mediator.Send(new AddToCartCommand(userId, dto.ProductId, dto.Quantity), ct);
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Item added to cart successfully"))
-            : MapResult(result.GetErrorOrThrow());
+        try
+        {
+            var result = await _mediator.Send(
+                new AddToCartCommand(userId, dto.ProductId, dto.Quantity), ct);
+            
+            if (!result.IsSuccess)
+                return MapResult(result.GetErrorOrThrow());
+
+            var cart = result.GetDataOrThrow();
+            return CreatedAtAction(nameof(GetCart), new { }, 
+                ApiResponse<CartDto>.Ok(cart, "Item added to cart successfully"));
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict adding item to cart for user {UserId}", userId);
+            return Conflict(ApiResponse<object>.Failure("Cart was modified. Please retry.", "CONCURRENCY_CONFLICT"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding item to cart for user {UserId}", userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
     // ── PUT /api/cart/update-item/{id} AND /api/cart/items/{id} ───────────
+    /// <summary>Update cart item quantity. Both route aliases supported: /update-item/{id} and /items/{id}.</summary>
     [HttpPut("update-item/{cartItemId:guid}")]
     [HttpPut("items/{cartItemId:guid}")]
-    [Authorize]           // Phase 4: requires auth (was AllowAnonymous)
+    [Authorize]
     [ValidationFilter]
     public async Task<IActionResult> UpdateCartItem(
         Guid cartItemId, [FromBody] UpdateCartItemDto dto, CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId;
+        _logger.LogInformation("Updating cart item {CartItemId} to quantity {Quantity} for user {UserId}", 
+            cartItemId, dto.Quantity, userId);
 
-        var result = await _mediator.Send(
-            new UpdateCartItemQuantityCommand(userId, cartItemId, dto.Quantity), ct);
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Cart item updated successfully"))
-            : MapResult(result.GetErrorOrThrow());
+        try
+        {
+            var result = await _mediator.Send(
+                new UpdateCartItemQuantityCommand(userId, cartItemId, dto.Quantity), ct);
+            
+            return result.IsSuccess
+                ? Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart item updated successfully"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict updating cart item {CartItemId} for user {UserId}", 
+                cartItemId, userId);
+            return Conflict(ApiResponse<object>.Failure("Cart was modified. Please retry.", "CONCURRENCY_CONFLICT"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating cart item {CartItemId} for user {UserId}", cartItemId, userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
     // ── DELETE /api/cart/remove-item/{id} AND /api/cart/items/{id} ─────────
+    /// <summary>Remove item from cart. Both route aliases supported: /remove-item/{id} and /items/{id}.</summary>
     [HttpDelete("remove-item/{cartItemId:guid}")]
     [HttpDelete("items/{cartItemId:guid}")]
     [Authorize]
     public async Task<IActionResult> RemoveFromCart(Guid cartItemId, CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId;
+        _logger.LogInformation("Removing cart item {CartItemId} for user {UserId}", cartItemId, userId);
 
-        var result = await _mediator.Send(new RemoveFromCartCommand(userId, cartItemId), ct);
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Item removed from cart successfully"))
-            : MapResult(result.GetErrorOrThrow());
+        try
+        {
+            var result = await _mediator.Send(new RemoveFromCartCommand(userId, cartItemId), ct);
+            
+            return result.IsSuccess
+                ? Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Item removed from cart successfully"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict removing item {CartItemId} for user {UserId}", 
+                cartItemId, userId);
+            return Conflict(ApiResponse<object>.Failure("Cart was modified. Please retry.", "CONCURRENCY_CONFLICT"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing item {CartItemId} for user {UserId}", cartItemId, userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
     // ── POST /api/cart/clear AND DELETE /api/cart ──────────────────────────
+    /// <summary>Clear cart (both authenticated and anonymous). Anonymous clear returns empty stub without DB hit.</summary>
     [HttpPost("clear")]
     [HttpDelete]
     [AllowAnonymous]
     public async Task<IActionResult> ClearCart(CancellationToken ct)
     {
         var userId = _currentUser.UserIdOrNull;
-        var result = await _mediator.Send(new ClearCartCommand(userId), ct);
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Cart cleared successfully"))
-            : MapResult(result.GetErrorOrThrow());
+        _logger.LogInformation("Clearing cart for user {UserId}", userId ?? Guid.Empty);
+
+        try
+        {
+            var result = await _mediator.Send(new ClearCartCommand(userId), ct);
+            
+            return result.IsSuccess
+                ? Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart cleared successfully"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict clearing cart for user {UserId}", userId);
+            return Conflict(ApiResponse<object>.Failure("Cart was modified. Please retry.", "CONCURRENCY_CONFLICT"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing cart for user {UserId}", userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
     // ── POST /api/cart/validate/{cartId} ───────────────────────────────────
+    /// <summary>Validate cart for checkout. Owner or admin only. Returns 422 if any item out of stock.</summary>
     [HttpPost("validate/{cartId:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> ValidateCart(Guid cartId, CancellationToken ct)
     {
-        var userId  = _currentUser.UserIdOrNull;
-        var isAdmin = _currentUser.IsAuthenticated &&
-                      (_currentUser.RoleOrNull?.ToString() is "Admin" or "SuperAdmin");
+        var userId = _currentUser.UserIdOrNull;
+        var isAdmin = _currentUser.IsAuthenticated && HasAdminRole();
+        
+        _logger.LogInformation("Validating cart {CartId} (user={UserId}, isAdmin={IsAdmin})", 
+            cartId, userId ?? Guid.Empty, isAdmin);
 
-        var result = await _mediator.Send(new ValidateCartQuery(cartId, userId, isAdmin), ct);
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(new { }, "Cart is valid"))
-            : MapResult(result.GetErrorOrThrow());
+        try
+        {
+            var result = await _mediator.Send(new ValidateCartQuery(cartId, userId, isAdmin), ct);
+            
+            return result.IsSuccess
+                ? Ok(ApiResponse<object>.Ok(new { }, "Cart is valid"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating cart {CartId}", cartId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
+
+    private bool HasAdminRole() =>
+        _currentUser.RoleOrNull is "Admin" or "SuperAdmin";
 
     private IActionResult MapResult(DomainError error) => error.Code switch
     {
         "CART_NOT_FOUND" or "CART_ITEM_NOT_FOUND" or "PRODUCT_NOT_FOUND"
             => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
 
-        "CART_FULL" or "WISHLIST_FULL" or "QUANTITY_INVALID" or "INSUFFICIENT_STOCK"
+        "CART_FULL" or "QUANTITY_INVALID" or "INSUFFICIENT_STOCK"
             => UnprocessableEntity(ApiResponse<object>.Failure(error.Message, error.Code)),
 
         "UNAUTHORIZED"
@@ -204,12 +315,25 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
         "VALIDATION_FAILED"
             => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
 
+        "CONCURRENCY_CONFLICT"
+            => Conflict(ApiResponse<object>.Failure(error.Message, error.Code)),
+
         _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
     };
 }
 ```
 
-**Breaking change note**: `POST /cart/add-item` and `PUT /cart/update-item/{id}` now require authentication. Previously they were `[AllowAnonymous]`. This is an intentional scope reduction for Phase 4 — document with a comment and verify the characterization tests were updated to reflect this.
+**BREAKING CHANGE**: `POST /cart/add-item` and `PUT /cart/update-item/{id}` now require authentication. Previously they were `[AllowAnonymous]`. This is an intentional Phase 4 scope reduction. Update characterization tests in step-0 if not already done.
+
+---
+
+## Wishlist DTOs (defined in DTOs file)
+
+```csharp
+namespace ECommerce.API.Controllers.DTOs;
+
+public record AddToWishlistDto(Guid ProductId);
+```
 
 ---
 
@@ -221,70 +345,156 @@ using ECommerce.Shopping.Application.Commands.ClearWishlist;
 using ECommerce.Shopping.Application.Commands.RemoveFromWishlist;
 using ECommerce.Shopping.Application.Queries.GetWishlist;
 using ECommerce.Shopping.Application.Queries.IsProductInWishlist;
+using ECommerce.API.Controllers.DTOs;
 using ECommerce.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
-public class WishlistController(IMediator _mediator, ICurrentUserService _currentUser) : ControllerBase
+[Authorize]  // All endpoints require authentication
+public class WishlistController(
+    IMediator _mediator,
+    ICurrentUserService _currentUser,
+    ILogger<WishlistController> _logger) : ControllerBase
 {
+    /// <summary>Get the authenticated user's wishlist (load-or-create).</summary>
     [HttpGet]
     public async Task<IActionResult> GetWishlist(CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId; // [Authorize] guarantees non-null
+        _logger.LogInformation("Getting wishlist for user {UserId}", userId);
 
-        var result = await _mediator.Send(new GetWishlistQuery(userId), ct);
-        return Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Wishlist retrieved successfully"));
+        try
+        {
+            var result = await _mediator.Send(new GetWishlistQuery(userId), ct);
+            return result.IsSuccess
+                ? Ok(ApiResponse<WishlistDto>.Ok(result.GetDataOrThrow(), "Wishlist retrieved successfully"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving wishlist for user {UserId}", userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
+    /// <summary>Add product to wishlist (idempotent).</summary>
     [HttpPost("add")]
     [ValidationFilter]
-    public async Task<IActionResult> AddToWishlist([FromBody] AddToWishlistDto dto, CancellationToken ct)
+    public async Task<IActionResult> AddToWishlist(
+        [FromBody] AddToWishlistDto dto, CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId;
+        _logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", 
+            dto.ProductId, userId);
 
-        var result = await _mediator.Send(new AddToWishlistCommand(userId, dto.ProductId), ct);
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Product added to wishlist successfully"))
-            : MapResult(result.GetErrorOrThrow());
+        try
+        {
+            var result = await _mediator.Send(new AddToWishlistCommand(userId, dto.ProductId), ct);
+            
+            if (!result.IsSuccess)
+                return MapResult(result.GetErrorOrThrow());
+
+            var wishlist = result.GetDataOrThrow();
+            return CreatedAtAction(nameof(GetWishlist), new { },
+                ApiResponse<WishlistDto>.Ok(wishlist, "Product added to wishlist successfully"));
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict adding to wishlist for user {UserId}", userId);
+            return Conflict(ApiResponse<object>.Failure("Wishlist was modified. Please retry.", "CONCURRENCY_CONFLICT"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding product {ProductId} to wishlist for user {UserId}", 
+                dto.ProductId, userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
+    /// <summary>Remove product from wishlist (no-op if not present).</summary>
     [HttpDelete("remove/{productId:guid}")]
     public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId;
+        _logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", 
+            productId, userId);
 
-        var result = await _mediator.Send(new RemoveFromWishlistCommand(userId, productId), ct);
-        return Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Product removed from wishlist successfully"));
+        try
+        {
+            var result = await _mediator.Send(new RemoveFromWishlistCommand(userId, productId), ct);
+            
+            return result.IsSuccess
+                ? Ok(ApiResponse<WishlistDto>.Ok(result.GetDataOrThrow(), "Product removed from wishlist successfully"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict removing from wishlist for user {UserId}", userId);
+            return Conflict(ApiResponse<object>.Failure("Wishlist was modified. Please retry.", "CONCURRENCY_CONFLICT"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing product {ProductId} from wishlist for user {UserId}", 
+                productId, userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
+    /// <summary>Check if product is in wishlist. Returns plain bool in data field.</summary>
     [HttpGet("contains/{productId:guid}")]
     public async Task<IActionResult> IsProductInWishlist(Guid productId, CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId;
+        _logger.LogDebug("Checking if product {ProductId} is in wishlist for user {UserId}", 
+            productId, userId);
 
-        var result = await _mediator.Send(new IsProductInWishlistQuery(userId, productId), ct);
-        // data must be a plain bool — the characterization test pins this shape
-        return Ok(ApiResponse<bool>.Ok(result.GetDataOrThrow(), "Check completed successfully"));
+        try
+        {
+            var result = await _mediator.Send(new IsProductInWishlistQuery(userId, productId), ct);
+            
+            // IMPORTANT: data field must be a plain bool, not an object
+            // Characterization tests verify: typeof body.data === 'boolean'
+            return Ok(ApiResponse<bool>.Ok(result.GetDataOrThrow(), "Check completed successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking wishlist for product {ProductId}, user {UserId}", 
+                productId, userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
+    /// <summary>Clear entire wishlist.</summary>
     [HttpPost("clear")]
     public async Task<IActionResult> ClearWishlist(CancellationToken ct)
     {
-        if (_currentUser.UserIdOrNull is not Guid userId)
-            return Unauthorized(ApiResponse<object>.Failure("Authentication required.", "UNAUTHORIZED"));
+        var userId = _currentUser.UserId;
+        _logger.LogInformation("Clearing wishlist for user {UserId}", userId);
 
-        var result = await _mediator.Send(new ClearWishlistCommand(userId), ct);
-        return Ok(ApiResponse<object>.Ok(result.GetDataOrThrow(), "Wishlist cleared successfully"));
+        try
+        {
+            var result = await _mediator.Send(new ClearWishlistCommand(userId), ct);
+            
+            return result.IsSuccess
+                ? Ok(ApiResponse<WishlistDto>.Ok(result.GetDataOrThrow(), "Wishlist cleared successfully"))
+                : MapResult(result.GetErrorOrThrow());
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict clearing wishlist for user {UserId}", userId);
+            return Conflict(ApiResponse<object>.Failure("Wishlist was modified. Please retry.", "CONCURRENCY_CONFLICT"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing wishlist for user {UserId}", userId);
+            return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", "INTERNAL_ERROR"));
+        }
     }
 
     private IActionResult MapResult(DomainError error) => error.Code switch
@@ -297,6 +507,9 @@ public class WishlistController(IMediator _mediator, ICurrentUserService _curren
 
         "VALIDATION_FAILED"
             => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
+
+        "CONCURRENCY_CONFLICT"
+            => Conflict(ApiResponse<object>.Failure(error.Message, error.Code)),
 
         _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
     };
@@ -342,11 +555,61 @@ npx playwright test api-cart.spec.ts api-wishlist.spec.ts --reporter=list
 
 ## Acceptance Criteria
 
-- [ ] `CartController` updated to use `IMediator`; all route paths and aliases preserved
-- [ ] `WishlistController` updated to use `IMediator`
-- [ ] `POST /cart/add-item` now requires auth — documented with `// TODO Phase 8` comment
-- [ ] `GET /wishlist/contains/{id}` returns `ApiResponse<bool>` (bool in `data`, not object)
-- [ ] `QUANTITY_INVALID` and `CART_FULL` → 422; `CART_ITEM_NOT_FOUND` → 404
+**Controllers**:
+- [ ] `CartController` and `WishlistController` both inject `IMediator`, `ICurrentUserService`, and `ILogger<T>`
+- [ ] All actions use `await _mediator.Send()` — no direct service calls
+- [ ] `ICurrentUserService.UserId` used on `[Authorize]` endpoints (no null checks needed)
+- [ ] `ICurrentUserService.UserIdOrNull` used on `[AllowAnonymous]` endpoints (with null checks)
+- [ ] All error paths use private `MapResult()` method for consistent error → HTTP code mapping
+- [ ] `DbUpdateConcurrencyException` caught and returns 409 Conflict
+- [ ] All unhandled exceptions logged and return 500 with `INTERNAL_ERROR` code
+
+**Routes & Aliases**:
+- [ ] Cart: Both `/api/cart/update-item/{id}` and `/api/cart/items/{id}` route to same action
+- [ ] Cart: Both `/api/cart/remove-item/{id}` and `/api/cart/items/{id}` route to same action
+- [ ] Wishlist: All endpoints have `[Authorize]` at class level (no anonymous access)
+
+**Auth Breaking Changes**:
+- [ ] `POST /cart/add-item` requires `[Authorize]` (was anonymous in Phase 3) — documented
+- [ ] `PUT /cart/update-item/{id}` requires `[Authorize]` (was anonymous in Phase 3) — documented
+- [ ] `POST /cart/get-or-create` remains `[AllowAnonymous]` — returns empty stub for anon users
+- [ ] `POST /cart/clear` remains `[AllowAnonymous]` — handles null userId without DB hit
+- [ ] `POST /cart/validate/{id}` remains `[AllowAnonymous]` — checks ownership/admin role in handler
+
+**Response Shapes**:
+- [ ] `GET /wishlist/contains/{id}` returns `ApiResponse<bool>` with plain bool in `data` field (not object)
+- [ ] All POST create endpoints return `CreatedAtAction()` with Location header (optional: may use plain `Ok()`)
+- [ ] All success responses include message: "...successfully", "Cart retrieved", etc.
+- [ ] All error responses use `MapResult()` with correct HTTP status codes
+
+**Error Mappings**:
+- [ ] `CART_NOT_FOUND`, `CART_ITEM_NOT_FOUND`, `PRODUCT_NOT_FOUND` → 404 NotFound
+- [ ] `CART_FULL`, `QUANTITY_INVALID`, `INSUFFICIENT_STOCK`, `WISHLIST_FULL` → 422 UnprocessableEntity
+- [ ] `VALIDATION_FAILED` → 400 BadRequest
+- [ ] `UNAUTHORIZED` → 401 Unauthorized
+- [ ] `FORBIDDEN` → 403 Forbidden
+- [ ] `CONCURRENCY_CONFLICT` → 409 Conflict
+- [ ] Unhandled exceptions → 500 Internal Server Error with `INTERNAL_ERROR` code
+
+**DTOs**:
+- [ ] `AddToCartDto(ProductId, Quantity)` defined
+- [ ] `UpdateCartItemDto(Quantity)` defined
+- [ ] `AddToWishlistDto(ProductId)` defined
+- [ ] All DTOs use validation attributes or `[ValidationFilter]` on controllers
+
+**Logging**:
+- [ ] `ILogger<CartController>` and `ILogger<WishlistController>` injected
+- [ ] Key operations logged: GetCart, AddToCart, RemoveFromCart, ClearCart, etc.
+- [ ] Errors and concurrency conflicts logged with context (userId, productId, etc.)
+
+**Service Cleanup**:
 - [ ] Old `CartService`, `WishlistService`, `ICartService`, `IWishlistService` deleted
-- [ ] All characterization tests pass post-cutover
-- [ ] All e2e tests pass post-cutover
+- [ ] DI registration for old services removed from `Program.cs`
+- [ ] `dotnet build` passes with no references to old service types
+
+**Testing**:
+- [ ] All characterization tests from step-0 pass post-cutover
+- [ ] Characterization tests verify auth requirements (401 on protected endpoints)
+- [ ] Characterization tests verify route aliases both work
+- [ ] All e2e tests from step-0b pass post-cutover
+- [ ] `dotnet test` passes for entire solution

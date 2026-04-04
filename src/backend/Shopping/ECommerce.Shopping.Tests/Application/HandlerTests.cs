@@ -21,7 +21,7 @@ public class GetCartQueryHandlerTests
         var repo = new FakeCartRepository();
         var handler = new GetCartQueryHandler(repo);
 
-        var result = await handler.Handle(new GetCartQuery(_userId), CancellationToken.None);
+        var result = await handler.Handle(new GetCartQuery(_userId, null), CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
         if (result is Result<CartDto>.Success success)
@@ -37,7 +37,7 @@ public class GetCartQueryHandlerTests
         repo.Store.Add(cart);
         var handler = new GetCartQueryHandler(repo);
 
-        var result = await handler.Handle(new GetCartQuery(_userId), CancellationToken.None);
+        var result = await handler.Handle(new GetCartQuery(_userId, null), CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
         if (result is Result<CartDto>.Success success)
@@ -61,7 +61,7 @@ public class AddToCartCommandHandlerTests
         var handler = new AddToCartCommandHandler(cartRepo, dbReader, uow);
 
         var result = await handler.Handle(
-            new AddToCartCommand(_userId, _productId, 2),
+            new AddToCartCommand(_userId, null, _productId, 2),
             CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
@@ -76,7 +76,7 @@ public class AddToCartCommandHandlerTests
         var handler = new AddToCartCommandHandler(cartRepo, dbReader, uow);
 
         var result = await handler.Handle(
-            new AddToCartCommand(_userId, _productId, 2),
+            new AddToCartCommand(_userId, null, _productId, 2),
             CancellationToken.None);
 
         Assert.IsFalse(result.IsSuccess);

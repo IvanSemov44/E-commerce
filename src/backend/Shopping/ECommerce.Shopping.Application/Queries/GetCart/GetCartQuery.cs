@@ -4,4 +4,4 @@ using ECommerce.Shopping.Application.DTOs;
 
 namespace ECommerce.Shopping.Application.Queries.GetCart;
 
-public record GetCartQuery(Guid UserId) : IRequest<Result<CartDto>>;
+public record GetCartQuery(Guid? UserId, string? SessionId) : IRequest<Result<CartDto>>;

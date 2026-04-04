@@ -10,9 +10,7 @@ public class WishlistRepository(AppDbContext _db) : IWishlistRepository
     public async Task<Wishlist?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
     {
         var rows = await _db.Wishlists
-            .FromSqlRaw(
-                "SELECT \"Id\", \"UserId\", \"ProductId\" FROM \"Wishlists\" WHERE \"UserId\" = {0}",
-                userId)
+            .Where(w => w.UserId == userId)
             .ToListAsync(ct);
 
         if (rows.Count == 0) return null;
@@ -26,14 +24,22 @@ public class WishlistRepository(AppDbContext _db) : IWishlistRepository
 
     public async Task UpsertAsync(Wishlist wishlist, CancellationToken ct = default)
     {
-        await _db.Database.ExecuteSqlRawAsync(
-            "DELETE FROM \"Wishlists\" WHERE \"UserId\" = {0}", wishlist.UserId);
+        var existing = await _db.Wishlists
+            .Where(w => w.UserId == wishlist.UserId)
+            .ToListAsync(ct);
+
+        _db.Wishlists.RemoveRange(existing);
 
         foreach (var productId in wishlist.ProductIds)
         {
-            await _db.Database.ExecuteSqlRawAsync(
-                "INSERT INTO \"Wishlists\" (\"Id\", \"UserId\", \"ProductId\") VALUES ({0}, {1}, {2})",
-                Guid.NewGuid(), wishlist.UserId, productId);
+            await _db.Wishlists.AddAsync(new Core.Entities.Wishlist
+            {
+                Id = Guid.NewGuid(),
+                UserId = wishlist.UserId,
+                ProductId = productId
+            }, ct);
         }
+
+        await _db.SaveChangesAsync(ct);
     }
 }

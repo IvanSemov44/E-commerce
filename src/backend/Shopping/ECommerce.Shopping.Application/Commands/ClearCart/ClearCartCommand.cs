@@ -5,5 +5,5 @@ using ECommerce.Shopping.Application.DTOs;
 
 namespace ECommerce.Shopping.Application.Commands.ClearCart;
 
-public record ClearCartCommand(Guid? UserId)
+public record ClearCartCommand(Guid? UserId, string? SessionId)
     : IRequest<Result<CartDto>>, ITransactionalCommand;

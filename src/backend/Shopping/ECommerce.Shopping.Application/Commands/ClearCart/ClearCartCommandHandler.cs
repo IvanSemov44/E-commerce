@@ -3,6 +3,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Shopping.Application.DTOs;
 using ECommerce.Shopping.Application.Mapping;
+using ECommerce.Shopping.Application.Helpers;
 using ECommerce.Shopping.Domain.Aggregates.Cart;
 using ECommerce.Shopping.Domain.Interfaces;
 
@@ -15,16 +16,10 @@ public class ClearCartCommandHandler(
 {
     public async Task<Result<CartDto>> Handle(ClearCartCommand command, CancellationToken ct)
     {
-        if (command.UserId is null)
-        {
-            var empty = Cart.Create(Guid.Empty);
-            return Result<CartDto>.Ok(empty.ToDto());
-        }
-
-        var cart = await _carts.GetByUserIdAsync(command.UserId.Value, ct);
+        var cart = await _carts.ResolveCartAsync(command.UserId, command.SessionId, ct);
         if (cart is null)
         {
-            return Result<CartDto>.Ok(Cart.Create(command.UserId.Value).ToDto());
+            return Result<CartDto>.Ok(Cart.Create(Guid.Empty).ToDto());
         }
 
         cart.Clear();

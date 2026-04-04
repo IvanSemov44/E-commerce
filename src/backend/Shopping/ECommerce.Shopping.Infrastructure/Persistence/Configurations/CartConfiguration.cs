@@ -12,6 +12,8 @@ public class CartConfiguration : IEntityTypeConfiguration<Cart>
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.UserId).IsRequired();
+        builder.Property(c => c.SessionId).HasMaxLength(100).IsRequired(false);
+        builder.HasIndex(c => c.SessionId);
 
         builder.Property(c => c.RowVersion)
                .IsRowVersion()

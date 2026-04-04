@@ -1,5 +1,6 @@
 ﻿using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.Interfaces;
 using ECommerce.Identity.Application.Commands.ForgotPassword;
 using ECommerce.Identity.Application.Commands.Login;
 using ECommerce.Identity.Application.Commands.Logout;
@@ -9,6 +10,7 @@ using ECommerce.Identity.Application.Commands.ResetPassword;
 using ECommerce.Identity.Application.Commands.VerifyEmail;
 using ECommerce.Identity.Application.DTOs;
 using ECommerce.Identity.Application.Queries.GetCurrentUser;
+using ECommerce.Shopping.Application.Commands.MergeCart;
 using ECommerce.Core.Constants;
 using ECommerce.Core.Extensions;
 using ECommerce.API.ActionFilters;
@@ -28,7 +30,11 @@ namespace ECommerce.API.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Auth")]
-public class AuthController(IMediator mediator, ILogger<AuthController> logger, IConfiguration configuration) : ControllerBase
+public class AuthController(
+    IMediator mediator,
+    ILogger<AuthController> logger,
+    IConfiguration configuration,
+    ICurrentUserService currentUser) : ControllerBase
 {
     private void SetAuthCookies(string accessToken, string refreshToken)
     {
@@ -137,6 +143,15 @@ public class AuthController(IMediator mediator, ILogger<AuthController> logger, 
         var data = result.GetDataOrThrow();
         SetAuthCookies(data.AccessToken, data.RefreshToken);
         logger.LogInformation("User logged in successfully: {Email}", dto.Email.MaskEmail());
+
+        // Merge session-based cart (if exists) with user cart
+        var sessionId = currentUser.SessionId;
+        if (sessionId is not null)
+        {
+            // Fire-and-forget merge; don't block login on merge failure
+            _ = mediator.Send(new MergeCartCommand(data.UserId, sessionId), ct)
+                .ContinueWith(_ => Response.Cookies.Delete("CartSession"));
+        }
 
         // Fetch user profile to include in response
         var profile = await mediator.Send(new GetCurrentUserQuery(data.UserId), ct);

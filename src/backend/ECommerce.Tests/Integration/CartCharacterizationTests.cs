@@ -76,14 +76,15 @@ public class CartCharacterizationTests
     [TestMethod]
     public async Task GetOrCreateCart_Anonymous_Returns200()
     {
-        // This endpoint is [AllowAnonymous]
+        // This endpoint is [AllowAnonymous] - requires sessionId for anonymous users
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
 
         var res = await client.PostAsync("/api/cart/get-or-create",
             new StringContent("", Encoding.UTF8, "application/json"),
             TestContext.CancellationToken);
 
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode, "Anonymous users need a sessionId to create cart");
     }
 
     // ── POST /api/cart/add-item ────────────────────────────────────────────────
@@ -93,6 +94,7 @@ public class CartCharacterizationTests
     {
         // add-item is [AllowAnonymous] — missing body should still 400
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
 
         var res = await client.PostAsync("/api/cart/add-item",
             new StringContent("{}", Encoding.UTF8, "application/json"),
@@ -108,16 +110,16 @@ public class CartCharacterizationTests
     public async Task AddToCart_Anonymous_UnknownProduct_ReturnsErrorStatus()
     {
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
         var payload = new { ProductId = Guid.NewGuid(), Quantity = 1 };
 
         var res = await client.PostAsync("/api/cart/add-item", Json(payload), TestContext.CancellationToken);
 
-        // Either 404 (product not found) or 200 (added to anonymous cart without product check)
+        // Product not found should return 404
         Assert.IsTrue(
             res.StatusCode == HttpStatusCode.NotFound
-            || res.StatusCode == HttpStatusCode.OK
             || res.StatusCode == HttpStatusCode.BadRequest,
-            $"Expected 200/400/404, got {(int)res.StatusCode}");
+            $"Expected 400/404, got {(int)res.StatusCode}");
     }
 
     // ── PUT /api/cart/update-item/{cartItemId} (alias: items/{id}) ────────────
@@ -125,8 +127,9 @@ public class CartCharacterizationTests
     [TestMethod]
     public async Task UpdateCartItem_UnknownCartItemId_Returns404OrOk()
     {
-        // Anonymous endpoint
+        // Anonymous endpoint - requires sessionId
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
         var payload = new { Quantity = 3 };
 
         // Test both route aliases
@@ -135,19 +138,16 @@ public class CartCharacterizationTests
         var res2 = await client.PutAsync(
             $"/api/cart/items/{Guid.NewGuid()}", Json(payload), TestContext.CancellationToken);
 
-        // Both aliases must respond (not 404 on the route itself)
-        Assert.IsTrue(
-            res1.StatusCode != HttpStatusCode.NotFound || res1.StatusCode == HttpStatusCode.NotFound,
-            "Route /update-item must exist");
-        Assert.IsTrue(
-            (int)res2.StatusCode >= 200 && (int)res2.StatusCode < 500,
-            "Route /items must exist and be handled");
+        // Both aliases must respond with 404 (item not found in cart)
+        Assert.AreEqual(HttpStatusCode.NotFound, res1.StatusCode, "Route /update-item must return 404 for unknown item");
+        Assert.AreEqual(HttpStatusCode.NotFound, res2.StatusCode, "Route /items must return 404 for unknown item");
     }
 
     [TestMethod]
     public async Task UpdateCartItem_ZeroQuantity_Returns400OrUnprocessable()
     {
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
         var payload = new { Quantity = 0 };
 
         var res = await client.PutAsync(
@@ -199,6 +199,7 @@ public class CartCharacterizationTests
     {
         // clear is [AllowAnonymous]
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
 
         var res = await client.PostAsync("/api/cart/clear",
             new StringContent("", Encoding.UTF8, "application/json"),
@@ -212,6 +213,7 @@ public class CartCharacterizationTests
     {
         // [HttpDelete] on the same action
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
 
         var res = await client.DeleteAsync("/api/cart", TestContext.CancellationToken);
 
@@ -224,6 +226,7 @@ public class CartCharacterizationTests
     public async Task ValidateCart_AnonymousUnknownCart_Returns404OrOk()
     {
         using var client = _factory.CreateUnauthenticatedClient();
+        client.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
 
         var res = await client.PostAsync(
             $"/api/cart/validate/{Guid.NewGuid()}",

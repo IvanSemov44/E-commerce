@@ -40,10 +40,18 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            return _httpContextAccessor.HttpContext?.Request.Cookies
-                .TryGetValue("sessionId", out var sessionId) == true
-                ? sessionId
-                : null;
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null) return null;
+
+            // Check header first (for API/mobile clients)
+            if (httpContext.Request.Headers.TryGetValue("X-Session-ID", out var headerSessionId) && !string.IsNullOrWhiteSpace(headerSessionId))
+                return headerSessionId.ToString();
+
+            // Fall back to cookie
+            if (httpContext.Request.Cookies.TryGetValue("sessionId", out var cookieSessionId) && !string.IsNullOrWhiteSpace(cookieSessionId))
+                return cookieSessionId;
+
+            return null;
         }
     }
 

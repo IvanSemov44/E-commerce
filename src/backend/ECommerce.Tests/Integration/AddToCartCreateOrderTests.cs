@@ -28,6 +28,7 @@ public class AddToCartCreateOrderTests
     {
         // Use unauthenticated client for cart (anonymous allowed)
         var anonClient = _factory.CreateClient();
+        anonClient.DefaultRequestHeaders.Add("X-Session-ID", Guid.NewGuid().ToString());
 
         // Add to cart (anonymous allowed)
         var addBody = new { ProductId = "22222222-2222-2222-2222-222222222222", Quantity = 2 };

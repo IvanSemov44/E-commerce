@@ -16,6 +16,9 @@ sealed class FakeCartRepository : ICartRepository
     public Task<Cart?> GetByIdAsync(Guid cartId, CancellationToken ct = default)
         => Task.FromResult(Store.FirstOrDefault(c => c.Id == cartId));
 
+    public Task<Cart?> GetBySessionIdAsync(string sessionId, CancellationToken ct = default)
+        => Task.FromResult(Store.FirstOrDefault(c => c.SessionId == sessionId));
+
     public Task UpsertAsync(Cart cart, CancellationToken ct = default)
     {
         Store.RemoveAll(c => c.Id == cart.Id);

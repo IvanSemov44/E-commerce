@@ -4,6 +4,7 @@ using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Shopping.Application.DTOs;
 using ECommerce.Shopping.Application.Errors;
 using ECommerce.Shopping.Application.Mapping;
+using ECommerce.Shopping.Application.Helpers;
 using ECommerce.Shopping.Domain.Interfaces;
 
 namespace ECommerce.Shopping.Application.Commands.UpdateCartItemQuantity;
@@ -15,7 +16,7 @@ public class UpdateCartItemQuantityCommandHandler(
 {
     public async Task<Result<CartDto>> Handle(UpdateCartItemQuantityCommand command, CancellationToken ct)
     {
-        var cart = await _carts.GetByUserIdAsync(command.UserId, ct);
+        var cart = await _carts.ResolveCartAsync(command.UserId, command.SessionId, ct);
         if (cart is null) return Result<CartDto>.Fail(ShoppingApplicationErrors.CartNotFound);
 
         var result = cart.UpdateItemQuantity(command.CartItemId, command.NewQuantity);
