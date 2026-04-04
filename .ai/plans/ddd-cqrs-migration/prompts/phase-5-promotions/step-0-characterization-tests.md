@@ -1,33 +1,17 @@
-# Phase 5, Step 0: Promotions Characterization Tests
+# Phase 5, Step 0: Characterization Tests
 
-**Do this BEFORE touching any migration code.** These tests pin the existing HTTP contract for the PromoCodesController.
+**Prerequisite**: Phase 4 complete. Old `PromoCodeService` still in place. Do NOT modify any production code in this step.
 
-**Prerequisite**: Phase 4 (Shopping) complete and all tests pass.
+Write integration tests that pin the existing HTTP contract. These tests run against the OLD service now and must pass again — without modification — after cutover to new MediatR handlers.
 
----
-
-## Context
-
-The existing `PromoCodesController` is backed by `IPromoCodeService`. We create `PromoCodeCharacterizationTests.cs` to lock down the EXACT contract: status codes, response shapes, auth requirements, and route structure. These must pass against the OLD service before migration AND must still pass after cutover.
-
-**Key things to pin:**
-- Route is `api/promo-codes` (hyphenated, not `api/promocodes`)
-- `GET /api/promo-codes/active` is anonymous and returns paginated shape
-- All other endpoints except `POST /api/promo-codes/validate` require Admin or SuperAdmin
-- `POST /api/promo-codes/validate` is anonymous and ALWAYS returns 200 — even for invalid codes
-- `POST /api/promo-codes` returns 201 Created with a `Location` header
-- `PUT /api/promo-codes/{id}/deactivate` uses the sub-route `deactivate`
-- Seeded PromoCode: Id `55555555-5555-5555-5555-555555555555`, Code `SAVE20`, 20% discount, IsActive=true
+Seeded test data (from `TestWebApplicationFactory`):
+- PromoCode Id: `55555555-5555-5555-5555-555555555555`, Code: `SAVE20`, DiscountType: `Percentage`, DiscountValue: `20`, IsActive: `true`, MaxUses: `null`, UsedCount: `0`, MinOrderAmount: `null`, MaxDiscountAmount: `null`
 
 ---
 
-## Task: Create Characterization Tests in ECommerce.Tests
+## Create the file
 
-File goes in `src/backend/ECommerce.Tests/Integration/`.
-
----
-
-### File: `ECommerce.Tests/Integration/PromoCodeCharacterizationTests.cs`
+`src/backend/ECommerce.Tests/Integration/PromoCodeCharacterizationTests.cs`
 
 ```csharp
 using System.Net;
@@ -37,512 +21,467 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Integration;
 
-/// <summary>
-/// Characterization tests for PromoCodesController.
-/// Written BEFORE Phase 5 migration — pin the exact HTTP contract.
-/// Must pass against both old PromoCodeService AND new MediatR handlers.
-/// </summary>
 [TestClass]
 public class PromoCodeCharacterizationTests
 {
-    private TestWebApplicationFactory _factory = null!;
-    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
-
-    // Seeded PromoCode used across multiple tests
-    private const string SeededPromoCodeId   = "55555555-5555-5555-5555-555555555555";
-    private const string SeededPromoCodeCode = "SAVE20";
-
-    public TestContext TestContext { get; set; } = null!;
+    private static TestWebApplicationFactory _factory = null!;
+    private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
+    private static readonly Guid SeededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
 
     [TestInitialize]
-    public void Setup() => _factory = new TestWebApplicationFactory();
+    public void Setup()
+    {
+        _factory ??= new TestWebApplicationFactory();
+    }
 
     [TestCleanup]
     public void Cleanup()
     {
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId           = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole         = "Customer";
-        _factory?.Dispose();
+        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
+        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
     }
 
-    private static StringContent Json(object dto) =>
-        new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-
-    /// <summary>Generates a unique promo code string safe for use in tests.</summary>
-    private static string UniqueCode() =>
-        ("TEST" + Guid.NewGuid().ToString("N").ToUpper())[..10]; // e.g. "TESTA1B2C3D4"
-
-    // ── GET /api/promo-codes/active ────────────────────────────────────────────
+    // ────────────────────────────────────────────────
+    // GET /api/promo-codes/active  (anonymous)
+    // ────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetActivePromoCodes_Anonymous_Returns200()
+    public async Task GetActiveCodes_Anonymous_Returns200()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-
-        var res = await client.GetAsync("/api/promo-codes/active", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var response = await client.GetAsync("/api/promo-codes/active");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task GetActivePromoCodes_ResponseShape_HasPaginatedData()
+    public async Task GetActiveCodes_ResponseShape_HasDataWithItemsAndTotalCount()
     {
         using var client = _factory.CreateUnauthenticatedClient();
+        var body = JsonSerializer.Deserialize<JsonElement>(
+            await (await client.GetAsync("/api/promo-codes/active")).Content.ReadAsStringAsync(), _json);
 
-        var res  = await client.GetAsync("/api/promo-codes/active?page=1&pageSize=10", TestContext.CancellationToken);
-        var body = await res.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-        Assert.IsTrue(
-            data.TryGetProperty("items", out _) || data.TryGetProperty("Items", out _),
-            "Paginated data must have 'items'");
-        Assert.IsTrue(
-            data.TryGetProperty("totalCount", out _) || data.TryGetProperty("TotalCount", out _),
-            "Paginated data must have 'totalCount'");
+        Assert.IsTrue(body.TryGetProperty("data", out var data));
+        Assert.IsTrue(data.TryGetProperty("items", out _));
+        Assert.IsTrue(data.TryGetProperty("totalCount", out _));
+        Assert.IsTrue(data.TryGetProperty("page", out _));
+        Assert.IsTrue(data.TryGetProperty("pageSize", out _));
     }
 
     [TestMethod]
-    public async Task GetActivePromoCodes_PageSizeClamped_To100()
+    public async Task GetActiveCodes_PageSizeClamped_To100()
     {
-        // pageSize > 100 must be clamped — the endpoint must not throw or 400
         using var client = _factory.CreateUnauthenticatedClient();
+        var response = await client.GetAsync("/api/promo-codes/active?page=1&pageSize=500");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
-        var res = await client.GetAsync("/api/promo-codes/active?page=1&pageSize=999", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var body = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json);
+        if (body.TryGetProperty("data", out var data) &&
+            data.TryGetProperty("items", out var items) &&
+            items.ValueKind == JsonValueKind.Array)
+        {
+            Assert.IsTrue(items.GetArrayLength() <= 100, "pageSize must be clamped to 100");
+        }
     }
 
-    // ── GET /api/promo-codes (admin list) ──────────────────────────────────────
+    // ────────────────────────────────────────────────
+    // GET /api/promo-codes  (admin only)
+    // ────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetAllPromoCodes_Unauthenticated_Returns401()
+    public async Task GetAllPromoCodes_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-
-        var res = await client.GetAsync("/api/promo-codes", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+        var response = await client.GetAsync("/api/promo-codes");
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [TestMethod]
     public async Task GetAllPromoCodes_CustomerRole_Returns403()
     {
-        // Customer is not Admin — must be forbidden
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
-
-        var res = await client.GetAsync("/api/promo-codes", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+        var response = await client.GetAsync("/api/promo-codes");
+        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [TestMethod]
     public async Task GetAllPromoCodes_AdminRole_Returns200WithPaginatedShape()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
-
-        var res  = await client.GetAsync("/api/promo-codes?page=1&pageSize=10", TestContext.CancellationToken);
-        var body = await res.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-        Assert.IsTrue(
-            data.TryGetProperty("items", out _) || data.TryGetProperty("Items", out _),
-            "Paginated response must have 'items'");
+        using var client = _factory.CreateAdminClient();
+        var body = JsonSerializer.Deserialize<JsonElement>(
+            await (await client.GetAsync("/api/promo-codes?page=1&pageSize=10")).Content.ReadAsStringAsync(), _json);
+        Assert.IsTrue(body.TryGetProperty("data", out var data));
+        Assert.IsTrue(data.TryGetProperty("items", out _));
+        Assert.IsTrue(data.TryGetProperty("totalCount", out _));
     }
 
-    // ── GET /api/promo-codes/{id} ──────────────────────────────────────────────
+    [TestMethod]
+    public async Task GetAllPromoCodes_SearchFilter_Returns200()
+    {
+        using var client = _factory.CreateAdminClient();
+        var response = await client.GetAsync("/api/promo-codes?search=SAVE");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
 
     [TestMethod]
-    public async Task GetPromoCodeById_Unauthenticated_Returns401()
+    public async Task GetAllPromoCodes_IsActiveFilter_Returns200()
+    {
+        using var client = _factory.CreateAdminClient();
+        var response = await client.GetAsync("/api/promo-codes?isActive=true");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    // ────────────────────────────────────────────────
+    // GET /api/promo-codes/{id}  (admin only)
+    // ────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task GetPromoCodeById_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-
-        var res = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+        var response = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}");
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [TestMethod]
     public async Task GetPromoCodeById_CustomerRole_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
-
-        var res = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+        var response = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}");
+        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task GetPromoCodeById_AdminRole_SeededId_Returns200WithDetailShape()
+    public async Task GetPromoCodeById_Admin_SeededId_Returns200WithCorrectShape()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateAdminClient();
+        var response = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
-        var res  = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}", TestContext.CancellationToken);
-        var body = await res.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json).GetProperty("data");
 
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-        // Verify code field in response
-        var code = data.TryGetProperty("code", out var c) ? c.GetString() :
-                   data.TryGetProperty("Code", out var cc) ? cc.GetString() : null;
-        Assert.AreEqual(SeededPromoCodeCode, code, "Seeded code must be SAVE20");
+        Assert.AreEqual("SAVE20", data.GetProperty("code").GetString());
+        Assert.IsTrue(data.GetProperty("isActive").GetBoolean());
+        Assert.IsTrue(data.TryGetProperty("discountType", out _));
+        Assert.IsTrue(data.TryGetProperty("discountValue", out _));
+        Assert.IsTrue(data.TryGetProperty("usedCount", out _));
+        Assert.IsTrue(data.TryGetProperty("createdAt", out _));
+        Assert.IsTrue(data.TryGetProperty("updatedAt", out _));
     }
 
     [TestMethod]
-    public async Task GetPromoCodeById_AdminRole_UnknownId_Returns404()
+    public async Task GetPromoCodeById_Admin_UnknownId_Returns404WithErrorCode()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateAdminClient();
+        var response = await client.GetAsync($"/api/promo-codes/{Guid.NewGuid()}");
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
 
-        var res = await client.GetAsync($"/api/promo-codes/{Guid.NewGuid()}", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+        var body = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json);
+        Assert.IsTrue(body.TryGetProperty("errorCode", out var code));
+        Assert.AreEqual("PROMO_CODE_NOT_FOUND", code.GetString());
     }
 
-    // ── POST /api/promo-codes ──────────────────────────────────────────────────
+    // ────────────────────────────────────────────────
+    // POST /api/promo-codes  (admin only, returns 201 Created)
+    // ────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task CreatePromoCode_Unauthenticated_Returns401()
+    public async Task CreatePromoCode_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { Code = UniqueCode(), DiscountType = "Percentage", DiscountValue = 10m };
-
-        var res = await client.PostAsync("/api/promo-codes", Json(payload), TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+        var response = await client.PostAsync("/api/promo-codes", BuildCreateBody(UniqueCode(), "Percentage", 10));
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task CreatePromoCode_AdminRole_ValidPayload_Returns201WithLocationHeader()
+    public async Task CreatePromoCode_CustomerRole_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
         using var client = _factory.CreateAuthenticatedClient();
-        var payload = new
-        {
-            Code          = UniqueCode(),
-            DiscountType  = "Percentage",
-            DiscountValue = 15m,
-            IsActive      = true
-        };
-
-        var res = await client.PostAsync("/api/promo-codes", Json(payload), TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Created, res.StatusCode,
-            $"Create must return 201. Body: {await res.Content.ReadAsStringAsync()}");
-        Assert.IsNotNull(res.Headers.Location, "Created response must include Location header");
+        var response = await client.PostAsync("/api/promo-codes", BuildCreateBody(UniqueCode(), "Percentage", 10));
+        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task CreatePromoCode_InvalidDiscountType_Returns400()
+    public async Task CreatePromoCode_Admin_ValidData_Returns201WithLocationHeader()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
-        var payload = new { Code = UniqueCode(), DiscountType = "InvalidType", DiscountValue = 10m };
-
-        var res = await client.PostAsync("/api/promo-codes", Json(payload), TestContext.CancellationToken);
-
-        Assert.IsTrue(
-            res.StatusCode == HttpStatusCode.BadRequest
-            || res.StatusCode == HttpStatusCode.UnprocessableEntity,
-            $"Invalid DiscountType must return 400 or 422, got {(int)res.StatusCode}");
+        using var client = _factory.CreateAdminClient();
+        var response = await client.PostAsync("/api/promo-codes", BuildCreateBody(UniqueCode(), "Percentage", 15));
+        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode,
+            $"Body: {await response.Content.ReadAsStringAsync()}");
+        Assert.IsNotNull(response.Headers.Location, "201 must include Location header");
     }
 
     [TestMethod]
-    public async Task CreatePromoCode_DuplicateCode_Returns409()
+    public async Task CreatePromoCode_Admin_CodeNormalized_ToUppercase()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateAdminClient();
+        var rawCode = "lower-" + Guid.NewGuid().ToString("N")[..5];
+        var response = await client.PostAsync("/api/promo-codes", BuildCreateBody(rawCode, "Percentage", 10));
+        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
 
-        // Use the seeded SAVE20 code — it already exists
-        var payload = new { Code = SeededPromoCodeCode, DiscountType = "Percentage", DiscountValue = 10m };
-
-        var res = await client.PostAsync("/api/promo-codes", Json(payload), TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Conflict, res.StatusCode,
-            $"Duplicate code must return 409. Body: {await res.Content.ReadAsStringAsync()}");
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json).GetProperty("data");
+        Assert.AreEqual(rawCode.Trim().ToUpperInvariant(), data.GetProperty("code").GetString());
     }
 
-    // ── PUT /api/promo-codes/{id} ──────────────────────────────────────────────
+    [TestMethod]
+    public async Task CreatePromoCode_Admin_DuplicateCode_Returns409WithDuplicateErrorCode()
+    {
+        using var client = _factory.CreateAdminClient();
+        var code = UniqueCode();
+        var first = await client.PostAsync("/api/promo-codes", BuildCreateBody(code, "Percentage", 10));
+        Assert.AreEqual(HttpStatusCode.Created, first.StatusCode);
+
+        var second = await client.PostAsync("/api/promo-codes", BuildCreateBody(code, "Percentage", 10));
+        Assert.AreEqual(HttpStatusCode.Conflict, second.StatusCode);
+
+        var body = JsonSerializer.Deserialize<JsonElement>(
+            await second.Content.ReadAsStringAsync(), _json);
+        Assert.AreEqual("DUPLICATE_PROMO_CODE", body.GetProperty("errorCode").GetString());
+    }
 
     [TestMethod]
-    public async Task UpdatePromoCode_Unauthenticated_Returns401()
+    public async Task CreatePromoCode_Admin_FixedDiscount_Returns201()
+    {
+        using var client = _factory.CreateAdminClient();
+        var response = await client.PostAsync("/api/promo-codes", BuildCreateBody(UniqueCode(), "Fixed", 25));
+        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    // ────────────────────────────────────────────────
+    // PUT /api/promo-codes/{id}  (admin only)
+    // ────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task UpdatePromoCode_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { DiscountValue = 25m };
-
-        var res = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}", Json(payload), TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+        var response = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}",
+            new StringContent("{}", Encoding.UTF8, "application/json"));
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task UpdatePromoCode_AdminRole_SeededId_Returns200()
+    public async Task UpdatePromoCode_Admin_SeededId_Returns200()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
-        var payload = new { DiscountValue = (decimal?)20m }; // no change in value — just a valid update
-
-        var res = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}", Json(payload), TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode,
-            $"Update must return 200. Body: {await res.Content.ReadAsStringAsync()}");
+        using var client = _factory.CreateAdminClient();
+        var dto = new { IsActive = true };
+        var response = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}",
+            new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json"));
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task UpdatePromoCode_AdminRole_UnknownId_Returns404()
+    public async Task UpdatePromoCode_Admin_UnknownId_Returns404()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
-        var payload = new { DiscountValue = (decimal?)10m };
-
-        var res = await client.PutAsync($"/api/promo-codes/{Guid.NewGuid()}", Json(payload), TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+        using var client = _factory.CreateAdminClient();
+        var dto = new { IsActive = false };
+        var response = await client.PutAsync($"/api/promo-codes/{Guid.NewGuid()}",
+            new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json"));
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // ── PUT /api/promo-codes/{id}/deactivate ──────────────────────────────────
+    // ────────────────────────────────────────────────
+    // PUT /api/promo-codes/{id}/deactivate  (admin only)
+    // ────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task DeactivatePromoCode_Unauthenticated_Returns401()
+    public async Task DeactivatePromoCode_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-
-        var res = await client.PutAsync(
-            $"/api/promo-codes/{SeededPromoCodeId}/deactivate",
-            new StringContent("", Encoding.UTF8, "application/json"),
-            TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+        var response = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}/deactivate", null);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task DeactivatePromoCode_AdminRole_SeededId_Returns200()
+    public async Task DeactivatePromoCode_Admin_ExistingCode_Returns200()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateAdminClient();
+        // Create a fresh code to deactivate — don't deactivate SAVE20 as it would break other tests
+        var code = UniqueCode();
+        var created = await client.PostAsync("/api/promo-codes", BuildCreateBody(code, "Percentage", 5));
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var id = JsonSerializer.Deserialize<JsonElement>(
+            await created.Content.ReadAsStringAsync(), _json)
+            .GetProperty("data").GetProperty("id").GetGuid();
 
-        var res = await client.PutAsync(
-            $"/api/promo-codes/{SeededPromoCodeId}/deactivate",
-            new StringContent("", Encoding.UTF8, "application/json"),
-            TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode,
-            $"Deactivate must return 200. Body: {await res.Content.ReadAsStringAsync()}");
+        var response = await client.PutAsync($"/api/promo-codes/{id}/deactivate", null);
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task DeactivatePromoCode_AdminRole_UnknownId_Returns404()
+    public async Task DeactivatePromoCode_Admin_UnknownId_Returns404()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
-
-        var res = await client.PutAsync(
-            $"/api/promo-codes/{Guid.NewGuid()}/deactivate",
-            new StringContent("", Encoding.UTF8, "application/json"),
-            TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+        using var client = _factory.CreateAdminClient();
+        var response = await client.PutAsync($"/api/promo-codes/{Guid.NewGuid()}/deactivate", null);
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // ── DELETE /api/promo-codes/{id} ───────────────────────────────────────────
+    // ────────────────────────────────────────────────
+    // DELETE /api/promo-codes/{id}  (admin only)
+    // ────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task DeletePromoCode_Unauthenticated_Returns401()
+    public async Task DeletePromoCode_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-
-        var res = await client.DeleteAsync($"/api/promo-codes/{Guid.NewGuid()}", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+        var response = await client.DeleteAsync($"/api/promo-codes/{Guid.NewGuid()}");
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [TestMethod]
     public async Task DeletePromoCode_CustomerRole_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
-
-        var res = await client.DeleteAsync($"/api/promo-codes/{Guid.NewGuid()}", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+        var response = await client.DeleteAsync($"/api/promo-codes/{Guid.NewGuid()}");
+        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task DeletePromoCode_AdminRole_UnknownId_Returns404()
+    public async Task DeletePromoCode_Admin_UnknownId_Returns404()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
-
-        var res = await client.DeleteAsync($"/api/promo-codes/{Guid.NewGuid()}", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+        using var client = _factory.CreateAdminClient();
+        var response = await client.DeleteAsync($"/api/promo-codes/{Guid.NewGuid()}");
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task DeletePromoCode_AdminRole_CreatedCode_Returns200()
+    public async Task DeletePromoCode_Admin_ExistingCode_Returns200()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var client = _factory.CreateAuthenticatedClient();
-
-        // Create a code so we have something to delete
-        var createPayload = new { Code = UniqueCode(), DiscountType = "Percentage", DiscountValue = 5m, IsActive = true };
-        var createRes = await client.PostAsync("/api/promo-codes", Json(createPayload), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, createRes.StatusCode, "Pre-condition: create must succeed");
-
-        var location = createRes.Headers.Location!.ToString();
-        var id       = location.Split('/').Last();
-
-        var deleteRes = await client.DeleteAsync($"/api/promo-codes/{id}", TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.OK, deleteRes.StatusCode,
-            $"Delete must return 200. Body: {await deleteRes.Content.ReadAsStringAsync()}");
-    }
-
-    // ── POST /api/promo-codes/validate ─────────────────────────────────────────
-
-    [TestMethod]
-    public async Task ValidatePromoCode_Anonymous_AlwaysReturns200()
-    {
-        // This endpoint is always 200 — even for invalid codes
-        using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { code = "COMPLETELY-INVALID-CODE-99", orderAmount = 100m };
-
-        var res = await client.PostAsync("/api/promo-codes/validate", Json(payload), TestContext.CancellationToken);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode,
-            "Validate must always return 200 regardless of code validity");
-    }
-
-    [TestMethod]
-    public async Task ValidatePromoCode_UnknownCode_Returns200WithIsValidFalse()
-    {
-        using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { code = "DOES-NOT-EXIST", orderAmount = 100m };
-
-        var res  = await client.PostAsync("/api/promo-codes/validate", Json(payload), TestContext.CancellationToken);
-        var body = await res.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-        var isValid = data.TryGetProperty("isValid", out var iv) ? iv.GetBoolean() :
-                      data.TryGetProperty("IsValid", out var iv2) ? iv2.GetBoolean() : true;
-        Assert.IsFalse(isValid, "Unknown code must produce isValid=false");
-    }
-
-    [TestMethod]
-    public async Task ValidatePromoCode_Seeded_SAVE20_Returns200WithIsValidTrueAndCorrectDiscount()
-    {
-        // SAVE20 = 20% off. 20% of 100 = 20
-        using var client = _factory.CreateUnauthenticatedClient();
-        var payload = new { code = SeededPromoCodeCode, orderAmount = 100m };
-
-        var res  = await client.PostAsync("/api/promo-codes/validate", Json(payload), TestContext.CancellationToken);
-        var body = await res.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-
-        var isValid = data.TryGetProperty("isValid", out var iv) ? iv.GetBoolean() :
-                      data.TryGetProperty("IsValid", out var iv2) && iv2.GetBoolean();
-        Assert.IsTrue(isValid, "SAVE20 must be valid");
-
-        var discount = data.TryGetProperty("discountAmount", out var da) ? da.GetDecimal() :
-                       data.TryGetProperty("DiscountAmount", out var da2) ? da2.GetDecimal() : -1m;
-        Assert.AreEqual(20m, discount, "20% of 100 = 20");
-    }
-
-    [TestMethod]
-    public async Task ValidatePromoCode_CodeIsCaseInsensitive()
-    {
-        // "save20" lowercase must behave the same as "SAVE20"
-        using var client = _factory.CreateUnauthenticatedClient();
-        var payloadLower = new { code = "save20", orderAmount = 100m };
-
-        var res  = await client.PostAsync("/api/promo-codes/validate", Json(payloadLower), TestContext.CancellationToken);
-        var body = await res.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-        var isValid = data.TryGetProperty("isValid", out var iv) ? iv.GetBoolean() :
-                      data.TryGetProperty("IsValid", out var iv2) && iv2.GetBoolean();
-        Assert.IsTrue(isValid, "Code lookup must be case-insensitive");
-    }
-
-    [TestMethod]
-    public async Task ValidatePromoCode_MinOrderAmountNotMet_Returns200WithIsValidFalse()
-    {
-        // Create a code with minOrderAmount=500, then validate with orderAmount=50
-        ConditionalTestAuthHandler.CurrentUserRole = "Admin";
-        using var adminClient = _factory.CreateAuthenticatedClient();
-
+        using var client = _factory.CreateAdminClient();
         var code = UniqueCode();
-        var createPayload = new
-        {
-            Code             = code,
-            DiscountType     = "Percentage",
-            DiscountValue    = 10m,
-            MinOrderAmount   = 500m,
-            IsActive         = true
-        };
-        var createRes = await adminClient.PostAsync(
-            "/api/promo-codes", Json(createPayload), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, createRes.StatusCode,
-            "Pre-condition: create must succeed");
+        var created = await client.PostAsync("/api/promo-codes", BuildCreateBody(code, "Fixed", 5));
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var id = JsonSerializer.Deserialize<JsonElement>(
+            await created.Content.ReadAsStringAsync(), _json)
+            .GetProperty("data").GetProperty("id").GetGuid();
 
-        // Now validate as anonymous with orderAmount=50 (below minimum)
-        using var anonClient = _factory.CreateUnauthenticatedClient();
-        var validatePayload = new { code, orderAmount = 50m };
-
-        var res  = await anonClient.PostAsync("/api/promo-codes/validate", Json(validatePayload), TestContext.CancellationToken);
-        var body = await res.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
-
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode,
-            "Validate must still return 200 even when min order not met");
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-        var isValid = data.TryGetProperty("isValid", out var iv) ? iv.GetBoolean() :
-                      data.TryGetProperty("IsValid", out var iv2) && iv2.GetBoolean();
-        Assert.IsFalse(isValid, "Min order not met must produce isValid=false");
+        var response = await client.DeleteAsync($"/api/promo-codes/{id}");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
+
+    // ────────────────────────────────────────────────
+    // POST /api/promo-codes/validate  (anonymous, always 200)
+    // ────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task ValidatePromoCode_Anonymous_AlwaysReturns200_EvenForUnknownCode()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+        var response = await client.PostAsync("/api/promo-codes/validate",
+            new StringContent("{\"code\":\"DOESNOTEXIST\",\"orderAmount\":100}", Encoding.UTF8, "application/json"));
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_ValidCode_IsValidTrue_CorrectDiscountAmount()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+        var response = await client.PostAsync("/api/promo-codes/validate",
+            new StringContent("{\"code\":\"SAVE20\",\"orderAmount\":100}", Encoding.UTF8, "application/json"));
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json).GetProperty("data");
+        Assert.IsTrue(data.GetProperty("isValid").GetBoolean());
+        Assert.AreEqual(20m, data.GetProperty("discountAmount").GetDecimal(), "20% of 100 = 20");
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_UnknownCode_IsValidFalse_DiscountZero()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+        var response = await client.PostAsync("/api/promo-codes/validate",
+            new StringContent("{\"code\":\"FAKECODE999\",\"orderAmount\":100}", Encoding.UTF8, "application/json"));
+
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json).GetProperty("data");
+        Assert.IsFalse(data.GetProperty("isValid").GetBoolean());
+        Assert.AreEqual(0m, data.GetProperty("discountAmount").GetDecimal());
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_LowercaseCode_MatchesCaseInsensitively()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+        var response = await client.PostAsync("/api/promo-codes/validate",
+            new StringContent("{\"code\":\"save20\",\"orderAmount\":100}", Encoding.UTF8, "application/json"));
+
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json).GetProperty("data");
+        Assert.IsTrue(data.GetProperty("isValid").GetBoolean(), "Code lookup must be case-insensitive");
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_BelowMinOrderAmount_IsValidFalse()
+    {
+        using var client = _factory.CreateAdminClient();
+        var code = UniqueCode();
+        var dto = new { Code = code, DiscountType = "Percentage", DiscountValue = 10, MinOrderAmount = 50m };
+        var created = await client.PostAsync("/api/promo-codes",
+            new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json"));
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+
+        using var anon = _factory.CreateUnauthenticatedClient();
+        var response = await anon.PostAsync("/api/promo-codes/validate",
+            new StringContent($"{{\"code\":\"{code}\",\"orderAmount\":30}}", Encoding.UTF8, "application/json"));
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json).GetProperty("data");
+        Assert.IsFalse(data.GetProperty("isValid").GetBoolean());
+    }
+
+    [TestMethod]
+    public async Task ValidatePromoCode_ResponseShape_HasIsValidDiscountAmountMessage()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+        var response = await client.PostAsync("/api/promo-codes/validate",
+            new StringContent("{\"code\":\"SAVE20\",\"orderAmount\":100}", Encoding.UTF8, "application/json"));
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            await response.Content.ReadAsStringAsync(), _json).GetProperty("data");
+
+        Assert.IsTrue(data.TryGetProperty("isValid", out _));
+        Assert.IsTrue(data.TryGetProperty("discountAmount", out _));
+        Assert.IsTrue(data.TryGetProperty("message", out _));
+    }
+
+    // ────────────────────────────────────────────────
+    // Helpers
+    // ────────────────────────────────────────────────
+
+    private static StringContent BuildCreateBody(string code, string discountType, decimal discountValue)
+    {
+        var dto = new { Code = code, DiscountType = discountType, DiscountValue = discountValue };
+        return new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+    }
+
+    /// Generates a unique uppercase code that satisfies the 3–20 char, A-Z0-9 rule.
+    private static string UniqueCode() =>
+        ("T" + Guid.NewGuid().ToString("N")[..11]).ToUpperInvariant();
 }
 ```
 
 ---
 
-## Run Before Starting Migration
+## Run before migration
 
 ```bash
 cd src/backend
-dotnet test ECommerce.Tests/ECommerce.Tests.csproj \
-    --filter "FullyQualifiedName~PromoCodeCharacterizationTests"
+dotnet test ECommerce.Tests --filter "FullyQualifiedName~PromoCodeCharacterizationTests" --logger "console;verbosity=normal"
 ```
 
-All must pass. If any fail, fix the test assumption before starting migration.
+All tests must be green before you touch any production code.
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] `PromoCodeCharacterizationTests.cs` created in `ECommerce.Tests/Integration/`
-- [ ] All tests pass against the EXISTING `PromoCodeService` (before migration)
-- [ ] Anonymous access confirmed: `GET /api/promo-codes/active` and `POST /api/promo-codes/validate` return 200 without token
-- [ ] Auth invariants confirmed: all other endpoints return 401 without token, 403 for Customer role
-- [ ] `POST /api/promo-codes` confirmed to return 201 with `Location` header
-- [ ] `POST /api/promo-codes/validate` confirmed to ALWAYS return 200 regardless of code validity
-- [ ] `data.isValid=true` and `data.discountAmount=20` confirmed for SAVE20 + orderAmount=100
-- [ ] `data.isValid=false` confirmed for unknown code (still 200)
-- [ ] `data.isValid=false` confirmed when minOrderAmount not met (still 200)
-- [ ] Case-insensitive code lookup confirmed: `save20` == `SAVE20`
-- [ ] Duplicate code → 409 confirmed
+- [ ] All tests pass against the OLD `PromoCodeService`
+- [ ] `SAVE20` seeded data confirmed: GetById 200, validate isValid=true, discountAmount=20 for orderAmount=100
+- [ ] Auth boundaries pinned: anonymous → 401, Customer → 403 on admin endpoints
+- [ ] `POST /validate` always returns 200 regardless of code validity
+- [ ] Code normalization pinned: lowercase stored and matched as uppercase
+- [ ] `DUPLICATE_PROMO_CODE` → 409, `PROMO_CODE_NOT_FOUND` → 404
+- [ ] 201 Created with Location header on successful create

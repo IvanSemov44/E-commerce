@@ -1,56 +1,37 @@
-# Phase 5, Step 3: Promotions Infrastructure Project
+# Phase 5, Step 3: Infrastructure Project
 
-**Prerequisite**: Step 2 (`ECommerce.Promotions.Application`) is complete and `dotnet build` passes.
+**Prerequisite**: Steps 1 and 2 complete and building.
 
----
-
-## Important: No EF migration needed
-
-The `PromoCodes` table already exists with all required columns. This step re-maps it to the new DDD aggregate using EF Core Owned Entities and a value converter for `PromoCodeString`.
-
-**Existing table columns (do not change):**
-- `Id` (uniqueidentifier), `Code` (nvarchar), `DiscountType` (nvarchar), `DiscountValue` (decimal)
-- `MinOrderAmount` (decimal, nullable), `MaxDiscountAmount` (decimal, nullable)
-- `MaxUses` (int, nullable), `UsedCount` (int)
-- `StartDate` (datetime2, nullable), `EndDate` (datetime2, nullable)
-- `IsActive` (bit), `RowVersion` ([Timestamp] / rowversion)
-- `CreatedAt`, `UpdatedAt` (from BaseEntity)
-
-**DbSet naming conflict**: The old entity `ECommerce.Core.Entities.PromoCode` likely has a DbSet named `PromoCodes` in `AppDbContext`. The new entity is `ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode`. Handle this by:
-1. Adding the new configuration in this step with a temporary DbSet name `PromoCodes2`.
-2. Removing the old entity and renaming back to `PromoCodes` in step 4 (cutover).
+Create `ECommerce.Promotions.Infrastructure` — EF Core configuration, repository implementation, and DI wiring. No EF migration is needed: the `PromoCodes` table already exists with all columns.
 
 ---
 
-## Task: Create ECommerce.Promotions.Infrastructure Project
-
-### 1. Create the project
+## Task 1: Create the project
 
 ```bash
 cd src/backend
-dotnet new classlib -n ECommerce.Promotions.Infrastructure -f net10.0 \
-    -o Promotions/ECommerce.Promotions.Infrastructure
-dotnet sln ../../ECommerce.sln add \
-    Promotions/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj
-
-dotnet add Promotions/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj \
-    reference ECommerce.SharedKernel/ECommerce.SharedKernel.csproj
-dotnet add Promotions/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj \
-    reference Promotions/ECommerce.Promotions.Domain/ECommerce.Promotions.Domain.csproj
-dotnet add Promotions/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj \
-    reference Promotions/ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj
-dotnet add Promotions/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj \
-    reference ECommerce.Infrastructure/ECommerce.Infrastructure.csproj  # for AppDbContext
-
-dotnet add Promotions/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj \
-    package Microsoft.EntityFrameworkCore
-
-rm Promotions/ECommerce.Promotions.Infrastructure/Class1.cs
+dotnet new classlib -n ECommerce.Promotions.Infrastructure -o ECommerce.Promotions.Infrastructure
+dotnet sln ECommerce.sln add ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj
+dotnet add ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj reference ECommerce.SharedKernel/ECommerce.SharedKernel.csproj
+dotnet add ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj reference ECommerce.Promotions.Domain/ECommerce.Promotions.Domain.csproj
+dotnet add ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj reference ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj
+dotnet add ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj reference ECommerce.Infrastructure/ECommerce.Infrastructure.csproj
+dotnet add ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj package Microsoft.EntityFrameworkCore
+rm ECommerce.Promotions.Infrastructure/Class1.cs
 ```
 
-### 2. EF Core configuration
+---
 
-**File: `Promotions/ECommerce.Promotions.Infrastructure/Persistence/Configurations/PromoCodeConfiguration.cs`**
+## Task 2: EF Configuration
+
+**Mapping strategy**:
+- `PromoCodeString` → value converter (stored as `string` in `Code` column)
+- `DiscountValue` → owned entity: `Type` → `DiscountType` column, `Amount` → `DiscountValue` column
+- `DateRange` → owned entity, nullable: `Start` → `StartDate` column, `End` → `EndDate` column. Both columns are already nullable in the DB.
+- `MaxDiscountAmount` and `MinimumOrderAmount` → regular nullable decimal columns (`MinOrderAmount`, `MaxDiscountAmount`)
+- `RowVersion` → concurrency token
+
+`ECommerce.Promotions.Infrastructure/Configurations/PromoCodeConfiguration.cs`
 
 ```csharp
 using ECommerce.Promotions.Domain.Aggregates.PromoCode;
@@ -59,198 +40,210 @@ using ECommerce.Promotions.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECommerce.Promotions.Infrastructure.Persistence.Configurations;
+namespace ECommerce.Promotions.Infrastructure.Configurations;
 
 public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
 {
     public void Configure(EntityTypeBuilder<PromoCode> builder)
     {
         builder.ToTable("PromoCodes");
+
         builder.HasKey(p => p.Id);
 
-        // ── PromoCodeString via value converter ───────────────────────────────
-        // Reconstitute bypasses validation — EF re-reads an already-stored value.
+        // PromoCodeString — value converter
         builder.Property(p => p.Code)
-               .HasColumnName("Code")
-               .HasMaxLength(20)
-               .IsRequired()
-               .HasConversion(
-                   v => v.Value,
-                   v => PromoCodeString.Reconstitute(v));
+            .HasColumnName("Code")
+            .HasMaxLength(20)
+            .HasConversion(
+                v => v.Value,
+                v => PromoCodeString.Reconstitute(v))
+            .IsRequired();
 
-        // ── DiscountValue owned entity ─────────────────────────────────────────
-        // Maps to existing columns: DiscountType, DiscountValue
-        builder.OwnsOne(p => p.Discount, discount =>
+        builder.HasIndex(p => p.Code).IsUnique();
+
+        // DiscountValue — owned entity mapping to existing columns
+        builder.OwnsOne(p => p.Discount, dv =>
         {
-            discount.Property(d => d.Type)
-                    .HasColumnName("DiscountType")
-                    .IsRequired()
-                    .HasConversion<string>(); // stores enum name as string
+            dv.Property(x => x.Type)
+              .HasColumnName("DiscountType")
+              .HasConversion<string>()
+              .IsRequired();
 
-            discount.Property(d => d.Amount)
-                    .HasColumnName("DiscountValue")
-                    .HasColumnType("decimal(18,4)")
-                    .IsRequired();
+            dv.Property(x => x.Amount)
+              .HasColumnName("DiscountValue")
+              .HasColumnType("decimal(18,2)")
+              .IsRequired();
         });
 
-        // ── ValidPeriod owned entity (nullable) ────────────────────────────────
-        // Maps to existing columns: StartDate, EndDate
-        // ValidPeriod itself can be null (no date restriction).
-        // Use Navigation().IsRequired(false) to tell EF the owned type is optional.
+        // DateRange — nullable owned entity mapping to nullable StartDate / EndDate columns
+        // Navigation is required(false) so EF allows the PromoCode row to have null Start/End
         builder.OwnsOne(p => p.ValidPeriod, vp =>
         {
-            vp.Property(d => d.Start)
+            vp.Property(x => x.Start)
               .HasColumnName("StartDate")
               .IsRequired(false);
 
-            vp.Property(d => d.End)
+            vp.Property(x => x.End)
               .HasColumnName("EndDate")
               .IsRequired(false);
         });
-
         builder.Navigation(p => p.ValidPeriod).IsRequired(false);
 
-        // ── Scalar columns ─────────────────────────────────────────────────────
+        builder.Property(p => p.MaxUses)
+            .HasColumnName("MaxUses")
+            .IsRequired(false);
+
+        builder.Property(p => p.UsedCount)
+            .HasColumnName("UsedCount")
+            .IsRequired();
+
+        builder.Property(p => p.IsActive)
+            .HasColumnName("IsActive")
+            .IsRequired();
+
         builder.Property(p => p.MinimumOrderAmount)
-               .HasColumnName("MinOrderAmount")
-               .HasColumnType("decimal(18,2)")
-               .IsRequired(false);
+            .HasColumnName("MinOrderAmount")
+            .HasColumnType("decimal(18,2)")
+            .IsRequired(false);
 
         builder.Property(p => p.MaxDiscountAmount)
-               .HasColumnType("decimal(18,2)")
-               .IsRequired(false);
+            .HasColumnName("MaxDiscountAmount")
+            .HasColumnType("decimal(18,2)")
+            .IsRequired(false);
 
-        builder.Property(p => p.MaxUses).IsRequired(false);
-        builder.Property(p => p.UsedCount).IsRequired();
-        builder.Property(p => p.IsActive).IsRequired();
-
-        // ── RowVersion concurrency token ───────────────────────────────────────
+        // Concurrency token — existing [Timestamp] column
         builder.Property(p => p.RowVersion)
-               .IsRowVersion()
-               .IsConcurrencyToken();
+            .HasColumnName("RowVersion")
+            .IsRowVersion()
+            .IsConcurrencyToken();
 
-        // ── Unique index on Code ───────────────────────────────────────────────
-        builder.HasIndex(p => p.Code).IsUnique();
+        builder.Property(p => p.CreatedAt).HasColumnName("CreatedAt").IsRequired();
+        builder.Property(p => p.UpdatedAt).HasColumnName("UpdatedAt").IsRequired();
 
-        // ── Ignore Orders navigation (belongs to Ordering context) ─────────────
+        // Ignore navigation to Orders — that relationship is managed by the Ordering context
         builder.Ignore("Orders");
     }
 }
 ```
 
-> **Note on ValidPeriod null reconstitution**: When both `StartDate` and `EndDate` are null in the database, EF Core will set `ValidPeriod` to `null` on the aggregate (because of `Navigation().IsRequired(false)`). This is the correct behaviour — null ValidPeriod = no date restriction.
+**Important — nullable DateRange**: EF owned entities can be null but require careful configuration. If both `StartDate` and `EndDate` are NULL in the DB, EF will set `ValidPeriod` to `null` on the aggregate automatically when `IsRequired(false)` is set on the navigation.
 
-### 3. Implement IPromoCodeRepository
+---
 
-**File: `Promotions/ECommerce.Promotions.Infrastructure/Persistence/Repositories/PromoCodeRepository.cs`**
+## Task 3: DbSet registration
+
+Open `ECommerce.Infrastructure/Data/AppDbContext.cs`. At this point the file has:
+```csharp
+public DbSet<ECommerce.Core.Entities.PromoCode> PromoCodes { get; set; }
+```
+
+You need to add the new `DbSet` **without** removing the old one yet (the old service still references it until cutover). Add a second registration with a distinct name:
 
 ```csharp
-using ECommerce.Infrastructure.Persistence;
+// Phase 5 — new DDD aggregate (temporary name; renamed to PromoCodes in step-4 after old entity removed)
+public DbSet<ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode> PromoCodes2 { get; set; }
+```
+
+Also register the EF configuration in `OnModelCreating`:
+```csharp
+modelBuilder.ApplyConfiguration(new ECommerce.Promotions.Infrastructure.Configurations.PromoCodeConfiguration());
+```
+
+Add the reference from `ECommerce.Infrastructure` to `ECommerce.Promotions.Infrastructure`:
+```bash
+dotnet add src/backend/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj reference src/backend/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj
+```
+
+---
+
+## Task 4: Repository
+
+`ECommerce.Promotions.Infrastructure/Repositories/PromoCodeRepository.cs`
+
+```csharp
+using ECommerce.Infrastructure.Data;
 using ECommerce.Promotions.Domain.Aggregates.PromoCode;
 using ECommerce.Promotions.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECommerce.Promotions.Infrastructure.Persistence.Repositories;
+namespace ECommerce.Promotions.Infrastructure.Repositories;
 
-public class PromoCodeRepository(AppDbContext _db) : IPromoCodeRepository
+public class PromoCodeRepository : IPromoCodeRepository
 {
-    // Use the temporary DbSet name until old entity is removed in step 4
-    private IQueryable<PromoCode> PromoCodes => _db.Set<PromoCode>();
+    private readonly AppDbContext _db;
+    public PromoCodeRepository(AppDbContext db) => _db = db;
 
-    public async Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await PromoCodes.FirstOrDefaultAsync(p => p.Id == id, ct);
+    public Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => _db.PromoCodes2.FirstOrDefaultAsync(p => p.Id == id, ct);
 
-    public async Task<PromoCode?> GetByCodeAsync(string code, CancellationToken ct = default)
-        => await PromoCodes
-            .FirstOrDefaultAsync(p => EF.Property<string>(p, "Code") == code, ct);
+    public Task<PromoCode?> GetByCodeAsync(string normalizedCode, CancellationToken ct = default)
+        => _db.PromoCodes2.FirstOrDefaultAsync(p => p.Code == PromoCodeString.Reconstitute(normalizedCode), ct);
+        // Note: EF will compare the converted string values correctly
 
-    public async Task<(IReadOnlyList<PromoCode> Items, int TotalCount)> GetActiveAsync(
+    public async Task<(List<PromoCode> Items, int TotalCount)> GetActiveAsync(
         int page, int pageSize, CancellationToken ct = default)
     {
-        var query = PromoCodes
-            .Where(p => p.IsActive)
-            .OrderBy(p => EF.Property<string>(p, "Code"));
-
+        var query = _db.PromoCodes2.Where(p => p.IsActive).OrderByDescending(p => p.CreatedAt);
         var total = await query.CountAsync(ct);
-        var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         return (items, total);
     }
 
-    public async Task<(IReadOnlyList<PromoCode> Items, int TotalCount)> GetAllAsync(
+    public async Task<(List<PromoCode> Items, int TotalCount)> GetAllAsync(
         int page, int pageSize, string? search, bool? isActive, CancellationToken ct = default)
     {
-        var query = PromoCodes.AsQueryable();
+        var query = _db.PromoCodes2.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var upper = search.Trim().ToUpperInvariant();
-            query = query.Where(p =>
-                EF.Property<string>(p, "Code").Contains(upper));
+            var pattern = $"%{search}%";
+            query = query.Where(p => EF.Functions.Like(p.Code.Value, pattern));
         }
 
         if (isActive.HasValue)
             query = query.Where(p => p.IsActive == isActive.Value);
 
-        query = query.OrderBy(p => EF.Property<string>(p, "Code"));
+        query = query.OrderByDescending(p => p.CreatedAt);
 
         var total = await query.CountAsync(ct);
-        var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         return (items, total);
     }
 
     public async Task UpsertAsync(PromoCode promoCode, CancellationToken ct = default)
     {
-        var exists = await PromoCodes.AnyAsync(p => p.Id == promoCode.Id, ct);
-        if (exists)
-            _db.Update(promoCode);
-        else
-            await _db.AddAsync(promoCode, ct);
+        var existing = await _db.PromoCodes2.FindAsync(new object[] { promoCode.Id }, ct);
+        if (existing is null)
+            await _db.PromoCodes2.AddAsync(promoCode, ct);
+        // If tracked, EF change tracking handles the update automatically
     }
 
-    public Task DeleteAsync(PromoCode promoCode, CancellationToken ct = default)
+    public async Task DeleteAsync(PromoCode promoCode, CancellationToken ct = default)
     {
-        _db.Remove(promoCode);
-        return Task.CompletedTask;
+        var existing = await _db.PromoCodes2.FindAsync(new object[] { promoCode.Id }, ct);
+        if (existing is not null)
+            _db.PromoCodes2.Remove(existing);
     }
 }
 ```
 
-### 4. Update AppDbContext
-
-In `ECommerce.Infrastructure/Data/AppDbContext.cs`, add the following.
-
-**Add a temporary DbSet** (named `PromoCodes2` to avoid a name clash with the old `ECommerce.Core.Entities.PromoCode` DbSet — this will be renamed back in step 4 after the old entity is removed):
-
+**Note on `GetByCodeAsync`**: EF value converters allow querying by the converted value. Since `PromoCodeString` converts to its `.Value` string, the LINQ expression `p.Code == PromoCodeString.Reconstitute(normalizedCode)` is translated to a SQL `WHERE Code = @normalizedCode`. Alternatively, use:
 ```csharp
-// TEMPORARY — rename to PromoCodes in step 4 after removing old Core entity
-public DbSet<ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode> PromoCodes2
-    => Set<ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode>();
+_db.PromoCodes2.FirstOrDefaultAsync(p => EF.Property<string>(p, "Code") == normalizedCode, ct)
 ```
+Use whichever your EF version handles cleanly.
 
-**Apply the configuration in `OnModelCreating`**:
+---
 
-```csharp
-modelBuilder.ApplyConfiguration(
-    new ECommerce.Promotions.Infrastructure.Persistence.Configurations.PromoCodeConfiguration());
-```
+## Task 5: DependencyInjection
 
-### 5. DI registration
-
-**File: `Promotions/ECommerce.Promotions.Infrastructure/DependencyInjection.cs`**
+`ECommerce.Promotions.Infrastructure/DependencyInjection.cs`
 
 ```csharp
+using ECommerce.Promotions.Application;
 using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Domain.Services;
-using ECommerce.Promotions.Infrastructure.Persistence.Repositories;
-using MediatR;
+using ECommerce.Promotions.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerce.Promotions.Infrastructure;
@@ -260,57 +253,52 @@ public static class DependencyInjection
     public static IServiceCollection AddPromotionsInfrastructure(this IServiceCollection services)
     {
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
-
-        // DiscountCalculator is a domain service — concrete class, no interface
         services.AddScoped<DiscountCalculator>();
-
-        // Register MediatR handlers from the Application assembly
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(
-                typeof(ECommerce.Promotions.Application.Commands.CreatePromoCode.CreatePromoCodeCommand).Assembly));
-
+        services.AddPromotionsApplication();
         return services;
     }
 }
 ```
 
-### 6. Wire up in ECommerce.API
+---
 
+## Task 6: Wire up in API
+
+1. Add project reference from API to Infrastructure:
 ```bash
-dotnet add ECommerce.API/ECommerce.API.csproj \
-    reference Promotions/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj
+dotnet add src/backend/ECommerce.API/ECommerce.API.csproj reference src/backend/ECommerce.Promotions.Infrastructure/ECommerce.Promotions.Infrastructure.csproj
 ```
 
-In `Program.cs` (or `Extensions/ServiceCollectionExtensions.cs`), add:
-
+2. In `src/backend/ECommerce.API/Program.cs`, add before `builder.Build()`:
 ```csharp
 builder.Services.AddPromotionsInfrastructure();
 ```
 
-### 7. Verify build (do NOT run tests yet — old controller still uses IPromoCodeService)
+---
+
+## Task 7: Verify (no EF migration needed)
 
 ```bash
 cd src/backend
 dotnet build
+# Confirm no errors
+dotnet run --project ECommerce.API -- &
+sleep 3
+# Verify the app still boots and old endpoints work
+curl -s http://localhost:5000/api/promo-codes/active | jq '.success'
+# Expected: true
+kill %1
 ```
-
-The solution must compile. If there are type conflicts between the old `ECommerce.Core.Entities.PromoCode` and the new `ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode`, use fully-qualified type names in `AppDbContext` (as shown in step 4 above).
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] `ECommerce.Promotions.Infrastructure` project created and added to solution
-- [ ] `PromoCodeConfiguration` maps to existing `PromoCodes` table with no schema changes
-- [ ] `OwnsOne` for `Discount` → maps `Type` → `DiscountType` column (string), `Amount` → `DiscountValue` column
-- [ ] `OwnsOne` for `ValidPeriod` with `Navigation().IsRequired(false)` — null when both dates are null in DB
-- [ ] `PromoCodeString` mapped via `HasConversion` using `Reconstitute` (internal factory)
-- [ ] `RowVersion` configured with `IsRowVersion().IsConcurrencyToken()`
-- [ ] `HasIndex(p => p.Code).IsUnique()` applied
-- [ ] `PromoCodeRepository` implements all 6 `IPromoCodeRepository` methods
-- [ ] `GetByCodeAsync` compares the stored string value (case-sensitive — codes are always stored in UPPER-CASE)
-- [ ] `DiscountCalculator` registered as `Scoped`
-- [ ] `DependencyInjection.cs` registers repo, DiscountCalculator, and MediatR handlers from Application assembly
-- [ ] `AppDbContext` has `PromoCodes2` DbSet (temporary) and applies `PromoCodeConfiguration`
-- [ ] `ECommerce.API` project references Infrastructure and calls `AddPromotionsInfrastructure()`
-- [ ] `dotnet build` passes (full solution)
+- [ ] Project builds with zero errors
+- [ ] `AppDbContext` has `PromoCodes2` DbSet for the new aggregate (old `PromoCodes` DbSet for `Core.Entities.PromoCode` still present)
+- [ ] `PromoCodeConfiguration` applied in `OnModelCreating`
+- [ ] No EF migration required (existing `PromoCodes` table unchanged)
+- [ ] App boots and existing `GET /api/promo-codes/active` still returns 200 (old service still active)
+- [ ] `DiscountCalculator` registered as Scoped
+- [ ] `IPromoCodeRepository` → `PromoCodeRepository` registered as Scoped
+- [ ] `PromoCodeString.Reconstitute` is `internal` — only Infrastructure can call it

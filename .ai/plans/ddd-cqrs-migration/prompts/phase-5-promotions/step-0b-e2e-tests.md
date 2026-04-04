@@ -4,7 +4,7 @@
 
 Run against the OLD `PromoCodeService` to establish a passing baseline. After cutover (step 4), run again — all must still pass.
 
-**Prerequisite**: Backend running on `http://localhost:5000` with a seeded PostgreSQL database.
+**Prerequisite**: Backend running on `http://localhost:5000` with a seeded PostgreSQL database (SAVE20 code seeded with Id `55555555-5555-5555-5555-555555555555`).
 
 ---
 
@@ -23,10 +23,6 @@ import { test, expect, request, APIRequestContext } from '@playwright/test';
  * Run again after cutover — all tests must still pass.
  *
  * No browser — pure API contract verification.
- *
- * Seeded data:
- *   PromoCode Id: 55555555-5555-5555-5555-555555555555
- *   Code: SAVE20, DiscountType: Percentage, DiscountValue: 20, IsActive: true
  */
 
 const API_BASE = process.env.VITE_API_URL
@@ -35,310 +31,394 @@ const API_BASE = process.env.VITE_API_URL
 
 const ADMIN_EMAIL    = 'admin@test.com';
 const ADMIN_PASSWORD = 'Admin123!';
-
-const SEEDED_PROMO_ID   = '55555555-5555-5555-5555-555555555555';
-const SEEDED_PROMO_CODE = 'SAVE20';
+const SEEDED_PROMO_ID = '55555555-5555-5555-5555-555555555555';
+const SEEDED_CODE     = 'SAVE20';
 
 async function loginAndGetToken(ctx: APIRequestContext): Promise<string> {
   const res = await ctx.post('auth/login', {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
   });
   expect(res.ok(), `Login failed with status ${res.status()}`).toBe(true);
-  const body  = await res.json();
-  const token = body.data?.token ?? body.data?.accessToken ?? body.data?.access_token;
-  expect(token, 'Login response must contain a token').toBeTruthy();
-  return token as string;
+  const body = await res.json();
+  return body.data?.token ?? body.token;
 }
 
-/** Generates a unique promo code string safe for the API (3-20 chars, A-Z0-9). */
 function uniqueCode(): string {
-  return ('TEST' + Math.random().toString(36).toUpperCase().replace('.', '').slice(2, 8)).slice(0, 10);
+  return ('T' + Math.random().toString(36).slice(2, 13)).toUpperCase();
 }
 
-test.describe('Promo Codes API', () => {
-  let apiContext: APIRequestContext;
+function randomGuid(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 
-  test.beforeEach(async () => {
-    apiContext = await request.newContext({ baseURL: API_BASE });
+// ─────────────────────────────────────────────────────────
+// GET /api/promo-codes/active  (anonymous)
+// ─────────────────────────────────────────────────────────
+
+test.describe('GET /api/promo-codes/active', () => {
+  test('anonymous user can access, returns 200', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const res = await ctx.get('promo-codes/active');
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.data).toBeDefined();
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(typeof body.data.totalCount).toBe('number');
+    await ctx.dispose();
   });
 
-  test.afterEach(async () => {
-    await apiContext.dispose();
+  test('pageSize is clamped to 100', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const res = await ctx.get('promo-codes/active?page=1&pageSize=500');
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.data.items.length).toBeLessThanOrEqual(100);
+    await ctx.dispose();
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// GET /api/promo-codes  (admin only)
+// ─────────────────────────────────────────────────────────
+
+test.describe('GET /api/promo-codes', () => {
+  test('anonymous returns 401', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    expect((await ctx.get('promo-codes')).status()).toBe(401);
+    await ctx.dispose();
   });
 
-  // ===========================================================================
-  // GET /promo-codes/active — anonymous
-  // ===========================================================================
-
-  test('GET /promo-codes/active — anonymous returns 200', async () => {
-    const response = await apiContext.get('promo-codes/active');
-    expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
-  });
-
-  test('GET /promo-codes/active — response has paginated shape', async () => {
-    const response = await apiContext.get('promo-codes/active?page=1&pageSize=10');
-    expect(response.ok()).toBe(true);
-
-    const body = await response.json();
-    expect(body.success).toBe(true);
-    const data = body.data;
-    const hasItems =
-      Array.isArray(data?.items) || Array.isArray(data?.Items);
-    expect(hasItems, 'Response data must have items array').toBe(true);
-  });
-
-  test('GET /promo-codes/active — pageSize over 100 is clamped, not an error', async () => {
-    const response = await apiContext.get('promo-codes/active?page=1&pageSize=500');
-    expect(response.ok(), `Expected 200, got ${response.status()}`).toBe(true);
-  });
-
-  // ===========================================================================
-  // GET /promo-codes — admin list (auth required)
-  // ===========================================================================
-
-  test('GET /promo-codes — no token returns 401', async () => {
-    const response = await apiContext.get('promo-codes');
-    expect(response.status()).toBe(401);
-  });
-
-  test('GET /promo-codes — admin token returns 200 with paginated shape', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` }
+  test('admin returns 200 with paginated shape', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.get('promo-codes?page=1&pageSize=10', {
+      headers: { Authorization: `Bearer ${token}` }
     });
-
-    try {
-      const response = await ctx.get('promo-codes?page=1&pageSize=10');
-      expect(response.ok()).toBe(true);
-
-      const body = await response.json();
-      expect(body.success).toBe(true);
-      expect(
-        Array.isArray(body.data?.items) || Array.isArray(body.data?.Items)
-      ).toBe(true);
-    } finally {
-      await ctx.dispose();
-    }
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(typeof body.data.totalCount).toBe('number');
+    await ctx.dispose();
   });
 
-  // ===========================================================================
-  // GET /promo-codes/{id} — admin only
-  // ===========================================================================
-
-  test('GET /promo-codes/{id} — no token returns 401', async () => {
-    const response = await apiContext.get(`promo-codes/${SEEDED_PROMO_ID}`);
-    expect(response.status()).toBe(401);
-  });
-
-  test('GET /promo-codes/{id} — seeded id returns 200 with code SAVE20', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` }
+  test('admin can filter by isActive=true', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.get('promo-codes?isActive=true', {
+      headers: { Authorization: `Bearer ${token}` }
     });
-
-    try {
-      const response = await ctx.get(`promo-codes/${SEEDED_PROMO_ID}`);
-      expect(response.ok()).toBe(true);
-
-      const body = await response.json();
-      const code = body.data?.code ?? body.data?.Code;
-      expect(code).toBe(SEEDED_PROMO_CODE);
-    } finally {
-      await ctx.dispose();
-    }
+    expect(res.status()).toBe(200);
+    await ctx.dispose();
   });
 
-  test('GET /promo-codes/{id} — unknown id returns 404', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` }
+  test('admin can search by code string', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.get('promo-codes?search=SAVE', {
+      headers: { Authorization: `Bearer ${token}` }
     });
+    expect(res.status()).toBe(200);
+    await ctx.dispose();
+  });
+});
 
-    try {
-      const response = await ctx.get(`promo-codes/${crypto.randomUUID()}`);
-      expect(response.status()).toBe(404);
-    } finally {
-      await ctx.dispose();
-    }
+// ─────────────────────────────────────────────────────────
+// GET /api/promo-codes/{id}  (admin only)
+// ─────────────────────────────────────────────────────────
+
+test.describe('GET /api/promo-codes/{id}', () => {
+  test('anonymous returns 401', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    expect((await ctx.get(`promo-codes/${SEEDED_PROMO_ID}`)).status()).toBe(401);
+    await ctx.dispose();
   });
 
-  // ===========================================================================
-  // POST /promo-codes — create (admin only)
-  // ===========================================================================
+  test('admin gets seeded code, returns correct shape', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.get(`promo-codes/${SEEDED_PROMO_ID}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    expect(res.status()).toBe(200);
+    const { data } = await res.json();
+    expect(data.code).toBe(SEEDED_CODE);
+    expect(data.isActive).toBe(true);
+    expect(typeof data.discountType).toBe('string');
+    expect(typeof data.discountValue).toBe('number');
+    expect(typeof data.usedCount).toBe('number');
+    expect(data.createdAt).toBeDefined();
+    expect(data.updatedAt).toBeDefined();
+    await ctx.dispose();
+  });
 
-  test('POST /promo-codes — no token returns 401', async () => {
-    const response = await apiContext.post('promo-codes', {
+  test('unknown id returns 404 with PROMO_CODE_NOT_FOUND', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.get(`promo-codes/${randomGuid()}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    expect(res.status()).toBe(404);
+    const body = await res.json();
+    expect(body.errorCode).toBe('PROMO_CODE_NOT_FOUND');
+    await ctx.dispose();
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// POST /api/promo-codes  (admin only, 201 Created)
+// ─────────────────────────────────────────────────────────
+
+test.describe('POST /api/promo-codes', () => {
+  test('anonymous returns 401', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const res = await ctx.post('promo-codes', {
       data: { code: uniqueCode(), discountType: 'Percentage', discountValue: 10 }
     });
-    expect(response.status()).toBe(401);
+    expect(res.status()).toBe(401);
+    await ctx.dispose();
   });
 
-  test('POST /promo-codes — admin creates code, returns 201 with Location header', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` }
+  test('admin creates code, returns 201 with Location header', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.post('promo-codes', {
+      data: { code: uniqueCode(), discountType: 'Percentage', discountValue: 15 },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    expect(res.status()).toBe(201);
+    const location = res.headers()['location'];
+    expect(location).toBeDefined();
+    expect(location).toContain('promo-codes');
+    await ctx.dispose();
+  });
+
+  test('code stored as uppercase regardless of input case', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const rawCode = 'lower-' + Math.random().toString(36).slice(2, 7);
+    const res = await ctx.post('promo-codes', {
+      data: { code: rawCode, discountType: 'Percentage', discountValue: 10 },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    expect(res.status()).toBe(201);
+    const { data } = await res.json();
+    expect(data.code).toBe(rawCode.trim().toUpperCase());
+    await ctx.dispose();
+  });
+
+  test('duplicate code returns 409 with DUPLICATE_PROMO_CODE', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const code = uniqueCode();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    await ctx.post('promo-codes', {
+      data: { code, discountType: 'Fixed', discountValue: 5 }, headers
     });
 
-    try {
-      const response = await ctx.post('promo-codes', {
-        data: {
-          code:          uniqueCode(),
-          discountType:  'Percentage',
-          discountValue: 15,
-          isActive:      true
-        }
-      });
-      expect(response.status()).toBe(201);
-
-      const location = response.headers()['location'];
-      expect(location, 'Created response must have Location header').toBeTruthy();
-    } finally {
-      await ctx.dispose();
-    }
-  });
-
-  test('POST /promo-codes — duplicate code returns 409', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` }
+    const second = await ctx.post('promo-codes', {
+      data: { code, discountType: 'Fixed', discountValue: 5 }, headers
     });
+    expect(second.status()).toBe(409);
+    expect((await second.json()).errorCode).toBe('DUPLICATE_PROMO_CODE');
+    await ctx.dispose();
+  });
+});
 
-    try {
-      const response = await ctx.post('promo-codes', {
-        data: {
-          code:          SEEDED_PROMO_CODE, // already exists
-          discountType:  'Percentage',
-          discountValue: 10
-        }
-      });
-      expect(response.status()).toBe(409);
-    } finally {
-      await ctx.dispose();
-    }
+// ─────────────────────────────────────────────────────────
+// PUT /api/promo-codes/{id}  (admin only)
+// ─────────────────────────────────────────────────────────
+
+test.describe('PUT /api/promo-codes/{id}', () => {
+  test('anonymous returns 401', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    expect((await ctx.put(`promo-codes/${SEEDED_PROMO_ID}`, { data: {} })).status()).toBe(401);
+    await ctx.dispose();
   });
 
-  // ===========================================================================
-  // DELETE /promo-codes/{id} — admin only
-  // ===========================================================================
-
-  test('DELETE /promo-codes/{id} — no token returns 401', async () => {
-    const response = await apiContext.delete(`promo-codes/${crypto.randomUUID()}`);
-    expect(response.status()).toBe(401);
-  });
-
-  test('DELETE /promo-codes/{id} — unknown id returns 404', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` }
+  test('admin updates existing code, returns 200', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.put(`promo-codes/${SEEDED_PROMO_ID}`, {
+      data: { isActive: true },
+      headers: { Authorization: `Bearer ${token}` }
     });
-
-    try {
-      const response = await ctx.delete(`promo-codes/${crypto.randomUUID()}`);
-      expect(response.status()).toBe(404);
-    } finally {
-      await ctx.dispose();
-    }
+    expect(res.status()).toBe(200);
+    await ctx.dispose();
   });
 
-  test('DELETE /promo-codes/{id} — admin deletes created code, returns 200', async () => {
-    const token = await loginAndGetToken(apiContext);
-    const ctx = await request.newContext({
-      baseURL: API_BASE,
-      extraHTTPHeaders: { Authorization: `Bearer ${token}` }
+  test('unknown id returns 404', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const res = await ctx.put(`promo-codes/${randomGuid()}`, {
+      data: { isActive: false },
+      headers: { Authorization: `Bearer ${token}` }
     });
+    expect(res.status()).toBe(404);
+    await ctx.dispose();
+  });
+});
 
-    try {
-      // Create first
-      const createRes = await ctx.post('promo-codes', {
-        data: { code: uniqueCode(), discountType: 'Percentage', discountValue: 5, isActive: true }
-      });
-      expect(createRes.status()).toBe(201);
+// ─────────────────────────────────────────────────────────
+// PUT /api/promo-codes/{id}/deactivate  (admin only)
+// ─────────────────────────────────────────────────────────
 
-      const location = createRes.headers()['location']!;
-      const id = location.split('/').pop()!;
-
-      const deleteRes = await ctx.delete(`promo-codes/${id}`);
-      expect(deleteRes.ok(), `Expected 200, got ${deleteRes.status()}`).toBe(true);
-    } finally {
-      await ctx.dispose();
-    }
+test.describe('PUT /api/promo-codes/{id}/deactivate', () => {
+  test('anonymous returns 401', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    expect((await ctx.put(`promo-codes/${SEEDED_PROMO_ID}/deactivate`)).status()).toBe(401);
+    await ctx.dispose();
   });
 
-  // ===========================================================================
-  // POST /promo-codes/validate — anonymous, ALWAYS 200
-  // ===========================================================================
-
-  test('POST /promo-codes/validate — anonymous, unknown code returns 200 with isValid=false', async () => {
-    const response = await apiContext.post('promo-codes/validate', {
-      data: { code: 'TOTALLY-INVALID', orderAmount: 100 }
+  test('admin deactivates existing code, returns 200', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    // Create a fresh code — do not deactivate SAVE20 as other tests rely on it being active
+    const createRes = await ctx.post('promo-codes', {
+      data: { code: uniqueCode(), discountType: 'Percentage', discountValue: 5 },
+      headers: { Authorization: `Bearer ${token}` }
     });
-    expect(response.status()).toBe(200);
-
-    const body    = await response.json();
-    const isValid = body.data?.isValid ?? body.data?.IsValid;
-    expect(isValid).toBe(false);
-  });
-
-  test('POST /promo-codes/validate — SAVE20 with orderAmount=100 returns isValid=true, discountAmount=20', async () => {
-    const response = await apiContext.post('promo-codes/validate', {
-      data: { code: SEEDED_PROMO_CODE, orderAmount: 100 }
+    const { data } = await createRes.json();
+    const res = await ctx.put(`promo-codes/${data.id}/deactivate`, {
+      headers: { Authorization: `Bearer ${token}` }
     });
-    expect(response.status()).toBe(200);
-
-    const body           = await response.json();
-    const isValid        = body.data?.isValid ?? body.data?.IsValid;
-    const discountAmount = body.data?.discountAmount ?? body.data?.DiscountAmount;
-
-    expect(isValid).toBe(true);
-    expect(discountAmount).toBe(20); // 20% of 100
+    expect(res.status()).toBe(200);
+    await ctx.dispose();
   });
 
-  test('POST /promo-codes/validate — response always 200 even when isValid=false (never fails with error status)', async () => {
-    // Confirm the contract: validate is not a normal "fail with 4xx" endpoint
-    const testCodes = [
-      { code: '',             orderAmount: 100 },
-      { code: 'DOESNOTEXIST', orderAmount: 0   },
-    ];
+  test('unknown id returns 404', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    expect((await ctx.put(`promo-codes/${randomGuid()}/deactivate`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })).status()).toBe(404);
+    await ctx.dispose();
+  });
+});
 
-    for (const payload of testCodes) {
-      const response = await apiContext.post('promo-codes/validate', { data: payload });
-      // Must be 200 or at most 400 (for truly malformed bodies) — never 404/409/500
-      expect(
-        response.status() === 200 || response.status() === 400,
-        `Validate must return 200 or 400, got ${response.status()} for code="${payload.code}"`
-      ).toBe(true);
-    }
+// ─────────────────────────────────────────────────────────
+// DELETE /api/promo-codes/{id}  (admin only)
+// ─────────────────────────────────────────────────────────
+
+test.describe('DELETE /api/promo-codes/{id}', () => {
+  test('anonymous returns 401', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    expect((await ctx.delete(`promo-codes/${randomGuid()}`)).status()).toBe(401);
+    await ctx.dispose();
   });
 
-  test('POST /promo-codes/validate — code lookup is case-insensitive', async () => {
-    // "save20" lowercase must return the same isValid=true as "SAVE20"
-    const response = await apiContext.post('promo-codes/validate', {
+  test('admin deletes existing code, returns 200', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    const createRes = await ctx.post('promo-codes', {
+      data: { code: uniqueCode(), discountType: 'Fixed', discountValue: 5 },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const { data } = await createRes.json();
+    const res = await ctx.delete(`promo-codes/${data.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    expect(res.status()).toBe(200);
+    await ctx.dispose();
+  });
+
+  test('unknown id returns 404', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(ctx);
+    expect((await ctx.delete(`promo-codes/${randomGuid()}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })).status()).toBe(404);
+    await ctx.dispose();
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// POST /api/promo-codes/validate  (anonymous, ALWAYS 200)
+// ─────────────────────────────────────────────────────────
+
+test.describe('POST /api/promo-codes/validate', () => {
+  test('anonymous can access', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    expect((await ctx.post('promo-codes/validate', {
+      data: { code: SEEDED_CODE, orderAmount: 100 }
+    })).status()).toBe(200);
+    await ctx.dispose();
+  });
+
+  test('valid code: isValid=true, discountAmount=20 for orderAmount=100', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const res = await ctx.post('promo-codes/validate', {
+      data: { code: SEEDED_CODE, orderAmount: 100 }
+    });
+    expect(res.status()).toBe(200);
+    const { data } = await res.json();
+    expect(data.isValid).toBe(true);
+    expect(data.discountAmount).toBe(20); // 20% of 100
+    expect(data.message).toBeDefined();
+    await ctx.dispose();
+  });
+
+  test('unknown code returns 200 with isValid=false, discountAmount=0', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const res = await ctx.post('promo-codes/validate', {
+      data: { code: 'FAKECODE999', orderAmount: 100 }
+    });
+    expect(res.status()).toBe(200); // NOT 404
+    const { data } = await res.json();
+    expect(data.isValid).toBe(false);
+    expect(data.discountAmount).toBe(0);
+    await ctx.dispose();
+  });
+
+  test('lowercase code matches case-insensitively', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const { data } = await (await ctx.post('promo-codes/validate', {
       data: { code: 'save20', orderAmount: 100 }
-    });
-    expect(response.status()).toBe(200);
+    })).json();
+    expect(data.isValid).toBe(true);
+    await ctx.dispose();
+  });
 
-    const body    = await response.json();
-    const isValid = body.data?.isValid ?? body.data?.IsValid;
-    expect(isValid).toBe(true);
+  test('below minOrderAmount: isValid=false', async () => {
+    const adminCtx = await request.newContext({ baseURL: API_BASE });
+    const token = await loginAndGetToken(adminCtx);
+    const code = uniqueCode();
+    await adminCtx.post('promo-codes', {
+      data: { code, discountType: 'Percentage', discountValue: 10, minOrderAmount: 50 },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    await adminCtx.dispose();
+
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const { data } = await (await ctx.post('promo-codes/validate', {
+      data: { code, orderAmount: 30 }
+    })).json();
+    expect(data.isValid).toBe(false);
+    await ctx.dispose();
+  });
+
+  test('response shape has isValid, discountAmount, message', async () => {
+    const ctx = await request.newContext({ baseURL: API_BASE });
+    const { data } = await (await ctx.post('promo-codes/validate', {
+      data: { code: SEEDED_CODE, orderAmount: 100 }
+    })).json();
+    expect(typeof data.isValid).toBe('boolean');
+    expect(typeof data.discountAmount).toBe('number');
+    expect(data.message).toBeDefined();
+    await ctx.dispose();
   });
 });
 ```
 
 ---
 
-## Run Before Starting Migration
+## Run
 
 ```bash
-# 1. Start the backend
-cd src/backend && dotnet run --project ECommerce.API
-
-# 2. Run e2e tests
+# Backend must be running with seeded PostgreSQL
 cd src/frontend/storefront
 npx playwright test api-promo-codes.spec.ts --reporter=list
 ```
@@ -347,12 +427,10 @@ npx playwright test api-promo-codes.spec.ts --reporter=list
 
 ## Acceptance Criteria
 
-- [ ] `api-promo-codes.spec.ts` created in `src/frontend/storefront/e2e/`
-- [ ] All tests pass against the OLD `PromoCodeService` (baseline)
-- [ ] Anonymous endpoints confirmed: `GET /promo-codes/active` and `POST /promo-codes/validate` return 200 without token
-- [ ] Admin endpoints return 401 without token
-- [ ] `POST /promo-codes` returns 201 with `Location` header
-- [ ] `POST /promo-codes/validate` with SAVE20 + 100 → `{ isValid: true, discountAmount: 20 }`
-- [ ] `POST /promo-codes/validate` with unknown code → `{ isValid: false }` still with status 200
-- [ ] `DELETE /promo-codes/{id}` returns 404 for unknown ID
-- [ ] Duplicate code on create → 409
+- [ ] All tests pass against the OLD `PromoCodeService` with real PostgreSQL
+- [ ] `POST /validate` always returns 200 regardless of code validity
+- [ ] SAVE20 + orderAmount=100 → discountAmount=20 confirmed against real DB
+- [ ] 201 with Location header on create confirmed
+- [ ] 409 with `DUPLICATE_PROMO_CODE` on duplicate confirmed
+- [ ] 404 with `PROMO_CODE_NOT_FOUND` on unknown id confirmed
+- [ ] Auth boundaries confirmed: anonymous → 401, Customer → 403

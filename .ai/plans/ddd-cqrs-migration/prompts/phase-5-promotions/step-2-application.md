@@ -1,34 +1,30 @@
-# Phase 5, Step 2: Promotions Application Project
+# Phase 5, Step 2: Application Project
 
-**Prerequisite**: Step 1 (`ECommerce.Promotions.Domain`) is complete and `dotnet build` passes.
+**Prerequisite**: Step 1 (Domain) complete and building.
+
+Create `ECommerce.Promotions.Application` — Commands, Queries, Handlers, DTOs, and mappings. No EF, no HTTP, no infrastructure details.
 
 ---
 
-## Task: Create ECommerce.Promotions.Application Project
-
-### 1. Create the project
+## Task 1: Create the project
 
 ```bash
 cd src/backend
-dotnet new classlib -n ECommerce.Promotions.Application -f net10.0 -o Promotions/ECommerce.Promotions.Application
-dotnet sln ../../ECommerce.sln add Promotions/ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj
-
-dotnet add Promotions/ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj \
-    reference ECommerce.SharedKernel/ECommerce.SharedKernel.csproj
-dotnet add Promotions/ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj \
-    reference Promotions/ECommerce.Promotions.Domain/ECommerce.Promotions.Domain.csproj
-
-dotnet add Promotions/ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj package MediatR
-
-rm Promotions/ECommerce.Promotions.Application/Class1.cs
+dotnet new classlib -n ECommerce.Promotions.Application -o ECommerce.Promotions.Application
+dotnet sln ECommerce.sln add ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj
+dotnet add ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj reference ECommerce.SharedKernel/ECommerce.SharedKernel.csproj
+dotnet add ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj reference ECommerce.Promotions.Domain/ECommerce.Promotions.Domain.csproj
+dotnet add ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj package MediatR
+rm ECommerce.Promotions.Application/Class1.cs
 ```
 
-### 2. Create DependencyInjection.cs
+---
 
-**File: `Promotions/ECommerce.Promotions.Application/DependencyInjection.cs`**
+## Task 2: DependencyInjection
+
+`ECommerce.Promotions.Application/DependencyInjection.cs`
 
 ```csharp
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerce.Promotions.Application;
@@ -44,438 +40,387 @@ public static class DependencyInjection
 }
 ```
 
-> Note: In practice `AddPromotionsInfrastructure` (step 3) calls `AddMediatR` from the Application assembly directly, so you may not need to call `AddPromotionsApplication` separately. Include this for completeness and testability.
+---
 
-### 3. Create DTOs
+## Task 3: DTOs
 
-These must match the existing HTTP contract exactly (the characterization tests pin their shapes).
+These must exactly match the existing API contract so the controller and characterization tests work unchanged.
 
-**File: `Promotions/ECommerce.Promotions.Application/DTOs/PromoCodeDto.cs`**
-
+### `ECommerce.Promotions.Application/DTOs/PromoCodeDto.cs`
 ```csharp
 namespace ECommerce.Promotions.Application.DTOs;
 
-/// <summary>Lightweight DTO used in list responses and embedded in ValidatePromoCodeDto.</summary>
-public record PromoCodeDto(
-    Guid      Id,
-    string    Code,
-    string    DiscountType,
-    decimal   DiscountValue,
-    decimal?  MinOrderAmount,
-    int?      MaxUses,
-    int       UsedCount,
-    bool      IsActive,
-    DateTime? StartDate,
-    DateTime? EndDate
-);
-```
-
-**File: `Promotions/ECommerce.Promotions.Application/DTOs/PromoCodeDetailDto.cs`**
-
-```csharp
-namespace ECommerce.Promotions.Application.DTOs;
-
-/// <summary>Full detail DTO returned by admin GET /api/promo-codes/{id} and POST (create).</summary>
-public record PromoCodeDetailDto(
-    Guid      Id,
-    string    Code,
-    string    DiscountType,
-    decimal   DiscountValue,
-    decimal?  MinOrderAmount,
-    int?      MaxUses,
-    int       UsedCount,
-    bool      IsActive,
-    DateTime? StartDate,
-    DateTime? EndDate,
-    decimal?  MaxDiscountAmount,
-    DateTime  CreatedAt,
-    DateTime  UpdatedAt
-);
-```
-
-**File: `Promotions/ECommerce.Promotions.Application/DTOs/ValidatePromoCodeDto.cs`**
-
-```csharp
-namespace ECommerce.Promotions.Application.DTOs;
-
-/// <summary>
-/// Response body for POST /api/promo-codes/validate.
-/// IsValid=false does NOT mean an error — the endpoint always returns 200.
-/// </summary>
-public record ValidatePromoCodeDto(
-    bool           IsValid,
-    decimal        DiscountAmount,
-    string?        Message,
-    PromoCodeDto?  PromoCode
-);
-```
-
-### 4. Create mapping extensions
-
-**File: `Promotions/ECommerce.Promotions.Application/Mapping/PromotionsMappingExtensions.cs`**
-
-```csharp
-using ECommerce.Promotions.Application.DTOs;
-using ECommerce.Promotions.Domain.Aggregates.PromoCode;
-
-namespace ECommerce.Promotions.Application.Mapping;
-
-public static class PromotionsMappingExtensions
+public record PromoCodeDto
 {
-    public static PromoCodeDetailDto ToDetailDto(this PromoCode p) => new(
-        p.Id,
-        p.Code.Value,
-        p.Discount.Type.ToString(),
-        p.Discount.Amount,
-        p.MinimumOrderAmount,
-        p.MaxUses,
-        p.UsedCount,
-        p.IsActive,
-        p.ValidPeriod?.Start,
-        p.ValidPeriod?.End,
-        p.MaxDiscountAmount,
-        p.CreatedAt,
-        p.UpdatedAt
-    );
-
-    public static PromoCodeDto ToDto(this PromoCode p) => new(
-        p.Id,
-        p.Code.Value,
-        p.Discount.Type.ToString(),
-        p.Discount.Amount,
-        p.MinimumOrderAmount,
-        p.MaxUses,
-        p.UsedCount,
-        p.IsActive,
-        p.ValidPeriod?.Start,
-        p.ValidPeriod?.End
-    );
+    public Guid      Id            { get; init; }
+    public string    Code          { get; init; } = null!;
+    public string    DiscountType  { get; init; } = null!;
+    public decimal   DiscountValue { get; init; }
+    public decimal?  MinOrderAmount { get; init; }
+    public int?      MaxUses       { get; init; }
+    public int       UsedCount     { get; init; }
+    public bool      IsActive      { get; init; }
+    public DateTime? StartDate     { get; init; }
+    public DateTime? EndDate       { get; init; }
 }
 ```
 
-> Assumes `PromoCode` inherits `BaseEntity` from SharedKernel which exposes `CreatedAt` and `UpdatedAt`.
+### `ECommerce.Promotions.Application/DTOs/PromoCodeDetailDto.cs`
+```csharp
+namespace ECommerce.Promotions.Application.DTOs;
+
+public record PromoCodeDetailDto
+{
+    public Guid      Id               { get; init; }
+    public string    Code             { get; init; } = null!;
+    public string    DiscountType     { get; init; } = null!;
+    public decimal   DiscountValue    { get; init; }
+    public decimal?  MinOrderAmount   { get; init; }
+    public decimal?  MaxDiscountAmount { get; init; }
+    public int?      MaxUses          { get; init; }
+    public int       UsedCount        { get; init; }
+    public bool      IsActive         { get; init; }
+    public DateTime? StartDate        { get; init; }
+    public DateTime? EndDate          { get; init; }
+    public DateTime  CreatedAt        { get; init; }
+    public DateTime  UpdatedAt        { get; init; }
+}
+```
+
+### `ECommerce.Promotions.Application/DTOs/ValidatePromoCodeDto.cs`
+```csharp
+namespace ECommerce.Promotions.Application.DTOs;
+
+public record ValidatePromoCodeDto
+{
+    public bool         IsValid        { get; init; }
+    public string?      Message        { get; init; }
+    public decimal      DiscountAmount { get; init; }
+    public PromoCodeDto? PromoCode     { get; init; }
+}
+```
 
 ---
 
-### 5. Commands
+## Task 4: Mapping Extensions
 
-#### CreatePromoCodeCommand
-
-**File: `Promotions/ECommerce.Promotions.Application/Commands/CreatePromoCode/CreatePromoCodeCommand.cs`**
+`ECommerce.Promotions.Application/Mappings/PromotionsMappingExtensions.cs`
 
 ```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Promotions.Application.DTOs;
+using ECommerce.Promotions.Domain.Aggregates.PromoCode;
 
-namespace ECommerce.Promotions.Application.Commands.CreatePromoCode;
+namespace ECommerce.Promotions.Application.Mappings;
+
+public static class PromotionsMappingExtensions
+{
+    public static PromoCodeDto ToDto(this PromoCode p) => new()
+    {
+        Id             = p.Id,
+        Code           = p.Code.Value,
+        DiscountType   = p.Discount.Type.ToString(),
+        DiscountValue  = p.Discount.Amount,
+        MinOrderAmount = p.MinimumOrderAmount,
+        MaxUses        = p.MaxUses,
+        UsedCount      = p.UsedCount,
+        IsActive       = p.IsActive,
+        StartDate      = p.ValidPeriod?.Start,
+        EndDate        = p.ValidPeriod?.End
+    };
+
+    public static PromoCodeDetailDto ToDetailDto(this PromoCode p) => new()
+    {
+        Id                = p.Id,
+        Code              = p.Code.Value,
+        DiscountType      = p.Discount.Type.ToString(),
+        DiscountValue     = p.Discount.Amount,
+        MinOrderAmount    = p.MinimumOrderAmount,
+        MaxDiscountAmount = p.MaxDiscountAmount,
+        MaxUses           = p.MaxUses,
+        UsedCount         = p.UsedCount,
+        IsActive          = p.IsActive,
+        StartDate         = p.ValidPeriod?.Start,
+        EndDate           = p.ValidPeriod?.End,
+        CreatedAt         = p.CreatedAt,
+        UpdatedAt         = p.UpdatedAt
+    };
+}
+```
+
+---
+
+## Task 5: Commands
+
+### `ECommerce.Promotions.Application/Commands/CreatePromoCodeCommand.cs`
+```csharp
+using ECommerce.SharedKernel.CQRS;
+using ECommerce.SharedKernel.Results;
+using ECommerce.Promotions.Application.DTOs;
+using ECommerce.Promotions.Application.Mappings;
+using ECommerce.Promotions.Domain.Errors;
+using ECommerce.Promotions.Domain.Interfaces;
+using ECommerce.Promotions.Domain.Services;
+using ECommerce.Promotions.Domain.ValueObjects;
+using MediatR;
+
+namespace ECommerce.Promotions.Application.Commands;
 
 public record CreatePromoCodeCommand(
     string    Code,
-    string    DiscountType,   // "Percentage" or "Fixed"
+    string    DiscountType,
     decimal   DiscountValue,
     decimal?  MinOrderAmount,
     decimal?  MaxDiscountAmount,
     int?      MaxUses,
     DateTime? StartDate,
     DateTime? EndDate,
-    bool      IsActive
+    bool      IsActive = true
 ) : IRequest<Result<PromoCodeDetailDto>>, ITransactionalCommand;
-```
 
-**File: `Promotions/ECommerce.Promotions.Application/Commands/CreatePromoCode/CreatePromoCodeCommandHandler.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.Promotions.Application.DTOs;
-using ECommerce.Promotions.Application.Mapping;
-using ECommerce.Promotions.Domain.Aggregates.PromoCode;
-using ECommerce.Promotions.Domain.Errors;
-using ECommerce.Promotions.Domain.Interfaces;
-using ECommerce.Promotions.Domain.ValueObjects;
-
-namespace ECommerce.Promotions.Application.Commands.CreatePromoCode;
-
-public class CreatePromoCodeCommandHandler(
-    IPromoCodeRepository _repo,
-    IUnitOfWork          _uow
-) : IRequestHandler<CreatePromoCodeCommand, Result<PromoCodeDetailDto>>
+public class CreatePromoCodeCommandHandler : IRequestHandler<CreatePromoCodeCommand, Result<PromoCodeDetailDto>>
 {
-    public async Task<Result<PromoCodeDetailDto>> Handle(
-        CreatePromoCodeCommand command, CancellationToken ct)
+    private readonly IPromoCodeRepository _repo;
+    private readonly IUnitOfWork          _uow;
+
+    public CreatePromoCodeCommandHandler(IPromoCodeRepository repo, IUnitOfWork uow)
     {
-        // Duplicate check
-        var existing = await _repo.GetByCodeAsync(command.Code.Trim().ToUpperInvariant(), ct);
+        _repo = repo;
+        _uow  = uow;
+    }
+
+    public async Task<Result<PromoCodeDetailDto>> Handle(CreatePromoCodeCommand cmd, CancellationToken cancellationToken)
+    {
+        // 1. Build value objects
+        var codeResult = PromoCodeString.Create(cmd.Code);
+        if (!codeResult.IsSuccess) return Result<PromoCodeDetailDto>.Fail(codeResult.Error!);
+
+        var discountResult = BuildDiscount(cmd.DiscountType, cmd.DiscountValue);
+        if (!discountResult.IsSuccess) return Result<PromoCodeDetailDto>.Fail(discountResult.Error!);
+
+        Domain.ValueObjects.DateRange? validPeriod = null;
+        if (cmd.StartDate.HasValue && cmd.EndDate.HasValue)
+        {
+            var rangeResult = Domain.ValueObjects.DateRange.Create(cmd.StartDate.Value, cmd.EndDate.Value);
+            if (!rangeResult.IsSuccess) return Result<PromoCodeDetailDto>.Fail(rangeResult.Error!);
+            validPeriod = rangeResult.Value;
+        }
+
+        // 2. Duplicate check
+        var existing = await _repo.GetByCodeAsync(codeResult.Value!.Value, cancellationToken);
         if (existing is not null)
             return Result<PromoCodeDetailDto>.Fail(PromotionsErrors.DuplicateCode);
 
-        // Build discount value object
-        var discountResult = BuildDiscount(command.DiscountType, command.DiscountValue);
-        if (!discountResult.IsSuccess)
-            return Result<PromoCodeDetailDto>.Fail(discountResult.GetErrorOrThrow());
-
-        // Build optional date range
-        DateRange? validPeriod = null;
-        if (command.StartDate.HasValue && command.EndDate.HasValue)
-        {
-            var drResult = DateRange.Create(command.StartDate.Value, command.EndDate.Value);
-            if (!drResult.IsSuccess)
-                return Result<PromoCodeDetailDto>.Fail(drResult.GetErrorOrThrow());
-            validPeriod = drResult.GetDataOrThrow();
-        }
-
-        var createResult = PromoCode.Create(
-            command.Code,
-            discountResult.GetDataOrThrow(),
+        // 3. Create aggregate
+        var promo = Domain.Aggregates.PromoCode.PromoCode.Create(
+            codeResult.Value!,
+            discountResult.Value!,
             validPeriod,
-            command.MaxUses,
-            command.IsActive,
-            command.MinOrderAmount,
-            command.MaxDiscountAmount);
+            cmd.MaxUses,
+            cmd.MinOrderAmount,
+            cmd.MaxDiscountAmount);
 
-        if (!createResult.IsSuccess)
-            return Result<PromoCodeDetailDto>.Fail(createResult.GetErrorOrThrow());
+        await _repo.UpsertAsync(promo, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
-        var promoCode = createResult.GetDataOrThrow();
-
-        await _repo.UpsertAsync(promoCode, ct);
-        await _uow.SaveChangesAsync(ct);
-
-        return Result<PromoCodeDetailDto>.Ok(promoCode.ToDetailDto());
+        return Result<PromoCodeDetailDto>.Ok(promo.ToDetailDto());
     }
 
-    private static Result<DiscountValue> BuildDiscount(string discountType, decimal value)
+    private static Result<DiscountValue> BuildDiscount(string discountType, decimal amount)
     {
-        return discountType.Trim().ToUpperInvariant() switch
+        return discountType.Trim().ToLowerInvariant() switch
         {
-            "PERCENTAGE" => DiscountValue.Percentage(value),
-            "FIXED"      => DiscountValue.Fixed(value),
-            _            => Result<DiscountValue>.Fail(
-                                new ECommerce.SharedKernel.Results.DomainError(
-                                    "VALIDATION_FAILED",
-                                    $"Unknown DiscountType '{discountType}'. Must be 'Percentage' or 'Fixed'."))
+            "percentage" => DiscountValue.Percentage(amount),
+            "fixed"      => DiscountValue.Fixed(amount),
+            _            => Result<DiscountValue>.Fail(new DomainError("INVALID_DISCOUNT_TYPE",
+                                $"Unknown discount type '{discountType}'. Use 'Percentage' or 'Fixed'"))
         };
     }
 }
 ```
 
-#### UpdatePromoCodeCommand
-
-**File: `Promotions/ECommerce.Promotions.Application/Commands/UpdatePromoCode/UpdatePromoCodeCommand.cs`**
-
+### `ECommerce.Promotions.Application/Commands/UpdatePromoCodeCommand.cs`
 ```csharp
-using MediatR;
+using ECommerce.SharedKernel.CQRS;
 using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Promotions.Application.DTOs;
+using ECommerce.Promotions.Application.Mappings;
+using ECommerce.Promotions.Domain.Errors;
+using ECommerce.Promotions.Domain.Interfaces;
+using ECommerce.Promotions.Domain.ValueObjects;
+using MediatR;
 
-namespace ECommerce.Promotions.Application.Commands.UpdatePromoCode;
+namespace ECommerce.Promotions.Application.Commands;
 
-/// <summary>
-/// Partial update — any null field means "keep existing value".
-/// To explicitly clear MaxUses or ValidPeriod, pass the *Present flag as true with the value as null.
-/// </summary>
+/// <summary>All fields are nullable — only non-null values are applied to the aggregate.</summary>
 public record UpdatePromoCodeCommand(
     Guid      Id,
     string?   Code,
     string?   DiscountType,
     decimal?  DiscountValue,
     decimal?  MinOrderAmount,
+    bool      ClearMinOrderAmount,
     decimal?  MaxDiscountAmount,
+    bool      ClearMaxDiscountAmount,
     int?      MaxUses,
-    bool      MaxUsesPresent,     // true = caller explicitly sent MaxUses (even if null = clear)
+    bool      ClearMaxUses,
     DateTime? StartDate,
     DateTime? EndDate,
-    bool      DatesPresent,       // true = caller explicitly sent StartDate/EndDate (even if null = clear)
+    bool      ClearDates,
     bool?     IsActive
 ) : IRequest<Result<PromoCodeDetailDto>>, ITransactionalCommand;
-```
 
-**File: `Promotions/ECommerce.Promotions.Application/Commands/UpdatePromoCode/UpdatePromoCodeCommandHandler.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.Promotions.Application.DTOs;
-using ECommerce.Promotions.Application.Mapping;
-using ECommerce.Promotions.Domain.Errors;
-using ECommerce.Promotions.Domain.Interfaces;
-using ECommerce.Promotions.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-
-namespace ECommerce.Promotions.Application.Commands.UpdatePromoCode;
-
-public class UpdatePromoCodeCommandHandler(
-    IPromoCodeRepository _repo,
-    IUnitOfWork          _uow
-) : IRequestHandler<UpdatePromoCodeCommand, Result<PromoCodeDetailDto>>
+public class UpdatePromoCodeCommandHandler : IRequestHandler<UpdatePromoCodeCommand, Result<PromoCodeDetailDto>>
 {
-    public async Task<Result<PromoCodeDetailDto>> Handle(
-        UpdatePromoCodeCommand command, CancellationToken ct)
+    private readonly IPromoCodeRepository _repo;
+    private readonly IUnitOfWork          _uow;
+
+    public UpdatePromoCodeCommandHandler(IPromoCodeRepository repo, IUnitOfWork uow)
     {
-        var promoCode = await _repo.GetByIdAsync(command.Id, ct);
-        if (promoCode is null)
-            return Result<PromoCodeDetailDto>.Fail(PromotionsErrors.PromoNotFound);
-
-        // Build new DiscountValue if either type or value was supplied
-        DiscountValue? newDiscount = null;
-        if (command.DiscountType is not null || command.DiscountValue.HasValue)
-        {
-            var type  = command.DiscountType ?? promoCode.Discount.Type.ToString();
-            var value = command.DiscountValue ?? promoCode.Discount.Amount;
-
-            var discountResult = type.Trim().ToUpperInvariant() switch
-            {
-                "PERCENTAGE" => DiscountValue.Percentage(value),
-                "FIXED"      => DiscountValue.Fixed(value),
-                _            => Result<DiscountValue>.Fail(
-                                    new ECommerce.SharedKernel.Results.DomainError(
-                                        "VALIDATION_FAILED",
-                                        $"Unknown DiscountType '{type}'."))
-            };
-
-            if (!discountResult.IsSuccess)
-                return Result<PromoCodeDetailDto>.Fail(discountResult.GetErrorOrThrow());
-
-            newDiscount = discountResult.GetDataOrThrow();
-        }
-
-        // Build new DateRange if dates are explicitly present
-        DateRange? newValidPeriod   = null;
-        bool       validPeriodSet   = false;
-        if (command.DatesPresent)
-        {
-            validPeriodSet = true;
-            if (command.StartDate.HasValue && command.EndDate.HasValue)
-            {
-                var drResult = DateRange.Create(command.StartDate.Value, command.EndDate.Value);
-                if (!drResult.IsSuccess)
-                    return Result<PromoCodeDetailDto>.Fail(drResult.GetErrorOrThrow());
-                newValidPeriod = drResult.GetDataOrThrow();
-            }
-            // else both null → clear ValidPeriod (newValidPeriod stays null)
-        }
-
-        var updateResult = promoCode.Update(
-            command.Code,
-            newDiscount,
-            newValidPeriod,
-            validPeriodSet,
-            command.MaxUses,
-            command.MaxUsesPresent,
-            command.IsActive,
-            command.MinOrderAmount,
-            command.MaxDiscountAmount);
-
-        if (!updateResult.IsSuccess)
-            return Result<PromoCodeDetailDto>.Fail(updateResult.GetErrorOrThrow());
-
-        try
-        {
-            await _repo.UpsertAsync(promoCode, ct);
-            await _uow.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Result<PromoCodeDetailDto>.Fail(PromotionsErrors.ConcurrencyConflict);
-        }
-
-        return Result<PromoCodeDetailDto>.Ok(promoCode.ToDetailDto());
+        _repo = repo;
+        _uow  = uow;
     }
+
+    public async Task<Result<PromoCodeDetailDto>> Handle(UpdatePromoCodeCommand cmd, CancellationToken cancellationToken)
+    {
+        var promo = await _repo.GetByIdAsync(cmd.Id, cancellationToken);
+        if (promo is null) return Result<PromoCodeDetailDto>.Fail(PromotionsErrors.PromoNotFound);
+
+        // Build optional value objects only if fields provided
+        PromoCodeString? newCode = null;
+        if (cmd.Code is not null)
+        {
+            var r = PromoCodeString.Create(cmd.Code);
+            if (!r.IsSuccess) return Result<PromoCodeDetailDto>.Fail(r.Error!);
+
+            // Duplicate check (only if code is actually changing)
+            if (r.Value!.Value != promo.Code.Value)
+            {
+                var dup = await _repo.GetByCodeAsync(r.Value.Value, cancellationToken);
+                if (dup is not null && dup.Id != promo.Id)
+                    return Result<PromoCodeDetailDto>.Fail(PromotionsErrors.DuplicateCode);
+            }
+            newCode = r.Value;
+        }
+
+        DiscountValue? newDiscount = null;
+        if (cmd.DiscountType is not null || cmd.DiscountValue.HasValue)
+        {
+            var type   = cmd.DiscountType ?? promo.Discount.Type.ToString();
+            var amount = cmd.DiscountValue ?? promo.Discount.Amount;
+            var r = BuildDiscount(type, amount);
+            if (!r.IsSuccess) return Result<PromoCodeDetailDto>.Fail(r.Error!);
+            newDiscount = r.Value;
+        }
+
+        Domain.ValueObjects.DateRange? newPeriod = null;
+        if (!cmd.ClearDates && (cmd.StartDate.HasValue || cmd.EndDate.HasValue))
+        {
+            var start = cmd.StartDate ?? promo.ValidPeriod?.Start;
+            var end   = cmd.EndDate   ?? promo.ValidPeriod?.End;
+            if (start.HasValue && end.HasValue)
+            {
+                var r = Domain.ValueObjects.DateRange.Create(start.Value, end.Value);
+                if (!r.IsSuccess) return Result<PromoCodeDetailDto>.Fail(r.Error!);
+                newPeriod = r.Value;
+            }
+        }
+
+        promo.Update(
+            code:                   newCode,
+            discount:               newDiscount,
+            validPeriod:            newPeriod,
+            clearValidPeriod:       cmd.ClearDates,
+            maxUses:                cmd.MaxUses,
+            clearMaxUses:           cmd.ClearMaxUses,
+            minimumOrderAmount:     cmd.MinOrderAmount,
+            clearMinimumOrderAmount: cmd.ClearMinOrderAmount,
+            maxDiscountAmount:      cmd.MaxDiscountAmount,
+            clearMaxDiscountAmount: cmd.ClearMaxDiscountAmount,
+            isActive:               cmd.IsActive);
+
+        await _repo.UpsertAsync(promo, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        return Result<PromoCodeDetailDto>.Ok(promo.ToDetailDto());
+    }
+
+    private static Result<DiscountValue> BuildDiscount(string discountType, decimal amount)
+        => discountType.Trim().ToLowerInvariant() switch
+        {
+            "percentage" => DiscountValue.Percentage(amount),
+            "fixed"      => DiscountValue.Fixed(amount),
+            _            => Result<DiscountValue>.Fail(new DomainError("INVALID_DISCOUNT_TYPE",
+                                $"Unknown discount type '{discountType}'"))
+        };
 }
 ```
 
-#### DeactivatePromoCodeCommand
-
-**File: `Promotions/ECommerce.Promotions.Application/Commands/DeactivatePromoCode/DeactivatePromoCodeCommand.cs`**
-
+### `ECommerce.Promotions.Application/Commands/DeactivatePromoCodeCommand.cs`
 ```csharp
-using MediatR;
+using ECommerce.SharedKernel.CQRS;
 using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
-
-namespace ECommerce.Promotions.Application.Commands.DeactivatePromoCode;
-
-public record DeactivatePromoCodeCommand(Guid Id)
-    : IRequest<Result>, ITransactionalCommand;
-```
-
-**File: `Promotions/ECommerce.Promotions.Application/Commands/DeactivatePromoCode/DeactivatePromoCodeCommandHandler.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Promotions.Domain.Errors;
 using ECommerce.Promotions.Domain.Interfaces;
+using MediatR;
 
-namespace ECommerce.Promotions.Application.Commands.DeactivatePromoCode;
+namespace ECommerce.Promotions.Application.Commands;
 
-public class DeactivatePromoCodeCommandHandler(
-    IPromoCodeRepository _repo,
-    IUnitOfWork          _uow
-) : IRequestHandler<DeactivatePromoCodeCommand, Result>
+public record DeactivatePromoCodeCommand(Guid Id) : IRequest<Result>, ITransactionalCommand;
+
+public class DeactivatePromoCodeCommandHandler : IRequestHandler<DeactivatePromoCodeCommand, Result>
 {
-    public async Task<Result> Handle(DeactivatePromoCodeCommand command, CancellationToken ct)
+    private readonly IPromoCodeRepository _repo;
+    private readonly IUnitOfWork          _uow;
+
+    public DeactivatePromoCodeCommandHandler(IPromoCodeRepository repo, IUnitOfWork uow)
     {
-        var promoCode = await _repo.GetByIdAsync(command.Id, ct);
-        if (promoCode is null)
-            return Result.Fail(PromotionsErrors.PromoNotFound);
+        _repo = repo;
+        _uow  = uow;
+    }
 
-        promoCode.Deactivate();
+    public async Task<Result> Handle(DeactivatePromoCodeCommand cmd, CancellationToken cancellationToken)
+    {
+        var promo = await _repo.GetByIdAsync(cmd.Id, cancellationToken);
+        if (promo is null) return Result.Fail(PromotionsErrors.PromoNotFound);
 
-        await _repo.UpsertAsync(promoCode, ct);
-        await _uow.SaveChangesAsync(ct);
-
+        promo.Deactivate();
+        await _repo.UpsertAsync(promo, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
         return Result.Ok();
     }
 }
 ```
 
-#### DeletePromoCodeCommand
-
-**File: `Promotions/ECommerce.Promotions.Application/Commands/DeletePromoCode/DeletePromoCodeCommand.cs`**
-
+### `ECommerce.Promotions.Application/Commands/DeletePromoCodeCommand.cs`
 ```csharp
-using MediatR;
+using ECommerce.SharedKernel.CQRS;
 using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
-
-namespace ECommerce.Promotions.Application.Commands.DeletePromoCode;
-
-public record DeletePromoCodeCommand(Guid Id)
-    : IRequest<Result>, ITransactionalCommand;
-```
-
-**File: `Promotions/ECommerce.Promotions.Application/Commands/DeletePromoCode/DeletePromoCodeCommandHandler.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Promotions.Domain.Errors;
 using ECommerce.Promotions.Domain.Interfaces;
+using MediatR;
 
-namespace ECommerce.Promotions.Application.Commands.DeletePromoCode;
+namespace ECommerce.Promotions.Application.Commands;
 
-public class DeletePromoCodeCommandHandler(
-    IPromoCodeRepository _repo,
-    IUnitOfWork          _uow
-) : IRequestHandler<DeletePromoCodeCommand, Result>
+public record DeletePromoCodeCommand(Guid Id) : IRequest<Result>, ITransactionalCommand;
+
+public class DeletePromoCodeCommandHandler : IRequestHandler<DeletePromoCodeCommand, Result>
 {
-    public async Task<Result> Handle(DeletePromoCodeCommand command, CancellationToken ct)
+    private readonly IPromoCodeRepository _repo;
+    private readonly IUnitOfWork          _uow;
+
+    public DeletePromoCodeCommandHandler(IPromoCodeRepository repo, IUnitOfWork uow)
     {
-        var promoCode = await _repo.GetByIdAsync(command.Id, ct);
-        if (promoCode is null)
-            return Result.Fail(PromotionsErrors.PromoNotFound);
+        _repo = repo;
+        _uow  = uow;
+    }
 
-        await _repo.DeleteAsync(promoCode, ct);
-        await _uow.SaveChangesAsync(ct);
+    public async Task<Result> Handle(DeletePromoCodeCommand cmd, CancellationToken cancellationToken)
+    {
+        var promo = await _repo.GetByIdAsync(cmd.Id, cancellationToken);
+        if (promo is null) return Result.Fail(PromotionsErrors.PromoNotFound);
 
+        await _repo.DeleteAsync(promo, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
         return Result.Ok();
     }
 }
@@ -483,255 +428,195 @@ public class DeletePromoCodeCommandHandler(
 
 ---
 
-### 6. Queries
+## Task 6: Queries
 
-#### GetPromoCodesQuery (admin list)
-
-**File: `Promotions/ECommerce.Promotions.Application/Queries/GetPromoCodes/GetPromoCodesQuery.cs`**
-
+### `ECommerce.Promotions.Application/Queries/GetPromoCodeByIdQuery.cs`
 ```csharp
-using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Promotions.Application.DTOs;
-
-namespace ECommerce.Promotions.Application.Queries.GetPromoCodes;
-
-public record GetPromoCodesQuery(
-    int     Page,
-    int     PageSize,
-    string? Search,
-    bool?   IsActive
-) : IRequest<Result<PagedResult<PromoCodeDetailDto>>>;
-```
-
-**File: `Promotions/ECommerce.Promotions.Application/Queries/GetPromoCodes/GetPromoCodesQueryHandler.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Promotions.Application.DTOs;
-using ECommerce.Promotions.Application.Mapping;
-using ECommerce.Promotions.Domain.Interfaces;
-
-namespace ECommerce.Promotions.Application.Queries.GetPromoCodes;
-
-public class GetPromoCodesQueryHandler(IPromoCodeRepository _repo)
-    : IRequestHandler<GetPromoCodesQuery, Result<PagedResult<PromoCodeDetailDto>>>
-{
-    public async Task<Result<PagedResult<PromoCodeDetailDto>>> Handle(
-        GetPromoCodesQuery query, CancellationToken ct)
-    {
-        var (items, total) = await _repo.GetAllAsync(
-            query.Page, query.PageSize, query.Search, query.IsActive, ct);
-
-        var dtos = items.Select(p => p.ToDetailDto()).ToList();
-
-        return Result<PagedResult<PromoCodeDetailDto>>.Ok(
-            new PagedResult<PromoCodeDetailDto>(dtos, total, query.Page, query.PageSize));
-    }
-}
-```
-
-#### GetActivePromoCodesQuery (public list)
-
-**File: `Promotions/ECommerce.Promotions.Application/Queries/GetActivePromoCodes/GetActivePromoCodesQuery.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Promotions.Application.DTOs;
-
-namespace ECommerce.Promotions.Application.Queries.GetActivePromoCodes;
-
-public record GetActivePromoCodesQuery(int Page, int PageSize)
-    : IRequest<Result<PagedResult<PromoCodeDto>>>;
-```
-
-**File: `Promotions/ECommerce.Promotions.Application/Queries/GetActivePromoCodes/GetActivePromoCodesQueryHandler.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Promotions.Application.DTOs;
-using ECommerce.Promotions.Application.Mapping;
-using ECommerce.Promotions.Domain.Interfaces;
-
-namespace ECommerce.Promotions.Application.Queries.GetActivePromoCodes;
-
-public class GetActivePromoCodesQueryHandler(IPromoCodeRepository _repo)
-    : IRequestHandler<GetActivePromoCodesQuery, Result<PagedResult<PromoCodeDto>>>
-{
-    private const int MaxPageSize = 100;
-
-    public async Task<Result<PagedResult<PromoCodeDto>>> Handle(
-        GetActivePromoCodesQuery query, CancellationToken ct)
-    {
-        var pageSize = Math.Min(query.PageSize, MaxPageSize);
-
-        var (items, total) = await _repo.GetActiveAsync(query.Page, pageSize, ct);
-
-        var dtos = items.Select(p => p.ToDto()).ToList();
-
-        return Result<PagedResult<PromoCodeDto>>.Ok(
-            new PagedResult<PromoCodeDto>(dtos, total, query.Page, pageSize));
-    }
-}
-```
-
-#### GetPromoCodeByIdQuery
-
-**File: `Promotions/ECommerce.Promotions.Application/Queries/GetPromoCodeById/GetPromoCodeByIdQuery.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Promotions.Application.DTOs;
-
-namespace ECommerce.Promotions.Application.Queries.GetPromoCodeById;
-
-public record GetPromoCodeByIdQuery(Guid Id)
-    : IRequest<Result<PromoCodeDetailDto>>;
-```
-
-**File: `Promotions/ECommerce.Promotions.Application/Queries/GetPromoCodeById/GetPromoCodeByIdQueryHandler.cs`**
-
-```csharp
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Promotions.Application.DTOs;
-using ECommerce.Promotions.Application.Mapping;
+using ECommerce.Promotions.Application.Mappings;
 using ECommerce.Promotions.Domain.Errors;
 using ECommerce.Promotions.Domain.Interfaces;
+using MediatR;
 
-namespace ECommerce.Promotions.Application.Queries.GetPromoCodeById;
+namespace ECommerce.Promotions.Application.Queries;
 
-public class GetPromoCodeByIdQueryHandler(IPromoCodeRepository _repo)
-    : IRequestHandler<GetPromoCodeByIdQuery, Result<PromoCodeDetailDto>>
+public record GetPromoCodeByIdQuery(Guid Id) : IRequest<Result<PromoCodeDetailDto>>;
+
+public class GetPromoCodeByIdQueryHandler : IRequestHandler<GetPromoCodeByIdQuery, Result<PromoCodeDetailDto>>
 {
-    public async Task<Result<PromoCodeDetailDto>> Handle(
-        GetPromoCodeByIdQuery query, CancellationToken ct)
-    {
-        var promoCode = await _repo.GetByIdAsync(query.Id, ct);
-        if (promoCode is null)
-            return Result<PromoCodeDetailDto>.Fail(PromotionsErrors.PromoNotFound);
+    private readonly IPromoCodeRepository _repo;
+    public GetPromoCodeByIdQueryHandler(IPromoCodeRepository repo) => _repo = repo;
 
-        return Result<PromoCodeDetailDto>.Ok(promoCode.ToDetailDto());
+    public async Task<Result<PromoCodeDetailDto>> Handle(GetPromoCodeByIdQuery q, CancellationToken ct)
+    {
+        var promo = await _repo.GetByIdAsync(q.Id, ct);
+        return promo is null
+            ? Result<PromoCodeDetailDto>.Fail(PromotionsErrors.PromoNotFound)
+            : Result<PromoCodeDetailDto>.Ok(promo.ToDetailDto());
     }
 }
 ```
 
-#### ValidatePromoCodeQuery
-
-**File: `Promotions/ECommerce.Promotions.Application/Queries/ValidatePromoCode/ValidatePromoCodeQuery.cs`**
-
+### `ECommerce.Promotions.Application/Queries/GetPromoCodesQuery.cs`
 ```csharp
-using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Promotions.Application.DTOs;
+using ECommerce.Promotions.Application.Mappings;
+using ECommerce.Promotions.Domain.Interfaces;
+using MediatR;
 
-namespace ECommerce.Promotions.Application.Queries.ValidatePromoCode;
+namespace ECommerce.Promotions.Application.Queries;
 
-/// <summary>
-/// IMPORTANT: This query NEVER returns a domain error failure.
-/// If the code is not found, invalid, or the order doesn't meet the minimum,
-/// the result is Result.Ok with IsValid=false inside the DTO.
-/// This preserves the existing API contract where POST /validate always returns 200.
-/// </summary>
-public record ValidatePromoCodeQuery(
-    string  Code,
-    decimal OrderAmount
-) : IRequest<Result<ValidatePromoCodeDto>>;
+public record GetPromoCodesQuery(int Page, int PageSize, string? Search, bool? IsActive)
+    : IRequest<Result<PaginatedResult<PromoCodeDto>>>;
+
+public class GetPromoCodesQueryHandler : IRequestHandler<GetPromoCodesQuery, Result<PaginatedResult<PromoCodeDto>>>
+{
+    private readonly IPromoCodeRepository _repo;
+    public GetPromoCodesQueryHandler(IPromoCodeRepository repo) => _repo = repo;
+
+    public async Task<Result<PaginatedResult<PromoCodeDto>>> Handle(GetPromoCodesQuery q, CancellationToken ct)
+    {
+        var (items, total) = await _repo.GetAllAsync(q.Page, q.PageSize, q.Search, q.IsActive, ct);
+        return Result<PaginatedResult<PromoCodeDto>>.Ok(new PaginatedResult<PromoCodeDto>
+        {
+            Items      = items.Select(p => p.ToDto()).ToList(),
+            TotalCount = total,
+            Page       = q.Page,
+            PageSize   = q.PageSize
+        });
+    }
+}
 ```
 
-**File: `Promotions/ECommerce.Promotions.Application/Queries/ValidatePromoCode/ValidatePromoCodeQueryHandler.cs`**
-
+### `ECommerce.Promotions.Application/Queries/GetActivePromoCodesQuery.cs`
 ```csharp
-using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Promotions.Application.DTOs;
-using ECommerce.Promotions.Application.Mapping;
+using ECommerce.Promotions.Application.Mappings;
+using ECommerce.Promotions.Domain.Interfaces;
+using MediatR;
+
+namespace ECommerce.Promotions.Application.Queries;
+
+public record GetActivePromoCodesQuery(int Page, int PageSize) : IRequest<Result<PaginatedResult<PromoCodeDto>>>;
+
+public class GetActivePromoCodesQueryHandler : IRequestHandler<GetActivePromoCodesQuery, Result<PaginatedResult<PromoCodeDto>>>
+{
+    private readonly IPromoCodeRepository _repo;
+    public GetActivePromoCodesQueryHandler(IPromoCodeRepository repo) => _repo = repo;
+
+    public async Task<Result<PaginatedResult<PromoCodeDto>>> Handle(GetActivePromoCodesQuery q, CancellationToken ct)
+    {
+        var (items, total) = await _repo.GetActiveAsync(q.Page, q.PageSize, ct);
+        return Result<PaginatedResult<PromoCodeDto>>.Ok(new PaginatedResult<PromoCodeDto>
+        {
+            Items      = items.Select(p => p.ToDto()).ToList(),
+            TotalCount = total,
+            Page       = q.Page,
+            PageSize   = q.PageSize
+        });
+    }
+}
+```
+
+### `ECommerce.Promotions.Application/Queries/ValidatePromoCodeQuery.cs`
+```csharp
+using ECommerce.SharedKernel.Results;
+using ECommerce.Promotions.Application.DTOs;
+using ECommerce.Promotions.Application.Mappings;
 using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Domain.Services;
+using ECommerce.Promotions.Domain.ValueObjects;
+using MediatR;
 
-namespace ECommerce.Promotions.Application.Queries.ValidatePromoCode;
+namespace ECommerce.Promotions.Application.Queries;
 
-public class ValidatePromoCodeQueryHandler(
-    IPromoCodeRepository _repo,
-    DiscountCalculator   _calculator
-) : IRequestHandler<ValidatePromoCodeQuery, Result<ValidatePromoCodeDto>>
+/// <summary>
+/// Validates a promo code for a given order amount.
+///
+/// IMPORTANT: This query NEVER returns a failed Result.
+/// If the code is invalid, not found, or the order is below the minimum,
+/// it returns Result.Ok(new ValidatePromoCodeDto { IsValid = false, ... }).
+/// This preserves the existing API contract: POST /validate always returns HTTP 200.
+/// </summary>
+public record ValidatePromoCodeQuery(string Code, decimal OrderAmount)
+    : IRequest<Result<ValidatePromoCodeDto>>;
+
+public class ValidatePromoCodeQueryHandler : IRequestHandler<ValidatePromoCodeQuery, Result<ValidatePromoCodeDto>>
 {
-    public async Task<Result<ValidatePromoCodeDto>> Handle(
-        ValidatePromoCodeQuery query, CancellationToken ct)
+    private readonly IPromoCodeRepository _repo;
+    private readonly DiscountCalculator   _calculator;
+
+    public ValidatePromoCodeQueryHandler(IPromoCodeRepository repo, DiscountCalculator calculator)
     {
-        // Normalise code for lookup (case-insensitive)
-        var upperCode = query.Code?.Trim().ToUpperInvariant() ?? string.Empty;
+        _repo       = repo;
+        _calculator = calculator;
+    }
 
-        if (string.IsNullOrEmpty(upperCode))
-            return Result<ValidatePromoCodeDto>.Ok(
-                new ValidatePromoCodeDto(false, 0m, "Promo code is required.", null));
+    public async Task<Result<ValidatePromoCodeDto>> Handle(ValidatePromoCodeQuery q, CancellationToken ct)
+    {
+        var normalizedCode = q.Code.Trim().ToUpperInvariant();
+        var promo = await _repo.GetByCodeAsync(normalizedCode, ct);
 
-        var promoCode = await _repo.GetByCodeAsync(upperCode, ct);
-        if (promoCode is null)
-            return Result<ValidatePromoCodeDto>.Ok(
-                new ValidatePromoCodeDto(false, 0m, "Promo code not found.", null));
-
-        var calcResult = _calculator.Calculate(promoCode, query.OrderAmount, DateTime.UtcNow);
-        if (!calcResult.IsSuccess)
+        if (promo is null)
         {
-            // PROMO_NOT_VALID or PROMO_MIN_ORDER — return IsValid=false, not a failure
-            return Result<ValidatePromoCodeDto>.Ok(
-                new ValidatePromoCodeDto(false, 0m, calcResult.GetErrorOrThrow().Message, promoCode.ToDto()));
+            return Result<ValidatePromoCodeDto>.Ok(new ValidatePromoCodeDto
+            {
+                IsValid        = false,
+                Message        = "Promo code not found",
+                DiscountAmount = 0
+            });
         }
 
-        var calc = calcResult.GetDataOrThrow();
-        return Result<ValidatePromoCodeDto>.Ok(
-            new ValidatePromoCodeDto(true, calc.DiscountAmount, null, promoCode.ToDto()));
+        var calcResult = _calculator.Calculate(promo, q.OrderAmount, DateTime.UtcNow);
+
+        if (!calcResult.IsSuccess)
+        {
+            var message = calcResult.Error!.Code switch
+            {
+                "PROMO_NOT_VALID"  => "This promo code is not valid",
+                "PROMO_MIN_ORDER"  => $"Order amount must meet the minimum required for this code",
+                _                  => calcResult.Error.Message
+            };
+            return Result<ValidatePromoCodeDto>.Ok(new ValidatePromoCodeDto
+            {
+                IsValid        = false,
+                Message        = message,
+                DiscountAmount = 0
+            });
+        }
+
+        return Result<ValidatePromoCodeDto>.Ok(new ValidatePromoCodeDto
+        {
+            IsValid        = true,
+            Message        = "Promo code applied successfully",
+            DiscountAmount = calcResult.Value!.DiscountAmount,
+            PromoCode      = promo.ToDto()
+        });
     }
 }
 ```
 
-### 7. PagedResult DTO
+---
 
-If `PagedResult<T>` is not already in SharedKernel, add it here:
-
-**File: `Promotions/ECommerce.Promotions.Application/DTOs/PagedResult.cs`**
-
-```csharp
-namespace ECommerce.Promotions.Application.DTOs;
-
-/// <summary>
-/// Generic paginated response wrapper. Use only if not already defined in SharedKernel.
-/// If SharedKernel already defines PagedResult<T>, delete this file and use that type instead.
-/// </summary>
-public record PagedResult<T>(
-    IReadOnlyList<T> Items,
-    int              TotalCount,
-    int              Page,
-    int              PageSize
-);
-```
-
-> Check `ECommerce.SharedKernel` first. If it already has `PagedResult<T>`, delete this file and reference the SharedKernel type in all handlers above.
-
-### 8. Verify
+## Task 7: Verify
 
 ```bash
 cd src/backend
-dotnet build Promotions/ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj
-dotnet build
+dotnet build ECommerce.Promotions.Application/ECommerce.Promotions.Application.csproj
 ```
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] `ECommerce.Promotions.Application` project created and added to solution
-- [ ] DTOs: `PromoCodeDto`, `PromoCodeDetailDto`, `ValidatePromoCodeDto` match existing HTTP contract shapes
-- [ ] `PromotionsMappingExtensions.ToDetailDto` and `ToDto` implemented
-- [ ] Commands: `CreatePromoCodeCommand`, `UpdatePromoCodeCommand`, `DeactivatePromoCodeCommand`, `DeletePromoCodeCommand` — all implement `ITransactionalCommand` and inject `IUnitOfWork`
-- [ ] Queries: `GetPromoCodesQuery`, `GetActivePromoCodesQuery`, `GetPromoCodeByIdQuery`, `ValidatePromoCodeQuery`
-- [ ] `GetActivePromoCodesQueryHandler` clamps pageSize to 100
-- [ ] `ValidatePromoCodeQueryHandler` NEVER returns a domain error failure — always returns `Result.Ok(dto)` with `IsValid=false` in the DTO when code is not found, invalid, or min order not met
-- [ ] `UpdatePromoCodeCommandHandler` catches `DbUpdateConcurrencyException` and returns `ConcurrencyConflict` error
-- [ ] `SaveChangesAsync` never called on failure paths
-- [ ] `dotnet build` passes
+- [ ] Project builds with zero errors
+- [ ] `ValidatePromoCodeQuery` handler never returns a failed Result — invalid codes return `IsValid=false` inside a successful result
+- [ ] `CreatePromoCodeCommand` builds all value objects before touching the repository
+- [ ] `UpdatePromoCodeCommand` partial-updates: only provided fields change; unset fields retain current values
+- [ ] `DeletePromoCodeCommand` uses hard delete (repo.DeleteAsync)
+- [ ] `DeactivatePromoCodeCommand` calls `promo.Deactivate()` (soft-delete via domain method)
+- [ ] `GetPromoCodesQuery` and `GetActivePromoCodesQuery` return `PaginatedResult<PromoCodeDto>`
+- [ ] No EF, no HTTP, no AutoMapper references in this project
