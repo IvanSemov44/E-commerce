@@ -7,6 +7,7 @@ using MediatR;
 using ECommerce.Catalog.Infrastructure;
 using ECommerce.Catalog.Application.Commands.CreateProduct;
 using ECommerce.Identity.Infrastructure;
+using ECommerce.Promotions.Infrastructure;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -73,6 +74,9 @@ builder.Services.AddCatalogInfrastructure();
 
 // Identity Infrastructure
 builder.Services.AddIdentityInfrastructure();
+
+// Promotions Infrastructure (Phase 5)
+builder.Services.AddPromotionsInfrastructure();
 
 // MediatR
 builder.Services.AddMediatR(cfg =>
