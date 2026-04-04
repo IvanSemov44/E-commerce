@@ -43,6 +43,7 @@
     <ProjectReference Include="..\Identity\ECommerce.Identity.Infrastructure\ECommerce.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\Inventory\ECommerce.Inventory.Infrastructure\ECommerce.Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\Inventory\ECommerce.Inventory.Application\ECommerce.Inventory.Application.csproj" />
+    <ProjectReference Include="..\Shopping\ECommerce.Shopping.Infrastructure\ECommerce.Shopping.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

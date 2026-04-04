@@ -27,7 +27,13 @@ public static class ApplicationBuilderExtensions
         {
             var context = services.GetRequiredService<AppDbContext>();
             await ApplyMigrationsAsync(context);
-            await SeedDatabaseAsync(context, services, app.Environment);
+
+            // Integration tests seed their own deterministic dataset in TestWebApplicationFactory.
+            // Skipping app-level seed avoids duplicate work and startup overhead.
+            if (!app.Environment.IsEnvironment("Test"))
+            {
+                await SeedDatabaseAsync(context, services, app.Environment);
+            }
         }
         catch (Exception ex)
         {

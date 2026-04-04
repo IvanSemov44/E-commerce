@@ -11,6 +11,7 @@ using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
 using ECommerce.Inventory.Infrastructure;
+using ECommerce.Shopping.Infrastructure;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Antiforgery;
@@ -318,6 +319,9 @@ public static class ServiceCollectionExtensions
 
         // Inventory (Phase 3 - DDD extract)
         services.AddInventoryInfrastructure();
+
+        // Shopping (Phase 4 - DDD extract)
+        services.AddShoppingInfrastructure();
 
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         // IInventoryService kept for OrderService compatibility

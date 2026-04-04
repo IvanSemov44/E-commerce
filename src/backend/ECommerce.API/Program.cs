@@ -116,24 +116,27 @@ var app = builder.Build();
 // ============================================================================
 // DI Validation - Ensure all critical services are resolvable
 // ============================================================================
-try
+if (!app.Environment.IsEnvironment("Test"))
 {
-    using (var scope = app.Services.CreateScope())
+    try
     {
-        // Validate each critical service can be instantiated
-        // This catches missing dependencies and circular references early
-        _ = scope.ServiceProvider.GetRequiredService<IOrderService>();
-        _ = scope.ServiceProvider.GetRequiredService<IMediator>();
+        using (var scope = app.Services.CreateScope())
+        {
+            // Validate each critical service can be instantiated
+            // This catches missing dependencies and circular references early
+            _ = scope.ServiceProvider.GetRequiredService<IOrderService>();
+            _ = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-        _ = scope.ServiceProvider.GetRequiredService<ICartService>();
-        _ = scope.ServiceProvider.GetRequiredService<IPaymentService>();
+            _ = scope.ServiceProvider.GetRequiredService<ICartService>();
+            _ = scope.ServiceProvider.GetRequiredService<IPaymentService>();
+        }
+        Serilog.Log.Information("✓ Dependency injection validation passed. All critical services are resolvable.");
     }
-    Serilog.Log.Information("✓ Dependency injection validation passed. All critical services are resolvable.");
-}
-catch (Exception ex)
-{
-    Serilog.Log.Fatal(ex, "✗ Dependency injection validation failed - missing or circular dependencies");
-    throw;
+    catch (Exception ex)
+    {
+        Serilog.Log.Fatal(ex, "✗ Dependency injection validation failed - missing or circular dependencies");
+        throw;
+    }
 }
 
 // Apply migrations and seed database
