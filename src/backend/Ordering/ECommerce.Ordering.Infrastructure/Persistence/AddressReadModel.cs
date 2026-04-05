@@ -1,4 +1,4 @@
-namespace ECommerce.Ordering.Infrastructure.Persistence;
+﻿namespace ECommerce.Ordering.Infrastructure.Persistence;
 
 public class AddressReadModel
 {

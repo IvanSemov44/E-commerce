@@ -1,4 +1,4 @@
-namespace ECommerce.Catalog.Infrastructure.Persistence;
+﻿namespace ECommerce.Catalog.Infrastructure.Persistence;
 
 public class ProductRatingReadModel
 {
