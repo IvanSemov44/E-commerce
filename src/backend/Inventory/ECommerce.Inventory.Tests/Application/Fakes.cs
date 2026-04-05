@@ -34,6 +34,21 @@ sealed class FakeInventoryItemRepository : IInventoryItemRepository
         Store.Add(item);
         return Task.CompletedTask;
     }
+
+    public Task UpdateAsync(InventoryItem item, CancellationToken ct = default)
+    {
+        var index = Store.FindIndex(i => i.Id == item.Id);
+        if (index >= 0)
+        {
+            Store[index] = item;
+        }
+        else
+        {
+            Store.Add(item);
+        }
+
+        return Task.CompletedTask;
+    }
 }
 
 sealed class FakeUnitOfWork : IUnitOfWork
