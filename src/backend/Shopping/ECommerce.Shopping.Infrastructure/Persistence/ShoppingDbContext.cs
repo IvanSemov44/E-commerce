@@ -8,6 +8,7 @@ public class ShoppingDbContext(DbContextOptions<ShoppingDbContext> options) : Db
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Wishlist> Wishlists => Set<Wishlist>();
+    public DbSet<ProductReadModel> Products => Set<ProductReadModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,5 +18,14 @@ public class ShoppingDbContext(DbContextOptions<ShoppingDbContext> options) : Db
         modelBuilder.Entity<Cart>().ToTable("Carts");
         modelBuilder.Entity<CartItem>().ToTable("CartItems");
         modelBuilder.Entity<Wishlist>().ToTable("Wishlists");
+        modelBuilder.Entity<ProductReadModel>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.ToTable("Products", "catalog");
+            entity.Property(x => x.Id).HasColumnName("Id");
+            entity.Property(x => x.IsActive).HasColumnName("IsActive");
+            entity.Property(x => x.Price).HasColumnName("Price");
+            entity.Property(x => x.Sku).HasColumnName("Sku");
+        });
     }
 }
