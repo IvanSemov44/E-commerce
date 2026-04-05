@@ -1,15 +1,15 @@
 ﻿using System.Reflection;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.Aggregates.Product;
+using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Domain.ValueObjects;
-using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using CoreProduct = ECommerce.Core.Entities.Product;
 using CoreProductImage = ECommerce.Core.Entities.ProductImage;
 
 namespace ECommerce.Catalog.Infrastructure.Repositories;
 
-public class ProductRepository(AppDbContext _db) : IProductRepository
+public class ProductRepository(CatalogDbContext _db) : IProductRepository
 {
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

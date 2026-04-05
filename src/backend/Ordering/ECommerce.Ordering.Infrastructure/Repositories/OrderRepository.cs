@@ -1,14 +1,14 @@
 using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.Interfaces;
 using ECommerce.Ordering.Domain.ValueObjects;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using CoreOrder = ECommerce.Core.Entities.Order;
 using CoreOrderItem = ECommerce.Core.Entities.OrderItem;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence.Repositories;
 
-public class OrderRepository(AppDbContext _db) : IOrderRepository
+public class OrderRepository(OrderingDbContext _db) : IOrderRepository
 {
     public async Task<Order?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {

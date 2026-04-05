@@ -1,11 +1,11 @@
-﻿using ECommerce.Infrastructure.Data;
-using ECommerce.Promotions.Domain.Aggregates.PromoCode;
+﻿using ECommerce.Promotions.Domain.Aggregates.PromoCode;
 using ECommerce.Promotions.Domain.Interfaces;
+using ECommerce.Promotions.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Promotions.Infrastructure.Persistence.Repositories;
 
-public class PromoCodeRepository(AppDbContext db) : IPromoCodeRepository
+public class PromoCodeRepository(PromotionsDbContext db) : IPromoCodeRepository
 {
     public Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {

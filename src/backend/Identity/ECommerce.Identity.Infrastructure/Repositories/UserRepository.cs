@@ -1,6 +1,6 @@
 ﻿using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Identity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using CoreUser         = ECommerce.Core.Entities.User;
 using CoreAddress      = ECommerce.Core.Entities.Address;
@@ -9,7 +9,7 @@ using DomainUser       = ECommerce.Identity.Domain.Aggregates.User.User;
 
 namespace ECommerce.Identity.Infrastructure.Repositories;
 
-public class UserRepository(AppDbContext _db) : IUserRepository
+public class UserRepository(IdentityDbContext _db) : IUserRepository
 {
     // ── Queries ────────────────────────────────────────────────────────────────
 

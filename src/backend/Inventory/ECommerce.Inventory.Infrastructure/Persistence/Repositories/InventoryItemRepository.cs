@@ -1,11 +1,11 @@
 ﻿using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using ECommerce.Inventory.Domain.Interfaces;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Inventory.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Inventory.Infrastructure.Persistence.Repositories;
 
-public class InventoryItemRepository(AppDbContext _db) : IInventoryItemRepository
+public class InventoryItemRepository(InventoryDbContext _db) : IInventoryItemRepository
 {
     public async Task<InventoryItem?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await _db.InventoryItems
