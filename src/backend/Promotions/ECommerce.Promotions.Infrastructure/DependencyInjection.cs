@@ -1,5 +1,4 @@
-﻿using ECommerce.Infrastructure.Data;
-using ECommerce.Promotions.Application;
+﻿using ECommerce.Promotions.Application;
 using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Infrastructure.Persistence;
 using ECommerce.Promotions.Infrastructure.Persistence.Repositories;
@@ -23,9 +22,6 @@ public static class DependencyInjection
             options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
-
-        // Register configuration assembly with AppDbContext
-        AppDbContext.RegisterConfigurationAssembly(typeof(DependencyInjection).Assembly);
 
         // Register repositories
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();

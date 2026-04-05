@@ -1,8 +1,6 @@
-﻿using ECommerce.Infrastructure.Data;
-using ECommerce.Inventory.Application.Interfaces;
+﻿using ECommerce.Inventory.Application.Interfaces;
 using ECommerce.Inventory.Domain.Interfaces;
 using ECommerce.Inventory.Infrastructure.Persistence;
-using ECommerce.Inventory.Infrastructure.Persistence.Configurations;
 using ECommerce.Inventory.Infrastructure.Persistence.Repositories;
 using ECommerce.Inventory.Infrastructure.Services;
 using MediatR;
@@ -26,9 +24,6 @@ public static class DependencyInjection
             options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
-
-        // Register EF configurations so AppDbContext picks them up without a direct project reference
-        AppDbContext.RegisterConfigurationAssembly(typeof(InventoryItemConfiguration).Assembly);
 
         services.AddScoped<IInventoryItemRepository, InventoryItemRepository>();
         services.AddScoped<IEmailService, EmailService>();

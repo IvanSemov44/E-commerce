@@ -1,14 +1,19 @@
-using ECommerce.Ordering.Application.Interfaces;
-using ECommerce.Infrastructure.Data;
+﻿using ECommerce.Ordering.Application.Interfaces;
+using ECommerce.Catalog.Infrastructure.Persistence;
+using ECommerce.Identity.Infrastructure.Persistence;
+using ECommerce.Promotions.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence;
 
-public class DbReader(AppDbContext _db) : IDbReader
+public class DbReader(
+    CatalogDbContext catalogDb,
+    PromotionsDbContext promotionsDb,
+    IdentityDbContext identityDb) : IDbReader
 {
     public async Task<List<ProductSnapshot>> GetProductsAsync(List<Guid> productIds, CancellationToken ct)
     {
-        var products = await _db.Products
+        var products = await catalogDb.Products
             .AsNoTracking()
             .Where(p => productIds.Contains(p.Id))
             .Select(p => new ProductSnapshot(
@@ -23,7 +28,7 @@ public class DbReader(AppDbContext _db) : IDbReader
 
     public async Task<(decimal Discount, Guid PromoCodeId)?> GetPromoCodeAsync(string code, CancellationToken ct)
     {
-        var promo = await _db.PromoCodes
+        var promo = await promotionsDb.PromoCodes
             .AsNoTracking()
             .Where(p => p.Code.Value == code && p.IsActive)
             .Select(p => new { p.Id, p.Discount })
@@ -37,7 +42,7 @@ public class DbReader(AppDbContext _db) : IDbReader
 
     public async Task<ShippingAddressSnapshot?> GetShippingAddressAsync(Guid userId, Guid addressId, CancellationToken ct)
     {
-        var address = await _db.Addresses
+        var address = await identityDb.Addresses
             .AsNoTracking()
             .Where(a => a.Id == addressId && a.UserId == userId)
             .Select(a => new ShippingAddressSnapshot(

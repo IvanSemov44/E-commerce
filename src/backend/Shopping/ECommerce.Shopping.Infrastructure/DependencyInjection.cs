@@ -1,5 +1,4 @@
-﻿using ECommerce.Infrastructure.Data;
-using ECommerce.Shopping.Application.Interfaces;
+﻿using ECommerce.Shopping.Application.Interfaces;
 using ECommerce.Shopping.Domain.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence.Repositories;
 using ECommerce.Shopping.Infrastructure.Persistence;
@@ -25,9 +24,6 @@ public static class DependencyInjection
             options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
-
-        // Skip configuration registration - AppDbContext already has Cart/Wishlist from Core.Entities
-        // The new DDD aggregates use raw SQL queries in repositories
 
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();

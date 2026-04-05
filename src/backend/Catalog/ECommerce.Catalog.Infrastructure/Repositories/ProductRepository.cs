@@ -3,13 +3,14 @@ using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Domain.ValueObjects;
+using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using CoreProduct = ECommerce.Core.Entities.Product;
 using CoreProductImage = ECommerce.Core.Entities.ProductImage;
 
 namespace ECommerce.Catalog.Infrastructure.Repositories;
 
-public class ProductRepository(CatalogDbContext _db) : IProductRepository
+public class ProductRepository(CatalogDbContext _db, ReviewsDbContext _reviewsDb) : IProductRepository
 {
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -69,7 +70,7 @@ public class ProductRepository(CatalogDbContext _db) : IProductRepository
         {
             // Filter by average rating (scalar subquery)
             var rating = (double)minRating.Value;
-            query = query.Where(p => _db.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating) >= rating);
+            query = query.Where(p => _reviewsDb.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating.Value) >= rating);
         }
 
         // Sorting
@@ -87,7 +88,7 @@ public class ProductRepository(CatalogDbContext _db) : IProductRepository
                     query = query.OrderByDescending(p => p.Price);
                     break;
                 case "rating":
-                    query = query.OrderByDescending(p => _db.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating));
+                    query = query.OrderByDescending(p => _reviewsDb.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating.Value));
                     break;
                 case "newest":
                     query = query.OrderByDescending(p => p.CreatedAt);

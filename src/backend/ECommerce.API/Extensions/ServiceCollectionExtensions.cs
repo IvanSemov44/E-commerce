@@ -327,7 +327,6 @@ public static class ServiceCollectionExtensions
 
         // Promotions (Phase 5 - DDD extract)
         services.AddPromotionsInfrastructure();
-        AppDbContext.RegisterConfigurationAssembly(typeof(ECommerce.Promotions.Infrastructure.Persistence.Configurations.PromoCodeConfiguration).Assembly);
 
         // IInventoryService kept for OrderService compatibility
         services.AddScoped<IInventoryService, InventoryService>();
