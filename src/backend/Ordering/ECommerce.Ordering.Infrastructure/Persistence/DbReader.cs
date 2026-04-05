@@ -1,14 +1,13 @@
 ﻿using ECommerce.Ordering.Application.Interfaces;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Identity.Infrastructure.Persistence;
-using ECommerce.Promotions.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence;
 
 public class DbReader(
     CatalogDbContext catalogDb,
-    PromotionsDbContext promotionsDb,
+    OrderingDbContext orderingDb,
     IdentityDbContext identityDb) : IDbReader
 {
     public async Task<List<ProductSnapshot>> GetProductsAsync(List<Guid> productIds, CancellationToken ct)
@@ -28,15 +27,15 @@ public class DbReader(
 
     public async Task<(decimal Discount, Guid PromoCodeId)?> GetPromoCodeAsync(string code, CancellationToken ct)
     {
-        var promo = await promotionsDb.PromoCodes
+        var promo = await orderingDb.PromoCodes
             .AsNoTracking()
-            .Where(p => p.Code.Value == code && p.IsActive)
-            .Select(p => new { p.Id, p.Discount })
+            .Where(p => p.Code == code && p.IsActive)
+            .Select(p => new { p.Id, p.DiscountValue })
             .FirstOrDefaultAsync(ct);
 
         if (promo is null) return null;
 
-        decimal discount = promo.Discount.Amount;
+        decimal discount = promo.DiscountValue;
         return (discount, promo.Id);
     }
 

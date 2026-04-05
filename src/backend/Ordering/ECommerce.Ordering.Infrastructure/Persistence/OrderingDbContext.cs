@@ -7,6 +7,7 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
 {
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<PromoCodeReadModel> PromoCodes => Set<PromoCodeReadModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -15,5 +16,14 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         modelBuilder.HasDefaultSchema("ordering");
         modelBuilder.Entity<Order>().ToTable("Orders");
         modelBuilder.Entity<OrderItem>().ToTable("OrderItems");
+        modelBuilder.Entity<PromoCodeReadModel>(entity =>
+        {
+            entity.HasNoKey();
+            entity.ToTable("PromoCodes", "promotions");
+            entity.Property(x => x.Id).HasColumnName("Id");
+            entity.Property(x => x.Code).HasColumnName("Code");
+            entity.Property(x => x.IsActive).HasColumnName("IsActive");
+            entity.Property(x => x.DiscountValue).HasColumnName("Discount");
+        });
     }
 }
