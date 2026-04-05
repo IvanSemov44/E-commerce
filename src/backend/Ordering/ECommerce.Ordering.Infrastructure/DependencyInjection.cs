@@ -28,6 +28,9 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICurrentUserService, OrderingCurrentUserService>();
         services.AddScoped<IDbReader, DbReader>();
+        services.AddScoped<IProductCatalogReader, DbReader>();
+        services.AddScoped<IPromoCodeLookup, DbReader>();
+        services.AddScoped<IShippingAddressReader, DbReader>();
         services.AddOrderingApplication();
 
         return services;
