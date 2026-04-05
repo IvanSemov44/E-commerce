@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Shopping.Application.DTOs;
@@ -13,13 +13,13 @@ namespace ECommerce.Shopping.Application.Commands.AddToCart;
 
 public class AddToCartCommandHandler(
     ICartRepository _carts,
-    IShoppingDbReader _db,
+    IShoppingProductReader _productReader,
     IUnitOfWork _uow
 ) : IRequestHandler<AddToCartCommand, Result<CartDto>>
 {
     public async Task<Result<CartDto>> Handle(AddToCartCommand command, CancellationToken ct)
     {
-        var product = await _db.GetProductPriceAsync(command.ProductId, ct);
+        var product = await _productReader.GetProductPriceAsync(command.ProductId, ct);
         if (product is null)
             return Result<CartDto>.Fail(ShoppingApplicationErrors.ProductNotFound);
 

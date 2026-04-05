@@ -28,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
         services.AddScoped<IShoppingDbReader, ShoppingDbReader>();
+        services.AddScoped<IShoppingProductReader, ShoppingDbReader>();
+        services.AddScoped<IStockAvailabilityReader, ShoppingDbReader>();
 
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(

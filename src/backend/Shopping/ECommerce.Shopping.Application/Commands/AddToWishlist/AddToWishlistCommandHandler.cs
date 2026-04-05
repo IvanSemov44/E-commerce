@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Shopping.Application.DTOs;
@@ -12,13 +12,13 @@ namespace ECommerce.Shopping.Application.Commands.AddToWishlist;
 
 public class AddToWishlistCommandHandler(
     IWishlistRepository _wishlists,
-    IShoppingDbReader _db,
+    IShoppingProductReader _productReader,
     IUnitOfWork _uow
 ) : IRequestHandler<AddToWishlistCommand, Result<WishlistDto>>
 {
     public async Task<Result<WishlistDto>> Handle(AddToWishlistCommand command, CancellationToken ct)
     {
-        var productExists = await _db.ProductExistsAsync(command.ProductId, ct);
+        var productExists = await _productReader.ProductExistsAsync(command.ProductId, ct);
         if (!productExists)
             return Result<WishlistDto>.Fail(ShoppingApplicationErrors.ProductNotFound);
 
