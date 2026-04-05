@@ -313,7 +313,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddSingleton<IPaymentStore, InMemoryPaymentStore>();
         services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();
-        services.AddScoped<IOrderService, OrderService>();
+        // OrderService removed - migrated to Ordering bounded context with MediatR
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IWishlistService, WishlistService>();

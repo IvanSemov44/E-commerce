@@ -1,0 +1,12 @@
+﻿global using ECommerce.SharedKernel.Interfaces;
+global using ECommerce.SharedKernel.Results;
+global using ECommerce.Reviews.Application.Commands;
+global using ECommerce.Reviews.Application.Queries;
+global using ECommerce.Reviews.Application.DTOs;
+global using ECommerce.Reviews.Domain.Aggregates.Review;
+global using ECommerce.Reviews.Domain.Enums;
+global using ECommerce.Reviews.Domain.Errors;
+global using ECommerce.Reviews.Domain.Interfaces;
+global using ECommerce.Reviews.Domain.ValueObjects;
+global using ECommerce.Reviews.Application.DTOs.Common;
+global using ECommerce.Reviews.Application.Interfaces;

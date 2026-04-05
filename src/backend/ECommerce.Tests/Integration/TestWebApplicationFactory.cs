@@ -20,6 +20,7 @@ using ECommerce.Infrastructure.Data;
 using ECommerce.Core.Entities;
 using ECommerce.Application.Interfaces;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
+using ECommerce.Reviews.Infrastructure.Persistence;
 using BCrypt.Net;
 using Microsoft.Extensions.Hosting;
 
@@ -87,6 +88,7 @@ public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOpti
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
+    private readonly string _reviewsDatabaseName = $"IntegrationTestsReviewsDb_{Guid.NewGuid():N}";
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -121,6 +123,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
             if (descriptor != null) services.Remove(descriptor);
 
+            var reviewsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ReviewsDbContext>));
+            if (reviewsDescriptor != null) services.Remove(reviewsDescriptor);
+
             services.RemoveAll(typeof(IEmailService));
             services.AddScoped<IEmailService, NoOpEmailService>();
 
@@ -144,6 +149,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
+            services.AddDbContext<ReviewsDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_reviewsDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
             // Replace authentication with conditional test scheme
             services.AddAuthentication(options =>
             {
@@ -158,6 +170,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 var scopedServices = scope.ServiceProvider;
                 var db = scopedServices.GetRequiredService<AppDbContext>();
                 db.Database.EnsureCreated();
+
+                var reviewsDb = scopedServices.GetRequiredService<ReviewsDbContext>();
+                reviewsDb.Database.EnsureCreated();
 
                 // Precomputed once per process to avoid repeated hash cost on startup
                 string passwordHash = _testPasswordHash;

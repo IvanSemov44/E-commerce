@@ -10,4 +10,5 @@ public interface IInventoryItemRepository
     Task<List<InventoryItem>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<List<InventoryItem>> GetLowStockAsync(int? thresholdOverride = null, CancellationToken cancellationToken = default);
     Task AddAsync(InventoryItem item, CancellationToken cancellationToken = default);
+    Task UpdateAsync(InventoryItem item, CancellationToken cancellationToken = default);
 }

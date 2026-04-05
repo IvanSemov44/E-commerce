@@ -9,6 +9,8 @@ using ECommerce.Catalog.Application.Commands.CreateProduct;
 using ECommerce.Identity.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
 using ECommerce.Promotions.Application.Commands.CreatePromoCode;
+using ECommerce.Reviews.Application.Commands;
+using ECommerce.Reviews.Infrastructure;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -79,6 +81,9 @@ builder.Services.AddIdentityInfrastructure();
 // Promotions Infrastructure (Phase 5)
 builder.Services.AddPromotionsInfrastructure();
 
+// Reviews Infrastructure (Phase 6)
+builder.Services.AddReviewsInfrastructure(builder.Configuration);
+
 // MediatR
 builder.Services.AddMediatR(cfg =>
 {
@@ -90,7 +95,7 @@ builder.Services.AddMediatR(cfg =>
     // Phase 3: cfg.RegisterServicesFromAssembly(typeof(ReduceStockCommand).Assembly);
     // Phase 4: cfg.RegisterServicesFromAssembly(typeof(AddToCartCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
-    // Phase 6: cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
     // Phase 7: cfg.RegisterServicesFromAssembly(typeof(PlaceOrderCommand).Assembly);
 
     // Pipeline order matters: outermost first
@@ -133,7 +138,6 @@ if (!app.Environment.IsEnvironment("Test"))
         {
             // Validate each critical service can be instantiated
             // This catches missing dependencies and circular references early
-            _ = scope.ServiceProvider.GetRequiredService<IOrderService>();
             _ = scope.ServiceProvider.GetRequiredService<IMediator>();
 
             _ = scope.ServiceProvider.GetRequiredService<ICartService>();

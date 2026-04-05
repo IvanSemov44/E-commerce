@@ -68,7 +68,7 @@ public class ReviewsCharacterizationTests
     // ────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetProductReviews_ApprovedReview_Returns500InternalServerError()
+    public async Task GetProductReviews_ApprovedReview_Returns200AndIncludesApprovedReview()
     {
         using var customerClient = _factory.CreateAuthenticatedClient();
         using var adminClient = _factory.CreateAdminClient();
@@ -79,10 +79,11 @@ public class ReviewsCharacterizationTests
         Assert.AreEqual(HttpStatusCode.OK, approveResponse.StatusCode, await approveResponse.Content.ReadAsStringAsync());
 
         var response = await customerClient.GetAsync($"/api/reviews/product/{SeededProductId}?page=1&pageSize=10");
-        Assert.AreEqual(HttpStatusCode.InternalServerError, response.StatusCode, await response.Content.ReadAsStringAsync());
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
 
-        var envelope = await ReadErrorResponseAsync(response);
-        Assert.AreEqual("INTERNAL_SERVER_ERROR", envelope.ErrorDetails?.Code);
+        var envelope = await ReadResponseAsync<PaginatedResult<ReviewDetailDto>>(response);
+        Assert.IsNotNull(envelope.Data);
+        Assert.IsTrue(envelope.Data!.Items.Any(r => r.Id == created.Id));
     }
 
     [TestMethod]
