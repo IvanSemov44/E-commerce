@@ -1,10 +1,13 @@
-using ECommerce.Infrastructure.Data;
+﻿using ECommerce.Infrastructure.Data;
 using ECommerce.Inventory.Application.Interfaces;
 using ECommerce.Inventory.Domain.Interfaces;
+using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Inventory.Infrastructure.Persistence.Configurations;
 using ECommerce.Inventory.Infrastructure.Persistence.Repositories;
 using ECommerce.Inventory.Infrastructure.Services;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerce.Inventory.Infrastructure;
@@ -13,6 +16,17 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInventoryInfrastructure(this IServiceCollection services)
     {
+        services.AddDbContext<InventoryDbContext>((serviceProvider, options) =>
+        {
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+
+            options.UseNpgsql(connectionString);
+            options.ConfigureWarnings(warnings => warnings
+                .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
+
         // Register EF configurations so AppDbContext picks them up without a direct project reference
         AppDbContext.RegisterConfigurationAssembly(typeof(InventoryItemConfiguration).Assembly);
 
