@@ -1,25 +1,26 @@
 ﻿using ECommerce.Ordering.Application.Interfaces;
-using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Identity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence;
 
 public class DbReader(
-    CatalogDbContext catalogDb,
     OrderingDbContext orderingDb,
     IdentityDbContext identityDb) : IDbReader
 {
     public async Task<List<ProductSnapshot>> GetProductsAsync(List<Guid> productIds, CancellationToken ct)
     {
-        var products = await catalogDb.Products
+        var products = await orderingDb.Products
             .AsNoTracking()
             .Where(p => productIds.Contains(p.Id))
             .Select(p => new ProductSnapshot(
                 p.Id,
                 p.Name,
                 p.Price,
-                p.Images.Where(i => i.IsPrimary).Select(i => i.Url).FirstOrDefault()))
+                orderingDb.ProductImages
+                    .Where(i => i.ProductId == p.Id && i.IsPrimary)
+                    .Select(i => i.Url)
+                    .FirstOrDefault()))
             .ToListAsync(ct);
 
         return products;
