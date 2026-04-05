@@ -13,6 +13,7 @@ export default defineConfig({
     'api-promo-codes.spec.ts',
     'api-reviews.spec.ts',
     'api-orders.spec.ts',
+    'api-phase8-current-state.spec.ts',
   ],
 
   /* Run tests in files in parallel */
