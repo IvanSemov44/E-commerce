@@ -49,6 +49,7 @@
     <ProjectReference Include="..\Ordering\ECommerce.Ordering.Infrastructure\ECommerce.Ordering.Infrastructure.csproj" />
     <ProjectReference Include="..\Reviews\ECommerce.Reviews.Application\ECommerce.Reviews.Application.csproj" />
     <ProjectReference Include="..\Reviews\ECommerce.Reviews.Infrastructure\ECommerce.Reviews.Infrastructure.csproj" />
+    <ProjectReference Include="..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

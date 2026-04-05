@@ -5,6 +5,7 @@
     <ProjectReference Include="..\ECommerce.Inventory.Domain\ECommerce.Inventory.Domain.csproj" />
     <ProjectReference Include="..\ECommerce.Inventory.Application\ECommerce.Inventory.Application.csproj" />
     <ProjectReference Include="..\..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

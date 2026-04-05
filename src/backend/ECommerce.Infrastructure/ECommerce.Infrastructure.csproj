@@ -5,6 +5,7 @@
     <ProjectReference Include="..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
     <ProjectReference Include="..\Promotions\ECommerce.Promotions.Domain\ECommerce.Promotions.Domain.csproj" />
     <ProjectReference Include="..\Inventory\ECommerce.Inventory.Domain\ECommerce.Inventory.Domain.csproj" />
+    <ProjectReference Include="..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
