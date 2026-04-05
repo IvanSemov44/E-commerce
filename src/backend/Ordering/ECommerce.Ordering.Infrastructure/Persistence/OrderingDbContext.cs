@@ -10,6 +10,7 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
     public DbSet<ProductReadModel> Products => Set<ProductReadModel>();
     public DbSet<ProductImageReadModel> ProductImages => Set<ProductImageReadModel>();
     public DbSet<PromoCodeReadModel> PromoCodes => Set<PromoCodeReadModel>();
+    public DbSet<AddressReadModel> Addresses => Set<AddressReadModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,6 +44,17 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
             entity.Property(x => x.Code).HasColumnName("Code");
             entity.Property(x => x.IsActive).HasColumnName("IsActive");
             entity.Property(x => x.DiscountValue).HasColumnName("Discount");
+        });
+        modelBuilder.Entity<AddressReadModel>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.ToTable("Addresses", "identity");
+            entity.Property(x => x.Id).HasColumnName("Id");
+            entity.Property(x => x.UserId).HasColumnName("UserId");
+            entity.Property(x => x.StreetLine1).HasColumnName("StreetLine1");
+            entity.Property(x => x.City).HasColumnName("City");
+            entity.Property(x => x.Country).HasColumnName("Country");
+            entity.Property(x => x.PostalCode).HasColumnName("PostalCode");
         });
     }
 }

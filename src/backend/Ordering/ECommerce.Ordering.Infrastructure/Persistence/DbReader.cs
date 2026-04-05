@@ -1,12 +1,10 @@
 ﻿using ECommerce.Ordering.Application.Interfaces;
-using ECommerce.Identity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence;
 
 public class DbReader(
-    OrderingDbContext orderingDb,
-    IdentityDbContext identityDb) : IDbReader
+    OrderingDbContext orderingDb) : IDbReader
 {
     public async Task<List<ProductSnapshot>> GetProductsAsync(List<Guid> productIds, CancellationToken ct)
     {
@@ -42,7 +40,7 @@ public class DbReader(
 
     public async Task<ShippingAddressSnapshot?> GetShippingAddressAsync(Guid userId, Guid addressId, CancellationToken ct)
     {
-        var address = await identityDb.Addresses
+        var address = await orderingDb.Addresses
             .AsNoTracking()
             .Where(a => a.Id == addressId && a.UserId == userId)
             .Select(a => new ShippingAddressSnapshot(
