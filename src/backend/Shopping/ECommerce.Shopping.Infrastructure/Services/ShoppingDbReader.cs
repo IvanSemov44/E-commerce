@@ -1,5 +1,4 @@
 ﻿using ECommerce.Core.Entities;
-using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Shopping.Application.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -7,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ECommerce.Shopping.Infrastructure.Services;
 
 public class ShoppingDbReader(
-    ShoppingDbContext shoppingDb,
-    InventoryDbContext inventoryDb) : IShoppingDbReader
+    ShoppingDbContext shoppingDb) : IShoppingDbReader
 {
     public async Task<ProductPriceInfo?> GetProductPriceAsync(Guid productId, CancellationToken ct)
     {
@@ -29,7 +27,7 @@ public class ShoppingDbReader(
             .AnyAsync(p => p.Id == productId && p.IsActive, ct);
 
     public async Task<bool> IsInStockAsync(Guid productId, int quantity, CancellationToken ct)
-        => await inventoryDb.InventoryItems
+        => await shoppingDb.InventoryItems
             .AsNoTracking()
-            .AnyAsync(i => i.ProductId == productId && i.Stock.Quantity >= quantity, ct);
+            .AnyAsync(i => i.ProductId == productId && i.Quantity >= quantity, ct);
 }
