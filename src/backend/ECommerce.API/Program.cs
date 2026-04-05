@@ -7,10 +7,16 @@ using MediatR;
 using ECommerce.Catalog.Infrastructure;
 using ECommerce.Catalog.Application.Commands.CreateProduct;
 using ECommerce.Identity.Infrastructure;
+using ECommerce.Inventory.Application.Commands.ReduceStock;
+using ECommerce.Inventory.Infrastructure;
+using ECommerce.Shopping.Application.Commands.AddToCart;
+using ECommerce.Shopping.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
 using ECommerce.Promotions.Application.Commands.CreatePromoCode;
 using ECommerce.Reviews.Application.Commands;
 using ECommerce.Reviews.Infrastructure;
+using ECommerce.Ordering.Infrastructure;
+using ECommerce.Ordering.Application.Commands.PlaceOrder;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -84,6 +90,15 @@ builder.Services.AddPromotionsInfrastructure();
 // Reviews Infrastructure (Phase 6)
 builder.Services.AddReviewsInfrastructure(builder.Configuration);
 
+// Inventory Infrastructure (Phase 3)
+builder.Services.AddInventoryInfrastructure();
+
+// Shopping Infrastructure (Phase 4)
+builder.Services.AddShoppingInfrastructure();
+
+// Ordering Infrastructure (Phase 7)
+builder.Services.AddOrderingInfrastructure();
+
 // MediatR
 builder.Services.AddMediatR(cfg =>
 {
@@ -92,11 +107,11 @@ builder.Services.AddMediatR(cfg =>
     // Uncomment each line when that bounded context's Application project is created:
     cfg.RegisterServicesFromAssembly(typeof(CreateProductCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
-    // Phase 3: cfg.RegisterServicesFromAssembly(typeof(ReduceStockCommand).Assembly);
-    // Phase 4: cfg.RegisterServicesFromAssembly(typeof(AddToCartCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Inventory.Application.Commands.ReduceStock.ReduceStockCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
-    // Phase 7: cfg.RegisterServicesFromAssembly(typeof(PlaceOrderCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Ordering.Application.Commands.PlaceOrder.PlaceOrderCommand).Assembly);
 
     // Pipeline order matters: outermost first
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
