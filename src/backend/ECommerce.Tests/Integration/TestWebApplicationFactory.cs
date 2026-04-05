@@ -20,6 +20,7 @@ using ECommerce.Infrastructure.Data;
 using ECommerce.Core.Entities;
 using ECommerce.Application.Interfaces;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
+using ECommerce.Reviews.Infrastructure.Persistence;
 using BCrypt.Net;
 using Microsoft.Extensions.Hosting;
 
@@ -87,6 +88,7 @@ public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOpti
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
+    private readonly string _reviewsDatabaseName = $"IntegrationTestsReviewsDb_{Guid.NewGuid():N}";
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -112,9 +114,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            // Register Promotions configuration assembly before replacing DbContext
+            // This ensures the PromoCode entity configuration is available
+            ECommerce.Infrastructure.Data.AppDbContext.RegisterConfigurationAssembly(
+                typeof(ECommerce.Promotions.Infrastructure.DependencyInjection).Assembly);
+
             // Replace AppDbContext with InMemory DB
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
             if (descriptor != null) services.Remove(descriptor);
+
+            var reviewsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ReviewsDbContext>));
+            if (reviewsDescriptor != null) services.Remove(reviewsDescriptor);
 
             services.RemoveAll(typeof(IEmailService));
             services.AddScoped<IEmailService, NoOpEmailService>();
@@ -139,6 +149,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
+            services.AddDbContext<ReviewsDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_reviewsDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
             // Replace authentication with conditional test scheme
             services.AddAuthentication(options =>
             {
@@ -153,6 +170,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 var scopedServices = scope.ServiceProvider;
                 var db = scopedServices.GetRequiredService<AppDbContext>();
                 db.Database.EnsureCreated();
+
+                var reviewsDb = scopedServices.GetRequiredService<ReviewsDbContext>();
+                reviewsDb.Database.EnsureCreated();
 
                 // Precomputed once per process to avoid repeated hash cost on startup
                 string passwordHash = _testPasswordHash;
@@ -209,22 +229,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 if (inventoryResult.IsSuccess)
                     db.InventoryItems.Add(inventoryResult.GetDataOrThrow());
 
-                db.PromoCodes.Add(new PromoCode
+                // Seed new domain-driven PromoCode
+                var codeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE20");
+                var discountResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(20);
+                if (codeResult.IsSuccess && discountResult.IsSuccess)
                 {
-                    Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
-                    Code = "SAVE20",
-                    DiscountType = ECommerce.Core.Enums.DiscountType.Percentage,
-                    DiscountValue = 20,
-                    IsActive = true,
-                    MaxUses = null,
-                    UsedCount = 0,
-                    MinOrderAmount = null,
-                    MaxDiscountAmount = null,
-                    StartDate = null,
-                    EndDate = null,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                });
+                    var newPromoCode = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode.Create(
+                        codeResult.GetDataOrThrow(),
+                        discountResult.GetDataOrThrow(),
+                        null); // No date range for this promo code
+                    db.PromoCodes.Add(newPromoCode);
+                }
 
                 var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
                 db.Orders.Add(new Order

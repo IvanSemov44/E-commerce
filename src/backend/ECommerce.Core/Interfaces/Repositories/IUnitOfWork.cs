@@ -62,11 +62,6 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IRepository<Address> Addresses { get; }
 
     /// <summary>
-    /// Generic repository for promo codes (simple CRUD operations).
-    /// </summary>
-    IRepository<PromoCode> PromoCodes { get; }
-
-    /// <summary>
     /// Generic repository for inventory logs (simple CRUD operations).
     /// </summary>
     IRepository<InventoryLog> InventoryLogs { get; }

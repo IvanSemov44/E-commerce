@@ -12,6 +12,7 @@ using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
 using ECommerce.Inventory.Infrastructure;
 using ECommerce.Shopping.Infrastructure;
+using ECommerce.Promotions.Infrastructure;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Antiforgery;
@@ -294,6 +295,7 @@ public static class ServiceCollectionExtensions
         // FluentValidation
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<ECommerce.Promotions.Application.Validators.ValidatePromoCodeRequestDtoValidator>();
 
         // Old UnitOfWork — used by existing services, untouched.
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -311,7 +313,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddSingleton<IPaymentStore, InMemoryPaymentStore>();
         services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();
-        services.AddScoped<IOrderService, OrderService>();
+        // OrderService removed - migrated to Ordering bounded context with MediatR
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IWishlistService, WishlistService>();
@@ -323,7 +325,10 @@ public static class ServiceCollectionExtensions
         // Shopping (Phase 4 - DDD extract)
         services.AddShoppingInfrastructure();
 
-        services.AddScoped<IPromoCodeService, PromoCodeService>();
+        // Promotions (Phase 5 - DDD extract)
+        services.AddPromotionsInfrastructure();
+        AppDbContext.RegisterConfigurationAssembly(typeof(ECommerce.Promotions.Infrastructure.Persistence.Configurations.PromoCodeConfiguration).Assembly);
+
         // IInventoryService kept for OrderService compatibility
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IWebhookVerificationService, WebhookVerificationService>();

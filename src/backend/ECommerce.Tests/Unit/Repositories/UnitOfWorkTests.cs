@@ -238,17 +238,6 @@ public class UnitOfWorkTests
     }
 
     [TestMethod]
-    public void PromoCodes_ReturnsGenericRepository()
-    {
-        // Act
-        var repository = _sut.PromoCodes;
-
-        // Assert
-        repository.Should().NotBeNull();
-        repository.Should().BeAssignableTo<IRepository<PromoCode>>();
-    }
-
-    [TestMethod]
     public void InventoryLogs_ReturnsGenericRepository()
     {
         // Act

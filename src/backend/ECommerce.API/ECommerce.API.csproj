@@ -37,6 +37,7 @@
     <ProjectReference Include="..\ECommerce.Application\ECommerce.Application.csproj" />
     <ProjectReference Include="..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
     <ProjectReference Include="..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
+    <ProjectReference Include="..\Promotions\ECommerce.Promotions.Infrastructure\ECommerce.Promotions.Infrastructure.csproj" />
     <ProjectReference Include="..\Catalog\ECommerce.Catalog.Application\ECommerce.Catalog.Application.csproj" />
     <ProjectReference Include="..\Catalog\ECommerce.Catalog.Infrastructure\ECommerce.Catalog.Infrastructure.csproj" />
     <ProjectReference Include="..\Identity\ECommerce.Identity.Application\ECommerce.Identity.Application.csproj" />
@@ -44,6 +45,10 @@
     <ProjectReference Include="..\Inventory\ECommerce.Inventory.Infrastructure\ECommerce.Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\Inventory\ECommerce.Inventory.Application\ECommerce.Inventory.Application.csproj" />
     <ProjectReference Include="..\Shopping\ECommerce.Shopping.Infrastructure\ECommerce.Shopping.Infrastructure.csproj" />
+    <ProjectReference Include="..\Ordering\ECommerce.Ordering.Application\ECommerce.Ordering.Application.csproj" />
+    <ProjectReference Include="..\Ordering\ECommerce.Ordering.Infrastructure\ECommerce.Ordering.Infrastructure.csproj" />
+    <ProjectReference Include="..\Reviews\ECommerce.Reviews.Application\ECommerce.Reviews.Application.csproj" />
+    <ProjectReference Include="..\Reviews\ECommerce.Reviews.Infrastructure\ECommerce.Reviews.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

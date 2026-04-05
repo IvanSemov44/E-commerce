@@ -7,6 +7,16 @@ using MediatR;
 using ECommerce.Catalog.Infrastructure;
 using ECommerce.Catalog.Application.Commands.CreateProduct;
 using ECommerce.Identity.Infrastructure;
+using ECommerce.Inventory.Application.Commands.ReduceStock;
+using ECommerce.Inventory.Infrastructure;
+using ECommerce.Shopping.Application.Commands.AddToCart;
+using ECommerce.Shopping.Infrastructure;
+using ECommerce.Promotions.Infrastructure;
+using ECommerce.Promotions.Application.Commands.CreatePromoCode;
+using ECommerce.Reviews.Application.Commands;
+using ECommerce.Reviews.Infrastructure;
+using ECommerce.Ordering.Infrastructure;
+using ECommerce.Ordering.Application.Commands.PlaceOrder;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -74,6 +84,21 @@ builder.Services.AddCatalogInfrastructure();
 // Identity Infrastructure
 builder.Services.AddIdentityInfrastructure();
 
+// Promotions Infrastructure (Phase 5)
+builder.Services.AddPromotionsInfrastructure();
+
+// Reviews Infrastructure (Phase 6)
+builder.Services.AddReviewsInfrastructure(builder.Configuration);
+
+// Inventory Infrastructure (Phase 3)
+builder.Services.AddInventoryInfrastructure();
+
+// Shopping Infrastructure (Phase 4)
+builder.Services.AddShoppingInfrastructure();
+
+// Ordering Infrastructure (Phase 7)
+builder.Services.AddOrderingInfrastructure();
+
 // MediatR
 builder.Services.AddMediatR(cfg =>
 {
@@ -82,11 +107,11 @@ builder.Services.AddMediatR(cfg =>
     // Uncomment each line when that bounded context's Application project is created:
     cfg.RegisterServicesFromAssembly(typeof(CreateProductCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
-    // Phase 3: cfg.RegisterServicesFromAssembly(typeof(ReduceStockCommand).Assembly);
-    // Phase 4: cfg.RegisterServicesFromAssembly(typeof(AddToCartCommand).Assembly);
-    // Phase 5: cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
-    // Phase 6: cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
-    // Phase 7: cfg.RegisterServicesFromAssembly(typeof(PlaceOrderCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Inventory.Application.Commands.ReduceStock.ReduceStockCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Ordering.Application.Commands.PlaceOrder.PlaceOrderCommand).Assembly);
 
     // Pipeline order matters: outermost first
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
@@ -99,6 +124,10 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 // Also register validators from the Catalog application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(CreateProductCommand).Assembly);
+// Also register validators from the Promotions application assembly
+builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Promotions.Application.Commands.CreatePromoCode.CreatePromoCodeCommand).Assembly);
+// Also register validators from the Identity application assembly
+builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
 
 // Controllers & Validation
 builder.Services.AddControllers();
@@ -124,7 +153,6 @@ if (!app.Environment.IsEnvironment("Test"))
         {
             // Validate each critical service can be instantiated
             // This catches missing dependencies and circular references early
-            _ = scope.ServiceProvider.GetRequiredService<IOrderService>();
             _ = scope.ServiceProvider.GetRequiredService<IMediator>();
 
             _ = scope.ServiceProvider.GetRequiredService<ICartService>();

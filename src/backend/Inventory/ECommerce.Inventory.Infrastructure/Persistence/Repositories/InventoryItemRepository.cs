@@ -34,4 +34,10 @@ public class InventoryItemRepository(AppDbContext _db) : IInventoryItemRepositor
 
     public async Task AddAsync(InventoryItem item, CancellationToken ct = default)
         => await _db.InventoryItems.AddAsync(item, ct);
+
+    public async Task UpdateAsync(InventoryItem item, CancellationToken ct = default)
+    {
+        _db.InventoryItems.Update(item);
+        await Task.CompletedTask;
+    }
 }

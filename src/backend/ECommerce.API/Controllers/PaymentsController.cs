@@ -23,7 +23,6 @@ public class PaymentsController : ControllerBase
     private static readonly JsonSerializerOptions WebhookJsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private readonly IPaymentService _paymentService;
-    private readonly IOrderService _orderService;
     private readonly ICurrentUserService _currentUser;
     private readonly IIdempotencyStore _idempotencyStore;
     private readonly IWebhookVerificationService _webhookVerificationService;
@@ -31,14 +30,12 @@ public class PaymentsController : ControllerBase
 
     public PaymentsController(
         IPaymentService paymentService,
-        IOrderService orderService,
         ICurrentUserService currentUser,
         IIdempotencyStore idempotencyStore,
         IWebhookVerificationService webhookVerificationService,
         ILogger<PaymentsController> logger)
     {
         _paymentService = paymentService;
-        _orderService = orderService;
         _currentUser = currentUser;
         _idempotencyStore = idempotencyStore;
         _webhookVerificationService = webhookVerificationService;

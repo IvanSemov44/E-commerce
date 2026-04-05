@@ -28,7 +28,6 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<OrderItem>? _orderItems;
     private IRepository<CartItem>? _cartItems;
     private IRepository<Address>? _addresses;
-    private IRepository<PromoCode>? _promoCodes;
     private IRepository<InventoryLog>? _inventoryLogs;
     private IRepository<ProductImage>? _productImages;
     private IRepository<RefreshToken>? _refreshTokens;
@@ -93,11 +92,6 @@ public class UnitOfWork : IUnitOfWork
     /// Gets the generic addresses repository with lazy initialization.
     /// </summary>
     public IRepository<Address> Addresses => _addresses ??= new Repository<Address>(_context);
-
-    /// <summary>
-    /// Gets the generic promo codes repository with lazy initialization.
-    /// </summary>
-    public IRepository<PromoCode> PromoCodes => _promoCodes ??= new Repository<PromoCode>(_context);
 
     /// <summary>
     /// Gets the generic inventory logs repository with lazy initialization.
