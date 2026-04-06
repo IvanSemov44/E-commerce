@@ -137,4 +137,125 @@ public class Phase8MessageBrokerIntegrationTests
         Assert.AreEqual(1, inbox.AttemptCount);
         Assert.IsNotNull(inbox.ProcessedAt);
     }
+
+    [TestMethod]
+    public async Task InboxProcessor_WhenHandlerFails_StoresAttemptAndError()
+    {
+        var idempotencyKey = Guid.NewGuid();
+        var message = new PromoCodeProjectionUpdatedIntegrationEvent(
+            Guid.NewGuid(),
+            "SAVE20",
+            20m,
+            true,
+            false,
+            DateTime.UtcNow)
+        {
+            IdempotencyKey = idempotencyKey
+        };
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"inbox-failure-test-{Guid.NewGuid():N}")
+            .Options;
+
+        await using var dbContext = new AppDbContext(options);
+        var processor = new InboxIdempotencyProcessor(dbContext);
+
+        Func<Task> act = () => processor.ExecuteAsync(
+            message,
+            _ => throw new InvalidOperationException("boom"),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        var inbox = await dbContext.InboxMessages.SingleAsync(x => x.IdempotencyKey == idempotencyKey);
+        Assert.AreEqual(1, inbox.AttemptCount);
+        Assert.IsNull(inbox.ProcessedAt);
+        Assert.AreEqual("boom", inbox.LastError);
+    }
+
+    [TestMethod]
+    public async Task InboxProcessor_AfterFailure_RetrySucceedsAndMarksProcessed()
+    {
+        var idempotencyKey = Guid.NewGuid();
+        var message = new PromoCodeProjectionUpdatedIntegrationEvent(
+            Guid.NewGuid(),
+            "SAVE20",
+            20m,
+            true,
+            false,
+            DateTime.UtcNow)
+        {
+            IdempotencyKey = idempotencyKey
+        };
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"inbox-retry-test-{Guid.NewGuid():N}")
+            .Options;
+
+        await using var dbContext = new AppDbContext(options);
+        var processor = new InboxIdempotencyProcessor(dbContext);
+
+        Func<Task> act = () => processor.ExecuteAsync(
+            message,
+            _ => throw new InvalidOperationException("transient"),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        await processor.ExecuteAsync(message, _ => Task.CompletedTask, CancellationToken.None);
+
+        var inbox = await dbContext.InboxMessages.SingleAsync(x => x.IdempotencyKey == idempotencyKey);
+        Assert.AreEqual(2, inbox.AttemptCount);
+        Assert.IsNotNull(inbox.ProcessedAt);
+        Assert.IsNull(inbox.LastError);
+    }
+
+    [TestMethod]
+    public async Task AddressProjectionEvent_Consumer_DuplicateDelivery_ProcessesOnce()
+    {
+        var idempotencyKey = Guid.NewGuid();
+        var message = new AddressProjectionUpdatedIntegrationEvent(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "Main Street",
+            "City",
+            "US",
+            "12345",
+            false,
+            DateTime.UtcNow)
+        {
+            IdempotencyKey = idempotencyKey
+        };
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"inbox-address-dup-test-{Guid.NewGuid():N}")
+            .Options;
+
+        await using var dbContext = new AppDbContext(options);
+
+        var mediatorMock = new Mock<IPublisher>(MockBehavior.Strict);
+        mediatorMock
+            .Setup(m => m.Publish(It.IsAny<AddressProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var contextMock = new Mock<ConsumeContext<AddressProjectionUpdatedIntegrationEvent>>(MockBehavior.Strict);
+        contextMock.SetupGet(c => c.Message).Returns(message);
+        contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
+
+        var consumer = new AddressProjectionUpdatedIntegrationEventConsumer(
+            new InboxIdempotencyProcessor(dbContext),
+            mediatorMock.Object,
+            NullLogger<AddressProjectionUpdatedIntegrationEventConsumer>.Instance);
+
+        await consumer.Consume(contextMock.Object);
+        await consumer.Consume(contextMock.Object);
+
+        mediatorMock.Verify(
+            m => m.Publish(It.IsAny<AddressProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        var inbox = await dbContext.InboxMessages.SingleAsync(x => x.IdempotencyKey == idempotencyKey);
+        Assert.AreEqual(1, inbox.AttemptCount);
+        Assert.IsNotNull(inbox.ProcessedAt);
+    }
 }
