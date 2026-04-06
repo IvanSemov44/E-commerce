@@ -309,6 +309,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, MediatRUnitOfWork>();
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+        services.Configure<OutboxDispatcherOptions>(configuration.GetSection("IntegrationMessaging:Outbox"));
         services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
         services.AddScoped<IIntegrationEventBus, MassTransitIntegrationEventBus>();
         services.AddScoped<InboxIdempotencyProcessor>();

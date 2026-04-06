@@ -1,11 +1,13 @@
 ﻿namespace ECommerce.Infrastructure.Data;
 
 /// <summary>
-/// Stores integration events until they are dispatched by the outbox worker.
+/// Stores permanently failed integration events for operational recovery.
 /// </summary>
-public class OutboxMessage
+public class DeadLetterMessage
 {
     public Guid Id { get; set; }
+
+    public Guid OutboxMessageId { get; set; }
 
     public Guid IdempotencyKey { get; set; }
 
@@ -13,17 +15,9 @@ public class OutboxMessage
 
     public string EventData { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime? NextAttemptAt { get; set; }
-
-    public DateTime? ProcessedAt { get; set; }
-
-    public DateTime? DeadLetteredAt { get; set; }
-
-    public bool IsDeadLettered { get; set; }
-
     public int RetryCount { get; set; }
 
     public string? LastError { get; set; }
+
+    public DateTime FailedAt { get; set; }
 }

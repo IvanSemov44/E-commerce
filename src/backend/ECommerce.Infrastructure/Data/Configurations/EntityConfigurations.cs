@@ -422,6 +422,33 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
         entity.HasIndex(e => e.IdempotencyKey).IsUnique();
         entity.HasIndex(e => e.ProcessedAt);
         entity.HasIndex(e => e.CreatedAt);
+        entity.HasIndex(e => e.NextAttemptAt);
+        entity.HasIndex(e => e.IsDeadLettered);
+
+        entity.Property(e => e.EventType)
+            .IsRequired()
+            .HasMaxLength(512);
+
+        entity.Property(e => e.EventData)
+            .IsRequired();
+
+        entity.Property(e => e.LastError)
+            .HasMaxLength(2000);
+    }
+}
+
+/// <summary>
+/// Configuration for DeadLetterMessage entity used by outbox poison-message handling.
+/// </summary>
+public class DeadLetterMessageConfiguration : IEntityTypeConfiguration<DeadLetterMessage>
+{
+    public void Configure(EntityTypeBuilder<DeadLetterMessage> entity)
+    {
+        entity.ToTable("dead_letter_messages", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.OutboxMessageId);
+        entity.HasIndex(e => e.FailedAt);
 
         entity.Property(e => e.EventType)
             .IsRequired()
