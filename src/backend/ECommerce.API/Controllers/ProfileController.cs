@@ -1,6 +1,7 @@
 ﻿using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Identity.Application.Commands.ChangePassword;
+using ECommerce.Identity.Application.Commands.DeleteAddress;
 using ECommerce.Identity.Application.Commands.UpdateProfile;
 using ECommerce.Identity.Application.Commands.UpdateUserPreferences;
 using ECommerce.Identity.Application.Queries.GetCurrentUser;
@@ -139,5 +140,24 @@ public class ProfileController(IMediator mediator, ILogger<ProfileController> lo
         if (!result.IsSuccess) return MapError(result.GetErrorOrThrow());
 
         return Ok(ApiResponse<object>.Ok(new object(), "Password changed successfully"));
+    }
+
+    /// <summary>Deletes one of the authenticated user's addresses.</summary>
+    [HttpDelete("addresses/{addressId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<ECommerce.Identity.Application.DTOs.UserProfileDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAddress([FromRoute] Guid addressId, CancellationToken ct)
+    {
+        var userId = GetUserId();
+        if (!userId.HasValue)
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+
+        logger.LogInformation("Deleting address {AddressId} for user {UserId}", addressId, userId.Value);
+
+        var result = await mediator.Send(new DeleteAddressCommand(userId.Value, addressId), ct);
+        if (!result.IsSuccess) return MapError(result.GetErrorOrThrow());
+
+        return Ok(ApiResponse<ECommerce.Identity.Application.DTOs.UserProfileDto>.Ok(result.GetDataOrThrow(), "Address deleted successfully"));
     }
 }
