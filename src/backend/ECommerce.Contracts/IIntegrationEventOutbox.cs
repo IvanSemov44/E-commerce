@@ -1,4 +1,4 @@
-namespace ECommerce.Contracts;
+﻿namespace ECommerce.Contracts;
 
 /// <summary>
 /// Queues integration events for asynchronous outbox dispatch.

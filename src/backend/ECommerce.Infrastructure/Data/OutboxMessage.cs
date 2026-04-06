@@ -1,4 +1,4 @@
-namespace ECommerce.Infrastructure.Data;
+﻿namespace ECommerce.Infrastructure.Data;
 
 /// <summary>
 /// Stores integration events until they are dispatched by the outbox worker.
