@@ -43,9 +43,6 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     networks:
       - ecommerce-network
     healthcheck:
@@ -95,7 +92,7 @@ services:
       ASPNETCORE_URLS: "http://+:5000"
 
       # Integration Messaging (RabbitMQ)
-      IntegrationMessaging__Transport: "${INTEGRATION_TRANSPORT:-InMemory}"
+      IntegrationMessaging__Transport: "${INTEGRATION_TRANSPORT:-RabbitMq}"
       IntegrationMessaging__RabbitMq__Host: "rabbitmq"
       IntegrationMessaging__RabbitMq__VirtualHost: "/"
       IntegrationMessaging__RabbitMq__Username: "${RABBITMQ_USER:-guest}"

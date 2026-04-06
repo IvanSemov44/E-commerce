@@ -13,7 +13,7 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasDefaultSchema("identity");
+        modelBuilder.HasDefaultSchema("public");
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens");
         modelBuilder.Entity<Address>().ToTable("Addresses");

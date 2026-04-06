@@ -22,7 +22,7 @@ public class ShoppingDbContext(DbContextOptions<ShoppingDbContext> options) : Db
         modelBuilder.Entity<ProductReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("Products", "catalog");
+            entity.ToTable("Products", "public");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.IsActive).HasColumnName("IsActive");
             entity.Property(x => x.Price).HasColumnName("Price");

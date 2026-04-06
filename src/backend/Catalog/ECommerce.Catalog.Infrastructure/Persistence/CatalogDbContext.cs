@@ -14,7 +14,7 @@ public class CatalogDbContext(DbContextOptions<CatalogDbContext> options) : DbCo
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasDefaultSchema("catalog");
+        modelBuilder.HasDefaultSchema("public");
         modelBuilder.Entity<Category>().ToTable("Categories");
         modelBuilder.Entity<Product>().ToTable("Products");
         modelBuilder.Entity<ProductImage>().ToTable("ProductImages");

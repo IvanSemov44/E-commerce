@@ -63,7 +63,7 @@ public class OrdersController : ControllerBase
         var cmd = new PlaceOrderCommand
         {
             UserId = userId ?? Guid.Empty,
-            ShippingAddressId = Guid.NewGuid(),
+            ShippingAddressId = dto.ShippingAddress.Id ?? Guid.NewGuid(),
             CartItems = dto.Items?.Select(i => new CartItemInput(Guid.Parse(i.ProductId), i.Quantity)).ToList() ?? new(),
             PaymentMethod = dto.PaymentMethod ?? "card",
             PaymentReference = Guid.NewGuid().ToString(),

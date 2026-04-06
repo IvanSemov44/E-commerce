@@ -96,6 +96,8 @@ public class PlaceOrderCommandHandler(
             order.Total,
             ct);
 
+        await uow.SaveChangesAsync(ct);
+
         return Result<OrderDto>.Ok(order.ToDto());
     }
 }

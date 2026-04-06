@@ -1,4 +1,4 @@
-namespace ECommerce.Infrastructure.Integration;
+﻿namespace ECommerce.Infrastructure.Integration;
 
 public sealed class RabbitMqTransportOptions
 {

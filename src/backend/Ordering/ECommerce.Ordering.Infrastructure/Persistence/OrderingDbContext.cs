@@ -16,13 +16,13 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasDefaultSchema("ordering");
+        modelBuilder.HasDefaultSchema("public");
         modelBuilder.Entity<Order>().ToTable("Orders");
         modelBuilder.Entity<OrderItem>().ToTable("OrderItems");
         modelBuilder.Entity<ProductReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("ProductProjections");
+            entity.ToTable("Products");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.Name).HasColumnName("Name");
             entity.Property(x => x.Price).HasColumnName("Price");
@@ -31,7 +31,7 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         modelBuilder.Entity<ProductImageReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("ProductImageProjections");
+            entity.ToTable("ProductImages");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.ProductId).HasColumnName("ProductId");
             entity.Property(x => x.Url).HasColumnName("Url");
@@ -41,7 +41,7 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         modelBuilder.Entity<PromoCodeReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("PromoCodeProjections");
+            entity.ToTable("PromoCodes");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.Code).HasColumnName("Code");
             entity.Property(x => x.IsActive).HasColumnName("IsActive");
@@ -51,7 +51,7 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         modelBuilder.Entity<AddressReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("AddressProjections");
+            entity.ToTable("Addresses");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.UserId).HasColumnName("UserId");
             entity.Property(x => x.StreetLine1).HasColumnName("StreetLine1");
