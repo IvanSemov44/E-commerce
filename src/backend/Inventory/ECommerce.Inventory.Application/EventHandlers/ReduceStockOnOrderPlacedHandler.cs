@@ -13,17 +13,20 @@ public class ReduceStockOnOrderPlacedHandler : INotificationHandler<OrderPlacedE
     private readonly IInventoryItemRepository _inventory;
     private readonly IUnitOfWork _uow;
     private readonly IInventoryProjectionEventPublisher _projectionPublisher;
+    private readonly IInventoryReservationEventPublisher _reservationPublisher;
     private readonly ILogger<ReduceStockOnOrderPlacedHandler> _logger;
 
     public ReduceStockOnOrderPlacedHandler(
         IInventoryItemRepository inventory,
         IUnitOfWork uow,
         IInventoryProjectionEventPublisher projectionPublisher,
+        IInventoryReservationEventPublisher reservationPublisher,
         ILogger<ReduceStockOnOrderPlacedHandler> logger)
     {
         _inventory = inventory;
         _uow = uow;
         _projectionPublisher = projectionPublisher;
+        _reservationPublisher = reservationPublisher;
         _logger = logger;
     }
 
@@ -31,18 +34,63 @@ public class ReduceStockOnOrderPlacedHandler : INotificationHandler<OrderPlacedE
     {
         try
         {
+            var inventoryItems = new List<(Guid ProductId, int Quantity, InventoryItem Item)>();
+
             foreach (var item in notification.Items)
             {
                 var inventoryItem = await _inventory.GetByProductIdAsync(item.ProductId, ct);
                 if (inventoryItem is null)
                 {
                     _logger.LogWarning("Inventory item not found for product {ProductId}", item.ProductId);
-                    continue;
+                    await _reservationPublisher.PublishInventoryReservationFailedAsync(
+                        notification.OrderId,
+                        item.ProductId,
+                        "Inventory item not found.",
+                        ct);
+                    return;
                 }
 
-                inventoryItem.Reduce(item.Quantity, $"Order {notification.OrderId}");
-                await _inventory.UpdateAsync(inventoryItem, ct);
+                if (inventoryItem.Stock.Quantity < item.Quantity)
+                {
+                    _logger.LogWarning(
+                        "Insufficient stock for product {ProductId}. Requested {Requested} Available {Available}",
+                        item.ProductId,
+                        item.Quantity,
+                        inventoryItem.Stock.Quantity);
+
+                    await _reservationPublisher.PublishInventoryReservationFailedAsync(
+                        notification.OrderId,
+                        item.ProductId,
+                        "Insufficient stock.",
+                        ct);
+                    return;
+                }
+
+                inventoryItems.Add((item.ProductId, item.Quantity, inventoryItem));
             }
+
+            foreach (var reservation in inventoryItems)
+            {
+                var reduceResult = reservation.Item.Reduce(reservation.Quantity, $"Order {notification.OrderId}");
+                if (!reduceResult.IsSuccess)
+                {
+                    var error = reduceResult.GetErrorOrThrow();
+                    _logger.LogWarning(
+                        "Failed reducing stock for product {ProductId}. Error code: {Code}",
+                        reservation.ProductId,
+                        error.Code);
+
+                    await _reservationPublisher.PublishInventoryReservationFailedAsync(
+                        notification.OrderId,
+                        reservation.ProductId,
+                        error.Message,
+                        ct);
+                    return;
+                }
+
+                await _inventory.UpdateAsync(reservation.Item, ct);
+            }
+
             await _uow.SaveChangesAsync(ct);
 
             foreach (var item in notification.Items)
@@ -60,11 +108,27 @@ public class ReduceStockOnOrderPlacedHandler : INotificationHandler<OrderPlacedE
                     ct);
             }
 
+            await _reservationPublisher.PublishInventoryReservedAsync(
+                notification.OrderId,
+                notification.Items.Select(x => x.ProductId).ToArray(),
+                notification.Items.Select(x => x.Quantity).ToArray(),
+                ct);
+
             _logger.LogInformation("Stock reduced for order {OrderId}", notification.OrderId);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to reduce stock for order {OrderId}", notification.OrderId);
+
+            var firstProductId = notification.Items.Count > 0
+                ? notification.Items[0].ProductId
+                : Guid.Empty;
+
+            await _reservationPublisher.PublishInventoryReservationFailedAsync(
+                notification.OrderId,
+                firstProductId,
+                "Inventory processing failed due to an unexpected error.",
+                ct);
         }
     }
 }

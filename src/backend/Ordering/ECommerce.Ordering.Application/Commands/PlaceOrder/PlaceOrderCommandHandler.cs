@@ -17,7 +17,8 @@ public class PlaceOrderCommandHandler(
     IProductCatalogReader productReader,
     IPromoCodeLookup promoCodeLookup,
     IShippingAddressReader shippingAddressReader,
-    ICurrentUserService currentUser
+    ICurrentUserService currentUser,
+    IOrderIntegrationEventPublisher orderIntegrationEventPublisher
 ) : IRequestHandler<PlaceOrderCommand, Result<OrderDto>>
 {
     public async Task<Result<OrderDto>> Handle(PlaceOrderCommand command, CancellationToken ct)
@@ -87,6 +88,13 @@ public class PlaceOrderCommandHandler(
 
         await orders.AddAsync(order, ct);
         await uow.SaveChangesAsync(ct);
+
+        await orderIntegrationEventPublisher.PublishOrderPlacedAsync(
+            order.Id,
+            order.UserId,
+            order.Items.Select(x => x.ProductId).ToArray(),
+            order.Total,
+            ct);
 
         return Result<OrderDto>.Ok(order.ToDto());
     }

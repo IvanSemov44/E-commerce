@@ -1,11 +1,17 @@
 ﻿using ECommerce.Contracts;
 using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace ECommerce.Infrastructure.Integration;
 
-public sealed class OrderFulfillmentSagaService(AppDbContext dbContext) : IOrderFulfillmentSagaService
+public sealed class OrderFulfillmentSagaService(
+    AppDbContext dbContext,
+    IOrderCompensationService compensationService,
+    IOptions<OrderFulfillmentSagaOptions> options) : IOrderFulfillmentSagaService
 {
+    private readonly OrderFulfillmentSagaOptions _options = options.Value;
+
     public async Task StartAsync(OrderPlacedIntegrationEvent integrationEvent, CancellationToken cancellationToken = default)
     {
         var existing = await dbContext.OrderFulfillmentSagaStates
@@ -56,15 +62,48 @@ public sealed class OrderFulfillmentSagaService(AppDbContext dbContext) : IOrder
         if (IsTerminal(saga.CurrentState))
             return;
 
+        var reason = integrationEvent.Reason.Length > 1000
+            ? integrationEvent.Reason[..1000]
+            : integrationEvent.Reason;
+
+        await compensationService.CompensateOrderAsync(saga.OrderId, reason, cancellationToken);
+
         var now = DateTime.UtcNow;
         saga.CurrentState = OrderFulfillmentSagaStates.CompensatedFailed;
         saga.CompletedAt = now;
         saga.UpdatedAt = now;
-        saga.FailureReason = integrationEvent.Reason.Length > 1000
-            ? integrationEvent.Reason[..1000]
-            : integrationEvent.Reason;
+        saga.FailureReason = reason;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<int> HandleTimeoutsAsync(DateTime utcNow, CancellationToken cancellationToken = default)
+    {
+        var timeoutMinutes = Math.Max(1, _options.InventoryTimeoutMinutes);
+        var timeoutThreshold = utcNow.AddMinutes(-timeoutMinutes);
+
+        var timedOutSagas = await dbContext.OrderFulfillmentSagaStates
+            .Where(x =>
+                x.CurrentState == OrderFulfillmentSagaStates.AwaitingInventory &&
+                x.CreatedAt <= timeoutThreshold)
+            .ToListAsync(cancellationToken);
+
+        if (timedOutSagas.Count == 0)
+            return 0;
+
+        foreach (var saga in timedOutSagas)
+        {
+            const string timeoutReason = "Timed out waiting for inventory reservation.";
+            await compensationService.CompensateOrderAsync(saga.OrderId, timeoutReason, cancellationToken);
+
+            saga.CurrentState = OrderFulfillmentSagaStates.CompensatedFailed;
+            saga.CompletedAt = utcNow;
+            saga.UpdatedAt = utcNow;
+            saga.FailureReason = timeoutReason;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return timedOutSagas.Count;
     }
 
     private Task<OrderFulfillmentSagaState?> FindSagaAsync(Guid correlationId, Guid orderId, CancellationToken cancellationToken)

@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IInventoryItemRepository, InventoryItemRepository>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IInventoryProjectionEventPublisher, InventoryProjectionEventPublisher>();
+        services.AddScoped<IInventoryReservationEventPublisher, InventoryReservationEventPublisher>();
 
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(

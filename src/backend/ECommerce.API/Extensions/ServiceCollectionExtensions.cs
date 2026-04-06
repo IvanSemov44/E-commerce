@@ -1,5 +1,6 @@
 ﻿using ECommerce.API.Configuration;
 using ECommerce.API.HealthChecks;
+using ECommerce.API.Services;
 using ECommerce.Application;
 using ECommerce.Application.Configuration;
 using ECommerce.Application.Interfaces;
@@ -310,12 +311,15 @@ public static class ServiceCollectionExtensions
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection("IntegrationMessaging:Outbox"));
+        services.Configure<OrderFulfillmentSagaOptions>(configuration.GetSection("IntegrationMessaging:OrderFulfillmentSaga"));
         services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
         services.AddScoped<IIntegrationEventBus, MassTransitIntegrationEventBus>();
         services.AddScoped<IDeadLetterReplayService, DeadLetterReplayService>();
         services.AddScoped<IOrderFulfillmentSagaService, OrderFulfillmentSagaService>();
+        services.AddScoped<IOrderCompensationService, SagaOrderCompensationService>();
         services.AddScoped<InboxIdempotencyProcessor>();
         services.AddHostedService<OutboxDispatcherHostedService>();
+        services.AddHostedService<OrderFulfillmentSagaTimeoutHostedService>();
 
         // HTTP context accessor
         services.AddHttpContextAccessor();
