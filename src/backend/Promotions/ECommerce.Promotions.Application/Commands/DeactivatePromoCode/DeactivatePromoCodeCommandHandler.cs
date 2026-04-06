@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.Promotions.Application.Interfaces;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Promotions.Domain.Errors;

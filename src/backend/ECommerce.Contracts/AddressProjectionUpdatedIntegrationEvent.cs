@@ -1,4 +1,4 @@
-namespace ECommerce.Contracts;
+﻿namespace ECommerce.Contracts;
 
 /// <summary>
 /// Published when an identity address projection changes and downstream read models should sync.

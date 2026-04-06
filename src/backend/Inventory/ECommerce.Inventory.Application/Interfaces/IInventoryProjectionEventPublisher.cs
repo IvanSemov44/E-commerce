@@ -1,4 +1,4 @@
-namespace ECommerce.Inventory.Application.Interfaces;
+﻿namespace ECommerce.Inventory.Application.Interfaces;
 
 public interface IInventoryProjectionEventPublisher
 {

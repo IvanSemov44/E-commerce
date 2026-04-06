@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Promotions.Application.DTOs;
 using ECommerce.Promotions.Application.Interfaces;

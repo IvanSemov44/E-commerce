@@ -1,4 +1,4 @@
-namespace ECommerce.Promotions.Application.Interfaces;
+﻿namespace ECommerce.Promotions.Application.Interfaces;
 
 public interface IPromoProjectionEventPublisher
 {

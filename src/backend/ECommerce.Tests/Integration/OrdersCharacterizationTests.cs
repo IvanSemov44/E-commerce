@@ -1,4 +1,4 @@
-using ECommerce.API;
+﻿using ECommerce.API;
 using ECommerce.Tests.Helpers;
 using System.Net;
 using System.Net.Http.Json;
@@ -8,10 +8,10 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class OrdersCharacterizationTests
 {
-    private static readonly Lazy<TestWebApplicationFactory> LazyFactory =
+    private static readonly Lazy<TestWebApplicationFactory> _lazyFactory =
         new(() => new TestWebApplicationFactory());
 
-    private static TestWebApplicationFactory Factory => LazyFactory.Value;
+    private static TestWebApplicationFactory Factory => _lazyFactory.Value;
 
     [TestMethod]
     public async Task PlaceOrder_ValidData_Returns201WithOrderData()
@@ -46,7 +46,7 @@ public class OrdersCharacterizationTests
         var client = Factory.CreateClient();
         var createOrderDto = new
         {
-            Items = new object[0],
+            Items = Array.Empty<object>(),
             ShippingAddress = new
             {
                 StreetLine1 = "123 Main St",

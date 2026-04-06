@@ -1,4 +1,4 @@
-using ECommerce.Contracts;
+﻿using ECommerce.Contracts;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

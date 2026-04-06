@@ -1,4 +1,4 @@
-namespace ECommerce.Contracts;
+﻿namespace ECommerce.Contracts;
 
 /// <summary>
 /// Published when promo-code projection data changes and downstream read models should sync.

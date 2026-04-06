@@ -1,4 +1,4 @@
-namespace ECommerce.Identity.Application.Interfaces;
+﻿namespace ECommerce.Identity.Application.Interfaces;
 
 public interface IAddressProjectionEventPublisher
 {
