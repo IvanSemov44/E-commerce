@@ -434,3 +434,26 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
             .HasMaxLength(2000);
     }
 }
+
+/// <summary>
+/// Configuration for InboxMessage entity used by idempotent integration consumers.
+/// </summary>
+public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
+{
+    public void Configure(EntityTypeBuilder<InboxMessage> entity)
+    {
+        entity.ToTable("inbox_messages", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.IdempotencyKey).IsUnique();
+        entity.HasIndex(e => e.ProcessedAt);
+        entity.HasIndex(e => e.ReceivedAt);
+
+        entity.Property(e => e.EventType)
+            .IsRequired()
+            .HasMaxLength(512);
+
+        entity.Property(e => e.LastError)
+            .HasMaxLength(2000);
+    }
+}

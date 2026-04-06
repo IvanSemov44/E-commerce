@@ -64,6 +64,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     // Integration outbox
     public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
 
+    // Integration inbox
+    public DbSet<InboxMessage> InboxMessages { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

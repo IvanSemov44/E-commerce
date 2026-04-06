@@ -1,10 +1,9 @@
 ﻿using ECommerce.Contracts;
 using ECommerce.Inventory.Application.Interfaces;
-using MediatR;
 
 namespace ECommerce.Inventory.Infrastructure.Services;
 
-public class InventoryProjectionEventPublisher(IMediator mediator) : IInventoryProjectionEventPublisher
+public class InventoryProjectionEventPublisher(IIntegrationEventOutbox outbox) : IInventoryProjectionEventPublisher
 {
     public Task PublishStockProjectionUpdatedAsync(
         Guid productId,
@@ -18,6 +17,6 @@ public class InventoryProjectionEventPublisher(IMediator mediator) : IInventoryP
             reason,
             DateTime.UtcNow);
 
-        return mediator.Publish(integrationEvent, cancellationToken);
+        return outbox.EnqueueAsync(integrationEvent, cancellationToken);
     }
 }
