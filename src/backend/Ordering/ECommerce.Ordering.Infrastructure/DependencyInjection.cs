@@ -34,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<IProductCatalogReader, DbReader>();
         services.AddScoped<IPromoCodeLookup, DbReader>();
         services.AddScoped<IShippingAddressReader, DbReader>();
+        services.AddScoped<INotificationHandler<ProductProjectionUpdatedIntegrationEvent>, ProductProjectionUpdatedIntegrationEventHandler>();
+        services.AddScoped<INotificationHandler<ProductImageProjectionUpdatedIntegrationEvent>, ProductImageProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<PromoCodeProjectionUpdatedIntegrationEvent>, PromoCodeProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<AddressProjectionUpdatedIntegrationEvent>, AddressProjectionUpdatedIntegrationEventHandler>();
         services.AddOrderingApplication();

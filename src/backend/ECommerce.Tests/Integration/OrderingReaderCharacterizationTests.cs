@@ -25,19 +25,22 @@ public class OrderingReaderCharacterizationTests
             {
                 Id = productWithPrimaryImageId,
                 Name = "Primary Image Product",
-                Price = 19.99m
+                Price = 19.99m,
+                UpdatedAt = DateTime.UtcNow
             },
             new OrderingProductReadModel
             {
                 Id = productWithoutPrimaryImageId,
                 Name = "No Primary Image Product",
-                Price = 29.99m
+                Price = 29.99m,
+                UpdatedAt = DateTime.UtcNow
             },
             new OrderingProductReadModel
             {
                 Id = nonRequestedProductId,
                 Name = "Not Requested",
-                Price = 39.99m
+                Price = 39.99m,
+                UpdatedAt = DateTime.UtcNow
             });
 
         db.ProductImages.AddRange(
@@ -46,21 +49,24 @@ public class OrderingReaderCharacterizationTests
                 Id = Guid.NewGuid(),
                 ProductId = productWithPrimaryImageId,
                 Url = "https://cdn.example.com/primary.jpg",
-                IsPrimary = true
+                IsPrimary = true,
+                UpdatedAt = DateTime.UtcNow
             },
             new OrderingProductImageReadModel
             {
                 Id = Guid.NewGuid(),
                 ProductId = productWithPrimaryImageId,
                 Url = "https://cdn.example.com/secondary.jpg",
-                IsPrimary = false
+                IsPrimary = false,
+                UpdatedAt = DateTime.UtcNow
             },
             new OrderingProductImageReadModel
             {
                 Id = Guid.NewGuid(),
                 ProductId = productWithoutPrimaryImageId,
                 Url = "https://cdn.example.com/non-primary.jpg",
-                IsPrimary = false
+                IsPrimary = false,
+                UpdatedAt = DateTime.UtcNow
             });
 
         await db.SaveChangesAsync();

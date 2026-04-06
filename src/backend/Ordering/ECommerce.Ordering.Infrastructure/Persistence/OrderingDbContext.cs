@@ -22,19 +22,21 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         modelBuilder.Entity<ProductReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("Products", "catalog");
+            entity.ToTable("ProductProjections");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.Name).HasColumnName("Name");
             entity.Property(x => x.Price).HasColumnName("Price");
+            entity.Property(x => x.UpdatedAt).HasColumnName("UpdatedAt");
         });
         modelBuilder.Entity<ProductImageReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("ProductImages", "catalog");
+            entity.ToTable("ProductImageProjections");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.ProductId).HasColumnName("ProductId");
             entity.Property(x => x.Url).HasColumnName("Url");
             entity.Property(x => x.IsPrimary).HasColumnName("IsPrimary");
+            entity.Property(x => x.UpdatedAt).HasColumnName("UpdatedAt");
         });
         modelBuilder.Entity<PromoCodeReadModel>(entity =>
         {

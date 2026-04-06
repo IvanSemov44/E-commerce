@@ -6,4 +6,5 @@ public class ProductImageReadModel
     public Guid ProductId { get; set; }
     public string Url { get; set; } = string.Empty;
     public bool IsPrimary { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

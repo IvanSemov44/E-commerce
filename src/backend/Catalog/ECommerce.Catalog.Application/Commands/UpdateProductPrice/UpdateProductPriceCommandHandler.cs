@@ -5,6 +5,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Extensions;
+using ECommerce.Catalog.Application.Interfaces;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.ValueObjects;
 
@@ -12,7 +13,8 @@ namespace ECommerce.Catalog.Application.Commands.UpdateProductPrice;
 
 public class UpdateProductPriceCommandHandler(
     IProductRepository _products,
-    ICategoryRepository _categories
+    ICategoryRepository _categories,
+    IProductProjectionEventPublisher? _projectionPublisher = null
 ) : IRequestHandler<UpdateProductPriceCommand, Result<ProductDetailDto>>
 {
     public async Task<Result<ProductDetailDto>> Handle(UpdateProductPriceCommand command, CancellationToken cancellationToken)
@@ -28,6 +30,16 @@ public class UpdateProductPriceCommandHandler(
         product.UpdatePrice(priceResult.GetDataOrThrow());
 
         await _products.UpdateAsync(product, cancellationToken);
+
+        if (_projectionPublisher is not null)
+        {
+            await _projectionPublisher.PublishProductProjectionUpdatedAsync(
+                product.Id,
+                product.Name.Value,
+                product.Price.Amount,
+                product.IsDeleted,
+                cancellationToken);
+        }
 
         var category = await _categories.GetByIdAsync(product.CategoryId, cancellationToken);
         if (category is null)

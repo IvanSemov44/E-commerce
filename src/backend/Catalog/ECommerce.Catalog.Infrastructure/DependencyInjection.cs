@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using ECommerce.Catalog.Application.Interfaces;
+using ECommerce.Catalog.Infrastructure.Services;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Infrastructure.Repositories;
@@ -24,6 +26,7 @@ public static class CatalogInfrastructureServiceExtensions
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IProductProjectionEventPublisher, ProductProjectionEventPublisher>();
         return services;
     }
 }
