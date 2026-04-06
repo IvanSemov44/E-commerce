@@ -1,4 +1,4 @@
-using ECommerce.Contracts;
+﻿using ECommerce.Contracts;
 using ECommerce.Ordering.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -66,8 +66,7 @@ public class OrderingProductProjectionSyncCharacterizationTests
         {
             Id = productId,
             Name = "To delete",
-            Price = 10m,
-            UpdatedAt = DateTime.UtcNow
+            Price = 10m
         });
 
         db.ProductImages.Add(new ProductImageReadModel
@@ -75,8 +74,7 @@ public class OrderingProductProjectionSyncCharacterizationTests
             Id = imageId,
             ProductId = productId,
             Url = "https://cdn.example.com/delete.jpg",
-            IsPrimary = true,
-            UpdatedAt = DateTime.UtcNow
+            IsPrimary = true
         });
 
         await db.SaveChangesAsync();
