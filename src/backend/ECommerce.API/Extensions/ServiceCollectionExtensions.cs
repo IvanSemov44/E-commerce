@@ -311,6 +311,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
         services.AddScoped<IIntegrationEventBus, MassTransitIntegrationEventBus>();
+        services.AddScoped<InboxIdempotencyProcessor>();
         services.AddHostedService<OutboxDispatcherHostedService>();
 
         // HTTP context accessor

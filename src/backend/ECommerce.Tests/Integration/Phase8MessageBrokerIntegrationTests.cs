@@ -22,6 +22,12 @@ public class Phase8MessageBrokerIntegrationTests
             false,
             DateTime.UtcNow);
 
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"inbox-product-test-{Guid.NewGuid():N}")
+            .Options;
+
+        await using var dbContext = new AppDbContext(options);
+
         var mediatorMock = new Mock<IPublisher>(MockBehavior.Strict);
         mediatorMock
             .Setup(m => m.Publish(It.IsAny<ProductProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
@@ -32,10 +38,59 @@ public class Phase8MessageBrokerIntegrationTests
         contextMock.SetupGet(c => c.Message).Returns(message);
         contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
 
-        var consumer = new ProductProjectionUpdatedIntegrationEventConsumer(mediatorMock.Object);
+        var consumer = new ProductProjectionUpdatedIntegrationEventConsumer(
+            new InboxIdempotencyProcessor(dbContext),
+            mediatorMock.Object,
+            NullLogger<ProductProjectionUpdatedIntegrationEventConsumer>.Instance);
         await consumer.Consume(contextMock.Object);
 
         mediatorMock.Verify(m => m.Publish(message, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ProductProjectionEvent_Consumer_DuplicateDelivery_ProcessesOnce()
+    {
+        var idempotencyKey = Guid.NewGuid();
+        var message = new ProductProjectionUpdatedIntegrationEvent(
+            Guid.NewGuid(),
+            "Harness Product",
+            12.34m,
+            false,
+            DateTime.UtcNow)
+        {
+            IdempotencyKey = idempotencyKey
+        };
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"inbox-product-dup-test-{Guid.NewGuid():N}")
+            .Options;
+
+        await using var dbContext = new AppDbContext(options);
+
+        var mediatorMock = new Mock<IPublisher>(MockBehavior.Strict);
+        mediatorMock
+            .Setup(m => m.Publish(It.IsAny<ProductProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var contextMock = new Mock<ConsumeContext<ProductProjectionUpdatedIntegrationEvent>>(MockBehavior.Strict);
+        contextMock.SetupGet(c => c.Message).Returns(message);
+        contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
+
+        var consumer = new ProductProjectionUpdatedIntegrationEventConsumer(
+            new InboxIdempotencyProcessor(dbContext),
+            mediatorMock.Object,
+            NullLogger<ProductProjectionUpdatedIntegrationEventConsumer>.Instance);
+
+        await consumer.Consume(contextMock.Object);
+        await consumer.Consume(contextMock.Object);
+
+        mediatorMock.Verify(
+            m => m.Publish(It.IsAny<ProductProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        var inbox = await dbContext.InboxMessages.SingleAsync(x => x.IdempotencyKey == idempotencyKey);
+        Assert.AreEqual(1, inbox.AttemptCount);
+        Assert.IsNotNull(inbox.ProcessedAt);
     }
 
     [TestMethod]
@@ -67,7 +122,7 @@ public class Phase8MessageBrokerIntegrationTests
         contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
 
         var consumer = new InventoryStockProjectionUpdatedIntegrationEventConsumer(
-            dbContext,
+            new InboxIdempotencyProcessor(dbContext),
             mediatorMock.Object,
             NullLogger<InventoryStockProjectionUpdatedIntegrationEventConsumer>.Instance);
 
