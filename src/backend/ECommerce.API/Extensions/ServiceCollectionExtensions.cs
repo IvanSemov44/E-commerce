@@ -312,6 +312,7 @@ public static class ServiceCollectionExtensions
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection("IntegrationMessaging:Outbox"));
         services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
         services.AddScoped<IIntegrationEventBus, MassTransitIntegrationEventBus>();
+        services.AddScoped<IDeadLetterReplayService, DeadLetterReplayService>();
         services.AddScoped<InboxIdempotencyProcessor>();
         services.AddHostedService<OutboxDispatcherHostedService>();
 

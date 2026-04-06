@@ -72,4 +72,9 @@ public static class ErrorCodes
 
     // Concurrency errors
     public const string ConcurrencyConflict = "CONCURRENCY_CONFLICT";
+
+    // Integration reliability errors
+    public const string DeadLetterMessageNotFound = "DEAD_LETTER_MESSAGE_NOT_FOUND";
+    public const string DeadLetterAlreadyRequeued = "DEAD_LETTER_ALREADY_REQUEUED";
+    public const string InvalidIntegrationEventPayload = "INVALID_INTEGRATION_EVENT_PAYLOAD";
 }

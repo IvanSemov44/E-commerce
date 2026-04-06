@@ -449,6 +449,7 @@ public class DeadLetterMessageConfiguration : IEntityTypeConfiguration<DeadLette
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => e.OutboxMessageId);
         entity.HasIndex(e => e.FailedAt);
+        entity.HasIndex(e => e.RequeuedAt);
 
         entity.Property(e => e.EventType)
             .IsRequired()

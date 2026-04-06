@@ -20,4 +20,6 @@ public class DeadLetterMessage
     public string? LastError { get; set; }
 
     public DateTime FailedAt { get; set; }
+
+    public DateTime? RequeuedAt { get; set; }
 }
