@@ -78,6 +78,9 @@ builder.Services.AddResiliencePolicies();
 // Application Services
 builder.Services.AddApplicationServices(builder.Configuration);
 
+// Integration Messaging (Phase 8 Step 4)
+builder.Services.AddIntegrationMessaging(builder.Configuration);
+
 // Catalog Infrastructure
 builder.Services.AddCatalogInfrastructure();
 

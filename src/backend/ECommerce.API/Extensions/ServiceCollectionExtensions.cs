@@ -31,6 +31,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using AutoMapper;
+using MassTransit;
 
 namespace ECommerce.API.Extensions;
 
@@ -39,6 +40,9 @@ namespace ECommerce.API.Extensions;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
+    private const string InMemoryTransport = "InMemory";
+    private const string RabbitMqTransport = "RabbitMq";
+
     /// <summary>
     /// Configures JWT authentication for the application.
     /// Supports both Authorization header and httpOnly cookie-based authentication.
@@ -306,6 +310,7 @@ public static class ServiceCollectionExtensions
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
+        services.AddScoped<IIntegrationEventBus, MassTransitIntegrationEventBus>();
         services.AddHostedService<OutboxDispatcherHostedService>();
 
         // HTTP context accessor
@@ -357,6 +362,54 @@ public static class ServiceCollectionExtensions
 
         // Logging
         services.AddLogging();
+
+        return services;
+    }
+
+    public static IServiceCollection AddIntegrationMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var transport = configuration["IntegrationMessaging:Transport"] ?? InMemoryTransport;
+
+        services.AddMassTransit(bus =>
+        {
+            bus.AddConsumer<ProductProjectionUpdatedIntegrationEventConsumer>();
+            bus.AddConsumer<ProductImageProjectionUpdatedIntegrationEventConsumer>();
+            bus.AddConsumer<PromoCodeProjectionUpdatedIntegrationEventConsumer>();
+            bus.AddConsumer<AddressProjectionUpdatedIntegrationEventConsumer>();
+            bus.AddConsumer<InventoryStockProjectionUpdatedIntegrationEventConsumer>();
+
+            if (transport.Equals(RabbitMqTransport, StringComparison.OrdinalIgnoreCase))
+            {
+                var host = configuration["IntegrationMessaging:RabbitMq:Host"] ?? "localhost";
+                var virtualHost = configuration["IntegrationMessaging:RabbitMq:VirtualHost"] ?? "/";
+                var username = configuration["IntegrationMessaging:RabbitMq:Username"] ?? "guest";
+                var password = configuration["IntegrationMessaging:RabbitMq:Password"] ?? "guest";
+
+                bus.UsingRabbitMq((context, cfg) =>
+                {
+                    cfg.Host(host, virtualHost, hostConfig =>
+                    {
+                        hostConfig.Username(username);
+                        hostConfig.Password(password);
+                    });
+
+                    cfg.ConfigureEndpoints(context);
+                });
+
+                Log.Information("Integration messaging transport configured: RabbitMq ({Host})", host);
+            }
+            else
+            {
+                bus.UsingInMemory((context, cfg) =>
+                {
+                    cfg.ConfigureEndpoints(context);
+                });
+
+                Log.Information("Integration messaging transport configured: InMemory");
+            }
+        });
 
         return services;
     }

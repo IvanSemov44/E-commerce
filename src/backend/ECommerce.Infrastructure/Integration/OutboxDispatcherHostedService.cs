@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using ECommerce.Contracts;
 using ECommerce.Infrastructure.Data;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -48,7 +47,7 @@ public sealed class OutboxDispatcherHostedService(
     {
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+        var integrationEventBus = scope.ServiceProvider.GetRequiredService<IIntegrationEventBus>();
 
         var pendingMessages = await dbContext.Set<OutboxMessage>()
             .Where(message => message.ProcessedAt == null)
@@ -70,7 +69,7 @@ public sealed class OutboxDispatcherHostedService(
                 if (JsonSerializer.Deserialize(message.EventData, eventType) is not IntegrationEvent deserialized)
                     throw new InvalidOperationException($"Failed to deserialize outbox payload for type '{message.EventType}'");
 
-                await publisher.Publish(deserialized, cancellationToken);
+                await integrationEventBus.PublishAsync(deserialized, cancellationToken);
 
                 message.ProcessedAt = DateTime.UtcNow;
                 message.LastError = null;
