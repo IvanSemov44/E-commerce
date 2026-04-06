@@ -38,12 +38,13 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         });
         modelBuilder.Entity<PromoCodeReadModel>(entity =>
         {
-            entity.HasNoKey();
-            entity.ToTable("PromoCodes", "promotions");
+            entity.HasKey(x => x.Id);
+            entity.ToTable("PromoCodeProjections");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.Code).HasColumnName("Code");
             entity.Property(x => x.IsActive).HasColumnName("IsActive");
-            entity.Property(x => x.DiscountValue).HasColumnName("Discount");
+            entity.Property(x => x.DiscountValue).HasColumnName("DiscountValue");
+            entity.Property(x => x.UpdatedAt).HasColumnName("UpdatedAt");
         });
         modelBuilder.Entity<AddressReadModel>(entity =>
         {

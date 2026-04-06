@@ -1,9 +1,12 @@
 ﻿using ECommerce.Ordering.Application;
 using ECommerce.Ordering.Application.Interfaces;
 using ECommerce.Ordering.Domain.Interfaces;
+using ECommerce.Ordering.Infrastructure.IntegrationEvents;
 using ECommerce.Ordering.Infrastructure.Persistence;
 using ECommerce.Ordering.Infrastructure.Persistence.Repositories;
 using ECommerce.Ordering.Infrastructure.Services;
+using ECommerce.Contracts;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IProductCatalogReader, DbReader>();
         services.AddScoped<IPromoCodeLookup, DbReader>();
         services.AddScoped<IShippingAddressReader, DbReader>();
+        services.AddScoped<INotificationHandler<PromoCodeProjectionUpdatedIntegrationEvent>, PromoCodeProjectionUpdatedIntegrationEventHandler>();
         services.AddOrderingApplication();
 
         return services;

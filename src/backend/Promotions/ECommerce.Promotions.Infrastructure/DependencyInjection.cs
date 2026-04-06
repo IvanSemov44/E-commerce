@@ -1,7 +1,9 @@
 ﻿using ECommerce.Promotions.Application;
+using ECommerce.Promotions.Application.Interfaces;
 using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Infrastructure.Persistence;
 using ECommerce.Promotions.Infrastructure.Persistence.Repositories;
+using ECommerce.Promotions.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +27,7 @@ public static class DependencyInjection
 
         // Register repositories
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
+        services.AddScoped<IPromoProjectionEventPublisher, PromoProjectionEventPublisher>();
 
         // Register application layer
         services.AddPromotionsApplication();

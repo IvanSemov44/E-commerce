@@ -6,4 +6,5 @@ public class PromoCodeReadModel
     public string Code { get; set; } = string.Empty;
     public decimal DiscountValue { get; set; }
     public bool IsActive { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

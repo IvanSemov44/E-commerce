@@ -1,6 +1,5 @@
 ﻿using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderingAddressReadModel = ECommerce.Ordering.Infrastructure.Persistence.AddressReadModel;
 using OrderingDbContext = ECommerce.Ordering.Infrastructure.Persistence.OrderingDbContext;
 using OrderingDbReader = ECommerce.Ordering.Infrastructure.Persistence.DbReader;
@@ -130,13 +129,14 @@ public class OrderingReaderCharacterizationTests
     {
         var promoId = Guid.NewGuid();
 
-        await using var db = CreateSeedableOrderingDbContext();
+        await using var db = CreateOrderingDbContext();
         db.PromoCodes.Add(new OrderingPromoCodeReadModel
         {
             Id = promoId,
             Code = "SAVE10",
             DiscountValue = 10m,
-            IsActive = true
+            IsActive = true,
+            UpdatedAt = DateTime.UtcNow
         });
         await db.SaveChangesAsync();
 
@@ -156,27 +156,5 @@ public class OrderingReaderCharacterizationTests
             .Options;
 
         return new OrderingDbContext(options);
-    }
-
-    private static SeedableOrderingDbContext CreateSeedableOrderingDbContext()
-    {
-        var options = new DbContextOptionsBuilder<OrderingDbContext>()
-            .UseInMemoryDatabase($"ordering-reader-seedable-{Guid.NewGuid():N}")
-            .Options;
-
-        return new SeedableOrderingDbContext(options);
-    }
-
-    private sealed class SeedableOrderingDbContext(DbContextOptions<OrderingDbContext> options)
-        : OrderingDbContext(options)
-    {
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            EntityTypeBuilder<OrderingPromoCodeReadModel> promo = modelBuilder.Entity<OrderingPromoCodeReadModel>();
-            promo.HasKey(x => x.Id);
-            promo.ToTable("PromoCodes");
-        }
     }
 }
