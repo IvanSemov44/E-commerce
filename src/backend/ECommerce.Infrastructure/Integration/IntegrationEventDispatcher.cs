@@ -1,4 +1,4 @@
-﻿using ECommerce.Contracts;
+using ECommerce.Contracts;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
