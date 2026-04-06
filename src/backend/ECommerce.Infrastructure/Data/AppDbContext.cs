@@ -67,6 +67,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     // Integration dead-letter
     public DbSet<DeadLetterMessage> DeadLetterMessages { get; set; } = null!;
 
+    // Integration saga state
+    public DbSet<OrderFulfillmentSagaState> OrderFulfillmentSagaStates { get; set; } = null!;
+
     // Integration inbox
     public DbSet<InboxMessage> InboxMessages { get; set; } = null!;
 

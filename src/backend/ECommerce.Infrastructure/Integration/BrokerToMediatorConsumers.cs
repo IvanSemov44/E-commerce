@@ -89,3 +89,54 @@ public sealed class InventoryStockProjectionUpdatedIntegrationEventConsumer(
         logger.LogDebug("Processed inventory projection integration event {IdempotencyKey}", context.Message.IdempotencyKey);
     }
 }
+
+public sealed class OrderPlacedIntegrationEventConsumer(
+    InboxIdempotencyProcessor inbox,
+    IOrderFulfillmentSagaService sagaService,
+    ILogger<OrderPlacedIntegrationEventConsumer> logger)
+    : IConsumer<OrderPlacedIntegrationEvent>
+{
+    public async Task Consume(ConsumeContext<OrderPlacedIntegrationEvent> context)
+    {
+        await inbox.ExecuteAsync(
+            context.Message,
+            ct => sagaService.StartAsync(context.Message, ct),
+            context.CancellationToken);
+
+        logger.LogDebug("Processed order placed integration event {IdempotencyKey}", context.Message.IdempotencyKey);
+    }
+}
+
+public sealed class InventoryReservedIntegrationEventConsumer(
+    InboxIdempotencyProcessor inbox,
+    IOrderFulfillmentSagaService sagaService,
+    ILogger<InventoryReservedIntegrationEventConsumer> logger)
+    : IConsumer<InventoryReservedIntegrationEvent>
+{
+    public async Task Consume(ConsumeContext<InventoryReservedIntegrationEvent> context)
+    {
+        await inbox.ExecuteAsync(
+            context.Message,
+            ct => sagaService.HandleInventoryReservedAsync(context.Message, ct),
+            context.CancellationToken);
+
+        logger.LogDebug("Processed inventory reserved integration event {IdempotencyKey}", context.Message.IdempotencyKey);
+    }
+}
+
+public sealed class InventoryReservationFailedIntegrationEventConsumer(
+    InboxIdempotencyProcessor inbox,
+    IOrderFulfillmentSagaService sagaService,
+    ILogger<InventoryReservationFailedIntegrationEventConsumer> logger)
+    : IConsumer<InventoryReservationFailedIntegrationEvent>
+{
+    public async Task Consume(ConsumeContext<InventoryReservationFailedIntegrationEvent> context)
+    {
+        await inbox.ExecuteAsync(
+            context.Message,
+            ct => sagaService.HandleInventoryReservationFailedAsync(context.Message, ct),
+            context.CancellationToken);
+
+        logger.LogDebug("Processed inventory reservation failed integration event {IdempotencyKey}", context.Message.IdempotencyKey);
+    }
+}

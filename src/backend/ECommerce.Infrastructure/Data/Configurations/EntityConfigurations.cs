@@ -464,6 +464,29 @@ public class DeadLetterMessageConfiguration : IEntityTypeConfiguration<DeadLette
 }
 
 /// <summary>
+/// Configuration for OrderFulfillmentSagaState entity used by order saga orchestration.
+/// </summary>
+public class OrderFulfillmentSagaStateConfiguration : IEntityTypeConfiguration<OrderFulfillmentSagaState>
+{
+    public void Configure(EntityTypeBuilder<OrderFulfillmentSagaState> entity)
+    {
+        entity.ToTable("order_fulfillment_saga_states", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.CorrelationId).IsUnique();
+        entity.HasIndex(e => e.OrderId).IsUnique();
+        entity.HasIndex(e => e.CurrentState);
+
+        entity.Property(e => e.CurrentState)
+            .IsRequired()
+            .HasMaxLength(128);
+
+        entity.Property(e => e.FailureReason)
+            .HasMaxLength(1000);
+    }
+}
+
+/// <summary>
 /// Configuration for InboxMessage entity used by idempotent integration consumers.
 /// </summary>
 public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>

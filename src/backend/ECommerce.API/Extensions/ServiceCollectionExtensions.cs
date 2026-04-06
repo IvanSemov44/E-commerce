@@ -313,6 +313,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
         services.AddScoped<IIntegrationEventBus, MassTransitIntegrationEventBus>();
         services.AddScoped<IDeadLetterReplayService, DeadLetterReplayService>();
+        services.AddScoped<IOrderFulfillmentSagaService, OrderFulfillmentSagaService>();
         services.AddScoped<InboxIdempotencyProcessor>();
         services.AddHostedService<OutboxDispatcherHostedService>();
 
@@ -382,6 +383,9 @@ public static class ServiceCollectionExtensions
             bus.AddConsumer<PromoCodeProjectionUpdatedIntegrationEventConsumer>();
             bus.AddConsumer<AddressProjectionUpdatedIntegrationEventConsumer>();
             bus.AddConsumer<InventoryStockProjectionUpdatedIntegrationEventConsumer>();
+            bus.AddConsumer<OrderPlacedIntegrationEventConsumer>();
+            bus.AddConsumer<InventoryReservedIntegrationEventConsumer>();
+            bus.AddConsumer<InventoryReservationFailedIntegrationEventConsumer>();
 
             if (transport.Equals(RabbitMqTransport, StringComparison.OrdinalIgnoreCase))
             {
