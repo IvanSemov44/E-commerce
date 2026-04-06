@@ -156,3 +156,74 @@ cfg.State(x => x.ReservingInventory)
 - [ ] Idempotency: receiving same event twice doesn't break saga
 - [ ] Timeout handling (if InventoryReserved never comes, cancel order after X minutes)
 - [ ] Saga integration tests passing
+
+---
+
+## Practical First Slice (Recommended)
+
+Build the minimum useful saga first, then expand.
+
+### Scope
+
+1. Start on `OrderPlacedIntegrationEvent`
+2. Persist saga instance with `CorrelationId`, `OrderId`, `CurrentState`, timestamps
+3. Wait for either:
+    - `InventoryReservedIntegrationEvent` (success path)
+    - `InventoryReservationFailedIntegrationEvent` (compensation path)
+4. End in terminal state:
+    - `Completed` when reserved
+    - `CompensatedFailed` when reservation fails
+
+### Do Not Add Yet
+
+1. Email orchestration
+2. Cart clearing orchestration
+3. Cross-context business side-effects beyond inventory decision
+
+### Why this scope
+
+1. Tests one real distributed decision point
+2. Keeps state machine small and debuggable
+3. Provides base to attach later steps without rework
+
+### Minimal Saga State Fields
+
+1. `CorrelationId`
+2. `OrderId`
+3. `CurrentState`
+4. `CreatedAt`
+5. `UpdatedAt`
+6. `CompletedAt`
+7. `FailureReason` (nullable)
+
+### Suggested Tests for First Slice
+
+1. `OrderPlaced` then `InventoryReserved` transitions to `Completed`
+2. `OrderPlaced` then `InventoryReservationFailed` transitions to `CompensatedFailed`
+3. Duplicate delivery of the same event does not create invalid transitions
+4. Event with unknown correlation is ignored safely
+
+---
+
+## How Saga Differs From Broker, Inbox, and Dead-Letter
+
+Use this as the quick mental model:
+
+| Component | Main Responsibility | Question It Answers | Scope |
+|---|---|---|---|
+| Message Broker | Transport events between producers and consumers | "Can event A reach consumer B?" | Infrastructure transport |
+| Inbox | Deduplicate event consumption | "Have I already handled this event?" | Consumer reliability |
+| Outbox | Ensure produced events are not lost | "Did I persist and eventually publish this event?" | Producer reliability |
+| Dead-Letter | Store poison events for ops recovery | "What failed repeatedly and needs intervention?" | Operational recovery |
+| Saga | Coordinate multi-step business workflow | "What is the business process state and what is the next step?" | Business orchestration |
+
+### Key Distinction
+
+Broker/inbox/outbox/dead-letter are reliability plumbing.
+Saga is business process logic.
+
+### Example in one sentence
+
+If an event arrives twice, inbox handles it.
+If an event cannot be processed after retries, dead-letter captures it.
+If multiple events represent one business transaction across contexts, saga tracks and decides the flow.

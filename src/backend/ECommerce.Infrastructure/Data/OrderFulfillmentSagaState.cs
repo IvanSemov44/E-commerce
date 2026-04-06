@@ -1,4 +1,4 @@
-namespace ECommerce.Infrastructure.Data;
+﻿namespace ECommerce.Infrastructure.Data;
 
 /// <summary>
 /// Persisted saga state for the minimal order fulfillment orchestration flow.
