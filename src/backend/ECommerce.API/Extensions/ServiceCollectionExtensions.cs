@@ -32,7 +32,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using AutoMapper;
-using MassTransit;
 
 namespace ECommerce.API.Extensions;
 
@@ -313,7 +312,6 @@ public static class ServiceCollectionExtensions
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection("IntegrationMessaging:Outbox"));
         services.Configure<OrderFulfillmentSagaOptions>(configuration.GetSection("IntegrationMessaging:OrderFulfillmentSaga"));
         services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
-        services.AddScoped<IIntegrationEventBus, MassTransitIntegrationEventBus>();
         services.AddScoped<IDeadLetterReplayService, DeadLetterReplayService>();
         services.AddScoped<IOrderFulfillmentSagaService, OrderFulfillmentSagaService>();
         services.AddScoped<IOrderCompensationService, SagaOrderCompensationService>();
@@ -380,47 +378,30 @@ public static class ServiceCollectionExtensions
     {
         var transport = configuration["IntegrationMessaging:Transport"] ?? InMemoryTransport;
 
-        services.AddMassTransit(bus =>
+        services.AddScoped<IIntegrationEventDispatcher, IntegrationEventDispatcher>();
+
+        if (transport.Equals(RabbitMqTransport, StringComparison.OrdinalIgnoreCase))
         {
-            bus.AddConsumer<ProductProjectionUpdatedIntegrationEventConsumer>();
-            bus.AddConsumer<ProductImageProjectionUpdatedIntegrationEventConsumer>();
-            bus.AddConsumer<PromoCodeProjectionUpdatedIntegrationEventConsumer>();
-            bus.AddConsumer<AddressProjectionUpdatedIntegrationEventConsumer>();
-            bus.AddConsumer<InventoryStockProjectionUpdatedIntegrationEventConsumer>();
-            bus.AddConsumer<OrderPlacedIntegrationEventConsumer>();
-            bus.AddConsumer<InventoryReservedIntegrationEventConsumer>();
-            bus.AddConsumer<InventoryReservationFailedIntegrationEventConsumer>();
-
-            if (transport.Equals(RabbitMqTransport, StringComparison.OrdinalIgnoreCase))
+            var rabbitOptions = new RabbitMqTransportOptions
             {
-                var host = configuration["IntegrationMessaging:RabbitMq:Host"] ?? "localhost";
-                var virtualHost = configuration["IntegrationMessaging:RabbitMq:VirtualHost"] ?? "/";
-                var username = configuration["IntegrationMessaging:RabbitMq:Username"] ?? "guest";
-                var password = configuration["IntegrationMessaging:RabbitMq:Password"] ?? "guest";
+                Host = configuration["IntegrationMessaging:RabbitMq:Host"] ?? "localhost",
+                VirtualHost = configuration["IntegrationMessaging:RabbitMq:VirtualHost"] ?? "/",
+                Username = configuration["IntegrationMessaging:RabbitMq:Username"] ?? "guest",
+                Password = configuration["IntegrationMessaging:RabbitMq:Password"] ?? "guest"
+            };
 
-                bus.UsingRabbitMq((context, cfg) =>
-                {
-                    cfg.Host(host, virtualHost, hostConfig =>
-                    {
-                        hostConfig.Username(username);
-                        hostConfig.Password(password);
-                    });
+            services.AddSingleton(rabbitOptions);
+            services.AddScoped<IIntegrationEventBus, RabbitMqIntegrationEventBus>();
+            services.AddHostedService<RabbitMqIntegrationConsumerHostedService>();
 
-                    cfg.ConfigureEndpoints(context);
-                });
+            Log.Information("Integration messaging transport configured: RabbitMq ({Host})", rabbitOptions.Host);
+        }
+        else
+        {
+            services.AddScoped<IIntegrationEventBus, InMemoryIntegrationEventBus>();
 
-                Log.Information("Integration messaging transport configured: RabbitMq ({Host})", host);
-            }
-            else
-            {
-                bus.UsingInMemory((context, cfg) =>
-                {
-                    cfg.ConfigureEndpoints(context);
-                });
-
-                Log.Information("Integration messaging transport configured: InMemory");
-            }
-        });
+            Log.Information("Integration messaging transport configured: InMemory");
+        }
 
         return services;
     }

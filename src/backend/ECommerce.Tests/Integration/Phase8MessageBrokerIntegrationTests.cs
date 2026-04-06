@@ -1,7 +1,6 @@
 ﻿using ECommerce.Contracts;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Infrastructure.Data;
-using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,6 +11,16 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class Phase8MessageBrokerIntegrationTests
 {
+    private static IntegrationEventDispatcher CreateDispatcher(AppDbContext dbContext, IPublisher mediator)
+    {
+        var sagaMock = new Mock<IOrderFulfillmentSagaService>(MockBehavior.Loose);
+        return new IntegrationEventDispatcher(
+            new InboxIdempotencyProcessor(dbContext),
+            mediator,
+            sagaMock.Object,
+            NullLogger<IntegrationEventDispatcher>.Instance);
+    }
+
     [TestMethod]
     public async Task ProductProjectionEvent_Consumer_ForwardsToMediator()
     {
@@ -34,15 +43,8 @@ public class Phase8MessageBrokerIntegrationTests
             .Returns(Task.CompletedTask)
             .Verifiable();
 
-        var contextMock = new Mock<ConsumeContext<ProductProjectionUpdatedIntegrationEvent>>(MockBehavior.Strict);
-        contextMock.SetupGet(c => c.Message).Returns(message);
-        contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
-
-        var consumer = new ProductProjectionUpdatedIntegrationEventConsumer(
-            new InboxIdempotencyProcessor(dbContext),
-            mediatorMock.Object,
-            NullLogger<ProductProjectionUpdatedIntegrationEventConsumer>.Instance);
-        await consumer.Consume(contextMock.Object);
+        var dispatcher = CreateDispatcher(dbContext, mediatorMock.Object);
+        await dispatcher.DispatchAsync(message, CancellationToken.None);
 
         mediatorMock.Verify(m => m.Publish(message, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -72,17 +74,10 @@ public class Phase8MessageBrokerIntegrationTests
             .Setup(m => m.Publish(It.IsAny<ProductProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var contextMock = new Mock<ConsumeContext<ProductProjectionUpdatedIntegrationEvent>>(MockBehavior.Strict);
-        contextMock.SetupGet(c => c.Message).Returns(message);
-        contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
+        var dispatcher = CreateDispatcher(dbContext, mediatorMock.Object);
 
-        var consumer = new ProductProjectionUpdatedIntegrationEventConsumer(
-            new InboxIdempotencyProcessor(dbContext),
-            mediatorMock.Object,
-            NullLogger<ProductProjectionUpdatedIntegrationEventConsumer>.Instance);
-
-        await consumer.Consume(contextMock.Object);
-        await consumer.Consume(contextMock.Object);
+        await dispatcher.DispatchAsync(message, CancellationToken.None);
+        await dispatcher.DispatchAsync(message, CancellationToken.None);
 
         mediatorMock.Verify(
             m => m.Publish(It.IsAny<ProductProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()),
@@ -117,17 +112,10 @@ public class Phase8MessageBrokerIntegrationTests
             .Setup(m => m.Publish(It.IsAny<InventoryStockProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var contextMock = new Mock<ConsumeContext<InventoryStockProjectionUpdatedIntegrationEvent>>(MockBehavior.Strict);
-        contextMock.SetupGet(c => c.Message).Returns(message);
-        contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
+        var dispatcher = CreateDispatcher(dbContext, mediatorMock.Object);
 
-        var consumer = new InventoryStockProjectionUpdatedIntegrationEventConsumer(
-            new InboxIdempotencyProcessor(dbContext),
-            mediatorMock.Object,
-            NullLogger<InventoryStockProjectionUpdatedIntegrationEventConsumer>.Instance);
-
-        await consumer.Consume(contextMock.Object);
-        await consumer.Consume(contextMock.Object);
+        await dispatcher.DispatchAsync(message, CancellationToken.None);
+        await dispatcher.DispatchAsync(message, CancellationToken.None);
 
         mediatorMock.Verify(
             m => m.Publish(It.IsAny<InventoryStockProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()),
@@ -238,17 +226,10 @@ public class Phase8MessageBrokerIntegrationTests
             .Setup(m => m.Publish(It.IsAny<AddressProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var contextMock = new Mock<ConsumeContext<AddressProjectionUpdatedIntegrationEvent>>(MockBehavior.Strict);
-        contextMock.SetupGet(c => c.Message).Returns(message);
-        contextMock.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
+        var dispatcher = CreateDispatcher(dbContext, mediatorMock.Object);
 
-        var consumer = new AddressProjectionUpdatedIntegrationEventConsumer(
-            new InboxIdempotencyProcessor(dbContext),
-            mediatorMock.Object,
-            NullLogger<AddressProjectionUpdatedIntegrationEventConsumer>.Instance);
-
-        await consumer.Consume(contextMock.Object);
-        await consumer.Consume(contextMock.Object);
+        await dispatcher.DispatchAsync(message, CancellationToken.None);
+        await dispatcher.DispatchAsync(message, CancellationToken.None);
 
         mediatorMock.Verify(
             m => m.Publish(It.IsAny<AddressProjectionUpdatedIntegrationEvent>(), It.IsAny<CancellationToken>()),
