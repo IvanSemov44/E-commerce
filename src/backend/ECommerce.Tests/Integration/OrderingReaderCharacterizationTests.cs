@@ -98,7 +98,8 @@ public class OrderingReaderCharacterizationTests
             StreetLine1 = "42 Reader St",
             City = "Testville",
             Country = "US",
-            PostalCode = "10001"
+            PostalCode = "10001",
+            UpdatedAt = DateTime.UtcNow
         });
         await db.SaveChangesAsync();
 

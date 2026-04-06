@@ -49,13 +49,14 @@ public class OrderingDbContext(DbContextOptions<OrderingDbContext> options) : Db
         modelBuilder.Entity<AddressReadModel>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.ToTable("Addresses", "identity");
+            entity.ToTable("AddressProjections");
             entity.Property(x => x.Id).HasColumnName("Id");
             entity.Property(x => x.UserId).HasColumnName("UserId");
             entity.Property(x => x.StreetLine1).HasColumnName("StreetLine1");
             entity.Property(x => x.City).HasColumnName("City");
             entity.Property(x => x.Country).HasColumnName("Country");
             entity.Property(x => x.PostalCode).HasColumnName("PostalCode");
+            entity.Property(x => x.UpdatedAt).HasColumnName("UpdatedAt");
         });
     }
 }

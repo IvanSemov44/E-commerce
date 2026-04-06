@@ -1,7 +1,8 @@
-using ECommerce.Contracts;
-using ECommerce.Ordering.Infrastructure.IntegrationEvents;
+﻿using ECommerce.Contracts;
 using ECommerce.Ordering.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerce.Tests.Integration;
 
@@ -12,9 +13,11 @@ public class OrderingPromoProjectionSyncCharacterizationTests
     public async Task Handle_WhenProjectionMissing_InsertsProjection()
     {
         var promoId = Guid.NewGuid();
+        var databaseName = $"ordering-promo-proj-{Guid.NewGuid():N}";
 
-        await using var db = CreateOrderingDbContext();
-        var sut = new PromoCodeProjectionUpdatedIntegrationEventHandler(db);
+        await using var scope = CreateScope(databaseName);
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
 
         var evt = new PromoCodeProjectionUpdatedIntegrationEvent(
             promoId,
@@ -24,7 +27,7 @@ public class OrderingPromoProjectionSyncCharacterizationTests
             false,
             DateTime.UtcNow);
 
-        await sut.Handle(evt, CancellationToken.None);
+        await publisher.Publish(evt, CancellationToken.None);
 
         var projection = await db.PromoCodes.SingleOrDefaultAsync(x => x.Id == promoId);
         Assert.IsNotNull(projection);
@@ -37,19 +40,21 @@ public class OrderingPromoProjectionSyncCharacterizationTests
     public async Task Handle_WhenProjectionExists_UpdatesProjection()
     {
         var promoId = Guid.NewGuid();
+        var databaseName = $"ordering-promo-proj-{Guid.NewGuid():N}";
 
-        await using var db = CreateOrderingDbContext();
+        await using var scope = CreateScope(databaseName);
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+
         db.PromoCodes.Add(new PromoCodeReadModel
         {
             Id = promoId,
             Code = "SAVE10",
             DiscountValue = 10m,
-            IsActive = true,
-            UpdatedAt = DateTime.UtcNow.AddMinutes(-5)
+            IsActive = true
         });
         await db.SaveChangesAsync();
 
-        var sut = new PromoCodeProjectionUpdatedIntegrationEventHandler(db);
         var evt = new PromoCodeProjectionUpdatedIntegrationEvent(
             promoId,
             "SAVE10",
@@ -58,7 +63,7 @@ public class OrderingPromoProjectionSyncCharacterizationTests
             false,
             DateTime.UtcNow);
 
-        await sut.Handle(evt, CancellationToken.None);
+        await publisher.Publish(evt, CancellationToken.None);
 
         var projection = await db.PromoCodes.SingleOrDefaultAsync(x => x.Id == promoId);
         Assert.IsNotNull(projection);
@@ -70,19 +75,21 @@ public class OrderingPromoProjectionSyncCharacterizationTests
     public async Task Handle_WhenDeleted_RemovesProjection()
     {
         var promoId = Guid.NewGuid();
+        var databaseName = $"ordering-promo-proj-{Guid.NewGuid():N}";
 
-        await using var db = CreateOrderingDbContext();
+        await using var scope = CreateScope(databaseName);
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+
         db.PromoCodes.Add(new PromoCodeReadModel
         {
             Id = promoId,
             Code = "SAVE20",
             DiscountValue = 20m,
-            IsActive = true,
-            UpdatedAt = DateTime.UtcNow
+            IsActive = true
         });
         await db.SaveChangesAsync();
 
-        var sut = new PromoCodeProjectionUpdatedIntegrationEventHandler(db);
         var evt = new PromoCodeProjectionUpdatedIntegrationEvent(
             promoId,
             "SAVE20",
@@ -91,18 +98,20 @@ public class OrderingPromoProjectionSyncCharacterizationTests
             true,
             DateTime.UtcNow);
 
-        await sut.Handle(evt, CancellationToken.None);
+        await publisher.Publish(evt, CancellationToken.None);
 
         var projection = await db.PromoCodes.SingleOrDefaultAsync(x => x.Id == promoId);
         Assert.IsNull(projection);
     }
 
-    private static OrderingDbContext CreateOrderingDbContext()
+    private static AsyncServiceScope CreateScope(string databaseName)
     {
-        var options = new DbContextOptionsBuilder<OrderingDbContext>()
-            .UseInMemoryDatabase($"ordering-promo-proj-{Guid.NewGuid():N}")
-            .Options;
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDbContext<OrderingDbContext>(options => options.UseInMemoryDatabase(databaseName));
+        services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(OrderingDbContext).Assembly));
 
-        return new OrderingDbContext(options);
+        var provider = services.BuildServiceProvider();
+        return provider.CreateAsyncScope();
     }
 }
