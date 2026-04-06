@@ -158,7 +158,6 @@ if (!app.Environment.IsEnvironment("Test"))
             // This catches missing dependencies and circular references early
             _ = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-            _ = scope.ServiceProvider.GetRequiredService<ICartService>();
             _ = scope.ServiceProvider.GetRequiredService<IPaymentService>();
         }
         Serilog.Log.Information("✓ Dependency injection validation passed. All critical services are resolvable.");
