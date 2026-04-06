@@ -3,7 +3,7 @@
 /// <summary>
 /// Base contract for integration events exchanged across bounded contexts.
 /// </summary>
-public abstract record IntegrationEvent
+public abstract record IntegrationEvent : MediatR.INotification
 {
     public Guid CorrelationId { get; init; } = Guid.NewGuid();
 

@@ -30,11 +30,11 @@ public class ShoppingDbContext(DbContextOptions<ShoppingDbContext> options) : Db
         });
         modelBuilder.Entity<InventoryItemReadModel>(entity =>
         {
-            entity.HasKey(x => x.Id);
-            entity.ToTable("InventoryItems", "inventory");
-            entity.Property(x => x.Id).HasColumnName("Id");
+            entity.HasKey(x => x.ProductId);
+            entity.ToTable("InventoryStockProjections");
             entity.Property(x => x.ProductId).HasColumnName("ProductId");
             entity.Property(x => x.Quantity).HasColumnName("Quantity");
+            entity.Property(x => x.UpdatedAt).HasColumnName("UpdatedAt");
         });
     }
 }

@@ -32,8 +32,9 @@ public static class DependencyInjection
         services.AddScoped<IStockAvailabilityReader, ShoppingDbReader>();
 
         services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(
-                typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly));
+            cfg.RegisterServicesFromAssemblies(
+                typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly,
+                typeof(DependencyInjection).Assembly));
 
         return services;
     }

@@ -1,4 +1,4 @@
-using ECommerce.Shopping.Infrastructure.Persistence;
+﻿using ECommerce.Shopping.Infrastructure.Persistence;
 using ECommerce.Shopping.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -82,9 +82,9 @@ public class ShoppingReaderCharacterizationTests
         await using var db = CreateShoppingDbContext();
         db.InventoryItems.Add(new InventoryItemReadModel
         {
-            Id = Guid.NewGuid(),
             ProductId = productId,
-            Quantity = 7
+            Quantity = 7,
+            UpdatedAt = DateTime.UtcNow
         });
         await db.SaveChangesAsync();
 
