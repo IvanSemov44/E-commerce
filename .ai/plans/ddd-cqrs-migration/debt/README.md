@@ -181,3 +181,139 @@ After Phase 7 — if all old services are gone, remove AutoMapper entirely. Conf
 | Phase 5 | D-01, D-02, D-05 (promotions) | Same |
 | Phase 6 | D-01, D-02, D-05 (reviews) | Same |
 | Phase 7 | D-01, D-02, D-05 (ordering) | D-01–D-07 all closed — migration complete |
+
+---
+
+## Phase 8+ Deferred Architecture Notes (Intentional)
+
+These are not migration mistakes. They are deliberate trade-offs made to keep delivery speed while reliability work is in progress.
+
+### A-01 — Operational Endpoints Not Full MediatR CQRS
+
+**Introduced:** Phase 8 (integration reliability)
+**Status:** Open (acceptable)
+
+`IntegrationDeadLettersController` uses an infrastructure service directly (`IDeadLetterReplayService`) instead of command/query handlers.
+
+**Why this is acceptable now:**
+- Endpoint scope is operational/admin only
+- Data is infrastructure-owned (`integration.dead_letter_messages` / outbox)
+- Keeps implementation small while we stabilize outbox/inbox behavior
+
+**When to upgrade to full CQRS:**
+- We add validation/authorization policies that are shared across many ops endpoints
+- We need pipeline behaviors (audit, retries, idempotency, metrics) at handler layer
+- Ops surface expands (bulk replay, runbooks, triage workflows)
+
+**Cleanup / Upgrade Path:**
+Move `GetDeadLettersAsync` and `RequeueAsync` into explicit MediatR Query/Command handlers under the integration module.
+
+---
+
+### A-02 — Integration Reliability Kept in Infrastructure (No New Bounded Context Yet)
+
+**Introduced:** Phase 8
+**Status:** Open (acceptable)
+
+Outbox/inbox/dead-letter logic lives in `ECommerce.Infrastructure` and uses `AppDbContext` directly.
+
+**Why this is acceptable now:**
+- It is cross-cutting operational plumbing, not core business behavior
+- A dedicated bounded context would add overhead before clear domain boundaries exist
+
+**When a new bounded context is justified:**
+- Dedicated team ownership for messaging operations
+- Rich domain language emerges (quarantine policies, replay campaigns, incident workflows)
+- Separate release cadence or separate data ownership is required
+
+**Cleanup / Upgrade Path:**
+Create `IntegrationOps` context only when above signals appear; until then keep this in infrastructure and well-tested.
+
+---
+
+### A-03 — Direct DbContext in Integration Ops Service
+
+**Introduced:** Phase 8
+**Status:** Open (acceptable)
+
+`DeadLetterReplayService` uses `AppDbContext` directly rather than repository abstractions.
+
+**Why this is acceptable now:**
+- Tables are technical records, not aggregates with rich domain invariants
+- Repository layer would mostly pass-through EF queries and add little value today
+
+**When to refactor to repositories/specifications:**
+- Query complexity and reuse grow significantly
+- We need provider-agnostic abstraction for integration operations
+- We split persistence per bounded context and want stricter interface boundaries
+
+**Cleanup / Upgrade Path:**
+Introduce `IDeadLetterRepository`/`IOutboxRepository` only when complexity justifies it.
+
+---
+
+## DDD Needs Checklist (Come-Back Plan)
+
+Use this list when the current product goal shifts back to architecture hardening.
+
+1. Split controllers by bounded context
+	- Move API surface into clear context areas (`Catalog`, `Identity`, `Shopping`, `Promotions`, `Reviews`, `Ordering`, `Integration`)
+	- Keep each controller thin and dependent on its own context application layer
+2. Split persistence by bounded context
+	- Replace shared `AppDbContext` over time with context-owned DbContexts
+	- Keep cross-context communication via integration events only
+3. Finish removal of legacy Core services/repositories/entities
+	- Complete D-01..D-07 closure with strict deletion after each cutover
+4. Reduce SharedKernel to true shared concepts
+	- Keep only stable primitives (Result, DomainError, base abstractions)
+	- Prevent business logic leakage into shared packages
+5. Decide CQRS depth intentionally
+	- Use full MediatR CQRS for core business workflows
+	- Keep simple operational endpoints lightweight unless complexity demands handlers
+6. Define integration operations maturity level
+	- Level 1: single-message replay (current)
+	- Level 2: bulk replay with safeguards and reporting
+	- Level 3: workflow-driven incident tooling (possible future `IntegrationOps` context)
+7. Close operational observability gaps
+	- Correlation IDs, idempotency tracking, dead-letter dashboards, replay audit trail
+
+---
+
+## Staff-Dev Guidance: What To Do Now vs Later
+
+**Do now (high ROI):**
+- Keep reliability baseline stable (outbox/inbox/dead-letter + tests)
+- Add only incremental safety features needed by current delivery goals
+
+**Do later (when architecture window opens):**
+- Full controller/context split
+- Full CQRS for integration operations
+- Potential `IntegrationOps` bounded context
+
+**Rule of thumb:**
+If a change does not reduce current delivery risk or unblock active business flow, put it in this backlog instead of expanding scope mid-phase.
+
+---
+
+## Must-Not-Miss Backlog (Integration Ops)
+
+When the focus returns to architecture hardening, do not skip these items:
+
+1. Bulk replay endpoint
+2. Rate limits/throttling per replay job
+3. Audit trail enrichment
+4. UI/dashboard
+5. Moving to full CQRS handlers
+
+Suggested execution order (staff recommendation):
+1. Bulk replay endpoint
+2. Rate limits/throttling per replay job
+3. Audit trail enrichment
+4. UI/dashboard
+5. Moving to full CQRS handlers
+
+Rationale for this order:
+- Safety first: replay capability without throttling can create blast radius
+- Audit before scale: operational visibility is needed before broad usage
+- UX after controls: dashboard adds value once actions are safe and traceable
+- CQRS last: apply structure once operational behavior is stable and proven
