@@ -1,4 +1,4 @@
-using ECommerce.Catalog.Application.Interfaces;
+﻿using ECommerce.Catalog.Application.Interfaces;
 using ECommerce.Contracts;
 using MediatR;
 

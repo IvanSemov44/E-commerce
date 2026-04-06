@@ -191,7 +191,7 @@ public class CartController(IMediator mediator, ICurrentUserService currentUser,
     /// <summary>
     /// Converts Shopping application CartDto to API CartDto.
     /// </summary>
-    private CartDto MapShoppingCartDtoToApiDto(ECommerce.Shopping.Application.DTOs.CartDto shoppingCart)
+    private static CartDto MapShoppingCartDtoToApiDto(ECommerce.Shopping.Application.DTOs.CartDto shoppingCart)
     {
         return new CartDto
         {
