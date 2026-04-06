@@ -1,10 +1,9 @@
 ﻿using ECommerce.Contracts;
 using ECommerce.Identity.Application.Interfaces;
-using MediatR;
 
 namespace ECommerce.Identity.Infrastructure.Services;
 
-public sealed class AddressProjectionEventPublisher(IPublisher publisher) : IAddressProjectionEventPublisher
+public sealed class AddressProjectionEventPublisher(IIntegrationEventOutbox outbox) : IAddressProjectionEventPublisher
 {
     public Task PublishAddressProjectionUpdatedAsync(
         Guid addressId,
@@ -26,6 +25,6 @@ public sealed class AddressProjectionEventPublisher(IPublisher publisher) : IAdd
             isDeleted,
             DateTime.UtcNow);
 
-        return publisher.Publish(integrationEvent, cancellationToken);
+        return outbox.EnqueueAsync(integrationEvent, cancellationToken);
     }
 }

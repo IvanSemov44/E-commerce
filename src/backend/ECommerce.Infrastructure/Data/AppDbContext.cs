@@ -61,6 +61,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     // Data Protection Keys for persistent key storage
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
+    // Integration outbox
+    public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

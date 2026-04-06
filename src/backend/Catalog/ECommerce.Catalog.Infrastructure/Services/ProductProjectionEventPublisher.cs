@@ -1,10 +1,9 @@
 ﻿using ECommerce.Catalog.Application.Interfaces;
 using ECommerce.Contracts;
-using MediatR;
 
 namespace ECommerce.Catalog.Infrastructure.Services;
 
-public sealed class ProductProjectionEventPublisher(IPublisher publisher) : IProductProjectionEventPublisher
+public sealed class ProductProjectionEventPublisher(IIntegrationEventOutbox outbox) : IProductProjectionEventPublisher
 {
     public Task PublishProductProjectionUpdatedAsync(
         Guid productId,
@@ -20,7 +19,7 @@ public sealed class ProductProjectionEventPublisher(IPublisher publisher) : IPro
             isDeleted,
             DateTime.UtcNow);
 
-        return publisher.Publish(integrationEvent, cancellationToken);
+        return outbox.EnqueueAsync(integrationEvent, cancellationToken);
     }
 
     public Task PublishProductImageProjectionUpdatedAsync(
@@ -39,6 +38,6 @@ public sealed class ProductProjectionEventPublisher(IPublisher publisher) : IPro
             isDeleted,
             DateTime.UtcNow);
 
-        return publisher.Publish(integrationEvent, cancellationToken);
+        return outbox.EnqueueAsync(integrationEvent, cancellationToken);
     }
 }

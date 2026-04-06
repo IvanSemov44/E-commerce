@@ -313,3 +313,29 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+/// <summary>
+/// Configuration for OutboxMessage entity used by the integration outbox pattern.
+/// </summary>
+public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
+{
+    public void Configure(EntityTypeBuilder<OutboxMessage> entity)
+    {
+        entity.ToTable("outbox_messages", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.IdempotencyKey).IsUnique();
+        entity.HasIndex(e => e.ProcessedAt);
+        entity.HasIndex(e => e.CreatedAt);
+
+        entity.Property(e => e.EventType)
+            .IsRequired()
+            .HasMaxLength(512);
+
+        entity.Property(e => e.EventData)
+            .IsRequired();
+
+        entity.Property(e => e.LastError)
+            .HasMaxLength(2000);
+    }
+}

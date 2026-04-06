@@ -10,9 +10,11 @@ using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
+using ECommerce.Infrastructure.Integration;
 using ECommerce.Inventory.Infrastructure;
 using ECommerce.Shopping.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
+using ECommerce.Contracts;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Antiforgery;
@@ -303,6 +305,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, MediatRUnitOfWork>();
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+        services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
+        services.AddHostedService<OutboxDispatcherHostedService>();
 
         // HTTP context accessor
         services.AddHttpContextAccessor();

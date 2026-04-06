@@ -1,10 +1,9 @@
 ﻿using ECommerce.Contracts;
 using ECommerce.Promotions.Application.Interfaces;
-using MediatR;
 
 namespace ECommerce.Promotions.Infrastructure.Services;
 
-public class PromoProjectionEventPublisher(IPublisher publisher) : IPromoProjectionEventPublisher
+public class PromoProjectionEventPublisher(IIntegrationEventOutbox outbox) : IPromoProjectionEventPublisher
 {
     public Task PublishPromoProjectionUpdatedAsync(
         Guid promoCodeId,
@@ -22,6 +21,6 @@ public class PromoProjectionEventPublisher(IPublisher publisher) : IPromoProject
             isDeleted,
             DateTime.UtcNow);
 
-        return publisher.Publish(integrationEvent, cancellationToken);
+        return outbox.EnqueueAsync(integrationEvent, cancellationToken);
     }
 }
