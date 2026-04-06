@@ -8,18 +8,13 @@ namespace ECommerce.API.HealthChecks;
 /// Health check that monitors memory usage and reports degraded status
 /// when memory consumption exceeds the configured threshold.
 /// </summary>
-public class MemoryHealthCheck : IHealthCheck
+/// <remarks>
+/// Initializes a new instance of the <see cref="MemoryHealthCheck"/> class.
+/// </remarks>
+/// <param name="options">The monitoring configuration options.</param>
+public class MemoryHealthCheck(IOptions<MonitoringOptions> options) : IHealthCheck
 {
-    private readonly MonitoringOptions _options;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MemoryHealthCheck"/> class.
-    /// </summary>
-    /// <param name="options">The monitoring configuration options.</param>
-    public MemoryHealthCheck(IOptions<MonitoringOptions> options)
-    {
-        _options = options.Value;
-    }
+    private readonly MonitoringOptions _options = options.Value;
 
     /// <summary>
     /// Performs the memory health check.

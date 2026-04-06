@@ -1,4 +1,4 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.Interfaces;
@@ -21,22 +21,16 @@ namespace ECommerce.API.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Cart")]
-public class CartController : ControllerBase
+public class CartController(IMediator mediator, ICurrentUserService currentUser, ILogger<CartController> logger) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUser;
-    private readonly ILogger<CartController> _logger;
-
-    public CartController(IMediator mediator, ICurrentUserService currentUser, ILogger<CartController> logger)
-    {
-        _mediator = mediator;
-        _currentUser = currentUser;
-        _logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ICurrentUserService _currentUser = currentUser;
+    private readonly ILogger<CartController> _logger = logger;
 
     /// <summary>
     /// Retrieves the authenticated user's shopping cart, creating an empty cart if one doesn't exist.
     /// </summary>
+    /// <param name="cancellationToken"></param>
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]

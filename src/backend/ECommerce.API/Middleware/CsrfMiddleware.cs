@@ -8,19 +8,12 @@ namespace ECommerce.API.Middleware;
 /// Middleware that provides CSRF protection for authenticated requests.
 /// Generates CSRF tokens for GET requests and validates them for state-changing methods.
 /// </summary>
-public class CsrfMiddleware
+public class CsrfMiddleware(RequestDelegate next, ILogger<CsrfMiddleware> logger, IHostEnvironment environment)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<CsrfMiddleware> _logger;
-    private readonly IHostEnvironment _environment;
-    private static readonly string[] SafeMethods = { "GET", "HEAD", "OPTIONS", "TRACE" };
-
-    public CsrfMiddleware(RequestDelegate next, ILogger<CsrfMiddleware> logger, IHostEnvironment environment)
-    {
-        _next = next;
-        _logger = logger;
-        _environment = environment;
-    }
+    private readonly RequestDelegate _next = next;
+    private readonly ILogger<CsrfMiddleware> _logger = logger;
+    private readonly IHostEnvironment _environment = environment;
+    private static readonly string[] _safeMethods = { "GET", "HEAD", "OPTIONS", "TRACE" };
 
     public async Task InvokeAsync(HttpContext context, IAntiforgery antiforgery)
     {
@@ -54,7 +47,7 @@ public class CsrfMiddleware
 
         if (isAuthenticated)
         {
-            if (SafeMethods.Contains(context.Request.Method))
+            if (_safeMethods.Contains(context.Request.Method))
             {
                 // Generate and set CSRF token for safe methods
                 // GetAndStoreTokens generates both cookie and request tokens
