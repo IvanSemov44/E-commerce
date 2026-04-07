@@ -30,6 +30,9 @@ public class UserRepository(IdentityDbContext _db) : IUserRepository
     public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
         => _db.Users.AnyAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
 
+    public Task<int> GetCustomersCountAsync(CancellationToken cancellationToken = default)
+        => _db.Users.CountAsync(u => u.Role == ECommerce.Core.Enums.UserRole.Customer, cancellationToken);
+
     public async Task<DomainUser?> GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         var core = await LoadCoreUser()

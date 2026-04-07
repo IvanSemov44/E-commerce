@@ -46,6 +46,9 @@ public class CommandHandlerTests
         public Task<User?> GetByRefreshTokenAsync(string token, CancellationToken ct = default)
             => Task.FromResult(Store.FirstOrDefault(u => u.RefreshTokens.Any(t => t.Token == token)));
 
+        public Task<int> GetCustomersCountAsync(CancellationToken ct = default)
+            => Task.FromResult(Store.Count(u => u.Role == UserRole.Customer));
+
         public Task AddAsync(User user, CancellationToken ct = default)
         {
             Store.Add(user);
