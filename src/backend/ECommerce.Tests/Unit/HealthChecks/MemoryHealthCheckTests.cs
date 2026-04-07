@@ -1,4 +1,4 @@
-﻿using ECommerce.API.Configuration;
+using ECommerce.API.Shared.Configuration;
 using ECommerce.API.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -195,3 +195,4 @@ public class MemoryHealthCheckTests
         result.Status.Should().Be(HealthStatus.Degraded);
     }
 }
+

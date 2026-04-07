@@ -1,4 +1,4 @@
-﻿namespace ECommerce.API.Configuration;
+namespace ECommerce.API.Shared.Configuration;
 
 /// <summary>
 /// Centralized application configuration.
@@ -132,3 +132,4 @@ public class EmailSettings
     /// </summary>
     public string? FromName { get; set; } = "E-Commerce Team";
 }
+
