@@ -18,7 +18,7 @@ using ECommerce.Promotions.Application.Queries.GetPromoCodes;
 using ECommerce.Promotions.Application.Queries.ValidatePromoCode;
 using ECommerce.SharedKernel.Results;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Promotions.Controllers;
 
 [ApiController]
 [Route("api/promo-codes")]

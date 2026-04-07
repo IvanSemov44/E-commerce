@@ -1,4 +1,4 @@
-﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.ActionFilters;
 using ECommerce.API.Helpers;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Inventory;
@@ -14,7 +14,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Inventory.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

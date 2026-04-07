@@ -1,4 +1,4 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Extensions;
 using ECommerce.API.Helpers;
@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using CreateReviewRequestDto = ECommerce.Reviews.Application.DTOs.CreateReviewRequestDto;
 using UpdateReviewRequestDto = ECommerce.Reviews.Application.DTOs.UpdateReviewRequestDto;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Reviews.Controllers;
 
 /// <summary>
 /// Controller for managing product reviews.
