@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Core.Exceptions;
+using ECommerce.SharedKernel.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
