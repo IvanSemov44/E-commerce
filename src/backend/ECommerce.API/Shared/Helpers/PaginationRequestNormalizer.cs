@@ -1,6 +1,6 @@
-﻿using ECommerce.Core.Constants;
+using ECommerce.Core.Constants;
 
-namespace ECommerce.API.Helpers;
+namespace ECommerce.API.Shared.Helpers;
 
 /// <summary>
 /// Provides shared normalization for pagination query parameters.
@@ -20,3 +20,4 @@ public static class PaginationRequestNormalizer
         return (normalizedPage, normalizedPageSize);
     }
 }
+

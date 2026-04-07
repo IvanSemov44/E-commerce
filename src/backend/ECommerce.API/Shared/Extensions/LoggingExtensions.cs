@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // E-Commerce API - Serilog Logging Configuration Extensions
 // ============================================================================
 
@@ -6,7 +6,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Serilog;
 using Serilog.Events;
 
-namespace ECommerce.API.Extensions;
+namespace ECommerce.API.Shared.Extensions;
 
 /// <summary>
 /// Extension methods for configuring Serilog logging with cloud-ready sinks.
@@ -84,3 +84,4 @@ public static class LoggingExtensions
         return builder;
     }
 }
+

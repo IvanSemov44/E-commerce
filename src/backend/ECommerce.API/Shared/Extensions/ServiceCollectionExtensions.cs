@@ -1,4 +1,4 @@
-﻿using ECommerce.API.Configuration;
+using ECommerce.API.Shared.Configuration;
 using ECommerce.API.Behaviors;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Services;
@@ -35,7 +35,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using AutoMapper;
 
-namespace ECommerce.API.Extensions;
+namespace ECommerce.API.Shared.Extensions;
 
 /// <summary>
 /// Extension methods for IServiceCollection to configure application services.
@@ -762,3 +762,4 @@ public static class ServiceCollectionExtensions
         return "storefront";
     }
 }
+

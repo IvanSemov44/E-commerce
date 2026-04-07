@@ -1,6 +1,6 @@
-﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.ActionFilters;
 using ECommerce.API.Behaviors;
-using ECommerce.API.Extensions;
+using ECommerce.API.Shared.Extensions;
 using FluentValidation;
 using MediatR;
 using ECommerce.Catalog.Infrastructure;
@@ -204,3 +204,4 @@ await app.ApplyMigrationsAndSeedAsync();
 app.ConfigureMiddlewarePipeline();
 
 app.Run();
+

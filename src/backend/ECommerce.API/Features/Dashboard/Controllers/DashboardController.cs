@@ -1,5 +1,5 @@
-﻿using System.Collections.Frozen;
-using ECommerce.API.Extensions;
+using System.Collections.Frozen;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.API.Features.Dashboard.Models;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Catalog.Application.Queries.GetProductStats;
@@ -136,3 +136,4 @@ public class DashboardController(IMediator mediator, ILogger<DashboardController
         return BadRequest(body);
     }
 }
+

@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
-using ECommerce.API.Extensions;
-using ECommerce.API.Helpers;
+using ECommerce.API.Shared.Extensions;
+using ECommerce.API.Shared.Helpers;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Common;
@@ -207,3 +207,4 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
             Problem);
     }
 }
+

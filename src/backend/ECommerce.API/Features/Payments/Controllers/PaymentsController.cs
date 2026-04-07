@@ -1,7 +1,7 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using System.Text.Json;
 using ECommerce.API.ActionFilters;
-using ECommerce.API.Extensions;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using ECommerce.Payments.Application.Commands.ProcessPayment;
@@ -229,3 +229,4 @@ public class PaymentsController(
         return BadRequest(ApiResponse<object>.Failure(error.Message, error.Code));
     }
 }
+

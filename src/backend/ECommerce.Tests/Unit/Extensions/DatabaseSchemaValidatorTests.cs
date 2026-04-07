@@ -1,4 +1,4 @@
-﻿using ECommerce.API.Extensions;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.Infrastructure.Data;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -117,3 +117,4 @@ public class DatabaseSchemaValidatorTests
         await act.Should().NotThrowAsync();
     }
 }
+
