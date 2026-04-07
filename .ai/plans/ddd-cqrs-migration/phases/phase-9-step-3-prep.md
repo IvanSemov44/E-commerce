@@ -79,3 +79,85 @@ Expected at end of Step 3:
 - Step 4 shared folder moves (`Configuration`, `Extensions`, `Helpers`).
 - Any service/repository deletion work from Steps 5-7.
 - Business logic or API behavior modifications.
+
+## Execution Prompt (Ready To Implement)
+Use this prompt as-is when starting Step 3 implementation.
+
+You are implementing Phase 9 Step 3 in this repository.
+
+Mission:
+- Move all remaining API controllers from `src/backend/ECommerce.API/Controllers/` to `src/backend/ECommerce.API/Features/{Context}/Controllers/`.
+- Apply namespace and required using updates only.
+- Preserve behavior exactly.
+
+Success criteria:
+- Old `src/backend/ECommerce.API/Controllers/` folder is removed.
+- All production controllers exist under `Features/*/Controllers/`.
+- Build and required tests are green.
+
+Hard constraints:
+- No route changes.
+- No endpoint signature changes.
+- No auth/role logic changes.
+- No DTO/schema changes.
+- No business logic changes.
+- No Step 4+ scope work.
+- Do not edit frontend files.
+
+Execution order (must follow):
+1. Promotions, Reviews, Inventory
+   - `PromoCodesController` -> `Features/Promotions/Controllers/`
+   - `ReviewsController` -> `Features/Reviews/Controllers/`
+   - `InventoryController` -> `Features/Inventory/Controllers/`
+
+2. Catalog, Identity
+   - `CatalogProductsController` + `CatalogCategoriesController` -> `Features/Catalog/Controllers/`
+   - `AuthController` + `ProfileController` -> `Features/Identity/Controllers/`
+
+3. Shopping, Ordering
+   - `CartController` + `WishlistController` -> `Features/Shopping/Controllers/`
+   - `OrdersController` -> `Features/Ordering/Controllers/`
+
+4. IntegrationOps and cleanup
+   - `IntegrationDeadLettersController` -> `Features/IntegrationOps/Controllers/`
+   - Delete old `Controllers/` folder only after it is empty
+   - Update architecture tests that assume old controller file paths
+
+Required gate after each execution-order batch:
+1. `dotnet build src/backend/ECommerce.sln`
+2. If build fails:
+   - Stop progression to next batch
+   - Fix only move-related compile issues
+   - Re-run build until green
+
+Required final verification:
+1. `dotnet build src/backend/ECommerce.sln`
+2. `dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --filter "Controller"`
+3. `dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --filter "BackendGuideConventionsTests"`
+4. `rg "ECommerce.API/Controllers/.*Controller.cs" src/backend --glob "*.cs"`
+
+Expected final verification state:
+- Build green.
+- Controller-focused tests green.
+- Architecture conventions tests green.
+- No production controllers remain in old `Controllers/` path.
+
+Commit slicing rules (tiny commits):
+1. `refactor(api): move promotions reviews inventory controllers to features`
+2. `refactor(api): move catalog and identity controllers to features`
+3. `refactor(api): move shopping and ordering controllers to features`
+4. `refactor(api): move integrationops controller and remove legacy controllers folder`
+5. `test(architecture): update controller path assumptions for feature folders`
+
+Failure protocol:
+- If any test/build gate fails after reasonable targeted fixes, stop and report:
+  - exact failing command
+  - first failing test or error
+  - minimal next patch proposal
+
+Final response format:
+1. Files moved (source -> destination)
+2. Namespace/usings-only confirmation
+3. Build and test command results
+4. Commits created (hash + message)
+5. Residual risks or Step 4 handoff notes
