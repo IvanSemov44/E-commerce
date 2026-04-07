@@ -1,8 +1,10 @@
 ﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.Features.Wishlist;
 using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using ECommerce.Core.Results;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,13 +20,13 @@ namespace ECommerce.API.Controllers;
 [Authorize]
 public class WishlistController : ControllerBase
 {
-    private readonly IWishlistService _wishlistService;
+    private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<WishlistController> _logger;
 
-    public WishlistController(IWishlistService wishlistService, ICurrentUserService currentUser, ILogger<WishlistController> logger)
+    public WishlistController(IMediator mediator, ICurrentUserService currentUser, ILogger<WishlistController> logger)
     {
-        _wishlistService = wishlistService;
+        _mediator = mediator;
         _currentUser = currentUser;
         _logger = logger;
     }
@@ -49,7 +51,7 @@ public class WishlistController : ControllerBase
 
         _logger.LogInformation("Retrieving wishlist for user {UserId}", userId.Value);
 
-        var result = await _wishlistService.GetUserWishlistAsync(userId.Value, cancellationToken: cancellationToken);
+        var result = await _mediator.Send(new GetWishlistQuery(userId.Value), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist retrieved successfully"))
             : result is Result<WishlistDto>.Failure failure
@@ -81,7 +83,7 @@ public class WishlistController : ControllerBase
 
         _logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", dto.ProductId, userId.Value);
 
-        var result = await _wishlistService.AddToWishlistAsync(userId.Value, dto.ProductId, cancellationToken: cancellationToken);
+        var result = await _mediator.Send(new AddToWishlistCommand(userId.Value, dto.ProductId), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product added to wishlist successfully"))
             : result is Result<WishlistDto>.Failure failure
@@ -110,7 +112,7 @@ public class WishlistController : ControllerBase
 
         _logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", productId, userId.Value);
 
-        var result = await _wishlistService.RemoveFromWishlistAsync(userId.Value, productId, cancellationToken: cancellationToken);
+        var result = await _mediator.Send(new RemoveFromWishlistCommand(userId.Value, productId), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product removed from wishlist successfully"))
             : result is Result<WishlistDto>.Failure failure
@@ -137,7 +139,7 @@ public class WishlistController : ControllerBase
 
         _logger.LogInformation("Checking if product {ProductId} is in wishlist for user {UserId}", productId, userId.Value);
 
-        var isInWishlist = await _wishlistService.IsProductInWishlistAsync(userId.Value, productId, cancellationToken: cancellationToken);
+        var isInWishlist = await _mediator.Send(new IsProductInWishlistQuery(userId.Value, productId), cancellationToken);
         return Ok(ApiResponse<bool>.Ok(isInWishlist, "Check completed successfully"));
     }
 
@@ -161,7 +163,7 @@ public class WishlistController : ControllerBase
 
         _logger.LogInformation("Clearing wishlist for user {UserId}", userId.Value);
 
-        var result = await _wishlistService.ClearWishlistAsync(userId.Value, cancellationToken: cancellationToken);
+        var result = await _mediator.Send(new ClearWishlistCommand(userId.Value), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist cleared successfully"))
             : result is Result<WishlistDto>.Failure failure
