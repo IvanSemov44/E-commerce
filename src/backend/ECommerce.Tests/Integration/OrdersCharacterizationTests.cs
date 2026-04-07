@@ -67,7 +67,7 @@ public class OrdersCharacterizationTests
     [TestMethod]
     public async Task GetOrderById_ExistingOrder_Returns200()
     {
-        var client = Factory.CreateClient();
+        var client = Factory.CreateAuthenticatedClient();
         var orderId = Guid.Parse("44444444-4444-4444-4444-444444444444");
 
         var response = await client.GetAsync($"/api/orders/{orderId}");
@@ -79,7 +79,7 @@ public class OrdersCharacterizationTests
     [TestMethod]
     public async Task GetOrderById_UnknownId_Returns404()
     {
-        var client = Factory.CreateClient();
+        var client = Factory.CreateAuthenticatedClient();
         var unknownId = Guid.NewGuid();
 
         var response = await client.GetAsync($"/api/orders/{unknownId}");
