@@ -12,7 +12,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should display checkout page', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Check for checkout container
     page.locator('[class*="checkout"], [data-testid="checkout"]');
@@ -21,7 +21,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should redirect to login for unauthenticated users', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Should redirect to login or show login prompt
     const url = page.url();
@@ -32,7 +32,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should show cart items in checkout summary', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for cart items/summary
     const cartSummary = page.locator('[class*="cart-summary"], [class*="order-summary"]');
@@ -47,7 +47,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should display shipping address form', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for shipping address form
     const addressForm = page.locator('[class*="address"], form');
@@ -64,7 +64,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should show saved addresses for authenticated users', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for saved addresses
     const savedAddresses = page.locator('[class*="saved-address"], [class*="address-book"]');
@@ -73,14 +73,14 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should allow adding new shipping address', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for add address button
     const addAddressButton = page.locator('button:has-text("Add"), button:has-text("New Address")');
 
     if ((await addAddressButton.count()) > 0) {
       await addAddressButton.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should show address form
       const addressForm = page.locator('form, [class*="address-form"]');
@@ -92,7 +92,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should display payment method selection', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for payment methods
     const paymentMethods = page.locator('[class*="payment-method"], [class*="payment-option"]');
@@ -101,7 +101,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should show order total', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for order total
     const orderTotal = page.locator(':text("Total"), [class*="total"]');
@@ -110,7 +110,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should show shipping cost', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for shipping cost
     const shippingCost = page.locator(':text("Shipping"), [class*="shipping"]');
@@ -119,7 +119,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should show tax amount', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for tax
     const taxAmount = page.locator(':text("Tax"), :text("VAT"), [class*="tax"]');
@@ -128,7 +128,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should allow applying promo code', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for promo code input
     const promoInput = page.locator('input[placeholder*="promo" i], input[name*="promo"]').first();
@@ -139,7 +139,7 @@ test.describe('Checkout - Authenticated', () => {
       const applyButton = page.locator('button:has-text("Apply")').first();
       if ((await applyButton.count()) > 0) {
         await applyButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Should show validation result
         expect(true).toBeTruthy();
@@ -151,7 +151,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should validate required fields before placing order', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Try to place order without filling required fields
     const placeOrderButton = page
@@ -160,7 +160,7 @@ test.describe('Checkout - Authenticated', () => {
 
     if ((await placeOrderButton.count()) > 0) {
       await placeOrderButton.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should show validation errors
       const errorMessages = page.locator('[class*="error"], :text("required" i)');
@@ -174,7 +174,7 @@ test.describe('Checkout - Authenticated', () => {
     // This test would require a full checkout flow
     // For now, just check if confirmation page exists
     await page.goto('/checkout/confirmation');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for confirmation elements
     const confirmationMessage = page.locator(
@@ -185,7 +185,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should show order number on confirmation', async ({ page }) => {
     await page.goto('/checkout/confirmation');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for order number
     const orderNumber = page.locator(':text(/Order\\s*#?\\d+/i), [class*="order-number"]');
@@ -194,7 +194,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should allow continuing shopping after checkout', async ({ page }) => {
     await page.goto('/checkout/confirmation');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for continue shopping button
     const continueButton = page.locator(
@@ -203,7 +203,7 @@ test.describe('Checkout - Authenticated', () => {
 
     if ((await continueButton.count()) > 0) {
       await continueButton.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should navigate away from checkout
       expect(page.url()).not.toContain('checkout/confirmation');
@@ -214,7 +214,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should show estimated delivery date', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for delivery estimate
     const deliveryEstimate = page.locator(
@@ -225,7 +225,7 @@ test.describe('Checkout - Authenticated', () => {
 
   test('should allow selecting shipping method', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for shipping options
     const shippingOptions = page.locator(

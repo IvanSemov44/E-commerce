@@ -13,7 +13,7 @@ test.describe('Wishlist', () => {
   test('should display wishlist page', async ({ page }) => {
     // Navigate to wishlist
     await page.goto('/wishlist');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Check for wishlist container
     page.locator('[class*="wishlist"], [data-testid="wishlist"]');
@@ -24,7 +24,7 @@ test.describe('Wishlist', () => {
 
   test('should show empty state when wishlist is empty', async ({ page }) => {
     await page.goto('/wishlist');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for empty state message
     const emptyState = page.locator(
@@ -42,14 +42,14 @@ test.describe('Wishlist', () => {
   test('should add product to wishlist from product page', async ({ page }) => {
     // Navigate to a product page
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Click on first product
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for add to wishlist button
       const wishlistButton = page
@@ -60,7 +60,7 @@ test.describe('Wishlist', () => {
 
       if ((await wishlistButton.count()) > 0) {
         await wishlistButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Check for success indication
         const successToast = page.locator('[class*="toast"], [role="alert"]');
@@ -78,7 +78,7 @@ test.describe('Wishlist', () => {
 
   test('should remove item from wishlist', async ({ page }) => {
     await page.goto('/wishlist');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Check if there are items in wishlist
     const wishlistItem = page
@@ -93,7 +93,7 @@ test.describe('Wishlist', () => {
 
       if ((await removeButton.count()) > 0) {
         await removeButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Item should be removed
         const itemsAfter = await page
@@ -110,7 +110,7 @@ test.describe('Wishlist', () => {
 
   test('should move item from wishlist to cart', async ({ page }) => {
     await page.goto('/wishlist');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const wishlistItem = page
       .locator('[class*="wishlist-item"], [data-testid="wishlist-item"]')
@@ -124,7 +124,7 @@ test.describe('Wishlist', () => {
 
       if ((await addToCartButton.count()) > 0) {
         await addToCartButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Check for success indication
         const successToast = page.locator('[class*="toast"], [role="alert"]');
@@ -139,7 +139,7 @@ test.describe('Wishlist', () => {
 
   test('should navigate to product from wishlist', async ({ page }) => {
     await page.goto('/wishlist');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const wishlistItem = page
       .locator('[class*="wishlist-item"], [data-testid="wishlist-item"]')
@@ -151,14 +151,14 @@ test.describe('Wishlist', () => {
 
       if ((await productLink.count()) > 0) {
         await productLink.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Should be on product page
         expect(page.url()).toContain('/products/');
       } else {
         // Click on the item itself
         await wishlistItem.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Check if navigated
         const currentUrl = page.url();
@@ -171,7 +171,7 @@ test.describe('Wishlist', () => {
 
   test('should display product price in wishlist', async ({ page }) => {
     await page.goto('/wishlist');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const wishlistItem = page
       .locator('[class*="wishlist-item"], [data-testid="wishlist-item"]')
@@ -210,13 +210,13 @@ test.describe('Wishlist', () => {
   test('should persist wishlist across page navigations', async ({ page }) => {
     // Add item to wishlist first
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const wishlistButton = page
         .locator('button:has-text("Wishlist"), [data-testid="add-to-wishlist"]')
@@ -224,15 +224,15 @@ test.describe('Wishlist', () => {
 
       if ((await wishlistButton.count()) > 0) {
         await wishlistButton.click();
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
 
         // Navigate to different page
         await page.goto('/');
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Go back to wishlist
         await page.goto('/wishlist');
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Item should still be there
         const wishlistItem = page.locator(

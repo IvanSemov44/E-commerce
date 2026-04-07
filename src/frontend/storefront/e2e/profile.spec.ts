@@ -18,7 +18,7 @@ test.describe('Profile Management', () => {
     await page.goto('/profile');
 
     // Should be redirected to login or see login form
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     const url = page.url();
     const hasLoginForm = (await page.locator('input[type="email"]').count()) > 0;
 
@@ -36,7 +36,7 @@ test.describe('Profile Management', () => {
 
     // Navigate to login and attempt authentication
     await loginLink.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Fill login form (would need valid test credentials)
     const emailInput = page.locator('input[type="email"]').first();
@@ -54,7 +54,7 @@ test.describe('Profile Management', () => {
   test('should display user information on profile page', async ({ page }) => {
     // Navigate to profile (would need authentication)
     await page.goto('/profile');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Check for profile elements
     const profileSection = page.locator('[class*="profile"], [data-testid="profile"]');
@@ -74,7 +74,7 @@ test.describe('Profile Management', () => {
 
   test('should allow updating profile information', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for editable profile form
     const editButton = page.locator('button:has-text("Edit"), button:has-text("Update")').first();
@@ -93,7 +93,7 @@ test.describe('Profile Management', () => {
         const saveButton = page.locator('button[type="submit"], button:has-text("Save")').first();
         if ((await saveButton.count()) > 0) {
           await saveButton.click();
-          await page.waitForTimeout(2000);
+          await page.waitForLoadState('networkidle');
 
           // Look for success message
           const successMessage = page.locator('[class*="success"], [role="alert"], .toast');
@@ -107,7 +107,7 @@ test.describe('Profile Management', () => {
 
   test('should display order history on profile', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for order history section
     const orderHistoryLink = page
@@ -116,7 +116,7 @@ test.describe('Profile Management', () => {
 
     if ((await orderHistoryLink.count()) > 0) {
       await orderHistoryLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Check for order list
       const orderList = page.locator('[class*="order"], [data-testid="order-list"]');
@@ -124,7 +124,7 @@ test.describe('Profile Management', () => {
     } else {
       // Try direct navigation
       await page.goto('/profile/orders');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
       expect(url).toContain('order');
@@ -133,7 +133,7 @@ test.describe('Profile Management', () => {
 
   test('should allow password change', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for password change section
     const passwordSection = page
@@ -142,7 +142,7 @@ test.describe('Profile Management', () => {
 
     if ((await passwordSection.count()) > 0) {
       await passwordSection.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for password form
       const currentPasswordInput = page
@@ -162,21 +162,21 @@ test.describe('Profile Management', () => {
 
   test('should display wishlist on profile', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for wishlist section
     const wishlistLink = page.locator('a[href*="wishlist"], a:has-text("Wishlist")').first();
 
     if ((await wishlistLink.count()) > 0) {
       await wishlistLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
       expect(url).toContain('wishlist');
     } else {
       // Try direct navigation
       await page.goto('/wishlist');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const wishlistContainer = page.locator('[class*="wishlist"], [data-testid="wishlist"]');
       expect((await wishlistContainer.count()) >= 0).toBeTruthy();
@@ -185,14 +185,14 @@ test.describe('Profile Management', () => {
 
   test('should allow account deletion or deactivation', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for account deletion option (usually in settings)
     const settingsLink = page.locator('a[href*="settings"], button:has-text("Settings")').first();
 
     if ((await settingsLink.count()) > 0) {
       await settingsLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for delete/deactivate option
       const deleteOption = page.locator('button:has-text("Delete"), button:has-text("Deactivate")');

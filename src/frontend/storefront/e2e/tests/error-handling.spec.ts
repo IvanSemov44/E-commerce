@@ -201,7 +201,6 @@ test.describe('Error Handling Tests', () => {
       // Attempt multiple logins
       for (let i = 0; i < 5; i++) {
         await loginPage.login('test@example.com', 'wrongpassword');
-        await page.waitForTimeout(100);
       }
 
       // Should show rate limit message
@@ -420,7 +419,7 @@ test.describe('Error Handling Tests', () => {
         await Promise.all([addButtons.nth(0).click(), addButtons.nth(1).click()]);
 
         // Wait for cart to update
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Cart should show correct count
         const cartCount = page.locator('[data-testid="cart-count"], .cart-count');
@@ -462,7 +461,7 @@ test.describe('Error Handling Tests', () => {
         await placeOrderButton.dblclick();
 
         // Should handle gracefully - either success or error, not both
-        await page.waitForTimeout(2000);
+        await page.waitForLoadState('networkidle');
 
         // Should not have multiple order confirmations
         const successMessages = page.locator('text=/order.*confirmed|thank you/i');
@@ -519,7 +518,7 @@ test.describe('Error Handling Tests', () => {
         await searchInput.press('Enter');
 
         // Should not execute script, should escape or show no results
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Page should still be functional
         const body = page.locator('body');
@@ -536,7 +535,7 @@ test.describe('Error Handling Tests', () => {
         await searchInput.press('Enter');
 
         // Should handle without crashing
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         const body = page.locator('body');
         await expect(body).toBeVisible();
@@ -610,8 +609,8 @@ test.describe('Error Handling Tests', () => {
       // Go offline
       await context.setOffline(true);
 
-      // Wait for offline state
-      await page.waitForTimeout(1000);
+      // Wait for offline state (cannot use networkidle while network is disabled)
+      await page.waitForTimeout(200);
 
       // Restore network
       await context.setOffline(false);

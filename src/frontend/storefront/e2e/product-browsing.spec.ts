@@ -53,7 +53,7 @@ test.describe('Product Browsing', () => {
       await searchInput.press('Enter');
 
       // Wait for results
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Verify search results or URL change
       const hasResults =
@@ -78,7 +78,7 @@ test.describe('Product Browsing', () => {
       await categoryLink.click();
 
       // Wait for navigation or filtering
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Verify products are still displayed
       const products = page.locator('[data-testid="product-card"], .product-card');
