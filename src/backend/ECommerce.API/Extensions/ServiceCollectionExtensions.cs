@@ -329,7 +329,6 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();
         // OrderService removed - migrated to Ordering bounded context with MediatR
-        services.AddScoped<IDashboardService, DashboardService>();
 
         // Inventory (Phase 3 - DDD extract)
         services.AddInventoryInfrastructure();

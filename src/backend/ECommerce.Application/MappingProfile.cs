@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using System.Globalization;
 using ECommerce.Core.Entities;
 using ECommerce.Application.DTOs.Products;
 using ECommerce.Application.DTOs.Auth;
@@ -164,13 +163,5 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.PromoCodeId, opt => opt.Ignore())
             .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
 
-        // Dashboard trend mappings from KeyValuePair<DateTime, T> to DTOs
-        CreateMap<KeyValuePair<DateTime, int>, ECommerce.Application.DTOs.Dashboard.OrderTrendDto>()
-            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
-            .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.Value));
-
-        CreateMap<KeyValuePair<DateTime, decimal>, ECommerce.Application.DTOs.Dashboard.RevenueTrendDto>()
-            .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
-            .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Value));
     }
 }

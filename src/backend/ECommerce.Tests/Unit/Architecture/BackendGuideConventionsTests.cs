@@ -66,24 +66,25 @@ public class BackendGuideConventionsTests
     public void HotspotControllers_ShouldPreferRoleOrNullOverThrowingRoleAccessor()
     {
         var repoRoot = GetRepositoryRoot();
-        var controllersPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API", "Controllers");
+        var apiRootPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API");
 
         var hotspotFiles = new[]
         {
-            "OrdersController.cs",
-            "PaymentsController.cs",
-            "ReviewsController.cs",
-            "WishlistController.cs",
-            "ProfileController.cs"
+            Path.Combine("Controllers", "OrdersController.cs"),
+            Path.Combine("Features", "Payments", "Controllers", "PaymentsController.cs"),
+            Path.Combine("Controllers", "ReviewsController.cs"),
+            Path.Combine("Controllers", "WishlistController.cs"),
+            Path.Combine("Controllers", "ProfileController.cs")
         };
 
-        foreach (var fileName in hotspotFiles)
+        foreach (var relativePath in hotspotFiles)
         {
-            var filePath = Path.Combine(controllersPath, fileName);
+            var filePath = Path.Combine(apiRootPath, relativePath);
+            Assert.IsTrue(File.Exists(filePath), $"Expected hotspot controller file not found: {relativePath}");
             var content = File.ReadAllText(filePath);
 
             Assert.IsFalse(Regex.IsMatch(content, @"_currentUser\.Role(?!OrNull)\b", RegexOptions.None),
-                $"Throw-based role accessor usage found in {fileName}. Prefer RoleOrNull for defensive checks.");
+                $"Throw-based role accessor usage found in {relativePath}. Prefer RoleOrNull for defensive checks.");
         }
     }
 

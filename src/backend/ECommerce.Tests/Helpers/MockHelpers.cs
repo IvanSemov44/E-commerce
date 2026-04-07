@@ -3,7 +3,6 @@ using ECommerce.Core.Common;
 using ECommerce.Core.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Globalization;
 
 namespace ECommerce.Tests.Helpers;
 
@@ -199,36 +198,6 @@ public static class MockHelpers
         // Note: No broad fallback mapping is configured so specific setups above
         // will be used. Tests that require other mappings should explicitly
         // configure the mock in their setup.
-
-        // Provide mapping for KeyValuePair<DateTime,int> -> OrderTrendDto
-        mock.Setup(m => m.Map<ECommerce.Application.DTOs.Dashboard.OrderTrendDto>(It.IsAny<object>())).Returns((object src) =>
-        {
-            if (src == null) return null!;
-            if (src is KeyValuePair<DateTime, int> kv)
-            {
-                return new ECommerce.Application.DTOs.Dashboard.OrderTrendDto
-                {
-                    Date = kv.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    Count = kv.Value
-                };
-            }
-            return null!;
-        });
-
-        // Provide mapping for KeyValuePair<DateTime,decimal> -> RevenueTrendDto
-        mock.Setup(m => m.Map<ECommerce.Application.DTOs.Dashboard.RevenueTrendDto>(It.IsAny<object>())).Returns((object src) =>
-        {
-            if (src == null) return null!;
-            if (src is KeyValuePair<DateTime, decimal> kv)
-            {
-                return new ECommerce.Application.DTOs.Dashboard.RevenueTrendDto
-                {
-                    Date = kv.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    Amount = kv.Value
-                };
-            }
-            return null!;
-        });
 
         return mock;
     }
