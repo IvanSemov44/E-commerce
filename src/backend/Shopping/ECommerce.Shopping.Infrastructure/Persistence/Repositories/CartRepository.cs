@@ -73,8 +73,6 @@ public class CartRepository(ShoppingDbContext _db) : ICartRepository
                 });
             }
         }
-
-        await _db.SaveChangesAsync(ct);
     }
 
     public async Task DeleteAsync(Cart cart, CancellationToken ct = default)
@@ -86,7 +84,6 @@ public class CartRepository(ShoppingDbContext _db) : ICartRepository
         if (existing is not null)
         {
             _db.Carts.Remove(existing);
-            await _db.SaveChangesAsync(ct);
         }
     }
 

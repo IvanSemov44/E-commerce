@@ -39,7 +39,5 @@ public class WishlistRepository(ShoppingDbContext _db) : IWishlistRepository
                 ProductId = productId
             }, ct);
         }
-
-        await _db.SaveChangesAsync(ct);
     }
 }

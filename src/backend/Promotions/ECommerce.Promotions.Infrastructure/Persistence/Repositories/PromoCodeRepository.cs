@@ -71,8 +71,6 @@ public class PromoCodeRepository(PromotionsDbContext db) : IPromoCodeRepository
         {
             db.Entry(existing).CurrentValues.SetValues(promoCode);
         }
-
-        await db.SaveChangesAsync(ct);
     }
 
     public async Task DeleteAsync(PromoCode promoCode, CancellationToken ct = default)
@@ -82,7 +80,6 @@ public class PromoCodeRepository(PromotionsDbContext db) : IPromoCodeRepository
         if (existing is not null)
         {
             db.PromoCodes.Remove(existing);
-            await db.SaveChangesAsync(ct);
         }
     }
 }

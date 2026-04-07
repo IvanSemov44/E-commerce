@@ -1,4 +1,4 @@
-using ECommerce.Ordering.Domain.Aggregates.Order;
+﻿using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.Interfaces;
 using ECommerce.Ordering.Domain.ValueObjects;
 using ECommerce.Ordering.Infrastructure.Persistence;
@@ -82,8 +82,6 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
                 ProductImageUrl = item.ProductImageUrl
             });
         }
-
-        await _db.SaveChangesAsync(ct);
     }
 
     public async Task UpdateAsync(Order order, CancellationToken ct = default)
@@ -102,8 +100,6 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
         var domainStatus = order.Status.Name;
         if (Enum.TryParse<Core.Enums.OrderStatus>(domainStatus, true, out var coreStatus))
             existing.Status = coreStatus;
-
-        await _db.SaveChangesAsync(ct);
     }
 
     private static Order MapToDomain(CoreOrder order, bool withItems)

@@ -1,4 +1,5 @@
 ﻿using ECommerce.API.Configuration;
+using ECommerce.API.Behaviors;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Services;
 using ECommerce.Application;
@@ -306,7 +307,7 @@ public static class ServiceCollectionExtensions
         // Old UnitOfWork — used by existing services, untouched.
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         // MediatRUnitOfWork — used by MediatR handlers, old code knows nothing about it.
-        services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, MediatRUnitOfWork>();
+        services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, CrossContextMediatRUnitOfWork>();
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection("IntegrationMessaging:Outbox"));
