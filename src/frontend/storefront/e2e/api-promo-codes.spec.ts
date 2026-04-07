@@ -14,7 +14,7 @@ const API_BASE = process.env.VITE_API_URL
   ? process.env.VITE_API_URL.replace(/\/?$/, '/')
   : 'http://localhost:5000/api/';
 
-const ADMIN_EMAIL = 'admin@example.com';
+const ADMIN_EMAIL = `admin-${crypto.randomUUID()}@example.com`;
 const ADMIN_PASSWORD = 'Admin123';
 const SEEDED_PROMO_ID = 'e635af42-c88d-4384-b8ae-d85b91212928';
 const SEEDED_CODE = 'SAVE20';
