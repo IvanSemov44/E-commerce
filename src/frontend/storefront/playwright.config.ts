@@ -4,6 +4,10 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright configuration for E2E tests
  * @see https://playwright.dev/docs/test-configuration
+ *
+ * Two modes:
+ *   npm run test:e2e          — dev server (port 5173, fast startup)
+ *   npm run test:e2e:preview  — production build on port 4173 (fastest tests, no HMR)
  */
 export default defineConfig({
   testDir: './e2e',
@@ -40,7 +44,7 @@ export default defineConfig({
 
   /* Configure projects for major browsers.
    * Default run: Chromium only (fast).
-   * Full cross-browser run: npx playwright test --project=chromium --project=firefox --project=webkit
+   * Full cross-browser run: PLAYWRIGHT_FULL_BROWSERS=1 npm run test:e2e
    */
   projects: [
     {
