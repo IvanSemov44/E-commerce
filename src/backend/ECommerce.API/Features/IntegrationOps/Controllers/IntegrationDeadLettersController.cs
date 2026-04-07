@@ -1,4 +1,4 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using ECommerce.API.Extensions;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Infrastructure.Integration;
@@ -6,7 +6,7 @@ using ECommerce.SharedKernel.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.IntegrationOps.Controllers;
 
 [ApiController]
 [Route("api/integration/dead-letters")]
