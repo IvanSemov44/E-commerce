@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
@@ -15,7 +15,7 @@ using ECommerce.Catalog.Application.Queries.GetCategoryById;
 using ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
 using CategoryDto = ECommerce.Catalog.Application.DTOs.Categories.CategoryDto;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Catalog.Controllers;
 
 [ApiController]
 [Route("api/categories")]

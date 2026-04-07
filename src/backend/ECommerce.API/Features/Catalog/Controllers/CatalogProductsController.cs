@@ -1,4 +1,4 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +28,7 @@ using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
 using ECommerce.Catalog.Application.Queries.SearchProducts;
 using CatalogCommon = ECommerce.Catalog.Application.DTOs.Common;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Catalog.Controllers;
 
 [ApiController]
 [Route("api/products")]

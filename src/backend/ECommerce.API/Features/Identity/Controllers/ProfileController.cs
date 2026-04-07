@@ -1,4 +1,4 @@
-﻿using ECommerce.Application.DTOs.Common;
+using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Identity.Application.Commands.ChangePassword;
 using ECommerce.Identity.Application.Commands.DeleteAddress;
@@ -11,7 +11,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Identity.Controllers;
 
 /// <summary>
 /// Controller for managing user profile operations.

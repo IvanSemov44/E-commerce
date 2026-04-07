@@ -1,4 +1,4 @@
-﻿using ECommerce.Application.DTOs.Auth;
+using ECommerce.Application.DTOs.Auth;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using ECommerce.Identity.Application.Commands.ForgotPassword;
@@ -19,7 +19,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Identity.Controllers;
 
 /// <summary>
 /// Controller for authentication operations including registration and login.
