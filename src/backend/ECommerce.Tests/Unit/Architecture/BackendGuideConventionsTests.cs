@@ -10,8 +10,8 @@ public class BackendGuideConventionsTests
     public void ApiControllers_ShouldNotUseInlinePaginationClampMagicNumbers()
     {
         var repoRoot = GetRepositoryRoot();
-        var controllersPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API", "Controllers");
-        var controllerFiles = Directory.GetFiles(controllersPath, "*.cs", SearchOption.TopDirectoryOnly);
+        var featuresPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API", "Features");
+        var controllerFiles = Directory.GetFiles(featuresPath, "*Controller.cs", SearchOption.AllDirectories);
 
         var forbiddenPatterns = new[]
         {
@@ -70,11 +70,11 @@ public class BackendGuideConventionsTests
 
         var hotspotFiles = new[]
         {
-            Path.Combine("Controllers", "OrdersController.cs"),
+            Path.Combine("Features", "Ordering", "Controllers", "OrdersController.cs"),
             Path.Combine("Features", "Payments", "Controllers", "PaymentsController.cs"),
-            Path.Combine("Controllers", "ReviewsController.cs"),
-            Path.Combine("Controllers", "WishlistController.cs"),
-            Path.Combine("Controllers", "ProfileController.cs")
+            Path.Combine("Features", "Reviews", "Controllers", "ReviewsController.cs"),
+            Path.Combine("Features", "Shopping", "Controllers", "WishlistController.cs"),
+            Path.Combine("Features", "Identity", "Controllers", "ProfileController.cs")
         };
 
         foreach (var relativePath in hotspotFiles)
