@@ -1,5 +1,5 @@
-﻿using ECommerce.Application.DTOs.Payments;
-using ECommerce.Application.Services;
+﻿using ECommerce.Payments.Application.DTOs;
+using ECommerce.Payments.Infrastructure.Services;
 using FluentAssertions;
 
 namespace ECommerce.Tests.Unit.Services;

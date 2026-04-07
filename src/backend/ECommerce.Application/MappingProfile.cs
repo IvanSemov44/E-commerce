@@ -7,7 +7,6 @@ using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.DTOs.Inventory;
 using ECommerce.Application.DTOs.Reviews;
-using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Users;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Categories;
@@ -113,23 +112,6 @@ public class MappingProfile : Profile
 
         // Address mappings
         CreateMap<Address, AddressDto>();
-
-        // Wishlist mappings
-        CreateMap<Wishlist, WishlistDto>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
-            .ForMember(dest => dest.Items, opt => opt.Ignore())
-            .ForMember(dest => dest.ItemCount, opt => opt.Ignore());
-
-        CreateMap<Product, ECommerce.Application.DTOs.Wishlist.WishlistItemDto>()
-            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
-            .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.Images.FirstOrDefault() != null ? src.Images.FirstOrDefault()!.Url : null))
-            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
-            .ForMember(dest => dest.CompareAtPrice, opt => opt.MapFrom(src => src.CompareAtPrice))
-            .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.StockQuantity))
-            .ForMember(dest => dest.IsAvailable, opt => opt.MapFrom(src => src.IsActive && src.StockQuantity > 0))
-            .ForMember(dest => dest.AddedAt, opt => opt.Ignore())
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
 
         // Inventory mappings
         CreateMap<Product, InventoryDto>()

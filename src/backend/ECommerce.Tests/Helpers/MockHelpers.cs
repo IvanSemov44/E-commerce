@@ -149,27 +149,6 @@ public static class MockHelpers
             return dto;
         });
 
-        // Provide mapping for Product -> WishlistItemDto used by wishlist service tests
-        mock.Setup(m => m.Map<ECommerce.Application.DTOs.Wishlist.WishlistItemDto>(It.IsAny<object>())).Returns((object src) =>
-        {
-            if (src == null) return null!;
-            var prod = src as ECommerce.Core.Entities.Product;
-            if (prod == null) return null!;
-
-            return new ECommerce.Application.DTOs.Wishlist.WishlistItemDto
-            {
-                Id = Guid.Empty,
-                ProductId = prod.Id,
-                ProductName = prod.Name,
-                ProductImage = prod.Images.FirstOrDefault() != null ? prod.Images.FirstOrDefault()!.Url : null,
-                Price = prod.Price,
-                CompareAtPrice = prod.CompareAtPrice,
-                StockQuantity = prod.StockQuantity,
-                IsAvailable = prod.IsActive && prod.StockQuantity > 0,
-                AddedAt = DateTime.MinValue
-            };
-        });
-
         // Provide mapping for CreateOrderItemDto -> OrderItem used by OrderService tests
         // Note: ProductName, Price, and ImageUrl are now populated by OrderService from Product entity
         mock.Setup(m => m.Map<ECommerce.Core.Entities.OrderItem>(It.IsAny<object>())).Returns((object src) =>

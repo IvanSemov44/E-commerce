@@ -1,7 +1,6 @@
 ﻿using ECommerce.API.ActionFilters;
 using ECommerce.API.Behaviors;
 using ECommerce.API.Extensions;
-using ECommerce.Application.Interfaces;
 using FluentValidation;
 using MediatR;
 using ECommerce.Catalog.Infrastructure;
@@ -13,6 +12,9 @@ using ECommerce.Shopping.Application.Commands.AddToCart;
 using ECommerce.Shopping.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
 using ECommerce.Promotions.Application.Commands.CreatePromoCode;
+using ECommerce.Payments.Infrastructure;
+using ECommerce.Payments.Application.Commands.ProcessPayment;
+using ECommerce.Payments.Application.Interfaces;
 using ECommerce.Reviews.Application.Commands;
 using ECommerce.Reviews.Infrastructure;
 using ECommerce.Ordering.Infrastructure;
@@ -91,6 +93,9 @@ builder.Services.AddIdentityInfrastructure();
 // Promotions Infrastructure (Phase 5)
 builder.Services.AddPromotionsInfrastructure();
 
+// Payments Infrastructure (Phase 9)
+builder.Services.AddPaymentsInfrastructure();
+
 // Reviews Infrastructure (Phase 6)
 builder.Services.AddReviewsInfrastructure(builder.Configuration);
 
@@ -116,6 +121,7 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(ECommerce.Ordering.Application.Commands.PlaceOrder.PlaceOrderCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ProcessPaymentCommand).Assembly);
 
     // Pipeline order matters: outermost first
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
@@ -134,6 +140,7 @@ builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Shopping.Application
 builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Promotions.Application.Commands.CreatePromoCode.CreatePromoCodeCommand).Assembly);
 // Also register validators from the Identity application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(ProcessPaymentCommand).Assembly);
 
 // Controllers & Validation
 builder.Services.AddControllers()
@@ -179,7 +186,7 @@ if (!app.Environment.IsEnvironment("Test"))
             // This catches missing dependencies and circular references early
             _ = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-            _ = scope.ServiceProvider.GetRequiredService<IPaymentService>();
+            _ = scope.ServiceProvider.GetRequiredService<IWebhookVerificationService>();
         }
         Serilog.Log.Information("✓ Dependency injection validation passed. All critical services are resolvable.");
     }

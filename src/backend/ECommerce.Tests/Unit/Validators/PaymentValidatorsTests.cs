@@ -1,6 +1,6 @@
 ﻿using FluentValidation.TestHelper;
-using ECommerce.Application.DTOs.Payments;
-using ECommerce.Application.Validators.Payments;
+using ECommerce.Payments.Application.DTOs;
+using ECommerce.Payments.Application.Validators;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Unit.Validators;

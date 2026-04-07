@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Core.Entities;
 using ECommerce.Application.Interfaces;
+using ECommerce.Payments.Application.Interfaces;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
@@ -179,6 +180,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IPromoProjectionEventPublisher>();
             services.AddSingleton<IPromoProjectionEventPublisher, NoOpPromoProjectionEventPublisher>();
+
+            services.RemoveAll<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher>();
+            services.AddScoped<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher, NoOpInventoryProjectionEventPublisher>();
 
             // Use a separate internal service provider for EF InMemory to avoid multiple provider registrations
             var inMemoryServiceProvider = new ServiceCollection()
@@ -417,6 +421,62 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     UpdatedAt = DateTime.UtcNow
                 });
 
+                // Seed a pending order in OrderingDbContext so ship/cancel handlers can find it
+                var testOrderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+                orderingDb.Orders.Add(new ECommerce.Core.Entities.Order
+                {
+                    Id = testOrderId,
+                    OrderNumber = "TEST-ORDER-001",
+                    UserId = userId,
+                    Status = Core.Enums.OrderStatus.Pending,
+                    PaymentStatus = Core.Enums.PaymentStatus.Paid,
+                    Subtotal = 20.00m,
+                    DiscountAmount = 0.00m,
+                    ShippingAmount = 10.00m,
+                    TaxAmount = 0.00m,
+                    TotalAmount = 30.00m,
+                    Currency = "USD",
+                    RowVersion = Array.Empty<byte>()
+                });
+                orderingDb.OrderItems.Add(new ECommerce.Core.Entities.OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = testOrderId,
+                    ProductId = productId,
+                    ProductName = "IntegrationProduct",
+                    UnitPrice = 10.00m,
+                    Quantity = 2,
+                    TotalPrice = 20.00m
+                });
+
+                // Seed a shipped order so cancel-shipped tests can find it
+                var shippedOrderId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+                orderingDb.Orders.Add(new ECommerce.Core.Entities.Order
+                {
+                    Id = shippedOrderId,
+                    OrderNumber = "TEST-ORDER-SHIPPED-001",
+                    UserId = userId,
+                    Status = Core.Enums.OrderStatus.Shipped,
+                    PaymentStatus = Core.Enums.PaymentStatus.Paid,
+                    Subtotal = 20.00m,
+                    DiscountAmount = 0.00m,
+                    ShippingAmount = 10.00m,
+                    TaxAmount = 0.00m,
+                    TotalAmount = 30.00m,
+                    Currency = "USD",
+                    RowVersion = Array.Empty<byte>()
+                });
+                orderingDb.OrderItems.Add(new ECommerce.Core.Entities.OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = shippedOrderId,
+                    ProductId = productId,
+                    ProductName = "IntegrationProduct",
+                    UnitPrice = 10.00m,
+                    Quantity = 2,
+                    TotalPrice = 20.00m
+                });
+
                 var promoCodeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE20");
                 var discountValueResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(20);
                 if (promoCodeResult.IsSuccess && discountValueResult.IsSuccess)
@@ -579,6 +639,16 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     private sealed class TestWebhookVerificationService : IWebhookVerificationService
     {
         public bool VerifySignature(string payload, string signature) => true;
+    }
+
+    private sealed class NoOpInventoryProjectionEventPublisher : ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher
+    {
+        public Task PublishStockProjectionUpdatedAsync(
+            Guid productId,
+            int quantity,
+            string reason,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 
     private sealed class NoOpPromoProjectionEventPublisher : IPromoProjectionEventPublisher

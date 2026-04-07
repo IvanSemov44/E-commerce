@@ -16,6 +16,7 @@ using ECommerce.Infrastructure.Integration;
 using ECommerce.Inventory.Infrastructure;
 using ECommerce.Shopping.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
+using ECommerce.Payments.Infrastructure;
 using ECommerce.Contracts;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -326,11 +327,8 @@ public static class ServiceCollectionExtensions
         // Domain services
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-        services.AddScoped<IPaymentService, PaymentService>();
-        services.AddSingleton<IPaymentStore, InMemoryPaymentStore>();
         services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();
         // OrderService removed - migrated to Ordering bounded context with MediatR
-        services.AddScoped<IWishlistService, WishlistService>();
         services.AddScoped<IDashboardService, DashboardService>();
 
         // Inventory (Phase 3 - DDD extract)
@@ -342,9 +340,11 @@ public static class ServiceCollectionExtensions
         // Promotions (Phase 5 - DDD extract)
         services.AddPromotionsInfrastructure();
 
+        // Payments (Phase 9 - DDD extract)
+        services.AddPaymentsInfrastructure();
+
         // IInventoryService kept for OrderService compatibility
         services.AddScoped<IInventoryService, InventoryService>();
-        services.AddScoped<IWebhookVerificationService, WebhookVerificationService>();
 
         // Email service based on configuration
         var emailProvider = configuration["EmailProvider"] ?? "SendGrid";
