@@ -1,11 +1,8 @@
-﻿using FluentValidation;
-using ECommerce.Application.DTOs.Wishlist;
+﻿using ECommerce.Shopping.Application.DTOs;
+using FluentValidation;
 
-namespace ECommerce.Application.Validators.Wishlist;
+namespace ECommerce.Shopping.Application.Validators.Wishlist;
 
-/// <summary>
-/// Validator for AddToWishlistDto - validates wishlist addition requests.
-/// </summary>
 public class AddToWishlistDtoValidator : AbstractValidator<AddToWishlistDto>
 {
     public AddToWishlistDtoValidator()

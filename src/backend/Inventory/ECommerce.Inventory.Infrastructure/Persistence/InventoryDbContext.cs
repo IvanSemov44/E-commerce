@@ -1,5 +1,6 @@
 ﻿using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using Microsoft.EntityFrameworkCore;
+using ECommerce.Inventory.Infrastructure.Persistence.Configurations;
 
 namespace ECommerce.Inventory.Infrastructure.Persistence;
 
@@ -12,6 +13,7 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.HasDefaultSchema("inventory");
+        modelBuilder.ApplyConfiguration(new InventoryItemConfiguration());
         modelBuilder.Entity<InventoryItem>().ToTable("InventoryItems");
     }
 }

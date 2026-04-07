@@ -20,6 +20,7 @@
     <!-- Integration Testing -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
 
     <!-- Test Data Generation -->
     <PackageReference Include="Bogus" Version="35.6.1" />
@@ -48,6 +49,7 @@
     <ProjectReference Include="..\Ordering\ECommerce.Ordering.Infrastructure\ECommerce.Ordering.Infrastructure.csproj" />
     <ProjectReference Include="..\Shopping\ECommerce.Shopping.Infrastructure\ECommerce.Shopping.Infrastructure.csproj" />
     <ProjectReference Include="..\Reviews\ECommerce.Reviews.Infrastructure\ECommerce.Reviews.Infrastructure.csproj" />
+    <ProjectReference Include="..\Promotions\ECommerce.Promotions.Infrastructure\ECommerce.Promotions.Infrastructure.csproj" />
     <ProjectReference Include="..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 

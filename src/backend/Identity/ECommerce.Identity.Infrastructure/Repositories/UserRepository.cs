@@ -28,7 +28,7 @@ public class UserRepository(IdentityDbContext _db) : IUserRepository
     }
 
     public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
-        => _db.Users.AnyAsync(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase), cancellationToken); // ToLowerInvariant normalised before DB compare
+        => _db.Users.AnyAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
 
     public async Task<DomainUser?> GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {

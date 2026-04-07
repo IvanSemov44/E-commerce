@@ -1,4 +1,5 @@
 ﻿using ECommerce.Promotions.Domain.Aggregates.PromoCode;
+using ECommerce.Promotions.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Promotions.Infrastructure.Persistence;
@@ -12,6 +13,7 @@ public class PromotionsDbContext(DbContextOptions<PromotionsDbContext> options) 
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.HasDefaultSchema("promotions");
+        modelBuilder.ApplyConfiguration(new PromoCodeConfiguration());
         modelBuilder.Entity<PromoCode>().ToTable("PromoCodes");
     }
 }

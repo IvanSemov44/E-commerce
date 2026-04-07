@@ -63,17 +63,6 @@ public class BackendGuideConventionsTests
     }
 
     [TestMethod]
-    public void WishlistService_ShouldUseMapperForWishlistDtoConstruction()
-    {
-        var repoRoot = GetRepositoryRoot();
-        var wishlistServicePath = Path.Combine(repoRoot, "src", "backend", "ECommerce.Application", "Services", "WishlistService.cs");
-        var content = File.ReadAllText(wishlistServicePath);
-
-        Assert.IsFalse(content.Contains("new WishlistDto", StringComparison.Ordinal),
-            "Manual WishlistDto construction found in WishlistService. Use AutoMapper-based mapping instead.");
-    }
-
-    [TestMethod]
     public void HotspotControllers_ShouldPreferRoleOrNullOverThrowingRoleAccessor()
     {
         var repoRoot = GetRepositoryRoot();

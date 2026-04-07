@@ -17,6 +17,7 @@ using ECommerce.Reviews.Application.Commands;
 using ECommerce.Reviews.Infrastructure;
 using ECommerce.Ordering.Infrastructure;
 using ECommerce.Ordering.Application.Commands.PlaceOrder;
+using Microsoft.AspNetCore.Mvc;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -127,13 +128,33 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 // Also register validators from the Catalog application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(CreateProductCommand).Assembly);
+// Also register validators from the Shopping application assembly
+builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly);
 // Also register validators from the Promotions application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Promotions.Application.Commands.CreatePromoCode.CreatePromoCodeCommand).Assembly);
 // Also register validators from the Identity application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
 
 // Controllers & Validation
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var validationErrors = context.ModelState
+                .Where(ms => ms.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
+
+            var errorResponse = ECommerce.Application.DTOs.Common.ApiResponse<object>.Failure(
+                "Validation failed",
+                "VALIDATION_FAILED",
+                validationErrors);
+
+            return new BadRequestObjectResult(errorResponse);
+        };
+    });
 builder.Services.AddScoped<ValidationFilterAttribute>();
 
 // Swagger Documentation

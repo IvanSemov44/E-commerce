@@ -1,12 +1,16 @@
 ﻿using ECommerce.API.ActionFilters;
-using ECommerce.API.Features.Wishlist;
-using ECommerce.Application.DTOs.Wishlist;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
-using ECommerce.Core.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ECommerce.Shopping.Application.Commands.AddToWishlist;
+using ECommerce.Shopping.Application.Commands.ClearWishlist;
+using ECommerce.Shopping.Application.Commands.RemoveFromWishlist;
+using ECommerce.Shopping.Application.DTOs;
+using ECommerce.Shopping.Application.Queries.GetWishlist;
+using ECommerce.Shopping.Application.Queries.IsProductInWishlist;
+using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.API.Controllers;
 
@@ -18,19 +22,8 @@ namespace ECommerce.API.Controllers;
 [Produces("application/json")]
 [Tags("Wishlist")]
 [Authorize]
-public class WishlistController : ControllerBase
+public class WishlistController(IMediator mediator, ICurrentUserService currentUser, ILogger<WishlistController> logger) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUser;
-    private readonly ILogger<WishlistController> _logger;
-
-    public WishlistController(IMediator mediator, ICurrentUserService currentUser, ILogger<WishlistController> logger)
-    {
-        _mediator = mediator;
-        _currentUser = currentUser;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Retrieves the authenticated user's wishlist with all saved products.
     /// </summary>
@@ -45,17 +38,17 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWishlist(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = currentUser.UserIdOrNull;
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Retrieving wishlist for user {UserId}", userId.Value);
+        logger.LogInformation("Retrieving wishlist for user {UserId}", userId.Value);
 
-        var result = await _mediator.Send(new GetWishlistQuery(userId.Value), cancellationToken);
+        var result = await mediator.Send(new GetWishlistQuery(userId.Value), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist retrieved successfully"))
             : result is Result<WishlistDto>.Failure failure
-                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Error.Message, failure.Error.Code))
                 : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -77,17 +70,17 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AddToWishlist([FromBody] AddToWishlistDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = currentUser.UserIdOrNull;
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", dto.ProductId, userId.Value);
+        logger.LogInformation("Adding product {ProductId} to wishlist for user {UserId}", dto.ProductId, userId.Value);
 
-        var result = await _mediator.Send(new AddToWishlistCommand(userId.Value, dto.ProductId), cancellationToken);
+        var result = await mediator.Send(new AddToWishlistCommand(userId.Value, dto.ProductId), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product added to wishlist successfully"))
             : result is Result<WishlistDto>.Failure failure
-                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Error.Message, failure.Error.Code))
                 : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -106,17 +99,17 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = currentUser.UserIdOrNull;
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", productId, userId.Value);
+        logger.LogInformation("Removing product {ProductId} from wishlist for user {UserId}", productId, userId.Value);
 
-        var result = await _mediator.Send(new RemoveFromWishlistCommand(userId.Value, productId), cancellationToken);
+        var result = await mediator.Send(new RemoveFromWishlistCommand(userId.Value, productId), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Product removed from wishlist successfully"))
             : result is Result<WishlistDto>.Failure failure
-                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Error.Message, failure.Error.Code))
                 : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
@@ -133,14 +126,18 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> IsProductInWishlist(Guid productId, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = currentUser.UserIdOrNull;
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<bool>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Checking if product {ProductId} is in wishlist for user {UserId}", productId, userId.Value);
+        logger.LogInformation("Checking if product {ProductId} is in wishlist for user {UserId}", productId, userId.Value);
 
-        var isInWishlist = await _mediator.Send(new IsProductInWishlistQuery(userId.Value, productId), cancellationToken);
-        return Ok(ApiResponse<bool>.Ok(isInWishlist, "Check completed successfully"));
+        var isInWishlist = await mediator.Send(new IsProductInWishlistQuery(userId.Value, productId), cancellationToken);
+        return isInWishlist is Result<bool>.Success success
+            ? Ok(ApiResponse<bool>.Ok(success.Data, "Check completed successfully"))
+            : isInWishlist is Result<bool>.Failure failure
+                ? BadRequest(ApiResponse<bool>.Failure(failure.Error.Message, failure.Error.Code))
+                : BadRequest(ApiResponse<bool>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 
     /// <summary>
@@ -157,17 +154,17 @@ public class WishlistController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearWishlist(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
+        var userId = currentUser.UserIdOrNull;
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        _logger.LogInformation("Clearing wishlist for user {UserId}", userId.Value);
+        logger.LogInformation("Clearing wishlist for user {UserId}", userId.Value);
 
-        var result = await _mediator.Send(new ClearWishlistCommand(userId.Value), cancellationToken);
+        var result = await mediator.Send(new ClearWishlistCommand(userId.Value), cancellationToken);
         return result is Result<WishlistDto>.Success success
             ? Ok(ApiResponse<WishlistDto>.Ok(success.Data, "Wishlist cleared successfully"))
             : result is Result<WishlistDto>.Failure failure
-                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Message, failure.Code))
+                ? BadRequest(ApiResponse<WishlistDto>.Failure(failure.Error.Message, failure.Error.Code))
                 : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 }

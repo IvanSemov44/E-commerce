@@ -1,4 +1,5 @@
 ﻿using ECommerce.Core.Entities;
+using ECommerce.Infrastructure.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Identity.Infrastructure.Persistence;
@@ -14,6 +15,7 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.HasDefaultSchema("public");
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserConfiguration).Assembly);
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens");
         modelBuilder.Entity<Address>().ToTable("Addresses");
