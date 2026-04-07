@@ -1,4 +1,4 @@
-﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
@@ -14,7 +14,7 @@ using ECommerce.Ordering.Application.Queries.GetOrderById;
 using ECommerce.SharedKernel.Results;
 using OrderingQueries = ECommerce.Ordering.Application.Queries;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Ordering.Controllers;
 
 /// <summary>
 /// Controller for order management.

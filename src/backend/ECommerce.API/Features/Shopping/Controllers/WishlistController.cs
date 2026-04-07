@@ -1,4 +1,4 @@
-﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.Interfaces;
 using MediatR;
@@ -12,7 +12,7 @@ using ECommerce.Shopping.Application.Queries.GetWishlist;
 using ECommerce.Shopping.Application.Queries.IsProductInWishlist;
 using ECommerce.SharedKernel.Results;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Shopping.Controllers;
 
 /// <summary>
 /// Controller for managing user wishlists.

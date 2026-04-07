@@ -1,4 +1,4 @@
-﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.ActionFilters;
 using ECommerce.Application.DTOs.Common;
 using ECommerce.Application.DTOs.Cart;
 using ECommerce.Application.Interfaces;
@@ -12,7 +12,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECommerce.API.Controllers;
+namespace ECommerce.API.Features.Shopping.Controllers;
 
 /// <summary>
 /// Controller for shopping cart management operations. Uses MediatR CQRS pattern.
