@@ -1,4 +1,4 @@
-using ECommerce.API.Shared.Configuration;
+﻿using ECommerce.API.Shared.Configuration;
 using ECommerce.API.Behaviors;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Services;
@@ -8,7 +8,6 @@ using ECommerce.Application.Interfaces;
 using ECommerce.Application.Services;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.Application.Validators.Cart;
-using ECommerce.Core.Interfaces.Repositories;
 using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
@@ -305,9 +304,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<ECommerce.Promotions.Application.Validators.ValidatePromoCodeRequestDtoValidator>();
 
-        // Old UnitOfWork — used by existing services, untouched.
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-        // MediatRUnitOfWork — used by MediatR handlers, old code knows nothing about it.
+        // Cross-context UoW used by MediatR handlers.
         services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, CrossContextMediatRUnitOfWork>();
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
@@ -341,9 +338,6 @@ public static class ServiceCollectionExtensions
 
         // Payments (Phase 9 - DDD extract)
         services.AddPaymentsInfrastructure();
-
-        // IInventoryService kept for OrderService compatibility
-        services.AddScoped<IInventoryService, InventoryService>();
 
         // Email service based on configuration
         var emailProvider = configuration["EmailProvider"] ?? "SendGrid";
