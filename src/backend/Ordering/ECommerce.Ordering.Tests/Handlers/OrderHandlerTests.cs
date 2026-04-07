@@ -1,4 +1,4 @@
-using ECommerce.Ordering.Application.Commands.ConfirmOrder;
+﻿using ECommerce.Ordering.Application.Commands.ConfirmOrder;
 using ECommerce.Ordering.Application.Commands.ShipOrder;
 using ECommerce.Ordering.Application.Commands.CancelOrder;
 using ECommerce.Ordering.Application.Queries.GetOrderById;
@@ -42,6 +42,32 @@ public sealed class FakeOrderRepository : IOrderRepository
             .OrderByDescending(o => o.CreatedAt)
             .ToList();
         return Task.FromResult(orders);
+    }
+
+    public Task<int> GetTotalOrdersCountAsync(CancellationToken ct = default)
+        => Task.FromResult(_store.Count);
+
+    public Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
+        => Task.FromResult(_store.Values.Sum(o => o.Total));
+
+    public Task<Dictionary<DateTime, int>> GetOrdersTrendAsync(int days, CancellationToken ct = default)
+    {
+        var start = DateTime.UtcNow.AddDays(-days).Date;
+        var data = _store.Values
+            .Where(o => o.CreatedAt.Date >= start)
+            .GroupBy(o => o.CreatedAt.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+        return Task.FromResult(data);
+    }
+
+    public Task<Dictionary<DateTime, decimal>> GetRevenueTrendAsync(int days, CancellationToken ct = default)
+    {
+        var start = DateTime.UtcNow.AddDays(-days).Date;
+        var data = _store.Values
+            .Where(o => o.CreatedAt.Date >= start)
+            .GroupBy(o => o.CreatedAt.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Total));
+        return Task.FromResult(data);
     }
 
     public Task AddAsync(Order order, CancellationToken ct = default)

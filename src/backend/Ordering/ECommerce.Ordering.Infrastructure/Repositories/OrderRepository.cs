@@ -51,6 +51,41 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
         return orders.Select(o => MapToDomain(o, true)).ToList();
     }
 
+    public Task<int> GetTotalOrdersCountAsync(CancellationToken ct = default)
+        => _db.Orders.AsNoTracking().CountAsync(ct);
+
+    public async Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
+        => await _db.Orders
+            .AsNoTracking()
+            .Where(o => o.PaymentStatus == Core.Enums.PaymentStatus.Paid)
+            .SumAsync(o => (decimal?)o.TotalAmount, ct) ?? 0m;
+
+    public async Task<Dictionary<DateTime, int>> GetOrdersTrendAsync(int days, CancellationToken ct = default)
+    {
+        var startDate = DateTime.UtcNow.AddDays(-days).Date;
+        var data = await _db.Orders
+            .AsNoTracking()
+            .Where(o => o.CreatedAt >= startDate)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        return data.ToDictionary(x => x.Date, x => x.Count);
+    }
+
+    public async Task<Dictionary<DateTime, decimal>> GetRevenueTrendAsync(int days, CancellationToken ct = default)
+    {
+        var startDate = DateTime.UtcNow.AddDays(-days).Date;
+        var data = await _db.Orders
+            .AsNoTracking()
+            .Where(o => o.CreatedAt >= startDate && o.PaymentStatus == Core.Enums.PaymentStatus.Paid)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Amount = g.Sum(o => o.TotalAmount) })
+            .ToListAsync(ct);
+
+        return data.ToDictionary(x => x.Date, x => x.Amount);
+    }
+
     public async Task AddAsync(Order order, CancellationToken ct = default)
     {
         var entity = new CoreOrder
