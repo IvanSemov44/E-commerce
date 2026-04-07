@@ -14,9 +14,10 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
     {
         var order = await _db.Orders
             .AsNoTracking()
+            .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == id, ct);
 
-        return order is null ? null : MapToDomain(order, false);
+        return order is null ? null : MapToDomain(order, true);
     }
 
     public async Task<Order?> GetByIdWithItemsAsync(Guid id, CancellationToken ct = default)

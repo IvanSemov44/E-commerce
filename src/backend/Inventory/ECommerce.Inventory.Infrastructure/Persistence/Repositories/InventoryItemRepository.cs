@@ -14,6 +14,7 @@ public class InventoryItemRepository(InventoryDbContext _db) : IInventoryItemRep
 
     public async Task<InventoryItem?> GetByProductIdAsync(Guid productId, CancellationToken ct = default)
         => await _db.InventoryItems
+            .Include("_logEntries")
             .FirstOrDefaultAsync(i => i.ProductId == productId, ct);
 
     public async Task<InventoryItem?> GetByProductIdWithLogsAsync(Guid productId, CancellationToken ct = default)

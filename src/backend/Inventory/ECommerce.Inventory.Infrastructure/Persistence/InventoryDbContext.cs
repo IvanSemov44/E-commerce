@@ -16,4 +16,20 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
         modelBuilder.ApplyConfiguration(new InventoryItemConfiguration());
         modelBuilder.Entity<InventoryItem>().ToTable("InventoryItems");
     }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // InventoryLog entries are append-only. In EF InMemory + OwnsMany scenarios,
+        // newly added owned entities can be tracked as Modified instead of Added,
+        // which causes DbUpdateConcurrencyException ("entity does not exist in store").
+        // Normalize to Added before persisting.
+        var modifiedLogs = ChangeTracker.Entries<InventoryLog>()
+            .Where(e => e.State == EntityState.Modified)
+            .ToList();
+
+        foreach (var entry in modifiedLogs)
+            entry.State = EntityState.Added;
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
 }
