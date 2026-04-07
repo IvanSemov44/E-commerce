@@ -2,7 +2,7 @@ using ECommerce.SharedKernel.Interfaces;
 using System.Net;
 using System.Net.Mail;
 using ECommerce.Core.Entities;
-using ECommerce.Core.Extensions;
+using ECommerce.SharedKernel.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading;

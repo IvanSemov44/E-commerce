@@ -1,4 +1,4 @@
-using ECommerce.Core.Enums;
+using ECommerce.SharedKernel.Enums;
 
 namespace ECommerce.SharedKernel.Interfaces;
 

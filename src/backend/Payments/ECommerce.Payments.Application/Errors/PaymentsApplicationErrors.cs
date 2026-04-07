@@ -1,4 +1,4 @@
-using ECommerce.Core.Constants;
+using ECommerce.SharedKernel.Constants;
 using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.Payments.Application.Errors;

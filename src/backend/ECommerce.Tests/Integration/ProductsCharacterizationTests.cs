@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Core.Constants;
+using ECommerce.SharedKernel.Constants;
 
 namespace ECommerce.Tests.Integration;
 

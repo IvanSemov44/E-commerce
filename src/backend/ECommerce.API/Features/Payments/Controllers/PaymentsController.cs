@@ -1,4 +1,4 @@
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using System.Text.Json;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Shared.Extensions;
@@ -8,6 +8,7 @@ using ECommerce.Payments.Application.Commands.ProcessPayment;
 using ECommerce.Payments.Application.Commands.RefundPayment;
 using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Application.Interfaces;
+using ECommerce.SharedKernel.Enums;
 using ECommerce.Payments.Application.Queries.GetPaymentDetails;
 using ECommerce.Payments.Application.Queries.GetPaymentIntent;
 using ECommerce.SharedKernel.Results;
@@ -94,7 +95,7 @@ public class PaymentsController(
     {
         var role = currentUser.RoleOrNull;
         var isAdmin = currentUser.IsAuthenticated &&
-            (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
+            (role == UserRole.Admin || role == UserRole.SuperAdmin);
 
         var result = await mediator.Send(
             new GetPaymentDetailsQuery(orderId, currentUser.UserIdOrNull, isAdmin),

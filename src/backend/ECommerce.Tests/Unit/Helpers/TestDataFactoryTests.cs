@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Enums;
+using ECommerce.Core.Enums;
 using ECommerce.Promotions.Domain.Enums;
 using ECommerce.Tests.Helpers;
 

@@ -1,5 +1,5 @@
 using ECommerce.SharedKernel.Interfaces;
-using ECommerce.Core.Enums;
+using ECommerce.SharedKernel.Enums;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 

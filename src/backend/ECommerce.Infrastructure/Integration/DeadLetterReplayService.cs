@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-using ECommerce.Core.Constants;
+using System.Text.Json;
+using ECommerce.SharedKernel.Constants;
 using ECommerce.Contracts;
 using ECommerce.Infrastructure.Data;
 using ECommerce.SharedKernel.Results;

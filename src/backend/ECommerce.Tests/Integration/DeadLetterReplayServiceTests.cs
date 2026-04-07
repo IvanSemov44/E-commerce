@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ECommerce.Contracts;
-using ECommerce.Core.Constants;
+using ECommerce.SharedKernel.Constants;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Integration;
 using Microsoft.EntityFrameworkCore;

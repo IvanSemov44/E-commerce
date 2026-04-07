@@ -1,4 +1,4 @@
-using ECommerce.Core.Constants;
+using ECommerce.SharedKernel.Constants;
 
 namespace ECommerce.API.Shared.Helpers;
 

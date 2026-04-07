@@ -1,6 +1,6 @@
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Core.Entities;
-using ECommerce.Core.Extensions;
+using ECommerce.SharedKernel.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SendGrid;

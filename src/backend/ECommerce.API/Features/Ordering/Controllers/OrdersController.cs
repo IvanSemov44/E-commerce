@@ -1,11 +1,11 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.Contracts.DTOs.Orders;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Interfaces;
-using ECommerce.Core.Results;
+using ECommerce.SharedKernel.Enums;
 using ECommerce.Ordering.Application.Commands.PlaceOrder;
 using ECommerce.Ordering.Application.Commands.ConfirmOrder;
 using ECommerce.Ordering.Application.Commands.ShipOrder;
@@ -116,7 +116,7 @@ public class OrdersController : ControllerBase
         var currentUserId = _currentUser.UserIdOrNull;
         var role = _currentUser.RoleOrNull;
         var isAdmin = _currentUser.IsAuthenticated &&
-                     (role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin);
+                     (role == UserRole.Admin || role == UserRole.SuperAdmin);
 
         var query = new OrderingQueries.GetOrderById.GetOrderByIdQuery(id);
         var skResult = await _mediator.Send(query, cancellationToken);

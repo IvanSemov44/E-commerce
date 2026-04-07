@@ -1,4 +1,4 @@
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Shared.Extensions;
 using ECommerce.API.Shared.Helpers;
@@ -7,6 +7,7 @@ using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Reviews.Application.Commands;
 using ECommerce.Reviews.Application.DTOs;
 using ECommerce.Reviews.Application.DTOs.Common;
+using ECommerce.SharedKernel.Enums;
 using ECommerce.Reviews.Application.Queries;
 using ECommerce.SharedKernel.Results;
 using MediatR;
@@ -262,7 +263,7 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
             return Unauthorized(ApiResponse<ReviewDetailDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var role = _currentUser.RoleOrNull;
-        var isAdmin = role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin;
+        var isAdmin = role == UserRole.Admin || role == UserRole.SuperAdmin;
         _logger.LogInformation("Updating review {ReviewId} by user {UserId}", reviewId, userId.Value);
 
         var result = await _mediator.Send(
@@ -298,7 +299,7 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var role = _currentUser.RoleOrNull;
-        var isAdmin = role == Core.Enums.UserRole.Admin || role == Core.Enums.UserRole.SuperAdmin;
+        var isAdmin = role == UserRole.Admin || role == UserRole.SuperAdmin;
         _logger.LogInformation("Deleting review {ReviewId} by user {UserId}", reviewId, userId.Value);
 
         var result = await _mediator.Send(new DeleteReviewCommand(reviewId, userId.Value, isAdmin), cancellationToken);

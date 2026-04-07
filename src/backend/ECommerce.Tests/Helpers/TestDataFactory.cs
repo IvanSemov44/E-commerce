@@ -1,4 +1,4 @@
-﻿using Bogus;
+using Bogus;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using ECommerce.Promotions.Domain.Aggregates.PromoCode;

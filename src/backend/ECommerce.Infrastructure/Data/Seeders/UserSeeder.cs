@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Entities;
+using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
