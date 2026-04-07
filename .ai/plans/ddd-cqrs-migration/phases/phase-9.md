@@ -104,7 +104,7 @@ If the build is red before you start — stop. Do not proceed. Report the error.
 | Step 1 | **Merged** | Payments BC created under `src/backend/Payments/`; `PaymentsController` moved to Features and old `IPaymentService`/`PaymentService` removed. |
 | Step 2 | Not Started | DashboardService still live. Prep checklist: `phase-9-step-2-prep.md` |
 | Step 3 | Not Started | All controllers still in `Controllers/`. Prep checklist: `phase-9-step-3-prep.md` |
-| Step 4 | Not Started | Configuration/, Extensions/, Helpers/ not yet moved. Prep checklist: `phase-9-step-4-prep.md` |
+| Step 4 | In Progress (Branch Complete) | Shared folder reorganization implemented on `feature/phase-9-step-4-shared-folder`; pending merge. Prep checklist: `phase-9-step-4-prep.md` |
 | Step 5 | Not Started | Old repositories still live |
 | Step 6 | Not Started | ECommerce.Application still live |
 | Step 7 | Not Started | ECommerce.Core still live |
