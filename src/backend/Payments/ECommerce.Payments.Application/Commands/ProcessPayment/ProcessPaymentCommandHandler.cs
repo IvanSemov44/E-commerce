@@ -1,8 +1,8 @@
-﻿using ECommerce.Core.Enums;
+using ECommerce.Core.Enums;
 using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Application.Errors;
 using ECommerce.Payments.Application.Interfaces;
-using ECommerce.Application.Interfaces;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -178,3 +178,4 @@ public sealed class ProcessPaymentCommandHandler(
         return random.Next(0, 100) < 5;
     }
 }
+

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using ECommerce.Application.Interfaces;
+using ECommerce.SharedKernel.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -972,3 +972,4 @@ public class OrdersControllerTests
 
     #endregion
 }
+

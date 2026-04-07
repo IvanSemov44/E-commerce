@@ -1,7 +1,7 @@
-﻿using FluentValidation.TestHelper;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.DTOs.Orders;
-using ECommerce.Application.Validators.Orders;
+using FluentValidation.TestHelper;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.Contracts.DTOs.Orders;
+using ECommerce.Contracts.Validators.Orders;
 using FluentAssertions;
 
 namespace ECommerce.Tests.Unit.Validators;
@@ -332,3 +332,4 @@ public class OrderValidatorsTests
 
     #endregion
 }
+

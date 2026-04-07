@@ -1,8 +1,8 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using System.Text.Json;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.DTOs.Reviews;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.Contracts.DTOs.Reviews;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Integration;
@@ -305,3 +305,4 @@ public class ReviewsCharacterizationTests
         public string? TraceId { get; init; }
     }
 }
+

@@ -1,7 +1,7 @@
-using ECommerce.Ordering.Application.Interfaces;
+﻿using ECommerce.Ordering.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
-using CoreUserService = ECommerce.Application.Interfaces.ICurrentUserService;
+using CoreUserService = ECommerce.SharedKernel.Interfaces.ICurrentUserService;
 
 namespace ECommerce.Ordering.Infrastructure.Services;
 

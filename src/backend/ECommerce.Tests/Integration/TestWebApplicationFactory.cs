@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text;
@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Core.Entities;
-using ECommerce.Application.Interfaces;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Payments.Application.Interfaces;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Catalog.Infrastructure.Persistence;
@@ -718,3 +718,4 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         }
     }
 }
+

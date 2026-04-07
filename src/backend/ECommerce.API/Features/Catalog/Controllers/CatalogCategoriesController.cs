@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.Shared.Extensions;
 using ECommerce.API.Shared.Helpers;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Common;
 using ECommerce.Catalog.Application.Commands.CreateCategory;
@@ -207,4 +207,5 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
             Problem);
     }
 }
+
 

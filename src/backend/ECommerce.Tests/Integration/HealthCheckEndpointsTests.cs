@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Integration;
@@ -255,3 +255,4 @@ public class HealthCheckEndpointsTests
 
     #endregion
 }
+

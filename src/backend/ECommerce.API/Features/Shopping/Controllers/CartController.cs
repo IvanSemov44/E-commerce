@@ -1,7 +1,7 @@
 using ECommerce.API.ActionFilters;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.DTOs.Cart;
-using ECommerce.Application.Interfaces;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.Contracts.DTOs.Cart;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Shopping.Application.Commands.AddToCart;
 using ECommerce.Shopping.Application.Commands.UpdateCartItemQuantity;
 using ECommerce.Shopping.Application.Commands.RemoveFromCart;
@@ -211,3 +211,5 @@ public class CartController(IMediator mediator, ICurrentUserService currentUser,
         };
     }
 }
+
+

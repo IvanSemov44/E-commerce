@@ -1,6 +1,6 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Core.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -105,3 +105,4 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
         };
     }
 }
+

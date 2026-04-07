@@ -1,6 +1,6 @@
-﻿using FluentValidation.TestHelper;
-using ECommerce.Application.DTOs.Cart;
-using ECommerce.Application.Validators.Cart;
+using FluentValidation.TestHelper;
+using ECommerce.Contracts.DTOs.Cart;
+using ECommerce.Contracts.Validators.Cart;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Unit.Validators;
@@ -58,3 +58,4 @@ public class CartValidatorsTests
         result.ShouldNotHaveAnyValidationErrors();
     }
 }
+

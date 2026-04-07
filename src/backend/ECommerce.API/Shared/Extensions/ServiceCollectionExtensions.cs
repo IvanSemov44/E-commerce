@@ -2,12 +2,10 @@
 using ECommerce.API.Behaviors;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Services;
-using ECommerce.Application;
-using ECommerce.Application.Configuration;
-using ECommerce.Application.Interfaces;
-using ECommerce.Application.Services;
+using ECommerce.SharedKernel.Interfaces;
+using ECommerce.Infrastructure.Services;
 using ECommerce.SharedKernel.Domain;
-using ECommerce.Application.Validators.Cart;
+using ECommerce.Contracts.Validators.Cart;
 using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
@@ -32,7 +30,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using AutoMapper;
 
 namespace ECommerce.API.Shared.Extensions;
 
@@ -296,9 +293,6 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // AutoMapper
-        services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
-
         // FluentValidation
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
@@ -756,4 +750,6 @@ public static class ServiceCollectionExtensions
         return "storefront";
     }
 }
+
+
 

@@ -17,7 +17,7 @@ public class PlaceOrderCommandHandler(
     IProductCatalogReader productReader,
     IPromoCodeLookup promoCodeLookup,
     IShippingAddressReader shippingAddressReader,
-    ICurrentUserService currentUser,
+    ECommerce.Ordering.Application.Interfaces.ICurrentUserService currentUser,
     IOrderIntegrationEventPublisher orderIntegrationEventPublisher
 ) : IRequestHandler<PlaceOrderCommand, Result<OrderDto>>
 {

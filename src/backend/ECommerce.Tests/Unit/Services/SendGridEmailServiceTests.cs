@@ -1,4 +1,4 @@
-﻿using ECommerce.Application.Services;
+using ECommerce.Infrastructure.Services;
 using ECommerce.Core.Entities;
 using ECommerce.Core.Enums;
 using FluentAssertions;
@@ -485,3 +485,4 @@ public class SendGridEmailServiceTests
 
     #endregion
 }
+

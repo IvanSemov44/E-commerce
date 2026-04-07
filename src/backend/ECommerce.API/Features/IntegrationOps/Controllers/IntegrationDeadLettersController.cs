@@ -1,6 +1,6 @@
 using System.Collections.Frozen;
 using ECommerce.API.Shared.Extensions;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.SharedKernel.Results;
 using Microsoft.AspNetCore.Authorization;
@@ -59,4 +59,5 @@ public class IntegrationDeadLettersController(IDeadLetterReplayService deadLette
             MapError);
     }
 }
+
 

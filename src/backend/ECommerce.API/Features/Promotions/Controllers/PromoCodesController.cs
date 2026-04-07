@@ -6,7 +6,7 @@ using MediatR;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Shared.Extensions;
 using ECommerce.API.Shared.Helpers;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Promotions.Application.Commands.CreatePromoCode;
 using ECommerce.Promotions.Application.Commands.DeactivatePromoCode;
 using ECommerce.Promotions.Application.Commands.DeletePromoCode;
@@ -219,4 +219,5 @@ public class PromoCodesController(IMediator mediator) : ControllerBase
         };
     }
 }
+
 

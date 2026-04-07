@@ -1,6 +1,6 @@
 using ECommerce.API.ActionFilters;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.Interfaces;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -168,4 +168,6 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
                 : BadRequest(ApiResponse<WishlistDto>.Failure("An error occurred", "UNKNOWN_ERROR"));
     }
 }
+
+
 

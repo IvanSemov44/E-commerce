@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.Shared.Extensions;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Commands.ActivateProduct;
@@ -22,7 +22,7 @@ using ECommerce.Catalog.Application.Queries.GetProductBySlug;
 using ECommerce.Catalog.Application.Queries.GetProducts;
 using ECommerce.Catalog.Application.Queries.GetProductsByCategory;
 using ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
-using ECommerce.Application.DTOs.Inventory;
+using ECommerce.Contracts.DTOs.Inventory;
 using ECommerce.Catalog.Application.Commands.UpdateProductStock;
 using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
 using ECommerce.Catalog.Application.Queries.SearchProducts;
@@ -475,4 +475,5 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
             Problem);
     }
 }
+
 

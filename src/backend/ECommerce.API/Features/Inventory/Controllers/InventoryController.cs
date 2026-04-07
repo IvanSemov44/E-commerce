@@ -1,7 +1,7 @@
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Shared.Helpers;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.DTOs.Inventory;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.Contracts.DTOs.Inventory;
 using ECommerce.Inventory.Application.Commands.IncreaseStock;
 using ECommerce.Inventory.Application.Commands.ReduceStock;
 using ECommerce.Inventory.Application.Commands.AdjustStock;
@@ -270,4 +270,5 @@ public class InventoryController(IMediator mediator) : ControllerBase
         _ => StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", error.Code))
     };
 }
+
 

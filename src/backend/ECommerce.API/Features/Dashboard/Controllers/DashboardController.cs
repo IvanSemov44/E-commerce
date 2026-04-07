@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using ECommerce.API.Shared.Extensions;
 using ECommerce.API.Features.Dashboard.Models;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Catalog.Application.Queries.GetProductStats;
 using ECommerce.Identity.Application.Queries.GetUserStats;
 using ECommerce.Ordering.Application.DTOs.Dashboard;
@@ -136,4 +136,5 @@ public class DashboardController(IMediator mediator, ILogger<DashboardController
         return BadRequest(body);
     }
 }
+
 

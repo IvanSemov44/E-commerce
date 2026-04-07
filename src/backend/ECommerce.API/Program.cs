@@ -154,7 +154,7 @@ builder.Services.AddControllers()
                     x => x.Key,
                     x => x.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
 
-            var errorResponse = ECommerce.Application.DTOs.Common.ApiResponse<object>.Failure(
+            var errorResponse = ECommerce.Contracts.DTOs.Common.ApiResponse<object>.Failure(
                 "Validation failed",
                 "VALIDATION_FAILED",
                 validationErrors);
@@ -204,4 +204,5 @@ await app.ApplyMigrationsAndSeedAsync();
 app.ConfigureMiddlewarePipeline();
 
 app.Run();
+
 

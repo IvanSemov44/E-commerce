@@ -1,4 +1,4 @@
-﻿using ECommerce.Application.Services;
+using ECommerce.Infrastructure.Services;
 using ECommerce.Core.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -573,3 +573,4 @@ public class CurrentUserServiceTests
 
     #endregion
 }
+

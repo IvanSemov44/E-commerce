@@ -2,9 +2,9 @@ using ECommerce.API.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
-using ECommerce.Application.DTOs.Orders;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.Interfaces;
+using ECommerce.Contracts.DTOs.Orders;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Core.Results;
 using ECommerce.Ordering.Application.Commands.PlaceOrder;
 using ECommerce.Ordering.Application.Commands.ConfirmOrder;
@@ -377,5 +377,7 @@ public class CancelOrderRequestDto
 {
     public string? Reason { get; set; }
 }
+
+
 
 

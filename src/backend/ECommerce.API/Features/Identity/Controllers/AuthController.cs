@@ -1,6 +1,6 @@
-using ECommerce.Application.DTOs.Auth;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.Interfaces;
+using ECommerce.Contracts.DTOs.Auth;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Identity.Application.Commands.ForgotPassword;
 using ECommerce.Identity.Application.Commands.Login;
 using ECommerce.Identity.Application.Commands.Logout;
@@ -266,3 +266,5 @@ public class AuthController(
         Phone = p.PhoneNumber, Role = p.Role, AvatarUrl = null
     };
 }
+
+
