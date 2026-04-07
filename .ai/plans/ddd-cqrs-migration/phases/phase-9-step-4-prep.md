@@ -94,3 +94,84 @@ Expected at end of Step 4:
 - Step 5 repository/core deletion work.
 - Any controller logic refactor.
 - Any Application/Core project deletion.
+
+## Execution Prompt (Ready To Implement)
+Use this prompt as-is when starting Step 4 implementation.
+
+You are implementing Phase 9 Step 4 in this repository.
+
+Mission:
+- Move API cross-cutting files from top-level folders into `Shared`.
+- Update namespaces/usings only.
+- Preserve runtime behavior exactly.
+
+Success criteria:
+- Files moved to:
+  - `src/backend/ECommerce.API/Shared/Configuration/*`
+  - `src/backend/ECommerce.API/Shared/Extensions/*`
+  - `src/backend/ECommerce.API/Shared/Helpers/PaginationRequestNormalizer.cs`
+- Old folders removed once empty:
+  - `src/backend/ECommerce.API/Configuration/`
+  - `src/backend/ECommerce.API/Extensions/`
+  - `src/backend/ECommerce.API/Helpers/`
+- Build and focused tests are green.
+
+Hard constraints:
+- No behavior changes in options/middleware/extensions.
+- No route/controller logic changes.
+- No Step 5+ work.
+- Ignore unrelated frontend file changes.
+- Mechanical refactor only: move file + namespace + required using updates.
+
+Execution order (must follow):
+1. Move Configuration
+   - Move all `Configuration/*` to `Shared/Configuration/*`
+   - Update namespaces from `ECommerce.API.Configuration` to `ECommerce.API.Shared.Configuration`
+   - Update dependent usings
+
+2. Move Extensions
+   - Move all `Extensions/*` to `Shared/Extensions/*`
+   - Update namespaces from `ECommerce.API.Extensions` to `ECommerce.API.Shared.Extensions`
+   - Update dependent usings (including `Program.cs`)
+
+3. Move Helper and cleanup
+   - Move `Helpers/PaginationRequestNormalizer.cs` to `Shared/Helpers/`
+   - Update namespace from `ECommerce.API.Helpers` to `ECommerce.API.Shared.Helpers`
+   - Update dependent usings
+   - Delete old folders only if empty
+
+Required gate after each execution-order batch:
+1. `dotnet build src/backend/ECommerce.sln`
+2. If build fails:
+   - Stop progression to next batch
+   - Apply minimal move-related fixes only
+   - Re-run build until green
+
+Required final verification:
+1. `dotnet build src/backend/ECommerce.sln`
+2. `dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --filter "Controller|BackendGuideConventionsTests"`
+3. `rg "using ECommerce.API.Configuration|using ECommerce.API.Extensions|using ECommerce.API.Helpers" src/backend/ECommerce.API --glob "*.cs"`
+
+Expected final verification state:
+- Build green.
+- Focused tests green.
+- No stale `using ECommerce.API.Configuration|Extensions|Helpers` remain.
+
+Commit slicing rules (tiny commits):
+1. `refactor(api): move configuration files into shared`
+2. `refactor(api): move extension files into shared`
+3. `refactor(api): move pagination helper and remove legacy api folders`
+4. `docs(phase-9): harden step 4 prep into execution prompt`
+
+Failure protocol:
+- If any gate fails after targeted fixes, stop and report:
+  - exact failing command
+  - first failing error
+  - minimal next patch proposal
+
+Final response format:
+1. Files moved (source -> destination)
+2. Namespace/usings-only confirmation
+3. Build/test/grep results
+4. Commits created (hash + message)
+5. Residual risks and Step 5 handoff notes
