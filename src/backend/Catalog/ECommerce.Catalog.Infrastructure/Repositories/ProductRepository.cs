@@ -153,6 +153,9 @@ public class ProductRepository(CatalogDbContext _db) : IProductRepository
         return cores.Select(MapToDomain).ToList();
     }
 
+    public Task<int> GetActiveProductsCountAsync(CancellationToken cancellationToken = default)
+        => _db.Products.AsNoTracking().CountAsync(p => p.IsActive, cancellationToken);
+
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
     {
         var core = MapToCore(product);

@@ -85,6 +85,11 @@ public class CommandHandlerTests
             return Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
         }
 
+        public Task<int> GetActiveProductsCountAsync(CancellationToken ct = default)
+        {
+            return Task.FromResult(Store.Count);
+        }
+
         public Task AddAsync(Product product, CancellationToken ct = default)
         {
             Store.Add(product);
