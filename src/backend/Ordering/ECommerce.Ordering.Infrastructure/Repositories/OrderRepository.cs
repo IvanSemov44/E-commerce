@@ -3,8 +3,10 @@ using ECommerce.Ordering.Domain.Interfaces;
 using ECommerce.Ordering.Domain.ValueObjects;
 using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using CoreOrder = ECommerce.Core.Entities.Order;
-using CoreOrderItem = ECommerce.Core.Entities.OrderItem;
+using CoreOrder = ECommerce.SharedKernel.Entities.Order;
+using CoreOrderItem = ECommerce.SharedKernel.Entities.OrderItem;
+using SharedOrderStatus = ECommerce.SharedKernel.Enums.OrderStatus;
+using SharedPaymentStatus = ECommerce.SharedKernel.Enums.PaymentStatus;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence.Repositories;
 
@@ -57,7 +59,7 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
     public async Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
         => await _db.Orders
             .AsNoTracking()
-            .Where(o => o.PaymentStatus == Core.Enums.PaymentStatus.Paid)
+            .Where(o => o.PaymentStatus == SharedPaymentStatus.Paid)
             .SumAsync(o => (decimal?)o.TotalAmount, ct) ?? 0m;
 
     public async Task<Dictionary<DateTime, int>> GetOrdersTrendAsync(int days, CancellationToken ct = default)
@@ -78,7 +80,7 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
         var startDate = DateTime.UtcNow.AddDays(-days).Date;
         var data = await _db.Orders
             .AsNoTracking()
-            .Where(o => o.CreatedAt >= startDate && o.PaymentStatus == Core.Enums.PaymentStatus.Paid)
+            .Where(o => o.CreatedAt >= startDate && o.PaymentStatus == SharedPaymentStatus.Paid)
             .GroupBy(o => o.CreatedAt.Date)
             .Select(g => new { Date = g.Key, Amount = g.Sum(o => o.TotalAmount) })
             .ToListAsync(ct);
@@ -98,8 +100,8 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
             ShippingAmount = order.ShippingCost,
             TaxAmount = order.TaxAmount,
             TotalAmount = order.Total,
-            Status = Core.Enums.OrderStatus.Pending,
-            PaymentStatus = Core.Enums.PaymentStatus.Pending,
+            Status = SharedOrderStatus.Pending,
+            PaymentStatus = SharedPaymentStatus.Pending,
             RowVersion = Array.Empty<byte>()
         };
 
@@ -134,7 +136,7 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
         existing.TotalAmount = order.Total;
 
         var domainStatus = order.Status.Name;
-        if (Enum.TryParse<Core.Enums.OrderStatus>(domainStatus, true, out var coreStatus))
+        if (Enum.TryParse<SharedOrderStatus>(domainStatus, true, out var coreStatus))
             existing.Status = coreStatus;
     }
 
@@ -174,7 +176,7 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
 
         var domainOrder = result.GetDataOrThrow();
 
-        if (Enum.TryParse<Core.Enums.OrderStatus>(order.Status.ToString(), true, out var status))
+        if (Enum.TryParse<SharedOrderStatus>(order.Status.ToString(), true, out var status))
         {
             var statusName = status.ToString();
             var domainStatus = OrderStatus.FromName(statusName);

@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Entities;
+﻿using ECommerce.SharedKernel.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Catalog.Infrastructure.Persistence;

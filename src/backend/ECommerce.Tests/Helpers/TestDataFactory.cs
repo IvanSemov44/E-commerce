@@ -1,8 +1,10 @@
-using Bogus;
-using ECommerce.Core.Entities;
-using ECommerce.Core.Enums;
+﻿using Bogus;
+using ECommerce.SharedKernel.Entities;
+using ECommerce.SharedKernel.Enums;
 using ECommerce.Promotions.Domain.Aggregates.PromoCode;
+using ECommerce.Promotions.Domain.Enums;
 using ECommerce.Promotions.Domain.ValueObjects;
+using UserRole = ECommerce.SharedKernel.Enums.UserRole;
 
 namespace ECommerce.Tests.Helpers;
 

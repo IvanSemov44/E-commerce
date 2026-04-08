@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Entities;
+﻿using ECommerce.SharedKernel.Entities;
 using ECommerce.Infrastructure.Data.Configurations;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -53,7 +53,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     public DbSet<ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode> PromoCodes { get; set; } = null!;
 
     // Inventory - Legacy from Core
-    public DbSet<ECommerce.Core.Entities.InventoryLog> InventoryLogs { get; set; } = null!;
+    public DbSet<ECommerce.SharedKernel.Entities.InventoryLog> InventoryLogs { get; set; } = null!;
 
     // Inventory - DDD extract (Phase 3)
     public DbSet<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryItem> InventoryItems { get; set; } = null!;

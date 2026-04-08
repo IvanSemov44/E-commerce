@@ -1,4 +1,4 @@
-using ECommerce.Core.Enums;
+﻿using ECommerce.Payments.Core.Enums;
 using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Application.Errors;
 using ECommerce.Payments.Application.Interfaces;
@@ -68,10 +68,10 @@ public sealed class ProcessPaymentCommandHandler(
         {
             if (paymentSucceeds)
             {
-                order.PaymentStatus = PaymentStatus.Paid;
+                order.PaymentStatus = (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Paid;
                 order.PaymentMethod = dto.PaymentMethod;
                 order.PaymentIntentId = paymentIntentId;
-                order.Status = OrderStatus.Confirmed;
+                order.Status = ECommerce.SharedKernel.Enums.OrderStatus.Confirmed;
 
                 await orderRepository.UpdateAsync(order, cancellationToken);
 
@@ -110,7 +110,7 @@ public sealed class ProcessPaymentCommandHandler(
                 return Result<PaymentResponseDto>.Ok(response);
             }
 
-            order.PaymentStatus = PaymentStatus.Failed;
+            order.PaymentStatus = (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Failed;
             order.PaymentIntentId = paymentIntentId;
             await orderRepository.UpdateAsync(order, cancellationToken);
 

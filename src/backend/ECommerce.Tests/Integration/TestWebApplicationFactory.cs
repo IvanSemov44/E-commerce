@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text;
@@ -17,10 +17,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ECommerce.Infrastructure.Data;
-using ECommerce.Core.Entities;
+using ECommerce.SharedKernel.Entities;
+using ECommerce.SharedKernel.DTOs;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Payments.Application.Interfaces;
-using ECommerce.SharedKernel.Interfaces;
+using SharedOrderStatus = ECommerce.SharedKernel.Enums.OrderStatus;
+using SharedPaymentStatus = ECommerce.SharedKernel.Enums.PaymentStatus;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using ECommerce.Inventory.Infrastructure.Persistence;
@@ -297,7 +299,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Email = "integration@test.com",
                     FirstName = "Integration",
                     LastName = "User",
-                    Role = Core.Enums.UserRole.Customer,
+                    Role = SharedKernel.Enums.UserRole.Customer,
                     PasswordHash = passwordHash,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow
@@ -309,7 +311,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Email = "integration@test.com",
                     FirstName = "Integration",
                     LastName = "User",
-                    Role = Core.Enums.UserRole.Customer,
+                    Role = SharedKernel.Enums.UserRole.Customer,
                     PasswordHash = passwordHash,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow
@@ -321,7 +323,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Email = "admin@test.com",
                     FirstName = "Admin",
                     LastName = "User",
-                    Role = Core.Enums.UserRole.Admin,
+                    Role = SharedKernel.Enums.UserRole.Admin,
                     PasswordHash = passwordHash,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow
@@ -333,7 +335,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Email = "admin@test.com",
                     FirstName = "Admin",
                     LastName = "User",
-                    Role = Core.Enums.UserRole.Admin,
+                    Role = SharedKernel.Enums.UserRole.Admin,
                     PasswordHash = passwordHash,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow
@@ -423,13 +425,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
                 // Seed a pending order in OrderingDbContext so ship/cancel handlers can find it
                 var testOrderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
-                orderingDb.Orders.Add(new ECommerce.Core.Entities.Order
+                orderingDb.Orders.Add(new ECommerce.SharedKernel.Entities.Order
                 {
                     Id = testOrderId,
                     OrderNumber = "TEST-ORDER-001",
                     UserId = userId,
-                    Status = Core.Enums.OrderStatus.Pending,
-                    PaymentStatus = Core.Enums.PaymentStatus.Paid,
+                    Status = SharedOrderStatus.Pending,
+                    PaymentStatus = SharedPaymentStatus.Paid,
                     Subtotal = 20.00m,
                     DiscountAmount = 0.00m,
                     ShippingAmount = 10.00m,
@@ -438,7 +440,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Currency = "USD",
                     RowVersion = Array.Empty<byte>()
                 });
-                orderingDb.OrderItems.Add(new ECommerce.Core.Entities.OrderItem
+                orderingDb.OrderItems.Add(new ECommerce.SharedKernel.Entities.OrderItem
                 {
                     Id = Guid.NewGuid(),
                     OrderId = testOrderId,
@@ -451,13 +453,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
                 // Seed a shipped order so cancel-shipped tests can find it
                 var shippedOrderId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-                orderingDb.Orders.Add(new ECommerce.Core.Entities.Order
+                orderingDb.Orders.Add(new ECommerce.SharedKernel.Entities.Order
                 {
                     Id = shippedOrderId,
                     OrderNumber = "TEST-ORDER-SHIPPED-001",
                     UserId = userId,
-                    Status = Core.Enums.OrderStatus.Shipped,
-                    PaymentStatus = Core.Enums.PaymentStatus.Paid,
+                    Status = SharedOrderStatus.Shipped,
+                    PaymentStatus = SharedPaymentStatus.Paid,
                     Subtotal = 20.00m,
                     DiscountAmount = 0.00m,
                     ShippingAmount = 10.00m,
@@ -466,7 +468,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Currency = "USD",
                     RowVersion = Array.Empty<byte>()
                 });
-                orderingDb.OrderItems.Add(new ECommerce.Core.Entities.OrderItem
+                orderingDb.OrderItems.Add(new ECommerce.SharedKernel.Entities.OrderItem
                 {
                     Id = Guid.NewGuid(),
                     OrderId = shippedOrderId,
@@ -510,8 +512,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Id = orderId,
                     OrderNumber = "TEST-ORDER-001",
                     UserId = userId,
-                    Status = Core.Enums.OrderStatus.Pending,
-                    PaymentStatus = Core.Enums.PaymentStatus.Paid,  // Pre-paid for refund testing
+                    Status = SharedOrderStatus.Pending,
+                    PaymentStatus = SharedPaymentStatus.Paid,  // Pre-paid for refund testing
                     Subtotal = 100.00m,
                     DiscountAmount = 0.00m,
                     ShippingAmount = 10.00m,
@@ -628,10 +630,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Task SendWelcomeEmailAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendEmailVerificationAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendOrderConfirmationEmailAsync(string email, Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendOrderDeliveredEmailAsync(string email, Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderConfirmationEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderShippedEmailAsync(string email, OrderEmailDto order, string trackingNumber, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderDeliveredEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendAbandonedCartEmailAsync(string email, string firstName, CartEmailDto cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }

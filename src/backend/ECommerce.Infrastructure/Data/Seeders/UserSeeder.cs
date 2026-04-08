@@ -1,5 +1,5 @@
-using ECommerce.Core.Entities;
-using ECommerce.Core.Enums;
+﻿using ECommerce.SharedKernel.Entities;
+using ECommerce.SharedKernel.Enums;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 

@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Entities;
+﻿using ECommerce.SharedKernel.Entities;
 using ECommerce.Infrastructure.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
 

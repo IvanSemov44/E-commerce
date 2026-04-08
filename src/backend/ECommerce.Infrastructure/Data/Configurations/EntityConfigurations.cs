@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Entities;
+﻿using ECommerce.SharedKernel.Entities;
 using ECommerce.Promotions.Domain.Aggregates.PromoCode;
 using ECommerce.Promotions.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;

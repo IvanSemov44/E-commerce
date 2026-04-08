@@ -2,8 +2,8 @@
 using ECommerce.Shopping.Domain.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using CoreCart = ECommerce.Core.Entities.Cart;
-using CoreCartItem = ECommerce.Core.Entities.CartItem;
+using CoreCart = ECommerce.SharedKernel.Entities.Cart;
+using CoreCartItem = ECommerce.SharedKernel.Entities.CartItem;
 
 namespace ECommerce.Shopping.Infrastructure.Persistence.Repositories;
 

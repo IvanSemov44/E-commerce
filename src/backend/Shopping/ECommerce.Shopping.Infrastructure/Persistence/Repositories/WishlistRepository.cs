@@ -1,4 +1,5 @@
-﻿using ECommerce.Shopping.Domain.Aggregates.Wishlist;
+﻿using SharedWishlistEntity = ECommerce.SharedKernel.Entities.Wishlist;
+using ECommerce.Shopping.Domain.Aggregates.Wishlist;
 using ECommerce.Shopping.Domain.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +33,7 @@ public class WishlistRepository(ShoppingDbContext _db) : IWishlistRepository
 
         foreach (var productId in wishlist.ProductIds)
         {
-            await _db.Wishlists.AddAsync(new Core.Entities.Wishlist
+            await _db.Wishlists.AddAsync(new SharedWishlistEntity
             {
                 Id = Guid.NewGuid(),
                 UserId = wishlist.UserId,

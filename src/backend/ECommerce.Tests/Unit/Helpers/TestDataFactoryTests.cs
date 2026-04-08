@@ -1,5 +1,6 @@
-using ECommerce.Core.Enums;
+﻿using ECommerce.SharedKernel.Enums;
 using ECommerce.Promotions.Domain.Enums;
+using UserRole = ECommerce.SharedKernel.Enums.UserRole;
 using ECommerce.Tests.Helpers;
 
 namespace ECommerce.Tests.Unit.Helpers;

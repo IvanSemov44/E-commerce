@@ -4,8 +4,8 @@ using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
-using CoreProduct = ECommerce.Core.Entities.Product;
-using CoreProductImage = ECommerce.Core.Entities.ProductImage;
+using CoreProduct = ECommerce.SharedKernel.Entities.Product;
+using CoreProductImage = ECommerce.SharedKernel.Entities.ProductImage;
 
 namespace ECommerce.Catalog.Infrastructure.Repositories;
 

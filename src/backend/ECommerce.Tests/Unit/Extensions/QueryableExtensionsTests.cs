@@ -1,5 +1,5 @@
 ﻿using System.Linq.Expressions;
-using ECommerce.Core.Entities;
+using ECommerce.SharedKernel.Entities;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;

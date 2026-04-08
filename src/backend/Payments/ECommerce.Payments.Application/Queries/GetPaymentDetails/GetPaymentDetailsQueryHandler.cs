@@ -1,4 +1,4 @@
-using ECommerce.Core.Enums;
+﻿using ECommerce.Payments.Core.Enums;
 using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Application.Errors;
 using ECommerce.Payments.Application.Interfaces;
@@ -37,7 +37,7 @@ public sealed class GetPaymentDetailsQueryHandler(
             Amount = order.TotalAmount,
             Currency = order.Currency,
             CreatedAt = order.CreatedAt,
-            ProcessedAt = order.PaymentStatus == PaymentStatus.Paid ? order.UpdatedAt : null
+            ProcessedAt = order.PaymentStatus == (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Paid ? order.UpdatedAt : null
         };
 
         return Result<PaymentDetailsDto>.Ok(details);

@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Entities;
+﻿using ECommerce.SharedKernel.Entities;
 
 namespace ECommerce.Payments.Application.Interfaces;
 

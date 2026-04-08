@@ -1,4 +1,4 @@
-﻿using ECommerce.Core.Entities;
+﻿using ECommerce.SharedKernel.Entities;
 using ECommerce.Shopping.Application.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

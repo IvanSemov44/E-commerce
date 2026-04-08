@@ -1,4 +1,4 @@
-using ECommerce.Core.Enums;
+﻿using ECommerce.Payments.Core.Enums;
 using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Application.Errors;
 using ECommerce.Payments.Application.Interfaces;
@@ -37,7 +37,7 @@ public sealed class RefundPaymentCommandHandler(
             return Result<RefundResponseDto>.Fail(PaymentsApplicationErrors.OrderNotFound);
         }
 
-        if (order.PaymentStatus != PaymentStatus.Paid)
+        if (order.PaymentStatus != (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Paid)
         {
             await idempotencyStore.AbandonAsync(key, cancellationToken);
             return Result<RefundResponseDto>.Fail(PaymentsApplicationErrors.InvalidRefund);
@@ -48,7 +48,7 @@ public sealed class RefundPaymentCommandHandler(
 
         try
         {
-            order.PaymentStatus = PaymentStatus.Refunded;
+            order.PaymentStatus = (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Refunded;
             await orderRepository.UpdateAsync(order, cancellationToken);
 
             var response = new RefundResponseDto
