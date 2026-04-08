@@ -7,8 +7,6 @@ using ECommerce.Infrastructure.Services;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.Contracts.Validators.Cart;
 using ECommerce.Infrastructure;
-using ECommerce.Infrastructure.Data;
-using ECommerce.Infrastructure.Data.Seeders;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Inventory.Infrastructure;
 using ECommerce.Shopping.Infrastructure;
@@ -348,12 +346,6 @@ public static class ServiceCollectionExtensions
             Log.Information("Using SendGrid email provider");
         }
 
-        // Database seeders
-        services.AddScoped<IUserSeeder, UserSeeder>();
-        services.AddScoped<ICategorySeeder, CategorySeeder>();
-        services.AddScoped<IProductSeeder, ProductSeeder>();
-        services.AddScoped<DatabaseSeeder>();
-
         // Logging
         services.AddLogging();
 
@@ -419,41 +411,6 @@ public static class ServiceCollectionExtensions
                 c.IncludeXmlComments(xmlPath);
             }
         });
-        return services;
-    }
-
-    /// <summary>
-    /// Configures the PostgreSQL database context.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configuration">The application configuration.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddPostgreSqlDatabase(
-        this IServiceCollection services,
-        IConfiguration configuration)
-    {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
-
-        services.AddDbContext<AppDbContext>(options =>
-        {
-            options.UseNpgsql(connectionString, npgsqlOptions =>
-            {
-                // NOTE: EnableRetryOnFailure is not compatible with manual transactions (BeginTransactionAsync)
-                // The OrderService uses manual transactions for atomicity, so we cannot use retry on failure here.
-                // If retry logic is needed, it should be implemented at the application level using IExecutionStrategy.
-
-                // SplitQuery separates complex multi-include queries into multiple SQL queries
-                // to avoid generating a large cartesian product.
-                npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-            });
-
-            // Configure warnings - ignore pending model changes warning
-            options.ConfigureWarnings(warnings => warnings
-                .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-        });
-
-        Log.Information("PostgreSQL database configured with retry on failure and split query behavior");
         return services;
     }
 
@@ -678,9 +635,13 @@ public static class ServiceCollectionExtensions
 
             if (!string.IsNullOrEmpty(connectionString))
             {
+                // Keep Data Protection key storage isolated from business AppDbContext.
+                // These are ASP.NET framework encryption keys (key ring), not domain data.
                 services.AddDbContext<DataProtectionKeysContext>(options =>
                     options.UseNpgsql(connectionString));
 
+                // Persisting the key ring in DB ensures encrypted cookies/payloads remain valid
+                // across restarts and across multiple app instances.
                 services.AddDataProtection()
                     .PersistKeysToDbContext<DataProtectionKeysContext>()
                     .SetApplicationName("ECommerce-API");

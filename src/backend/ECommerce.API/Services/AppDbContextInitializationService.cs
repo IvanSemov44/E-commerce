@@ -16,6 +16,8 @@ public sealed class AppDbContextInitializationService(
 {
     public async Task InitializeAsync(IWebHostEnvironment environment)
     {
+        // Keep startup data lifecycle in one place: schema first, then data seed, then projection backfill.
+        // This ordering avoids backfill running against stale schema/data during app boot.
         await ApplyMigrationsAsync();
 
         // Integration tests seed their own deterministic dataset in TestWebApplicationFactory.

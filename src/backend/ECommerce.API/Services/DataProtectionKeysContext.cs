@@ -10,5 +10,6 @@ namespace ECommerce.API.Services;
 public sealed class DataProtectionKeysContext(DbContextOptions<DataProtectionKeysContext> options)
     : DbContext(options), IDataProtectionKeyContext
 {
+    // Required by IDataProtectionKeyContext; stores ASP.NET Core Data Protection key-ring entries.
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 }
