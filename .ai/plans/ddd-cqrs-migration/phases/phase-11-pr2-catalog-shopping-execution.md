@@ -31,6 +31,11 @@ Explicit out-of-scope:
 - `src/backend/ECommerce.API/appsettings.json`
 - `src/backend/ECommerce.API/appsettings.Development.json`
 
+Execution scripts added:
+- `src/backend/scripts/phase11/pr2/catalog-bootstrap.sql`
+- `src/backend/scripts/phase11/pr2/shopping-bootstrap.sql`
+- `src/backend/scripts/phase11/pr2/verify-catalog-shopping-rowcounts.sql`
+
 ## Remaining required work in PR 2
 
 1. Create/apply context-specific migration streams for Catalog and Shopping (if not already separated enough for dedicated DB bootstrap).
