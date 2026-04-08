@@ -16,8 +16,9 @@ public static class DependencyInjection
         services.AddDbContext<IdentityDbContext>((serviceProvider, options) =>
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+            var connectionString = configuration.GetConnectionString("IdentityConnection")
+                ?? configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'IdentityConnection' or 'DefaultConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
             options.ConfigureWarnings(warnings => warnings
