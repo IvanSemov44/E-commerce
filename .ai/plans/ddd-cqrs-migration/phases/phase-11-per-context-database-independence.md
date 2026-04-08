@@ -5,6 +5,27 @@ Owner: @ivans
 Created: 2026-04-08
 Last updated: 2026-04-08 (runtime evidence added)
 
+## PR5 narrow-slice progress (2026-04-08)
+
+Commit:
+1. `fa9502f` - start PR5 platform-only AppDb ownership
+
+Changes in this slice:
+1. Shared AppDb startup seeding disabled (ownership moved to context-owned seed paths).
+2. AppDbContext runtime model switched to platform-only (legacy business mappings retained only for InMemory test provider compatibility during transition).
+3. Infrastructure seed registration path changed to no-op for shared AppDb seeders.
+
+Verification:
+1. `dotnet build src/backend/ECommerce.API/ECommerce.API.csproj` passed.
+2. Focused tests passed:
+	- `Phase8MessageBrokerIntegrationTests`
+	- `ReviewsProductProjectionBackfillCharacterizationTests`
+3. Docker runtime checks passed:
+	- `GET /health/ready` returned `200`
+	- Startup logs include:
+	  - `Shared AppDb seeding is disabled. Context-owned seed paths must be used.`
+	  - `Reviews projection backfill completed...`
+
 ## Latest execution evidence (2026-04-08)
 
 Merged backend commits in this phase slice:
