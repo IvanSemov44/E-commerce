@@ -1,0 +1,49 @@
+﻿using ECommerce.Payments.Application.DTOs;
+using FluentValidation;
+
+namespace ECommerce.Payments.Application.Validators;
+
+public class ProcessPaymentDtoValidator : AbstractValidator<ProcessPaymentDto>
+{
+    private static readonly HashSet<string> AllowedMethods = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "stripe",
+        "paypal",
+        "credit_card",
+        "card",
+        "debit_card",
+        "apple_pay",
+        "google_pay"
+    };
+
+    public ProcessPaymentDtoValidator()
+    {
+        RuleFor(x => x.OrderId)
+            .NotEmpty().WithMessage("OrderId is required");
+
+        RuleFor(x => x.PaymentMethod)
+            .NotEmpty().WithMessage("PaymentMethod is required")
+            .Must(m => AllowedMethods.Contains(m ?? string.Empty))
+            .WithMessage("Unsupported payment method");
+
+        RuleFor(x => x.Amount)
+            .GreaterThan(0).WithMessage("Amount must be greater than zero");
+
+        When(x => x.PaymentMethod != null && x.PaymentMethod.Equals("credit_card", StringComparison.OrdinalIgnoreCase), () =>
+        {
+            RuleFor(x => x.CardToken)
+                .NotEmpty().WithMessage("CardToken is required for credit card payments");
+        });
+
+        When(x => x.PaymentMethod != null && x.PaymentMethod.Equals("paypal", StringComparison.OrdinalIgnoreCase), () =>
+        {
+            RuleFor(x => x)
+                .Must(x => !string.IsNullOrEmpty(x.PayPalEmail) || !string.IsNullOrEmpty(x.PaypalToken))
+                .WithMessage("Either PayPalEmail or PaypalToken is required for PayPal payments");
+
+            RuleFor(x => x.PayPalEmail)
+                .EmailAddress().When(x => !string.IsNullOrEmpty(x.PayPalEmail))
+                .WithMessage("PayPalEmail must be a valid email address");
+        });
+    }
+}

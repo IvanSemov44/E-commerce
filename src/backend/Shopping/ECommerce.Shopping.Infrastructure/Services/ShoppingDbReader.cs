@@ -1,15 +1,16 @@
-using ECommerce.Core.Entities;
-using ECommerce.Infrastructure.Data;
+﻿using ECommerce.SharedKernel.Entities;
 using ECommerce.Shopping.Application.Interfaces;
+using ECommerce.Shopping.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Shopping.Infrastructure.Services;
 
-public class ShoppingDbReader(AppDbContext _db) : IShoppingDbReader
+public class ShoppingDbReader(
+    ShoppingDbContext shoppingDb) : IShoppingDbReader
 {
     public async Task<ProductPriceInfo?> GetProductPriceAsync(Guid productId, CancellationToken ct)
     {
-        var product = await _db.Products
+        var product = await shoppingDb.Products
             .AsNoTracking()
             .Where(p => p.Id == productId && p.IsActive)
             .Select(p => new { p.Price, p.Sku })
@@ -20,13 +21,13 @@ public class ShoppingDbReader(AppDbContext _db) : IShoppingDbReader
         return new ProductPriceInfo(product.Price, currency);
     }
 
-    public async Task<bool> ProductExistsAsync(Guid productId, CancellationToken ct)
-        => await _db.Products
+    public Task<bool> ProductExistsAsync(Guid productId, CancellationToken ct)
+        => shoppingDb.Products
             .AsNoTracking()
             .AnyAsync(p => p.Id == productId && p.IsActive, ct);
 
-    public async Task<bool> IsInStockAsync(Guid productId, int quantity, CancellationToken ct)
-        => await _db.InventoryItems
+    public Task<bool> IsInStockAsync(Guid productId, int quantity, CancellationToken ct)
+        => shoppingDb.InventoryItems
             .AsNoTracking()
-            .AnyAsync(i => i.ProductId == productId && i.Stock.Quantity >= quantity, ct);
+            .AnyAsync(i => i.ProductId == productId && i.Quantity >= quantity, ct);
 }

@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Core.Exceptions;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,21 +14,15 @@ namespace ECommerce.API.Middleware;
 /// NOTE: Business logic failures are handled via Result{T} pattern - exceptions are reserved for
 /// unexpected infrastructure failures only (database conflicts, network issues, etc.).
 /// </summary>
-public class GlobalExceptionMiddleware
+/// <remarks>
+/// Initializes a new instance of the GlobalExceptionMiddleware class.
+/// </remarks>
+/// <param name="next">The next middleware in the pipeline.</param>
+/// <param name="logger">Logger instance for exception logging.</param>
+public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<GlobalExceptionMiddleware> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the GlobalExceptionMiddleware class.
-    /// </summary>
-    /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="logger">Logger instance for exception logging.</param>
-    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
+    private readonly RequestDelegate _next = next;
+    private readonly ILogger<GlobalExceptionMiddleware> _logger = logger;
 
     /// <summary>
     /// Invokes the middleware to catch and handle exceptions.
@@ -111,3 +105,4 @@ public class GlobalExceptionMiddleware
         };
     }
 }
+

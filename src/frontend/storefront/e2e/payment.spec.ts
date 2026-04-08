@@ -12,7 +12,7 @@ test.describe('Payment', () => {
 
   test('should display payment methods in checkout', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for payment method options
     const paymentMethods = page.locator('[class*="payment-method"], [class*="payment-option"]');
@@ -21,7 +21,7 @@ test.describe('Payment', () => {
 
   test('should show credit card payment option', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for credit card option
     const creditCardOption = page.locator(
@@ -32,7 +32,7 @@ test.describe('Payment', () => {
 
   test('should show PayPal payment option', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for PayPal option
     const paypalOption = page.locator(':text("PayPal"), [class*="paypal"]');
@@ -41,7 +41,7 @@ test.describe('Payment', () => {
 
   test('should display credit card form when selected', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Click on credit card option
     const creditCardOption = page
@@ -50,7 +50,7 @@ test.describe('Payment', () => {
 
     if ((await creditCardOption.count()) > 0) {
       await creditCardOption.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for card input fields
       const cardNumber = page.locator('input[name*="card"], input[placeholder*="card" i]');
@@ -62,7 +62,7 @@ test.describe('Payment', () => {
 
   test('should validate credit card number format', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const cardInput = page.locator('input[name*="card"], input[placeholder*="card" i]').first();
 
@@ -70,7 +70,7 @@ test.describe('Payment', () => {
       // Enter invalid card number
       await cardInput.fill('1234');
       await cardInput.blur();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for validation error
       const error = page.locator('[class*="error"], :text("invalid" i)');
@@ -82,13 +82,13 @@ test.describe('Payment', () => {
 
   test('should format credit card number with spaces', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const cardInput = page.locator('input[name*="card"], input[placeholder*="card" i]').first();
 
     if ((await cardInput.count()) > 0) {
       await cardInput.fill('4111111111111111');
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Check if formatted (may have spaces)
       const value = await cardInput.inputValue();
@@ -100,14 +100,14 @@ test.describe('Payment', () => {
 
   test('should show card type detection', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const cardInput = page.locator('input[name*="card"], input[placeholder*="card" i]').first();
 
     if ((await cardInput.count()) > 0) {
       // Enter Visa card number
       await cardInput.fill('4111111111111111');
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for card type indicator
       const cardType = page.locator('[class*="card-type"], [class*="visa"]');
@@ -119,7 +119,7 @@ test.describe('Payment', () => {
 
   test('should validate expiry date', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const expiryInput = page.locator('input[name*="expir"], input[placeholder*="expir" i]').first();
 
@@ -127,7 +127,7 @@ test.describe('Payment', () => {
       // Enter past date
       await expiryInput.fill('01/20');
       await expiryInput.blur();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for validation error
       const error = page.locator('[class*="error"], :text("expired" i), :text("invalid" i)');
@@ -139,7 +139,7 @@ test.describe('Payment', () => {
 
   test('should validate CVV', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const cvvInput = page
       .locator('input[name*="cvv"], input[name*="cvc"], input[placeholder*="cvv" i]')
@@ -149,7 +149,7 @@ test.describe('Payment', () => {
       // Enter invalid CVV
       await cvvInput.fill('1');
       await cvvInput.blur();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for validation error
       const error = page.locator('[class*="error"]');
@@ -161,7 +161,7 @@ test.describe('Payment', () => {
 
   test('should show billing address section', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for billing address
     const billingSection = page.locator('[class*="billing"], :text("Billing Address")');
@@ -170,7 +170,7 @@ test.describe('Payment', () => {
 
   test('should allow same as shipping address option', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for same as shipping checkbox
     const sameAsShipping = page.locator(
@@ -186,7 +186,7 @@ test.describe('Payment', () => {
 
   test('should show payment processing indicator', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for place order button
     const placeOrderButton = page
@@ -203,7 +203,7 @@ test.describe('Payment', () => {
 
   test('should show secure payment indicator', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for security indicators
     const securityIndicator = page.locator(
@@ -214,7 +214,7 @@ test.describe('Payment', () => {
 
   test('should handle payment failure gracefully', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // This would require simulating a failed payment
     // For now, just check if error handling exists
@@ -224,7 +224,7 @@ test.describe('Payment', () => {
 
   test('should show order summary during payment', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for order summary
     const orderSummary = page.locator('[class*="order-summary"], [class*="summary"]');
@@ -233,7 +233,7 @@ test.describe('Payment', () => {
 
   test('should allow canceling payment', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for cancel/back button
     const cancelButton = page.locator(
@@ -242,7 +242,7 @@ test.describe('Payment', () => {
 
     if ((await cancelButton.count()) > 0) {
       await cancelButton.first().click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should navigate away
       expect(page.url()).not.toContain('checkout');

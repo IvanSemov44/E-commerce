@@ -1,4 +1,4 @@
-using ECommerce.API;
+﻿using ECommerce.API;
 using ECommerce.Tests.Helpers;
 using System.Net;
 using System.Net.Http.Json;
@@ -8,10 +8,10 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class OrdersCharacterizationTests
 {
-    private static readonly Lazy<TestWebApplicationFactory> LazyFactory =
+    private static readonly Lazy<TestWebApplicationFactory> _lazyFactory =
         new(() => new TestWebApplicationFactory());
 
-    private static TestWebApplicationFactory Factory => LazyFactory.Value;
+    private static TestWebApplicationFactory Factory => _lazyFactory.Value;
 
     [TestMethod]
     public async Task PlaceOrder_ValidData_Returns201WithOrderData()
@@ -46,7 +46,7 @@ public class OrdersCharacterizationTests
         var client = Factory.CreateClient();
         var createOrderDto = new
         {
-            Items = new object[0],
+            Items = Array.Empty<object>(),
             ShippingAddress = new
             {
                 StreetLine1 = "123 Main St",
@@ -67,7 +67,7 @@ public class OrdersCharacterizationTests
     [TestMethod]
     public async Task GetOrderById_ExistingOrder_Returns200()
     {
-        var client = Factory.CreateClient();
+        var client = Factory.CreateAuthenticatedClient();
         var orderId = Guid.Parse("44444444-4444-4444-4444-444444444444");
 
         var response = await client.GetAsync($"/api/orders/{orderId}");
@@ -79,7 +79,7 @@ public class OrdersCharacterizationTests
     [TestMethod]
     public async Task GetOrderById_UnknownId_Returns404()
     {
-        var client = Factory.CreateClient();
+        var client = Factory.CreateAuthenticatedClient();
         var unknownId = Guid.NewGuid();
 
         var response = await client.GetAsync($"/api/orders/{unknownId}");

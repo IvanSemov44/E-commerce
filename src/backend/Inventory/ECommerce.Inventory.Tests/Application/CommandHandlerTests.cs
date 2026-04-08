@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,9 +24,10 @@ public class CommandHandlerTests
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new IncreaseStockCommandHandler(repo, uow, NullLogger<IncreaseStockCommandHandler>.Instance);
+        var handler = new IncreaseStockCommandHandler(repo, uow, projectionPublisher, NullLogger<IncreaseStockCommandHandler>.Instance);
         var result = await handler.Handle(new IncreaseStockCommand(productId, 20, "restock"), default);
 
         Assert.IsTrue(result.IsSuccess);
@@ -39,8 +40,9 @@ public class CommandHandlerTests
     {
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
 
-        var handler = new IncreaseStockCommandHandler(repo, uow, NullLogger<IncreaseStockCommandHandler>.Instance);
+        var handler = new IncreaseStockCommandHandler(repo, uow, projectionPublisher, NullLogger<IncreaseStockCommandHandler>.Instance);
         var result = await handler.Handle(new IncreaseStockCommand(Guid.NewGuid(), 10, "restock"), default);
 
         Assert.IsFalse(result.IsSuccess);
@@ -55,8 +57,9 @@ public class CommandHandlerTests
         var repo = new FakeInventoryItemRepository();
         repo.Store.Add(MakeItem(productId));
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
 
-        var handler = new IncreaseStockCommandHandler(repo, uow, NullLogger<IncreaseStockCommandHandler>.Instance);
+        var handler = new IncreaseStockCommandHandler(repo, uow, projectionPublisher, NullLogger<IncreaseStockCommandHandler>.Instance);
         var result = await handler.Handle(new IncreaseStockCommand(productId, 0, "restock"), default);
 
         Assert.IsFalse(result.IsSuccess);
@@ -70,9 +73,10 @@ public class CommandHandlerTests
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 50));
 
-        var handler = new ReduceStockCommandHandler(repo, uow, NullLogger<ReduceStockCommandHandler>.Instance);
+        var handler = new ReduceStockCommandHandler(repo, uow, projectionPublisher, NullLogger<ReduceStockCommandHandler>.Instance);
         var result = await handler.Handle(new ReduceStockCommand(productId, 20, "sale"), default);
 
         Assert.IsTrue(result.IsSuccess);
@@ -86,9 +90,10 @@ public class CommandHandlerTests
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 5));
 
-        var handler = new ReduceStockCommandHandler(repo, uow, NullLogger<ReduceStockCommandHandler>.Instance);
+        var handler = new ReduceStockCommandHandler(repo, uow, projectionPublisher, NullLogger<ReduceStockCommandHandler>.Instance);
         var result = await handler.Handle(new ReduceStockCommand(productId, 10, "sale"), default);
 
         Assert.IsFalse(result.IsSuccess);
@@ -101,8 +106,9 @@ public class CommandHandlerTests
     {
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
 
-        var handler = new ReduceStockCommandHandler(repo, uow, NullLogger<ReduceStockCommandHandler>.Instance);
+        var handler = new ReduceStockCommandHandler(repo, uow, projectionPublisher, NullLogger<ReduceStockCommandHandler>.Instance);
         var result = await handler.Handle(new ReduceStockCommand(Guid.NewGuid(), 5, "sale"), default);
 
         Assert.IsFalse(result.IsSuccess);
@@ -115,9 +121,10 @@ public class CommandHandlerTests
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new AdjustStockCommandHandler(repo, uow, NullLogger<AdjustStockCommandHandler>.Instance);
+        var handler = new AdjustStockCommandHandler(repo, uow, projectionPublisher, NullLogger<AdjustStockCommandHandler>.Instance);
         var result = await handler.Handle(new AdjustStockCommand(productId, 100, "inventory_count"), default);
 
         Assert.IsTrue(result.IsSuccess);
@@ -132,9 +139,10 @@ public class CommandHandlerTests
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new AdjustStockCommandHandler(repo, uow, NullLogger<AdjustStockCommandHandler>.Instance);
+        var handler = new AdjustStockCommandHandler(repo, uow, projectionPublisher, NullLogger<AdjustStockCommandHandler>.Instance);
         var result = await handler.Handle(new AdjustStockCommand(productId, 0, "write-off"), default);
 
         Assert.IsTrue(result.IsSuccess);
@@ -147,9 +155,10 @@ public class CommandHandlerTests
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
         var uow = new FakeUnitOfWork();
+        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new AdjustStockCommandHandler(repo, uow, NullLogger<AdjustStockCommandHandler>.Instance);
+        var handler = new AdjustStockCommandHandler(repo, uow, projectionPublisher, NullLogger<AdjustStockCommandHandler>.Instance);
         var result = await handler.Handle(new AdjustStockCommand(productId, -1, "error"), default);
 
         Assert.IsFalse(result.IsSuccess);

@@ -9,25 +9,12 @@ namespace ECommerce.Infrastructure.Data;
 /// Calls individual seeders in the correct sequence to maintain referential integrity.
 /// Seeds in production only when explicitly enabled via ENABLE_PRODUCTION_SEEDING environment variable.
 /// </summary>
-public class DatabaseSeeder
+public class DatabaseSeeder(
+    IUserSeeder userSeeder,
+    ICategorySeeder categorySeeder,
+    IProductSeeder productSeeder,
+    ILogger<DatabaseSeeder> logger)
 {
-    private readonly IUserSeeder _userSeeder;
-    private readonly ICategorySeeder _categorySeeder;
-    private readonly IProductSeeder _productSeeder;
-    private readonly ILogger<DatabaseSeeder> _logger;
-
-    public DatabaseSeeder(
-        IUserSeeder userSeeder,
-        ICategorySeeder categorySeeder,
-        IProductSeeder productSeeder,
-        ILogger<DatabaseSeeder> logger)
-    {
-        _userSeeder = userSeeder;
-        _categorySeeder = categorySeeder;
-        _productSeeder = productSeeder;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Seed all data into the database in the correct order.
     /// In production, requires ENABLE_PRODUCTION_SEEDING=true to seed.
@@ -42,33 +29,33 @@ public class DatabaseSeeder
             var enableSeeding = Environment.GetEnvironmentVariable("ENABLE_PRODUCTION_SEEDING");
             if (!string.Equals(enableSeeding, "true", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogInformation("Skipping database seeding in Production environment (set ENABLE_PRODUCTION_SEEDING=true to enable)");
+                logger.LogInformation("Skipping database seeding in Production environment (set ENABLE_PRODUCTION_SEEDING=true to enable)");
                 return;
             }
-            _logger.LogWarning("Production seeding is ENABLED. This should only be used for initial deployment!");
+            logger.LogWarning("Production seeding is ENABLED. This should only be used for initial deployment!");
         }
 
         try
         {
-            _logger.LogInformation("Starting database seeding in {Environment} environment...", environment.EnvironmentName);
+            logger.LogInformation("Starting database seeding in {Environment} environment...", environment.EnvironmentName);
 
             // Seed users first (no dependencies)
-            _logger.LogInformation("Seeding users...");
-            await _userSeeder.SeedAsync(context);
+            logger.LogInformation("Seeding users...");
+            await userSeeder.SeedAsync(context);
 
             // Seed categories (no dependencies)
-            _logger.LogInformation("Seeding categories...");
-            await _categorySeeder.SeedAsync(context);
+            logger.LogInformation("Seeding categories...");
+            await categorySeeder.SeedAsync(context);
 
             // Seed products and product images (depends on categories)
-            _logger.LogInformation("Seeding products...");
-            await _productSeeder.SeedAsync(context);
+            logger.LogInformation("Seeding products...");
+            await productSeeder.SeedAsync(context);
 
-            _logger.LogInformation("Database seeding completed successfully!");
+            logger.LogInformation("Database seeding completed successfully!");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during database seeding");
+            logger.LogError(ex, "Error during database seeding");
             throw;
         }
     }

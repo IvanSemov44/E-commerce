@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
     <ProjectReference Include="..\ECommerce.Promotions.Domain\ECommerce.Promotions.Domain.csproj" />
     <ProjectReference Include="..\ECommerce.Promotions.Application\ECommerce.Promotions.Application.csproj" />
+    <ProjectReference Include="..\..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

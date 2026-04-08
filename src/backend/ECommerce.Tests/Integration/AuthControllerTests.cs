@@ -1,9 +1,9 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ECommerce.Application.DTOs.Auth;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Auth;
+using ECommerce.Contracts.DTOs.Common;
 
 namespace ECommerce.Tests.Integration;
 
@@ -372,3 +372,4 @@ public class AuthControllerTests
 
     #endregion
 }
+

@@ -80,3 +80,9 @@ References/
 .react-router/
 
 .fake
+
+# Local runtime verification artifacts
+_verify_*.sql
+_auth_cookies.txt
+_login_payload.json
+_order_payload.json

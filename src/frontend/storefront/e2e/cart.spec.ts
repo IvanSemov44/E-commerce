@@ -69,7 +69,7 @@ test.describe('Shopping Cart', () => {
       .first();
 
     await addToCartButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Navigate to cart
     const cartLink = page
@@ -108,7 +108,7 @@ test.describe('Shopping Cart', () => {
       .first();
 
     await addToCartButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const cartLink = page
       .locator('a[href*="cart"], [data-testid="cart-link"], a:has-text("Cart")')
@@ -125,13 +125,13 @@ test.describe('Shopping Cart', () => {
 
     if ((await quantityInput.count()) > 0) {
       await quantityInput.fill('2');
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       const newValue = await quantityInput.inputValue();
       expect(newValue).toBe('2');
     } else if ((await incrementButton.count()) > 0) {
       await incrementButton.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Verify quantity increased (cart total should change)
       const cartTotal = page.locator('[data-testid="cart-total"], .total, [class*="total"]');
@@ -161,7 +161,7 @@ test.describe('Shopping Cart', () => {
       .first();
 
     await addToCartButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const cartLink = page
       .locator('a[href*="cart"], [data-testid="cart-link"], a:has-text("Cart")')
@@ -181,7 +181,7 @@ test.describe('Shopping Cart', () => {
 
     if ((await removeButton.count()) > 0) {
       await removeButton.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Verify item was removed
       const newCount = await cartItems.count();

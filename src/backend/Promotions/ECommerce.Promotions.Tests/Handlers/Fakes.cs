@@ -1,4 +1,5 @@
 ﻿using ECommerce.Promotions.Domain.Aggregates.PromoCode;
+using ECommerce.Promotions.Application.Interfaces;
 using ECommerce.Promotions.Domain.Interfaces;
 
 namespace ECommerce.Promotions.Tests.Handlers;
@@ -55,4 +56,16 @@ public sealed class FakePromoCodeRepository : IPromoCodeRepository
     }
 
     public bool Contains(Guid id) => _store.ContainsKey(id);
+}
+
+public sealed class FakePromoProjectionEventPublisher : IPromoProjectionEventPublisher
+{
+    public Task PublishPromoProjectionUpdatedAsync(
+        Guid promoCodeId,
+        string code,
+        decimal discountValue,
+        bool isActive,
+        bool isDeleted,
+        CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
 }

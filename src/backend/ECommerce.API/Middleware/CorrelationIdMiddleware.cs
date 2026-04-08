@@ -10,22 +10,16 @@ namespace ECommerce.API.Middleware;
 /// Extracts correlation ID from request headers, Activity.Current, or generates a new one.
 /// Validates all inbound correlation IDs and enriches logs for tracing across services.
 /// </summary>
-public sealed class CorrelationIdMiddleware
+public sealed class CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<CorrelationIdMiddleware> _logger;
+    private readonly RequestDelegate _next = next;
+    private readonly ILogger<CorrelationIdMiddleware> _logger = logger;
     private const string CorrelationIdHeader = "X-Correlation-ID";
     private const string CorrelationIdLogProperty = "CorrelationId";
     private const int MaxCorrelationIdLength = 255;
 
     // Valid correlation ID: UUID or alphanumeric-hyphen-underscore (no spaces, special chars)
-    private static readonly Regex ValidCorrelationIdPattern = new(@"^[a-zA-Z0-9\-_]+$", RegexOptions.Compiled);
-
-    public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
+    private static readonly Regex _validCorrelationIdPattern = new(@"^[a-zA-Z0-9\-_]+$", RegexOptions.Compiled);
 
     /// <summary>
     /// Extracts or generates a validated correlation ID and makes it available throughout the request pipeline.
@@ -101,6 +95,6 @@ public sealed class CorrelationIdMiddleware
 
         // Must match safe pattern: UUID or alphanumeric-hyphen-underscore
         // Rejects: special chars, spaces, control chars, multi-line sequences
-        return ValidCorrelationIdPattern.IsMatch(correlationId);
+        return _validCorrelationIdPattern.IsMatch(correlationId);
     }
 }

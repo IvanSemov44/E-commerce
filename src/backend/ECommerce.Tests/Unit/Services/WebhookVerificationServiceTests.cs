@@ -1,4 +1,4 @@
-﻿using ECommerce.Application.Services;
+﻿using ECommerce.Payments.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security.Cryptography;

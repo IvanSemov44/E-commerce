@@ -42,6 +42,7 @@ public class AddToCartCreateOrderTests
             PaymentMethod = "credit_card",
             ShippingAddress = new
             {
+                Id = "77777777-7777-7777-7777-777777777777",
                 FirstName = "John",
                 LastName = "Doe",
                 StreetLine1 = "123 Main St",

@@ -28,7 +28,7 @@ test.describe('Guest Checkout', () => {
       .first();
 
     await addToCartButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
   });
 
   test('should navigate to checkout from cart', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('Guest Checkout', () => {
       await checkoutButton.click();
 
       // Verify we navigated to checkout page
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
       const url = page.url();
       expect(url).toMatch(/\/(checkout|order)/i);
     } else {
@@ -75,7 +75,7 @@ test.describe('Guest Checkout', () => {
     }
 
     await checkoutButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Verify shipping address fields are present
     const emailInput = page.locator('input[type="email"], input[name*="email"]');
@@ -105,7 +105,7 @@ test.describe('Guest Checkout', () => {
     }
 
     await checkoutButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Try to submit without email
     const submitButton = page
@@ -114,7 +114,7 @@ test.describe('Guest Checkout', () => {
 
     if ((await submitButton.count()) > 0) {
       await submitButton.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for validation error
       const errorMessage = page.locator('.error, [class*="error"], [role="alert"], .invalid');
@@ -142,7 +142,7 @@ test.describe('Guest Checkout', () => {
     }
 
     await checkoutButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Verify order summary is visible
     const orderSummary = page.locator(
@@ -176,7 +176,7 @@ test.describe('Guest Checkout', () => {
     }
 
     await checkoutButton.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Fill in guest checkout form
     const emailInput = page.locator('input[type="email"], input[name*="email"]').first();

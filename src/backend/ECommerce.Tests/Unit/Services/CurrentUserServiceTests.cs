@@ -1,5 +1,5 @@
-﻿using ECommerce.Application.Services;
-using ECommerce.Core.Enums;
+using ECommerce.Infrastructure.Services;
+using ECommerce.SharedKernel.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
@@ -573,3 +573,4 @@ public class CurrentUserServiceTests
 
     #endregion
 }
+

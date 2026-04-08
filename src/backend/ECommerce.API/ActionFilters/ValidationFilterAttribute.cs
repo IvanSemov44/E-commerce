@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using ECommerce.Application.DTOs.Common;
+using ECommerce.Contracts.DTOs.Common;
 
 namespace ECommerce.API.ActionFilters;
 
@@ -51,3 +51,4 @@ public class ValidationFilterAttribute : ActionFilterAttribute
     }
 
 }
+

@@ -13,13 +13,13 @@ test.describe('Reviews', () => {
   test('should display reviews on product page', async ({ page }) => {
     // Navigate to a product
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for reviews section
       const reviewsSection = page.locator('[class*="reviews"], [data-testid="reviews"]');
@@ -36,13 +36,13 @@ test.describe('Reviews', () => {
 
   test('should show average rating on product page', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for rating display
       const ratingElement = page.locator('[class*="rating"], [data-testid="rating"]');
@@ -58,13 +58,13 @@ test.describe('Reviews', () => {
 
   test('should show star rating display', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for star icons
       const stars = page.locator('[class*="star"], svg[class*="star"], [data-testid*="star"]');
@@ -76,13 +76,13 @@ test.describe('Reviews', () => {
 
   test('should display review author name', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for review items
       const reviewItem = page.locator('[class*="review-item"], [data-testid="review"]').first();
@@ -99,13 +99,13 @@ test.describe('Reviews', () => {
 
   test('should display review date', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const reviewItem = page.locator('[class*="review-item"], [data-testid="review"]').first();
 
@@ -123,13 +123,13 @@ test.describe('Reviews', () => {
 
   test('should show review comment text', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const reviewItem = page.locator('[class*="review-item"], [data-testid="review"]').first();
 
@@ -145,13 +145,13 @@ test.describe('Reviews', () => {
 
   test('should allow writing a review when logged in', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for write review button
       const writeReviewButton = page
@@ -162,7 +162,7 @@ test.describe('Reviews', () => {
 
       if ((await writeReviewButton.count()) > 0) {
         await writeReviewButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Should show review form or login prompt
         const reviewForm = page.locator('form, [class*="review-form"]');
@@ -179,13 +179,13 @@ test.describe('Reviews', () => {
 
   test('should submit review with rating and comment', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const writeReviewButton = page
         .locator('button:has-text("Write a Review"), button:has-text("Add Review")')
@@ -193,7 +193,7 @@ test.describe('Reviews', () => {
 
       if ((await writeReviewButton.count()) > 0) {
         await writeReviewButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Check if review form is visible
         const reviewForm = page.locator('form, [class*="review-form"]');
@@ -219,7 +219,7 @@ test.describe('Reviews', () => {
             .first();
           if ((await submitButton.count()) > 0) {
             await submitButton.click();
-            await page.waitForTimeout(1000);
+            await page.waitForLoadState('networkidle');
 
             // Check for success
             const successToast = page.locator('[class*="toast"], [role="alert"]');
@@ -238,13 +238,13 @@ test.describe('Reviews', () => {
 
   test('should show helpful vote buttons on reviews', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const reviewItem = page.locator('[class*="review-item"], [data-testid="review"]').first();
 
@@ -262,20 +262,20 @@ test.describe('Reviews', () => {
 
   test('should sort reviews by date or rating', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for sort dropdown
       const sortDropdown = page.locator('select, [class*="sort"]').first();
 
       if ((await sortDropdown.count()) > 0) {
         await sortDropdown.click();
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
 
         // Look for sort options
         const sortOption = page.locator('option:has-text("Newest"), option:has-text("Highest")');
@@ -288,13 +288,13 @@ test.describe('Reviews', () => {
 
   test('should paginate reviews if many exist', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for pagination
       const pagination = page.locator('[class*="pagination"], button:has-text("Load More")');
@@ -306,13 +306,13 @@ test.describe('Reviews', () => {
 
   test('should show verified purchase badge', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for verified purchase badge
       const verifiedBadge = page.locator(':text("Verified Purchase"), [class*="verified"]');

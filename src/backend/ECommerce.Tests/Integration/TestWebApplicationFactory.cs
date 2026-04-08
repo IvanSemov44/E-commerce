@@ -17,10 +17,22 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ECommerce.Infrastructure.Data;
-using ECommerce.Core.Entities;
-using ECommerce.Application.Interfaces;
+using ECommerce.SharedKernel.Entities;
+using ECommerce.SharedKernel.DTOs;
+using ECommerce.SharedKernel.Interfaces;
+using ECommerce.Payments.Application.Interfaces;
+using SharedOrderStatus = ECommerce.SharedKernel.Enums.OrderStatus;
+using SharedPaymentStatus = ECommerce.SharedKernel.Enums.PaymentStatus;
+using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
+using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
+using ECommerce.Identity.Infrastructure.Persistence;
+using ECommerce.Ordering.Infrastructure.Persistence;
+using ECommerce.Shopping.Infrastructure.Persistence;
+using ECommerce.Promotions.Application.Interfaces;
+using ECommerce.Promotions.Domain.Interfaces;
+using ECommerce.Promotions.Infrastructure.Persistence;
 using BCrypt.Net;
 using Microsoft.Extensions.Hosting;
 
@@ -88,8 +100,19 @@ public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOpti
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
+    private readonly string _catalogDatabaseName = $"IntegrationTestsCatalogDb_{Guid.NewGuid():N}";
+    private readonly string _identityDatabaseName = $"IntegrationTestsIdentityDb_{Guid.NewGuid():N}";
+    private readonly string _inventoryDatabaseName = $"IntegrationTestsInventoryDb_{Guid.NewGuid():N}";
+    private readonly string _orderingDatabaseName = $"IntegrationTestsOrderingDb_{Guid.NewGuid():N}";
     private readonly string _reviewsDatabaseName = $"IntegrationTestsReviewsDb_{Guid.NewGuid():N}";
+    private readonly string _shoppingDatabaseName = $"IntegrationTestsShoppingDb_{Guid.NewGuid():N}";
+    private readonly string _promotionsDatabaseName = $"IntegrationTestsPromotionsDb_{Guid.NewGuid():N}";
+    private readonly FakePromoCodeRepository _promoCodeRepository = new();
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+    private static readonly Guid SeededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly string _defaultConnectionString =
+        Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+        ?? "Host=localhost;Database=ECommerceDb;Username=ecommerce;Password=local-dev-password-123";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -106,8 +129,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:SecretKey", "SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough");
         builder.UseSetting("Jwt:Issuer", "test");
         builder.UseSetting("Jwt:Audience", "test");
-        builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=localhost;Database=TestDb;Username=test;Password=testpassword");
-        builder.UseSetting("Serilog:MinimumLevel:Default", "Fatal");
+        builder.UseSetting("ConnectionStrings:DefaultConnection", _defaultConnectionString);
+        builder.UseSetting("Serilog:MinimumLevel:Default", "Debug");
         builder.UseSetting("RateLimiting:GlobalLimit", "100000");
         builder.UseSetting("RateLimiting:AuthLimit", "100000");
         builder.UseSetting("RateLimiting:PasswordResetLimit", "100000");
@@ -126,6 +149,24 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             var reviewsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ReviewsDbContext>));
             if (reviewsDescriptor != null) services.Remove(reviewsDescriptor);
 
+            var catalogDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<CatalogDbContext>));
+            if (catalogDescriptor != null) services.Remove(catalogDescriptor);
+
+            var identityDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<IdentityDbContext>));
+            if (identityDescriptor != null) services.Remove(identityDescriptor);
+
+            var inventoryDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<InventoryDbContext>));
+            if (inventoryDescriptor != null) services.Remove(inventoryDescriptor);
+
+            var orderingDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<OrderingDbContext>));
+            if (orderingDescriptor != null) services.Remove(orderingDescriptor);
+
+            var promotionsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PromotionsDbContext>));
+            if (promotionsDescriptor != null) services.Remove(promotionsDescriptor);
+
+            var shoppingDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ShoppingDbContext>));
+            if (shoppingDescriptor != null) services.Remove(shoppingDescriptor);
+
             services.RemoveAll(typeof(IEmailService));
             services.AddScoped<IEmailService, NoOpEmailService>();
 
@@ -135,6 +176,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Replace webhook verification service with test implementation (always returns true)
             services.RemoveAll(typeof(IWebhookVerificationService));
             services.AddScoped<IWebhookVerificationService, TestWebhookVerificationService>();
+
+            services.RemoveAll<IPromoCodeRepository>();
+            services.AddSingleton<IPromoCodeRepository>(_promoCodeRepository);
+
+            services.RemoveAll<IPromoProjectionEventPublisher>();
+            services.AddSingleton<IPromoProjectionEventPublisher, NoOpPromoProjectionEventPublisher>();
+
+            services.RemoveAll<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher>();
+            services.AddScoped<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher, NoOpInventoryProjectionEventPublisher>();
 
             // Use a separate internal service provider for EF InMemory to avoid multiple provider registrations
             var inMemoryServiceProvider = new ServiceCollection()
@@ -156,6 +206,51 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
+            services.AddDbContext<CatalogDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_catalogDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
+            services.AddDbContext<IdentityDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_identityDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
+            services.AddDbContext<InventoryDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_inventoryDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
+            services.AddDbContext<OrderingDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_orderingDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
+            services.AddDbContext<PromotionsDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_promotionsDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
+            services.AddDbContext<ShoppingDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_shoppingDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
+            services.RemoveAll<IUnitOfWork>();
+            services.AddScoped<IUnitOfWork, TestUnitOfWork>();
+
             // Replace authentication with conditional test scheme
             services.AddAuthentication(options =>
             {
@@ -174,18 +269,49 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 var reviewsDb = scopedServices.GetRequiredService<ReviewsDbContext>();
                 reviewsDb.Database.EnsureCreated();
 
+                var catalogDb = scopedServices.GetRequiredService<CatalogDbContext>();
+                catalogDb.Database.EnsureCreated();
+
+                var identityDb = scopedServices.GetRequiredService<IdentityDbContext>();
+                identityDb.Database.EnsureCreated();
+
+                var inventoryDb = scopedServices.GetRequiredService<InventoryDbContext>();
+                inventoryDb.Database.EnsureCreated();
+
+                var orderingDb = scopedServices.GetRequiredService<OrderingDbContext>();
+                orderingDb.Database.EnsureCreated();
+
+                var promotionsDb = scopedServices.GetRequiredService<PromotionsDbContext>();
+                promotionsDb.Database.EnsureCreated();
+
+                var shoppingDb = scopedServices.GetRequiredService<ShoppingDbContext>();
+                shoppingDb.Database.EnsureCreated();
+
                 // Precomputed once per process to avoid repeated hash cost on startup
                 string passwordHash = _testPasswordHash;
 
                 var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
                 var adminId = Guid.Parse(ConditionalTestAuthHandler.TestAdminUserId);
+
                 db.Users.Add(new User
                 {
                     Id = userId,
                     Email = "integration@test.com",
                     FirstName = "Integration",
                     LastName = "User",
-                    Role = Core.Enums.UserRole.Customer,
+                    Role = SharedKernel.Enums.UserRole.Customer,
+                    PasswordHash = passwordHash,
+                    IsEmailVerified = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                identityDb.Users.Add(new User
+                {
+                    Id = userId,
+                    Email = "integration@test.com",
+                    FirstName = "Integration",
+                    LastName = "User",
+                    Role = SharedKernel.Enums.UserRole.Customer,
                     PasswordHash = passwordHash,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow
@@ -197,7 +323,19 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Email = "admin@test.com",
                     FirstName = "Admin",
                     LastName = "User",
-                    Role = Core.Enums.UserRole.Admin,
+                    Role = SharedKernel.Enums.UserRole.Admin,
+                    PasswordHash = passwordHash,
+                    IsEmailVerified = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                identityDb.Users.Add(new User
+                {
+                    Id = adminId,
+                    Email = "admin@test.com",
+                    FirstName = "Admin",
+                    LastName = "User",
+                    Role = SharedKernel.Enums.UserRole.Admin,
                     PasswordHash = passwordHash,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow
@@ -227,19 +365,146 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
                 var inventoryResult = InventoryItem.Create(productId, 100, 10);
                 if (inventoryResult.IsSuccess)
-                    db.InventoryItems.Add(inventoryResult.GetDataOrThrow());
-
-                // Seed new domain-driven PromoCode
-                var codeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE20");
-                var discountResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(20);
-                if (codeResult.IsSuccess && discountResult.IsSuccess)
                 {
-                    var newPromoCode = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode.Create(
-                        codeResult.GetDataOrThrow(),
-                        discountResult.GetDataOrThrow(),
-                        null); // No date range for this promo code
-                    db.PromoCodes.Add(newPromoCode);
+                    db.InventoryItems.Add(inventoryResult.GetDataOrThrow());
                 }
+
+                var inventoryResultForInventoryDb = InventoryItem.Create(productId, 100, 10);
+                if (inventoryResultForInventoryDb.IsSuccess)
+                {
+                    inventoryDb.InventoryItems.Add(inventoryResultForInventoryDb.GetDataOrThrow());
+                }
+
+                catalogDb.Categories.Add(new Category
+                {
+                    Id = categoryId,
+                    Name = "Test Category",
+                    Slug = "test-category",
+                    IsActive = true
+                });
+
+                catalogDb.Products.Add(new Product
+                {
+                    Id = productId,
+                    Name = "IntegrationProduct",
+                    Slug = "integration-product",
+                    Price = 10.0m,
+                    StockQuantity = 100,
+                    IsActive = true,
+                    Sku = "TEST-SKU-001",
+                    CategoryId = categoryId
+                });
+
+                orderingDb.Products.Add(new ECommerce.Ordering.Infrastructure.Persistence.ProductReadModel
+                {
+                    Id = productId,
+                    Name = "IntegrationProduct",
+                    Price = 10.0m,
+                    UpdatedAt = DateTime.UtcNow
+                });
+
+                orderingDb.PromoCodes.Add(new PromoCodeReadModel
+                {
+                    Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
+                    Code = "SAVE20",
+                    DiscountValue = 20m,
+                    IsActive = true,
+                    UpdatedAt = DateTime.UtcNow
+                });
+
+                orderingDb.Addresses.Add(new AddressReadModel
+                {
+                    Id = Guid.Parse("77777777-7777-7777-7777-777777777777"),
+                    UserId = userId,
+                    StreetLine1 = "123 Test St",
+                    City = "Testville",
+                    Country = "US",
+                    PostalCode = "12345",
+                    UpdatedAt = DateTime.UtcNow
+                });
+
+                // Seed a pending order in OrderingDbContext so ship/cancel handlers can find it
+                var testOrderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+                orderingDb.Orders.Add(new ECommerce.SharedKernel.Entities.Order
+                {
+                    Id = testOrderId,
+                    OrderNumber = "TEST-ORDER-001",
+                    UserId = userId,
+                    Status = SharedOrderStatus.Pending,
+                    PaymentStatus = SharedPaymentStatus.Paid,
+                    Subtotal = 20.00m,
+                    DiscountAmount = 0.00m,
+                    ShippingAmount = 10.00m,
+                    TaxAmount = 0.00m,
+                    TotalAmount = 30.00m,
+                    Currency = "USD",
+                    RowVersion = Array.Empty<byte>()
+                });
+                orderingDb.OrderItems.Add(new ECommerce.SharedKernel.Entities.OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = testOrderId,
+                    ProductId = productId,
+                    ProductName = "IntegrationProduct",
+                    UnitPrice = 10.00m,
+                    Quantity = 2,
+                    TotalPrice = 20.00m
+                });
+
+                // Seed a shipped order so cancel-shipped tests can find it
+                var shippedOrderId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+                orderingDb.Orders.Add(new ECommerce.SharedKernel.Entities.Order
+                {
+                    Id = shippedOrderId,
+                    OrderNumber = "TEST-ORDER-SHIPPED-001",
+                    UserId = userId,
+                    Status = SharedOrderStatus.Shipped,
+                    PaymentStatus = SharedPaymentStatus.Paid,
+                    Subtotal = 20.00m,
+                    DiscountAmount = 0.00m,
+                    ShippingAmount = 10.00m,
+                    TaxAmount = 0.00m,
+                    TotalAmount = 30.00m,
+                    Currency = "USD",
+                    RowVersion = Array.Empty<byte>()
+                });
+                orderingDb.OrderItems.Add(new ECommerce.SharedKernel.Entities.OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = shippedOrderId,
+                    ProductId = productId,
+                    ProductName = "IntegrationProduct",
+                    UnitPrice = 10.00m,
+                    Quantity = 2,
+                    TotalPrice = 20.00m
+                });
+
+                var promoCodeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE20");
+                var discountValueResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(20);
+                if (promoCodeResult.IsSuccess && discountValueResult.IsSuccess)
+                {
+                    var promo = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode.Create(
+                        promoCodeResult.GetDataOrThrow(),
+                        discountValueResult.GetDataOrThrow(),
+                        null);
+                    SetEntityId(promo, SeededPromoCodeId);
+                    _promoCodeRepository.Seed(promo);
+                }
+
+                shoppingDb.Products.Add(new ECommerce.Shopping.Infrastructure.Persistence.ProductReadModel
+                {
+                    Id = productId,
+                    IsActive = true,
+                    Price = 10.0m,
+                    Sku = "TEST-SKU-001"
+                });
+
+                shoppingDb.InventoryItems.Add(new InventoryItemReadModel
+                {
+                    ProductId = productId,
+                    Quantity = 100,
+                    UpdatedAt = DateTime.UtcNow
+                });
 
                 var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
                 db.Orders.Add(new Order
@@ -247,8 +512,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Id = orderId,
                     OrderNumber = "TEST-ORDER-001",
                     UserId = userId,
-                    Status = Core.Enums.OrderStatus.Pending,
-                    PaymentStatus = Core.Enums.PaymentStatus.Paid,  // Pre-paid for refund testing
+                    Status = SharedOrderStatus.Pending,
+                    PaymentStatus = SharedPaymentStatus.Paid,  // Pre-paid for refund testing
                     Subtotal = 100.00m,
                     DiscountAmount = 0.00m,
                     ShippingAmount = 10.00m,
@@ -258,6 +523,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 });
 
                 db.SaveChanges();
+                catalogDb.SaveChanges();
+                identityDb.SaveChanges();
+                inventoryDb.SaveChanges();
+                orderingDb.SaveChanges();
+                shoppingDb.SaveChanges();
             }
 
             // Reset auth to enabled by default
@@ -360,10 +630,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Task SendWelcomeEmailAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendEmailVerificationAsync(string email, string firstName, string verificationLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendOrderConfirmationEmailAsync(string email, Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendOrderDeliveredEmailAsync(string email, Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderConfirmationEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderShippedEmailAsync(string email, OrderEmailDto order, string trackingNumber, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendOrderDeliveredEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SendAbandonedCartEmailAsync(string email, string firstName, CartEmailDto cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendLowStockAlertAsync(string email, string firstName, string productName, int currentStock, int threshold, string? sku = null, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
@@ -372,4 +642,82 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         public bool VerifySignature(string payload, string signature) => true;
     }
+
+    private sealed class NoOpInventoryProjectionEventPublisher : ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher
+    {
+        public Task PublishStockProjectionUpdatedAsync(
+            Guid productId,
+            int quantity,
+            string reason,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
+    private sealed class NoOpPromoProjectionEventPublisher : IPromoProjectionEventPublisher
+    {
+        public Task PublishPromoProjectionUpdatedAsync(
+            Guid promoCodeId,
+            string code,
+            decimal discountValue,
+            bool isActive,
+            bool isDeleted,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
+    private static void SetEntityId(object entity, Guid id)
+    {
+        var property = entity.GetType().BaseType?.GetProperty("Id") ?? entity.GetType().GetProperty("Id");
+        property?.SetValue(entity, id);
+    }
+
+    private sealed class TestUnitOfWork(IServiceProvider serviceProvider) : IUnitOfWork
+    {
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => SaveAllAsync(cancellationToken);
+
+        public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+            => SaveAllAsync(cancellationToken);
+
+        public Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public bool HasActiveTransaction => false;
+
+        public void Dispose()
+        {
+        }
+
+        private async Task<int> SaveAllAsync(CancellationToken cancellationToken)
+        {
+            var total = 0;
+
+            total += await SaveIfAvailableAsync<AppDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<IdentityDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<ReviewsDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<CatalogDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<InventoryDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<OrderingDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<PromotionsDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<ShoppingDbContext>(cancellationToken);
+
+            return total;
+        }
+
+        private async Task<int> SaveIfAvailableAsync<TDbContext>(CancellationToken cancellationToken)
+            where TDbContext : DbContext
+        {
+            var dbContext = _serviceProvider.GetService<TDbContext>();
+            if (dbContext is null)
+                return 0;
+
+            return await dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
 }
+

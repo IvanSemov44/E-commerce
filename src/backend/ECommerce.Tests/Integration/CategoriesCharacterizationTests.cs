@@ -6,8 +6,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Core.Constants;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Constants;
 
 namespace ECommerce.Tests.Integration;
 
@@ -348,3 +348,4 @@ public class CategoriesCharacterizationTests
         Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
     }
 }
+

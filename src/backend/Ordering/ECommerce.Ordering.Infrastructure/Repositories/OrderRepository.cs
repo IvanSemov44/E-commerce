@@ -1,22 +1,25 @@
-using ECommerce.Ordering.Domain.Aggregates.Order;
+﻿using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.Interfaces;
 using ECommerce.Ordering.Domain.ValueObjects;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using CoreOrder = ECommerce.Core.Entities.Order;
-using CoreOrderItem = ECommerce.Core.Entities.OrderItem;
+using CoreOrder = ECommerce.SharedKernel.Entities.Order;
+using CoreOrderItem = ECommerce.SharedKernel.Entities.OrderItem;
+using SharedOrderStatus = ECommerce.SharedKernel.Enums.OrderStatus;
+using SharedPaymentStatus = ECommerce.SharedKernel.Enums.PaymentStatus;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence.Repositories;
 
-public class OrderRepository(AppDbContext _db) : IOrderRepository
+public class OrderRepository(OrderingDbContext _db) : IOrderRepository
 {
     public async Task<Order?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var order = await _db.Orders
             .AsNoTracking()
+            .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == id, ct);
 
-        return order is null ? null : MapToDomain(order, false);
+        return order is null ? null : MapToDomain(order, true);
     }
 
     public async Task<Order?> GetByIdWithItemsAsync(Guid id, CancellationToken ct = default)
@@ -50,6 +53,41 @@ public class OrderRepository(AppDbContext _db) : IOrderRepository
         return orders.Select(o => MapToDomain(o, true)).ToList();
     }
 
+    public Task<int> GetTotalOrdersCountAsync(CancellationToken ct = default)
+        => _db.Orders.AsNoTracking().CountAsync(ct);
+
+    public async Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
+        => await _db.Orders
+            .AsNoTracking()
+            .Where(o => o.PaymentStatus == SharedPaymentStatus.Paid)
+            .SumAsync(o => (decimal?)o.TotalAmount, ct) ?? 0m;
+
+    public async Task<Dictionary<DateTime, int>> GetOrdersTrendAsync(int days, CancellationToken ct = default)
+    {
+        var startDate = DateTime.UtcNow.AddDays(-days).Date;
+        var data = await _db.Orders
+            .AsNoTracking()
+            .Where(o => o.CreatedAt >= startDate)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        return data.ToDictionary(x => x.Date, x => x.Count);
+    }
+
+    public async Task<Dictionary<DateTime, decimal>> GetRevenueTrendAsync(int days, CancellationToken ct = default)
+    {
+        var startDate = DateTime.UtcNow.AddDays(-days).Date;
+        var data = await _db.Orders
+            .AsNoTracking()
+            .Where(o => o.CreatedAt >= startDate && o.PaymentStatus == SharedPaymentStatus.Paid)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Amount = g.Sum(o => o.TotalAmount) })
+            .ToListAsync(ct);
+
+        return data.ToDictionary(x => x.Date, x => x.Amount);
+    }
+
     public async Task AddAsync(Order order, CancellationToken ct = default)
     {
         var entity = new CoreOrder
@@ -62,8 +100,8 @@ public class OrderRepository(AppDbContext _db) : IOrderRepository
             ShippingAmount = order.ShippingCost,
             TaxAmount = order.TaxAmount,
             TotalAmount = order.Total,
-            Status = Core.Enums.OrderStatus.Pending,
-            PaymentStatus = Core.Enums.PaymentStatus.Pending,
+            Status = SharedOrderStatus.Pending,
+            PaymentStatus = SharedPaymentStatus.Pending,
             RowVersion = Array.Empty<byte>()
         };
 
@@ -82,8 +120,6 @@ public class OrderRepository(AppDbContext _db) : IOrderRepository
                 ProductImageUrl = item.ProductImageUrl
             });
         }
-
-        await _db.SaveChangesAsync(ct);
     }
 
     public async Task UpdateAsync(Order order, CancellationToken ct = default)
@@ -100,14 +136,14 @@ public class OrderRepository(AppDbContext _db) : IOrderRepository
         existing.TotalAmount = order.Total;
 
         var domainStatus = order.Status.Name;
-        if (Enum.TryParse<Core.Enums.OrderStatus>(domainStatus, true, out var coreStatus))
+        if (Enum.TryParse<SharedOrderStatus>(domainStatus, true, out var coreStatus))
             existing.Status = coreStatus;
-
-        await _db.SaveChangesAsync(ct);
     }
 
     private static Order MapToDomain(CoreOrder order, bool withItems)
     {
+        _ = withItems;
+
         var shippingAddress = ShippingAddress.Create(
             order.ShippingAddress?.StreetLine1 ?? "",
             order.ShippingAddress?.City ?? "",
@@ -142,7 +178,7 @@ public class OrderRepository(AppDbContext _db) : IOrderRepository
 
         var domainOrder = result.GetDataOrThrow();
 
-        if (Enum.TryParse<Core.Enums.OrderStatus>(order.Status.ToString(), true, out var status))
+        if (Enum.TryParse<SharedOrderStatus>(order.Status.ToString(), true, out var status))
         {
             var statusName = status.ToString();
             var domainStatus = OrderStatus.FromName(statusName);

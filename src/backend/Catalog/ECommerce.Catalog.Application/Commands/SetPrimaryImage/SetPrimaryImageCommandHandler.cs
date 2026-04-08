@@ -5,13 +5,15 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Extensions;
+using ECommerce.Catalog.Application.Interfaces;
 using ECommerce.Catalog.Domain.Interfaces;
 
 namespace ECommerce.Catalog.Application.Commands.SetPrimaryImage;
 
 public class SetPrimaryImageCommandHandler(
     IProductRepository _products,
-    ICategoryRepository _categories
+    ICategoryRepository _categories,
+    IProductProjectionEventPublisher? _projectionPublisher = null
 ) : IRequestHandler<SetPrimaryImageCommand, Result<ProductDetailDto>>
 {
     public async Task<Result<ProductDetailDto>> Handle(SetPrimaryImageCommand command, CancellationToken cancellationToken)
@@ -25,6 +27,20 @@ public class SetPrimaryImageCommandHandler(
             return Result<ProductDetailDto>.Fail(setResult.GetErrorOrThrow());
 
         await _products.UpdateAsync(product, cancellationToken);
+
+        if (_projectionPublisher is not null)
+        {
+            foreach (var image in product.Images)
+            {
+                await _projectionPublisher.PublishProductImageProjectionUpdatedAsync(
+                    image.Id,
+                    product.Id,
+                    image.Url,
+                    image.IsPrimary,
+                    false,
+                    cancellationToken);
+            }
+        }
 
         var category = await _categories.GetByIdAsync(product.CategoryId, cancellationToken);
         if (category is null)

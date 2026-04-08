@@ -4,6 +4,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Inventory.Application.DTOs;
 using ECommerce.Inventory.Application.Errors;
+using ECommerce.Inventory.Application.Interfaces;
 using ECommerce.Inventory.Domain.Interfaces;
 
 namespace ECommerce.Inventory.Application.Commands.AdjustStock;
@@ -11,6 +12,7 @@ namespace ECommerce.Inventory.Application.Commands.AdjustStock;
 public class AdjustStockCommandHandler(
     IInventoryItemRepository _repo,
     IUnitOfWork _uow,
+    IInventoryProjectionEventPublisher _projectionPublisher,
     ILogger<AdjustStockCommandHandler> _logger
 ) : IRequestHandler<AdjustStockCommand, Result<StockAdjustmentResultDto>>
 {
@@ -37,6 +39,11 @@ public class AdjustStockCommandHandler(
         }
 
         await _uow.SaveChangesAsync(cancellationToken);
+        await _projectionPublisher.PublishStockProjectionUpdatedAsync(
+            command.ProductId,
+            item.Stock.Quantity,
+            command.Reason,
+            cancellationToken);
 
         _logger.LogInformation("Stock adjusted for product {ProductId}: {PreviousQty} -> {NewQty}",
             command.ProductId, previousQty, item.Stock.Quantity);

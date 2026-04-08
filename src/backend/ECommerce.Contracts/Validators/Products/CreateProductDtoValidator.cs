@@ -1,0 +1,20 @@
+using FluentValidation;
+using ECommerce.Contracts.DTOs.Products;
+
+namespace ECommerce.Contracts.Validators.Products;
+
+public class CreateProductDtoValidator : AbstractValidator<CreateProductDto>
+{
+    public CreateProductDtoValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Slug).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Price).GreaterThan(0);
+        RuleFor(x => x.StockQuantity).GreaterThanOrEqualTo(0);
+        When(x => x.CompareAtPrice.HasValue, () =>
+        {
+            RuleFor(x => x.CompareAtPrice).GreaterThan(x => x.Price).When(x => x.CompareAtPrice.HasValue);
+        });
+    }
+}
+

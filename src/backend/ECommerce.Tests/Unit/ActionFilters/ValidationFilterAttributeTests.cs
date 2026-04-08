@@ -1,6 +1,6 @@
-﻿using ECommerce.API.ActionFilters;
-using ECommerce.Application.DTOs.Common;
-using ECommerce.Application.DTOs.Products;
+using ECommerce.API.ActionFilters;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.Contracts.DTOs.Products;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -387,3 +387,4 @@ public class ValidationFilterAttributeTests
         result.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
     }
 }
+

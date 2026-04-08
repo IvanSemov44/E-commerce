@@ -6,6 +6,7 @@ using ECommerce.Identity.Application.Commands.ChangePassword;
 using ECommerce.Identity.Application.Commands.UpdateProfile;
 using ECommerce.Identity.Application.Commands.AddAddress;
 using ECommerce.Identity.Application.Commands.SetDefaultAddress;
+using ECommerce.Identity.Application.Commands.DeleteAddress;
 using ECommerce.Identity.Application.Commands.DeleteAccount;
 using ECommerce.Identity.Application.Commands.VerifyEmail;
 using ECommerce.Identity.Application.Commands.ForgotPassword;
@@ -19,6 +20,7 @@ using ECommerce.Identity.Domain.Errors;
 using ECommerce.Identity.Application.Errors;
 using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
+using ECommerce.SharedKernel.Enums;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
 
@@ -44,6 +46,9 @@ public class CommandHandlerTests
 
         public Task<User?> GetByRefreshTokenAsync(string token, CancellationToken ct = default)
             => Task.FromResult(Store.FirstOrDefault(u => u.RefreshTokens.Any(t => t.Token == token)));
+
+        public Task<int> GetCustomersCountAsync(CancellationToken ct = default)
+            => Task.FromResult(Store.Count(u => u.Role == UserRole.Customer));
 
         public Task AddAsync(User user, CancellationToken ct = default)
         {
@@ -83,6 +88,20 @@ public class CommandHandlerTests
         public Task RollbackTransactionAsync(CancellationToken ct = default) => Task.CompletedTask;
         public bool HasActiveTransaction => false;
         public void Dispose() { }
+    }
+
+    sealed class FakeAddressProjectionEventPublisher : IAddressProjectionEventPublisher
+    {
+        public Task PublishAddressProjectionUpdatedAsync(
+            Guid addressId,
+            Guid userId,
+            string streetLine1,
+            string city,
+            string country,
+            string postalCode,
+            bool isDeleted,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -416,7 +435,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        var handler = new AddAddressCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new AddAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
 
         var result = await handler.Handle(
             new AddAddressCommand(user.Id, "123 Main St", "Springfield", "US", "12345"),
@@ -435,7 +454,7 @@ public class CommandHandlerTests
         for (int i = 0; i < 5; i++)
             user.AddAddress($"{i} Street", "City", "US", null);
 
-        var handler = new AddAddressCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new AddAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
 
         var result = await handler.Handle(
             new AddAddressCommand(user.Id, "6th Street", "City", "US", null),
@@ -448,7 +467,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task AddAddressHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new AddAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new AddAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
 
         var result = await handler.Handle(
             new AddAddressCommand(Guid.NewGuid(), "123 Main St", "City", "US", null),
@@ -544,7 +563,7 @@ public class CommandHandlerTests
         user.AddAddress("123 Main St", "City", "US", null);
         user.AddAddress("456 Oak Ave", "City", "US", null);
         var secondAddressId = user.Addresses.Last().Id;
-        var handler = new SetDefaultAddressCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new SetDefaultAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
 
         var result = await handler.Handle(
             new SetDefaultAddressCommand(user.Id, secondAddressId),
@@ -557,7 +576,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task SetDefaultAddressHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new SetDefaultAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new SetDefaultAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
 
         var result = await handler.Handle(
             new SetDefaultAddressCommand(Guid.NewGuid(), Guid.NewGuid()),
@@ -573,7 +592,7 @@ public class CommandHandlerTests
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
         user.AddAddress("123 Main St", "City", "US", null);
-        var handler = new SetDefaultAddressCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new SetDefaultAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
 
         var result = await handler.Handle(
             new SetDefaultAddressCommand(user.Id, Guid.NewGuid()), // nonexistent address id
@@ -581,6 +600,53 @@ public class CommandHandlerTests
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(IdentityErrors.AddressNotFound.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── DeleteAddressCommandHandler ───────────────────────────────────────────
+
+    [TestMethod]
+    public async Task DeleteAddressHandler_ExistingAddress_RemovesAddressAndSucceeds()
+    {
+        var repo = new FakeUserRepository();
+        var user = SeedUser(repo);
+        user.AddAddress("123 Main St", "City", "US", null);
+        var addressId = user.Addresses.First().Id;
+        var handler = new DeleteAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+
+        var result = await handler.Handle(
+            new DeleteAddressCommand(user.Id, addressId),
+            CancellationToken.None);
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.IsFalse(user.Addresses.Any(a => a.Id == addressId));
+    }
+
+    [TestMethod]
+    public async Task DeleteAddressHandler_UserNotFound_ReturnsUserNotFound()
+    {
+        var handler = new DeleteAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+
+        var result = await handler.Handle(
+            new DeleteAddressCommand(Guid.NewGuid(), Guid.NewGuid()),
+            CancellationToken.None);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityApplicationErrors.UserNotFound.Code, result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public async Task DeleteAddressHandler_AddressNotFound_ReturnsAddressNotFound()
+    {
+        var repo = new FakeUserRepository();
+        var user = SeedUser(repo);
+        var handler = new DeleteAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+
+        var result = await handler.Handle(
+            new DeleteAddressCommand(user.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityApplicationErrors.AddressNotFound.Code, result.GetErrorOrThrow().Code);
     }
 
     // ── DeleteAccountCommandHandler ───────────────────────────────────────────

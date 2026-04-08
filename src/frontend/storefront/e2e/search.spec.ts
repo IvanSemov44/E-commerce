@@ -31,7 +31,7 @@ test.describe('Search', () => {
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('product');
       await searchInput.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should show search results
       const searchResults = page.locator('[class*="product"], [class*="result"]');
@@ -43,7 +43,7 @@ test.describe('Search', () => {
 
   test('should show search results page', async ({ page }) => {
     await page.goto('/products?search=test');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Should be on products page with search query
     expect(page.url()).toContain('search');
@@ -57,7 +57,7 @@ test.describe('Search', () => {
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('zzzzzzzzzzzzzzzzzzzz');
       await searchInput.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for no results message
       const noResults = page.locator(':text("No results"), :text("No products found")');
@@ -74,7 +74,7 @@ test.describe('Search', () => {
 
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('pro');
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for autocomplete/suggestions dropdown
       const suggestions = page.locator(
@@ -88,7 +88,7 @@ test.describe('Search', () => {
 
   test('should filter search results by category', async ({ page }) => {
     await page.goto('/products?search=product');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for category filter
     const categoryFilter = page
@@ -97,7 +97,7 @@ test.describe('Search', () => {
 
     if ((await categoryFilter.count()) > 0) {
       await categoryFilter.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for category options
       const categoryOption = page.locator('option').first();
@@ -109,7 +109,7 @@ test.describe('Search', () => {
 
   test('should filter search results by price range', async ({ page }) => {
     await page.goto('/products?search=product');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for price filter
     const priceFilter = page.locator('input[type="range"], [class*="price-filter"]').first();
@@ -123,14 +123,14 @@ test.describe('Search', () => {
 
   test('should sort search results', async ({ page }) => {
     await page.goto('/products?search=product');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for sort dropdown
     const sortDropdown = page.locator('select, [class*="sort"]').first();
 
     if ((await sortDropdown.count()) > 0) {
       await sortDropdown.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for sort options
       const sortOption = page.locator('option:has-text("Price"), option:has-text("Name")');
@@ -148,7 +148,7 @@ test.describe('Search', () => {
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('test');
       await searchInput.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Clear search
       const clearButton = page
@@ -157,7 +157,7 @@ test.describe('Search', () => {
 
       if ((await clearButton.count()) > 0) {
         await clearButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Should show all products
         expect(true).toBeTruthy();
@@ -165,7 +165,7 @@ test.describe('Search', () => {
         // Clear by emptying search
         await searchInput.fill('');
         await searchInput.press('Enter');
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
         expect(true).toBeTruthy();
       }
     } else {
@@ -175,7 +175,7 @@ test.describe('Search', () => {
 
   test('should show product count in search results', async ({ page }) => {
     await page.goto('/products?search=product');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for result count
     const resultCount = page.locator(':text(/\\d+\\s*(products?|results?)/i), [class*="count"]');
@@ -184,13 +184,13 @@ test.describe('Search', () => {
 
   test('should navigate to product from search results', async ({ page }) => {
     await page.goto('/products?search=product');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const productLink = page.locator('a[href*="/products/"]').first();
 
     if ((await productLink.count()) > 0) {
       await productLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should be on product page
       expect(page.url()).toContain('/products/');
@@ -207,7 +207,7 @@ test.describe('Search', () => {
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('laptop');
       await searchInput.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // URL should contain search query
       expect(page.url()).toContain('laptop');
@@ -224,7 +224,7 @@ test.describe('Search', () => {
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('product-test');
       await searchInput.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should handle special characters without error
       const errorPage = page.locator(':text("Error"), :text("Something went wrong")');
@@ -243,15 +243,15 @@ test.describe('Search', () => {
       // Perform a search
       await searchInput.fill('recent search');
       await searchInput.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Go back to home
       await page.goto('/');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Click on search input
       await searchInput.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for recent searches
       const recentSearches = page.locator(':text("Recent"), :text("History")');
@@ -269,7 +269,7 @@ test.describe('Search', () => {
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('SKU-');
       await searchInput.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should show results or no results
       const results = page.locator('[class*="product"], :text("No results")');

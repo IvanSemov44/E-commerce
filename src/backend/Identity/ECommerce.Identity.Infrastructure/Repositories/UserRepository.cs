@@ -1,15 +1,15 @@
 ﻿using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Identity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using CoreUser         = ECommerce.Core.Entities.User;
-using CoreAddress      = ECommerce.Core.Entities.Address;
-using CoreRefreshToken = ECommerce.Core.Entities.RefreshToken;
+using CoreUser         = ECommerce.SharedKernel.Entities.User;
+using CoreAddress      = ECommerce.SharedKernel.Entities.Address;
+using CoreRefreshToken = ECommerce.SharedKernel.Entities.RefreshToken;
 using DomainUser       = ECommerce.Identity.Domain.Aggregates.User.User;
 
 namespace ECommerce.Identity.Infrastructure.Repositories;
 
-public class UserRepository(AppDbContext _db) : IUserRepository
+public class UserRepository(IdentityDbContext _db) : IUserRepository
 {
     // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,13 @@ public class UserRepository(AppDbContext _db) : IUserRepository
     }
 
     public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
-        => _db.Users.AnyAsync(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase), cancellationToken); // ToLowerInvariant normalised before DB compare
+    {
+        var normalizedEmail = email.ToLowerInvariant();
+        return _db.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
+    }
+
+    public Task<int> GetCustomersCountAsync(CancellationToken cancellationToken = default)
+        => _db.Users.CountAsync(u => u.Role == ECommerce.SharedKernel.Enums.UserRole.Customer, cancellationToken);
 
     public async Task<DomainUser?> GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
@@ -58,7 +64,7 @@ public class UserRepository(AppDbContext _db) : IUserRepository
             tracked.LastName          = user.Name.Last;
             tracked.PasswordHash      = user.PasswordHash.Hash;
             tracked.Phone             = user.PhoneNumber;
-            tracked.Role              = (ECommerce.Core.Enums.UserRole)(int)user.Role;
+            tracked.Role              = (ECommerce.SharedKernel.Enums.UserRole)(int)user.Role;
             tracked.IsEmailVerified   = user.IsEmailVerified;
             tracked.EmailVerificationToken = user.EmailVerificationToken;
             tracked.PasswordResetToken     = user.PasswordResetToken;
@@ -84,7 +90,7 @@ public class UserRepository(AppDbContext _db) : IUserRepository
         existing.LastName          = user.Name.Last;
         existing.PasswordHash      = user.PasswordHash.Hash;
         existing.Phone             = user.PhoneNumber;
-        existing.Role              = (ECommerce.Core.Enums.UserRole)(int)user.Role;
+        existing.Role              = (ECommerce.SharedKernel.Enums.UserRole)(int)user.Role;
         existing.IsEmailVerified   = user.IsEmailVerified;
         existing.EmailVerificationToken = user.EmailVerificationToken;
         existing.PasswordResetToken     = user.PasswordResetToken;
@@ -186,7 +192,7 @@ public class UserRepository(AppDbContext _db) : IUserRepository
             name:                   name,
             passwordHash:           passwordHash,
             phoneNumber:            core.Phone,
-            role:                   (ECommerce.Identity.Domain.Aggregates.User.UserRole)(int)core.Role,
+            role:                   (ECommerce.SharedKernel.Enums.UserRole)(int)core.Role,
             isEmailVerified:        core.IsEmailVerified,
             emailVerificationToken: core.EmailVerificationToken,
             passwordResetToken:     core.PasswordResetToken,
@@ -233,7 +239,7 @@ public class UserRepository(AppDbContext _db) : IUserRepository
             LastName                = domain.Name.Last,
             PasswordHash            = domain.PasswordHash.Hash,
             Phone                   = domain.PhoneNumber,
-            Role                    = (ECommerce.Core.Enums.UserRole)(int)domain.Role,
+            Role                    = (ECommerce.SharedKernel.Enums.UserRole)(int)domain.Role,
             IsEmailVerified         = domain.IsEmailVerified,
             EmailVerificationToken  = domain.EmailVerificationToken,
             PasswordResetToken      = domain.PasswordResetToken,

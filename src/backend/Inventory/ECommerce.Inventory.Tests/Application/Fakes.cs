@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ECommerce.Inventory.Application.Interfaces;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using ECommerce.Inventory.Domain.Interfaces;
 using ECommerce.SharedKernel.Interfaces;
@@ -34,6 +35,21 @@ sealed class FakeInventoryItemRepository : IInventoryItemRepository
         Store.Add(item);
         return Task.CompletedTask;
     }
+
+    public Task UpdateAsync(InventoryItem item, CancellationToken ct = default)
+    {
+        var index = Store.FindIndex(i => i.Id == item.Id);
+        if (index >= 0)
+        {
+            Store[index] = item;
+        }
+        else
+        {
+            Store.Add(item);
+        }
+
+        return Task.CompletedTask;
+    }
 }
 
 sealed class FakeUnitOfWork : IUnitOfWork
@@ -51,4 +67,19 @@ sealed class FakeUnitOfWork : IUnitOfWork
     public Task RollbackTransactionAsync(CancellationToken ct = default) => Task.CompletedTask;
     public bool HasActiveTransaction => false;
     public void Dispose() { }
+}
+
+sealed class FakeInventoryProjectionEventPublisher : IInventoryProjectionEventPublisher
+{
+    public List<(Guid ProductId, int Quantity, string Reason)> Calls { get; } = new();
+
+    public Task PublishStockProjectionUpdatedAsync(
+        Guid productId,
+        int quantity,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        Calls.Add((productId, quantity, reason));
+        return Task.CompletedTask;
+    }
 }

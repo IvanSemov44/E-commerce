@@ -6,6 +6,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Extensions;
+using ECommerce.Catalog.Application.Interfaces;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.ValueObjects;
 
@@ -13,7 +14,8 @@ namespace ECommerce.Catalog.Application.Commands.UpdateProduct;
 
 public class UpdateProductCommandHandler(
     IProductRepository _products,
-    ICategoryRepository _categories
+    ICategoryRepository _categories,
+    IProductProjectionEventPublisher? _projectionPublisher = null
 ) : IRequestHandler<UpdateProductCommand, Result<ProductDetailDto>>
 {
     public async Task<Result<ProductDetailDto>> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
@@ -32,6 +34,16 @@ public class UpdateProductCommandHandler(
             return Result<ProductDetailDto>.Fail(nameResult.GetErrorOrThrow());
 
         product.UpdateDetails(nameResult.GetDataOrThrow(), command.Description, categoryId);
+
+        if (_projectionPublisher is not null)
+        {
+            await _projectionPublisher.PublishProductProjectionUpdatedAsync(
+                product.Id,
+                product.Name.Value,
+                product.Price.Amount,
+                product.IsDeleted,
+                cancellationToken);
+        }
 
         return Result<ProductDetailDto>.Ok(product.ToDetailDto(category.Name.Value));
     }

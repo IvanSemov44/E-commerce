@@ -2,6 +2,7 @@
 using ECommerce.Identity.Domain.Errors;
 using ECommerce.Identity.Domain.Events;
 using ECommerce.Identity.Domain.ValueObjects;
+using ECommerce.SharedKernel.Enums;
 
 namespace ECommerce.Identity.Tests.Domain;
 

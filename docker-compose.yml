@@ -35,6 +35,25 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
+  # RabbitMQ Message Broker
+  # ===========================================================================
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: ecommerce_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # ===========================================================================
   # Backend API
   # ===========================================================================
   api:
@@ -44,6 +63,8 @@ services:
     container_name: ecommerce_api
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     environment:
       # Database Connection
@@ -69,6 +90,15 @@ services:
       # Application Settings
       ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Development}"
       ASPNETCORE_URLS: "http://+:5000"
+
+      # Integration Messaging (RabbitMQ)
+      IntegrationMessaging__Transport: "${INTEGRATION_TRANSPORT:-RabbitMq}"
+      IntegrationMessaging__RabbitMq__Host: "rabbitmq"
+      IntegrationMessaging__RabbitMq__VirtualHost: "/"
+      IntegrationMessaging__RabbitMq__Username: "${RABBITMQ_USER:-guest}"
+      IntegrationMessaging__RabbitMq__Password: "${RABBITMQ_PASSWORD:-guest}"
+      MT_LICENSE: "${MT_LICENSE:-}"
+      MT_LICENSE_PATH: "${MT_LICENSE_PATH:-}"
       
       # Monitoring
       Monitoring__EnableDetailedHealthChecks: "true"

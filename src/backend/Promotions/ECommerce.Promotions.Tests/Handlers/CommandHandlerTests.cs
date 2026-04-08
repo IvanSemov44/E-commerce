@@ -13,7 +13,7 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_ValidData_ReturnsDetailDto()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo);
+        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var command = new CreatePromoCodeCommand(
             Code: "SUMMER10",
@@ -37,7 +37,7 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_NormalizesCodeToUpper()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo);
+        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("summer10", "Percentage", 10),
@@ -52,7 +52,7 @@ public class CommandHandlerTests
     {
         var repo = new FakePromoCodeRepository();
         repo.Seed(PromoCodeFactory.Active("SAVE20"));
-        var handler = new CreatePromoCodeCommandHandler(repo);
+        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("SAVE20", "Percentage", 10),
@@ -66,7 +66,7 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_InvalidPercentage_ReturnsError()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo);
+        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("TEST123", "Percentage", 0),
@@ -80,7 +80,7 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_InvalidDateRange_ReturnsError()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo);
+        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand(
@@ -99,7 +99,7 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_InvalidDiscountType_DefaultsToPercentage()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo);
+        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("TEST123", "NotAType", 15),
@@ -116,7 +116,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo);
+        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(promo.Id, IsActive: false),
@@ -130,7 +130,7 @@ public class CommandHandlerTests
     public async Task UpdatePromoCode_UnknownId_ReturnsPromoNotFound()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new UpdatePromoCodeCommandHandler(repo);
+        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(Guid.NewGuid(), IsActive: false),
@@ -146,7 +146,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo);
+        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(
@@ -172,7 +172,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo);
+        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(
@@ -191,7 +191,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo);
+        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(
@@ -211,7 +211,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new DeactivatePromoCodeCommandHandler(repo);
+        var handler = new DeactivatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(new DeactivatePromoCodeCommand(promo.Id), default);
 
@@ -223,7 +223,7 @@ public class CommandHandlerTests
     public async Task DeactivatePromoCode_UnknownId_ReturnsPromoNotFound()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new DeactivatePromoCodeCommandHandler(repo);
+        var handler = new DeactivatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
 
         var result = await handler.Handle(new DeactivatePromoCodeCommand(Guid.NewGuid()), default);
 

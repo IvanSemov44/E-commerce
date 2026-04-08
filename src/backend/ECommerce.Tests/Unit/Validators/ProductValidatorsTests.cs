@@ -1,6 +1,6 @@
-﻿using FluentValidation.TestHelper;
-using ECommerce.Application.DTOs.Products;
-using ECommerce.Application.Validators.Products;
+using FluentValidation.TestHelper;
+using ECommerce.Contracts.DTOs.Products;
+using ECommerce.Contracts.Validators.Products;
 using FluentAssertions;
 
 namespace ECommerce.Tests.Unit.Validators;
@@ -348,3 +348,4 @@ public class ProductValidatorsTests
 
     #endregion
 }
+

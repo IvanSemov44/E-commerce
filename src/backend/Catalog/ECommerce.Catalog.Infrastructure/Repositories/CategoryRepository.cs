@@ -1,14 +1,14 @@
 ﻿using System.Reflection;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.Aggregates.Category;
+using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Domain.ValueObjects;
-using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using CoreCategory = ECommerce.Core.Entities.Category;
+using CoreCategory = ECommerce.SharedKernel.Entities.Category;
 
 namespace ECommerce.Catalog.Infrastructure.Repositories;
 
-public class CategoryRepository(AppDbContext _db) : ICategoryRepository
+public class CategoryRepository(CatalogDbContext _db) : ICategoryRepository
 {
     public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

@@ -10,8 +10,8 @@ public class BackendGuideConventionsTests
     public void ApiControllers_ShouldNotUseInlinePaginationClampMagicNumbers()
     {
         var repoRoot = GetRepositoryRoot();
-        var controllersPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API", "Controllers");
-        var controllerFiles = Directory.GetFiles(controllersPath, "*.cs", SearchOption.TopDirectoryOnly);
+        var featuresPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API", "Features");
+        var controllerFiles = Directory.GetFiles(featuresPath, "*Controller.cs", SearchOption.AllDirectories);
 
         var forbiddenPatterns = new[]
         {
@@ -63,38 +63,28 @@ public class BackendGuideConventionsTests
     }
 
     [TestMethod]
-    public void WishlistService_ShouldUseMapperForWishlistDtoConstruction()
-    {
-        var repoRoot = GetRepositoryRoot();
-        var wishlistServicePath = Path.Combine(repoRoot, "src", "backend", "ECommerce.Application", "Services", "WishlistService.cs");
-        var content = File.ReadAllText(wishlistServicePath);
-
-        Assert.IsFalse(content.Contains("new WishlistDto", StringComparison.Ordinal),
-            "Manual WishlistDto construction found in WishlistService. Use AutoMapper-based mapping instead.");
-    }
-
-    [TestMethod]
     public void HotspotControllers_ShouldPreferRoleOrNullOverThrowingRoleAccessor()
     {
         var repoRoot = GetRepositoryRoot();
-        var controllersPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API", "Controllers");
+        var apiRootPath = Path.Combine(repoRoot, "src", "backend", "ECommerce.API");
 
         var hotspotFiles = new[]
         {
-            "OrdersController.cs",
-            "PaymentsController.cs",
-            "ReviewsController.cs",
-            "WishlistController.cs",
-            "ProfileController.cs"
+            Path.Combine("Features", "Ordering", "Controllers", "OrdersController.cs"),
+            Path.Combine("Features", "Payments", "Controllers", "PaymentsController.cs"),
+            Path.Combine("Features", "Reviews", "Controllers", "ReviewsController.cs"),
+            Path.Combine("Features", "Shopping", "Controllers", "WishlistController.cs"),
+            Path.Combine("Features", "Identity", "Controllers", "ProfileController.cs")
         };
 
-        foreach (var fileName in hotspotFiles)
+        foreach (var relativePath in hotspotFiles)
         {
-            var filePath = Path.Combine(controllersPath, fileName);
+            var filePath = Path.Combine(apiRootPath, relativePath);
+            Assert.IsTrue(File.Exists(filePath), $"Expected hotspot controller file not found: {relativePath}");
             var content = File.ReadAllText(filePath);
 
             Assert.IsFalse(Regex.IsMatch(content, @"_currentUser\.Role(?!OrNull)\b", RegexOptions.None),
-                $"Throw-based role accessor usage found in {fileName}. Prefer RoleOrNull for defensive checks.");
+                $"Throw-based role accessor usage found in {relativePath}. Prefer RoleOrNull for defensive checks.");
         }
     }
 

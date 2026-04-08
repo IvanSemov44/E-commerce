@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Domain;
@@ -14,8 +14,11 @@ namespace ECommerce.Ordering.Application.Commands.PlaceOrder;
 public class PlaceOrderCommandHandler(
     IOrderRepository orders,
     IUnitOfWork uow,
-    IDbReader dbReader,
-    ICurrentUserService currentUser
+    IProductCatalogReader productReader,
+    IPromoCodeLookup promoCodeLookup,
+    IShippingAddressReader shippingAddressReader,
+    ECommerce.Ordering.Application.Interfaces.ICurrentUserService currentUser,
+    IOrderIntegrationEventPublisher orderIntegrationEventPublisher
 ) : IRequestHandler<PlaceOrderCommand, Result<OrderDto>>
 {
     public async Task<Result<OrderDto>> Handle(PlaceOrderCommand command, CancellationToken ct)
@@ -25,7 +28,7 @@ public class PlaceOrderCommandHandler(
             return Result<OrderDto>.Fail(new DomainError("UNAUTHORIZED", "User not authenticated."));
 
         var productIds = command.CartItems.Select(x => x.ProductId).ToList();
-        var products = await dbReader.GetProductsAsync(productIds, ct);
+        var products = await productReader.GetProductsAsync(productIds, ct);
 
         if (products.Count != productIds.Count)
             return Result<OrderDto>.Fail(OrderingApplicationErrors.ProductsUnavailable);
@@ -43,7 +46,7 @@ public class PlaceOrderCommandHandler(
 
         if (!string.IsNullOrEmpty(command.PromoCode))
         {
-            var promoResult = await dbReader.GetPromoCodeAsync(command.PromoCode, ct);
+            var promoResult = await promoCodeLookup.GetPromoCodeAsync(command.PromoCode, ct);
             if (promoResult is null)
                 return Result<OrderDto>.Fail(OrderingApplicationErrors.PromoCodeNotFound);
 
@@ -52,7 +55,7 @@ public class PlaceOrderCommandHandler(
             promoCodeId = promoId;
         }
 
-        var address = await dbReader.GetShippingAddressAsync(userId.Value, command.ShippingAddressId, ct);
+        var address = await shippingAddressReader.GetShippingAddressAsync(userId.Value, command.ShippingAddressId, ct);
         if (address is null)
             return Result<OrderDto>.Fail(OrderingApplicationErrors.AddressNotFound);
 
@@ -84,6 +87,15 @@ public class PlaceOrderCommandHandler(
         var order = orderResult.GetDataOrThrow();
 
         await orders.AddAsync(order, ct);
+        await uow.SaveChangesAsync(ct);
+
+        await orderIntegrationEventPublisher.PublishOrderPlacedAsync(
+            order.Id,
+            order.UserId,
+            order.Items.Select(x => x.ProductId).ToArray(),
+            order.Total,
+            ct);
+
         await uow.SaveChangesAsync(ct);
 
         return Result<OrderDto>.Ok(order.ToDto());

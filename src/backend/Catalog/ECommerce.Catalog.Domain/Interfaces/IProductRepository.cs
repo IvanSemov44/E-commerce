@@ -23,6 +23,7 @@ public interface IProductRepository
         Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFeaturedPagedAsync(int page, int pageSize, CancellationToken ct = default);
     // TODO Phase 3: move to Inventory context once InventoryItem aggregate exists
     Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default);
+    Task<int> GetActiveProductsCountAsync(CancellationToken ct = default);
     Task AddAsync(Product product, CancellationToken ct = default);
     Task UpdateAsync(Product product, CancellationToken ct = default);
     Task DeleteAsync(Product product, CancellationToken ct = default);

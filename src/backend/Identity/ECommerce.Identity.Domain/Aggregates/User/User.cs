@@ -2,11 +2,10 @@
 using ECommerce.Identity.Domain.Events;
 using ECommerce.Identity.Domain.ValueObjects;
 using ECommerce.SharedKernel.Domain;
+using ECommerce.SharedKernel.Enums;
 using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.Identity.Domain.Aggregates.User;
-
-public enum UserRole { Customer, Admin }
 
 /// <summary>
 /// User aggregate root — manages identity, authentication, and profile data.

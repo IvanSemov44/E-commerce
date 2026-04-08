@@ -33,8 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ECommerce.Core\ECommerce.Core.csproj" />
-    <ProjectReference Include="..\ECommerce.Application\ECommerce.Application.csproj" />
     <ProjectReference Include="..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
     <ProjectReference Include="..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
     <ProjectReference Include="..\Promotions\ECommerce.Promotions.Infrastructure\ECommerce.Promotions.Infrastructure.csproj" />
@@ -47,8 +45,11 @@
     <ProjectReference Include="..\Shopping\ECommerce.Shopping.Infrastructure\ECommerce.Shopping.Infrastructure.csproj" />
     <ProjectReference Include="..\Ordering\ECommerce.Ordering.Application\ECommerce.Ordering.Application.csproj" />
     <ProjectReference Include="..\Ordering\ECommerce.Ordering.Infrastructure\ECommerce.Ordering.Infrastructure.csproj" />
+    <ProjectReference Include="..\Payments\ECommerce.Payments.Application\ECommerce.Payments.Application.csproj" />
+    <ProjectReference Include="..\Payments\ECommerce.Payments.Infrastructure\ECommerce.Payments.Infrastructure.csproj" />
     <ProjectReference Include="..\Reviews\ECommerce.Reviews.Application\ECommerce.Reviews.Application.csproj" />
     <ProjectReference Include="..\Reviews\ECommerce.Reviews.Infrastructure\ECommerce.Reviews.Infrastructure.csproj" />
+    <ProjectReference Include="..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,21 +1,24 @@
-using ECommerce.Ordering.Application.Interfaces;
-using ECommerce.Infrastructure.Data;
+﻿using ECommerce.Ordering.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Ordering.Infrastructure.Persistence;
 
-public class DbReader(AppDbContext _db) : IDbReader
+public class DbReader(
+    OrderingDbContext orderingDb) : IDbReader
 {
     public async Task<List<ProductSnapshot>> GetProductsAsync(List<Guid> productIds, CancellationToken ct)
     {
-        var products = await _db.Products
+        var products = await orderingDb.Products
             .AsNoTracking()
             .Where(p => productIds.Contains(p.Id))
             .Select(p => new ProductSnapshot(
                 p.Id,
                 p.Name,
                 p.Price,
-                p.Images.Where(i => i.IsPrimary).Select(i => i.Url).FirstOrDefault()))
+                orderingDb.ProductImages
+                    .Where(i => i.ProductId == p.Id && i.IsPrimary)
+                    .Select(i => i.Url)
+                    .FirstOrDefault()))
             .ToListAsync(ct);
 
         return products;
@@ -23,21 +26,21 @@ public class DbReader(AppDbContext _db) : IDbReader
 
     public async Task<(decimal Discount, Guid PromoCodeId)?> GetPromoCodeAsync(string code, CancellationToken ct)
     {
-        var promo = await _db.PromoCodes
+        var promo = await orderingDb.PromoCodes
             .AsNoTracking()
-            .Where(p => p.Code.Value == code && p.IsActive)
-            .Select(p => new { p.Id, p.Discount })
+            .Where(p => p.Code == code && p.IsActive)
+            .Select(p => new { p.Id, p.DiscountValue })
             .FirstOrDefaultAsync(ct);
 
         if (promo is null) return null;
 
-        decimal discount = promo.Discount.Amount;
+        decimal discount = promo.DiscountValue;
         return (discount, promo.Id);
     }
 
     public async Task<ShippingAddressSnapshot?> GetShippingAddressAsync(Guid userId, Guid addressId, CancellationToken ct)
     {
-        var address = await _db.Addresses
+        var address = await orderingDb.Addresses
             .AsNoTracking()
             .Where(a => a.Id == addressId && a.UserId == userId)
             .Select(a => new ShippingAddressSnapshot(

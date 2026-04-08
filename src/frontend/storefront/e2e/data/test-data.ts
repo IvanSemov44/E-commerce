@@ -4,24 +4,28 @@
  */
 
 // Test Users
+function generateUniqueEmail(): string {
+  return `test-${crypto.randomUUID()}@example.com`;
+}
+
 export const testUsers = {
   standard: {
-    email: 'test@example.com',
+    email: generateUniqueEmail(),
     password: 'TestPassword123!',
     firstName: 'Test',
     lastName: 'User',
   },
   admin: {
-    email: 'admin@example.com',
+    email: generateUniqueEmail(),
     password: 'AdminPassword123!',
     firstName: 'Admin',
     lastName: 'User',
   },
   guest: {
-    email: 'guest@example.com',
+    email: generateUniqueEmail(),
   },
   invalid: {
-    email: 'invalid@example.com',
+    email: generateUniqueEmail(),
     password: 'WrongPassword123!',
   },
 };
@@ -238,8 +242,7 @@ export const mockApiResponses = {
 
 // Helper to generate unique test data
 export function generateUniqueEmail(): string {
-  const timestamp = Date.now();
-  return `test-${timestamp}@example.com`;
+  return `test-${crypto.randomUUID()}@example.com`;
 }
 
 export function generateUniqueProduct(): typeof testProducts.laptop {

@@ -1,13 +1,13 @@
-using ECommerce.Shopping.Domain.Aggregates.Cart;
+﻿using ECommerce.Shopping.Domain.Aggregates.Cart;
 using ECommerce.Shopping.Domain.Interfaces;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Shopping.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using CoreCart = ECommerce.Core.Entities.Cart;
-using CoreCartItem = ECommerce.Core.Entities.CartItem;
+using CoreCart = ECommerce.SharedKernel.Entities.Cart;
+using CoreCartItem = ECommerce.SharedKernel.Entities.CartItem;
 
 namespace ECommerce.Shopping.Infrastructure.Persistence.Repositories;
 
-public class CartRepository(AppDbContext _db) : ICartRepository
+public class CartRepository(ShoppingDbContext _db) : ICartRepository
 {
     public async Task<Cart?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
     {
@@ -73,8 +73,6 @@ public class CartRepository(AppDbContext _db) : ICartRepository
                 });
             }
         }
-
-        await _db.SaveChangesAsync(ct);
     }
 
     public async Task DeleteAsync(Cart cart, CancellationToken ct = default)
@@ -86,7 +84,6 @@ public class CartRepository(AppDbContext _db) : ICartRepository
         if (existing is not null)
         {
             _db.Carts.Remove(existing);
-            await _db.SaveChangesAsync(ct);
         }
     }
 

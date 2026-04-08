@@ -13,7 +13,7 @@ test.describe('Orders', () => {
   test('should display order history page', async ({ page }) => {
     // Navigate to orders
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Check for orders container
     page.locator('[class*="orders"], [data-testid="orders"]');
@@ -24,7 +24,7 @@ test.describe('Orders', () => {
 
   test('should show login prompt for unauthenticated users', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Should redirect to login or show login prompt
     const url = page.url();
@@ -35,7 +35,7 @@ test.describe('Orders', () => {
 
   test('should display order list for authenticated users', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for order items
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
@@ -55,13 +55,13 @@ test.describe('Orders', () => {
 
   test('should display order details when clicking on order', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
 
     if ((await orderItem.count()) > 0) {
       await orderItem.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Should show order details
       const orderDetails = page.locator('[class*="order-detail"], [class*="order-items"]');
@@ -73,7 +73,7 @@ test.describe('Orders', () => {
 
   test('should show order status on order card', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
 
@@ -92,7 +92,7 @@ test.describe('Orders', () => {
 
   test('should show order total on order card', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
 
@@ -107,7 +107,7 @@ test.describe('Orders', () => {
 
   test('should show order date on order card', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
 
@@ -124,13 +124,13 @@ test.describe('Orders', () => {
 
   test('should display order items in order details', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
 
     if ((await orderItem.count()) > 0) {
       await orderItem.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for order items list
       const orderItems = page.locator('[class*="order-item"], [data-testid="order-line-item"]');
@@ -142,13 +142,13 @@ test.describe('Orders', () => {
 
   test('should show shipping address in order details', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
 
     if ((await orderItem.count()) > 0) {
       await orderItem.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for shipping address section
       const shippingAddress = page.locator('[class*="shipping"], [class*="address"]');
@@ -160,13 +160,13 @@ test.describe('Orders', () => {
 
   test('should allow reordering from past order', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const orderItem = page.locator('[class*="order-card"], [data-testid="order-item"]').first();
 
     if ((await orderItem.count()) > 0) {
       await orderItem.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Look for reorder button
       const reorderButton = page.locator(
@@ -175,7 +175,7 @@ test.describe('Orders', () => {
 
       if ((await reorderButton.count()) > 0) {
         await reorderButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Should add items to cart or show confirmation
         const successToast = page.locator('[class*="toast"], [role="alert"]');
@@ -192,14 +192,14 @@ test.describe('Orders', () => {
 
   test('should filter orders by status', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for filter options
     const filterDropdown = page.locator('select, [class*="filter"]').first();
 
     if ((await filterDropdown.count()) > 0) {
       await filterDropdown.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       // Look for status options
       const statusOption = page.locator(
@@ -213,7 +213,7 @@ test.describe('Orders', () => {
 
   test('should search orders by order number', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for search input
     const searchInput = page
@@ -222,7 +222,7 @@ test.describe('Orders', () => {
 
     if ((await searchInput.count()) > 0) {
       await searchInput.fill('ORD-');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       // Results should update
       const orderList = page.locator('[class*="order-card"], [data-testid="order-item"]');
@@ -234,7 +234,7 @@ test.describe('Orders', () => {
 
   test('should paginate orders if many exist', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Look for pagination
     const pagination = page.locator('[class*="pagination"], [class*="page-nav"]');
@@ -244,7 +244,7 @@ test.describe('Orders', () => {
 
       if ((await nextButton.count()) > 0) {
         await nextButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
 
         // Page should change
         expect(true).toBeTruthy();

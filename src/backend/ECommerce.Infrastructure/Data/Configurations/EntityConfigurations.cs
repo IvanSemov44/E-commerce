@@ -1,4 +1,6 @@
-﻿using ECommerce.Core.Entities;
+﻿using ECommerce.SharedKernel.Entities;
+using ECommerce.Promotions.Domain.Aggregates.PromoCode;
+using ECommerce.Promotions.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -227,6 +229,61 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 }
 
 /// <summary>
+/// Configuration for Promotions PromoCode aggregate in shared AppDbContext.
+/// Explicit value-object mappings are required for design-time model creation.
+/// </summary>
+public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
+{
+    public void Configure(EntityTypeBuilder<PromoCode> entity)
+    {
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.Code).IsUnique();
+
+        entity.Property(e => e.Code)
+            .HasColumnName("Code")
+            .HasMaxLength(50)
+            .HasConversion(
+                value => value.Value,
+                value => PromoCodeString.Create(value).GetDataOrThrow())
+            .IsRequired();
+
+        entity.ComplexProperty(e => e.Discount, discountBuilder =>
+        {
+            discountBuilder.Property(d => d.Type)
+                .HasColumnName("DiscountType")
+                .HasConversion<string>()
+                .IsRequired();
+
+            discountBuilder.Property(d => d.Amount)
+                .HasColumnName("DiscountValue")
+                .HasPrecision(18, 2)
+                .IsRequired();
+        });
+
+        entity.ComplexProperty(e => e.ValidPeriod, rangeBuilder =>
+        {
+            rangeBuilder.Property(v => v.Start)
+                .HasColumnName("StartDate");
+
+            rangeBuilder.Property(v => v.End)
+                .HasColumnName("EndDate");
+        });
+
+        entity.Property(e => e.MinimumOrderAmount)
+            .HasColumnName("MinOrderAmount")
+            .HasPrecision(18, 2);
+
+        entity.Property(e => e.MaxDiscountAmount)
+            .HasColumnName("MaxDiscountAmount")
+            .HasPrecision(18, 2);
+
+        entity.Property(e => e.RowVersion)
+            .IsRowVersion()
+            .IsConcurrencyToken();
+    }
+}
+
+/// <summary>
 /// Configuration for Review entity.
 /// Reviews don't need optimistic concurrency - single user operations.
 /// Note: Review does not implement IConcurrencyToken, so no RowVersion property exists.
@@ -294,6 +351,44 @@ public class InventoryLogConfiguration : IEntityTypeConfiguration<InventoryLog>
 }
 
 /// <summary>
+/// Configuration for Inventory bounded-context aggregate in shared AppDbContext.
+/// </summary>
+public class InventoryItemAggregateConfiguration : IEntityTypeConfiguration<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryItem>
+{
+    public void Configure(EntityTypeBuilder<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryItem> entity)
+    {
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.ProductId).IsUnique();
+
+        entity.OwnsOne(e => e.Stock, stockBuilder =>
+        {
+            stockBuilder.Property(s => s.Quantity)
+                .HasColumnName("Quantity")
+                .IsRequired();
+        });
+
+        entity.Property(e => e.ProductId).IsRequired();
+        entity.Property(e => e.LowStockThreshold).IsRequired();
+        entity.Property(e => e.TrackInventory).IsRequired();
+
+        entity.Ignore(e => e.Log);
+
+        entity.OwnsMany<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryLog>("_logEntries", logBuilder =>
+        {
+            logBuilder.ToTable("InventoryItemLogs");
+            logBuilder.HasKey(l => l.Id);
+            logBuilder.WithOwner().HasForeignKey(l => l.InventoryItemId);
+
+            logBuilder.Property(l => l.InventoryItemId).IsRequired();
+            logBuilder.Property(l => l.Delta).IsRequired();
+            logBuilder.Property(l => l.Reason).IsRequired().HasMaxLength(500);
+            logBuilder.Property(l => l.StockAfter).IsRequired();
+            logBuilder.Property(l => l.OccurredAt).IsRequired();
+        });
+    }
+}
+
+/// <summary>
 /// Configuration for RefreshToken entity.
 /// RefreshTokens don't need optimistic concurrency - simple create/revoke operations.
 /// Note: RefreshToken does not implement IConcurrencyToken, so no RowVersion property exists.
@@ -311,5 +406,105 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .WithMany(u => u.RefreshTokens)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+/// <summary>
+/// Configuration for OutboxMessage entity used by the integration outbox pattern.
+/// </summary>
+public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
+{
+    public void Configure(EntityTypeBuilder<OutboxMessage> entity)
+    {
+        entity.ToTable("outbox_messages", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.IdempotencyKey).IsUnique();
+        entity.HasIndex(e => e.ProcessedAt);
+        entity.HasIndex(e => e.CreatedAt);
+        entity.HasIndex(e => e.NextAttemptAt);
+        entity.HasIndex(e => e.IsDeadLettered);
+
+        entity.Property(e => e.EventType)
+            .IsRequired()
+            .HasMaxLength(512);
+
+        entity.Property(e => e.EventData)
+            .IsRequired();
+
+        entity.Property(e => e.LastError)
+            .HasMaxLength(2000);
+    }
+}
+
+/// <summary>
+/// Configuration for DeadLetterMessage entity used by outbox poison-message handling.
+/// </summary>
+public class DeadLetterMessageConfiguration : IEntityTypeConfiguration<DeadLetterMessage>
+{
+    public void Configure(EntityTypeBuilder<DeadLetterMessage> entity)
+    {
+        entity.ToTable("dead_letter_messages", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.OutboxMessageId);
+        entity.HasIndex(e => e.FailedAt);
+        entity.HasIndex(e => e.RequeuedAt);
+
+        entity.Property(e => e.EventType)
+            .IsRequired()
+            .HasMaxLength(512);
+
+        entity.Property(e => e.EventData)
+            .IsRequired();
+
+        entity.Property(e => e.LastError)
+            .HasMaxLength(2000);
+    }
+}
+
+/// <summary>
+/// Configuration for OrderFulfillmentSagaState entity used by order saga orchestration.
+/// </summary>
+public class OrderFulfillmentSagaStateConfiguration : IEntityTypeConfiguration<OrderFulfillmentSagaState>
+{
+    public void Configure(EntityTypeBuilder<OrderFulfillmentSagaState> entity)
+    {
+        entity.ToTable("order_fulfillment_saga_states", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.CorrelationId).IsUnique();
+        entity.HasIndex(e => e.OrderId).IsUnique();
+        entity.HasIndex(e => e.CurrentState);
+
+        entity.Property(e => e.CurrentState)
+            .IsRequired()
+            .HasMaxLength(128);
+
+        entity.Property(e => e.FailureReason)
+            .HasMaxLength(1000);
+    }
+}
+
+/// <summary>
+/// Configuration for InboxMessage entity used by idempotent integration consumers.
+/// </summary>
+public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
+{
+    public void Configure(EntityTypeBuilder<InboxMessage> entity)
+    {
+        entity.ToTable("inbox_messages", schema: "integration");
+
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.IdempotencyKey).IsUnique();
+        entity.HasIndex(e => e.ProcessedAt);
+        entity.HasIndex(e => e.ReceivedAt);
+
+        entity.Property(e => e.EventType)
+            .IsRequired()
+            .HasMaxLength(512);
+
+        entity.Property(e => e.LastError)
+            .HasMaxLength(2000);
     }
 }

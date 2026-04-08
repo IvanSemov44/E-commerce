@@ -3,7 +3,7 @@ import { ROUTE_PATHS } from '@/shared/constants/navigation';
 import { Card } from '@/shared/components/ui/Card';
 import styles from './LegalPage.module.css';
 
-export function PrivacyPolicy() {
+export default function PrivacyPolicy() {
   return (
     <div className={styles.container}>
       <Card variant="elevated" padding="lg" className={styles.card}>

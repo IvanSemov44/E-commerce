@@ -1,9 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Inventory.Application.DTOs;
 using ECommerce.Inventory.Application.Errors;
+using ECommerce.Inventory.Application.Interfaces;
 using ECommerce.Inventory.Domain.Interfaces;
 
 namespace ECommerce.Inventory.Application.Commands.ReduceStock;
@@ -11,6 +12,7 @@ namespace ECommerce.Inventory.Application.Commands.ReduceStock;
 public class ReduceStockCommandHandler(
     IInventoryItemRepository _repo,
     IUnitOfWork _uow,
+    IInventoryProjectionEventPublisher _projectionPublisher,
     ILogger<ReduceStockCommandHandler> _logger
 ) : IRequestHandler<ReduceStockCommand, Result<StockAdjustmentResultDto>>
 {
@@ -37,6 +39,11 @@ public class ReduceStockCommandHandler(
         }
 
         await _uow.SaveChangesAsync(cancellationToken);
+        await _projectionPublisher.PublishStockProjectionUpdatedAsync(
+            command.ProductId,
+            item.Stock.Quantity,
+            command.Reason,
+            cancellationToken);
 
         _logger.LogInformation("Stock reduced for product {ProductId}: {PreviousQty} -> {NewQty}",
             command.ProductId, previousQty, item.Stock.Quantity);

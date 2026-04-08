@@ -89,6 +89,9 @@ public class QueryHandlerTests
             return Task.FromResult<IReadOnlyList<Product>>(items);
         }
 
+        public Task<int> GetActiveProductsCountAsync(CancellationToken ct = default)
+            => Task.FromResult(Store.Count);
+
         public Task AddAsync(Product product, CancellationToken ct = default)
         {
             Store.Add(product);

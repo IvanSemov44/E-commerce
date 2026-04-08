@@ -1,15 +1,15 @@
 ﻿using System.Reflection;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.Aggregates.Product;
+using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Domain.ValueObjects;
-using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using CoreProduct = ECommerce.Core.Entities.Product;
-using CoreProductImage = ECommerce.Core.Entities.ProductImage;
+using CoreProduct = ECommerce.SharedKernel.Entities.Product;
+using CoreProductImage = ECommerce.SharedKernel.Entities.ProductImage;
 
 namespace ECommerce.Catalog.Infrastructure.Repositories;
 
-public class ProductRepository(AppDbContext _db) : IProductRepository
+public class ProductRepository(CatalogDbContext _db) : IProductRepository
 {
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -53,11 +53,11 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var s = search.Trim().ToLowerInvariant();
+            var s = search.Trim();
             if (_db.Database.ProviderName?.Contains("Npgsql") == true)
                 query = query.Where(p => EF.Functions.ILike(p.Name, $"%{s}%") || EF.Functions.ILike(p.Sku ?? string.Empty, $"%{s}%"));
             else
-                query = query.Where(p => p.Name.ToLower().Contains(s) || (p.Sku != null && p.Sku.ToLower().Contains(s)));
+                query = query.Where(p => EF.Functions.Like(p.Name, $"%{s}%") || (p.Sku != null && EF.Functions.Like(p.Sku, $"%{s}%")));
         }
 
         if (minPrice.HasValue)
@@ -69,7 +69,7 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
         {
             // Filter by average rating (scalar subquery)
             var rating = (double)minRating.Value;
-            query = query.Where(p => _db.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating) >= rating);
+            query = query.Where(p => _db.ProductRatings.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating) >= rating);
         }
 
         // Sorting
@@ -87,7 +87,7 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
                     query = query.OrderByDescending(p => p.Price);
                     break;
                 case "rating":
-                    query = query.OrderByDescending(p => _db.Reviews.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating));
+                    query = query.OrderByDescending(p => _db.ProductRatings.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating));
                     break;
                 case "newest":
                     query = query.OrderByDescending(p => p.CreatedAt);
@@ -152,6 +152,9 @@ public class ProductRepository(AppDbContext _db) : IProductRepository
             .ToListAsync(cancellationToken);
         return cores.Select(MapToDomain).ToList();
     }
+
+    public Task<int> GetActiveProductsCountAsync(CancellationToken cancellationToken = default)
+        => _db.Products.AsNoTracking().CountAsync(p => p.IsActive, cancellationToken);
 
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
     {

@@ -1,6 +1,6 @@
-﻿using FluentValidation.TestHelper;
-using ECommerce.Application.DTOs.Auth;
-using ECommerce.Application.Validators.Auth;
+using FluentValidation.TestHelper;
+using ECommerce.Contracts.DTOs.Auth;
+using ECommerce.Contracts.Validators.Auth;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Unit.Validators;
@@ -45,3 +45,4 @@ public class AuthValidatorsTests
         result.ShouldNotHaveAnyValidationErrors();
     }
 }
+

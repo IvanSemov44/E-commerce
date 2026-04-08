@@ -4,6 +4,10 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright configuration for E2E tests
  * @see https://playwright.dev/docs/test-configuration
+ *
+ * Two modes:
+ *   npm run test:e2e          — dev server (port 5173, fast startup)
+ *   npm run test:e2e:preview  — production build on port 4173 (fastest tests, no HMR)
  */
 export default defineConfig({
   testDir: './e2e',
@@ -38,32 +42,36 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for major browsers.
+   * Default run: Chromium only (fast).
+   * Full cross-browser run: PLAYWRIGHT_FULL_BROWSERS=1 npm run test:e2e
+   */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
+    ...(process.env.PLAYWRIGHT_FULL_BROWSERS
+      ? [
+          {
+            name: 'firefox',
+            use: { ...devices['Desktop Firefox'] },
+          },
+          {
+            name: 'webkit',
+            use: { ...devices['Desktop Safari'] },
+          },
+          {
+            name: 'Mobile Chrome',
+            use: { ...devices['Pixel 5'] },
+          },
+          {
+            name: 'Mobile Safari',
+            use: { ...devices['iPhone 12'] },
+          },
+        ]
+      : []),
   ],
 
   /* Run local dev server before starting tests */

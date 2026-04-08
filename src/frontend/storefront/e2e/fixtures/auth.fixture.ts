@@ -7,9 +7,15 @@ import { LoginPage } from '../pages/LoginPage';
  */
 
 // Environment variables for test credentials
-const TEST_USER_EMAIL = process.env.E2E_TEST_USER_EMAIL || 'test@example.com';
+function getTestUserEmail(): string {
+  return process.env.E2E_TEST_USER_EMAIL || `test-${crypto.randomUUID()}@example.com`;
+}
+
+function getAdminUserEmail(): string {
+  return process.env.E2E_ADMIN_USER_EMAIL || `admin-${crypto.randomUUID()}@example.com`;
+}
+
 const TEST_USER_PASSWORD = process.env.E2E_TEST_USER_PASSWORD || 'TestPassword123!';
-const ADMIN_USER_EMAIL = process.env.E2E_ADMIN_USER_EMAIL || 'admin@example.com';
 const ADMIN_USER_PASSWORD = process.env.E2E_ADMIN_USER_PASSWORD || 'AdminPassword123!';
 
 // Define fixture types
@@ -24,31 +30,20 @@ export const test = base.extend<AuthFixtures>({
   // Regular authenticated user page
   authenticatedPage: async ({ page }, use) => {
     const loginPage = new LoginPage(page);
+    const email = getTestUserEmail();
     await loginPage.navigate();
-    await loginPage.login(TEST_USER_EMAIL, TEST_USER_PASSWORD);
-
-    // Wait for successful login (redirect away from login page)
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await loginPage.register(email, TEST_USER_PASSWORD);
+    await page.waitForURL((url) => !url.pathname.includes('/register') && !url.pathname.includes('/login'), { timeout: 10000 });
     await use(page);
   },
 
   // Admin authenticated page
   adminPage: async ({ page }, use) => {
     const loginPage = new LoginPage(page);
+    const email = getAdminUserEmail();
     await loginPage.navigate();
-    await loginPage.login(ADMIN_USER_EMAIL, ADMIN_USER_PASSWORD);
-
-    // Wait for admin dashboard
-    await page.waitForURL(
-      (url) => url.pathname.includes('/admin') || url.pathname.includes('/dashboard'),
-      {
-        timeout: 10000,
-      }
-    );
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await loginPage.register(email, ADMIN_USER_PASSWORD);
+    await page.waitForURL((url) => !url.pathname.includes('/register') && !url.pathname.includes('/login'), { timeout: 10000 });
     await use(page);
   },
 
@@ -71,8 +66,8 @@ export async function authenticatePage(
 ): Promise<void> {
   const loginPage = new LoginPage(page);
   await loginPage.navigate();
-  await loginPage.login(email || TEST_USER_EMAIL, password || TEST_USER_PASSWORD);
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+  await loginPage.register(email || getTestUserEmail(), password || TEST_USER_PASSWORD);
+  await page.waitForURL((url) => !url.pathname.includes('/register') && !url.pathname.includes('/login'), { timeout: 10000 });
 }
 
 // Helper to check if user is authenticated

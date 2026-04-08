@@ -20,7 +20,7 @@ test.describe('Authentication', () => {
       await loginLink.click();
 
       // Verify we're on login page
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
       const url = page.url();
       expect(url).toMatch(/\/(login|signin|auth)/i);
 
@@ -51,7 +51,7 @@ test.describe('Authentication', () => {
     }
 
     await loginLink.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Try to login with invalid credentials
     const emailInput = page.locator('input[type="email"]').first();
@@ -63,7 +63,7 @@ test.describe('Authentication', () => {
     await submitButton.click();
 
     // Wait for response
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
 
     // Look for error message
     const errorMessage = page.locator(
@@ -91,7 +91,7 @@ test.describe('Authentication', () => {
       await registerLink.click();
 
       // Verify we're on registration page
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
       const url = page.url();
       expect(url).toMatch(/\/(register|signup|auth)/i);
 
@@ -121,7 +121,7 @@ test.describe('Authentication', () => {
     }
 
     await registerLink.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Verify form fields
     const emailInput = page.locator('input[type="email"]');
@@ -152,7 +152,7 @@ test.describe('Authentication', () => {
     }
 
     await loginLink.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // Try invalid email format
     const emailInput = page.locator('input[type="email"]').first();
@@ -171,7 +171,7 @@ test.describe('Authentication', () => {
     } else {
       // Try submitting and check for error
       await submitButton.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
       const errorMessage = page.locator('.error, [class*="error"], [role="alert"]');
       const hasError = (await errorMessage.count()) > 0;

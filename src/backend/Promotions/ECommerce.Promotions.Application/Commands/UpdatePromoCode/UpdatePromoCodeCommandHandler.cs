@@ -1,6 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Promotions.Application.DTOs;
+using ECommerce.Promotions.Application.Interfaces;
 using ECommerce.Promotions.Domain.Errors;
 using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Domain.ValueObjects;
@@ -8,7 +9,9 @@ using ECommerce.Promotions.Domain.Aggregates.PromoCode;
 
 namespace ECommerce.Promotions.Application.Commands.UpdatePromoCode;
 
-public sealed class UpdatePromoCodeCommandHandler(IPromoCodeRepository repository)
+public sealed class UpdatePromoCodeCommandHandler(
+    IPromoCodeRepository repository,
+    IPromoProjectionEventPublisher projectionEventPublisher)
     : IRequestHandler<UpdatePromoCodeCommand, Result<PromoCodeDto>>
 {
     public async Task<Result<PromoCodeDto>> Handle(UpdatePromoCodeCommand command, CancellationToken cancellationToken)
@@ -51,6 +54,14 @@ public sealed class UpdatePromoCodeCommandHandler(IPromoCodeRepository repositor
             promoCode.Update(maxDiscountAmount: command.MaxDiscountAmount);
 
         await repository.UpsertAsync(promoCode, cancellationToken);
+
+        await projectionEventPublisher.PublishPromoProjectionUpdatedAsync(
+            promoCode.Id,
+            promoCode.Code.Value,
+            promoCode.Discount.Amount,
+            promoCode.IsActive,
+            false,
+            cancellationToken);
 
         return Result<PromoCodeDto>.Ok(MapToDto(promoCode));
     }
