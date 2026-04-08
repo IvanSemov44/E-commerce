@@ -50,8 +50,8 @@ dotnet test ECommerce.Tests/ECommerce.Tests.csproj --filter "FullyQualifiedName~
 
 Validation status (current):
 1. `dotnet build ECommerce.API/ECommerce.API.csproj` passed.
-2. Filtered test run is currently blocked by pre-existing compile errors in integration reliability test files (`DeadLetterReplayServiceTests`, `OrderFulfillmentSagaServiceTests`, `Phase8MessageBrokerIntegrationTests`) due `AppDbContext` -> `IntegrationPersistenceDbContext` constructor mismatches.
-3. This blocker is outside PR2 Catalog/Shopping routing scope and should be handled in a dedicated test-fix slice.
+2. Dedicated test-fix slice completed: integration reliability tests were updated to use `IntegrationPersistenceDbContext`.
+3. `dotnet test ECommerce.Tests/ECommerce.Tests.csproj --filter "FullyQualifiedName~Cart|FullyQualifiedName~Shopping"` passed (`total: 47, failed: 0, succeeded: 46, skipped: 1`).
 
 Data verification commands (template):
 

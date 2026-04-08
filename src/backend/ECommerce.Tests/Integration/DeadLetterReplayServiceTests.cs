@@ -1,7 +1,7 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ECommerce.Contracts;
-using ECommerce.SharedKernel.Constants;
 using ECommerce.Infrastructure.Data;
+using ECommerce.SharedKernel.Constants;
 using ECommerce.Infrastructure.Integration;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,11 +13,11 @@ public class DeadLetterReplayServiceTests
     [TestMethod]
     public async Task RequeueAsync_WhenMessageExists_EnqueuesOutboxAndMarksRequeued()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"dead-letter-requeue-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
         var service = new DeadLetterReplayService(dbContext);
 
         var integrationEvent = new ProductProjectionUpdatedIntegrationEvent(
@@ -49,11 +49,11 @@ public class DeadLetterReplayServiceTests
     [TestMethod]
     public async Task RequeueAsync_WhenAlreadyRequeued_ReturnsConflictError()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"dead-letter-requeue-conflict-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
         var service = new DeadLetterReplayService(dbContext);
 
         var integrationEvent = new ProductProjectionUpdatedIntegrationEvent(
@@ -77,11 +77,11 @@ public class DeadLetterReplayServiceTests
     [TestMethod]
     public async Task RequeueAsync_WhenMessageMissing_ReturnsNotFoundError()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"dead-letter-requeue-missing-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
         var service = new DeadLetterReplayService(dbContext);
 
         var result = await service.RequeueAsync(Guid.NewGuid(), CancellationToken.None);
@@ -93,11 +93,11 @@ public class DeadLetterReplayServiceTests
     [TestMethod]
     public async Task RequeueAsync_WhenPayloadTypeIsInvalid_ReturnsValidationError()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"dead-letter-requeue-invalid-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
         var service = new DeadLetterReplayService(dbContext);
 
         var deadLetter = new DeadLetterMessage
