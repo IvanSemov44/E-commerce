@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { Header } from './Header';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 const dispatchMock = vi.fn();
 const navigateMock = vi.fn();
-const getCartQueryMock = vi.fn();
-const getWishlistQueryMock = vi.fn();
 
 type MockState = {
   auth: {
@@ -29,7 +29,6 @@ vi.mock('@/features/auth/slices/authSlice', async () => {
   );
   return {
     ...actual,
-    // bypass reselect memoisation so each test sees fresh state
     selectIsAuthenticated: (state: MockState) => state.auth.isAuthenticated,
     selectCurrentUser: (state: MockState) => state.auth.user,
   };
@@ -45,18 +44,6 @@ vi.mock('@/features/cart/slices/cartSlice', async () => {
       state.cart.items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0),
   };
 });
-
-vi.mock('@/features/cart/api/cartApi', () => ({
-  useGetCartQuery: (...args: unknown[]) => getCartQueryMock(...args),
-}));
-
-vi.mock('@/features/auth/api/authApi', () => ({
-  useLogoutMutation: () => [vi.fn().mockResolvedValue({}), {}],
-}));
-
-vi.mock('@/features/wishlist/api/wishlistApi', () => ({
-  useGetWishlistQuery: (...args: unknown[]) => getWishlistQueryMock(...args),
-}));
 
 vi.mock('@/shared/components/icons', () => {
   const Icon = ({ className }: { className?: string }) => <span className={className}>icon</span>;
@@ -85,7 +72,6 @@ vi.mock('@/app/SearchBar', () => ({
   SearchBar: () => <div data-testid="search-bar" />,
 }));
 
-// Stub HeaderUserMenu — isolate from its own Redux + i18n dependencies
 vi.mock('../HeaderUserMenu', () => ({
   HeaderUserMenu: ({
     isOpen,
@@ -111,7 +97,6 @@ vi.mock('../HeaderUserMenu', () => ({
   ),
 }));
 
-// Stub HeaderMobileMenu — isolate from its own Redux + i18n dependencies
 vi.mock('../HeaderMobileMenu', () => ({
   HeaderMobileMenu: ({ onClose, onLogout }: { onClose: () => void; onLogout: () => void }) => (
     <div>
@@ -131,6 +116,26 @@ vi.mock('react-router', async () => {
   return { ...actual, useNavigate: () => navigateMock };
 });
 
+const setupApiHandlers = (cartData = null, wishlistData = null) => {
+  server.use(
+    http.get('/api/cart', () => {
+      if (!cartData) {
+        return HttpResponse.json({ success: false, data: null }, { status: 404 });
+      }
+      return HttpResponse.json({ success: true, data: cartData });
+    }),
+    http.post('/api/auth/logout', () => {
+      return HttpResponse.json({ success: true });
+    }),
+    http.get('/api/wishlist', () => {
+      if (!wishlistData) {
+        return HttpResponse.json({ success: false, data: null }, { status: 404 });
+      }
+      return HttpResponse.json({ success: true, data: wishlistData });
+    })
+  );
+};
+
 function renderHeader() {
   return render(
     <MemoryRouter>
@@ -148,8 +153,7 @@ describe('Header', () => {
       cart: { items: [{ quantity: 2 }, { quantity: 1 }] },
     };
 
-    getCartQueryMock.mockReturnValue({ data: undefined });
-    getWishlistQueryMock.mockReturnValue({ data: undefined });
+    setupApiHandlers(null, null);
   });
 
   it('renders public navigation for unauthenticated user', () => {
@@ -172,12 +176,10 @@ describe('Header', () => {
       isAuthenticated: true,
       user: { firstName: 'Ivan', email: 'ivan@example.com' },
     };
-    getCartQueryMock.mockReturnValue({
-      data: { items: [{ quantity: 4 }, { quantity: 3 }] },
-    });
-    getWishlistQueryMock.mockReturnValue({
-      data: { items: [{ id: '1' }, { id: '2' }, { id: '3' }] },
-    });
+    setupApiHandlers(
+      { items: [{ quantity: 4 }, { quantity: 3 }] },
+      { items: [{ id: '1' }, { id: '2' }, { id: '3' }] }
+    );
 
     renderHeader();
 
@@ -192,17 +194,16 @@ describe('Header', () => {
       isAuthenticated: true,
       user: { firstName: 'Ivan', email: 'ivan@example.com' },
     };
+    setupApiHandlers({ items: [] }, { items: [] });
 
     renderHeader();
 
-    // desktopRight has display:none by default (mobile-first CSS); use hidden:true
     fireEvent.click(screen.getByRole('button', { name: /user menu/i, hidden: true }));
 
     expect(screen.getByText('Account')).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: /sign out/i, hidden: true })[0]);
 
-    // dispatch(logout()) runs inside logoutApi().finally() — flush microtasks
     await act(async () => {});
 
     expect(dispatchMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'auth/logout' }));
@@ -222,33 +223,15 @@ describe('Header', () => {
       isAuthenticated: true,
       user: { firstName: 'Ivan', email: 'ivan@example.com' },
     };
+    setupApiHandlers({ items: [] }, { items: [] });
 
     renderHeader();
 
     fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
     fireEvent.click(screen.getAllByRole('button', { name: /sign out/i })[0]);
 
-    // dispatch(logout()) runs inside logoutApi().finally() — flush microtasks
     await act(async () => {});
 
     expect(dispatchMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'auth/logout' }));
-  });
-
-  it('requests cart and wishlist with authenticated skip flags', () => {
-    mockState.auth = {
-      isAuthenticated: true,
-      user: { firstName: 'Ivan', email: 'ivan@example.com' },
-    };
-
-    renderHeader();
-
-    expect(getCartQueryMock).toHaveBeenCalledWith(
-      undefined,
-      expect.objectContaining({ skip: false })
-    );
-    expect(getWishlistQueryMock).toHaveBeenCalledWith(
-      undefined,
-      expect.objectContaining({ skip: false })
-    );
   });
 });

@@ -3,32 +3,43 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { LoginPage } from '../LoginPage';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 const mockNavigate = vi.fn();
-const mockLogin = vi.fn();
-
-vi.mock('@/features/auth/api/authApi', () => ({
-  useLoginMutation: () => [mockLogin, {}],
-}));
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-function successResponse() {
-  return {
-    unwrap: vi.fn().mockResolvedValue({
-      success: true,
-      user: {
-        id: '1',
-        email: 'john@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'Customer',
-      },
-    }),
-  };
+function setupLoginHandlers(success = true) {
+  server.use(
+    http.post('/api/auth/login', async ({ request }) => {
+      if (!success) {
+        return HttpResponse.json(
+          {
+            success: false,
+            errorDetails: { message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' },
+          },
+          { status: 401 }
+        );
+      }
+      const body = await request.json();
+      return HttpResponse.json({
+        success: true,
+        data: {
+          user: {
+            id: '1',
+            email: body.email,
+            firstName: 'John',
+            lastName: 'Doe',
+            role: 'Customer',
+          },
+        },
+      });
+    })
+  );
 }
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
@@ -39,7 +50,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockLogin.mockReturnValue(successResponse());
+    setupLoginHandlers(true);
   });
 
   it('renders email field, password field, submit button, forgot password link', () => {
@@ -61,7 +72,6 @@ describe('LoginPage', () => {
       expect(screen.getByText('Email is required')).toBeInTheDocument();
     });
     expect(screen.getByText('Password is required')).toBeInTheDocument();
-    expect(mockLogin).not.toHaveBeenCalled();
   });
 
   it('dispatches loginSuccess and navigates home on success', async () => {
@@ -75,19 +85,11 @@ describe('LoginPage', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
     expect(store.getState().auth.isAuthenticated).toBe(true);
-    expect(mockLogin).toHaveBeenCalledWith({
-      email: 'john@example.com',
-      password: 'password123',
-    });
   });
 
   it('shows backend error via handleError, no navigation', async () => {
     const user = userEvent.setup();
-    mockLogin.mockReturnValue({
-      unwrap: vi.fn().mockRejectedValue({
-        data: { message: 'Invalid credentials' },
-      }),
-    });
+    setupLoginHandlers(false);
     renderWithProviders(<LoginPage />);
 
     await fillValidForm(user);

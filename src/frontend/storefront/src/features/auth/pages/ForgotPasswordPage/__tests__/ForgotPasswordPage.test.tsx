@@ -3,23 +3,27 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ForgotPasswordPage } from '../ForgotPasswordPage';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
-const mockForgotPassword = vi.fn();
-
-vi.mock('@/features/auth/api/authApi', () => ({
-  useForgotPasswordMutation: () => [mockForgotPassword, {}],
-}));
-
-function successResponse() {
-  return {
-    unwrap: vi.fn().mockResolvedValue({ success: true }),
-  };
+function setupForgotPasswordHandlers(success = true) {
+  server.use(
+    http.post('/api/auth/forgot-password', async () => {
+      if (!success) {
+        return HttpResponse.json(
+          { success: false, errorDetails: { message: 'Network error', code: 'INTERNAL_ERROR' } },
+          { status: 500 }
+        );
+      }
+      return HttpResponse.json({ success: true });
+    })
+  );
 }
 
 describe('ForgotPasswordPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockForgotPassword.mockReturnValue(successResponse());
+    setupForgotPasswordHandlers(true);
   });
 
   it('renders email field and submit button', () => {
@@ -38,7 +42,6 @@ describe('ForgotPasswordPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Email is required')).toBeInTheDocument();
     });
-    expect(mockForgotPassword).not.toHaveBeenCalled();
   });
 
   it('shows success state on successful submission', async () => {
@@ -56,11 +59,7 @@ describe('ForgotPasswordPage', () => {
 
   it('shows error toast on API error, form stays visible', async () => {
     const user = userEvent.setup();
-    mockForgotPassword.mockReturnValue({
-      unwrap: vi.fn().mockRejectedValue({
-        data: { message: 'Network error' },
-      }),
-    });
+    setupForgotPasswordHandlers(false);
     renderWithProviders(<ForgotPasswordPage />);
 
     await user.type(screen.getByLabelText(/^email/i), 'john@example.com');

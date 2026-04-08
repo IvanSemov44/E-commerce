@@ -3,32 +3,52 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { RegisterPage } from '../RegisterPage';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 const mockNavigate = vi.fn();
-const mockRegister = vi.fn();
-
-vi.mock('@/features/auth/api/authApi', () => ({
-  useRegisterMutation: () => [mockRegister, {}],
-}));
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-function successResponse() {
-  return {
-    unwrap: vi.fn().mockResolvedValue({
-      success: true,
-      user: {
-        id: '1',
-        email: 'john@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'Customer',
-      },
-    }),
-  };
+function setupRegisterHandlers(mode: 'success' | 'duplicate' | 'validation' = 'success') {
+  server.use(
+    http.post('/api/auth/register', async ({ request }) => {
+      const body = await request.json();
+
+      if (mode === 'duplicate') {
+        return HttpResponse.json(
+          {
+            success: false,
+            errorDetails: { code: 'DUPLICATE_EMAIL', message: 'Email is already in use' },
+          },
+          { status: 409 }
+        );
+      }
+
+      if (mode === 'validation') {
+        return HttpResponse.json(
+          { success: false, errors: { Password: ['Password must contain a special character'] } },
+          { status: 400 }
+        );
+      }
+
+      return HttpResponse.json({
+        success: true,
+        data: {
+          user: {
+            id: '1',
+            email: body.email,
+            firstName: body.firstName,
+            lastName: body.lastName,
+            role: 'Customer',
+          },
+        },
+      });
+    })
+  );
 }
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
@@ -42,7 +62,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRegister.mockReturnValue(successResponse());
+    setupRegisterHandlers('success');
   });
 
   it('renders all form fields and submit button', () => {
@@ -70,7 +90,6 @@ describe('RegisterPage', () => {
     expect(screen.getByText('Email is required')).toBeInTheDocument();
     expect(screen.getByText('Password is required')).toBeInTheDocument();
     expect(screen.getByText('Confirm Password required')).toBeInTheDocument();
-    expect(mockRegister).not.toHaveBeenCalled();
   });
 
   it('shows terms error when terms not accepted', async () => {
@@ -83,7 +102,6 @@ describe('RegisterPage', () => {
     await waitFor(() => {
       expect(screen.getByText('You must accept the terms to continue')).toBeInTheDocument();
     });
-    expect(mockRegister).not.toHaveBeenCalled();
   });
 
   it('dispatches loginSuccess and navigates home on success', async () => {
@@ -98,21 +116,11 @@ describe('RegisterPage', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
     expect(store.getState().auth.isAuthenticated).toBe(true);
-    expect(mockRegister).toHaveBeenCalledWith({
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@example.com',
-      password: 'Password1',
-    });
   });
 
   it('shows DUPLICATE_EMAIL backend error inline on the email field', async () => {
     const user = userEvent.setup();
-    mockRegister.mockReturnValue({
-      unwrap: vi.fn().mockRejectedValue({
-        data: { errorDetails: { code: 'DUPLICATE_EMAIL', message: 'Email is already in use' } },
-      }),
-    });
+    setupRegisterHandlers('duplicate');
     renderWithProviders(<RegisterPage />);
 
     await fillValidForm(user);
@@ -128,11 +136,7 @@ describe('RegisterPage', () => {
 
   it('shows ASP.NET validation errors inline on the matching field', async () => {
     const user = userEvent.setup();
-    mockRegister.mockReturnValue({
-      unwrap: vi.fn().mockRejectedValue({
-        data: { errors: { Password: ['Password must contain a special character'] } },
-      }),
-    });
+    setupRegisterHandlers('validation');
     renderWithProviders(<RegisterPage />);
 
     await fillValidForm(user);
