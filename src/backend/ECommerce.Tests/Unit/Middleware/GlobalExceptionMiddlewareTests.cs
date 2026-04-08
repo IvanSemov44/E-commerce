@@ -1,6 +1,5 @@
 ﻿using ECommerce.API.Middleware;
 using ECommerce.SharedKernel.Exceptions;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -50,8 +49,8 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
-        context.Response.ContentType.Should().StartWith("application/json");
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+        context.Response.ContentType.ShouldStartWith("application/json");
     }
 
     [TestMethod]
@@ -66,7 +65,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
     }
 
     [TestMethod]
@@ -81,7 +80,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status401Unauthorized);
     }
 
     [TestMethod]
@@ -96,7 +95,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status409Conflict);
     }
 
     #endregion
@@ -115,7 +114,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status409Conflict);
     }
 
     [TestMethod]
@@ -131,11 +130,11 @@ public class GlobalExceptionMiddlewareTests
         var response = await ReadResponseBody<ErrorResponse>(context);
 
         // Assert
-        response.Should().NotBeNull();
-        response!.Success.Should().BeFalse();
-        response.ErrorDetails.Should().NotBeNull();
-        response.ErrorDetails!.Message.Should().Contain("modified by another user");
-        response.ErrorDetails.Code.Should().Be("CONCURRENCY_CONFLICT");
+        response.ShouldNotBeNull();
+        response!.Success.ShouldBeFalse();
+        response.ErrorDetails.ShouldNotBeNull();
+        response.ErrorDetails!.Message.ShouldContain("modified by another user");
+        response.ErrorDetails.Code.ShouldBe("CONCURRENCY_CONFLICT");
     }
 
     #endregion
@@ -154,7 +153,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
     }
 
     [TestMethod]
@@ -169,7 +168,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
     }
 
     #endregion
@@ -188,7 +187,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status409Conflict);
     }
 
     #endregion
@@ -207,7 +206,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status500InternalServerError);
     }
 
     [TestMethod]
@@ -223,10 +222,10 @@ public class GlobalExceptionMiddlewareTests
         var response = await ReadResponseBody<ErrorResponse>(context);
 
         // Assert
-        response.Should().NotBeNull();
-        response!.ErrorDetails.Should().NotBeNull();
-        response.ErrorDetails!.Message.Should().NotContain("Sensitive internal error message");
-        response.ErrorDetails.Message.Should().Be("An internal server error occurred. Please try again later.");
+        response.ShouldNotBeNull();
+        response!.ErrorDetails.ShouldNotBeNull();
+        response.ErrorDetails!.Message.ShouldNotContain("Sensitive internal error message");
+        response.ErrorDetails.Message.ShouldBe("An internal server error occurred. Please try again later.");
     }
 
     #endregion
@@ -249,7 +248,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        wasNextCalled.Should().BeTrue();
+        wasNextCalled.ShouldBeTrue();
     }
 
     [TestMethod]
@@ -264,7 +263,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status200OK);
     }
 
     #endregion

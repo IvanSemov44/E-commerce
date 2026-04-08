@@ -1,7 +1,6 @@
 using FluentValidation.TestHelper;
 using ECommerce.Contracts.DTOs.Products;
 using ECommerce.Contracts.Validators.Products;
-using FluentAssertions;
 
 namespace ECommerce.Tests.Unit.Validators;
 

@@ -3,7 +3,6 @@ using ECommerce.SharedKernel.Entities;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Unit.Extensions;
@@ -125,8 +124,8 @@ public class QueryableExtensionsTests
         var (totalCount, items) = await query.GetPagedDataAsync(1, 2);
 
         // Assert
-        totalCount.Should().Be(5);
-        items.Should().HaveCount(2);
+        totalCount.ShouldBe(5);
+        items.Count.ShouldBe(2);
     }
 
     [TestMethod]
@@ -139,8 +138,8 @@ public class QueryableExtensionsTests
         var (totalCount, items) = await query.GetPagedDataAsync(2, 2);
 
         // Assert
-        totalCount.Should().Be(5);
-        items.Should().HaveCount(2);
+        totalCount.ShouldBe(5);
+        items.Count.ShouldBe(2);
     }
 
     [TestMethod]
@@ -153,8 +152,8 @@ public class QueryableExtensionsTests
         var (totalCount, items) = await query.GetPagedDataAsync(3, 2);
 
         // Assert
-        totalCount.Should().Be(5);
-        items.Should().HaveCount(1);
+        totalCount.ShouldBe(5);
+        items.Count.ShouldBe(1);
     }
 
     [TestMethod]
@@ -167,8 +166,8 @@ public class QueryableExtensionsTests
         var (totalCount, items) = await query.GetPagedDataAsync(10, 2);
 
         // Assert
-        totalCount.Should().Be(5);
-        items.Should().BeEmpty();
+        totalCount.ShouldBe(5);
+        items.ShouldBeEmpty();
     }
 
     [TestMethod]
@@ -183,8 +182,8 @@ public class QueryableExtensionsTests
         var (totalCount, items) = await query.GetPagedDataAsync(1, 2);
 
         // Assert
-        totalCount.Should().Be(0);
-        items.Should().BeEmpty();
+        totalCount.ShouldBe(0);
+        items.ShouldBeEmpty();
     }
 
     #endregion
@@ -201,7 +200,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort("Price", ascending: true).ToList();
 
         // Assert
-        result.Should().BeInAscendingOrder(p => p.Price);
+        result.Select(p => p.Price).ShouldBeInOrder();
     }
 
     [TestMethod]
@@ -214,7 +213,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort("Price", ascending: false).ToList();
 
         // Assert
-        result.Should().BeInDescendingOrder(p => p.Price);
+        result.Select(p => p.Price).ShouldBeInOrder(SortDirection.Descending);
     }
 
     [TestMethod]
@@ -227,7 +226,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort("Name", ascending: true).ToList();
 
         // Assert
-        result.Should().BeInAscendingOrder(p => p.Name);
+        result.Select(p => p.Name).ShouldBeInOrder();
     }
 
     [TestMethod]
@@ -240,7 +239,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort("StockQuantity", ascending: true).ToList();
 
         // Assert
-        result.Should().BeInAscendingOrder(p => p.StockQuantity);
+        result.Select(p => p.StockQuantity).ShouldBeInOrder();
     }
 
     [TestMethod]
@@ -253,7 +252,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort("", ascending: true).ToList();
 
         // Assert
-        result.Should().HaveCount(5);
+        result.Count.ShouldBe(5);
     }
 
     [TestMethod]
@@ -266,7 +265,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort(null!, ascending: true).ToList();
 
         // Assert
-        result.Should().HaveCount(5);
+        result.Count.ShouldBe(5);
     }
 
     [TestMethod]
@@ -279,7 +278,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort("InvalidProperty", ascending: true).ToList();
 
         // Assert
-        result.Should().HaveCount(5);
+        result.Count.ShouldBe(5);
     }
 
     [TestMethod]
@@ -292,7 +291,7 @@ public class QueryableExtensionsTests
         var result = query.ApplySort("PRICE", ascending: true).ToList();
 
         // Assert
-        result.Should().BeInAscendingOrder(p => p.Price);
+        result.Select(p => p.Price).ShouldBeInOrder();
     }
 
     #endregion
@@ -310,8 +309,8 @@ public class QueryableExtensionsTests
         var result = System.Linq.Queryable.Where(query, predicate).ToList();
 
         // Assert
-        result.Should().HaveCount(2); // Laptop (999.99) and Phone (599.99)
-        result.All(p => p.Price > 500).Should().BeTrue();
+        result.Count.ShouldBe(2); // Laptop (999.99) and Phone (599.99)
+        result.All(p => p.Price > 500).ShouldBeTrue();
     }
 
     [TestMethod]
@@ -324,7 +323,7 @@ public class QueryableExtensionsTests
         var result = QueryableExtensions.Where(query, null).ToList();
 
         // Assert
-        result.Should().HaveCount(5);
+        result.Count.ShouldBe(5);
     }
 
     #endregion
@@ -341,8 +340,8 @@ public class QueryableExtensionsTests
         var result = query.InRange(p => p.Price, 200m, 600m).ToList();
 
         // Assert
-        result.Should().HaveCount(3); // Phone (599.99), Tablet (399.99), Smartwatch (299.99)
-        result.All(p => p.Price >= 200m && p.Price <= 600m).Should().BeTrue();
+        result.Count.ShouldBe(3); // Phone (599.99), Tablet (399.99), Smartwatch (299.99)
+        result.All(p => p.Price >= 200m && p.Price <= 600m).ShouldBeTrue();
     }
 
     [TestMethod]
@@ -355,7 +354,7 @@ public class QueryableExtensionsTests
         var result = query.InRange(p => p.StockQuantity, 10, 20).ToList();
 
         // Assert
-        result.Should().HaveCount(3); // Laptop (10), Phone (20), Tablet (15)
+        result.Count.ShouldBe(3); // Laptop (10), Phone (20), Tablet (15)
     }
 
     [TestMethod]
@@ -368,7 +367,7 @@ public class QueryableExtensionsTests
         var result = query.InRange(p => p.Price, 5000m, 10000m).ToList();
 
         // Assert
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     [TestMethod]
@@ -381,7 +380,7 @@ public class QueryableExtensionsTests
         var result = query.InRange(p => p.Price, 0m, 2000m).ToList();
 
         // Assert
-        result.Should().HaveCount(5);
+        result.Count.ShouldBe(5);
     }
 
     #endregion
@@ -398,8 +397,8 @@ public class QueryableExtensionsTests
         var result = query.GreaterThan(p => p.Price, 500m).ToList();
 
         // Assert
-        result.Should().HaveCount(2); // Laptop (999.99) and Phone (599.99)
-        result.All(p => p.Price > 500m).Should().BeTrue();
+        result.Count.ShouldBe(2); // Laptop (999.99) and Phone (599.99)
+        result.All(p => p.Price > 500m).ShouldBeTrue();
     }
 
     [TestMethod]
@@ -412,8 +411,8 @@ public class QueryableExtensionsTests
         var result = query.GreaterThan(p => p.StockQuantity, 20).ToList();
 
         // Assert
-        result.Should().HaveCount(2); // Smartwatch (30) and Headphones (50)
-        result.Should().NotContain(p => p.StockQuantity == 20);
+        result.Count.ShouldBe(2); // Smartwatch (30) and Headphones (50)
+        result.ShouldNotContain(p => p.StockQuantity == 20);
     }
 
     [TestMethod]
@@ -426,7 +425,7 @@ public class QueryableExtensionsTests
         var result = query.GreaterThan(p => p.Price, 5000m).ToList();
 
         // Assert
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     #endregion
@@ -443,8 +442,8 @@ public class QueryableExtensionsTests
         var result = query.LessThan(p => p.Price, 300m).ToList();
 
         // Assert
-        result.Should().HaveCount(2); // Smartwatch (299.99) and Headphones (149.99)
-        result.All(p => p.Price < 300m).Should().BeTrue();
+        result.Count.ShouldBe(2); // Smartwatch (299.99) and Headphones (149.99)
+        result.All(p => p.Price < 300m).ShouldBeTrue();
     }
 
     [TestMethod]
@@ -457,8 +456,8 @@ public class QueryableExtensionsTests
         var result = query.LessThan(p => p.StockQuantity, 20).ToList();
 
         // Assert
-        result.Should().HaveCount(2); // Laptop (10) and Tablet (15)
-        result.Should().NotContain(p => p.StockQuantity == 20);
+        result.Count.ShouldBe(2); // Laptop (10) and Tablet (15)
+        result.ShouldNotContain(p => p.StockQuantity == 20);
     }
 
     [TestMethod]
@@ -471,7 +470,7 @@ public class QueryableExtensionsTests
         var result = query.LessThan(p => p.Price, 100m).ToList();
 
         // Assert
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     #endregion
@@ -490,9 +489,9 @@ public class QueryableExtensionsTests
             .GetPagedDataAsync(1, 3);
 
         // Assert
-        totalCount.Should().Be(5);
-        items.Should().HaveCount(3);
-        items.Should().BeInDescendingOrder(p => p.Price);
+        totalCount.ShouldBe(5);
+        items.Count.ShouldBe(3);
+        items.Select(p => p.Price).ShouldBeInOrder(SortDirection.Descending);
     }
 
     [TestMethod]
@@ -508,9 +507,9 @@ public class QueryableExtensionsTests
             .GetPagedDataAsync(1, 2);
 
         // Assert
-        totalCount.Should().Be(4); // Phone, Smartwatch, Tablet, Laptop
-        items.Should().HaveCount(2);
-        items.Should().BeInAscendingOrder(p => p.Name);
+        totalCount.ShouldBe(4); // Phone, Smartwatch, Tablet, Laptop
+        items.Count.ShouldBe(2);
+        items.Select(p => p.Name).ShouldBeInOrder();
     }
 
     #endregion

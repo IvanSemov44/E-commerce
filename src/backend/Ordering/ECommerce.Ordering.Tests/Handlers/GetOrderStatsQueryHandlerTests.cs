@@ -2,7 +2,6 @@
 using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.Interfaces;
 using ECommerce.Ordering.Domain.ValueObjects;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Ordering.Tests.Handlers;
@@ -72,12 +71,12 @@ public class GetOrderStatsQueryHandlerTests
         var handler = new GetOrderStatsQueryHandler(repo);
         var result = await handler.Handle(new GetOrderStatsQuery(30), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsSuccess.ShouldBeTrue();
         var data = result.GetDataOrThrow();
-        data.TotalOrders.Should().Be(2);
-        data.TotalRevenue.Should().Be(350m);
-        data.OrdersTrend.Should().NotBeEmpty();
-        data.RevenueTrend.Should().NotBeEmpty();
+        data.TotalOrders.ShouldBe(2);
+        data.TotalRevenue.ShouldBe(350m);
+        data.OrdersTrend.ShouldNotBeEmpty();
+        data.RevenueTrend.ShouldNotBeEmpty();
     }
 
     private static Order CreateOrder(decimal amount)

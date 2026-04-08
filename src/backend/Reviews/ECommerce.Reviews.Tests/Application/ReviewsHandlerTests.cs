@@ -35,10 +35,10 @@ public class ReviewsHandlerTests
             new CreateReviewCommand(productId, userId, null, 5, "Nice", "Great product overall!"),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Rating.Should().Be(5);
-        repository.Reviews.Should().ContainSingle(review => review.ProductId == productId && review.UserId == userId);
-        unitOfWork.SaveCount.Should().Be(1);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Rating.ShouldBe(5);
+        repository.Reviews.Where(review => review.ProductId == productId && review.UserId == userId).ShouldHaveSingleItem();
+        unitOfWork.SaveCount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -53,9 +53,9 @@ public class ReviewsHandlerTests
             new CreateReviewCommand(Guid.NewGuid(), Guid.NewGuid(), null, 5, "Nice", "Great product overall!"),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ProductNotFound.Code);
-        unitOfWork.SaveCount.Should().Be(0);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ProductNotFound.Code);
+        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -75,9 +75,9 @@ public class ReviewsHandlerTests
             new CreateReviewCommand(productId, userId, null, 4, "Nice", "Great product overall!"),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.DuplicateReview.Code);
-        unitOfWork.SaveCount.Should().Be(0);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.DuplicateReview.Code);
+        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -93,10 +93,10 @@ public class ReviewsHandlerTests
             new UpdateReviewCommand(review.Id, review.UserId!.Value, false, 4, "Updated", "Updated review text"),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Rating.Should().Be(4);
-        result.GetDataOrThrow().Title.Should().Be("Updated");
-        unitOfWork.SaveCount.Should().Be(1);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Rating.ShouldBe(4);
+        result.GetDataOrThrow().Title.ShouldBe("Updated");
+        unitOfWork.SaveCount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -112,9 +112,9 @@ public class ReviewsHandlerTests
             new UpdateReviewCommand(review.Id, Guid.NewGuid(), false, 4, "Updated", "Updated review text"),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.Unauthorized.Code);
-        unitOfWork.SaveCount.Should().Be(0);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.Unauthorized.Code);
+        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -131,9 +131,9 @@ public class ReviewsHandlerTests
             new UpdateReviewCommand(review.Id, review.UserId!.Value, false, 4, "Updated", "Updated review text"),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ReviewAlreadyApproved.Code);
-        unitOfWork.SaveCount.Should().Be(0);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewAlreadyApproved.Code);
+        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -149,9 +149,9 @@ public class ReviewsHandlerTests
             new DeleteReviewCommand(review.Id, review.UserId!.Value, false),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        repository.Reviews.Should().BeEmpty();
-        unitOfWork.SaveCount.Should().Be(1);
+        result.IsSuccess.ShouldBeTrue();
+        repository.Reviews.ShouldBeEmpty();
+        unitOfWork.SaveCount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -167,9 +167,9 @@ public class ReviewsHandlerTests
             new DeleteReviewCommand(review.Id, Guid.NewGuid(), false),
             CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.Unauthorized.Code);
-        unitOfWork.SaveCount.Should().Be(0);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.Unauthorized.Code);
+        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -182,8 +182,8 @@ public class ReviewsHandlerTests
 
         var result = await handler.Handle(new GetReviewByIdQuery(review.Id), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Id.Should().Be(review.Id);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Id.ShouldBe(review.Id);
     }
 
     [TestMethod]
@@ -194,8 +194,8 @@ public class ReviewsHandlerTests
 
         var result = await handler.Handle(new GetReviewByIdQuery(Guid.NewGuid()), CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ReviewNotFound.Code);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewNotFound.Code);
     }
 
     [TestMethod]
@@ -214,10 +214,10 @@ public class ReviewsHandlerTests
         var handler = new GetProductReviewsQueryHandler(repository, catalog);
         var result = await handler.Handle(new GetProductReviewsQuery(productId, 1, 10), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsSuccess.ShouldBeTrue();
         var data = result.GetDataOrThrow();
-        data.TotalCount.Should().Be(1);
-        data.Items.Should().ContainSingle(item => item.Id == approved.Id);
+        data.TotalCount.ShouldBe(1);
+        data.Items.Where(item => item.Id == approved.Id).ShouldHaveSingleItem();
     }
 
     [TestMethod]
@@ -234,8 +234,8 @@ public class ReviewsHandlerTests
 
         var result = await handler.Handle(new GetProductAverageRatingQuery(productId), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Should().Be(4m);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().ShouldBe(4m);
     }
 
     [TestMethod]
@@ -250,9 +250,9 @@ public class ReviewsHandlerTests
         var handler = new GetPendingReviewsQueryHandler(repository);
         var result = await handler.Handle(new GetPendingReviewsQuery(1, 10), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().TotalCount.Should().Be(1);
-        result.GetDataOrThrow().Items.Should().ContainSingle(item => item.Id == pending.Id);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().TotalCount.ShouldBe(1);
+        result.GetDataOrThrow().Items.Where(item => item.Id == pending.Id).ShouldHaveSingleItem();
     }
 
     [TestMethod]
@@ -267,9 +267,9 @@ public class ReviewsHandlerTests
         var handler = new GetFlaggedReviewsQueryHandler(repository);
         var result = await handler.Handle(new GetFlaggedReviewsQuery(1, 10), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().TotalCount.Should().Be(1);
-        result.GetDataOrThrow().Items.Should().ContainSingle(item => item.Id == flagged.Id);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().TotalCount.ShouldBe(1);
+        result.GetDataOrThrow().Items.Where(item => item.Id == flagged.Id).ShouldHaveSingleItem();
     }
 
     [TestMethod]
@@ -284,9 +284,9 @@ public class ReviewsHandlerTests
         var handler = new GetAllReviewsQueryHandler(repository);
         var result = await handler.Handle(new GetAllReviewsQuery(1, 10, "Laptop", "Approved"), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().TotalCount.Should().Be(1);
-        result.GetDataOrThrow().Items.Should().ContainSingle(item => item.Id == matching.Id);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().TotalCount.ShouldBe(1);
+        result.GetDataOrThrow().Items.Where(item => item.Id == matching.Id).ShouldHaveSingleItem();
     }
 
     [TestMethod]
@@ -302,9 +302,9 @@ public class ReviewsHandlerTests
         var handler = new GetUserReviewsQueryHandler(repository);
         var result = await handler.Handle(new GetUserReviewsQuery(userId, 1, 10), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().TotalCount.Should().Be(1);
-        result.GetDataOrThrow().Items.Should().ContainSingle(item => item.UserId == userId);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().TotalCount.ShouldBe(1);
+        result.GetDataOrThrow().Items.Where(item => item.UserId == userId).ShouldHaveSingleItem();
     }
 
     private static Review CreateReview(

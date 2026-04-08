@@ -1,6 +1,5 @@
 ﻿using ECommerce.API.Common.Extensions;
 using ECommerce.Infrastructure.Data;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -30,14 +29,14 @@ public class DatabaseSchemaValidatorTests
     public async Task ValidateAsync_DoesNotThrow_WhenValidationPasses()
     {
         var act = async () => await DatabaseSchemaValidator.ValidateAsync(_context);
-        await act.Should().NotThrowAsync();
+        await Should.NotThrowAsync(act);
     }
 
     [TestMethod]
     public async Task ValidateAsync_HandlesConnectionIssues_Gracefully()
     {
         var act = async () => await DatabaseSchemaValidator.ValidateAsync(_context);
-        await act.Should().NotThrowAsync();
+        await Should.NotThrowAsync(act);
     }
 
     [TestMethod]
@@ -45,12 +44,12 @@ public class DatabaseSchemaValidatorTests
     {
         var expectedTables = new[] { "Users", "Products", "Orders", "RefreshTokens", "Categories" };
 
-        expectedTables.Should().HaveCount(5);
-        expectedTables.Should().Contain("Users");
-        expectedTables.Should().Contain("Products");
-        expectedTables.Should().Contain("Orders");
-        expectedTables.Should().Contain("RefreshTokens");
-        expectedTables.Should().Contain("Categories");
+        expectedTables.Length.ShouldBe(5);
+        expectedTables.ShouldContain("Users");
+        expectedTables.ShouldContain("Products");
+        expectedTables.ShouldContain("Orders");
+        expectedTables.ShouldContain("RefreshTokens");
+        expectedTables.ShouldContain("Categories");
     }
 
     [TestMethod]
@@ -58,12 +57,12 @@ public class DatabaseSchemaValidatorTests
     {
         var expectedTablesWithRowVersion = new[] { "Users", "Products", "Carts", "Orders", "PromoCodes" };
 
-        expectedTablesWithRowVersion.Should().HaveCount(5);
-        expectedTablesWithRowVersion.Should().Contain("Users");
-        expectedTablesWithRowVersion.Should().Contain("Products");
-        expectedTablesWithRowVersion.Should().Contain("Carts");
-        expectedTablesWithRowVersion.Should().Contain("Orders");
-        expectedTablesWithRowVersion.Should().Contain("PromoCodes");
+        expectedTablesWithRowVersion.Length.ShouldBe(5);
+        expectedTablesWithRowVersion.ShouldContain("Users");
+        expectedTablesWithRowVersion.ShouldContain("Products");
+        expectedTablesWithRowVersion.ShouldContain("Carts");
+        expectedTablesWithRowVersion.ShouldContain("Orders");
+        expectedTablesWithRowVersion.ShouldContain("PromoCodes");
     }
 
     [TestMethod]
@@ -75,9 +74,9 @@ public class DatabaseSchemaValidatorTests
             "CartItems", "OrderItems", "Reviews", "Wishlists", "InventoryLogs"
         };
 
-        expectedTablesWithoutRowVersion.Should().HaveCount(9);
-        expectedTablesWithoutRowVersion.Should().Contain("RefreshTokens");
-        expectedTablesWithoutRowVersion.Should().Contain("Categories");
+        expectedTablesWithoutRowVersion.Length.ShouldBe(9);
+        expectedTablesWithoutRowVersion.ShouldContain("RefreshTokens");
+        expectedTablesWithoutRowVersion.ShouldContain("Categories");
     }
 
     [TestMethod]
@@ -90,31 +89,31 @@ public class DatabaseSchemaValidatorTests
             ("RefreshTokens", "ExpiresAt")
         };
 
-        expectedCriticalColumns.Should().HaveCount(3);
-        expectedCriticalColumns.Should().Contain(("RefreshTokens", "Token"));
-        expectedCriticalColumns.Should().Contain(("RefreshTokens", "UserId"));
-        expectedCriticalColumns.Should().Contain(("RefreshTokens", "ExpiresAt"));
+        expectedCriticalColumns.Length.ShouldBe(3);
+        expectedCriticalColumns.ShouldContain(("RefreshTokens", "Token"));
+        expectedCriticalColumns.ShouldContain(("RefreshTokens", "UserId"));
+        expectedCriticalColumns.ShouldContain(("RefreshTokens", "ExpiresAt"));
     }
 
     [TestMethod]
     public async Task ValidateAsync_WhenExceptionOccurs_DoesNotThrow()
     {
         var act = async () => await DatabaseSchemaValidator.ValidateAsync(_context);
-        await act.Should().NotThrowAsync();
+        await Should.NotThrowAsync(act);
     }
 
     [TestMethod]
     public async Task ValidateAsync_WhenInvalidOperationExceptionOccurs_Throws()
     {
         var act = async () => await DatabaseSchemaValidator.ValidateAsync(_context);
-        await act.Should().NotThrowAsync();
+        await Should.NotThrowAsync(act);
     }
 
     [TestMethod]
     public async Task ValidateAsync_WithMockConnection_ValidatesSuccessfully()
     {
         var act = async () => await DatabaseSchemaValidator.ValidateAsync(_context);
-        await act.Should().NotThrowAsync();
+        await Should.NotThrowAsync(act);
     }
 }
 

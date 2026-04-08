@@ -1,7 +1,6 @@
 using ECommerce.API.ActionFilters;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Contracts.DTOs.Products;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -48,10 +47,10 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().NotBeNull();
-        context.Result.Should().BeOfType<BadRequestObjectResult>();
+        context.Result.ShouldNotBeNull();
+        context.Result.ShouldBeOfType<BadRequestObjectResult>();
         var badRequestResult = (BadRequestObjectResult)context.Result;
-        badRequestResult.StatusCode.Should().Be(400);
+        badRequestResult.StatusCode.ShouldBe(400);
     }
 
     [TestMethod]
@@ -71,9 +70,9 @@ public class ValidationFilterAttributeTests
         // Assert
         var badRequestResult = (BadRequestObjectResult)context.Result!;
         var errorResponse = badRequestResult.Value as ApiResponse<object>;
-        errorResponse?.ErrorDetails?.Message.Should().Contain("Object is null");
-        errorResponse?.ErrorDetails?.Message.Should().Contain("TestController");
-        errorResponse?.ErrorDetails?.Message.Should().Contain("TestAction");
+        errorResponse?.ErrorDetails?.Message.ShouldContain("Object is null");
+        errorResponse?.ErrorDetails?.Message.ShouldContain("TestController");
+        errorResponse?.ErrorDetails?.Message.ShouldContain("TestAction");
     }
 
     [TestMethod]
@@ -103,10 +102,10 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().NotBeNull();
-        context.Result.Should().BeOfType<UnprocessableEntityObjectResult>();
+        context.Result.ShouldNotBeNull();
+        context.Result.ShouldBeOfType<UnprocessableEntityObjectResult>();
         var result = (UnprocessableEntityObjectResult)context.Result;
-        result.StatusCode.Should().Be(422);
+        result.StatusCode.ShouldBe(422);
     }
 
     [TestMethod]
@@ -132,10 +131,10 @@ public class ValidationFilterAttributeTests
         var result = (UnprocessableEntityObjectResult)context.Result!;
         var errorResponse = result.Value as ApiResponse<object>;
         var errors = errorResponse?.ErrorDetails?.Errors?.Values.SelectMany(e => e).ToList();
-        errors.Should().HaveCount(3);
-        errors.Should().Contain("Name is required");
-        errors.Should().Contain("Price must be greater than 0");
-        errors.Should().Contain("Category is required");
+        errors.Count.ShouldBe(3);
+        errors.ShouldContain("Name is required");
+        errors.ShouldContain("Price must be greater than 0");
+        errors.ShouldContain("Category is required");
     }
 
     [TestMethod]
@@ -161,7 +160,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeNull();
+        context.Result.ShouldBeNull();
     }
 
     [TestMethod]
@@ -187,7 +186,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeOfType<UnprocessableEntityObjectResult>();
+        context.Result.ShouldBeOfType<UnprocessableEntityObjectResult>();
     }
 
     [TestMethod]
@@ -205,7 +204,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeOfType<BadRequestObjectResult>();
+        context.Result.ShouldBeOfType<BadRequestObjectResult>();
     }
 
     [TestMethod]
@@ -224,7 +223,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeNull();
+        context.Result.ShouldBeNull();
     }
 
     [TestMethod]
@@ -249,8 +248,8 @@ public class ValidationFilterAttributeTests
         var result = (UnprocessableEntityObjectResult)context.Result!;
         var errorResponse = result.Value as ApiResponse<object>;
         var errors = errorResponse?.ErrorDetails?.Errors?.Values.SelectMany(e => e).ToList();
-        errors.Should().Contain("Price is required");
-        errors.Should().Contain("Price must be positive");
+        errors.ShouldContain("Price is required");
+        errors.ShouldContain("Price must be positive");
     }
 
     [TestMethod]
@@ -268,7 +267,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeOfType<BadRequestObjectResult>();
+        context.Result.ShouldBeOfType<BadRequestObjectResult>();
     }
 
     [TestMethod]
@@ -287,7 +286,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeOfType<BadRequestObjectResult>();
+        context.Result.ShouldBeOfType<BadRequestObjectResult>();
     }
 
     [TestMethod]
@@ -323,8 +322,8 @@ public class ValidationFilterAttributeTests
         // Assert
         var result = (UnprocessableEntityObjectResult)context.Result!;
         var errorResponse = result.Value as ApiResponse<object>;
-        errorResponse.Should().NotBeNull();
-        errorResponse?.Success.Should().BeFalse();
+        errorResponse.ShouldNotBeNull();
+        errorResponse?.Success.ShouldBeFalse();
     }
 
     [TestMethod]
@@ -343,7 +342,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeNull(); // Valid DTO, no errors
+        context.Result.ShouldBeNull(); // Valid DTO, no errors
     }
 
     [TestMethod]
@@ -362,7 +361,7 @@ public class ValidationFilterAttributeTests
         _filter.OnActionExecuting(context);
 
         // Assert
-        context.Result.Should().BeNull(); // Valid DTO, no errors
+        context.Result.ShouldBeNull(); // Valid DTO, no errors
     }
 
     [TestMethod]
@@ -384,7 +383,7 @@ public class ValidationFilterAttributeTests
 
         // Assert
         var result = (UnprocessableEntityObjectResult)context.Result!;
-        result.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        result.StatusCode.ShouldBe(StatusCodes.Status422UnprocessableEntity);
     }
 }
 

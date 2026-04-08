@@ -153,7 +153,7 @@ public class Phase8MessageBrokerIntegrationTests
             _ => throw new InvalidOperationException("boom"),
             CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await Should.ThrowAsync<InvalidOperationException>(act);
 
         var inbox = await dbContext.InboxMessages.SingleAsync(x => x.IdempotencyKey == idempotencyKey);
         Assert.AreEqual(1, inbox.AttemptCount);
@@ -188,7 +188,7 @@ public class Phase8MessageBrokerIntegrationTests
             _ => throw new InvalidOperationException("transient"),
             CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await Should.ThrowAsync<InvalidOperationException>(act);
 
         await processor.ExecuteAsync(message, _ => Task.CompletedTask, CancellationToken.None);
 
