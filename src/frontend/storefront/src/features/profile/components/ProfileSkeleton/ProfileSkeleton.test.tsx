@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import ProfileSkeleton from './ProfileSkeleton';
+import { ProfileSkeleton } from './ProfileSkeleton';
 
 describe('ProfileSkeleton', () => {
   it('renders profile container', () => {
