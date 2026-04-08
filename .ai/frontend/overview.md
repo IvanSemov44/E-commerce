@@ -8,11 +8,11 @@ Quick orientation for storefront/admin frontend architecture.
 
 ## Architecture Snapshot
 - React 19 + TypeScript + Vite 7.
-- React Router v7 (Library Mode now; Framework Mode migration planned).
+- React Router v7 Framework Mode (file-based routes via `flatRoutes()`). Auth guards use component-style redirect pending migration to loader-based redirects.
 - Server state via RTK Query (`baseApi.injectEndpoints`).
 - Redux slices for UI/local state only.
 - Shared API base with auth refresh and telemetry in storefront.
-- Auth guards: `<ProtectedRoute>` wrapper now; route `loader` + `redirect()` after migration.
+- Auth guard: `_protected.tsx` pathless layout wraps all protected routes.
 
 ## Non-Negotiable Rules
 - Do not use manual `fetch` in feature components for API workflows.

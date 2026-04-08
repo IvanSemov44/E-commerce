@@ -105,7 +105,7 @@ return (
 ## Real Code References
 - Shared UI components: `src/frontend/storefront/src/shared/components/`
 - Feature UI components: `src/frontend/storefront/src/features/`
-- App entry composition: `src/frontend/storefront/src/App.tsx`
+- App root: `src/frontend/storefront/src/app/root.tsx`
 
 ## Practical Guidance
 - Co-locate feature-specific components under their feature folder.

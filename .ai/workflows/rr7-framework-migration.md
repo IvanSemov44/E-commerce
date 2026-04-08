@@ -1,147 +1,108 @@
-# Migration Plan: React Router v7 Framework Mode
+# Migration Record: React Router v7 Framework Mode
 
-Updated: 2026-03-15
+Updated: 2026-04-08
 Owner: @ivans
 
-## Current State
-
-`react-router-dom ^7.12.0` is installed but running in **Library Mode** (classic `<Routes>/<Route>` tree in `AppRoutes.tsx`). Framework Mode unlocks file-based routing, automatic code splitting, and route loaders — the modern React Router v7 pattern.
-
-No breaking changes to the backend. This is a pure frontend refactor.
+> **STATUS: Framework Mode is live as of Phase 9. Phases 1, 2, and 5 are complete.**
+> This document is a record of what was done and what remains — not a future plan.
 
 ---
 
-## What Changes, What Stays
+## What Changed
 
 | Concern | Before | After |
 |---|---|---|
-| Route registration | Manual `<Routes>` in `AppRoutes.tsx` | Files in `app/routes/` |
+| Route registration | Manual `<Routes>` in `AppRoutes.tsx` | Files in `src/app/routes/` |
 | Code splitting | Manual `React.lazy()` per page | Automatic per route file |
-| Auth guards | `<ProtectedRoute>` wrapper component | `loader` with `redirect()` |
-| Data fetching | RTK Query only | RTK Query + loader guards |
+| Auth guards | `<ProtectedRoute>` wrapper component | Component-style `<Navigate>` (loader pattern pending — see Phase 3) |
+| Data fetching | RTK Query only | RTK Query + loader guards (loaders for guards only) |
 | Path constants | `ROUTE_PATHS` constants | `ROUTE_PATHS` stays (navigation, `<Link>`) |
 | RTK Query | All server state | Unchanged — loaders do not replace it |
 
 ---
 
-## Phase 1 — Install & Configure Framework Mode
+## Phase 1 — Install & Configure Framework Mode ✅ DONE
 
-### 1.1 Install packages
-```bash
-npm install @react-router/dev @react-router/node
-npm uninstall @vitejs/plugin-react
-```
+### What was done
+- Installed `@react-router/dev` and `@react-router/node`
+- Updated `vite.config.ts` to use `reactRouter()` from `@react-router/dev/vite`
+- Created `react-router.config.ts` at project root:
+  ```ts
+  import type { Config } from '@react-router/dev/config';
+  export default {
+    appDirectory: 'src/app',
+    ssr: false,
+  } satisfies Config;
+  ```
+- Created `src/app/root.tsx` as the framework entry point (replaces `App.tsx`)
+- Updated `main.tsx` to use `HydratedRouter`
 
-> `@react-router/dev/vite` includes its own React plugin — `@vitejs/plugin-react` is redundant after this.
-
-### 1.2 Update `vite.config.ts`
-```ts
-// Before
-import react from '@vitejs/plugin-react';
-plugins: [react()]
-
-// After
-import { reactRouter } from '@react-router/dev/vite';
-plugins: [reactRouter()]
-```
-
-### 1.3 Create `react-router.config.ts` (project root)
-```ts
-import type { Config } from '@react-router/dev/config';
-
-export default {
-  appDirectory: 'src/app',       // where routes/ folder lives
-  ssr: false,                    // SPA mode — no server rendering yet
-} satisfies Config;
-```
-
-### 1.4 Create `app/root.tsx`
-This replaces `App.tsx` as the framework entry point. Move providers here:
-```tsx
-import { Outlet, Scripts, ScrollRestoration } from 'react-router';
-import { Provider } from 'react-redux';
-import { store } from '@/shared/lib/store/store';
-import Layout from '@/app/layouts/Layout';
-
-export default function Root() {
-  return (
-    <Provider store={store}>
-      <Layout>
-        <Outlet />
-      </Layout>
-      <ScrollRestoration />
-      <Scripts />
-    </Provider>
-  );
-}
-```
-
-### 1.5 Update `main.tsx`
-```tsx
-// Before: ReactDOM.createRoot(…).render(<App />)
-// After:
-import { HydratedRouter } from 'react-router/dom';
-ReactDOM.hydrateRoot(document, <HydratedRouter />);
-```
+### Key files (current state)
+- `src/app/root.tsx` — providers, layout shell, `<Outlet>`
+- `src/app/routes.ts` — `export default flatRoutes() satisfies RouteConfig`
+- `vite.config.ts` — `plugins: [reactRouter()]`
+- `react-router.config.ts` — `appDirectory: 'src/app'`, `ssr: false`
 
 ---
 
-## Phase 2 — Create Route Files
+## Phase 2 — Create Route Files ✅ DONE
 
-Create `src/app/routes/` and map each current `<Route>` to a file. File naming conventions:
+All routes from the old `AppRoutes.tsx` are now file-based in `src/app/routes/`.
+
+### Route file map (implemented)
+
+| URL | File |
+|---|---|
+| `/` | `_index.tsx` |
+| `/products` | `products._index.tsx` |
+| `/products/:slug` | `products.$slug.tsx` |
+| `/cart` | `cart.tsx` |
+| `/checkout` | `checkout.tsx` |
+| `/wishlist` | `_protected.wishlist.tsx` |
+| `/orders` | `_protected.orders._index.tsx` |
+| `/orders/:orderId` | `_protected.orders.$orderId.tsx` |
+| `/profile` | `_protected.profile.tsx` |
+| `/login` | `login.tsx` |
+| `/register` | `register.tsx` |
+| `/forgot-password` | `forgot-password.tsx` |
+| `/reset-password` | `reset-password.tsx` |
+| Static content pages | `about.tsx`, `blog.tsx`, `careers.tsx`, … |
+
+### File naming conventions
 - `.` separates URL segments (`products.cart` → `/products/cart`)
 - `$` prefix on a segment = dynamic param (`$slug` → `:slug`)
 - `_name` prefix = pathless layout (no URL segment, wraps child routes)
 - `_index` = index route (exact match of parent)
 
-### Route file map
-
-| Current `ROUTE_PATHS` | New file | URL |
-|---|---|---|
-| `home: '/'` | `_index.tsx` | `/` |
-| `products: '/products'` | `products._index.tsx` | `/products` |
-| `productDetail: '/products/:slug'` | `products.$slug.tsx` | `/products/:slug` |
-| `cart: '/cart'` | `cart.tsx` | `/cart` |
-| `checkout: '/checkout'` | `checkout.tsx` | `/checkout` |
-| `wishlist: '/wishlist'` | `_protected.wishlist.tsx` | `/wishlist` |
-| `orders: '/orders'` | `_protected.orders._index.tsx` | `/orders` |
-| `orderDetail: '/orders/:orderId'` | `_protected.orders.$orderId.tsx` | `/orders/:orderId` |
-| `profile: '/profile'` | `_protected.profile.tsx` | `/profile` |
-| `login: '/login'` | `login.tsx` | `/login` |
-| `register: '/register'` | `register.tsx` | `/register` |
-| `forgotPassword: '/forgot-password'` | `forgot-password.tsx` | `/forgot-password` |
-| `resetPassword: '/reset-password'` | `reset-password.tsx` | `/reset-password` |
-| Content pages (`/privacy`, `/about`, …) | `privacy.tsx`, `about.tsx`, … | as-is |
-
-### Example route file — public page
-```tsx
-// src/app/routes/products._index.tsx
-export default function ProductsPage() {
-  // exact same component as before — just re-exported
-  return <ProductsPageComponent />;
-}
-```
-
-### Example route file — dynamic param
-```tsx
-// src/app/routes/products.$slug.tsx
-import { useParams } from 'react-router';
-
-export default function ProductDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
-  // use slug with RTK Query as before
-}
-```
-
 ---
 
-## Phase 3 — Auth Guards via Loaders
+## Phase 3 — Auth Guards via Loaders 🚧 PARTIAL
 
-Replace `<ProtectedRoute>` with a pathless layout that uses a `loader`.
+### Current state
+`_protected.tsx` exists and wraps all `_protected.*` routes. However, it uses a **component-style guard** (`useAppSelector` + `<Navigate>`), not the idiomatic loader-based approach.
 
-### 3.1 Create `_protected.tsx`
 ```tsx
-// src/app/routes/_protected.tsx
+// src/app/routes/_protected.tsx (current — component-style)
+import { Outlet, Navigate } from 'react-router';
+import { selectAuthStatus } from '@/features/auth/slices/authSlice';
+import { useAppSelector } from '@/shared/lib/store';
+import { ROUTE_PATHS } from '@/shared/constants/navigation';
+
+export default function ProtectedLayout() {
+  const { isAuthenticated, loading } = useAppSelector(selectAuthStatus);
+
+  if (loading) return <LoadingSpinner />;
+  if (!isAuthenticated) return <Navigate to={ROUTE_PATHS.login} replace />;
+
+  return <Outlet />;
+}
+```
+
+**What still needs to be done:**
+Replace the component body with a `loader` that runs before any child renders:
+
+```tsx
+// src/app/routes/_protected.tsx (target — loader-based)
 import { redirect, Outlet } from 'react-router';
 import { store } from '@/shared/lib/store/store';
 
@@ -158,87 +119,52 @@ export default function ProtectedLayout() {
 }
 ```
 
-All routes named `_protected.*` are automatically children of this layout. The `loader` runs before any child renders — if not authenticated, it redirects. No component-level guard needed.
+**Why the loader pattern is better:**
+- Runs before child components render — no flash of protected content
+- `throw redirect()` is handled by the framework before any React renders
+- No need to check auth state inside page components
 
-### 3.2 Delete `ProtectedRoute.tsx`
-```bash
-rm src/app/ProtectedRoute/ProtectedRoute.tsx
-rm src/app/ProtectedRoute/ProtectedRoute.test.tsx
-```
+**When to implement:** When the loading spinner UX during auth bootstrap needs to be improved, or when SSR is added. The current component-style guard works correctly for the SPA use case.
 
 ---
 
-## Phase 4 — RTK Query + Loaders Coexistence
+## Phase 4 — RTK Query + Loaders Coexistence ✅ DONE (by design)
 
-**Loaders do NOT replace RTK Query.** They serve different concerns:
+Loaders do NOT replace RTK Query. They serve different concerns:
 
 | Concern | Tool |
 |---|---|
 | Auth guard / redirect | Route loader |
-| Data prefetch for SSR (future) | Route loader |
 | All feature data fetching | RTK Query |
 | Mutations (add to cart, place order) | RTK Query mutations |
 | Cache invalidation | RTK Query tags |
 | Loading / error states in UI | RTK Query `isLoading`, `isError` |
 
-The coexistence pattern: loaders validate/redirect, RTK Query owns data.
-
-```tsx
-// src/app/routes/products.$slug.tsx
-import { useParams } from 'react-router';
-import { useGetProductBySlugQuery } from '@/features/products/api/productApi';
-
-// No loader needed for data — RTK Query handles it
-export default function ProductDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const { data, isLoading, isError } = useGetProductBySlugQuery(slug!);
-  // ...
-}
-```
+The current pattern: loaders validate/redirect, RTK Query owns data. This is correct and requires no further changes.
 
 ---
 
-## Phase 5 — Clean Up Legacy
+## Phase 5 — Clean Up Legacy ✅ DONE
 
-After all routes are migrated and tested:
-
-```bash
-# Delete
-rm src/app/AppRoutes.tsx
-rm src/app/ProtectedRoute/ProtectedRoute.tsx
-rm src/app/ProtectedRoute/ProtectedRoute.test.tsx
-rm src/app/skeletons/RouteLoadingFallback/RouteLoadingFallback.tsx   # handled by Suspense in root.tsx
-```
-
-Update `ROUTE_PATHS` to remove any `:param` strings that are now unused in route registration (they remain valid for `generatePath` / `<Link to>` usage).
-
-Remove all `React.lazy()` wrapping from what used to be in `AppRoutes.tsx`. The framework splits automatically.
+- `AppRoutes.tsx` deleted
+- `ProtectedRoute.tsx` deleted
+- Manual `React.lazy()` wrappings removed
+- `ROUTE_PATHS` constants retained for `<Link>`, `useNavigate`, `generatePath`
 
 ---
 
 ## Phase 6 — Update Tests
 
-- `ProtectedRoute.test.tsx` → delete (logic is now in loader, test the loader directly)
-- Route-level tests: use `createMemoryRouter` from `react-router` in test setup, or use `@testing-library/react` with the framework's test utilities
-- Update `useRouteTelemetry.test.tsx` if it uses old router setup
+Route-level component tests: use `MemoryRouter` from `test-utils.tsx` (`renderWithProviders` with `withRouter: true`). `test-utils.tsx` already uses `MemoryRouter`.
+
+Loader tests (when Phase 3 is implemented): test the `loader` function directly by calling it and asserting the redirect response.
 
 ---
 
-## Rollout Order
+## What Remains
 
-1. Phase 1 (install + config) — isolated, no user-facing change
-2. Phase 2 (one route at a time) — migrate leaf routes first, verify each
-3. Phase 3 (auth guards) — after all protected routes exist as files
-4. Phase 5 (cleanup) — after full regression pass
-5. Phase 6 (tests) — parallel with Phase 2–3
-
----
-
-## Risks & Mitigations
-
-| Risk | Mitigation |
+| Item | Status |
 |---|---|
-| `ROUTE_PATHS` mismatches | Keep constants unchanged; file names mirror them |
-| Redux store not available in loader | Access via `store.getState()` directly (store is a singleton) |
-| Telemetry hook breaks | Update `useRouteTelemetry` to use `useLocation` from `react-router` (API unchanged) |
-| Docker HMR during migration | No change — Vite HMR works the same with `@react-router/dev` |
+| Loader-based auth guard in `_protected.tsx` | Pending — see Phase 3 above |
+| Streaming / Suspense improvements | Not started |
+| Coverage enforcement for route files | Pending (Phase T-5) |

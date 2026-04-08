@@ -130,5 +130,8 @@ Critical journeys (must always have E2E coverage):
 | Ordering.Application | GetOrderStats has 1 test only | Medium |
 | Reviews.Infrastructure | Projection sync missing update path | High |
 | All projection handlers | Only insert + delete tested; no update path | High |
-| Frontend slices | No slice tests exist yet | Medium |
-| Frontend components | No MSW server set up yet — all tests use vi.mock | High |
+| Frontend components | MSW server is set up but 52 test files still use vi.mock for RTK Query hooks | High |
+| orders pages | OrderDetailPage, OrderHistoryPage have no page-level tests | Medium |
+| profile page | ProfilePage has no page-level test | Low |
+| hooks | useCartOperations, useDebounce, useTranslation untested | Medium |
+| shared UI | EmptyState, QuantityControl, TrustSignals have no tests | Low |
