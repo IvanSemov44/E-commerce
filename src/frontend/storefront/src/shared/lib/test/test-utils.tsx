@@ -5,12 +5,12 @@ import {
   type RenderOptions,
   type RenderHookOptions,
 } from '@testing-library/react';
-import { BrowserRouter } from 'react-router';
+import { MemoryRouter } from 'react-router';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from '@/features/auth/slices/authSlice';
 import { cartReducer } from '@/features/cart/slices/cartSlice';
-import toastReducer from '@/app/Toast/toastSlice';
+import { toastReducer } from '@/app/Toast/toastSlice';
 import { baseApi } from '@/shared/lib/api/baseApi';
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -52,7 +52,7 @@ export function renderWithProviders(
   if (withRedux && withRouter) {
     Wrapper = ({ children }: { children: React.ReactNode }) => (
       <Provider store={store}>
-        <BrowserRouter>{children}</BrowserRouter>
+        <MemoryRouter>{children}</MemoryRouter>
       </Provider>
     );
   } else if (withRedux) {
@@ -61,7 +61,7 @@ export function renderWithProviders(
     );
   } else if (withRouter) {
     Wrapper = ({ children }: { children: React.ReactNode }) => (
-      <BrowserRouter>{children}</BrowserRouter>
+      <MemoryRouter>{children}</MemoryRouter>
     );
   }
 
@@ -83,7 +83,7 @@ export function renderHookWithProviders<TProps, TResult>(
   if (withRouter) {
     Wrapper = ({ children }: { children: React.ReactNode }) => (
       <Provider store={store}>
-        <BrowserRouter>{children}</BrowserRouter>
+        <MemoryRouter>{children}</MemoryRouter>
       </Provider>
     );
   }
