@@ -628,27 +628,22 @@ public static class ServiceCollectionExtensions
 
         if (useDatabaseStorage)
         {
-            // Get the connection string for the Data Protection keys database
-            // By default, use the same database as the application
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? configuration.GetConnectionString("DataProtectionConnection");
+            var connectionString = configuration.GetConnectionString("DataProtectionConnection")
+                ?? throw new InvalidOperationException("Connection string 'DataProtectionConnection' is not configured.");
 
-            if (!string.IsNullOrEmpty(connectionString))
-            {
-                // Keep Data Protection key storage isolated from business AppDbContext.
-                // These are ASP.NET framework encryption keys (key ring), not domain data.
-                services.AddDbContext<DataProtectionKeysContext>(options =>
-                    options.UseNpgsql(connectionString));
+            // Keep Data Protection key storage isolated from business AppDbContext.
+            // These are ASP.NET framework encryption keys (key ring), not domain data.
+            services.AddDbContext<DataProtectionKeysContext>(options =>
+                options.UseNpgsql(connectionString));
 
-                // Persisting the key ring in DB ensures encrypted cookies/payloads remain valid
-                // across restarts and across multiple app instances.
-                services.AddDataProtection()
-                    .PersistKeysToDbContext<DataProtectionKeysContext>()
-                    .SetApplicationName("ECommerce-API");
+            // Persisting the key ring in DB ensures encrypted cookies/payloads remain valid
+            // across restarts and across multiple app instances.
+            services.AddDataProtection()
+                .PersistKeysToDbContext<DataProtectionKeysContext>()
+                .SetApplicationName("ECommerce-API");
 
-                Log.Information("Data Protection keys configured with database persistence");
-                return services;
-            }
+            Log.Information("Data Protection keys configured with database persistence");
+            return services;
         }
 
         // Fallback: Use file system storage (works for containers with persistent volumes)

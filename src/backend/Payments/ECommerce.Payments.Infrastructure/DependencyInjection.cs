@@ -4,6 +4,7 @@ using ECommerce.Payments.Infrastructure.Persistence;
 using ECommerce.Payments.Infrastructure.Persistence.Repositories;
 using ECommerce.Payments.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerce.Payments.Infrastructure;
