@@ -678,8 +678,11 @@ public static class ServiceCollectionExtensions
 
             if (!string.IsNullOrEmpty(connectionString))
             {
+                services.AddDbContext<DataProtectionKeysContext>(options =>
+                    options.UseNpgsql(connectionString));
+
                 services.AddDataProtection()
-                    .PersistKeysToDbContext<AppDbContext>()
+                    .PersistKeysToDbContext<DataProtectionKeysContext>()
                     .SetApplicationName("ECommerce-API");
 
                 Log.Information("Data Protection keys configured with database persistence");
