@@ -6,20 +6,24 @@ One standard. Applied everywhere. No exceptions.
 
 ## Method Names
 
-**Pattern:** `Subject_Scenario_ExpectedOutcome`
+**Pattern:** `Scenario_ExpectedOutcome` for handler/service tests. `Subject_Scenario_ExpectedOutcome` when the subject adds meaning (domain tests, integration tests).
 
-The subject is what is being called. The scenario is the specific input or state. The outcome is what should happen.
+The rule: if you are already inside `CreateProductCommandHandlerTests`, the `Handle_` prefix on every method is noise. Drop it. Keep the subject when two methods on the same type do different things (domain aggregates, integration tests).
 
 ```
-// Domain / Application
+// Domain tests — keep Subject because the aggregate has many methods
 Create_EmptyName_ReturnsFailure
 Create_ValidInputs_RaisesProductCreatedEvent
-Handle_ProductNotFound_ReturnsNotFoundError
-Handle_ValidCommand_PersistsAggregateAndCommits
-GetById_ExistingProduct_ReturnsDto
+UpdatePrice_NegativeAmount_ReturnsFailure
+UpdatePrice_ValidAmount_UpdatesAndRaisesEvent
 Deactivate_AlreadyInactive_ReturnsFailure
 
-// Integration / Characterization
+// Application handler tests — drop Subject (you are already in the handler class)
+ValidCommand_CreatesProductAndCommits
+DuplicateSku_ReturnsSkuAlreadyExistsError
+CategoryNotFound_ReturnsNotFoundError
+
+// Integration / Characterization — keep HTTP verb as the Subject
 POST_ValidProduct_Returns201WithId
 POST_MissingName_Returns400
 POST_Unauthenticated_Returns401
@@ -27,6 +31,11 @@ POST_CustomerRole_Returns403
 GET_ExistingProduct_Returns200WithCorrectShape
 GET_NonExistentId_Returns404
 DELETE_ExistingProduct_Returns204
+
+// Projection sync
+Publish_NewProduct_InsertsProjection
+Publish_ExistingProduct_UpdatesProjection
+Publish_DeletedProduct_RemovesProjection
 
 // Frontend component
 renders_WithDefaultProps_ShowsTitle
@@ -57,7 +66,7 @@ ProductTests
 ReviewTests
 EmailValueObjectTests
 
-// Application
+// Application — one class per handler
 CreateProductCommandHandlerTests
 GetProductByIdQueryHandlerTests
 PlaceOrderCommandHandlerTests
@@ -140,10 +149,10 @@ public void Create_ValidInputs_RaisesProductCreatedEvent()
     Result<Product> result = Product.Create(name, price);
 
     // Assert
-    Assert.IsTrue(result.IsSuccess);
+    result.IsSuccess.ShouldBeTrue();
     Product product = result.GetDataOrThrow();
-    Assert.AreEqual(1, product.DomainEvents.Count);
-    Assert.IsInstanceOfType<ProductCreatedEvent>(product.DomainEvents[0]);
+    product.DomainEvents.ShouldHaveSingleItem();
+    product.DomainEvents[0].ShouldBeOfType<ProductCreatedEvent>();
 }
 ```
 
@@ -151,14 +160,13 @@ Frontend:
 ```tsx
 it('renders_WhenLoading_ShowsSkeleton', () => {
     // Arrange
-    const { getByTestId } = renderWithProviders(<ProductCard />, {
-        preloadedState: { catalog: { loading: true } },
-    });
+    server.use(http.get('/api/products', () => new HttpResponse(null, { status: 200 })));
 
-    // Act — (nothing; render is the act)
+    // Act
+    renderWithProviders(<ProductCard productId="1" />);
 
     // Assert
-    expect(getByTestId('product-skeleton')).toBeInTheDocument();
+    expect(screen.getByTestId('product-skeleton')).toBeInTheDocument();
 });
 ```
 
@@ -166,55 +174,128 @@ When there is no meaningful Arrange or Act, keep the comment but leave the block
 
 ---
 
-## Variable Naming Inside Tests
+## Grouping tests by method — nested classes, not #region
 
-- Use **explicit types** (not `var`) for all non-trivial assertions in backend tests.
-- Anonymous initializer objects are the only exception.
+`#region` hides structure and is discouraged in modern C#. Use **nested `[TestClass]`** to group tests by the method under test. MSTest 4 supports nested classes fully.
 
 ```csharp
-// GOOD
-Result<Product> result = Product.Create("Widget", 10m);
-Product product = result.GetDataOrThrow();
-HttpResponseMessage response = await client.GetAsync("/api/products/123");
+// WRONG — #region is a 2010 pattern
+[TestClass]
+public class ProductTests
+{
+    #region Create
+    [TestMethod]
+    public void Create_ValidInputs_ReturnsProduct() { }
+    [TestMethod]
+    public void Create_EmptyName_ReturnsFailure() { }
+    #endregion
 
-// BAD
-var result = Product.Create("Widget", 10m);
-var response = await client.GetAsync("/api/products/123");
+    #region UpdatePrice
+    [TestMethod]
+    public void UpdatePrice_ValidAmount_UpdatesAndRaisesEvent() { }
+    #endregion
+}
 
-// ALLOWED (anonymous object)
-var createDto = new { Name = "Widget", Price = 10m };
+// RIGHT — nested test classes
+[TestClass]
+public class ProductTests
+{
+    [TestClass]
+    public class Create
+    {
+        [TestMethod]
+        public void ValidInputs_ReturnsProduct() { }
+
+        [TestMethod]
+        public void EmptyName_ReturnsFailure() { }
+
+        [TestMethod]
+        public void NegativePrice_ReturnsFailure() { }
+    }
+
+    [TestClass]
+    public class UpdatePrice
+    {
+        [TestMethod]
+        public void ValidAmount_UpdatesAndRaisesEvent() { }
+
+        [TestMethod]
+        public void NegativeAmount_ReturnsFailure() { }
+    }
+
+    [TestClass]
+    public class Deactivate
+    {
+        [TestMethod]
+        public void AlreadyInactive_ReturnsFailure() { }
+
+        [TestMethod]
+        public void Active_DeactivatesAndRaisesEvent() { }
+    }
+}
 ```
 
-Frontend tests: `const`, `let` everywhere — TypeScript infers correctly.
+Benefits: test runner shows `ProductTests > Create > EmptyName_ReturnsFailure`. No folding. Proper class isolation. Navigable.
 
 ---
 
-## Region Grouping (backend BC test files only)
+## Parameterized Tests
 
-Group tests by the method being tested using `#region`:
+Use `[DataTestMethod]` + `[DataRow]` for boundary and equivalence class testing on value objects. Avoids copy-paste test methods that differ only in the input.
 
 ```csharp
 [TestClass]
 public class ProductTests
 {
-    #region Create
+    [TestClass]
+    public class Create
+    {
+        [DataTestMethod]
+        [DataRow(0)]
+        [DataRow(-0.01)]
+        [DataRow(-100)]
+        public void NonPositivePrice_ReturnsFailure(decimal price)
+        {
+            // Arrange + Act
+            Result<Product> result = Product.Create("Widget", price);
 
-    [TestMethod]
-    public void Create_ValidInputs_ReturnsProduct() { ... }
+            // Assert
+            result.IsSuccess.ShouldBeFalse();
+        }
 
-    [TestMethod]
-    public void Create_EmptyName_ReturnsFailure() { ... }
-
-    #endregion
-
-    #region UpdatePrice
-
-    [TestMethod]
-    public void UpdatePrice_ValidAmount_UpdatesAndRaisesEvent() { ... }
-
-    [TestMethod]
-    public void UpdatePrice_NegativeAmount_ReturnsFailure() { ... }
-
-    #endregion
+        [DataTestMethod]
+        [DataRow(0.01)]
+        [DataRow(1)]
+        [DataRow(9999.99)]
+        public void PositivePrice_Succeeds(decimal price)
+        {
+            Result<Product> result = Product.Create("Widget", price);
+            result.IsSuccess.ShouldBeTrue();
+        }
+    }
 }
 ```
+
+---
+
+## Variable Naming Inside Tests
+
+- Use **explicit types** (not `var`) for all assertion subjects in backend tests. This makes the type visible in code review and prevents accidental `object` inference.
+- Anonymous initializer objects are the only exception.
+
+```csharp
+// GOOD — type is explicit for assertion subjects
+Result<Product> result = Product.Create("Widget", 10m);
+Product product = result.GetDataOrThrow();
+HttpResponseMessage response = await client.GetAsync("/api/products/123");
+ApiResponse<ProductDto>? body = await Deserialize<ApiResponse<ProductDto>>(response);
+
+// OK — anonymous objects used only as request payloads
+var createDto = new { Name = "Widget", Price = 10m };
+
+// BAD — type invisible at point of assertion
+var result = Product.Create("Widget", 10m);
+var response = await client.GetAsync("/api/products/123");
+```
+
+Frontend tests: `const`, `let` everywhere — TypeScript infers correctly.

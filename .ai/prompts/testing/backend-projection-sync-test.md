@@ -7,6 +7,17 @@ Use this prompt when adding a new integration event handler that maintains a rea
 ```
 You are writing projection sync characterization tests for a new integration event handler in this DDD/CQRS e-commerce repository.
 
+## STEP 1 — Extract before generating (mandatory)
+
+Before writing any test, read the pasted handler and list:
+- The INotificationHandler<TEvent> type name
+- The integration event constructor parameters (exact names and types)
+- The read model class name and its settable properties
+- The DbSet property name on the target DbContext
+- What condition triggers insert vs. update vs. delete in the handler logic
+
+If any of these are missing from the pasted code, write "MISSING: [item]" and stop.
+
 ## Purpose
 These tests verify that an INotificationHandler<TEvent> correctly maintains its read model
 when an integration event fires. Three paths must be covered: insert, update, delete.
@@ -106,6 +117,13 @@ public async Task Publish_Deleted<Subject>_RemovesProjection()
 - Seed state directly via DbContext — do not publish a create event to set up update/delete tests
 - Always await using on scope — prevents memory leaks
 - Assert on DbContext state directly — not via API or service call
+
+## NEVER do these
+- Do NOT share a DbContext instance between tests — create a new scope per test
+- Do NOT reuse the same database name between tests — always use Guid suffix
+- Do NOT publish a create event to set up the update/delete test — seed directly via DbContext
+- Do NOT add XML doc comments
+- Do NOT invent read model property names — use only what is in the pasted code
 
 ## After writing
 Run: dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --filter "[BC][Subject]ProjectionSync"

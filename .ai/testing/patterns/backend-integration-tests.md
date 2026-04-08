@@ -1,6 +1,6 @@
 # Pattern: Backend Integration Tests
 
-Layer 3. Full HTTP stack. InMemory EF Core. Tests one endpoint scenario per method.
+Layer 3. Full HTTP stack. SQLite in-memory EF Core. Tests one endpoint scenario per method.
 
 ---
 
@@ -52,8 +52,9 @@ public class ProductsControllerTests
     [TestMethod]
     public async Task POST_ValidProduct_Returns201WithId()
     {
-        // Arrange
-        var body = new { Name = "Widget Pro", Price = 29.99m, Sku = "SKU-TEST-001", CategoryId = SeedData.CategoryId };
+        // Arrange — unique SKU per test run (unique constraint in DB)
+        string sku = $"SKU-{Guid.NewGuid():N}";
+        var body = new { Name = "Widget Pro", Price = 29.99m, Sku = sku, CategoryId = SeedData.CategoryId };
 
         // Act
         HttpResponseMessage response = await _adminClient.PostAsync(
@@ -62,17 +63,18 @@ public class ProductsControllerTests
         // Assert
         Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
         ApiResponse<ProductDto>? api = await Deserialize<ApiResponse<ProductDto>>(response);
-        Assert.IsNotNull(api);
-        Assert.IsTrue(api.Success);
-        Assert.AreNotEqual(Guid.Empty, api.Data!.Id);
-        Assert.AreEqual("Widget Pro", api.Data.Name);
+        api.ShouldNotBeNull();
+        api.Success.ShouldBeTrue();
+        api.Data!.Id.ShouldNotBe(Guid.Empty);
+        api.Data.Name.ShouldBe("Widget Pro");
     }
 
     [TestMethod]
     public async Task POST_MissingName_Returns400()
     {
-        // Arrange
-        var body = new { Price = 29.99m, Sku = "SKU-TEST-002" };
+        // Arrange — SKU still unique even in invalid-input tests
+        string sku = $"SKU-{Guid.NewGuid():N}";
+        var body = new { Price = 29.99m, Sku = sku };
 
         // Act
         HttpResponseMessage response = await _adminClient.PostAsync(
@@ -81,15 +83,15 @@ public class ProductsControllerTests
         // Assert
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
         ApiResponse<JsonElement>? api = await Deserialize<ApiResponse<JsonElement>>(response);
-        Assert.IsNotNull(api);
-        Assert.IsFalse(api.Success);
+        api.ShouldNotBeNull();
+        api.Success.ShouldBeFalse();
     }
 
     [TestMethod]
     public async Task POST_Unauthenticated_Returns401()
     {
         // Arrange
-        var body = new { Name = "Widget", Price = 10m, Sku = "SKU-TEST-003" };
+        var body = new { Name = "Widget", Price = 10m, Sku = $"SKU-{Guid.NewGuid():N}" };
 
         // Act
         HttpResponseMessage response = await _anonClient.PostAsync(
@@ -103,7 +105,7 @@ public class ProductsControllerTests
     public async Task POST_CustomerRole_Returns403()
     {
         // Arrange
-        var body = new { Name = "Widget", Price = 10m, Sku = "SKU-TEST-004" };
+        var body = new { Name = "Widget", Price = 10m, Sku = $"SKU-{Guid.NewGuid():N}" };
 
         // Act
         HttpResponseMessage response = await _customerClient.PostAsync(
@@ -118,10 +120,11 @@ public class ProductsControllerTests
     [TestMethod]
     public async Task GET_ExistingProduct_Returns200WithCorrectShape()
     {
-        // Arrange — create the product inside this test
+        // Arrange — create the product inside this test with a unique SKU
+        string sku = $"SKU-{Guid.NewGuid():N}";
         HttpResponseMessage created = await _adminClient.PostAsync(
             "/api/products",
-            Serialize(new { Name = "Shape Test", Price = 5m, Sku = "SKU-SHAPE-001", CategoryId = SeedData.CategoryId }),
+            Serialize(new { Name = "Shape Test", Price = 5m, Sku = sku, CategoryId = SeedData.CategoryId }),
             TestContext.CancellationToken);
         ApiResponse<ProductDto>? createApi = await Deserialize<ApiResponse<ProductDto>>(created);
         Guid id = createApi!.Data!.Id;
@@ -133,9 +136,9 @@ public class ProductsControllerTests
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
         ApiResponse<ProductDto>? api = await Deserialize<ApiResponse<ProductDto>>(response);
-        Assert.IsNotNull(api?.Data);
-        Assert.AreEqual(id, api.Data.Id);
-        Assert.AreEqual("Shape Test", api.Data.Name);
+        api?.Data.ShouldNotBeNull();
+        api!.Data!.Id.ShouldBe(id);
+        api.Data.Name.ShouldBe("Shape Test");
     }
 
     [TestMethod]
@@ -197,6 +200,17 @@ public class ProductsControllerTests
 1. **Use `TestContext.CancellationToken`** for every HTTP call — enables test timeout handling.
 
 2. **Create test data inside the test** — do not rely on seed data for write tests. Seed data is only for tests that verify read-only behaviour on pre-existing state.
+
+3. **Use unique identifiers for every field with a unique DB constraint.** All tests share the same SQLite database within a `[TestClass]`. Hardcoded strings like `"SKU-TEST-001"` collide when more tests are added. Pattern:
+   ```csharp
+   // WRONG — will collide when a second test uses the same SKU
+   var body = new { Sku = "SKU-TEST-001", Name = "Widget" };
+
+   // RIGHT — unique per test run
+   string sku = $"SKU-{Guid.NewGuid():N}";
+   var body = new { Sku = sku, Name = $"Widget-{sku}" };
+   ```
+   Fields to make unique: SKU, email, slug, code, any column with a UNIQUE index.
 
 3. **Use `[ClassInitialize]`** not `[TestInitialize]` for the factory and clients — avoids rebuilding the web host per test.
 

@@ -15,22 +15,20 @@ The most expensive mistake. Domain rules tested at the integration layer are slo
 [TestMethod]
 public async Task POST_NegativePrice_Returns422()
 {
-    var client = _factory.CreateAdminClient();
     var body = new { Name = "Widget", Price = -5m };
-    HttpResponseMessage response = await client.PostAsync("/api/products", Serialize(body));
+    HttpResponseMessage response = await _adminClient.PostAsync("/api/products", Serialize(body));
     Assert.AreEqual(HttpStatusCode.UnprocessableEntity, response.StatusCode);
 }
 
 // RIGHT — test it at the domain layer
 [TestMethod]
-public void Create_NegativePrice_ReturnsFailure()
+public void NegativePrice_ReturnsFailure()
 {
     Result<Product> result = Product.Create("Widget", -5m);
-    Assert.IsFalse(result.IsSuccess);
-    Assert.AreEqual("PRODUCT_PRICE_NEGATIVE", result.GetErrorOrThrow().Code);
+    result.IsSuccess.ShouldBeFalse();
+    result.GetErrorOrThrow().Code.ShouldBe("PRODUCT_PRICE_NEGATIVE");
 }
-// Then add ONE integration test that checks the endpoint returns 422 for bad input
-// — not repeating every domain rule, just proving the pipeline wires through.
+// Then add ONE integration test proving the pipeline wires through — not repeating every rule.
 ```
 
 ---
@@ -65,10 +63,10 @@ Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 // RIGHT
 Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 ApiResponse<ProductDto>? body = await Deserialize<ApiResponse<ProductDto>>(response);
-Assert.IsNotNull(body);
-Assert.IsTrue(body.Success);
-Assert.IsNotNull(body.Data);
-Assert.AreEqual("Widget Pro", body.Data.Name);
+body.ShouldNotBeNull();
+body.Success.ShouldBeTrue();
+body.Data.ShouldNotBeNull();
+body.Data!.Name.ShouldBe("Widget Pro");
 ```
 
 ---
@@ -84,38 +82,57 @@ Assert.AreEqual(HttpStatusCode.UnprocessableEntity, response.StatusCode);
 // RIGHT
 Assert.AreEqual(HttpStatusCode.UnprocessableEntity, response.StatusCode);
 ApiResponse<JsonElement>? body = await Deserialize<ApiResponse<JsonElement>>(response);
-Assert.AreEqual("CATALOG_PRODUCT_NAME_EMPTY", body?.ErrorCode);
+body?.ErrorCode.ShouldBe("CATALOG_PRODUCT_NAME_EMPTY");
 ```
 
 ---
 
-### 5. Shared state between tests
+### 5. Shared state between tests via shared fakes
 
-Shared static fields, shared DbContext instances, or shared factory data that tests mutate = flaky tests and ordering dependencies.
+Shared fake instances accumulate state across tests in the same class, creating hidden ordering dependencies.
 
 ```csharp
-// WRONG — static product ID shared between tests
-private static Guid _productId;
-
-[TestMethod]
-public async Task Create_ReturnsId() { _productId = ...; }
-
-[TestMethod]
-public async Task Get_ReturnsProduct() { /* depends on _productId */ }
-
-// RIGHT — every test creates its own data
-[TestMethod]
-public async Task GET_ExistingProduct_Returns200()
+// WRONG — _repo accumulates state; test 2 depends on test 1 having run first
+[TestClass]
+public class CreateProductCommandHandlerTests
 {
-    // Arrange — create the product inside this test
-    HttpResponseMessage created = await client.PostAsync("/api/products", Serialize(new { Name = "Widget" }));
-    Guid id = (await Deserialize<ApiResponse<ProductDto>>(created)).Data!.Id;
+    private readonly FakeProductRepository _repo = new(); // shared across all tests!
+    private readonly FakeUnitOfWork _uow = new();
 
-    // Act
-    HttpResponseMessage response = await client.GetAsync($"/api/products/{id}");
+    [TestMethod]
+    public async Task ValidCommand_CreatesProduct() { ... } // seeds _repo
 
-    // Assert
-    Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    [TestMethod]
+    public async Task DuplicateSku_ReturnsFailure() { ... } // silently relies on above
+}
+
+// RIGHT — each test creates its own fakes
+[TestClass]
+public class CreateProductCommandHandlerTests
+{
+    [TestClass]
+    public class Handle
+    {
+        [TestMethod]
+        public async Task ValidCommand_CreatesProduct()
+        {
+            FakeProductRepository repo = new();
+            FakeUnitOfWork uow = new();
+            CreateProductCommandHandler handler = new(repo, uow);
+            // ... test is fully self-contained
+        }
+
+        [TestMethod]
+        public async Task DuplicateSku_ReturnsFailure()
+        {
+            FakeProductRepository repo = new();
+            FakeUnitOfWork uow = new();
+            CreateProductCommandHandler handler = new(repo, uow);
+            // Seed exactly what this test needs, nothing more
+            await repo.AddAsync(Product.Create("Existing", 10m, "SKU-001").GetDataOrThrow());
+            // ...
+        }
+    }
 }
 ```
 
@@ -149,39 +166,71 @@ Moq in domain tests means you are testing something other than the domain. In ap
 var mockRepo = new Mock<IProductRepository>();
 mockRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
         .ReturnsAsync((Product?)null);
-mockRepo.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
 
-// RIGHT — fake repo, assert on state
-var fakeRepo = new FakeProductRepository();
+// RIGHT — fake repo, assert on observable state
+FakeProductRepository fakeRepo = new();
 // ... run handler ...
-Assert.IsTrue(fakeRepo.Contains(expectedProductId));
-Assert.AreEqual(1, fakeUow.SaveChangesCount);
+fakeRepo.All.ShouldBeEmpty();
+fakeUow.SaveChangesCount.ShouldBe(0);
+```
+
+---
+
+### 8. Using InMemory EF for integration tests that depend on relational behaviour
+
+`UseInMemoryDatabase` does not enforce referential integrity, does not support transactions, and behaves differently from real SQL providers. Tests that pass against InMemory can fail against a real database.
+
+```csharp
+// RISKY for integration tests — InMemory ignores FK constraints
+services.AddDbContext<AppDbContext>(opt =>
+    opt.UseInMemoryDatabase("test"));
+
+// BETTER for integration tests — SQLite enforces constraints and is still fast
+services.AddDbContext<AppDbContext>(opt =>
+    opt.UseSqlite("DataSource=:memory:"));
+// Note: SQLite is already in ECommerce.Tests.csproj. Use it.
+
+// InMemory IS acceptable for projection sync tests (Layer 5) — they only test
+// MediatR handler read/write paths, not relational constraints.
 ```
 
 ---
 
 ## Frontend
 
-### 8. Making real HTTP calls in component or hook tests
+### 9. Mocking RTK Query hooks with vi.mock (implementation detail testing)
 
-Real network calls make tests slow and environment-dependent.
+`vi.mock` at the module level replaces the hook itself, not the network. This means you are testing against a fake that shares no behaviour with the real RTK Query hook — different caching, different loading states, different error shapes. The test passes even if RTK Query is completely broken.
 
-```tsx
-// WRONG — real RTK Query call fires
-renderWithProviders(<ProductList />);
-await waitFor(() => expect(screen.getByText('Widget')).toBeInTheDocument());
-
-// RIGHT — mock the API endpoint
-vi.mock('@/shared/lib/api/baseApi', () => ({
-    useGetProductsQuery: () => ({ data: [{ id: '1', name: 'Widget' }], isLoading: false }),
+```ts
+// WRONG — mocking the hook is testing the mock, not the component
+vi.mock('@/features/cart/api/cartApi', () => ({
+    useRemoveFromCartMutation: () => [vi.fn(), { isLoading: false }],
 }));
-renderWithProviders(<ProductList />);
-expect(screen.getByText('Widget')).toBeInTheDocument();
+
+// RIGHT — use MSW to intercept at the network level
+// The real RTK Query hook fires, real loading state, real cache update
+import { http, HttpResponse } from 'msw';
+import { server } from '@/shared/lib/test/msw-server';
+
+it('click_Remove_RemovesItemFromCart', async () => {
+    server.use(
+        http.delete('/api/cart/:itemId', () => HttpResponse.json({ success: true }))
+    );
+
+    renderWithProviders(<CartItem id="1" productName="Widget Pro" quantity={2} unitPrice={29.99} />);
+    await userEvent.click(screen.getByRole('button', { name: /remove/i }));
+
+    // Assert on what the user sees, not on internals
+    await waitFor(() =>
+        expect(screen.queryByText('Widget Pro')).not.toBeInTheDocument()
+    );
+});
 ```
 
 ---
 
-### 9. Inline selectors in E2E spec files
+### 10. Inline selectors in E2E spec files
 
 Selectors change. When they live in spec files, you update them in 10 places. When they live in Page Objects, you update once.
 
@@ -198,7 +247,7 @@ await cartPage.expectItemCount(1);
 
 ---
 
-### 10. Testing implementation details (what a function calls, not what it returns)
+### 11. Testing implementation details (what a function calls, not what it returns)
 
 Tests that verify internal calls break on every refactor even when behavior is unchanged.
 
@@ -207,6 +256,7 @@ Tests that verify internal calls break on every refactor even when behavior is u
 mockRepo.Verify(r => r.AddAsync(It.IsAny<Product>(), default), Times.Once);
 
 // RIGHT — testing the observable outcome
-Assert.IsTrue(fakeRepo.All.Any(p => p.Name == "Widget"));
-Assert.AreEqual(1, fakeUow.SaveChangesCount);
+fakeRepo.All.ShouldHaveSingleItem();
+fakeRepo.All[0].Name.ShouldBe("Widget");
+fakeUow.SaveChangesCount.ShouldBe(1);
 ```

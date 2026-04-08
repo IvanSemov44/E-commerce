@@ -12,8 +12,9 @@ You are writing MSTest application-layer tests for a command or query handler in
 LAYER: Application (Layer 2)
 PROJECT: src/backend/<BC>/ECommerce.<BC>.Tests/Application/
 DEPS: Hand-written fake repositories only. No EF Core. No Moq. No web host.
-NAMING: MethodName_Scenario_ExpectedOutcome
-CLASS: <HandlerName>Tests
+NAMING: Scenario_ExpectedOutcome  (no method-name prefix — you are already inside the handler test class)
+CLASS: <HandlerName>Tests with nested [TestClass] public class Handle { ... }
+ASSERTIONS: Shouldly  (result.IsSuccess.ShouldBeTrue(), not Assert.IsTrue)
 
 ## Fakes pattern
 
@@ -32,8 +33,9 @@ internal sealed class Fake<Name>Repository : I<Name>Repository
         return Task.CompletedTask;
     }
 
-    // Test helpers
+    // Test helpers — assert on state, not on method calls
     public bool Contains(Guid id) => _store.Any(x => x.Id == id);
+    public TAggregateRoot? Find(Guid id) => _store.FirstOrDefault(x => x.Id == id);
     public IReadOnlyList<TAggregateRoot> All => _store.AsReadOnly();
 }
 
@@ -49,59 +51,62 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
 
 ## Test class structure
 
+Each test MUST create its own fakes. No shared state — shared fakes create ordering dependencies.
+Use a private static Build() helper to reduce boilerplate.
+
 [TestClass]
 public class <HandlerName>Tests
 {
-    // Fields: one fake instance per dependency
-    private readonly Fake<X>Repository _repo = new();
-    private readonly FakeUnitOfWork _uow = new();
-    private readonly <HandlerName> _handler;
-
-    public <HandlerName>Tests()
+    private static (Fake<X>Repository repo, FakeUnitOfWork uow, <HandlerName> handler) Build()
     {
-        _handler = new <HandlerName>(_repo, _uow);
+        Fake<X>Repository repo = new();
+        FakeUnitOfWork uow = new();
+        return (repo, uow, new <HandlerName>(repo, uow));
     }
 
-    #region Handle
-
-    // tests here
-
-    #endregion
+    [TestClass]
+    public class Handle
+    {
+        // tests here
+    }
 }
 
 ## What to generate for COMMAND handlers
 
-1. Handle_ValidCommand_<DescribesEffect>: assert the aggregate is in the fake repo AND SaveChangesCount == 1
-2. Handle_<ResourceType>NotFound_ReturnsNotFoundError: assert IsSuccess == false, assert error code
-3. Handle_<BusinessRule>Violated_ReturnsFailure: one test per distinct business rule the handler enforces
+1. ValidCommand_<DescribesEffect>: assert aggregate is in the fake repo AND uow.SaveChangesCount == 1
+2. <ResourceType>NotFound_ReturnsNotFoundError: assert IsSuccess == false, assert error code
+3. <BusinessRule>Violated_ReturnsFailure: one test per distinct business rule the handler enforces
 
 ## What to generate for QUERY handlers
 
-1. Handle_ExistingResource_ReturnsDtoWithCorrectShape: assert IsSuccess == true, assert key DTO fields
-2. Handle_NonExistentId_ReturnsNotFoundError: assert IsSuccess == false, assert error code
+1. ExistingResource_ReturnsDtoWithCorrectShape: assert IsSuccess == true, assert key DTO fields
+2. NonExistentId_ReturnsNotFoundError: assert IsSuccess == false, assert error code
 
-## Assertion patterns
+## Assertion patterns (Shouldly — mandatory)
 
-// Verify repo state (GOOD — check the fake, not mock.Verify)
-Assert.IsTrue(_repo.Contains(productId));
-Assert.AreEqual("Widget", _repo.Find(productId)!.Name.Value);
+// Verify repo state
+var (repo, uow, handler) = Build();
+repo.Contains(productId).ShouldBeTrue();
+repo.Find(productId)!.Name.Value.ShouldBe("Widget");
 
 // Verify commit happened
-Assert.AreEqual(1, _uow.SaveChangesCount);
+uow.SaveChangesCount.ShouldBe(1);
 
 // Verify failure
-Assert.IsFalse(result.IsSuccess);
-Assert.AreEqual("CATALOG_PRODUCT_NOT_FOUND", result.GetErrorOrThrow().Code);
+result.IsSuccess.ShouldBeFalse();
+result.GetErrorOrThrow().Code.ShouldBe("CATALOG_PRODUCT_NOT_FOUND");
 
 // Verify DTO shape
 ProductDto dto = result.GetDataOrThrow();
-Assert.AreEqual(product.Id, dto.Id);
-Assert.AreEqual("Widget", dto.Name);
+dto.Id.ShouldBe(product.Id);
+dto.Name.ShouldBe("Widget");
 
 ## Rules
-- Pass CancellationToken.None to Handle() — not TestContext.CancellationToken (no MSTest context here)
+- Create fakes inside each test via Build() — never as shared class fields
+- Pass CancellationToken.None to Handle() — TestContext.CancellationToken is for integration tests only
 - Seed the fake repo directly for prerequisites — do not run another handler to set up state
-- Do not assert on Moq.Verify — prefer asserting on fake state
+- Use nested [TestClass] public class Handle { } — not #region
+- Use Shouldly for all assertions — not Assert.AreEqual / Assert.IsTrue
 
 ## After writing
 Run: dotnet test src/backend/<BC>/ECommerce.<BC>.Tests/ECommerce.<BC>.Tests.csproj

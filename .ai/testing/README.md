@@ -11,7 +11,7 @@ This folder is the single source of truth for how tests are written, organised, 
 
 1. **[taxonomy.md](taxonomy.md)** — what test type goes where. The law.
 2. **[naming-conventions.md](naming-conventions.md)** — method names, file names, class names.
-3. **[coverage-targets.md](coverage-targets.md)** — minimum expectations per layer.
+3. **[coverage-targets.md](coverage-targets.md)** — minimum expectations per layer and why.
 4. **[anti-patterns.md](anti-patterns.md)** — what NOT to do, with examples.
 5. Pattern doc for the layer you are working in:
    - Backend domain → [patterns/backend-domain-tests.md](patterns/backend-domain-tests.md)
@@ -21,6 +21,47 @@ This folder is the single source of truth for how tests are written, organised, 
    - Backend projection sync → [patterns/backend-projection-sync-tests.md](patterns/backend-projection-sync-tests.md)
    - Frontend unit/component/hook → [patterns/frontend-unit-tests.md](patterns/frontend-unit-tests.md)
    - Frontend E2E → [patterns/frontend-e2e-tests.md](patterns/frontend-e2e-tests.md)
+
+---
+
+## Library Stack
+
+### Backend
+
+| Library | Version | Role | Notes |
+|---|---|---|---|
+| **MSTest** | 4.0.1 | Test runner | Modern — source generators, nested classes, `[DataTestMethod]`. No reason to switch to xUnit. |
+| **Shouldly** | — | Assertions | **Pending migration.** Replace FluentAssertions 7 in all projects. FA 7 changed from Apache 2.0 to a commercial license. Shouldly is MIT, free, and has equivalent API. |
+| **Moq** | 4.20.72 | Mocking | Acceptable in Layer 6 (infrastructure unit tests) only. Banned from BC domain and application tests — use hand-written fakes. |
+| **Bogus** | 35.6.1 | Test data | Used in `ECommerce.Tests` for integration test data generation. |
+| **EF SQLite in-memory** | 10.0.0 | Integration DB | Use for Layer 3 integration tests — enforces relational constraints unlike `UseInMemoryDatabase`. Already in `ECommerce.Tests.csproj`. |
+| **EF InMemory** | 10.0.0 | Projection sync DB | Acceptable for Layer 5 only — projection handlers don't depend on relational constraints. |
+| **coverlet** | 6.0.2 | Coverage | Thresholds enforcement planned for Phase T-5. |
+
+**FluentAssertions migration — pending action:**
+All projects using FluentAssertions 7 (ECommerce.Tests, Ordering.Tests, Reviews.Tests) need to either:
+- Migrate to **Shouldly** (recommended — MIT, modern, similar API)
+- Or downgrade to FluentAssertions 6.12.x (last Apache 2.0 release)
+
+BC test projects that currently have only raw MSTest assertions (Catalog, Identity, Inventory, Promotions, Shopping) should add Shouldly when the migration is done.
+
+### Frontend
+
+| Library | Version | Role | Notes |
+|---|---|---|---|
+| **Vitest** | 3.2.4 | Test runner | State of the art — fast, Vite-native, browser mode available. |
+| **@testing-library/react** | 16.3.2 | Component rendering | Latest, React 19-ready. |
+| **@testing-library/user-event** | 14.6.1 | User interaction simulation | Uses pointer events API. Always prefer over `fireEvent`. |
+| **MSW v2** | — | HTTP interception | **Not yet installed.** Must be added before component tests are written. Replaces `vi.mock` for the API layer. |
+| **@playwright/test** | 1.58.2 | E2E browser automation | Very recent. Excellent. |
+
+**MSW pending action:**
+Add `msw` to `package.json`, create `src/shared/lib/test/msw-server.ts`, wire lifecycle hooks in `setup.ts`. Until this is done, existing component tests that use `vi.mock` for RTK Query hooks should be noted as technical debt.
+
+**BrowserRouter issue:**
+`test-utils.tsx` currently uses `BrowserRouter`. This should be `MemoryRouter` from `react-router` — `BrowserRouter` interacts with the real browser history API and causes subtle leaks between tests in jsdom.
+
+---
 
 ## AI Prompt Library
 
@@ -36,6 +77,8 @@ Pre-written, context-rich prompts for generating each test type. Use these inste
 | [prompts/testing/frontend-component-test.md](../prompts/testing/frontend-component-test.md) | Adding/changing a React component |
 | [prompts/testing/frontend-hook-test.md](../prompts/testing/frontend-hook-test.md) | Adding/changing a custom hook |
 | [prompts/testing/frontend-e2e-test.md](../prompts/testing/frontend-e2e-test.md) | Adding/changing a user-facing flow |
+
+---
 
 ## Project Map
 
@@ -58,6 +101,8 @@ Pre-written, context-rich prompts for generating each test type. Use these inste
 |---|---|---|
 | Storefront | `src/frontend/storefront/src/**/*.test.tsx` | `src/frontend/storefront/e2e/` |
 
+---
+
 ## Phase Plan
 
 | Phase | Goal | Status |
@@ -67,4 +112,6 @@ Pre-written, context-rich prompts for generating each test type. Use these inste
 | T-3 | Fill projection sync gaps (all event types: insert/update/delete) | Pending |
 | T-4 | Integration test health (every endpoint: 200 + 400 + 401/403) | Pending |
 | T-5 | Coverage enforcement in CI (coverlet thresholds per project) | Pending |
-| T-6 | Frontend component coverage audit and gap fill | Pending |
+| T-6 | Migrate FluentAssertions → Shouldly across all projects | Pending |
+| T-7 | Add MSW + fix BrowserRouter in frontend test-utils | Pending |
+| T-8 | Frontend component coverage audit and gap fill | Pending |

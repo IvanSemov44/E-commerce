@@ -48,7 +48,7 @@ internal sealed class FakeProductRepository : IProductRepository
         return Task.CompletedTask;
     }
 
-    // Test helpers
+    // Test helpers — assert on state, not on method calls
     public bool Contains(Guid id) => _store.Any(p => p.Id == id);
     public Product? Find(Guid id) => _store.FirstOrDefault(p => p.Id == id);
     public IReadOnlyList<Product> All => _store.AsReadOnly();
@@ -70,75 +70,79 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
 
 ## Command handler test template
 
+Each test creates its own fakes. No shared state. No ordering dependencies.
+
 ```csharp
 [TestClass]
 public class CreateProductCommandHandlerTests
 {
-    private readonly FakeProductRepository _repo = new();
-    private readonly FakeUnitOfWork _uow = new();
-    private readonly CreateProductCommandHandler _handler;
-
-    public CreateProductCommandHandlerTests()
+    // Helper — reduces boilerplate inside each test
+    private static (FakeProductRepository repo, FakeUnitOfWork uow, CreateProductCommandHandler handler) Build()
     {
-        _handler = new CreateProductCommandHandler(_repo, _uow);
+        FakeProductRepository repo = new();
+        FakeUnitOfWork uow = new();
+        return (repo, uow, new CreateProductCommandHandler(repo, uow));
     }
 
-    #region Handle
-
-    [TestMethod]
-    public async Task Handle_ValidCommand_CreatesProductAndCommits()
+    [TestClass]
+    public class Handle
     {
-        // Arrange
-        CreateProductCommand command = new("Widget Pro", 29.99m, "SKU-001", categoryId: Guid.NewGuid());
+        [TestMethod]
+        public async Task ValidCommand_CreatesProductAndCommits()
+        {
+            // Arrange
+            var (repo, uow, handler) = Build();
+            CreateProductCommand command = new("Widget Pro", 29.99m, "SKU-001", categoryId: Guid.NewGuid());
 
-        // Act
-        Result<Guid> result = await _handler.Handle(command, CancellationToken.None);
+            // Act
+            Result<Guid> result = await handler.Handle(command, CancellationToken.None);
 
-        // Assert
-        Assert.IsTrue(result.IsSuccess);
-        Guid productId = result.GetDataOrThrow();
-        Assert.IsTrue(_repo.Contains(productId));
-        Assert.AreEqual(1, _uow.SaveChangesCount);
+            // Assert
+            result.IsSuccess.ShouldBeTrue();
+            Guid productId = result.GetDataOrThrow();
+            repo.Contains(productId).ShouldBeTrue();
+            uow.SaveChangesCount.ShouldBe(1);
+        }
+
+        [TestMethod]
+        public async Task DuplicateSku_ReturnsSkuAlreadyExistsError()
+        {
+            // Arrange — seed existing product directly via fake (not via another command)
+            var (repo, uow, handler) = Build();
+            Product existing = Product.Create("Existing", 10m, "SKU-001").GetDataOrThrow();
+            await repo.AddAsync(existing);
+
+            CreateProductCommand command = new("Another", 20m, "SKU-001", Guid.NewGuid());
+
+            // Act
+            Result<Guid> result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.IsSuccess.ShouldBeFalse();
+            result.GetErrorOrThrow().Code.ShouldBe("CATALOG_SKU_ALREADY_EXISTS");
+            uow.SaveChangesCount.ShouldBe(0); // nothing committed
+        }
+
+        [TestMethod]
+        public async Task CategoryNotFound_ReturnsNotFoundError()
+        {
+            // Arrange — empty category repo
+            FakeProductRepository repo = new();
+            FakeCategoryRepository categoryRepo = new(); // empty
+            FakeUnitOfWork uow = new();
+            CreateProductCommandHandler handler = new(repo, categoryRepo, uow);
+
+            CreateProductCommand command = new("Widget", 10m, "SKU-001", Guid.NewGuid());
+
+            // Act
+            Result<Guid> result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.IsSuccess.ShouldBeFalse();
+            result.GetErrorOrThrow().Code.ShouldBe("CATALOG_CATEGORY_NOT_FOUND");
+            uow.SaveChangesCount.ShouldBe(0);
+        }
     }
-
-    [TestMethod]
-    public async Task Handle_DuplicateSku_ReturnsFailure()
-    {
-        // Arrange — seed existing product with same SKU
-        CreateProductCommand first = new("Existing", 10m, "SKU-001", Guid.NewGuid());
-        await _handler.Handle(first, CancellationToken.None);
-
-        CreateProductCommand duplicate = new("Another", 20m, "SKU-001", Guid.NewGuid());
-
-        // Act
-        Result<Guid> result = await _handler.Handle(duplicate, CancellationToken.None);
-
-        // Assert
-        Assert.IsFalse(result.IsSuccess);
-        Assert.AreEqual("CATALOG_SKU_ALREADY_EXISTS", result.GetErrorOrThrow().Code);
-        Assert.AreEqual(1, _uow.SaveChangesCount); // Only the first command committed
-    }
-
-    [TestMethod]
-    public async Task Handle_CategoryNotFound_ReturnsFailure()
-    {
-        // Arrange — fake category repo returns null
-        FakeCategoryRepository categoryRepo = new(); // empty — no categories
-        CreateProductCommandHandler handlerWithEmptyCategories =
-            new(_repo, categoryRepo, _uow);
-
-        CreateProductCommand command = new("Widget", 10m, "SKU-001", Guid.NewGuid());
-
-        // Act
-        Result<Guid> result = await handlerWithEmptyCategories.Handle(command, CancellationToken.None);
-
-        // Assert
-        Assert.IsFalse(result.IsSuccess);
-        Assert.AreEqual("CATALOG_CATEGORY_NOT_FOUND", result.GetErrorOrThrow().Code);
-        Assert.AreEqual(0, _uow.SaveChangesCount);
-    }
-
-    #endregion
 }
 ```
 
@@ -150,50 +154,84 @@ public class CreateProductCommandHandlerTests
 [TestClass]
 public class GetProductByIdQueryHandlerTests
 {
-    private readonly FakeProductRepository _repo = new();
-    private readonly GetProductByIdQueryHandler _handler;
-
-    public GetProductByIdQueryHandlerTests()
+    private static (FakeProductRepository repo, GetProductByIdQueryHandler handler) Build()
     {
-        _handler = new GetProductByIdQueryHandler(_repo);
+        FakeProductRepository repo = new();
+        return (repo, new GetProductByIdQueryHandler(repo));
     }
 
-    #region Handle
-
-    [TestMethod]
-    public async Task Handle_ExistingProduct_ReturnsDto()
+    [TestClass]
+    public class Handle
     {
-        // Arrange
-        Product product = Product.Create("Widget", 29.99m, "SKU-001").GetDataOrThrow();
-        await _repo.AddAsync(product);
+        [TestMethod]
+        public async Task ExistingProduct_ReturnsDto()
+        {
+            // Arrange
+            var (repo, handler) = Build();
+            Product product = Product.Create("Widget", 29.99m, "SKU-001").GetDataOrThrow();
+            await repo.AddAsync(product);
 
-        GetProductByIdQuery query = new(product.Id);
+            GetProductByIdQuery query = new(product.Id);
 
-        // Act
-        Result<ProductDto> result = await _handler.Handle(query, CancellationToken.None);
+            // Act
+            Result<ProductDto> result = await handler.Handle(query, CancellationToken.None);
 
-        // Assert
-        Assert.IsTrue(result.IsSuccess);
-        ProductDto dto = result.GetDataOrThrow();
-        Assert.AreEqual(product.Id, dto.Id);
-        Assert.AreEqual("Widget", dto.Name);
+            // Assert
+            result.IsSuccess.ShouldBeTrue();
+            ProductDto dto = result.GetDataOrThrow();
+            dto.Id.ShouldBe(product.Id);
+            dto.Name.ShouldBe("Widget");
+        }
+
+        [TestMethod]
+        public async Task NonExistentId_ReturnsNotFoundError()
+        {
+            // Arrange
+            var (_, handler) = Build();
+            GetProductByIdQuery query = new(Guid.NewGuid());
+
+            // Act
+            Result<ProductDto> result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.IsSuccess.ShouldBeFalse();
+            result.GetErrorOrThrow().Code.ShouldBe("CATALOG_PRODUCT_NOT_FOUND");
+        }
     }
+}
+```
 
-    [TestMethod]
-    public async Task Handle_NonExistentId_ReturnsNotFoundError()
+---
+
+## Parameterized handler tests
+
+Use `[DataTestMethod]` + `[DataRow]` when multiple invalid inputs map to the same error:
+
+```csharp
+[TestClass]
+public class CreateProductCommandHandlerTests
+{
+    [TestClass]
+    public class Handle
     {
-        // Arrange
-        GetProductByIdQuery query = new(Guid.NewGuid());
+        [DataTestMethod]
+        [DataRow("")]
+        [DataRow("   ")]
+        [DataRow(null)]
+        public async Task EmptyOrWhitespaceName_ReturnsValidationError(string? name)
+        {
+            // Arrange
+            var (_, _, handler) = Build();
+            CreateProductCommand command = new(name!, 10m, "SKU-001", Guid.NewGuid());
 
-        // Act
-        Result<ProductDto> result = await _handler.Handle(query, CancellationToken.None);
+            // Act
+            Result<Guid> result = await handler.Handle(command, CancellationToken.None);
 
-        // Assert
-        Assert.IsFalse(result.IsSuccess);
-        Assert.AreEqual("CATALOG_PRODUCT_NOT_FOUND", result.GetErrorOrThrow().Code);
+            // Assert
+            result.IsSuccess.ShouldBeFalse();
+            result.GetErrorOrThrow().Code.ShouldBe("CATALOG_PRODUCT_NAME_EMPTY");
+        }
     }
-
-    #endregion
 }
 ```
 
@@ -201,24 +239,35 @@ public class GetProductByIdQueryHandlerTests
 
 ## Rules
 
-1. **One fake repo instance per test class** — created in the field initializer, not in `[TestInitialize]`. Tests share the same instance to let them seed state naturally.
+1. **Each test creates its own fakes** — use a private static `Build()` helper or inline construction. No shared instance fields. Shared instances create ordering dependencies.
 
-2. **Always assert `SaveChangesCount`** on command tests. Commands must commit exactly once on success and zero times on failure.
-
-3. **Assert the fake repo state**, not that a method was called:
-   ```csharp
-   // GOOD
-   Assert.IsTrue(_repo.Contains(productId));
-   // BAD
-   mockRepo.Verify(r => r.AddAsync(...), Times.Once);
-   ```
-
-4. **Seed state directly via the fake** — do not run another command to create prerequisites:
+2. **Seed state directly via the fake** — do not run another command to create prerequisites:
    ```csharp
    // GOOD — direct fake seeding
-   await _repo.AddAsync(existingProduct);
+   await repo.AddAsync(existingProduct);
    // BAD — running another command to create the product first
    await _createHandler.Handle(createCommand, ct);
    ```
 
-5. **No `CancellationToken` from MSTest** in application tests — pass `CancellationToken.None`. The `TestContext.CancellationToken` is only for integration tests using `HttpClient`.
+3. **Always assert `SaveChangesCount`** on command tests. Commands must commit exactly once on success and zero times on failure.
+
+4. **Assert on fake state, not on method calls:**
+   ```csharp
+   // GOOD
+   repo.Contains(productId).ShouldBeTrue();
+   // BAD
+   mockRepo.Verify(r => r.AddAsync(It.IsAny<Product>(), default), Times.Once);
+   ```
+
+5. **Use `CancellationToken.None`** in application tests — `TestContext.CancellationToken` is only for integration tests using `HttpClient`.
+
+6. **Use Shouldly for assertions** — not raw MSTest `Assert.*`. Shouldly gives better failure messages:
+   ```csharp
+   // MSTest — poor failure: "Assert.AreEqual failed. Expected: 1. Actual: 0."
+   Assert.AreEqual(1, uow.SaveChangesCount);
+
+   // Shouldly — clear failure: "uow.SaveChangesCount should be 1 but was 0"
+   uow.SaveChangesCount.ShouldBe(1);
+   ```
+
+7. **Use nested `[TestClass]` to group by method** — not `#region`. See naming-conventions.md.

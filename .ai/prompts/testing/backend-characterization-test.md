@@ -7,6 +7,23 @@ Use this prompt BEFORE changing or migrating any existing behavior. Written firs
 ```
 You are writing characterization tests for the [CONTEXT] bounded context BEFORE a migration or refactor.
 
+## STEP 1 — Extract before generating (mandatory)
+
+Before writing a single test, read the pasted controller and list:
+- Every endpoint method: HTTP verb + route + response code on success
+- Every [Authorize] / role requirement
+- Every ErrorCode string the handler can return
+- Every business rule that produces a 422
+
+If you cannot find an item in the pasted code, write "MISSING: [item]" and stop.
+Generate tests ONLY for items verified in this step.
+
+## Test data uniqueness rule
+
+All tests share the same SQLite database. Any field with a unique constraint (SKU, email, etc.)
+MUST use a random suffix: string sku = $"SKU-{Guid.NewGuid():N}";
+Never hardcode unique field values that could collide between tests.
+
 ## Purpose
 These tests document the current observable behavior of the existing code.
 They must PASS now, before any changes are made.
@@ -105,6 +122,13 @@ Example:
 3. ALWAYS use TestContext.CancellationToken in every HTTP call.
 
 4. CREATE test data inside the test — do not rely on pre-seeded data for write tests.
+
+## NEVER do these
+- Do NOT use Assert.AreEqual — use Shouldly
+- Do NOT write these tests after the code has already changed (that defeats the purpose)
+- Do NOT hardcode unique field values without a Guid suffix
+- Do NOT invent ErrorCode strings — only use codes found in Step 1
+- Do NOT add XML doc comments or helper classes not in the template
 
 ## After writing
 Run: dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --filter "[Context]CharacterizationTests"

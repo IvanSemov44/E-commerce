@@ -143,6 +143,23 @@ test.describe('<Feature> API', () => {
     });
 });
 
+## STEP 1 — Extract before generating (mandatory)
+
+Before writing any test, list:
+- Every user action in the described flow (click, fill, navigate)
+- Every expected visible outcome (text, URL change, element state)
+- Every API endpoint called during the flow (verb + path) — needed for API contract tests
+- Every role involved (guest, authenticated user, admin)
+
+If you cannot determine an item from the pasted components or routes, write "MISSING: [item]".
+
+## NEVER do these
+- Do NOT write inline selectors in spec files — all selectors belong in Page Objects
+- Do NOT reuse Page Object instances across tests (each test gets a fresh page)
+- Do NOT hardcode UUIDs or IDs — use constants from e2e/data/test-data.ts
+- Do NOT write E2E tests for edge cases — those belong in unit/integration tests
+- Do NOT add XML doc comments
+
 ## Rules
 
 1. ALL element selectors belong in Page Object classes. Spec files ONLY call Page Object methods.
