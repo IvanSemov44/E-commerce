@@ -3,8 +3,7 @@ import { server } from './msw-server';
 import i18n from 'i18next';
 
 // MSW lifecycle — intercept all HTTP at the network level
-// onUnhandledRequest: 'warn' during initial setup (change to 'error' once all tests use MSW)
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 import { initReactI18next } from 'react-i18next';
