@@ -1,6 +1,5 @@
 ﻿using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Identity.Infrastructure.Persistence;
-using ECommerce.Infrastructure.Data;
 using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Ordering.Infrastructure.Persistence;
 using ECommerce.Payments.Infrastructure.Persistence;
@@ -19,7 +18,6 @@ namespace ECommerce.API.Behaviors;
 /// local to one context and cross-context consistency should rely on outbox/events.
 /// </summary>
 public sealed class CrossContextMediatRUnitOfWork(
-    AppDbContext appDbContext,
     CatalogDbContext catalogDbContext,
     IdentityDbContext identityDbContext,
     InventoryDbContext inventoryDbContext,
@@ -34,7 +32,6 @@ public sealed class CrossContextMediatRUnitOfWork(
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         int total = 0;
-        total += await appDbContext.SaveChangesAsync(cancellationToken);
         total += await catalogDbContext.SaveChangesAsync(cancellationToken);
         total += await identityDbContext.SaveChangesAsync(cancellationToken);
         total += await inventoryDbContext.SaveChangesAsync(cancellationToken);
