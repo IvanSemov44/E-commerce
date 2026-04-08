@@ -16,8 +16,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddReviewsInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        string connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+        string connectionString = configuration.GetConnectionString("ReviewsConnection")
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string 'ReviewsConnection' or 'DefaultConnection' is not configured.");
 
         services.AddDbContext<ReviewsDbContext>(options =>
         {
