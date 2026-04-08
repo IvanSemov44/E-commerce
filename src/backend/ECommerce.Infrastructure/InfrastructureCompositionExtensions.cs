@@ -28,13 +28,15 @@ public static class InfrastructureCompositionExtensions
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
-            services.AddDbContext<IntegrationPersistenceDbContext>(options =>
-            {
-                options.UseNpgsql(connectionString);
+        services.AddDbContext<IntegrationPersistenceDbContext>(options =>
+        {
+            options.UseNpgsql(connectionString);
 
-                options.ConfigureWarnings(warnings => warnings
+            options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-            });
+        });
+
+        services.AddScoped<IAppDbInitializationService, AppDbInitializationService>();
 
         return services;
     }
