@@ -2,6 +2,7 @@
 using ECommerce.Identity.Domain.Aggregates.User;
 using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
+using ECommerce.SharedKernel.Enums;
 
 namespace ECommerce.Identity.Tests.Application;
 

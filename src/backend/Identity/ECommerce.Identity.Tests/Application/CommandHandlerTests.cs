@@ -20,6 +20,7 @@ using ECommerce.Identity.Domain.Errors;
 using ECommerce.Identity.Application.Errors;
 using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
+using ECommerce.SharedKernel.Enums;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
 
