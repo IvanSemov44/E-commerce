@@ -1,9 +1,38 @@
 # Phase 11: Per-Context Database Independence
 
-Status: Planned
+Status: In progress
 Owner: @ivans
 Created: 2026-04-08
-Last updated: 2026-04-08
+Last updated: 2026-04-08 (runtime evidence added)
+
+## Latest execution evidence (2026-04-08)
+
+Merged backend commits in this phase slice:
+1. `2878340` - strict context connection keys enforced (payments/integration/data-protection)
+2. `f0cfc4b` - integration schema bootstrap + reviews projection bootstrap/backfill hardening
+
+Verified outcomes:
+1. Context connection keys are present and required for Catalog, Shopping, Identity, Ordering, Inventory, Promotions, Reviews, Payments.
+2. Technical connection keys are present and required for Integration and DataProtection.
+3. Event infrastructure tables exist under `integration` schema in PostgreSQL:
+	- `integration.outbox_messages`
+	- `integration.inbox_messages`
+	- `integration.dead_letter_messages`
+	- `integration.order_fulfillment_saga_states`
+4. Reviews projection startup backfill now succeeds and logs:
+	- `Reviews projection backfill completed. CatalogProducts=28, Inserted=28, Updated=0`
+
+Validation evidence captured:
+1. `dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --no-build` passed in workspace context.
+2. Focused event + projection tests passed:
+	- `Phase8MessageBrokerIntegrationTests`
+	- `ReviewsProductProjectionBackfillCharacterizationTests`
+3. Docker runtime checks passed:
+	- `GET /health/ready` returned `200`
+	- API container healthy
+
+Known non-phase blocker:
+1. Frontend test files remain modified and intentionally outside backend phase commit scope.
 
 ## Purpose
 
