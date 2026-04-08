@@ -69,6 +69,17 @@ services:
     environment:
       # Database Connection
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__CatalogConnection: "Host=postgres;Database=${CATALOG_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__ShoppingConnection: "Host=postgres;Database=${SHOPPING_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      # Future per-context cutovers (currently many contexts still resolve DefaultConnection)
+      ConnectionStrings__IdentityConnection: "Host=postgres;Database=${IDENTITY_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__InventoryConnection: "Host=postgres;Database=${INVENTORY_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__OrderingConnection: "Host=postgres;Database=${ORDERING_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__PromotionsConnection: "Host=postgres;Database=${PROMOTIONS_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__ReviewsConnection: "Host=postgres;Database=${REVIEWS_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__PaymentsConnection: "Host=postgres;Database=${PAYMENTS_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__IntegrationConnection: "Host=postgres;Database=${INTEGRATION_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__DataProtectionConnection: "Host=postgres;Database=${DATAPROTECTION_DB:-ECommerceDb};Username=${POSTGRES_USER:-ecommerce};Password=${POSTGRES_PASSWORD}"
       
       # JWT Configuration
       Jwt__SecretKey: "${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}"
