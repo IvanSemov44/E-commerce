@@ -6,79 +6,100 @@ using MediatR;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ECommerce.Shopping.Domain.Aggregates.Cart;
 using ECommerce.SharedKernel.Results;
+using Shouldly;
 
 namespace ECommerce.Shopping.Tests.Application;
 
 [TestClass]
 public class GetCartQueryHandlerTests
 {
-    private readonly Guid _userId = Guid.NewGuid();
-    private readonly Guid _productId = Guid.NewGuid();
-
-    [TestMethod]
-    public async Task Handle_GetCart_NewUser_ReturnsEmptyCart()
+    [TestClass]
+    public class Handle
     {
-        var repo = new FakeCartRepository();
-        var handler = new GetCartQueryHandler(repo);
+        private static (FakeCartRepository repo, GetCartQueryHandler handler) Build()
+        {
+            var repo = new FakeCartRepository();
+            return (repo, new GetCartQueryHandler(repo));
+        }
 
-        var result = await handler.Handle(new GetCartQuery(_userId, null), CancellationToken.None);
+        [TestMethod]
+        public async Task NewUser_ReturnsEmptyCart()
+        {
+            var userId = Guid.NewGuid();
+            var (repo, handler) = Build();
 
-        Assert.IsTrue(result.IsSuccess);
-        if (result is Result<CartDto>.Success success)
-            Assert.IsEmpty(success.Data.Items);
-    }
+            var result = await handler.Handle(new GetCartQuery(userId, null), CancellationToken.None);
 
-    [TestMethod]
-    public async Task Handle_GetCart_ExistingUser_ReturnsCart()
-    {
-        var repo = new FakeCartRepository();
-        var cart = Cart.Create(_userId);
-        cart.AddItem(_productId, 2, 9.99m, "USD");
-        repo.Store.Add(cart);
-        var handler = new GetCartQueryHandler(repo);
+            result.IsSuccess.ShouldBeTrue();
+            result.GetDataOrThrow().Items.ShouldBeEmpty();
+        }
 
-        var result = await handler.Handle(new GetCartQuery(_userId, null), CancellationToken.None);
+        [TestMethod]
+        public async Task ExistingUser_ReturnsCartWithItems()
+        {
+            var userId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+            var cart = Cart.Create(userId);
+            cart.AddItem(productId, 2, 9.99m, "USD");
+            var (repo, handler) = Build();
+            repo.Store.Add(cart);
 
-        Assert.IsTrue(result.IsSuccess);
-        if (result is Result<CartDto>.Success success)
-            Assert.HasCount(1, success.Data.Items);
+            var result = await handler.Handle(new GetCartQuery(userId, null), CancellationToken.None);
+
+            result.IsSuccess.ShouldBeTrue();
+            result.GetDataOrThrow().Items.Count.ShouldBe(1);
+        }
     }
 }
 
 [TestClass]
 public class AddToCartCommandHandlerTests
 {
-    private readonly Guid _userId = Guid.NewGuid();
-    private readonly Guid _productId = Guid.NewGuid();
-
-    [TestMethod]
-    public async Task Handle_AddToCart_ValidProduct_AddsItem()
+    private static (FakeCartRepository cartRepo, FakeShoppingDbReader dbReader, FakeUnitOfWork uow, AddToCartCommandHandler handler) Build()
     {
         var cartRepo = new FakeCartRepository();
         var dbReader = new FakeShoppingDbReader();
-        dbReader.Products[_productId] = (9.99m, "USD");
         var uow = new FakeUnitOfWork();
-        var handler = new AddToCartCommandHandler(cartRepo, dbReader, uow);
-
-        var result = await handler.Handle(
-            new AddToCartCommand(_userId, null, _productId, 2),
-            CancellationToken.None);
-
-        Assert.IsTrue(result.IsSuccess);
+        return (cartRepo, dbReader, uow, new AddToCartCommandHandler(cartRepo, dbReader, uow));
     }
 
-    [TestMethod]
-    public async Task Handle_AddToCart_UnknownProduct_ReturnsError()
+    [TestClass]
+    public class Handle
     {
-        var cartRepo = new FakeCartRepository();
-        var dbReader = new FakeShoppingDbReader();
-        var uow = new FakeUnitOfWork();
-        var handler = new AddToCartCommandHandler(cartRepo, dbReader, uow);
+        [TestMethod]
+        public async Task ValidProduct_AddsItemAndCommits()
+        {
+            var userId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+            var cart = Cart.Create(userId);
+            var (cartRepo, dbReader, uow, handler) = Build();
+            cartRepo.Store.Add(cart);
+            dbReader.Products[productId] = (9.99m, "USD");
 
-        var result = await handler.Handle(
-            new AddToCartCommand(_userId, null, _productId, 2),
-            CancellationToken.None);
+            var result = await handler.Handle(
+                new AddToCartCommand(userId, null, productId, 2),
+                CancellationToken.None);
 
-        Assert.IsFalse(result.IsSuccess);
+            result.IsSuccess.ShouldBeTrue();
+            cartRepo.Store.First().Items.Count.ShouldBe(1);
+            uow.SaveChangesCount.ShouldBe(1);
+        }
+
+        [TestMethod]
+        public async Task UnknownProduct_ReturnsError()
+        {
+            var userId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+            var cart = Cart.Create(userId);
+            var (cartRepo, dbReader, uow, handler) = Build();
+            cartRepo.Store.Add(cart);
+
+            var result = await handler.Handle(
+                new AddToCartCommand(userId, null, productId, 2),
+                CancellationToken.None);
+
+            result.IsSuccess.ShouldBeFalse();
+            result.GetErrorOrThrow().Code.ShouldBe("PRODUCT_NOT_FOUND");
+        }
     }
 }
