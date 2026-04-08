@@ -1,4 +1,6 @@
 ﻿using ECommerce.Infrastructure;
+using ECommerce.Infrastructure.Integration;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace ECommerce.API.Services;
@@ -8,6 +10,7 @@ namespace ECommerce.API.Services;
 /// </summary>
 public sealed class AppDbContextInitializationService(
     IAppDbInitializationService appDbInitializationService,
+    IntegrationPersistenceDbContext integrationPersistenceDbContext,
     ReviewsProductProjectionBackfillService reviewsBackfillService)
 {
     public async Task InitializeAsync(IWebHostEnvironment environment)
@@ -17,7 +20,22 @@ public sealed class AppDbContextInitializationService(
         await appDbInitializationService.InitializeAsync(environment);
 
         if (!environment.IsEnvironment("Test"))
+        {
+            await EnsureIntegrationSchemaAsync();
             await BackfillReviewsProductProjectionsAsync();
+        }
+    }
+
+    private async Task EnsureIntegrationSchemaAsync(CancellationToken cancellationToken = default)
+    {
+        var providerName = integrationPersistenceDbContext.Database.ProviderName ?? string.Empty;
+        if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ||
+            !integrationPersistenceDbContext.Database.IsRelational())
+            return;
+
+        // IntegrationPersistenceDbContext currently does not own migration files.
+        // EnsureCreated keeps outbox/inbox/saga/dead-letter tables present in dedicated integration DBs.
+        await integrationPersistenceDbContext.Database.EnsureCreatedAsync(cancellationToken);
     }
 
     private async Task BackfillReviewsProductProjectionsAsync()

@@ -20,6 +20,8 @@ public sealed class ReviewsProductProjectionBackfillService(
 
     public async Task<ReviewsProductProjectionBackfillResult> BackfillAsync(CancellationToken cancellationToken = default)
     {
+        await EnsureProjectionTableExistsAsync(cancellationToken);
+
         var catalogProducts = await _catalogDbContext.Products
             .AsNoTracking()
             .Select(x => new { x.Id, x.IsActive })
@@ -71,5 +73,22 @@ public sealed class ReviewsProductProjectionBackfillService(
             result.UpdatedCount);
 
         return result;
+    }
+
+    private async Task EnsureProjectionTableExistsAsync(CancellationToken cancellationToken)
+    {
+        if (!_reviewsDbContext.Database.IsRelational())
+            return;
+
+        const string sql = """
+            CREATE TABLE IF NOT EXISTS "ReviewProductProjections" (
+                "Id" uuid NOT NULL,
+                "IsActive" boolean NOT NULL,
+                "UpdatedAt" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_ReviewProductProjections" PRIMARY KEY ("Id")
+            );
+            """;
+
+        await _reviewsDbContext.Database.ExecuteSqlRawAsync(sql, cancellationToken);
     }
 }
