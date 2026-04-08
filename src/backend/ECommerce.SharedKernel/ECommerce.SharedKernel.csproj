@@ -10,8 +10,5 @@
     <PackageReference Include="MediatR" Version="14.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ECommerce.Core\ECommerce.Core.csproj" />
-  </ItemGroup>
 
 </Project>

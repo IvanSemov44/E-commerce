@@ -1,4 +1,4 @@
-namespace ECommerce.SharedKernel.Exceptions;
+﻿namespace ECommerce.SharedKernel.Exceptions;
 
 /// <summary>
 /// Base exception for all "Unauthorized" errors (401).

@@ -1,8 +1,8 @@
+using ECommerce.SharedKernel.DTOs;
+using ECommerce.SharedKernel.Extensions;
 using ECommerce.SharedKernel.Interfaces;
 using System.Net;
 using System.Net.Mail;
-using ECommerce.Core.Entities;
-using ECommerce.SharedKernel.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading;
@@ -142,7 +142,7 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendOrderConfirmationEmailAsync(string email, Order order, CancellationToken cancellationToken = default)
+    public async Task SendOrderConfirmationEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default)
     {
         var subject = $"Order Confirmation - #{order.OrderNumber}";
 
@@ -212,7 +212,7 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber, CancellationToken cancellationToken = default)
+    public async Task SendOrderShippedEmailAsync(string email, OrderEmailDto order, string trackingNumber, CancellationToken cancellationToken = default)
     {
         var subject = $"Your Order Has Shipped - #{order.OrderNumber}";
         var htmlContent = $@"
@@ -244,7 +244,7 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendOrderDeliveredEmailAsync(string email, Order order, CancellationToken cancellationToken = default)
+    public async Task SendOrderDeliveredEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default)
     {
         var subject = $"Your Order Has Been Delivered - #{order.OrderNumber}";
         var htmlContent = $@"
@@ -277,16 +277,16 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(email, subject, htmlContent, cancellationToken);
     }
 
-    public async Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart, CancellationToken cancellationToken = default)
+    public async Task SendAbandonedCartEmailAsync(string email, string firstName, CartEmailDto cart, CancellationToken cancellationToken = default)
     {
         var subject = "You Left Something Behind...";
 
         var itemsHtml = string.Join("", cart.Items?.Select(item => $@"
             <li style='margin: 10px 0;'>
-                {item.Product?.Name ?? "Product"} - Qty: {item.Quantity} - ${(item.Product?.Price ?? 0) * item.Quantity:F2}
+                {item.ProductName} - Qty: {item.Quantity} - ${item.Price * item.Quantity:F2}
             </li>") ?? []);
 
-        var totalAmount = cart.Items?.Sum(i => (i.Product?.Price ?? 0) * i.Quantity) ?? 0;
+        var totalAmount = cart.Items?.Sum(i => i.Price * i.Quantity) ?? 0;
 
         var htmlContent = $@"
             <html>

@@ -1,4 +1,4 @@
-using ECommerce.Core.Entities;
+using ECommerce.SharedKernel.DTOs;
 
 namespace ECommerce.SharedKernel.Interfaces;
 
@@ -25,22 +25,22 @@ public interface IEmailService
     /// <summary>
     /// Send order confirmation email.
     /// </summary>
-    Task SendOrderConfirmationEmailAsync(string email, Order order, CancellationToken cancellationToken = default);
+    Task SendOrderConfirmationEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Send order shipped notification with tracking info.
     /// </summary>
-    Task SendOrderShippedEmailAsync(string email, Order order, string trackingNumber, CancellationToken cancellationToken = default);
+    Task SendOrderShippedEmailAsync(string email, OrderEmailDto order, string trackingNumber, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Send order delivered confirmation.
     /// </summary>
-    Task SendOrderDeliveredEmailAsync(string email, Order order, CancellationToken cancellationToken = default);
+    Task SendOrderDeliveredEmailAsync(string email, OrderEmailDto order, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Send abandoned cart recovery email.
     /// </summary>
-    Task SendAbandonedCartEmailAsync(string email, string firstName, Cart cart, CancellationToken cancellationToken = default);
+    Task SendAbandonedCartEmailAsync(string email, string firstName, CartEmailDto cart, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Send low stock alert to admin.
@@ -52,4 +52,3 @@ public interface IEmailService
     /// </summary>
     Task SendMarketingEmailAsync(string email, string firstName, string subject, string htmlContent, CancellationToken cancellationToken = default);
 }
-

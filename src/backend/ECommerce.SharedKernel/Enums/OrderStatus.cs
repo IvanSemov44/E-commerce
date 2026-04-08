@@ -1,4 +1,4 @@
-﻿namespace ECommerce.SharedKernel.Enums;
+namespace ECommerce.SharedKernel.Enums;
 
 public enum OrderStatus
 {

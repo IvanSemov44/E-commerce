@@ -1,6 +1,5 @@
 using ECommerce.Infrastructure.Services;
-using ECommerce.Core.Entities;
-using ECommerce.Core.Enums;
+using ECommerce.SharedKernel.DTOs;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -203,8 +202,7 @@ public class SendGridEmailServiceTests
         // Arrange
         var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
         var email = "test@example.com";
-        var order = CreateTestOrder();
-        order.DiscountAmount = 10.00m;
+        var order = CreateTestOrder() with { DiscountAmount = 10.00m };
 
         // Act
         var action = async () => await service.SendOrderConfirmationEmailAsync(email, order);
@@ -219,17 +217,9 @@ public class SendGridEmailServiceTests
         // Arrange
         var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
         var email = "test@example.com";
-        var order = CreateTestOrder();
-        order.ShippingAddress = new Address
+        var order = CreateTestOrder() with
         {
-            FirstName = "John",
-            LastName = "Doe",
-            StreetLine1 = "123 Main St",
-            StreetLine2 = "Apt 4B",
-            City = "New York",
-            State = "NY",
-            PostalCode = "10001",
-            Country = "USA"
+            ShippingAddress = new AddressEmailDto("John", "Doe", "123 Main St", "Apt 4B", "New York", "NY", "10001", "USA")
         };
 
         // Act
@@ -305,7 +295,7 @@ public class SendGridEmailServiceTests
         var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
         var email = "test@example.com";
         var firstName = "John";
-        var cart = new Cart { Items = new List<CartItem>() };
+        var cart = new CartEmailDto(Items: []);
 
         // Act
         var action = async () => await service.SendAbandonedCartEmailAsync(email, firstName, cart);
@@ -321,7 +311,7 @@ public class SendGridEmailServiceTests
         var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
         var email = "test@example.com";
         var firstName = "John";
-        var cart = new Cart { Items = null };
+        var cart = new CartEmailDto(Items: null!);
 
         // Act
         var action = async () => await service.SendAbandonedCartEmailAsync(email, firstName, cart);
@@ -418,70 +408,29 @@ public class SendGridEmailServiceTests
 
     #region Helper Methods
 
-    private static Order CreateTestOrder()
-    {
-        return new Order
-        {
-            Id = Guid.NewGuid(),
-            OrderNumber = "ORD-123",
-            UserId = Guid.NewGuid(),
-            Status = OrderStatus.Pending,
-            Subtotal = 100.00m,
-            DiscountAmount = 0,
-            ShippingAmount = 10.00m,
-            TaxAmount = 8.00m,
-            TotalAmount = 118.00m,
-            CreatedAt = DateTime.UtcNow,
-            Items = new List<OrderItem>
-            {
-                new()
-                {
-                    ProductName = "Test Product",
-                    Quantity = 2,
-                    UnitPrice = 50.00m,
-                    TotalPrice = 100.00m
-                }
-            },
-            ShippingAddress = new Address
-            {
-                FirstName = "John",
-                LastName = "Doe",
-                StreetLine1 = "123 Main St",
-                City = "New York",
-                State = "NY",
-                PostalCode = "10001",
-                Country = "USA"
-            }
-        };
-    }
+    private static OrderEmailDto CreateTestOrder() =>
+        new(
+            OrderNumber: "ORD-123",
+            CreatedAt: DateTime.UtcNow,
+            Status: "Pending",
+            Subtotal: 100.00m,
+            DiscountAmount: 0,
+            ShippingAmount: 10.00m,
+            TaxAmount: 8.00m,
+            TotalAmount: 118.00m,
+            Items:
+            [
+                new OrderItemEmailDto("Test Product", 2, 50.00m, 100.00m)
+            ],
+            ShippingAddress: new AddressEmailDto("John", "Doe", "123 Main St", null, "New York", "NY", "10001", "USA")
+        );
 
-    private static Cart CreateTestCart()
-    {
-        return new Cart
-        {
-            Items = new List<CartItem>
-            {
-                new()
-                {
-                    Quantity = 2,
-                    Product = new Product
-                    {
-                        Name = "Test Product",
-                        Price = 29.99m
-                    }
-                },
-                new()
-                {
-                    Quantity = 1,
-                    Product = new Product
-                    {
-                        Name = "Another Product",
-                        Price = 49.99m
-                    }
-                }
-            }
-        };
-    }
+    private static CartEmailDto CreateTestCart() =>
+        new(Items:
+        [
+            new CartItemEmailDto("Test Product", 2, 29.99m),
+            new CartItemEmailDto("Another Product", 1, 49.99m)
+        ]);
 
     #endregion
 }
