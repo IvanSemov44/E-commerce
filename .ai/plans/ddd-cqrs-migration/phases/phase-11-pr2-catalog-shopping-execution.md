@@ -31,10 +31,16 @@ Explicit out-of-scope:
 - `src/backend/ECommerce.API/appsettings.json`
 - `src/backend/ECommerce.API/appsettings.Development.json`
 
-Execution scripts added:
-- `src/backend/scripts/phase11/pr2/catalog-bootstrap.sql`
-- `src/backend/scripts/phase11/pr2/shopping-bootstrap.sql`
-- `src/backend/scripts/phase11/pr2/verify-catalog-shopping-rowcounts.sql`
+Docker-first bootstrap (no repo SQL files):
+
+```powershell
+# Start PostgreSQL container
+docker compose up -d postgres
+
+# Create DBs only if missing (safe for clean DB or already-existing DB)
+docker compose exec postgres psql -U ecommerce -d postgres -c "SELECT 'CREATE DATABASE \"ECommerceCatalogDb\"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ECommerceCatalogDb')\gexec"
+docker compose exec postgres psql -U ecommerce -d postgres -c "SELECT 'CREATE DATABASE \"ECommerceShoppingDb\"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ECommerceShoppingDb')\gexec"
+```
 
 ## Remaining required work in PR 2
 
@@ -60,14 +66,20 @@ Validation status (current):
 
 Data verification commands (template):
 
-```sql
--- Shared source
-SELECT COUNT(*) FROM public."Products";
-SELECT COUNT(*) FROM shopping."Carts";
+```powershell
+# Shared source DB
+docker compose exec postgres psql -U ecommerce -d ECommerceDb -c "SELECT COUNT(*) AS products_count FROM public.\"Products\";"
+docker compose exec postgres psql -U ecommerce -d ECommerceDb -c "SELECT COUNT(*) AS carts_count FROM shopping.\"Carts\";"
+docker compose exec postgres psql -U ecommerce -d ECommerceDb -c "SELECT COUNT(*) AS cart_items_count FROM shopping.\"CartItems\";"
+docker compose exec postgres psql -U ecommerce -d ECommerceDb -c "SELECT COUNT(*) AS wishlists_count FROM shopping.\"Wishlists\";"
 
--- Target databases (CatalogDb / ShoppingDb)
-SELECT COUNT(*) FROM public."Products";
-SELECT COUNT(*) FROM shopping."Carts";
+# Target catalog DB
+docker compose exec postgres psql -U ecommerce -d ECommerceCatalogDb -c "SELECT COUNT(*) AS products_count FROM public.\"Products\";"
+
+# Target shopping DB
+docker compose exec postgres psql -U ecommerce -d ECommerceShoppingDb -c "SELECT COUNT(*) AS carts_count FROM shopping.\"Carts\";"
+docker compose exec postgres psql -U ecommerce -d ECommerceShoppingDb -c "SELECT COUNT(*) AS cart_items_count FROM shopping.\"CartItems\";"
+docker compose exec postgres psql -U ecommerce -d ECommerceShoppingDb -c "SELECT COUNT(*) AS wishlists_count FROM shopping.\"Wishlists\";"
 ```
 
 ## Rollback plan

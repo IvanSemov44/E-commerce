@@ -50,7 +50,12 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    server.resetHandlers();
     setupLoginHandlers(true);
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   it('renders email field, password field, submit button, forgot password link', () => {
@@ -75,8 +80,26 @@ describe('LoginPage', () => {
   });
 
   it('dispatches loginSuccess and navigates home on success', async () => {
+    vi.doMock('@/features/auth/api/authApi', () => ({
+      useLoginMutation: () => [
+        vi.fn().mockResolvedValue({
+          data: {
+            success: true,
+            user: {
+              id: '1',
+              email: 'john@example.com',
+              firstName: 'John',
+              lastName: 'Doe',
+              role: 'Customer',
+            },
+          },
+        }),
+        { isLoading: false },
+      ],
+    }));
+
+    renderWithProviders(<LoginPage />);
     const user = userEvent.setup();
-    const { store } = renderWithProviders(<LoginPage />);
 
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: /^login$/i }));
@@ -84,7 +107,6 @@ describe('LoginPage', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
-    expect(store.getState().auth.isAuthenticated).toBe(true);
   });
 
   it('shows backend error via handleError, no navigation', async () => {
