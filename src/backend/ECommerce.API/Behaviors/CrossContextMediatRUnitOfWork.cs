@@ -3,6 +3,7 @@ using ECommerce.Identity.Infrastructure.Persistence;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Ordering.Infrastructure.Persistence;
+using ECommerce.Payments.Infrastructure.Persistence;
 using ECommerce.Promotions.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using ECommerce.SharedKernel.Interfaces;
@@ -23,6 +24,7 @@ public sealed class CrossContextMediatRUnitOfWork(
     IdentityDbContext identityDbContext,
     InventoryDbContext inventoryDbContext,
     OrderingDbContext orderingDbContext,
+    PaymentsDbContext paymentsDbContext,
     PromotionsDbContext promotionsDbContext,
     ReviewsDbContext reviewsDbContext,
     ShoppingDbContext shoppingDbContext) : IUnitOfWork
@@ -37,6 +39,7 @@ public sealed class CrossContextMediatRUnitOfWork(
         total += await identityDbContext.SaveChangesAsync(cancellationToken);
         total += await inventoryDbContext.SaveChangesAsync(cancellationToken);
         total += await orderingDbContext.SaveChangesAsync(cancellationToken);
+        total += await paymentsDbContext.SaveChangesAsync(cancellationToken);
         total += await promotionsDbContext.SaveChangesAsync(cancellationToken);
         total += await reviewsDbContext.SaveChangesAsync(cancellationToken);
         total += await shoppingDbContext.SaveChangesAsync(cancellationToken);

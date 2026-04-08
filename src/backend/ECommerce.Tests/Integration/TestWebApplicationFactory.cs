@@ -29,6 +29,7 @@ using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using ECommerce.Identity.Infrastructure.Persistence;
 using ECommerce.Ordering.Infrastructure.Persistence;
+using ECommerce.Payments.Infrastructure.Persistence;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using ECommerce.Promotions.Application.Interfaces;
 using ECommerce.Promotions.Domain.Interfaces;
@@ -104,6 +105,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _identityDatabaseName = $"IntegrationTestsIdentityDb_{Guid.NewGuid():N}";
     private readonly string _inventoryDatabaseName = $"IntegrationTestsInventoryDb_{Guid.NewGuid():N}";
     private readonly string _orderingDatabaseName = $"IntegrationTestsOrderingDb_{Guid.NewGuid():N}";
+    private readonly string _paymentsDatabaseName = $"IntegrationTestsPaymentsDb_{Guid.NewGuid():N}";
     private readonly string _reviewsDatabaseName = $"IntegrationTestsReviewsDb_{Guid.NewGuid():N}";
     private readonly string _shoppingDatabaseName = $"IntegrationTestsShoppingDb_{Guid.NewGuid():N}";
     private readonly string _promotionsDatabaseName = $"IntegrationTestsPromotionsDb_{Guid.NewGuid():N}";
@@ -160,6 +162,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             var orderingDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<OrderingDbContext>));
             if (orderingDescriptor != null) services.Remove(orderingDescriptor);
+
+            var paymentsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PaymentsDbContext>));
+            if (paymentsDescriptor != null) services.Remove(paymentsDescriptor);
 
             var promotionsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PromotionsDbContext>));
             if (promotionsDescriptor != null) services.Remove(promotionsDescriptor);
@@ -234,6 +239,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
+            services.AddDbContext<PaymentsDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_paymentsDatabaseName);
+                options.UseInternalServiceProvider(inMemoryServiceProvider);
+                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
+
             services.AddDbContext<PromotionsDbContext>(options =>
             {
                 options.UseInMemoryDatabase(_promotionsDatabaseName);
@@ -280,6 +292,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
                 var orderingDb = scopedServices.GetRequiredService<OrderingDbContext>();
                 orderingDb.Database.EnsureCreated();
+
+                var paymentsDb = scopedServices.GetRequiredService<PaymentsDbContext>();
+                paymentsDb.Database.EnsureCreated();
 
                 var promotionsDb = scopedServices.GetRequiredService<PromotionsDbContext>();
                 promotionsDb.Database.EnsureCreated();
@@ -529,11 +544,27 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Currency = "USD"
                 });
 
+                paymentsDb.Orders.Add(new Order
+                {
+                    Id = orderId,
+                    OrderNumber = "TEST-ORDER-001",
+                    UserId = userId,
+                    Status = SharedOrderStatus.Pending,
+                    PaymentStatus = SharedPaymentStatus.Paid,
+                    Subtotal = 100.00m,
+                    DiscountAmount = 0.00m,
+                    ShippingAmount = 10.00m,
+                    TaxAmount = 0.00m,
+                    TotalAmount = 100.00m,
+                    Currency = "USD"
+                });
+
                 db.SaveChanges();
                 catalogDb.SaveChanges();
                 identityDb.SaveChanges();
                 inventoryDb.SaveChanges();
                 orderingDb.SaveChanges();
+                paymentsDb.SaveChanges();
                 shoppingDb.SaveChanges();
                 reviewsDb.SaveChanges();
             }
@@ -711,6 +742,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             total += await SaveIfAvailableAsync<CatalogDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<InventoryDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<OrderingDbContext>(cancellationToken);
+            total += await SaveIfAvailableAsync<PaymentsDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<PromotionsDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<ShoppingDbContext>(cancellationToken);
 
