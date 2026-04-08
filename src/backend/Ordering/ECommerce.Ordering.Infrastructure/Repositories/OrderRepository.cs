@@ -142,6 +142,8 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
 
     private static Order MapToDomain(CoreOrder order, bool withItems)
     {
+        _ = withItems;
+
         var shippingAddress = ShippingAddress.Create(
             order.ShippingAddress?.StreetLine1 ?? "",
             order.ShippingAddress?.City ?? "",

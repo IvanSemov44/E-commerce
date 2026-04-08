@@ -17,7 +17,7 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
         modelBuilder.Entity<InventoryItem>().ToTable("InventoryItems");
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         // InventoryLog entries are append-only. In EF InMemory + OwnsMany scenarios,
         // newly added owned entities can be tracked as Modified instead of Added,
@@ -30,6 +30,6 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
         foreach (var entry in modifiedLogs)
             entry.State = EntityState.Added;
 
-        return await base.SaveChangesAsync(cancellationToken);
+        return base.SaveChangesAsync(cancellationToken);
     }
 }

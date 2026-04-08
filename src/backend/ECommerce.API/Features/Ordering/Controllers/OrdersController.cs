@@ -24,23 +24,16 @@ namespace ECommerce.API.Features.Ordering.Controllers;
 [Produces("application/json")]
 [Tags("Orders")]
 [Authorize]
-public class OrdersController : ControllerBase
+public class OrdersController(
+    ICurrentUserService currentUser,
+    IMediator mediator,
+    ILogger<OrdersController> logger) : ControllerBase
 {
     private const string IdempotencyHeaderName = "Idempotency-Key";
 
-    private readonly ICurrentUserService _currentUser;
-    private readonly ILogger<OrdersController> _logger;
-    private readonly IMediator _mediator;
-
-    public OrdersController(
-        ICurrentUserService currentUser,
-        IMediator mediator,
-        ILogger<OrdersController> logger)
-    {
-        _currentUser = currentUser;
-        _mediator = mediator;
-        _logger = logger;
-    }
+    private readonly ICurrentUserService _currentUser = currentUser;
+    private readonly ILogger<OrdersController> _logger = logger;
+    private readonly IMediator _mediator = mediator;
 
     /// <summary>
     /// Creates a new order using MediatR.

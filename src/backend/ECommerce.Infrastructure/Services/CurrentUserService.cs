@@ -1,4 +1,4 @@
-using ECommerce.SharedKernel.Interfaces;
+﻿using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Enums;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
@@ -8,15 +8,8 @@ namespace ECommerce.Infrastructure.Services;
 /// <summary>
 /// Service for accessing current user context from HTTP claims.
 /// </summary>
-public class CurrentUserService : ICurrentUserService
+public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public CurrentUserService(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
-
     public Guid UserId
     {
         get
@@ -40,7 +33,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var httpContext = _httpContextAccessor.HttpContext;
+            var httpContext = httpContextAccessor.HttpContext;
             if (httpContext == null) return null;
 
             // Check header first (for API/mobile clients)
@@ -94,27 +87,27 @@ public class CurrentUserService : ICurrentUserService
     }
 
     public bool IsAuthenticated =>
-        _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+        httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
     private bool TryGetUserId(out Guid userId)
     {
-        var userIdClaim = _httpContextAccessor.HttpContext?.User
+        var userIdClaim = httpContextAccessor.HttpContext?.User
             ?.FindFirst(ClaimTypes.NameIdentifier)
-            ?? _httpContextAccessor.HttpContext?.User?.FindFirst("sub");
+            ?? httpContextAccessor.HttpContext?.User?.FindFirst("sub");
 
         return Guid.TryParse(userIdClaim?.Value, out userId);
     }
 
     private bool TryGetEmail(out string email)
     {
-        var emailClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email);
+        var emailClaim = httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email);
         email = emailClaim?.Value ?? string.Empty;
         return !string.IsNullOrWhiteSpace(email);
     }
 
     private bool TryGetRole(out UserRole role)
     {
-        var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role);
+        var roleClaim = httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role);
         return Enum.TryParse<UserRole>(roleClaim?.Value, out role);
     }
 }

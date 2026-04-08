@@ -1,4 +1,4 @@
-using ECommerce.Shopping.Application.Interfaces;
+﻿using ECommerce.Shopping.Application.Interfaces;
 using ECommerce.Shopping.Domain.Aggregates.Cart;
 using ECommerce.Shopping.Domain.Aggregates.Wishlist;
 using ECommerce.Shopping.Domain.Interfaces;
@@ -68,7 +68,7 @@ sealed class FakeShoppingDbReader : IShoppingDbReader
 
 sealed class FakeUnitOfWork : IUnitOfWork
 {
-    public int SaveChangesCount = 0;
+    public int SaveChangesCount;
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
     {

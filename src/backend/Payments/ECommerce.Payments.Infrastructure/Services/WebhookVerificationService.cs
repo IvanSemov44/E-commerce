@@ -5,15 +5,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace ECommerce.Payments.Infrastructure.Services;
 
-public class WebhookVerificationService : IWebhookVerificationService
+public class WebhookVerificationService(IConfiguration configuration) : IWebhookVerificationService
 {
-    private readonly string _secret;
-
-    public WebhookVerificationService(IConfiguration configuration)
-    {
-        _secret = configuration["PaymentWebhook:Secret"]
-            ?? throw new InvalidOperationException("Webhook secret not configured");
-    }
+    private readonly string _secret = configuration["PaymentWebhook:Secret"]
+        ?? throw new InvalidOperationException("Webhook secret not configured");
 
     public bool VerifySignature(string payload, string signature)
     {

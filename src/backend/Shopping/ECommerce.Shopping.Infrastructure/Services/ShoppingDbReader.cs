@@ -21,13 +21,13 @@ public class ShoppingDbReader(
         return new ProductPriceInfo(product.Price, currency);
     }
 
-    public async Task<bool> ProductExistsAsync(Guid productId, CancellationToken ct)
-        => await shoppingDb.Products
+    public Task<bool> ProductExistsAsync(Guid productId, CancellationToken ct)
+        => shoppingDb.Products
             .AsNoTracking()
             .AnyAsync(p => p.Id == productId && p.IsActive, ct);
 
-    public async Task<bool> IsInStockAsync(Guid productId, int quantity, CancellationToken ct)
-        => await shoppingDb.InventoryItems
+    public Task<bool> IsInStockAsync(Guid productId, int quantity, CancellationToken ct)
+        => shoppingDb.InventoryItems
             .AsNoTracking()
             .AnyAsync(i => i.ProductId == productId && i.Quantity >= quantity, ct);
 }
