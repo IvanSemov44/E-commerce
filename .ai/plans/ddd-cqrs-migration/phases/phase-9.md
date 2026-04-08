@@ -1,6 +1,6 @@
 # Phase 9: API Layer Reorganization & Old Service/Repository Cleanup
 
-**Status**: In Progress — Phase 8 characterization tests ongoing in parallel.
+**Status**: In Progress — Step 7 branch work is complete and validated locally; awaiting merge.
 
 **Learn**: Bounded context ownership at the API layer, vertical slice organization, incremental deletion of legacy monolith code.
 
@@ -94,7 +94,7 @@ If the build is red before you start — stop. Do not proceed. Report the error.
 ## Live Progress
 
 > Update this table when a step is merged. Do not update mid-branch — only on merge.
-> Last updated: 2026-04-07
+> Last updated: 2026-04-08
 
 | Step | Status | Notes |
 |---|---|---|
@@ -107,7 +107,7 @@ If the build is red before you start — stop. Do not proceed. Report the error.
 | Step 4 | In Progress (Branch Complete) | Shared folder reorganization implemented on `feature/phase-9-step-4-shared-folder`; pending merge. Prep checklist: `phase-9-step-4-prep.md` |
 | Step 5 | **Merged** | Legacy repository implementations/interfaces removed; inventory compatibility bridge deleted. Prep checklist: `phase-9-step-5-prep.md` |
 | Step 6 | **Merged** | `ECommerce.Application` deleted after DTO/validator/interface/service migration to Contracts/SharedKernel/Infrastructure. Prep checklist: `phase-9-step-6-prep.md` |
-| Step 7 | Not Started | `ECommerce.Core` still live. Prep checklist: `phase-9-step-7-prep.md` |
+| Step 7 | In Progress (Branch Complete) | `ECommerce.Core` is detached from live references and from solution on this branch; pending merge. Prep checklist: `phase-9-step-7-prep.md` |
 
 ### Step 0 Checklist
 
@@ -858,3 +858,13 @@ Phase 9 is complete when:
 - [ ] All cross-cutting infrastructure lives under `ECommerce.API/Shared/`
 - [ ] `ECommerce.API/Controllers/` folder does not exist
 - [ ] Every deleted test file has a linked replacement in the BC test project (deletion gate satisfied)
+
+---
+
+## Handoff to Phase 10
+
+After all Definition of Done checks above are green, continue with:
+
+- `.ai/plans/ddd-cqrs-migration/phases/phase-10-persistence-and-integration-boundaries.md`
+
+Phase 10 covers persistence ownership hardening, shared context reduction, transaction boundary corrections, and event/projection reliability.
