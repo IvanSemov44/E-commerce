@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Collections.Concurrent;
 using ECommerce.SharedKernel.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
@@ -10,28 +10,21 @@ namespace ECommerce.Infrastructure.Services;
 /// <summary>
 /// Distributed idempotency store backed by IDistributedCache (Redis in production, memory fallback otherwise).
 /// </summary>
-public class DistributedIdempotencyStore : IIdempotencyStore
+public class DistributedIdempotencyStore(
+    IDistributedCache distributedCache,
+    IEnumerable<IConnectionMultiplexer> redisMultiplexers,
+    ILogger<DistributedIdempotencyStore> logger) : IIdempotencyStore
 {
     private const string InProgressState = "in_progress";
     private const string CompletedState = "completed";
 
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> LocalKeyLocks = new();
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _localKeyLocks = new();
 
-    private readonly IDistributedCache _distributedCache;
-    private readonly IConnectionMultiplexer? _redisMultiplexer;
-    private readonly ILogger<DistributedIdempotencyStore> _logger;
+    private readonly IDistributedCache _distributedCache = distributedCache;
+    private readonly IConnectionMultiplexer? _redisMultiplexer = redisMultiplexers.FirstOrDefault();
+    private readonly ILogger<DistributedIdempotencyStore> _logger = logger;
 
     private sealed record IdempotencyEnvelope(string State, string? Payload);
-
-    public DistributedIdempotencyStore(
-        IDistributedCache distributedCache,
-        IEnumerable<IConnectionMultiplexer> redisMultiplexers,
-        ILogger<DistributedIdempotencyStore> logger)
-    {
-        _distributedCache = distributedCache;
-        _redisMultiplexer = redisMultiplexers.FirstOrDefault();
-        _logger = logger;
-    }
 
     public async Task<IdempotencyStartResult<T>> StartAsync<T>(string key, TimeSpan inProgressTtl, CancellationToken cancellationToken = default) where T : class
     {
@@ -42,7 +35,7 @@ public class DistributedIdempotencyStore : IIdempotencyStore
                 return redisResult;
         }
 
-        var keyLock = LocalKeyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        var keyLock = _localKeyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
         await keyLock.WaitAsync(cancellationToken);
 
         try

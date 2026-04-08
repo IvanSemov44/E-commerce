@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Exceptions;
