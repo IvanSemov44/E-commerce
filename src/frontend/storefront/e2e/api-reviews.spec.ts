@@ -4,13 +4,20 @@ const API_BASE = process.env.VITE_API_URL
   ? process.env.VITE_API_URL.replace(/\/?$/, '/')
   : 'http://localhost:5000/api/';
 
-const ADMIN_EMAIL = `admin-${crypto.randomUUID()}@example.com`;
 const ADMIN_PASSWORD = 'Admin123';
 const CUSTOMER_PASSWORD = 'Customer123!';
 
+function getAdminEmail(): string {
+  return `admin-${crypto.randomUUID()}@example.com`;
+}
+
+function getCustomerEmail(): string {
+  return `reviews-e2e-${crypto.randomUUID()}@example.com`;
+}
+
 async function loginAsAdmin(ctx: APIRequestContext): Promise<void> {
   const response = await ctx.post('auth/login', {
-    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+    data: { email: getAdminEmail(), password: ADMIN_PASSWORD },
   });
 
   expect(response.ok(), `Admin login failed with status ${response.status()}`).toBe(true);
@@ -19,7 +26,7 @@ async function loginAsAdmin(ctx: APIRequestContext): Promise<void> {
 
 async function createCustomerContext(): Promise<{ ctx: APIRequestContext; email: string }> {
   const ctx = await request.newContext({ baseURL: API_BASE });
-  const email = `reviews-e2e-${crypto.randomUUID()}@example.com`;
+  const email = getCustomerEmail();
 
   const registerResponse = await ctx.post('auth/register', {
     data: {

@@ -4,12 +4,15 @@ const API_BASE = process.env.VITE_API_URL
   ? process.env.VITE_API_URL.replace(/\/?$/, '/')
   : 'http://localhost:5000/api/';
 
-const ADMIN_EMAIL = `admin-${crypto.randomUUID()}@example.com`;
 const ADMIN_PASSWORD = 'TestPassword123!';
+
+function getAdminEmail(): string {
+  return `admin-${crypto.randomUUID()}@example.com`;
+}
 
 async function loginAndGetToken(ctx: APIRequestContext): Promise<APIRequestContext> {
   const res = await ctx.post('auth/login', {
-    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+    data: { email: getAdminEmail(), password: ADMIN_PASSWORD },
   });
   expect(res.ok(), `Login failed with status ${res.status()}`).toBe(true);
   return ctx;
