@@ -31,7 +31,7 @@ describe('createRegisterSchema', () => {
 
   describe('firstName', () => {
     it('requires a value', () => {
-      expect(firstErrors({ ...valid, firstName: '' }).firstName).toBe('First Name required');
+      expect(firstErrors({ ...valid, firstName: '' }).firstName).toBe('First Name is required');
     });
 
     it('enforces max 50 chars', () => {
@@ -47,7 +47,7 @@ describe('createRegisterSchema', () => {
 
   describe('lastName', () => {
     it('requires a value', () => {
-      expect(firstErrors({ ...valid, lastName: '' }).lastName).toBe('Last Name required');
+      expect(firstErrors({ ...valid, lastName: '' }).lastName).toBe('Last Name is required');
     });
 
     it('enforces max 50 chars', () => {
@@ -105,7 +105,7 @@ describe('createRegisterSchema', () => {
   describe('confirmPassword', () => {
     it('requires a value', () => {
       expect(firstErrors({ ...valid, confirmPassword: '' }).confirmPassword).toBe(
-        'Confirm Password required'
+        'Confirm Password is required'
       );
     });
 
