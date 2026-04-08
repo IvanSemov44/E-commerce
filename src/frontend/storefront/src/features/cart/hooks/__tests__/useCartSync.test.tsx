@@ -3,21 +3,6 @@ import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import { useCartSync } from '../useCartSync';
 
-// Mock API hooks
-vi.mock('../../features/cart/api/cartApi', () => ({
-  useGetCartQuery: vi.fn(() => ({
-    data: null,
-    isLoading: false,
-    isError: false,
-    refetch: vi.fn(),
-  })),
-  useAddToCartMutation: vi.fn(() => [
-    vi.fn().mockResolvedValue({ data: {} }),
-    { isLoading: false },
-  ]),
-}));
-
-// Mock logger
 vi.mock('../../utils/logger', () => ({
   logger: {
     warn: vi.fn(),

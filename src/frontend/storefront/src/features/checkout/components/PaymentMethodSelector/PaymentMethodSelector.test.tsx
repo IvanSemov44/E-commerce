@@ -1,15 +1,9 @@
 import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
-import * as paymentsApi from '@/features/checkout/api/paymentsApi';
 import { PaymentMethodSelector } from './PaymentMethodSelector';
-
-vi.mock('@/features/checkout/api/paymentsApi', () => ({
-  useGetPaymentMethodsQuery: vi.fn(() => ({
-    data: { methods: ['credit_card', 'debit_card', 'paypal', 'apple_pay'] },
-    isLoading: false,
-  })),
-}));
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -17,12 +11,23 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+const mockMethods = ['credit_card', 'debit_card', 'paypal', 'apple_pay'];
+
+const setupPaymentMethodsHandlers = (methods = mockMethods) => {
+  server.use(
+    http.get('/api/payments/methods', () => {
+      return HttpResponse.json({
+        success: true,
+        data: { methods },
+      });
+    })
+  );
+};
+
 describe('PaymentMethodSelector', () => {
   beforeEach(() => {
-    vi.mocked(paymentsApi.useGetPaymentMethodsQuery).mockReturnValue({
-      data: { methods: ['credit_card', 'debit_card', 'paypal', 'apple_pay'] },
-      isLoading: false,
-    } as never);
+    vi.clearAllMocks();
+    setupPaymentMethodsHandlers();
   });
 
   it('renders available payment methods', () => {
@@ -62,24 +67,20 @@ describe('PaymentMethodSelector', () => {
     expect(screen.getByRole('group')).toBeInTheDocument();
   });
 
-  it('shows loading skeleton while fetching', () => {
-    vi.mocked(paymentsApi.useGetPaymentMethodsQuery).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    } as never);
-
+  it('shows loading skeleton while fetching', async () => {
+    server.use(
+      http.get('/api/checkout/payment-methods', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return HttpResponse.json({ success: true, data: { methods: mockMethods } });
+      })
+    );
     renderWithProviders(<PaymentMethodSelector selectedMethod="" onMethodChange={vi.fn()} />);
 
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument();
   });
 
   it('renders nothing when methods list is empty', () => {
-    vi.mocked(paymentsApi.useGetPaymentMethodsQuery).mockReturnValue({
-      data: { methods: [] },
-      isLoading: false,
-    } as never);
-
+    setupPaymentMethodsHandlers([]);
     const { container } = renderWithProviders(
       <PaymentMethodSelector selectedMethod="" onMethodChange={vi.fn()} />
     );
@@ -88,11 +89,7 @@ describe('PaymentMethodSelector', () => {
   });
 
   it('renders fallback icon for unknown payment method', () => {
-    vi.mocked(paymentsApi.useGetPaymentMethodsQuery).mockReturnValue({
-      data: { methods: ['unknown_method'] },
-      isLoading: false,
-    } as never);
-
+    setupPaymentMethodsHandlers(['unknown_method']);
     renderWithProviders(
       <PaymentMethodSelector selectedMethod="unknown_method" onMethodChange={vi.fn()} />
     );

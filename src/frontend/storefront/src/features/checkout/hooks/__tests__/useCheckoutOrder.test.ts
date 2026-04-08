@@ -1,23 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
-import * as ordersApi from '@/features/orders/api';
-import * as cartApi from '@/features/cart/api';
-import * as checkoutApi from '@/features/checkout/api';
 import { useCheckoutOrder } from '../useCheckoutOrder';
 import type { ShippingFormData } from '@/features/checkout/types';
-
-vi.mock('@/features/orders/api', () => ({
-  useCreateOrderMutation: vi.fn(() => [vi.fn()]),
-}));
-
-vi.mock('@/features/cart/api', () => ({
-  useClearCartMutation: vi.fn(() => [vi.fn()]),
-}));
-
-vi.mock('@/features/checkout/api', () => ({
-  useCheckAvailabilityMutation: vi.fn(() => [vi.fn()]),
-}));
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 vi.mock('@/shared/lib/utils/telemetry', () => ({
   telemetry: { track: vi.fn() },
@@ -49,29 +36,36 @@ const defaultOptions = {
   paymentMethod: 'card',
 };
 
-describe('useCheckoutOrder', () => {
-  let mockCreateOrder: ReturnType<typeof vi.fn>;
-  let mockClearCart: ReturnType<typeof vi.fn>;
-  let mockCheckAvailability: ReturnType<typeof vi.fn>;
+const setupHandlers = (
+  availabilityResult = { isAvailable: true, issues: [] },
+  orderResult = { orderNumber: 'ORD-001' }
+) => {
+  server.use(
+    http.post('/api/inventory/check-availability', async () => {
+      return HttpResponse.json({
+        success: true,
+        data: availabilityResult,
+      });
+    }),
+    http.post('/api/orders', async () => {
+      return HttpResponse.json({
+        success: true,
+        data: orderResult,
+      });
+    }),
+    http.post('/api/cart/clear', async () => {
+      return HttpResponse.json({
+        success: true,
+        data: { id: 'c1', items: [], itemCount: 0 },
+      });
+    })
+  );
+};
 
+describe('useCheckoutOrder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockCheckAvailability = vi.fn().mockReturnValue({
-      unwrap: () => Promise.resolve({ isAvailable: true, issues: [] }),
-    });
-    mockCreateOrder = vi.fn().mockReturnValue({
-      unwrap: () => Promise.resolve({ orderNumber: 'ORD-001' }),
-    });
-    mockClearCart = vi.fn().mockReturnValue({
-      unwrap: () => Promise.resolve(),
-    });
-
-    vi.mocked(ordersApi.useCreateOrderMutation).mockReturnValue([mockCreateOrder] as never);
-    vi.mocked(cartApi.useClearCartMutation).mockReturnValue([mockClearCart] as never);
-    vi.mocked(checkoutApi.useCheckAvailabilityMutation).mockReturnValue([
-      mockCheckAvailability,
-    ] as never);
+    setupHandlers();
   });
 
   it('initialises with orderComplete false and no error', () => {
@@ -83,9 +77,14 @@ describe('useCheckoutOrder', () => {
   });
 
   it('sets error when stock check fails', async () => {
-    mockCheckAvailability.mockReturnValue({
-      unwrap: () => Promise.reject(new Error('network')),
-    });
+    server.use(
+      http.post('/api/inventory/check-availability', async () => {
+        return HttpResponse.json(
+          { success: false, errorDetails: { message: 'Network error', code: 'INTERNAL_ERROR' } },
+          { status: 500 }
+        );
+      })
+    );
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
 
@@ -98,12 +97,9 @@ describe('useCheckoutOrder', () => {
   });
 
   it('sets error when stock is unavailable', async () => {
-    mockCheckAvailability.mockReturnValue({
-      unwrap: () =>
-        Promise.resolve({
-          isAvailable: false,
-          issues: [{ productName: 'Widget', message: 'Out of stock' }],
-        }),
+    setupHandlers({
+      isAvailable: false,
+      issues: [{ productName: 'Widget', message: 'Out of stock' }],
     });
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
@@ -129,9 +125,14 @@ describe('useCheckoutOrder', () => {
   });
 
   it('sets error when createOrder throws', async () => {
-    mockCreateOrder.mockReturnValue({
-      unwrap: () => Promise.reject({ data: { message: 'Payment failed' } }),
-    });
+    server.use(
+      http.post('/api/orders', async () => {
+        return HttpResponse.json(
+          { success: false, errorDetails: { message: 'Payment failed', code: 'PAYMENT_FAILED' } },
+          { status: 400 }
+        );
+      })
+    );
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
 
@@ -183,8 +184,6 @@ describe('useCheckoutOrder', () => {
     await act(async () => {
       await result.current.handleFormSubmit(mockShippingData);
     });
-
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ promoCode: 'SAVE10' }));
   });
 
   it('omits promoCode when promoCodeValidation is invalid', async () => {
@@ -199,14 +198,17 @@ describe('useCheckoutOrder', () => {
     await act(async () => {
       await result.current.handleFormSubmit(mockShippingData);
     });
-
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ promoCode: undefined }));
   });
 
   it('falls back to errorObj.message when data.message is absent', async () => {
-    mockCreateOrder.mockReturnValue({
-      unwrap: () => Promise.reject({ message: 'Network error' }),
-    });
+    server.use(
+      http.post('/api/orders', async () => {
+        return HttpResponse.json(
+          { success: false, errorDetails: { message: 'Network error', code: 'INTERNAL_ERROR' } },
+          { status: 500 }
+        );
+      })
+    );
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
 

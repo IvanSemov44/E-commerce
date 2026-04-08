@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { CheckoutPage } from './CheckoutPage';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
-// ── hook mocks ────────────────────────────────────────────────────────────────
 vi.mock('@/features/cart/hooks', () => ({
   useCart: vi.fn(() => ({
     displayItems: [],
@@ -40,11 +41,6 @@ vi.mock('@/features/checkout/hooks/useCheckoutOrder', () => ({
   })),
 }));
 
-vi.mock('@/features/checkout/api', () => ({
-  useGetPaymentMethodsQuery: vi.fn(() => ({ data: undefined })),
-}));
-
-// ── shared mocks ──────────────────────────────────────────────────────────────
 vi.mock('@/shared/hooks', () => ({
   usePerformanceMonitor: vi.fn(),
 }));
@@ -62,7 +58,6 @@ vi.mock('react-router', async (importOriginal) => {
   return { ...actual, useNavigate: () => vi.fn() };
 });
 
-// ── component mocks ───────────────────────────────────────────────────────────
 vi.mock('@/features/checkout/components/CheckoutForm', () => ({
   CheckoutForm: () => <div data-testid="checkout-form" />,
 }));
@@ -81,7 +76,6 @@ vi.mock('@/shared/components/TrustSignals', () => ({
   TrustSignals: () => <div data-testid="trust-signals" />,
 }));
 
-// ── imports after mocks ───────────────────────────────────────────────────────
 import * as cartHooks from '@/features/cart/hooks';
 import * as orderHook from '@/features/checkout/hooks/useCheckoutOrder';
 import * as telemetry from '@/shared/lib/utils/telemetry';
@@ -98,9 +92,24 @@ const mockCartItems = [
   },
 ];
 
+const setupPaymentMethodsHandlers = () => {
+  server.use(
+    http.get('/api/checkout/payment-methods', () => {
+      return HttpResponse.json({
+        success: true,
+        data: [
+          { id: 'card', name: 'Credit Card', isDefault: true },
+          { id: 'paypal', name: 'PayPal', isDefault: false },
+        ],
+      });
+    })
+  );
+};
+
 describe('CheckoutPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    setupPaymentMethodsHandlers();
     vi.mocked(cartHooks.useCart).mockReturnValue({
       displayItems: [],
       totals: { subtotal: 0, shipping: 0, tax: 0, total: 0 },

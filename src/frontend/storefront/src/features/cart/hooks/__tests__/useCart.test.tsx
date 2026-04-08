@@ -3,24 +3,6 @@ import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import { useCart } from '../useCart';
 
-// Mock API hooks
-vi.mock('../../store/api/cartApi', () => ({
-  useGetCartQuery: vi.fn(() => ({
-    data: null,
-    isLoading: false,
-    isError: false,
-  })),
-  useUpdateCartItemMutation: vi.fn(() => [
-    vi.fn().mockResolvedValue({ data: {} }),
-    { isLoading: false },
-  ]),
-  useRemoveFromCartMutation: vi.fn(() => [
-    vi.fn().mockResolvedValue({ data: {} }),
-    { isLoading: false },
-  ]),
-}));
-
-// Mock useCartSync hook
 vi.mock('../useCartSync', () => ({
   useCartSync: vi.fn(() => ({
     backendCart: null,
@@ -111,7 +93,6 @@ describe('useCart', () => {
     const rendered = renderHookWithProviders(() => useCart(), { preloadedState: highValueState });
     store = rendered.store;
 
-    // Assuming FREE_SHIPPING_THRESHOLD is 100
     expect(rendered.result.current.totals.subtotal).toBe(150.0);
     expect(rendered.result.current.totals.shipping).toBe(0); // Free shipping
   });
