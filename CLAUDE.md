@@ -13,6 +13,15 @@ Start here for this repository.
 8. `.ai/reference/common-mistakes.md`
 9. `.ai/workflows/post-modification-checks.md` (run after every code change)
 
+## Testing System (read when writing or reviewing tests)
+- `.ai/testing/README.md` — entry point and project map
+- `.ai/testing/taxonomy.md` — which test type goes where (the law)
+- `.ai/testing/naming-conventions.md` — method names, class names, file locations
+- `.ai/testing/coverage-targets.md` — minimum expectations per layer
+- `.ai/testing/anti-patterns.md` — what NOT to do
+- Pattern docs in `.ai/testing/patterns/` — one per test layer
+- AI prompt templates in `.ai/prompts/testing/` — use instead of freehand prompting
+
 ## Critical Rules (Do Not Violate)
 - Follow Clean Architecture direction: API -> Application -> Core, Infrastructure -> Core/Application.
 - Services inject `IUnitOfWork`, not individual repositories.

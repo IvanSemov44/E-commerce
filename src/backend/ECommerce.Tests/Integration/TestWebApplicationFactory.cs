@@ -499,6 +499,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Sku = "TEST-SKU-001"
                 });
 
+                reviewsDb.Products.Add(new ECommerce.Reviews.Infrastructure.Persistence.ProductReadModel
+                {
+                    Id = productId,
+                    IsActive = true,
+                    UpdatedAt = DateTime.UtcNow
+                });
+
                 shoppingDb.InventoryItems.Add(new InventoryItemReadModel
                 {
                     ProductId = productId,
@@ -528,6 +535,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 inventoryDb.SaveChanges();
                 orderingDb.SaveChanges();
                 shoppingDb.SaveChanges();
+                reviewsDb.SaveChanges();
             }
 
             // Reset auth to enabled by default

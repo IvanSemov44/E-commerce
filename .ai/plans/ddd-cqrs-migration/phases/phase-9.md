@@ -109,6 +109,12 @@ If the build is red before you start — stop. Do not proceed. Report the error.
 | Step 6 | **Merged** | `ECommerce.Application` deleted after DTO/validator/interface/service migration to Contracts/SharedKernel/Infrastructure. Prep checklist: `phase-9-step-6-prep.md` |
 | Step 7 | **Merged** | `ECommerce.Core` removed from solution and runtime usage; SharedKernel owns moved contracts/entities. Prep checklist: `phase-9-step-7-prep.md` |
 
+### Phase 10 Handoff
+
+- Handoff branch created: `feature/phase-10-persistence-and-integration-boundaries`.
+- Baseline cleanup completed before Phase 10 implementation (accidental nested duplicate test files removed).
+- Build validation after cleanup succeeded: `dotnet build src/backend/ECommerce.sln -v minimal`.
+
 ### Step 0 Checklist
 
 **Done**

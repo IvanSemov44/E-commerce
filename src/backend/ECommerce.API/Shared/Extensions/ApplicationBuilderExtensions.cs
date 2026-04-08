@@ -1,6 +1,7 @@
-using ECommerce.API.Common.Configuration;
+﻿using ECommerce.API.Common.Configuration;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Middleware;
+using ECommerce.API.Services;
 using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -33,6 +34,7 @@ public static class ApplicationBuilderExtensions
             if (!app.Environment.IsEnvironment("Test"))
             {
                 await SeedDatabaseAsync(context, services, app.Environment);
+                await BackfillReviewsProductProjectionsAsync(services);
             }
         }
         catch (Exception ex)
@@ -214,6 +216,19 @@ public static class ApplicationBuilderExtensions
         catch (Exception ex)
         {
             Log.Warning(ex, "An error occurred while seeding database.");
+        }
+    }
+
+    private static async Task BackfillReviewsProductProjectionsAsync(IServiceProvider services)
+    {
+        try
+        {
+            var backfillService = services.GetRequiredService<ReviewsProductProjectionBackfillService>();
+            await backfillService.BackfillAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "An error occurred while backfilling Reviews product projections.");
         }
     }
 

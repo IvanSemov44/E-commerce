@@ -1,4 +1,4 @@
-using ECommerce.API.Common.Configuration;
+﻿using ECommerce.API.Common.Configuration;
 using ECommerce.API.Behaviors;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Services;
@@ -317,6 +317,7 @@ public static class ServiceCollectionExtensions
 
         // Domain services
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ReviewsProductProjectionBackfillService>();
 
         services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();
         // OrderService removed - migrated to Ordering bounded context with MediatR

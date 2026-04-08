@@ -1,8 +1,11 @@
 ﻿using ECommerce.Reviews.Application;
+using ECommerce.Reviews.Infrastructure.IntegrationEvents;
 using ECommerce.Reviews.Domain.Interfaces;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence.Repositories;
 using ECommerce.Reviews.Infrastructure.Services;
+using ECommerce.Contracts;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +28,7 @@ public static class DependencyInjection
 
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<ECommerce.Reviews.Application.Interfaces.ICatalogService, CatalogService>();
+        services.AddScoped<INotificationHandler<ProductProjectionUpdatedIntegrationEvent>, ProductProjectionUpdatedIntegrationEventHandler>();
         services.AddReviewsApplication();
 
         return services;
