@@ -15,7 +15,7 @@
     <PackageReference Include="Moq" Version="4.20.72" />
 
     <!-- Assertions -->
-    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="Shouldly" Version="4.2.1" />
 
     <!-- Integration Testing -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
@@ -38,7 +38,7 @@
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
     <Using Include="Moq" />
-    <Using Include="FluentAssertions" />
+    <Using Include="Shouldly" />
   </ItemGroup>
 
   <ItemGroup>
