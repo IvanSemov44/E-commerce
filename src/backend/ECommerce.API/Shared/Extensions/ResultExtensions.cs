@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ECommerce.SharedKernel.Results;
 
-namespace ECommerce.API.Shared.Extensions;
+namespace ECommerce.API.Common.Extensions;
 
 public static class ResultExtensions
 {
@@ -26,4 +26,5 @@ public static class ResultExtensions
         Func<DomainError, IActionResult> onFailure)
         => result is Result.Success ? onSuccess() : onFailure(((Result.Failure)result).Error);
 }
+
 

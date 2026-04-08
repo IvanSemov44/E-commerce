@@ -1,4 +1,4 @@
-namespace ECommerce.API.Shared.Configuration;
+namespace ECommerce.API.Common.Configuration;
 
 /// <summary>
 /// CORS policy names used throughout the application.
@@ -20,4 +20,5 @@ public static class CorsPolicyNames
     /// </summary>
     public const string Production = "Production";
 }
+
 

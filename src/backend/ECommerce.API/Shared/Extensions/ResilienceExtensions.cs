@@ -2,7 +2,7 @@ using ECommerce.Infrastructure.Resilience;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 
-namespace ECommerce.API.Shared.Extensions;
+namespace ECommerce.API.Common.Extensions;
 
 /// <summary>
 /// Extension methods for registering resilience policies and middleware.
@@ -34,4 +34,5 @@ public static class ResilienceExtensions
         return app.UseMiddleware<Middleware.CorrelationIdMiddleware>();
     }
 }
+
 

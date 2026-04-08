@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-namespace ECommerce.API.Shared.Extensions;
+namespace ECommerce.API.Common.Extensions;
 
 /// <summary>
 /// Validates database schema consistency with EF Core model.
@@ -179,4 +179,5 @@ public static class DatabaseSchemaValidator
         return result != null && (bool)result;
     }
 }
+
 

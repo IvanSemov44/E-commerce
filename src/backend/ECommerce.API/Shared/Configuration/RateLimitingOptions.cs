@@ -1,4 +1,4 @@
-namespace ECommerce.API.Shared.Configuration;
+namespace ECommerce.API.Common.Configuration;
 
 /// <summary>
 /// Configuration options for rate limiting policies.
@@ -53,4 +53,5 @@ public class RateLimitingOptions
     /// </summary>
     public int RejectionStatusCode { get; set; } = StatusCodes.Status429TooManyRequests;
 }
+
 

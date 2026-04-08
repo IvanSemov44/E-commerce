@@ -1,4 +1,4 @@
-namespace ECommerce.API.Shared.Configuration;
+namespace ECommerce.API.Common.Configuration;
 
 /// <summary>
 /// JWT (JSON Web Token) configuration options.
@@ -78,4 +78,5 @@ public class JwtOptions
             throw new InvalidOperationException($"JWT configuration validation failed:\n{string.Join("\n", errors)}");
     }
 }
+
 

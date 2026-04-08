@@ -1,5 +1,5 @@
 using ECommerce.API.ActionFilters;
-using ECommerce.API.Shared.Helpers;
+using ECommerce.API.Common.Helpers;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Contracts.DTOs.Inventory;
 using ECommerce.Inventory.Application.Commands.IncreaseStock;
@@ -61,6 +61,9 @@ public class InventoryController(IMediator mediator) : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
+        _ = page;
+        _ = pageSize;
+
         var result = await _mediator.Send(new GetLowStockItemsQuery(threshold), cancellationToken);
 
         return result.IsSuccess
@@ -254,7 +257,7 @@ public class InventoryController(IMediator mediator) : ControllerBase
             "Stock updated successfully"));
     }
 
-    private IActionResult MapInventoryResult(DomainError error) => error.Code switch
+    private ObjectResult MapInventoryResult(DomainError error) => error.Code switch
     {
         "INVENTORY_ITEM_NOT_FOUND"
             => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
@@ -270,5 +273,6 @@ public class InventoryController(IMediator mediator) : ControllerBase
         _ => StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred.", error.Code))
     };
 }
+
 
 

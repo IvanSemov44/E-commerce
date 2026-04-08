@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace ECommerce.API.Shared.Extensions;
+namespace ECommerce.API.Common.Extensions;
 
 /// <summary>
 /// Extension methods for IConfiguration to validate required configuration values.
@@ -147,4 +147,5 @@ public static class ConfigurationExtensions
         }
     }
 }
+
 

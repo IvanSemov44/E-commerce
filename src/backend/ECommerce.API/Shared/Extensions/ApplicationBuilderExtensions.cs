@@ -1,4 +1,4 @@
-using ECommerce.API.Shared.Configuration;
+using ECommerce.API.Common.Configuration;
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Middleware;
 using ECommerce.Infrastructure.Data;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 
-namespace ECommerce.API.Shared.Extensions;
+namespace ECommerce.API.Common.Extensions;
 
 /// <summary>
 /// Extension methods for configuring the application middleware pipeline and startup tasks.
@@ -219,4 +219,5 @@ public static class ApplicationBuilderExtensions
 
     #endregion
 }
+
 

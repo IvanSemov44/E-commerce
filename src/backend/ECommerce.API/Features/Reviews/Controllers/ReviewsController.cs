@@ -1,7 +1,7 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using ECommerce.API.ActionFilters;
-using ECommerce.API.Shared.Extensions;
-using ECommerce.API.Shared.Helpers;
+using ECommerce.API.Common.Extensions;
+using ECommerce.API.Common.Helpers;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Reviews.Application.Commands;
@@ -422,6 +422,7 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
             MapError);
     }
 }
+
 
 
 

@@ -6,7 +6,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Serilog;
 using Serilog.Events;
 
-namespace ECommerce.API.Shared.Extensions;
+namespace ECommerce.API.Common.Extensions;
 
 /// <summary>
 /// Extension methods for configuring Serilog logging with cloud-ready sinks.
@@ -84,4 +84,5 @@ public static class LoggingExtensions
         return builder;
     }
 }
+
 

@@ -1,4 +1,4 @@
-namespace ECommerce.API.Shared.Configuration;
+namespace ECommerce.API.Common.Configuration;
 
 /// <summary>
 /// Configuration options for business rules and calculations.
@@ -23,4 +23,5 @@ public class BusinessRulesOptions
     /// </summary>
     public decimal TaxRate { get; set; } = 0.08m;
 }
+
 

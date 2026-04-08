@@ -1,5 +1,5 @@
 using System.Collections.Frozen;
-using ECommerce.API.Shared.Extensions;
+using ECommerce.API.Common.Extensions;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.SharedKernel.Results;
@@ -59,5 +59,6 @@ public class IntegrationDeadLettersController(IDeadLetterReplayService deadLette
             MapError);
     }
 }
+
 
 

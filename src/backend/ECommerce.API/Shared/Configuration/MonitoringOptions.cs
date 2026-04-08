@@ -1,4 +1,4 @@
-namespace ECommerce.API.Shared.Configuration;
+namespace ECommerce.API.Common.Configuration;
 
 /// <summary>
 /// Configuration options for health checks and monitoring.
@@ -32,4 +32,5 @@ public class MonitoringOptions
     /// </summary>
     public bool EnableHealthCheckUI { get; set; }
 }
+
 

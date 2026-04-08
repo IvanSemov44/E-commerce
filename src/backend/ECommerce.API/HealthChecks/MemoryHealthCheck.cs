@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
-using ECommerce.API.Shared.Configuration;
+using ECommerce.API.Common.Configuration;
 
 namespace ECommerce.API.HealthChecks;
 
@@ -60,4 +60,5 @@ public class MemoryHealthCheck(IOptions<MonitoringOptions> options) : IHealthChe
             data: data));
     }
 }
+
 
