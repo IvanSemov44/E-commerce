@@ -78,6 +78,11 @@ Deliverables:
 2. Explicit keep/remove decision for AppDbContext (platform-only or deprecate).
 3. Connection-string contract per bounded context.
 
+Required artifact files:
+1. `.ai/plans/ddd-cqrs-migration/phases/phase-11-ownership-matrix.md`
+2. `.ai/plans/ddd-cqrs-migration/phases/phase-11-appdbcontext-decision.md`
+3. `.ai/plans/ddd-cqrs-migration/phases/phase-11-connection-string-contract.md`
+
 Validation:
 1. Architecture review sign-off.
 2. No table with multiple write owners.
@@ -446,6 +451,14 @@ dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --filter "FullyQu
 ## AI prompt pack (required per PR)
 
 Each PR must include a concise prompt pack in PR notes or linked docs.
+
+Prompt file set in repo:
+1. `.ai/plans/ddd-cqrs-migration/prompts/phase-11/README.md`
+2. `.ai/plans/ddd-cqrs-migration/prompts/phase-11/01-implementation.prompt.md`
+3. `.ai/plans/ddd-cqrs-migration/prompts/phase-11/02-validation.prompt.md`
+4. `.ai/plans/ddd-cqrs-migration/prompts/phase-11/03-rollback-readiness.prompt.md`
+5. `.ai/plans/ddd-cqrs-migration/prompts/phase-11/04-post-cutover-evidence.prompt.md`
+6. `.ai/plans/ddd-cqrs-migration/prompts/phase-11/prompt-run-checklist.md`
 
 ### Prompt 1: Implementation prompt
 
