@@ -47,8 +47,8 @@ builder.Configuration.ValidateRequiredConfiguration();
 builder.Services.AddForwardedHeadersConfiguration();
 
 // Database
-InfrastructureCompositionExtensions.AddInfrastructurePersistence(builder.Services, builder.Configuration);
-InfrastructureCompositionExtensions.AddInfrastructureSeeders(builder.Services);
+builder.Services.AddInfrastructurePersistence(builder.Configuration);
+builder.Services.AddInfrastructureSeeders();
 
 // Data Protection - persistent key storage for containerized environments
 builder.Services.AddDataProtectionConfiguration(builder.Configuration);

@@ -1,5 +1,6 @@
 ﻿using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Data.Seeders;
+using ECommerce.Infrastructure.Integration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,14 @@ public static class InfrastructureCompositionExtensions
             options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
+
+            services.AddDbContext<IntegrationPersistenceDbContext>(options =>
+            {
+                options.UseNpgsql(connectionString);
+
+                options.ConfigureWarnings(warnings => warnings
+                .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+            });
 
         return services;
     }

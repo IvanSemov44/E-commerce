@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Integration;
 
-public sealed class DeadLetterReplayService(AppDbContext dbContext) : IDeadLetterReplayService
+public sealed class DeadLetterReplayService(IntegrationPersistenceDbContext dbContext) : IDeadLetterReplayService
 {
     public async Task<Result<DeadLetterPageDto>> GetDeadLettersAsync(
         int page,

@@ -54,7 +54,7 @@ public sealed class OutboxDispatcherHostedService(
         var utcNow = DateTime.UtcNow;
 
         await using var scope = serviceScopeFactory.CreateAsyncScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<IntegrationPersistenceDbContext>();
         var integrationEventBus = scope.ServiceProvider.GetRequiredService<IIntegrationEventBus>();
 
         var pendingMessages = await dbContext.Set<OutboxMessage>()
