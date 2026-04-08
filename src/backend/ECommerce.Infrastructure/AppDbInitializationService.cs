@@ -1,5 +1,4 @@
 ﻿using ECommerce.Infrastructure.Data;
-using ECommerce.Infrastructure.Data.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -13,16 +12,15 @@ public interface IAppDbInitializationService
 
 public sealed class AppDbInitializationService(
     AppDbContext context,
-    DatabaseSeeder seeder,
     ILogger<AppDbInitializationService> logger) : IAppDbInitializationService
 {
     public async Task InitializeAsync(IHostEnvironment environment, CancellationToken cancellationToken = default)
     {
         await ApplyMigrationsAsync(cancellationToken);
 
-        // Integration tests seed deterministic data in TestWebApplicationFactory.
-        if (!environment.IsEnvironment("Test"))
-            await SeedDatabaseAsync(environment);
+        // PR5 narrow slice: shared AppDb seeding is retired.
+        // Bounded contexts own their own seed strategies and startup assumptions.
+        logger.LogInformation("Shared AppDb seeding is disabled. Context-owned seed paths must be used.");
     }
 
     private async Task ApplyMigrationsAsync(CancellationToken cancellationToken)
@@ -68,17 +66,4 @@ public sealed class AppDbInitializationService(
         }
     }
 
-    private async Task SeedDatabaseAsync(IHostEnvironment environment)
-    {
-        try
-        {
-            logger.LogInformation("Seeding database with sample data...");
-            await seeder.SeedAsync(context, environment);
-            logger.LogInformation("Database seeding completed.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "An error occurred while seeding database.");
-        }
-    }
 }

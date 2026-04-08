@@ -77,6 +77,36 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     {
         base.OnModelCreating(modelBuilder);
 
+        var providerName = Database.ProviderName ?? string.Empty;
+        var enableLegacyBusinessMappings = providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
+
+        if (!enableLegacyBusinessMappings)
+        {
+            // PR5 narrow slice: AppDbContext is platform-only at runtime.
+            modelBuilder.Ignore<User>();
+            modelBuilder.Ignore<RefreshToken>();
+            modelBuilder.Ignore<Address>();
+            modelBuilder.Ignore<Category>();
+            modelBuilder.Ignore<Product>();
+            modelBuilder.Ignore<ProductImage>();
+            modelBuilder.Ignore<Review>();
+            modelBuilder.Ignore<Cart>();
+            modelBuilder.Ignore<CartItem>();
+            modelBuilder.Ignore<Wishlist>();
+            modelBuilder.Ignore<Order>();
+            modelBuilder.Ignore<OrderItem>();
+            modelBuilder.Ignore<ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode>();
+            modelBuilder.Ignore<ECommerce.SharedKernel.Entities.InventoryLog>();
+            modelBuilder.Ignore<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryItem>();
+
+            // Integration reliability persistence is owned by IntegrationPersistenceDbContext.
+            modelBuilder.Ignore<OutboxMessage>();
+            modelBuilder.Ignore<DeadLetterMessage>();
+            modelBuilder.Ignore<OrderFulfillmentSagaState>();
+            modelBuilder.Ignore<InboxMessage>();
+            return;
+        }
+
         // Apply all entity configurations from the Configurations namespace
         // Each configuration class handles its own entity's mapping and conventions
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserConfiguration).Assembly);

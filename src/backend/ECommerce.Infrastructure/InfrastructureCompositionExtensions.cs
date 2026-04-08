@@ -1,5 +1,4 @@
 ﻿using ECommerce.Infrastructure.Data;
-using ECommerce.Infrastructure.Data.Seeders;
 using ECommerce.Infrastructure.Integration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -46,11 +45,7 @@ public static class InfrastructureCompositionExtensions
 
     public static IServiceCollection AddInfrastructureSeeders(this IServiceCollection services)
     {
-        services.AddScoped<IUserSeeder, UserSeeder>();
-        services.AddScoped<ICategorySeeder, CategorySeeder>();
-        services.AddScoped<IProductSeeder, ProductSeeder>();
-        services.AddScoped<DatabaseSeeder>();
-
+        // PR5 narrow slice: shared AppDb seeders are retired in favor of context-owned seed paths.
         return services;
     }
 }
