@@ -1,6 +1,6 @@
 # Phase 10 Temporary Bridge Register
 
-Status: Draft for PR 1
+Status: Completed (all registered bridges removed)
 Owner: @ivans
 Created: 2026-04-08
 

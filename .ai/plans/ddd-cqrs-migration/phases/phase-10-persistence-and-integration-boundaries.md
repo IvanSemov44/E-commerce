@@ -1,9 +1,27 @@
 # Phase 10: Persistence Ownership and Integration Boundary Hardening
 
-Status: In progress (kickoff baseline complete)
+Status: Completed
 Owner: @ivans
 Created: 2026-04-08
 Last updated: 2026-04-08
+
+## Completion summary
+
+Phase 10 is complete.
+
+Key outcomes delivered:
+
+- Temporary bridges BR-001 through BR-005 are closed in the bridge register.
+- Shared AppDbContext business/runtime bridge usage was removed from active migration targets.
+- Cross-context transaction choreography was removed from business command flow.
+- Integration reliability persistence was isolated into dedicated integration context wiring.
+- Startup and data-protection composition were hardened to reduce API-level shared-context coupling.
+
+Validation evidence (across slices):
+
+- `dotnet build src/backend/ECommerce.API/ECommerce.API.csproj` succeeded on final slices.
+- Targeted payment/integration characterization gates used during cutovers remained green.
+- Bridge register contains per-bridge closure notes and test gates.
 
 ## Kickoff baseline completed
 
