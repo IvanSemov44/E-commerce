@@ -47,10 +47,9 @@ This folder is the single source of truth for how tests are written, organised, 
 | **Vitest** | 3.2.4 | Test runner | State of the art — fast, Vite-native, browser mode available. |
 | **@testing-library/react** | 16.3.2 | Component rendering | Latest, React 19-ready. |
 | **@testing-library/user-event** | 14.6.1 | User interaction simulation | Uses pointer events API. Always prefer over `fireEvent`. |
-| **MSW v2** | 2.13.2 | HTTP interception | Installed. Server infrastructure exists in `src/shared/lib/test/msw-server.ts`. Lifecycle hooks wired in `setup.ts`. What remains: migrate existing `vi.mock` component tests to MSW handlers (52 test files). |
-| **@playwright/test** | 1.58.2 | E2E browser automation | Very recent. Excellent. |
+| **MSW v2** | 2.13.2 | HTTP interception | Installed. Server infrastructure exists in `src/shared/lib/test/msw-server.ts`. Lifecycle hooks wired in `setup.ts`. Strict mode enabled (`onUnhandledRequest: 'error'`). ~30 test files migrated to MSW, some tests use hybrid vi.mock + MSW approach. |
 
-**MSW — infrastructure complete, migration pending.** `msw-server.ts` exists, lifecycle hooks are wired in `setup.ts`. The 52 test files that still use `vi.mock` for RTK Query hooks are technical debt to be migrated incrementally per feature (see Phase T-8).
+**MSW — infrastructure complete, migration in progress.** `msw-server.ts` exists, lifecycle hooks are wired in `setup.ts`. Strict mode enabled (`onUnhandledRequest: 'error'`). ~30 test files migrated from `vi.mock` to MSW handlers. Some tests use hybrid approach where vi.mock handles specific behaviors while MSW handles HTTP. Phase T-8 partially complete.
 
 **BrowserRouter — RESOLVED.** `test-utils.tsx` now uses `MemoryRouter`.
 
@@ -101,10 +100,10 @@ Pre-written, context-rich prompts for generating each test type. Use these inste
 | Phase | Goal | Status |
 |---|---|---|
 | T-1 | Foundation docs (this folder) | ✅ Done |
-| T-2 | Standardise BC handler coverage (Shopping, Ordering gaps) | Pending |
+| T-2 | Standardise BC handler coverage (Shopping, Ordering gaps) | ✅ Done (Shopping) |
 | T-3 | Fill projection sync gaps (all event types: insert/update/delete) | Pending |
 | T-4 | Integration test health (every endpoint: 200 + 400 + 401/403) | Pending |
 | T-5 | Coverage enforcement in CI (coverlet thresholds per project) | Pending |
 | T-6 | Migrate FluentAssertions → Shouldly across all projects | ✅ Done |
 | T-7 | Add MSW + fix BrowserRouter in frontend test-utils | ✅ Done |
-| T-8 | Migrate vi.mock RTK Query tests to MSW (52 files, do incrementally per feature) | Pending |
+| T-8 | Migrate vi.mock RTK Query tests to MSW (~30 files migrated, strict mode enabled) | In Progress |
