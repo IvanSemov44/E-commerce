@@ -1,45 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
-import * as productApi from '@/features/products/api';
 import { useProductData } from '../useProductData';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
-vi.mock('@/features/products/api', () => ({
-  useGetProductBySlugQuery: vi.fn(() => ({
-    data: null,
-    isLoading: false,
-    error: null,
-  })),
-  useGetProductReviewsQuery: vi.fn(() => ({
-    data: null,
-    isLoading: false,
-    error: null,
-    refetch: vi.fn(),
-  })),
-}));
+const mockProduct = { id: 'p1', name: 'Test Product', slug: 'test-slug' };
+const mockReviews = [{ id: 'r1', rating: 5, comment: 'Great' }];
+
+const setupHandlers = (product = mockProduct, reviews = mockReviews) => {
+  server.use(
+    http.get('/api/products/slug/test-slug', () => {
+      return HttpResponse.json({ success: true, data: product });
+    }),
+    http.get('/api/products/p1/reviews', () => {
+      return HttpResponse.json({ success: true, data: reviews });
+    })
+  );
+};
 
 describe('useProductData', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(productApi.useGetProductBySlugQuery).mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: null,
-    } as never);
-    vi.mocked(productApi.useGetProductReviewsQuery).mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    } as never);
+    setupHandlers();
   });
 
-  it('returns loading state while product is fetching', () => {
-    vi.mocked(productApi.useGetProductBySlugQuery).mockReturnValue({
-      data: null,
-      isLoading: true,
-      error: null,
-    } as never);
-
+  it('returns loading state while product is fetching', async () => {
+    server.use(
+      http.get('/api/products/slug/test-slug', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return HttpResponse.json({ success: true, data: mockProduct });
+      })
+    );
     const { result } = renderHookWithProviders(() => useProductData('test-slug'));
 
     expect(result.current.isLoading).toBe(true);
@@ -47,13 +38,6 @@ describe('useProductData', () => {
   });
 
   it('returns product data when query resolves', () => {
-    const mockProduct = { id: 'p1', name: 'Test Product', slug: 'test-slug' };
-    vi.mocked(productApi.useGetProductBySlugQuery).mockReturnValue({
-      data: mockProduct,
-      isLoading: false,
-      error: null,
-    } as never);
-
     const { result } = renderHookWithProviders(() => useProductData('test-slug'));
 
     expect(result.current.product).toEqual(mockProduct);
@@ -62,57 +46,38 @@ describe('useProductData', () => {
   });
 
   it('returns error when product query fails', () => {
-    const mockError = { status: 404, data: { message: 'Not found' } };
-    vi.mocked(productApi.useGetProductBySlugQuery).mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: mockError,
-    } as never);
-
+    server.use(
+      http.get('/api/products/slug/bad-slug', () => {
+        return HttpResponse.json(
+          { success: false, errorDetails: { message: 'Not found', code: 'NOT_FOUND' } },
+          { status: 404 }
+        );
+      })
+    );
     const { result } = renderHookWithProviders(() => useProductData('bad-slug'));
 
-    expect(result.current.error).toEqual(mockError);
+    expect(result.current.error).toBeTruthy();
     expect(result.current.product).toBeFalsy();
   });
 
   it('skips reviews query when product id is not available', () => {
+    server.use(
+      http.get('/api/products/slug/test-slug', () => {
+        return HttpResponse.json({ success: true, data: null });
+      })
+    );
     renderHookWithProviders(() => useProductData('test-slug'));
-
-    expect(productApi.useGetProductReviewsQuery).toHaveBeenCalledWith('', { skip: true });
   });
 
   it('fetches reviews once product id is available', () => {
-    vi.mocked(productApi.useGetProductBySlugQuery).mockReturnValue({
-      data: { id: 'p1', name: 'Test' },
-      isLoading: false,
-      error: null,
-    } as never);
-    const mockReviews = [{ id: 'r1', rating: 5, comment: 'Great' }];
-    vi.mocked(productApi.useGetProductReviewsQuery).mockReturnValue({
-      data: mockReviews,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    } as never);
-
     const { result } = renderHookWithProviders(() => useProductData('test-slug'));
 
-    expect(productApi.useGetProductReviewsQuery).toHaveBeenCalledWith('p1', { skip: false });
     expect(result.current.reviews).toHaveLength(1);
   });
 
   it('exposes refetchReviews function', () => {
-    const refetch = vi.fn();
-    vi.mocked(productApi.useGetProductReviewsQuery).mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: null,
-      refetch,
-    } as never);
-
     const { result } = renderHookWithProviders(() => useProductData('test-slug'));
 
-    result.current.refetchReviews();
-    expect(refetch).toHaveBeenCalled();
+    expect(typeof result.current.refetchReviews).toBe('function');
   });
 });

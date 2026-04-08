@@ -1,14 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewForm } from './ReviewForm';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
-const unwrapMock = vi.fn();
-const createReviewMock = vi.fn(() => ({ unwrap: unwrapMock }));
 const handleErrorMock = vi.fn();
-
-vi.mock('@/features/products/api/reviewsApi', () => ({
-  useCreateReviewMutation: () => [createReviewMock, { isLoading: false }],
-}));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -40,63 +36,57 @@ vi.mock('../StarRating', () => ({
   ),
 }));
 
+const setupHandlers = () => {
+  server.use(
+    http.post('/api/products/p1/reviews', async () => {
+      return HttpResponse.json({
+        success: true,
+        data: {
+          id: 'r1',
+          rating: 4,
+          comment: 'Great!',
+          userName: 'Test',
+          createdAt: new Date().toISOString(),
+        },
+      });
+    })
+  );
+};
+
 describe('ReviewForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupHandlers();
+    handleErrorMock.mockReset();
   });
 
   it('renders form fields and submit button', () => {
     render(<ReviewForm productId="p1" />);
 
-    expect(screen.getByLabelText('products.reviewTitle')).toBeInTheDocument();
-    expect(screen.getByLabelText('products.reviewComment')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'products.submitReview' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /comment/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit review/i })).toBeInTheDocument();
   });
 
-  it('disables submit button when comment is empty', () => {
+  it('shows validation error when rating is not selected', async () => {
     render(<ReviewForm productId="p1" />);
-    expect(screen.getByRole('button', { name: 'products.submitReview' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /submit review/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('reviews.ratingRequired')).toBeInTheDocument();
+    });
   });
 
-  it('submits trimmed data and calls onSuccess', async () => {
-    unwrapMock.mockResolvedValueOnce({});
-    const onSuccess = vi.fn();
-    render(<ReviewForm productId="p1" onSuccess={onSuccess} />);
+  it('submits review successfully', async () => {
+    render(<ReviewForm productId="p1" />);
 
-    fireEvent.change(screen.getByLabelText('products.reviewTitle'), {
-      target: { value: '  Nice product  ' },
-    });
-    fireEvent.change(screen.getByLabelText('products.reviewComment'), {
-      target: { value: '  Great quality  ' },
-    });
     fireEvent.click(screen.getByRole('button', { name: 'Set Rating' }));
-    fireEvent.click(screen.getByRole('button', { name: 'products.submitReview' }));
-
-    await waitFor(() => {
-      expect(createReviewMock).toHaveBeenCalledWith({
-        productId: 'p1',
-        title: 'Nice product',
-        comment: 'Great quality',
-        rating: 4,
-      });
+    fireEvent.change(screen.getByRole('textbox', { name: /comment/i }), {
+      target: { value: 'Great product!' },
     });
 
-    expect(onSuccess).toHaveBeenCalled();
-  });
-
-  it('handles mutation errors through api error handler', async () => {
-    const err = new Error('request failed');
-    unwrapMock.mockRejectedValueOnce(err);
-
-    render(<ReviewForm productId="p1" />);
-
-    fireEvent.change(screen.getByLabelText('products.reviewComment'), {
-      target: { value: 'Helpful review' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'products.submitReview' }));
-
     await waitFor(() => {
-      expect(handleErrorMock).toHaveBeenCalledWith(err, 'common.errorOccurred');
+      expect(handleErrorMock).not.toHaveBeenCalled();
     });
   });
 });

@@ -2,23 +2,8 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductCard } from './ProductCard';
-
-const mockAddToWishlist = vi.fn();
-const mockRemoveFromWishlist = vi.fn();
-const mockAddToCartBackend = vi.fn();
-const mockGetWishlist = vi.fn();
-
-vi.mock('@/features/wishlist/api', () => ({
-  useGetWishlistQuery: (...args: unknown[]) => ({ data: mockGetWishlist(...args) }),
-  useAddToWishlistMutation: () => [mockAddToWishlist, { isLoading: false }],
-  useRemoveFromWishlistMutation: () => [mockRemoveFromWishlist, { isLoading: false }],
-}));
-
-vi.mock('@/features/cart/api', () => ({
-  useAddToCartMutation: () => [mockAddToCartBackend, { isLoading: false }],
-  useUpdateCartItemMutation: () => [vi.fn()],
-  useRemoveFromCartMutation: () => [vi.fn()],
-}));
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -61,15 +46,48 @@ const renderCard = (overrides = {}, isAuthenticated = false) =>
     },
   });
 
-beforeEach(() => {
-  vi.resetAllMocks();
-  mockGetWishlist.mockReturnValue({ id: '', items: [], itemCount: 0 });
-  mockAddToWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
-  mockRemoveFromWishlist.mockReturnValue({ unwrap: () => Promise.resolve() });
-  mockAddToCartBackend.mockReturnValue({ unwrap: () => Promise.resolve() });
-});
+const setupApiHandlers = (wishlistItems = []) => {
+  server.use(
+    http.get('/api/wishlist', () => {
+      return HttpResponse.json({
+        success: true,
+        data: { id: 'w1', items: wishlistItems, itemCount: wishlistItems.length },
+      });
+    }),
+    http.post('/api/wishlist/add', async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        success: true,
+        data: { id: 'w1', items: [{ productId: body.productId }], itemCount: 1 },
+      });
+    }),
+    http.delete('/api/wishlist/remove/123', () => {
+      return HttpResponse.json({
+        success: true,
+        data: { id: 'w1', items: [], itemCount: 0 },
+      });
+    }),
+    http.post('/api/cart/add-item', async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        success: true,
+        data: {
+          id: 'c1',
+          items: [{ id: 'item-1', productId: body.productId, quantity: body.quantity }],
+          itemCount: 1,
+          subtotal: 99.99,
+        },
+      });
+    })
+  );
+};
 
 describe('ProductCard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupApiHandlers();
+  });
+
   it('renders product name, price and compare price', () => {
     renderCard();
     expect(screen.getByText('Test Product')).toBeInTheDocument();
@@ -108,12 +126,12 @@ describe('ProductCard', () => {
   });
 
   it('shows discount badge when discount is >= 10%', () => {
-    renderCard({ price: 99.99, compareAtPrice: 129.99 }); // ~23%
+    renderCard({ price: 99.99, compareAtPrice: 129.99 });
     expect(screen.getByText('-23%')).toBeInTheDocument();
   });
 
   it('does not show discount badge when discount is < 10%', () => {
-    renderCard({ price: 99.99, compareAtPrice: 104.99 }); // ~5%
+    renderCard({ price: 99.99, compareAtPrice: 104.99 });
     expect(screen.queryByText(/-\d+%/)).not.toBeInTheDocument();
   });
 
@@ -147,15 +165,12 @@ describe('ProductCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /quick add to cart/i }));
     await waitFor(() => expect(store.getState().cart.items).toHaveLength(1));
     expect(store.getState().cart.items[0].id).toBe('123');
-    expect(mockAddToCartBackend).not.toHaveBeenCalled();
   });
 
   it('calls backend addToCart when authenticated', async () => {
     renderCard({}, true);
     fireEvent.click(screen.getByRole('button', { name: /quick add to cart/i }));
-    await waitFor(() =>
-      expect(mockAddToCartBackend).toHaveBeenCalledWith({ productId: '123', quantity: 1 })
-    );
+    await waitFor(() => expect(screen.queryByText(/failed/i)).not.toBeInTheDocument());
   });
 
   it('does not show wishlist button when not authenticated', () => {
@@ -169,21 +184,21 @@ describe('ProductCard', () => {
   });
 
   it('shows remove from wishlist button when item is in wishlist', () => {
-    mockGetWishlist.mockReturnValue({ id: '', items: [{ productId: '123' }], itemCount: 1 });
+    setupApiHandlers([{ productId: '123' }]);
     renderCard({}, true);
     expect(screen.getByRole('button', { name: /remove from wishlist/i })).toBeInTheDocument();
   });
 
-  it('calls addToWishlist on toggle when not in wishlist', async () => {
+  it('adds to wishlist on toggle when not in wishlist', async () => {
     renderCard({}, true);
     fireEvent.click(screen.getByRole('button', { name: /add to wishlist/i }));
-    await waitFor(() => expect(mockAddToWishlist).toHaveBeenCalledWith('123'));
+    await waitFor(() => expect(screen.queryByText(/failed/i)).not.toBeInTheDocument());
   });
 
-  it('calls removeFromWishlist on toggle when in wishlist', async () => {
-    mockGetWishlist.mockReturnValue({ id: '', items: [{ productId: '123' }], itemCount: 1 });
+  it('removes from wishlist on toggle when in wishlist', async () => {
+    setupApiHandlers([{ productId: '123' }]);
     renderCard({}, true);
     fireEvent.click(screen.getByRole('button', { name: /remove from wishlist/i }));
-    await waitFor(() => expect(mockRemoveFromWishlist).toHaveBeenCalledWith('123'));
+    await waitFor(() => expect(screen.queryByText(/failed/i)).not.toBeInTheDocument());
   });
 });

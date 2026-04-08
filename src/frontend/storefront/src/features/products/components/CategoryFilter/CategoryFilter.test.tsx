@@ -1,6 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router';
+import { Provider } from 'react-redux';
+import { setupStore } from '@/shared/lib/test/test-utils';
 import { CategoryFilter } from './CategoryFilter';
 
 const getTopLevelCategoriesQueryMock = vi.fn();
@@ -15,15 +17,22 @@ vi.mock('react-i18next', () => ({
 
 function renderCategoryFilter(url = '/') {
   return render(
-    <MemoryRouter initialEntries={[url]}>
-      <Routes>
-        <Route path="*" element={<CategoryFilter />} />
-      </Routes>
-    </MemoryRouter>
+    <Provider store={setupStore()}>
+      <MemoryRouter initialEntries={[url]}>
+        <Routes>
+          <Route path="*" element={<CategoryFilter />} />
+        </Routes>
+      </MemoryRouter>
+    </Provider>
   );
 }
 
 describe('CategoryFilter', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getTopLevelCategoriesQueryMock.mockReturnValue({ data: [], isLoading: false, error: null });
+  });
+
   it('shows loading state', () => {
     getTopLevelCategoriesQueryMock.mockReturnValue({ data: [], isLoading: true, error: null });
     renderCategoryFilter();

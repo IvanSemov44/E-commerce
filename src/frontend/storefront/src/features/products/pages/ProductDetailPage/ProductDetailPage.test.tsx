@@ -1,40 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductDetailPage } from './ProductDetailPage';
-import * as useProductDataModule from '@/features/products/hooks/useProductData';
-
-vi.mock('@/features/products/hooks/useProductData', () => ({
-  useProductData: vi.fn(),
-}));
-
-vi.mock('@/features/products/api', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/products/api')>();
-  return {
-    ...actual,
-    useCreateReviewMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-    useGetProductReviewsQuery: vi.fn(() => ({ data: [], isLoading: false, error: undefined })),
-    useGetMyReviewsQuery: vi.fn(() => ({ data: [], isLoading: false, error: undefined })),
-  };
-});
-
-vi.mock('@/features/wishlist/api', () => ({
-  useGetWishlistQuery: vi.fn(() => ({ data: undefined })),
-  useAddToWishlistMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-  useRemoveFromWishlistMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-}));
-
-vi.mock('@/features/cart/api', () => ({
-  useAddToCartMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-  useUpdateCartItemMutation: () => [vi.fn()],
-  useRemoveFromCartMutation: () => [vi.fn()],
-}));
-
-vi.mock('@/shared/hooks', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/shared/hooks')>();
-  return { ...actual, usePerformanceMonitor: vi.fn() };
-});
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 const mockProduct = {
   id: 'p1',
@@ -90,155 +60,98 @@ const render = (
     { preloadedState, withRouter: false }
   );
 
+const setupProductHandlers = (product = mockProduct, reviews = mockReviews) => {
+  server.use(
+    http.get('/api/products/slug/detailed-product', () => {
+      return HttpResponse.json({
+        success: true,
+        data: product,
+      });
+    }),
+    http.get('/api/products/p1/reviews', () => {
+      return HttpResponse.json({
+        success: true,
+        data: reviews,
+      });
+    })
+  );
+};
+
 describe('ProductDetailPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    setupProductHandlers();
   });
 
-  it('shows skeleton while product is loading', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: undefined,
-      isLoading: true,
-      error: undefined,
-      reviews: undefined,
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
+  it('shows skeleton while product is loading', async () => {
+    server.use(
+      http.get('/api/products/slug/detailed-product', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return HttpResponse.json({ success: true, data: mockProduct });
+      })
+    );
     render();
-
     const skeletonItems = document.querySelectorAll('[aria-busy="true"]');
     expect(skeletonItems.length).toBeGreaterThan(0);
   });
 
   it('shows error state when product query fails', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: undefined,
-      isLoading: false,
-      error: { status: 404, data: { message: 'Not found' } },
-      reviews: undefined,
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
+    server.use(
+      http.get('/api/products/slug/detailed-product', () => {
+        return HttpResponse.json(
+          { success: false, errorDetails: { message: 'Not found', code: 'NOT_FOUND' } },
+          { status: 404 }
+        );
+      })
+    );
     render();
-
     expect(screen.getByText(/failed to load/i)).toBeInTheDocument();
   });
 
   it('shows empty state when product is not found', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: null,
-      isLoading: false,
-      error: undefined,
-      reviews: undefined,
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
+    server.use(
+      http.get('/api/products/slug/detailed-product', () => {
+        return HttpResponse.json({ success: false, errorDetails: null }, { status: 404 });
+      })
+    );
     render();
-
     expect(screen.getByText(/not found/i)).toBeInTheDocument();
   });
 
   it('renders product name when loaded', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: mockProduct,
-      isLoading: false,
-      error: undefined,
-      reviews: [],
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
     render();
-
     expect(screen.getByText('Detailed Product')).toBeInTheDocument();
   });
 
   it('renders product image gallery', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: mockProduct,
-      isLoading: false,
-      error: undefined,
-      reviews: [],
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
     render();
-
     const img = screen.getByRole('img', { name: 'Detailed Product' });
     expect(img).toBeInTheDocument();
   });
 
   it('shows review form when authenticated', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: mockProduct,
-      isLoading: false,
-      error: undefined,
-      reviews: [],
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
     render({ auth: authAuthenticated, cart: { items: [], lastUpdated: 0 } });
-
     expect(screen.getByText(/write a review/i)).toBeInTheDocument();
   });
 
   it('hides review form when not authenticated', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: mockProduct,
-      isLoading: false,
-      error: undefined,
-      reviews: [],
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
     render({ auth: authUnauthenticated, cart: { items: [], lastUpdated: 0 } });
-
     expect(screen.queryByText(/write a review/i)).not.toBeInTheDocument();
   });
 
   it('renders review list with reviews', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: mockProduct,
-      isLoading: false,
-      error: undefined,
-      reviews: mockReviews,
-      reviewsLoading: false,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
     render();
-
     expect(screen.getByText('Excellent product!')).toBeInTheDocument();
     expect(screen.getByText(/alice/i)).toBeInTheDocument();
   });
 
-  it('shows reviews skeleton while reviews are loading', () => {
-    vi.mocked(useProductDataModule.useProductData).mockReturnValue({
-      product: mockProduct,
-      isLoading: false,
-      error: undefined,
-      reviews: undefined,
-      reviewsLoading: true,
-      reviewsError: undefined,
-      refetchReviews: vi.fn(),
-    } as never);
-
+  it('shows reviews skeleton while reviews are loading', async () => {
+    server.use(
+      http.get('/api/products/p1/reviews', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return HttpResponse.json({ success: true, data: mockReviews });
+      })
+    );
     render();
-
     const skeletonItems = document.querySelectorAll('[aria-busy="true"]');
     expect(skeletonItems.length).toBeGreaterThan(0);
   });
