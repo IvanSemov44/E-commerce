@@ -2,10 +2,7 @@
 using ECommerce.API.HealthChecks;
 using ECommerce.API.Middleware;
 using ECommerce.API.Services;
-using ECommerce.Infrastructure.Data;
-using ECommerce.Infrastructure.Data.Seeders;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 
@@ -26,16 +23,8 @@ public static class ApplicationBuilderExtensions
 
         try
         {
-            var context = services.GetRequiredService<AppDbContext>();
-            await ApplyMigrationsAsync(context);
-
-            // Integration tests seed their own deterministic dataset in TestWebApplicationFactory.
-            // Skipping app-level seed avoids duplicate work and startup overhead.
-            if (!app.Environment.IsEnvironment("Test"))
-            {
-                await SeedDatabaseAsync(context, services, app.Environment);
-                await BackfillReviewsProductProjectionsAsync(services);
-            }
+            var initializationService = services.GetRequiredService<AppDbContextInitializationService>();
+            await initializationService.InitializeAsync(app.Environment);
         }
         catch (Exception ex)
         {
@@ -140,99 +129,6 @@ public static class ApplicationBuilderExtensions
 
         return app;
     }
-
-    #region Private Methods
-
-    private static async Task ApplyMigrationsAsync(AppDbContext context)
-    {
-        try
-        {
-            var providerName = context.Database.ProviderName ?? string.Empty;
-            if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ||
-                !context.Database.IsRelational())
-            {
-                Log.Information("Skipping migration/schema validation for non-relational provider: {Provider}", providerName);
-                return;
-            }
-
-            var pendingMigrations = await GetPendingMigrationsSafeAsync(context);
-
-            if (pendingMigrations.Any())
-            {
-                Log.Information("Applying pending migrations... Count: {Count}", pendingMigrations.Count());
-                foreach (var migration in pendingMigrations)
-                {
-                    Log.Information("Pending migration: {Migration}", migration);
-                }
-                await context.Database.MigrateAsync();
-                Log.Information("Migrations applied successfully.");
-            }
-            else
-            {
-                Log.Information("No pending migrations found.");
-            }
-
-            // Validate schema consistency
-            await DatabaseSchemaValidator.ValidateAsync(context);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to apply database migrations.");
-            throw;
-        }
-    }
-
-    private static async Task<IEnumerable<string>> GetPendingMigrationsSafeAsync(AppDbContext context)
-    {
-        try
-        {
-            return await Task.Run(() => context.Database.GetPendingMigrations());
-        }
-        catch (InvalidOperationException)
-        {
-            return Enumerable.Empty<string>();
-        }
-        catch (Exception ex) when (ex.Message.Contains("__EFMigrationsHistory") ||
-                                   ex.InnerException?.Message.Contains("__EFMigrationsHistory") == true)
-        {
-            // Migration history table doesn't exist - return all migrations as pending
-            Log.Information("Migration history table does not exist, all migrations will be applied.");
-            return await Task.Run(() => context.Database.GetMigrations());
-        }
-    }
-
-    private static async Task SeedDatabaseAsync(
-        AppDbContext context,
-        IServiceProvider services,
-        IWebHostEnvironment environment)
-    {
-        try
-        {
-            Log.Information("Seeding database with sample data...");
-            var seeder = services.GetRequiredService<DatabaseSeeder>();
-            await seeder.SeedAsync(context, environment);
-            Log.Information("Database seeding completed.");
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "An error occurred while seeding database.");
-        }
-    }
-
-    private static async Task BackfillReviewsProductProjectionsAsync(IServiceProvider services)
-    {
-        try
-        {
-            var backfillService = services.GetRequiredService<ReviewsProductProjectionBackfillService>();
-            await backfillService.BackfillAsync();
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "An error occurred while backfilling Reviews product projections.");
-        }
-    }
-
-    #endregion
 }
 
 

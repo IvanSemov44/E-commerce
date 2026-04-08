@@ -317,6 +317,7 @@ public static class ServiceCollectionExtensions
 
         // Domain services
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<AppDbContextInitializationService>();
         services.AddScoped<ReviewsProductProjectionBackfillService>();
 
         services.AddSingleton<IIdempotencyStore, DistributedIdempotencyStore>();
