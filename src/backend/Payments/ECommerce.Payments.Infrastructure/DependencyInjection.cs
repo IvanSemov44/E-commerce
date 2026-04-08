@@ -15,8 +15,8 @@ public static class DependencyInjection
         services.AddDbContext<PaymentsDbContext>((serviceProvider, options) =>
         {
             var configuration = serviceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
-            var connectionString = configuration["ConnectionStrings:DefaultConnection"]
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+            var connectionString = configuration.GetConnectionString("PaymentsConnection")
+                ?? throw new InvalidOperationException("Connection string 'PaymentsConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
             options.ConfigureWarnings(warnings => warnings

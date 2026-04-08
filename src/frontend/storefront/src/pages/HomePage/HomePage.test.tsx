@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { HomePage } from './HomePage';
 import { server } from '@/shared/lib/test/msw-server';
 import { http, HttpResponse } from 'msw';
@@ -181,13 +182,18 @@ const setupHandlers = (
 };
 
 const renderWithProviders = (component: React.ReactElement) => {
-  return render(<MemoryRouter>{component}</MemoryRouter>);
+  return renderWithProviders(<MemoryRouter>{component}</MemoryRouter>);
 };
 
 describe('HomePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    server.resetHandlers();
     setupHandlers([], [], []);
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   describe('rendering', () => {

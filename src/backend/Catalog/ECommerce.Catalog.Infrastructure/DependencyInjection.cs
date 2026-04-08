@@ -17,8 +17,7 @@ public static class CatalogInfrastructureServiceExtensions
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
             var connectionString = configuration.GetConnectionString("CatalogConnection")
-                ?? configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'CatalogConnection' or 'DefaultConnection' is not configured.");
+                ?? throw new InvalidOperationException("Connection string 'CatalogConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
             options.ConfigureWarnings(warnings => warnings

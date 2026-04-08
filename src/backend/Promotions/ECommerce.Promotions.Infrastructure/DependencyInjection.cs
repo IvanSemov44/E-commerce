@@ -18,8 +18,7 @@ public static class DependencyInjection
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
             var connectionString = configuration.GetConnectionString("PromotionsConnection")
-                ?? configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'PromotionsConnection' or 'DefaultConnection' is not configured.");
+                ?? throw new InvalidOperationException("Connection string 'PromotionsConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
             options.ConfigureWarnings(warnings => warnings

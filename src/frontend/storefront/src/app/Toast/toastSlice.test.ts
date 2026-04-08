@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import reducer, { addToast, removeToast, clearToasts, type ToastState } from './toastSlice';
+import {
+  toastReducer as reducer,
+  addToast,
+  removeToast,
+  clearToasts,
+  type ToastState,
+} from './toastSlice';
 
 describe('toastSlice', () => {
   it('adds toast', () => {

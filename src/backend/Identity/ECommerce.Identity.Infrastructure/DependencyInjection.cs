@@ -17,8 +17,7 @@ public static class DependencyInjection
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
             var connectionString = configuration.GetConnectionString("IdentityConnection")
-                ?? configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'IdentityConnection' or 'DefaultConnection' is not configured.");
+                ?? throw new InvalidOperationException("Connection string 'IdentityConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
             options.ConfigureWarnings(warnings => warnings

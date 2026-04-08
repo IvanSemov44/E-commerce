@@ -87,7 +87,12 @@ const setupWishlistHandlers = (wishlist = mockWishlist) => {
 describe('WishlistPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    server.resetHandlers();
     setupWishlistHandlers();
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   it('shows skeleton while loading', async () => {

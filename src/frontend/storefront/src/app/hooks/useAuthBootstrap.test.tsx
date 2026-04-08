@@ -1,5 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { selectAuthInitialized, selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useAuthBootstrap } from './useAuthBootstrap';
 import { server } from '@/shared/lib/test/msw-server';
@@ -79,7 +80,7 @@ describe('useAuthBootstrap', () => {
       lastName: 'User',
     });
 
-    const { result } = renderHook(() => useAuthBootstrap());
+    const { result } = renderHookWithProviders(() => useAuthBootstrap());
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -89,7 +90,7 @@ describe('useAuthBootstrap', () => {
   it('handles missing user data gracefully', async () => {
     setupHandlers(null);
 
-    const { result } = renderHook(() => useAuthBootstrap());
+    const { result } = renderHookWithProviders(() => useAuthBootstrap());
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
@@ -99,7 +100,7 @@ describe('useAuthBootstrap', () => {
   it('handles API errors gracefully', async () => {
     setupHandlers(null, true);
 
-    const { result } = renderHook(() => useAuthBootstrap());
+    const { result } = renderHookWithProviders(() => useAuthBootstrap());
 
     await waitFor(() => {
       expect(result.current).toBeDefined();

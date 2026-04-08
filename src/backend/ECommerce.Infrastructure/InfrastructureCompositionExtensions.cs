@@ -13,12 +13,15 @@ public static class InfrastructureCompositionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
+        var appDbConnectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+
+        var integrationConnectionString = configuration.GetConnectionString("IntegrationConnection")
+            ?? throw new InvalidOperationException("Connection string 'IntegrationConnection' is not configured.");
 
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseNpgsql(connectionString, npgsqlOptions =>
+            options.UseNpgsql(appDbConnectionString, npgsqlOptions =>
             {
                 // SplitQuery avoids cartesian explosion on multi-include read paths.
                 npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
@@ -30,7 +33,7 @@ public static class InfrastructureCompositionExtensions
 
         services.AddDbContext<IntegrationPersistenceDbContext>(options =>
         {
-            options.UseNpgsql(connectionString);
+            options.UseNpgsql(integrationConnectionString);
 
             options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));

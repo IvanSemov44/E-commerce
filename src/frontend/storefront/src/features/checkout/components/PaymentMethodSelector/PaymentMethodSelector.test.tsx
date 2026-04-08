@@ -27,7 +27,12 @@ const setupPaymentMethodsHandlers = (methods = mockMethods) => {
 describe('PaymentMethodSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    server.resetHandlers();
     setupPaymentMethodsHandlers();
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   it('renders available payment methods', () => {
