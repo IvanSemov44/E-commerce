@@ -1,4 +1,4 @@
-﻿using ECommerce.SharedKernel.Entities;
+using ECommerce.SharedKernel.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Catalog.Infrastructure.Persistence;
@@ -15,15 +15,6 @@ public class CatalogDbContext(DbContextOptions<CatalogDbContext> options) : DbCo
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.HasDefaultSchema("public");
-        modelBuilder.Entity<Category>().ToTable("Categories");
-        modelBuilder.Entity<Product>().ToTable("Products");
-        modelBuilder.Entity<ProductImage>().ToTable("ProductImages");
-        modelBuilder.Entity<ProductRatingReadModel>(entity =>
-        {
-            entity.HasNoKey();
-            entity.ToTable("Reviews", "public");
-            entity.Property(x => x.ProductId).HasColumnName("ProductId");
-            entity.Property(x => x.Rating).HasColumnName("Rating");
-        });
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(CatalogDbContext).Assembly);
     }
 }

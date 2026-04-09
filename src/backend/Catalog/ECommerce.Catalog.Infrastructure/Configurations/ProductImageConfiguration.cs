@@ -1,4 +1,4 @@
-﻿using ECommerce.Catalog.Domain.Aggregates.Product;
+﻿using ECommerce.SharedKernel.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,10 +10,15 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
     {
         builder.ToTable("ProductImages");
         builder.HasKey(pi => pi.Id);
-        builder.Property(pi => pi.ProductId).IsRequired();
+        builder.Property(pi => pi.ProductId).HasColumnName("ProductId").IsRequired();
         builder.Property(pi => pi.Url).HasMaxLength(2000).IsRequired();
         builder.Property(pi => pi.AltText).HasMaxLength(500).IsRequired(false);
-        builder.Property(pi => pi.IsPrimary).IsRequired();
-        builder.Property(pi => pi.DisplayOrder).IsRequired();
+        builder.Property(pi => pi.IsPrimary).HasColumnName("IsPrimary").IsRequired();
+        builder.Property(pi => pi.SortOrder).HasColumnName("SortOrder").IsRequired();
+
+        builder.HasOne(pi => pi.Product)
+            .WithMany(p => p.Images)
+            .HasForeignKey(pi => pi.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
