@@ -42,57 +42,28 @@ public class DatabaseSchemaValidatorTests
     [TestMethod]
     public void RequiredTables_ContainsExpectedTables()
     {
-        var expectedTables = new[] { "Users", "Products", "Orders", "RefreshTokens", "Categories" };
+        var expectedTables = new[] { "DataProtectionKeys" };
 
-        expectedTables.Length.ShouldBe(5);
-        expectedTables.ShouldContain("Users");
-        expectedTables.ShouldContain("Products");
-        expectedTables.ShouldContain("Orders");
-        expectedTables.ShouldContain("RefreshTokens");
-        expectedTables.ShouldContain("Categories");
+        expectedTables.Length.ShouldBe(1);
+        expectedTables.ShouldContain("DataProtectionKeys");
     }
 
     [TestMethod]
-    public void TablesWithRowVersion_ContainsExpectedTables()
+    public void IntegrationTables_ContainsExpectedTables()
     {
-        var expectedTablesWithRowVersion = new[] { "Users", "Products", "Carts", "Orders", "PromoCodes" };
-
-        expectedTablesWithRowVersion.Length.ShouldBe(5);
-        expectedTablesWithRowVersion.ShouldContain("Users");
-        expectedTablesWithRowVersion.ShouldContain("Products");
-        expectedTablesWithRowVersion.ShouldContain("Carts");
-        expectedTablesWithRowVersion.ShouldContain("Orders");
-        expectedTablesWithRowVersion.ShouldContain("PromoCodes");
-    }
-
-    [TestMethod]
-    public void TablesWithoutRowVersion_ContainsExpectedTables()
-    {
-        var expectedTablesWithoutRowVersion = new[]
+        var expectedIntegrationTables = new[]
         {
-            "RefreshTokens", "Categories", "ProductImages", "Addresses",
-            "CartItems", "OrderItems", "Reviews", "Wishlists", "InventoryLogs"
+            "outbox_messages",
+            "inbox_messages",
+            "dead_letter_messages",
+            "order_fulfillment_saga_states"
         };
 
-        expectedTablesWithoutRowVersion.Length.ShouldBe(9);
-        expectedTablesWithoutRowVersion.ShouldContain("RefreshTokens");
-        expectedTablesWithoutRowVersion.ShouldContain("Categories");
-    }
-
-    [TestMethod]
-    public void CriticalColumns_ContainsExpectedColumns()
-    {
-        var expectedCriticalColumns = new[]
-        {
-            ("RefreshTokens", "Token"),
-            ("RefreshTokens", "UserId"),
-            ("RefreshTokens", "ExpiresAt")
-        };
-
-        expectedCriticalColumns.Length.ShouldBe(3);
-        expectedCriticalColumns.ShouldContain(("RefreshTokens", "Token"));
-        expectedCriticalColumns.ShouldContain(("RefreshTokens", "UserId"));
-        expectedCriticalColumns.ShouldContain(("RefreshTokens", "ExpiresAt"));
+        expectedIntegrationTables.Length.ShouldBe(4);
+        expectedIntegrationTables.ShouldContain("outbox_messages");
+        expectedIntegrationTables.ShouldContain("inbox_messages");
+        expectedIntegrationTables.ShouldContain("dead_letter_messages");
+        expectedIntegrationTables.ShouldContain("order_fulfillment_saga_states");
     }
 
     [TestMethod]

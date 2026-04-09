@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
+using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.SharedKernel.Entities;
-using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -14,16 +14,16 @@ namespace ECommerce.Tests.Unit.Extensions;
 [TestClass]
 public class QueryableExtensionsTests
 {
-    private AppDbContext _context = null!;
+    private CatalogDbContext _context = null!;
     private List<Product> _testProducts = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<CatalogDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        _context = new AppDbContext(options);
+        _context = new CatalogDbContext(options);
 
         SeedTestData();
     }

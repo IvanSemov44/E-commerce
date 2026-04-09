@@ -323,18 +323,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
                 var adminId = Guid.Parse(ConditionalTestAuthHandler.TestAdminUserId);
 
-                db.Users.Add(new User
-                {
-                    Id = userId,
-                    Email = "integration@test.com",
-                    FirstName = "Integration",
-                    LastName = "User",
-                    Role = SharedKernel.Enums.UserRole.Customer,
-                    PasswordHash = passwordHash,
-                    IsEmailVerified = true,
-                    CreatedAt = DateTime.UtcNow
-                });
-
                 identityDb.Users.Add(new User
                 {
                     Id = userId,
@@ -342,18 +330,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     FirstName = "Integration",
                     LastName = "User",
                     Role = SharedKernel.Enums.UserRole.Customer,
-                    PasswordHash = passwordHash,
-                    IsEmailVerified = true,
-                    CreatedAt = DateTime.UtcNow
-                });
-
-                db.Users.Add(new User
-                {
-                    Id = adminId,
-                    Email = "admin@test.com",
-                    FirstName = "Admin",
-                    LastName = "User",
-                    Role = SharedKernel.Enums.UserRole.Admin,
                     PasswordHash = passwordHash,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow
@@ -372,33 +348,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 });
 
                 var categoryId = Guid.Parse("66666666-6666-6666-6666-666666666666");
-                db.Categories.Add(new Category
-                {
-                    Id = categoryId,
-                    Name = "Test Category",
-                    Slug = "test-category",
-                    IsActive = true
-                });
-
                 var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-                db.Products.Add(new Product
-                {
-                    Id = productId,
-                    Name = "IntegrationProduct",
-                    Slug = "integration-product",
-                    Price = 10.0m,
-                    StockQuantity = 100,
-                    IsActive = true,
-                    Sku = "TEST-SKU-001",
-                    CategoryId = categoryId
-                });
-
-                var inventoryResult = InventoryItem.Create(productId, 100, 10);
-                if (inventoryResult.IsSuccess)
-                {
-                    db.InventoryItems.Add(inventoryResult.GetDataOrThrow());
-                }
-
                 var inventoryResultForInventoryDb = InventoryItem.Create(productId, 100, 10);
                 if (inventoryResultForInventoryDb.IsSuccess)
                 {
@@ -544,21 +494,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 });
 
                 var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
-                db.Orders.Add(new Order
-                {
-                    Id = orderId,
-                    OrderNumber = "TEST-ORDER-001",
-                    UserId = userId,
-                    Status = SharedOrderStatus.Pending,
-                    PaymentStatus = SharedPaymentStatus.Paid,  // Pre-paid for refund testing
-                    Subtotal = 100.00m,
-                    DiscountAmount = 0.00m,
-                    ShippingAmount = 10.00m,
-                    TaxAmount = 0.00m,
-                    TotalAmount = 100.00m,
-                    Currency = "USD"
-                });
-
                 paymentsDb.Orders.Add(new Order
                 {
                     Id = orderId,
@@ -574,7 +509,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     Currency = "USD"
                 });
 
-                db.SaveChanges();
                 catalogDb.SaveChanges();
                 identityDb.SaveChanges();
                 inventoryDb.SaveChanges();
