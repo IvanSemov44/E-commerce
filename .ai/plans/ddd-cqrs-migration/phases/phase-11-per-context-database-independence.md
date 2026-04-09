@@ -26,6 +26,21 @@ Verification:
 	  - `Shared AppDb seeding is disabled. Context-owned seed paths must be used.`
 	  - `Reviews projection backfill completed...`
 
+## PR5 slice-2 progress (2026-04-09)
+
+Commit:
+1. `4844cc1` - complete PR5 slice2 AppDb decoupling
+
+Changes in this slice:
+1. AppDb schema validation moved away from shared business-table assumptions to platform/integration expectations.
+2. Integration test host no longer depends on shared AppDb business mappings for seeded scenario data.
+3. Unit tests for query/schema extensions were aligned to current decoupled model behavior.
+
+Verification:
+1. `dotnet test src/backend/ECommerce.Tests/ECommerce.Tests.csproj --no-build` passed.
+	- total: 698, failed: 0, succeeded: 689, skipped: 9
+2. Focused backend event/projection tests remained green during slice validation.
+
 ## Latest execution evidence (2026-04-08)
 
 Merged backend commits in this phase slice:
