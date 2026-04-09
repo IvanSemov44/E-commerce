@@ -3,8 +3,6 @@ import { act } from '@testing-library/react';
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { useCheckoutOrder } from '../useCheckoutOrder';
 import type { ShippingFormData } from '@/features/checkout/types';
-import { server } from '@/shared/lib/test/msw-server';
-import { http, HttpResponse } from 'msw';
 
 vi.mock('@/shared/lib/utils/telemetry', () => ({
   telemetry: { track: vi.fn() },
@@ -12,6 +10,29 @@ vi.mock('@/shared/lib/utils/telemetry', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+// Preserve authReducer so renderHookWithProviders can build the Redux store
+vi.mock('@/features/auth/slices/authSlice', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/auth/slices/authSlice')>();
+  return { ...actual };
+});
+
+// Mutable refs so individual tests can override success/failure behaviour
+const mockCheckAvailability = vi.fn();
+const mockCreateOrder = vi.fn();
+const mockClearCart = vi.fn();
+
+vi.mock('@/features/orders/api', () => ({
+  useCreateOrderMutation: () => [mockCreateOrder, { isLoading: false }],
+}));
+
+vi.mock('@/features/cart/api', () => ({
+  useClearCartMutation: () => [mockClearCart, { isLoading: false }],
+}));
+
+vi.mock('@/features/checkout/api', () => ({
+  useCheckAvailabilityMutation: () => [mockCheckAvailability, { isLoading: false }],
 }));
 
 const mockShippingData: ShippingFormData = {
@@ -36,36 +57,19 @@ const defaultOptions = {
   paymentMethod: 'card',
 };
 
-const setupHandlers = (
-  availabilityResult = { isAvailable: true, issues: [] },
-  orderResult = { orderNumber: 'ORD-001' }
-) => {
-  server.use(
-    http.post('/api/inventory/check-availability', async () => {
-      return HttpResponse.json({
-        success: true,
-        data: availabilityResult,
-      });
-    }),
-    http.post('/api/orders', async () => {
-      return HttpResponse.json({
-        success: true,
-        data: orderResult,
-      });
-    }),
-    http.post('/api/cart/clear', async () => {
-      return HttpResponse.json({
-        success: true,
-        data: { id: 'c1', items: [], itemCount: 0 },
-      });
-    })
-  );
-};
-
 describe('useCheckoutOrder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setupHandlers();
+    // Default: all mutations succeed
+    mockCheckAvailability.mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({ isAvailable: true, issues: [] }),
+    });
+    mockCreateOrder.mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({ orderNumber: 'ORD-001' }),
+    });
+    mockClearCart.mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({}),
+    });
   });
 
   it('initialises with orderComplete false and no error', () => {
@@ -77,14 +81,9 @@ describe('useCheckoutOrder', () => {
   });
 
   it('sets error when stock check fails', async () => {
-    server.use(
-      http.post('/api/inventory/check-availability', async () => {
-        return HttpResponse.json(
-          { success: false, errorDetails: { message: 'Network error', code: 'INTERNAL_ERROR' } },
-          { status: 500 }
-        );
-      })
-    );
+    mockCheckAvailability.mockReturnValue({
+      unwrap: vi.fn().mockRejectedValue(new Error('Network error')),
+    });
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
 
@@ -97,9 +96,11 @@ describe('useCheckoutOrder', () => {
   });
 
   it('sets error when stock is unavailable', async () => {
-    setupHandlers({
-      isAvailable: false,
-      issues: [{ productName: 'Widget', message: 'Out of stock' }],
+    mockCheckAvailability.mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({
+        isAvailable: false,
+        issues: [{ productName: 'Widget', message: 'Out of stock' }],
+      }),
     });
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
@@ -125,14 +126,9 @@ describe('useCheckoutOrder', () => {
   });
 
   it('sets error when createOrder throws', async () => {
-    server.use(
-      http.post('/api/orders', async () => {
-        return HttpResponse.json(
-          { success: false, errorDetails: { message: 'Payment failed', code: 'PAYMENT_FAILED' } },
-          { status: 400 }
-        );
-      })
-    );
+    mockCreateOrder.mockReturnValue({
+      unwrap: vi.fn().mockRejectedValue({ data: { message: 'Payment failed' } }),
+    });
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
 
@@ -201,14 +197,9 @@ describe('useCheckoutOrder', () => {
   });
 
   it('falls back to errorObj.message when data.message is absent', async () => {
-    server.use(
-      http.post('/api/orders', async () => {
-        return HttpResponse.json(
-          { success: false, errorDetails: { message: 'Network error', code: 'INTERNAL_ERROR' } },
-          { status: 500 }
-        );
-      })
-    );
+    mockCreateOrder.mockReturnValue({
+      unwrap: vi.fn().mockRejectedValue({ message: 'Network error' }),
+    });
 
     const { result } = renderHookWithProviders(() => useCheckoutOrder(defaultOptions));
 

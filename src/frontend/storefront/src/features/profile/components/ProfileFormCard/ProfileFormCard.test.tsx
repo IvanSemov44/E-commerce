@@ -29,7 +29,7 @@ const defaultHookValues = {
   handleCancel: mockHandleCancel,
 };
 
-vi.mock('../../hooks/useProfileForm', () => ({
+vi.mock('./useProfileForm', () => ({
   useProfileForm: vi.fn(() => defaultHookValues),
 }));
 

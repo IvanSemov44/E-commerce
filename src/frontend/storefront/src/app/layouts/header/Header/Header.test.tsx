@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { Header } from './Header';
 import { server } from '@/shared/lib/test/msw-server';
 import { http, HttpResponse } from 'msw';
@@ -21,6 +22,27 @@ let mockState: MockState;
 vi.mock('@/shared/lib/store', () => ({
   useAppSelector: (selector: (state: MockState) => unknown) => selector(mockState),
   useAppDispatch: () => dispatchMock,
+}));
+
+vi.mock('@/features/auth/api/authApi', () => ({
+  useLogoutMutation: () => [vi.fn().mockResolvedValue({}), { isLoading: false }],
+}));
+
+let mockCartData: { items: Array<{ quantity: number }> } | undefined = undefined;
+let mockWishlistData: { items: Array<{ id: string }> } | undefined = undefined;
+
+vi.mock('@/features/cart/api', () => ({
+  useGetCartQuery: (_arg: unknown, options?: { skip?: boolean }) => {
+    if (options?.skip) return { data: undefined, isLoading: false };
+    return { data: mockCartData, isLoading: false };
+  },
+}));
+
+vi.mock('@/features/wishlist/api', () => ({
+  useGetWishlistQuery: (_arg: unknown, options?: { skip?: boolean }) => {
+    if (options?.skip) return { data: undefined, isLoading: false };
+    return { data: mockWishlistData, isLoading: false };
+  },
 }));
 
 vi.mock('@/features/auth/slices/authSlice', async () => {
@@ -137,21 +159,26 @@ const setupApiHandlers = (cartData = null, wishlistData = null) => {
 };
 
 function renderHeader() {
-  return render(
+  return renderWithProviders(
     <MemoryRouter>
       <Header />
-    </MemoryRouter>
+    </MemoryRouter>,
+    { withRouter: false }
   );
 }
 
 describe('Header', () => {
   beforeEach(() => {
+    server.resetHandlers();
     vi.clearAllMocks();
 
     mockState = {
       auth: { isAuthenticated: false, user: null },
       cart: { items: [{ quantity: 2 }, { quantity: 1 }] },
     };
+
+    mockCartData = undefined;
+    mockWishlistData = undefined;
 
     setupApiHandlers(null, null);
   });
@@ -176,10 +203,8 @@ describe('Header', () => {
       isAuthenticated: true,
       user: { firstName: 'Ivan', email: 'ivan@example.com' },
     };
-    setupApiHandlers(
-      { items: [{ quantity: 4 }, { quantity: 3 }] },
-      { items: [{ id: '1' }, { id: '2' }, { id: '3' }] }
-    );
+    mockCartData = { items: [{ quantity: 4 }, { quantity: 3 }] };
+    mockWishlistData = { items: [{ id: '1' }, { id: '2' }, { id: '3' }] };
 
     renderHeader();
 

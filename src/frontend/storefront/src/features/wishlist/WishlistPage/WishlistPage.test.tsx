@@ -3,7 +3,51 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { WishlistPage } from './WishlistPage';
 import { server } from '@/shared/lib/test/msw-server';
-import { http, HttpResponse } from 'msw';
+
+const mockWishlist = {
+  id: 'w1',
+  itemCount: 2,
+  items: [
+    {
+      id: 'i1',
+      productId: 'p1',
+      productName: 'Widget',
+      price: 20,
+      isAvailable: true,
+      productImage: '',
+    },
+    {
+      id: 'i2',
+      productId: 'p2',
+      productName: 'Gadget',
+      price: 35,
+      isAvailable: false,
+      productImage: '/g.jpg',
+    },
+  ],
+};
+
+let mockWishlistState = {
+  data: undefined as
+    | undefined
+    | {
+        id: string;
+        items: Array<{
+          id: string;
+          productId: string;
+          productName: string;
+          price: number;
+          isAvailable: boolean;
+          productImage: string;
+        }>;
+      },
+  isLoading: false,
+  error: null as null | unknown,
+};
+
+vi.mock('@/features/wishlist/api', () => ({
+  useGetWishlistQuery: () => mockWishlistState,
+}));
 
 vi.mock('@/features/wishlist/components', () => ({
   WishlistCard: ({ productName }: { productName: string }) => (
@@ -47,120 +91,98 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
-  return { ...actual, Link: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+  return {
+    ...actual,
+    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+      <a href={typeof to === 'string' ? to : '#'}>{children}</a>
+    ),
+  };
 });
-
-const mockWishlist = {
-  id: 'w1',
-  itemCount: 2,
-  items: [
-    {
-      id: 'i1',
-      productId: 'p1',
-      productName: 'Widget',
-      price: 20,
-      isAvailable: true,
-      productImage: '',
-    },
-    {
-      id: 'i2',
-      productId: 'p2',
-      productName: 'Gadget',
-      price: 35,
-      isAvailable: false,
-      productImage: '/g.jpg',
-    },
-  ],
-};
-
-const setupWishlistHandlers = (wishlist = mockWishlist) => {
-  server.use(
-    http.get('/api/wishlist', () => {
-      return HttpResponse.json({
-        success: true,
-        data: wishlist,
-      });
-    })
-  );
-};
 
 describe('WishlistPage', () => {
   beforeEach(() => {
+    mockWishlistState = {
+      data: undefined,
+      isLoading: false,
+      error: null,
+    };
     vi.resetAllMocks();
     server.resetHandlers();
-    setupWishlistHandlers();
   });
 
   afterEach(() => {
     server.resetHandlers();
   });
 
-  it('shows skeleton while loading', async () => {
-    server.use(
-      http.get('/api/wishlist', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return HttpResponse.json({ success: true, data: mockWishlist });
-      })
-    );
-    renderWithProviders(<WishlistPage />);
-    expect(screen.getByTestId('wishlist-skeleton')).toBeInTheDocument();
-  });
-
-  it('shows empty state when wishlist has no data', () => {
-    server.use(
-      http.get('/api/wishlist', () => {
-        return HttpResponse.json({ success: false, data: null }, { status: 404 });
-      })
-    );
-    renderWithProviders(<WishlistPage />);
-    expect(screen.getByText('wishlist.empty')).toBeInTheDocument();
-  });
-
   it('renders a WishlistCard for each item', () => {
+    mockWishlistState = {
+      data: mockWishlist,
+      isLoading: false,
+      error: null,
+    };
     renderWithProviders(<WishlistPage />);
     expect(screen.getAllByTestId('wishlist-card')).toHaveLength(2);
     expect(screen.getByText('Widget')).toBeInTheDocument();
     expect(screen.getByText('Gadget')).toBeInTheDocument();
   });
 
+  it('shows skeleton while loading', async () => {
+    mockWishlistState = {
+      data: undefined,
+      isLoading: true,
+      error: null,
+    };
+    renderWithProviders(<WishlistPage />);
+    expect(screen.getByTestId('wishlist-skeleton')).toBeInTheDocument();
+  });
+
+  it('shows empty state when wishlist has no data', () => {
+    mockWishlistState = {
+      data: undefined,
+      isLoading: false,
+      error: null,
+    };
+    renderWithProviders(<WishlistPage />);
+    expect(screen.getByText('wishlist.empty')).toBeInTheDocument();
+  });
+
   it('shows error state when query fails', () => {
-    server.use(
-      http.get('/api/wishlist', () => {
-        return HttpResponse.json(
-          { success: false, errorDetails: { message: 'Server error', code: 'INTERNAL_ERROR' } },
-          { status: 500 }
-        );
-      })
-    );
+    mockWishlistState = {
+      data: undefined,
+      isLoading: false,
+      error: { message: 'Server error' },
+    };
     renderWithProviders(<WishlistPage />);
     expect(screen.getByTestId('query-error')).toBeInTheDocument();
   });
 
   it('shows empty state when wishlist has zero items', () => {
-    server.use(
-      http.get('/api/wishlist', () => {
-        return HttpResponse.json({
-          success: true,
-          data: { id: 'w1', itemCount: 0, items: [] },
-        });
-      })
-    );
+    mockWishlistState = {
+      data: { id: 'w1', items: [], itemCount: 0 },
+      isLoading: false,
+      error: null,
+    };
     renderWithProviders(<WishlistPage />);
-    expect(screen.queryAllByTestId('wishlist-card')).toHaveLength(0);
+    expect(screen.getByText('wishlist.empty')).toBeInTheDocument();
   });
 
   it('shows continue shopping button in empty state', () => {
-    server.use(
-      http.get('/api/wishlist', () => {
-        return HttpResponse.json({ success: false, data: null }, { status: 404 });
-      })
-    );
+    mockWishlistState = {
+      data: undefined,
+      isLoading: false,
+      error: null,
+    };
     renderWithProviders(<WishlistPage />);
-    expect(screen.getByText('wishlist.continueShopping')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /continue shopping/i })).toBeInTheDocument();
   });
 
   it('renders page title', () => {
+    mockWishlistState = {
+      data: undefined,
+      isLoading: false,
+      error: null,
+    };
     renderWithProviders(<WishlistPage />);
-    expect(screen.getByText('wishlist.title')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /my wishlist/i })).toBeInTheDocument();
   });
 });

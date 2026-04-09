@@ -13,6 +13,24 @@ vi.mock('react-router', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+vi.mock('@/features/auth/api/authApi', () => ({
+  useLoginMutation: () => [
+    vi.fn().mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({
+        success: true,
+        user: {
+          id: '1',
+          email: 'john@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          role: 'Customer',
+        },
+      }),
+    }),
+    { isLoading: false },
+  ],
+}));
+
 function setupLoginHandlers(success = true) {
   server.use(
     http.post('/api/auth/login', async ({ request }) => {
@@ -80,26 +98,8 @@ describe('LoginPage', () => {
   });
 
   it('dispatches loginSuccess and navigates home on success', async () => {
-    vi.doMock('@/features/auth/api/authApi', () => ({
-      useLoginMutation: () => [
-        vi.fn().mockResolvedValue({
-          data: {
-            success: true,
-            user: {
-              id: '1',
-              email: 'john@example.com',
-              firstName: 'John',
-              lastName: 'Doe',
-              role: 'Customer',
-            },
-          },
-        }),
-        { isLoading: false },
-      ],
-    }));
-
-    renderWithProviders(<LoginPage />);
     const user = userEvent.setup();
+    renderWithProviders(<LoginPage />);
 
     await fillValidForm(user);
     await user.click(screen.getByRole('button', { name: /^login$/i }));

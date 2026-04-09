@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { HomePage } from './HomePage';
 import { server } from '@/shared/lib/test/msw-server';
@@ -179,10 +178,6 @@ const setupHandlers = (
       });
     })
   );
-};
-
-const renderWithProviders = (component: React.ReactElement) => {
-  return renderWithProviders(<MemoryRouter>{component}</MemoryRouter>);
 };
 
 describe('HomePage', () => {

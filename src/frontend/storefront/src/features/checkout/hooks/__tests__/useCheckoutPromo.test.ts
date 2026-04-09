@@ -2,34 +2,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { useCheckoutPromo } from '../useCheckoutPromo';
-import { server } from '@/shared/lib/test/msw-server';
-import { http, HttpResponse } from 'msw';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-const setupHandlers = (
-  result: { isValid: boolean; discountAmount: number; message: string } = {
-    isValid: true,
-    discountAmount: 10,
-    message: 'Applied!',
-  }
-) => {
-  server.use(
-    http.post('/api/promo-codes/validate', async () => {
-      return HttpResponse.json({
-        success: true,
-        data: result,
-      });
-    })
-  );
-};
+vi.mock('@/shared/lib/store', () => ({
+  useAppDispatch: () => vi.fn(),
+}));
+
+// Mutable unwrap so individual tests can control the resolved value
+const mockValidateUnwrap = vi.fn();
+const mockValidate = vi.fn(() => ({ unwrap: mockValidateUnwrap }));
+
+vi.mock('@/features/checkout/api', () => ({
+  useValidatePromoCodeMutation: () => [mockValidate, { isLoading: false }],
+}));
 
 describe('useCheckoutPromo', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setupHandlers();
+    mockValidateUnwrap.mockResolvedValue({
+      isValid: true,
+      discountAmount: 10,
+      message: 'Applied!',
+    });
   });
 
   it('initialises with empty promo code and no validation', () => {
@@ -79,14 +76,7 @@ describe('useCheckoutPromo', () => {
   });
 
   it('sets error validation when mutation throws', async () => {
-    server.use(
-      http.post('/api/checkout/validate-promo', async () => {
-        return HttpResponse.json(
-          { success: false, errorDetails: { message: 'Network error', code: 'INTERNAL_ERROR' } },
-          { status: 500 }
-        );
-      })
-    );
+    mockValidateUnwrap.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
 
@@ -157,7 +147,11 @@ describe('useCheckoutPromo', () => {
   });
 
   it('sets invalid validation when server returns isValid false', async () => {
-    setupHandlers({ isValid: false, discountAmount: 0, message: 'Code expired' });
+    mockValidateUnwrap.mockResolvedValue({
+      isValid: false,
+      discountAmount: 0,
+      message: 'Code expired',
+    });
 
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
 
@@ -175,13 +169,10 @@ describe('useCheckoutPromo', () => {
   });
 
   it('sets isValidating true during mutation and false after', async () => {
-    server.use(
-      http.post('/api/checkout/validate-promo', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        return HttpResponse.json({
-          success: true,
-          data: { isValid: true, discountAmount: 5, message: 'OK' },
-        });
+    let resolve!: (value: { isValid: boolean; discountAmount: number; message: string }) => void;
+    mockValidateUnwrap.mockReturnValue(
+      new Promise((res) => {
+        resolve = res;
       })
     );
 
@@ -191,7 +182,7 @@ describe('useCheckoutPromo', () => {
       result.current.promoState.onChange('SLOW');
     });
 
-    let applyPromise: Promise<void>;
+    let applyPromise!: Promise<void>;
     act(() => {
       applyPromise = result.current.promoState.onApply();
     });
@@ -199,6 +190,7 @@ describe('useCheckoutPromo', () => {
     expect(result.current.promoState.isValidating).toBe(true);
 
     await act(async () => {
+      resolve({ isValid: true, discountAmount: 5, message: 'OK' });
       await applyPromise;
     });
 

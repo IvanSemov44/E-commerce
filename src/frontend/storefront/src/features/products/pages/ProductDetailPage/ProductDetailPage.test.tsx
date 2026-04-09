@@ -94,7 +94,7 @@ describe('ProductDetailPage', () => {
     expect(skeletonItems.length).toBeGreaterThan(0);
   });
 
-  it('shows error state when product query fails', () => {
+  it('shows error state when product query fails', async () => {
     server.use(
       http.get('/api/products/slug/detailed-product', () => {
         return HttpResponse.json(
@@ -104,27 +104,27 @@ describe('ProductDetailPage', () => {
       })
     );
     render();
-    expect(screen.getByText(/failed to load/i)).toBeInTheDocument();
+    expect(await screen.findByText(/failed to load/i)).toBeInTheDocument();
   });
 
-  it('shows empty state when product is not found', () => {
+  it('shows empty state when product is not found', async () => {
     server.use(
       http.get('/api/products/slug/detailed-product', () => {
         return HttpResponse.json({ success: false, errorDetails: null }, { status: 404 });
       })
     );
     render();
-    expect(screen.getByText(/not found/i)).toBeInTheDocument();
+    expect(await screen.findByText(/not found/i)).toBeInTheDocument();
   });
 
-  it('renders product name when loaded', () => {
+  it('renders product name when loaded', async () => {
     render();
-    expect(screen.getByText('Detailed Product')).toBeInTheDocument();
+    expect(await screen.findByText('Detailed Product')).toBeInTheDocument();
   });
 
-  it('renders product image gallery', () => {
+  it('renders product image gallery', async () => {
     render();
-    const img = screen.getByRole('img', { name: 'Detailed Product' });
+    const img = await screen.findByRole('img', { name: 'Detailed Product' });
     expect(img).toBeInTheDocument();
   });
 

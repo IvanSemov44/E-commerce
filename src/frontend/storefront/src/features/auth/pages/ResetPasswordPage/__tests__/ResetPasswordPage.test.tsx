@@ -9,14 +9,14 @@ import { http, HttpResponse } from 'msw';
 const mockNavigate = vi.fn();
 const mockToastFn = vi.fn();
 
-vi.mock('react-router', () => ({
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => children,
-  useNavigate: () => mockNavigate,
-  useSearchParams: () => [new URLSearchParams('email=test@example.com&token=abc123'), vi.fn()],
-  Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
-    <a href={to}>{children}</a>
-  ),
-}));
+vi.mock('react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router')>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useSearchParams: () => [new URLSearchParams('email=test@example.com&token=abc123'), vi.fn()],
+  };
+});
 
 vi.mock('@/shared/hooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/hooks')>();
@@ -34,6 +34,15 @@ vi.mock('@/shared/hooks', async (importOriginal) => {
   };
 });
 
+vi.mock('@/features/auth/api/authApi', () => ({
+  useResetPasswordMutation: () => [
+    vi.fn().mockReturnValue({
+      unwrap: vi.fn().mockResolvedValue({ success: true }),
+    }),
+    { isLoading: false },
+  ],
+}));
+
 function setupResetPasswordHandlers(success = true) {
   server.use(
     http.post('/api/auth/reset-password', async () => {
@@ -50,6 +59,7 @@ function setupResetPasswordHandlers(success = true) {
 
 describe('ResetPasswordPage', () => {
   beforeEach(() => {
+    server.resetHandlers();
     vi.clearAllMocks();
     setupResetPasswordHandlers(true);
   });

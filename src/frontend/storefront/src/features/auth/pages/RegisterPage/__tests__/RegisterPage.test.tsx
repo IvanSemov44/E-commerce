@@ -13,6 +13,15 @@ vi.mock('react-router', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+const mockRegisterUnwrap = vi.fn();
+
+vi.mock('@/features/auth/api/authApi', () => ({
+  useRegisterMutation: () => [
+    vi.fn().mockReturnValue({ unwrap: mockRegisterUnwrap }),
+    { isLoading: false },
+  ],
+}));
+
 function setupRegisterHandlers(mode: 'success' | 'duplicate' | 'validation' = 'success') {
   server.use(
     http.post('/api/auth/register', async ({ request }) => {
@@ -61,8 +70,19 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 
 describe('RegisterPage', () => {
   beforeEach(() => {
+    server.resetHandlers();
     vi.clearAllMocks();
     setupRegisterHandlers('success');
+    mockRegisterUnwrap.mockResolvedValue({
+      success: true,
+      user: {
+        id: '1',
+        email: 'john@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'Customer',
+      },
+    });
   });
 
   it('renders all form fields and submit button', () => {
@@ -106,7 +126,17 @@ describe('RegisterPage', () => {
 
   it('dispatches loginSuccess and navigates home on success', async () => {
     const user = userEvent.setup();
-    const { store } = renderWithProviders(<RegisterPage />);
+    const { store } = renderWithProviders(<RegisterPage />, {
+      preloadedState: {
+        auth: {
+          isAuthenticated: false,
+          user: null,
+          loading: false,
+          error: null,
+          initialized: true,
+        },
+      },
+    });
 
     await fillValidForm(user);
     await user.click(screen.getByRole('checkbox'));
@@ -120,7 +150,13 @@ describe('RegisterPage', () => {
 
   it('shows DUPLICATE_EMAIL backend error inline on the email field', async () => {
     const user = userEvent.setup();
-    setupRegisterHandlers('duplicate');
+    mockRegisterUnwrap.mockRejectedValue({
+      status: 409,
+      data: {
+        success: false,
+        errorDetails: { code: 'DUPLICATE_EMAIL', message: 'Email is already in use' },
+      },
+    });
     renderWithProviders(<RegisterPage />);
 
     await fillValidForm(user);
@@ -136,7 +172,10 @@ describe('RegisterPage', () => {
 
   it('shows ASP.NET validation errors inline on the matching field', async () => {
     const user = userEvent.setup();
-    setupRegisterHandlers('validation');
+    mockRegisterUnwrap.mockRejectedValue({
+      status: 400,
+      data: { success: false, errors: { Password: ['Password must contain a special character'] } },
+    });
     renderWithProviders(<RegisterPage />);
 
     await fillValidForm(user);
