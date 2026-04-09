@@ -144,5 +144,5 @@ generatePath(ROUTE_PATHS.productDetail, { slug: product.slug });
 
 ## Read Next
 
-- `.ai/frontend/route-loaders.md` — loader pattern, RTK Query coexistence
+- `.ai/frontend/storefront/route-loaders.md` — loader pattern, RTK Query coexistence
 - `.ai/workflows/rr7-framework-migration.md` — migration record and what remains

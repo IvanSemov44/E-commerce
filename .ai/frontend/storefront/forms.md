@@ -35,7 +35,7 @@ Used by LoginPage, ForgotPasswordPage, ResetPasswordPage. Will migrate to Patter
 
 ## Real Code References
 - **Pattern A full reference:** `src/frontend/storefront/src/features/auth/pages/RegisterPage/`
-- **Pattern A guide:** `.ai/frontend/auth-forms.md`
+- **Pattern A guide:** `.ai/frontend/storefront/auth-forms.md`
 - **Pattern B hook:** `src/frontend/storefront/src/shared/hooks/useForm.ts`
 - **Shared field builders:** `src/frontend/storefront/src/features/auth/schemas/authSchemas.ts`
 - **Backend error parser:** `src/frontend/storefront/src/shared/lib/utils/parseBackendFieldErrors.ts`

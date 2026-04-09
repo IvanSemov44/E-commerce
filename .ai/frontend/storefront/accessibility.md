@@ -27,7 +27,7 @@ Ensure interactive UI remains keyboard-usable, screen-reader friendly, and regre
 - Mark decorative icons as `aria-hidden="true"`.
 - Keep keyboard focus order aligned with visual flow.
 - The `Input` component wires `aria-invalid` and `aria-describedby` automatically. For raw
-  `<input type="checkbox">` with validation, add these manually — see `.ai/frontend/auth-forms.md`
+  `<input type="checkbox">` with validation, add these manually — see `.ai/frontend/storefront/auth-forms.md`
   (Raw Checkbox Accessibility section).
 - Use `aria-invalid={value || undefined}` not `aria-invalid={false}` — the attribute must be
   absent when valid, not set to `false`.

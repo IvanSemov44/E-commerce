@@ -19,8 +19,8 @@ Get enough project context in under 5 minutes to make safe, pattern-aligned code
 ## Module Read Order (Data + API Work)
 1. `.ai/backend/repositories.md`
 2. `.ai/backend/services.md`
-3. `.ai/frontend/api-integration.md`
-4. `.ai/frontend/type-safety.md`
+3. `.ai/frontend/storefront/api-integration.md`
+4. `.ai/frontend/storefront/type-safety.md`
 
 ## Hard Rules
 - Keep Clean Architecture flow intact: API -> Application -> Core and Infrastructure -> Core/Application.

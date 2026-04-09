@@ -36,5 +36,5 @@ The rule of thumb: if you need to go up one level or more (`../`), use `@/` inst
 
 ## References
 - `.ai/backend/services.md`
-- `.ai/frontend/type-safety.md`
+- `.ai/frontend/storefront/type-safety.md`
 - `.ai/reference/common-mistakes.md`

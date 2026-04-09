@@ -57,18 +57,21 @@ This is the canonical AI documentation for this repository. All assistant-specif
   - `.ai/backend/idempotency.md`
   - `.ai/backend/concurrency.md`
   - `.ai/backend/query-patterns.md`
-- Implement/modify frontend state or API integration:
-  - `.ai/frontend/overview.md`
-  - `.ai/frontend/redux.md`
-  - `.ai/frontend/api-integration.md`
-  - `.ai/frontend/type-safety.md`
-- Build or refactor frontend UI architecture:
-  - `.ai/frontend/components.md`
-  - `.ai/frontend/hooks.md`
-  - `.ai/frontend/routing.md`
-  - `.ai/frontend/forms.md`
-  - `.ai/frontend/auth-forms.md`
-  - `.ai/frontend/accessibility.md`
+- Implement/modify storefront state or API integration:
+  - `.ai/frontend/README.md` — hub: which app, which doc
+  - `.ai/frontend/storefront/overview.md`
+  - `.ai/frontend/storefront/redux.md`
+  - `.ai/frontend/storefront/api-integration.md`
+  - `.ai/frontend/storefront/type-safety.md`
+- Build or refactor storefront UI architecture:
+  - `.ai/frontend/storefront/components.md`
+  - `.ai/frontend/storefront/hooks.md`
+  - `.ai/frontend/storefront/routing.md`
+  - `.ai/frontend/storefront/forms.md`
+  - `.ai/frontend/storefront/auth-forms.md`
+  - `.ai/frontend/storefront/accessibility.md`
+- Work on the admin panel:
+  - `.ai/frontend/admin/overview.md`
 - Avoid known pitfalls:
   - `.ai/reference/common-mistakes.md`
 - Look up structure/examples/terms quickly:

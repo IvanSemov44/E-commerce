@@ -28,8 +28,8 @@ Quick orientation for storefront/admin frontend architecture.
 - Error handling hook: `src/frontend/storefront/src/shared/hooks/useApiErrorHandler.ts`
 
 ## Read Next
-- `.ai/frontend/redux.md`
-- `.ai/frontend/routing.md`
-- `.ai/frontend/route-loaders.md`
+- `.ai/frontend/storefront/redux.md`
+- `.ai/frontend/storefront/routing.md`
+- `.ai/frontend/storefront/route-loaders.md`
 - `.ai/workflows/adding-feature.md`
 - `.ai/reference/common-mistakes.md`
