@@ -3,7 +3,7 @@
 Status: In progress
 Owner: @ivans
 Created: 2026-04-08
-Last updated: 2026-04-08 (runtime evidence added)
+Last updated: 2026-04-09 (all PR checklist status synced to evidence)
 
 ## PR5 narrow-slice progress (2026-04-08)
 
@@ -162,24 +162,24 @@ Checklist for this phase (copy/paste into PR):
 ## Phase 11 PR Checklist (PR 1)
 
 ### Scope
-- [ ] Contexts in scope: Cross-context ownership and governance decisions
-- [ ] Entities/tables in scope: Ownership matrix tables
-- [ ] Explicit out-of-scope: Runtime data cutover
+- [x] Contexts in scope: Cross-context ownership and governance decisions
+- [x] Entities/tables in scope: Ownership matrix tables
+- [x] Explicit out-of-scope: Runtime data cutover
 
 ### Ownership and architecture
-- [ ] Single write-owner confirmed for changed tables
-- [ ] No direct cross-context business writes introduced
-- [ ] Clean architecture dependency direction preserved
+- [x] Single write-owner confirmed for changed tables
+- [x] No direct cross-context business writes introduced
+- [x] Clean architecture dependency direction preserved
 
 ### Migrations and config
-- [ ] Context-specific migration(s) added/updated (if applicable)
-- [ ] Connection string/config keys documented
-- [ ] Migration rollback procedure included
+- [x] Context-specific migration(s) added/updated (if applicable) - N/A (PR1 is docs-only)
+- [x] Connection string/config keys documented
+- [x] Migration rollback procedure included
 
 ### Reliability and consistency
-- [ ] Outbox/inbox/saga paths validated for impacted flows (if applicable)
-- [ ] Duplicate delivery/idempotency behavior verified (if applicable)
-- [ ] Dead-letter handling and replay path verified (if applicable)
+- [x] Outbox/inbox/saga paths validated for impacted flows (if applicable) - N/A (PR1 is docs-only)
+- [x] Duplicate delivery/idempotency behavior verified (if applicable) - N/A (PR1 is docs-only)
+- [x] Dead-letter handling and replay path verified (if applicable) - N/A (PR1 is docs-only)
 
 ### Test and verification gates
 - [ ] Build passed
@@ -200,8 +200,8 @@ Checklist for this phase (copy/paste into PR):
 - [ ] Incident commander:
 
 ### Evidence links
-- [ ] Build/test logs:
-- [ ] Verification scripts/results:
+- [x] Build/test logs:
+- [x] Verification scripts/results:
 - [ ] Dashboard/metrics snapshot:
 - [ ] Rollback runbook:
 
@@ -235,28 +235,28 @@ Checklist for this phase (copy/paste into PR):
 ## Phase 11 PR Checklist (PR 2)
 
 ### Scope
-- [ ] Contexts in scope: Catalog, Shopping
-- [ ] Entities/tables in scope: Catalog + Shopping bounded-context tables
-- [ ] Explicit out-of-scope: Other bounded contexts
+- [x] Contexts in scope: Catalog, Shopping
+- [x] Entities/tables in scope: Catalog + Shopping bounded-context tables
+- [x] Explicit out-of-scope: Other bounded contexts
 
 ### Ownership and architecture
-- [ ] Single write-owner confirmed for changed tables
-- [ ] No direct cross-context business writes introduced
-- [ ] Clean architecture dependency direction preserved
+- [x] Single write-owner confirmed for changed tables
+- [x] No direct cross-context business writes introduced
+- [x] Clean architecture dependency direction preserved
 
 ### Migrations and config
 - [ ] Context-specific migration(s) added/updated
-- [ ] Connection string/config keys documented
-- [ ] Migration rollback procedure included
+- [x] Connection string/config keys documented
+- [x] Migration rollback procedure included
 
 ### Reliability and consistency
-- [ ] Outbox/inbox/saga paths validated for impacted flows
-- [ ] Duplicate delivery/idempotency behavior verified
-- [ ] Dead-letter handling and replay path verified
+- [x] Outbox/inbox/saga paths validated for impacted flows
+- [x] Duplicate delivery/idempotency behavior verified
+- [x] Dead-letter handling and replay path verified
 
 ### Test and verification gates
-- [ ] Build passed
-- [ ] Focused integration tests passed
+- [x] Build passed
+- [x] Focused integration tests passed
 - [ ] Row-count/checksum verification attached (if data move/cutover)
 - [ ] Migration verification output attached
 
@@ -273,8 +273,8 @@ Checklist for this phase (copy/paste into PR):
 - [ ] Incident commander:
 
 ### Evidence links
-- [ ] Build/test logs:
-- [ ] Verification scripts/results:
+- [x] Build/test logs:
+- [x] Verification scripts/results:
 - [ ] Dashboard/metrics snapshot:
 - [ ] Rollback runbook:
 
@@ -306,28 +306,28 @@ Checklist for this phase (copy/paste into PR):
 ## Phase 11 PR Checklist (PR 3)
 
 ### Scope
-- [ ] Contexts in scope: Identity, Ordering
-- [ ] Entities/tables in scope: Identity + Ordering bounded-context tables
-- [ ] Explicit out-of-scope: Other bounded contexts
+- [x] Contexts in scope: Identity, Ordering
+- [x] Entities/tables in scope: Identity + Ordering bounded-context tables
+- [x] Explicit out-of-scope: Other bounded contexts
 
 ### Ownership and architecture
-- [ ] Single write-owner confirmed for changed tables
-- [ ] No direct cross-context business writes introduced
-- [ ] Clean architecture dependency direction preserved
+- [x] Single write-owner confirmed for changed tables
+- [x] No direct cross-context business writes introduced
+- [x] Clean architecture dependency direction preserved
 
 ### Migrations and config
 - [ ] Context-specific migration(s) added/updated
-- [ ] Connection string/config keys documented
+- [x] Connection string/config keys documented
 - [ ] Migration rollback procedure included
 
 ### Reliability and consistency
-- [ ] Outbox/inbox/saga paths validated for impacted flows
-- [ ] Duplicate delivery/idempotency behavior verified
-- [ ] Dead-letter handling and replay path verified
+- [x] Outbox/inbox/saga paths validated for impacted flows
+- [x] Duplicate delivery/idempotency behavior verified
+- [x] Dead-letter handling and replay path verified
 
 ### Test and verification gates
-- [ ] Build passed
-- [ ] Focused integration tests passed
+- [x] Build passed
+- [x] Focused integration tests passed
 - [ ] Row-count/checksum verification attached (if data move/cutover)
 - [ ] Migration verification output attached
 
@@ -344,8 +344,8 @@ Checklist for this phase (copy/paste into PR):
 - [ ] Incident commander:
 
 ### Evidence links
-- [ ] Build/test logs:
-- [ ] Verification scripts/results:
+- [x] Build/test logs:
+- [x] Verification scripts/results:
 - [ ] Dashboard/metrics snapshot:
 - [ ] Rollback runbook:
 
@@ -377,28 +377,28 @@ Checklist for this phase (copy/paste into PR):
 ## Phase 11 PR Checklist (PR 4)
 
 ### Scope
-- [ ] Contexts in scope: Inventory, Promotions, Reviews, Payments
-- [ ] Entities/tables in scope: Remaining bounded-context business tables
-- [ ] Explicit out-of-scope: Already split contexts
+- [x] Contexts in scope: Inventory, Promotions, Reviews, Payments
+- [x] Entities/tables in scope: Remaining bounded-context business tables
+- [x] Explicit out-of-scope: Already split contexts
 
 ### Ownership and architecture
-- [ ] Single write-owner confirmed for changed tables
-- [ ] No direct cross-context business writes introduced
-- [ ] Clean architecture dependency direction preserved
+- [x] Single write-owner confirmed for changed tables
+- [x] No direct cross-context business writes introduced
+- [x] Clean architecture dependency direction preserved
 
 ### Migrations and config
 - [ ] Context-specific migration(s) added/updated
-- [ ] Connection string/config keys documented
+- [x] Connection string/config keys documented
 - [ ] Migration rollback procedure included
 
 ### Reliability and consistency
-- [ ] Outbox/inbox/saga paths validated for impacted flows
-- [ ] Duplicate delivery/idempotency behavior verified
-- [ ] Dead-letter handling and replay path verified
+- [x] Outbox/inbox/saga paths validated for impacted flows
+- [x] Duplicate delivery/idempotency behavior verified
+- [x] Dead-letter handling and replay path verified
 
 ### Test and verification gates
-- [ ] Build passed
-- [ ] Focused integration tests passed
+- [x] Build passed
+- [x] Focused integration tests passed
 - [ ] Row-count/checksum verification attached (if data move/cutover)
 - [ ] Migration verification output attached
 
@@ -415,8 +415,8 @@ Checklist for this phase (copy/paste into PR):
 - [ ] Incident commander:
 
 ### Evidence links
-- [ ] Build/test logs:
-- [ ] Verification scripts/results:
+- [x] Build/test logs:
+- [x] Verification scripts/results:
 - [ ] Dashboard/metrics snapshot:
 - [ ] Rollback runbook:
 
@@ -449,14 +449,14 @@ Checklist for this phase (copy/paste into PR):
 ## Phase 11 PR Checklist (PR 5)
 
 ### Scope
-- [ ] Contexts in scope: Shared persistence finalization
-- [ ] Entities/tables in scope: AppDbContext platform-only entities
-- [ ] Explicit out-of-scope: New feature development
+- [x] Contexts in scope: Shared persistence finalization
+- [x] Entities/tables in scope: AppDbContext platform-only entities
+- [x] Explicit out-of-scope: New feature development
 
 ### Ownership and architecture
-- [ ] Single write-owner confirmed for changed tables
-- [ ] No direct cross-context business writes introduced
-- [ ] Clean architecture dependency direction preserved
+- [x] Single write-owner confirmed for changed tables
+- [x] No direct cross-context business writes introduced
+- [x] Clean architecture dependency direction preserved
 
 ### Migrations and config
 - [ ] Context-specific migration(s) added/updated
@@ -464,13 +464,13 @@ Checklist for this phase (copy/paste into PR):
 - [ ] Migration rollback procedure included
 
 ### Reliability and consistency
-- [ ] Outbox/inbox/saga paths validated for impacted flows
-- [ ] Duplicate delivery/idempotency behavior verified
+- [x] Outbox/inbox/saga paths validated for impacted flows
+- [x] Duplicate delivery/idempotency behavior verified
 - [ ] Dead-letter handling and replay path verified
 
 ### Test and verification gates
-- [ ] Build passed
-- [ ] Focused integration tests passed
+- [x] Build passed
+- [x] Focused integration tests passed
 - [ ] Row-count/checksum verification attached (if data move/cutover)
 - [ ] Migration verification output attached
 
@@ -487,8 +487,8 @@ Checklist for this phase (copy/paste into PR):
 - [ ] Incident commander:
 
 ### Evidence links
-- [ ] Build/test logs:
-- [ ] Verification scripts/results:
+- [x] Build/test logs:
+- [x] Verification scripts/results:
 - [ ] Dashboard/metrics snapshot:
 - [ ] Rollback runbook:
 

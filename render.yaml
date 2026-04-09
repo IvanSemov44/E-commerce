@@ -93,7 +93,7 @@ databases:
   - name: ecommerce-db
     plan: free
     region: oregon # Should match the API region
-    postgresMajorVersion: "15"
+    postgresMajorVersion: "18"
     
     # User and database name are auto-generated
     # Connection string is available via fromDatabase reference
