@@ -1,5 +1,7 @@
 ﻿using ECommerce.Reviews.Application;
+using ECommerce.Reviews.Infrastructure.EventHandlers;
 using ECommerce.Reviews.Infrastructure.IntegrationEvents;
+using ECommerce.Reviews.Domain.Events;
 using ECommerce.Reviews.Domain.Interfaces;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence.Repositories;
@@ -28,7 +30,9 @@ public static class DependencyInjection
 
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<ECommerce.Reviews.Application.Interfaces.ICatalogService, CatalogService>();
+        services.AddScoped<ECommerce.Reviews.Application.Interfaces.IReviewRatingProjectionEventPublisher, ReviewRatingProjectionEventPublisher>();
         services.AddScoped<INotificationHandler<ProductProjectionUpdatedIntegrationEvent>, ProductProjectionUpdatedIntegrationEventHandler>();
+        services.AddScoped<INotificationHandler<ReviewRatingProjectionChangedDomainEvent>, ReviewRatingProjectionChangedDomainEventHandler>();
         services.AddReviewsApplication();
 
         return services;

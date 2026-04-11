@@ -10,7 +10,6 @@ using ECommerce.Reviews.Domain.Enums;
 using ECommerce.Reviews.Domain.Errors;
 using ECommerce.Reviews.Domain.Interfaces;
 using ECommerce.Reviews.Domain.ValueObjects;
-using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -24,8 +23,7 @@ public class ReviewsHandlerTests
     {
         var repository = new FakeReviewRepository();
         var catalog = new FakeCatalogService();
-        var unitOfWork = new FakeUnitOfWork();
-        var handler = new CreateReviewCommandHandler(repository, catalog, unitOfWork);
+        var handler = new CreateReviewCommandHandler(repository, catalog);
 
         Guid productId = Guid.NewGuid();
         Guid userId = Guid.NewGuid();
@@ -38,7 +36,6 @@ public class ReviewsHandlerTests
         result.IsSuccess.ShouldBeTrue();
         result.GetDataOrThrow().Rating.ShouldBe(5);
         repository.Reviews.Where(review => review.ProductId == productId && review.UserId == userId).ShouldHaveSingleItem();
-        unitOfWork.SaveCount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -46,8 +43,7 @@ public class ReviewsHandlerTests
     {
         var repository = new FakeReviewRepository();
         var catalog = new FakeCatalogService();
-        var unitOfWork = new FakeUnitOfWork();
-        var handler = new CreateReviewCommandHandler(repository, catalog, unitOfWork);
+        var handler = new CreateReviewCommandHandler(repository, catalog);
 
         var result = await handler.Handle(
             new CreateReviewCommand(Guid.NewGuid(), Guid.NewGuid(), null, 5, "Nice", "Great product overall!"),
@@ -55,7 +51,6 @@ public class ReviewsHandlerTests
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ProductNotFound.Code);
-        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -63,8 +58,7 @@ public class ReviewsHandlerTests
     {
         var repository = new FakeReviewRepository();
         var catalog = new FakeCatalogService();
-        var unitOfWork = new FakeUnitOfWork();
-        var handler = new CreateReviewCommandHandler(repository, catalog, unitOfWork);
+        var handler = new CreateReviewCommandHandler(repository, catalog);
 
         Guid productId = Guid.NewGuid();
         Guid userId = Guid.NewGuid();
@@ -77,17 +71,15 @@ public class ReviewsHandlerTests
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.DuplicateReview.Code);
-        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
     public async Task UpdateReview_OwnerCanUpdate()
     {
         var repository = new FakeReviewRepository();
-        var unitOfWork = new FakeUnitOfWork();
         var review = CreateReview();
         repository.Seed(review);
-        var handler = new UpdateReviewCommandHandler(repository, unitOfWork);
+        var handler = new UpdateReviewCommandHandler(repository);
 
         var result = await handler.Handle(
             new UpdateReviewCommand(review.Id, review.UserId!.Value, false, 4, "Updated", "Updated review text"),
@@ -96,17 +88,15 @@ public class ReviewsHandlerTests
         result.IsSuccess.ShouldBeTrue();
         result.GetDataOrThrow().Rating.ShouldBe(4);
         result.GetDataOrThrow().Title.ShouldBe("Updated");
-        unitOfWork.SaveCount.ShouldBe(1);
     }
 
     [TestMethod]
     public async Task UpdateReview_NonOwnerNonAdmin_ReturnsUnauthorized()
     {
         var repository = new FakeReviewRepository();
-        var unitOfWork = new FakeUnitOfWork();
         var review = CreateReview();
         repository.Seed(review);
-        var handler = new UpdateReviewCommandHandler(repository, unitOfWork);
+        var handler = new UpdateReviewCommandHandler(repository);
 
         var result = await handler.Handle(
             new UpdateReviewCommand(review.Id, Guid.NewGuid(), false, 4, "Updated", "Updated review text"),
@@ -114,18 +104,16 @@ public class ReviewsHandlerTests
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.Unauthorized.Code);
-        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
     public async Task UpdateReview_ApprovedReview_ReturnsReviewAlreadyApproved()
     {
         var repository = new FakeReviewRepository();
-        var unitOfWork = new FakeUnitOfWork();
         var review = CreateReview();
         review.Approve(DateTime.UtcNow);
         repository.Seed(review);
-        var handler = new UpdateReviewCommandHandler(repository, unitOfWork);
+        var handler = new UpdateReviewCommandHandler(repository);
 
         var result = await handler.Handle(
             new UpdateReviewCommand(review.Id, review.UserId!.Value, false, 4, "Updated", "Updated review text"),
@@ -133,17 +121,15 @@ public class ReviewsHandlerTests
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewAlreadyApproved.Code);
-        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
     public async Task DeleteReview_OwnerCanDelete()
     {
         var repository = new FakeReviewRepository();
-        var unitOfWork = new FakeUnitOfWork();
         var review = CreateReview();
         repository.Seed(review);
-        var handler = new DeleteReviewCommandHandler(repository, unitOfWork);
+        var handler = new DeleteReviewCommandHandler(repository);
 
         var result = await handler.Handle(
             new DeleteReviewCommand(review.Id, review.UserId!.Value, false),
@@ -151,17 +137,15 @@ public class ReviewsHandlerTests
 
         result.IsSuccess.ShouldBeTrue();
         repository.Reviews.ShouldBeEmpty();
-        unitOfWork.SaveCount.ShouldBe(1);
     }
 
     [TestMethod]
     public async Task DeleteReview_NonOwnerNonAdmin_ReturnsUnauthorized()
     {
         var repository = new FakeReviewRepository();
-        var unitOfWork = new FakeUnitOfWork();
         var review = CreateReview();
         repository.Seed(review);
-        var handler = new DeleteReviewCommandHandler(repository, unitOfWork);
+        var handler = new DeleteReviewCommandHandler(repository);
 
         var result = await handler.Handle(
             new DeleteReviewCommand(review.Id, Guid.NewGuid(), false),
@@ -169,7 +153,6 @@ public class ReviewsHandlerTests
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.Unauthorized.Code);
-        unitOfWork.SaveCount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -441,20 +424,4 @@ public class ReviewsHandlerTests
             => Task.FromResult(_productIds.Contains(productId));
     }
 
-    private sealed class FakeUnitOfWork : IUnitOfWork
-    {
-        public int SaveCount { get; private set; }
-        public bool HasActiveTransaction => false;
-
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            SaveCount++;
-            return Task.FromResult(1);
-        }
-
-        public Task BeginTransactionAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task CommitTransactionAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task RollbackTransactionAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public void Dispose() { }
-    }
 }

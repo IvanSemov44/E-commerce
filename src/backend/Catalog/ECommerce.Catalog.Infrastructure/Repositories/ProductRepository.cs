@@ -67,9 +67,12 @@ public class ProductRepository(CatalogDbContext _db) : IProductRepository
 
         if (minRating.HasValue)
         {
-            // Filter by average rating (scalar subquery)
-            var rating = (double)minRating.Value;
-            query = query.Where(p => _db.ProductRatings.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating) >= rating);
+            // Filter by Catalog-owned rating projection.
+            var rating = minRating.Value;
+            query = query.Where(p => (_db.ProductRatings
+                .Where(r => r.ProductId == p.Id)
+                .Select(r => (decimal?)r.AverageRating)
+                .FirstOrDefault() ?? 0m) >= rating);
         }
 
         // Sorting
@@ -87,7 +90,10 @@ public class ProductRepository(CatalogDbContext _db) : IProductRepository
                     query = query.OrderByDescending(p => p.Price);
                     break;
                 case "rating":
-                    query = query.OrderByDescending(p => _db.ProductRatings.Where(r => r.ProductId == p.Id).Average(r => (double)r.Rating));
+                    query = query.OrderByDescending(p => _db.ProductRatings
+                        .Where(r => r.ProductId == p.Id)
+                        .Select(r => (decimal?)r.AverageRating)
+                        .FirstOrDefault() ?? 0m);
                     break;
                 case "newest":
                     query = query.OrderByDescending(p => p.CreatedAt);

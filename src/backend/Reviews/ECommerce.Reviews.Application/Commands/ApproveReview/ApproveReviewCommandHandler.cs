@@ -6,8 +6,7 @@ using MediatR;
 namespace ECommerce.Reviews.Application.CommandHandlers;
 
 public class ApproveReviewCommandHandler(
-    IReviewRepository reviewRepository,
-    ECommerce.SharedKernel.Interfaces.IUnitOfWork unitOfWork) : IRequestHandler<ApproveReviewCommand, Result>
+    IReviewRepository reviewRepository) : IRequestHandler<ApproveReviewCommand, Result>
 {
     public async Task<Result> Handle(ApproveReviewCommand request, CancellationToken cancellationToken)
     {
@@ -20,7 +19,6 @@ public class ApproveReviewCommandHandler(
             return approveResult;
 
         await reviewRepository.UpsertAsync(review, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }

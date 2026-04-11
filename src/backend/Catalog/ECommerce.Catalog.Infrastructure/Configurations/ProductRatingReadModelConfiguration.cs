@@ -8,9 +8,11 @@ public class ProductRatingReadModelConfiguration : IEntityTypeConfiguration<Prod
 {
     public void Configure(EntityTypeBuilder<ProductRatingReadModel> builder)
     {
-        builder.HasNoKey();
-        builder.ToTable("Reviews", "public");
+        builder.HasKey(x => x.ProductId);
+        builder.ToTable("ProductRatings", "catalog");
         builder.Property(x => x.ProductId).HasColumnName("ProductId");
-        builder.Property(x => x.Rating).HasColumnName("Rating");
+        builder.Property(x => x.AverageRating).HasColumnName("AverageRating").HasPrecision(5, 2);
+        builder.Property(x => x.ReviewCount).HasColumnName("ReviewCount");
+        builder.Property(x => x.UpdatedAt).HasColumnName("UpdatedAt");
     }
 }

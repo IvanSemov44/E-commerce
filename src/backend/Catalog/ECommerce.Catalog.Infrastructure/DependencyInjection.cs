@@ -4,6 +4,9 @@ using ECommerce.Catalog.Infrastructure.Services;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Infrastructure.Repositories;
+using ECommerce.Catalog.Infrastructure.IntegrationEvents;
+using ECommerce.Contracts;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -27,6 +30,7 @@ public static class CatalogInfrastructureServiceExtensions
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductProjectionEventPublisher, ProductProjectionEventPublisher>();
+        services.AddScoped<INotificationHandler<ProductRatingProjectionUpdatedIntegrationEvent>, ProductRatingProjectionUpdatedIntegrationEventHandler>();
         return services;
     }
 }

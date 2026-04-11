@@ -1,4 +1,5 @@
 ﻿using ECommerce.Reviews.Domain.Aggregates.Review;
+using ECommerce.Reviews.Domain.Events;
 using ECommerce.Reviews.Domain.Errors;
 using ECommerce.Reviews.Domain.Enums;
 using ECommerce.Reviews.Domain.ValueObjects;
@@ -87,6 +88,14 @@ public class ReviewsDomainTests
     }
 
     [TestMethod]
+    public void Review_Create_CollectsRatingProjectionDomainEvent()
+    {
+        Review review = CreateReview();
+
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    [TestMethod]
     public void Review_Edit_PendingReview_UpdatesValues()
     {
         Review review = CreateReview();
@@ -153,6 +162,18 @@ public class ReviewsDomainTests
 
         review.Status.ShouldBe(ReviewStatus.Rejected);
         review.UpdatedAt.ShouldBe(updatedAt);
+    }
+
+    [TestMethod]
+    public void Review_Approve_CollectsNewRatingProjectionDomainEvent()
+    {
+        Review review = CreateReview();
+        review.ClearDomainEvents();
+
+        Result result = review.Approve(DateTime.UtcNow);
+
+        result.IsSuccess.ShouldBeTrue();
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
     }
 
     [TestMethod]

@@ -6,8 +6,7 @@ using MediatR;
 namespace ECommerce.Reviews.Application.CommandHandlers;
 
 public class DeleteReviewCommandHandler(
-    IReviewRepository reviewRepository,
-    ECommerce.SharedKernel.Interfaces.IUnitOfWork unitOfWork) : IRequestHandler<DeleteReviewCommand, Result>
+    IReviewRepository reviewRepository) : IRequestHandler<DeleteReviewCommand, Result>
 {
     public async Task<Result> Handle(DeleteReviewCommand request, CancellationToken cancellationToken)
     {
@@ -18,8 +17,9 @@ public class DeleteReviewCommandHandler(
         if (!request.IsAdmin && review.UserId != request.UserId)
             return Result.Fail(ReviewsErrors.Unauthorized);
 
+        review.NotifyRatingProjectionChanged();
+
         await reviewRepository.DeleteAsync(review, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }
