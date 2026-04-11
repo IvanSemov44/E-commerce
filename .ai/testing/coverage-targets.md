@@ -122,16 +122,6 @@ Critical journeys (must always have E2E coverage):
 
 ---
 
-## Current Gaps (as of 2026-04-08)
+## Current Gaps
 
-| Area | Gap | Priority |
-|---|---|---|
-| Shopping.Application | Only 4 handler tests; domain has 19 | High |
-| Ordering.Application | GetOrderStats has 1 test only | Medium |
-| Reviews.Infrastructure | Projection sync missing update path | High |
-| All projection handlers | Only insert + delete tested; no update path | High |
-| Frontend components | MSW server is set up but 52 test files still use vi.mock for RTK Query hooks | High |
-| orders pages | OrderDetailPage, OrderHistoryPage have no page-level tests | Medium |
-| profile page | ProfilePage has no page-level test | Low |
-| hooks | useCartOperations, useDebounce, useTranslation untested | Medium |
-| shared UI | EmptyState, QuantityControl, TrustSignals have no tests | Low |
+See [targets.md](targets.md) for detailed gap analysis and roadmap to full coverage.
