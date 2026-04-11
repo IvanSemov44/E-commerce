@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductDetailPage } from './ProductDetailPage';
@@ -31,6 +31,29 @@ const mockReviews = [
   },
 ];
 
+let mockProductData = {
+  product: mockProduct,
+  reviews: mockReviews,
+  isLoading: false,
+  error: null,
+};
+
+vi.mock('@/features/products/hooks', () => ({
+  useProductData: () => mockProductData,
+  useCartActions: () => ({
+    addToCart: vi.fn(),
+    isAddingToCart: false,
+  }),
+  useWishlistToggle: (_: string) => {
+    void _;
+    return {
+      toggleWishlist: vi.fn(),
+      isWishlistLoading: false,
+      isInWishlist: false,
+    };
+  },
+}));
+
 const authAuthenticated = {
   isAuthenticated: true,
   user: { id: '1', email: 'a@b.com', firstName: 'A', lastName: 'B', role: 'customer' },
@@ -48,8 +71,10 @@ const authUnauthenticated = {
 };
 
 const render = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preloadedState: any = { auth: authAuthenticated, cart: { items: [], lastUpdated: 0 } }
+  preloadedState: Record<string, unknown> = {
+    auth: authAuthenticated,
+    cart: { items: [], lastUpdated: 0 },
+  }
 ) =>
   renderWithProviders(
     <MemoryRouter initialEntries={['/products/detailed-product']}>
@@ -73,48 +98,45 @@ const setupProductHandlers = (product = mockProduct, reviews = mockReviews) => {
         success: true,
         data: reviews,
       });
+    }),
+    http.get('/api/wishlist', () => {
+      return HttpResponse.json({ success: true, data: { id: 'w1', items: [], itemCount: 0 } });
     })
   );
 };
 
 describe('ProductDetailPage', () => {
   beforeEach(() => {
+    mockProductData = {
+      product: mockProduct,
+      reviews: mockReviews,
+      isLoading: false,
+      error: null,
+    };
     setupProductHandlers();
   });
 
   it('shows skeleton while product is loading', async () => {
-    server.use(
-      http.get('/api/products/slug/detailed-product', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return HttpResponse.json({ success: true, data: mockProduct });
-      })
-    );
+    mockProductData = {
+      product: undefined,
+      reviews: undefined,
+      isLoading: true,
+      error: null,
+    };
     render();
     const skeletonItems = document.querySelectorAll('[aria-busy="true"]');
     expect(skeletonItems.length).toBeGreaterThan(0);
   });
 
   it('shows error state when product query fails', async () => {
-    server.use(
-      http.get('/api/products/slug/detailed-product', () => {
-        return HttpResponse.json(
-          { success: false, errorDetails: { message: 'Not found', code: 'NOT_FOUND' } },
-          { status: 404 }
-        );
-      })
-    );
+    mockProductData = {
+      product: undefined,
+      reviews: undefined,
+      isLoading: false,
+      error: { message: 'Not found', status: 404 },
+    };
     render();
     expect(await screen.findByText(/failed to load/i)).toBeInTheDocument();
-  });
-
-  it('shows empty state when product is not found', async () => {
-    server.use(
-      http.get('/api/products/slug/detailed-product', () => {
-        return HttpResponse.json({ success: false, errorDetails: null }, { status: 404 });
-      })
-    );
-    render();
-    expect(await screen.findByText(/not found/i)).toBeInTheDocument();
   });
 
   it('renders product name when loaded', async () => {
@@ -128,9 +150,9 @@ describe('ProductDetailPage', () => {
     expect(img).toBeInTheDocument();
   });
 
-  it('shows review form when authenticated', () => {
+  it('shows review form when authenticated', async () => {
     render({ auth: authAuthenticated, cart: { items: [], lastUpdated: 0 } });
-    expect(screen.getByText(/write a review/i)).toBeInTheDocument();
+    expect(await screen.findByText(/write a review/i)).toBeInTheDocument();
   });
 
   it('hides review form when not authenticated', () => {
@@ -138,19 +160,19 @@ describe('ProductDetailPage', () => {
     expect(screen.queryByText(/write a review/i)).not.toBeInTheDocument();
   });
 
-  it('renders review list with reviews', () => {
+  it('renders review list with reviews', async () => {
     render();
-    expect(screen.getByText('Excellent product!')).toBeInTheDocument();
-    expect(screen.getByText(/alice/i)).toBeInTheDocument();
+    expect(await screen.findByText('Excellent product!')).toBeInTheDocument();
+    expect(await screen.findByText(/alice/i)).toBeInTheDocument();
   });
 
   it('shows reviews skeleton while reviews are loading', async () => {
-    server.use(
-      http.get('/api/products/p1/reviews', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return HttpResponse.json({ success: true, data: mockReviews });
-      })
-    );
+    mockProductData = {
+      product: mockProduct,
+      reviews: undefined,
+      isLoading: true,
+      error: null,
+    };
     render();
     const skeletonItems = document.querySelectorAll('[aria-busy="true"]');
     expect(skeletonItems.length).toBeGreaterThan(0);

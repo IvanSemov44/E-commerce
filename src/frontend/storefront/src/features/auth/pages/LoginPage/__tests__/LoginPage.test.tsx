@@ -7,6 +7,16 @@ import { server } from '@/shared/lib/test/msw-server';
 import { http, HttpResponse } from 'msw';
 
 const mockNavigate = vi.fn();
+const mockLoginUnwrap = vi.fn().mockResolvedValue({
+  success: true,
+  user: {
+    id: '1',
+    email: 'john@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    role: 'Customer',
+  },
+});
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
@@ -16,16 +26,7 @@ vi.mock('react-router', async (importOriginal) => {
 vi.mock('@/features/auth/api/authApi', () => ({
   useLoginMutation: () => [
     vi.fn().mockReturnValue({
-      unwrap: vi.fn().mockResolvedValue({
-        success: true,
-        user: {
-          id: '1',
-          email: 'john@example.com',
-          firstName: 'John',
-          lastName: 'Doe',
-          role: 'Customer',
-        },
-      }),
+      unwrap: mockLoginUnwrap,
     }),
     { isLoading: false },
   ],
@@ -68,6 +69,16 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLoginUnwrap.mockResolvedValue({
+      success: true,
+      user: {
+        id: '1',
+        email: 'john@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'Customer',
+      },
+    });
     server.resetHandlers();
     setupLoginHandlers(true);
   });
@@ -110,8 +121,12 @@ describe('LoginPage', () => {
   });
 
   it('shows backend error via handleError, no navigation', async () => {
+    mockLoginUnwrap.mockRejectedValue({
+      status: 401,
+      data: { errorDetails: { message: 'Invalid credentials' } },
+    });
+
     const user = userEvent.setup();
-    setupLoginHandlers(false);
     renderWithProviders(<LoginPage />);
 
     await fillValidForm(user);

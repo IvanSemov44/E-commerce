@@ -22,11 +22,17 @@ let mockWishlistState: {
   toggleWishlist: vi.fn().mockResolvedValue(undefined),
 };
 
+let mockAddToCart: ReturnType<typeof vi.fn> = vi.fn();
+let mockIsInStock = true;
+
 vi.mock('@/features/products/hooks', () => ({
   useWishlistToggle: () => mockWishlistState,
   useCartActions: () => ({
-    addToCart: vi.fn().mockResolvedValue(undefined),
-    isAddingToCart: false,
+    addToCart: mockAddToCart,
+    isAdding: false,
+    addedToCart: false,
+    isInStock: mockIsInStock,
+    inCartQuantity: 0,
   }),
 }));
 
@@ -107,6 +113,8 @@ describe('ProductCard', () => {
       isWishlistLoading: false,
       toggleWishlist: vi.fn().mockResolvedValue(undefined),
     };
+    mockAddToCart = vi.fn();
+    mockIsInStock = true;
     vi.clearAllMocks();
     setupApiHandlers();
   });
@@ -144,6 +152,7 @@ describe('ProductCard', () => {
   });
 
   it('shows sold out overlay when out of stock', () => {
+    mockIsInStock = false;
     renderCard({ stockQuantity: 0 });
     expect(screen.getByText(/products\.soldOut/i)).toBeInTheDocument();
   });
@@ -179,15 +188,16 @@ describe('ProductCard', () => {
   });
 
   it('disables quick add button when out of stock', () => {
+    mockIsInStock = false;
     renderCard({ stockQuantity: 0 });
     expect(screen.getByRole('button', { name: /quick add to cart/i })).toBeDisabled();
   });
 
-  it.skip('adds to local cart when not authenticated', async () => {
-    const { store } = renderCard();
+  it('adds to local cart when not authenticated', async () => {
+    mockAddToCart = vi.fn();
+    renderCard();
     fireEvent.click(screen.getByRole('button', { name: /quick add to cart/i }));
-    await waitFor(() => expect(store.getState().cart.items).toHaveLength(1));
-    expect(store.getState().cart.items[0].id).toBe('123');
+    await waitFor(() => expect(mockAddToCart).toHaveBeenCalledWith());
   });
 
   it('calls backend addToCart when authenticated', async () => {

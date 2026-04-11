@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductsPage } from './ProductsPage';
@@ -38,10 +38,30 @@ const defaultPreloadedState = {
   cart: { items: [], lastUpdated: 0 },
 };
 
+let mockProductsData = {
+  data: mockPaginatedResult,
+  isLoading: false,
+  error: null as null | unknown,
+};
+
+let mockCategoriesData = {
+  data: mockCategories,
+  isLoading: false,
+  error: null as null | unknown,
+};
+
+vi.mock('@/features/products/api', () => ({
+  useGetProductsQuery: () => mockProductsData,
+  useGetTopLevelCategoriesQuery: () => mockCategoriesData,
+}));
+
+vi.mock('@/features/categories/api', () => ({
+  useGetTopLevelCategoriesQuery: () => mockCategoriesData,
+}));
+
 const render = (
   initialEntry = '/',
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preloadedState: any = defaultPreloadedState
+  preloadedState: Record<string, unknown> = defaultPreloadedState
 ) =>
   renderWithProviders(
     <MemoryRouter initialEntries={[initialEntry]}>
@@ -70,6 +90,16 @@ const setupProductsHandlers = (products = mockPaginatedResult, categories = mock
 describe('ProductsPage', () => {
   beforeEach(() => {
     server.resetHandlers();
+    mockProductsData = {
+      data: mockPaginatedResult,
+      isLoading: false,
+      error: null,
+    };
+    mockCategoriesData = {
+      data: mockCategories,
+      isLoading: false,
+      error: null,
+    };
     setupProductsHandlers();
   });
 
@@ -79,52 +109,47 @@ describe('ProductsPage', () => {
   });
 
   it('shows skeleton while loading', async () => {
-    server.use(
-      http.get('/api/products', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return HttpResponse.json({
-          success: true,
-          data: mockPaginatedResult,
-        });
-      })
-    );
+    mockProductsData = {
+      data: mockPaginatedResult,
+      isLoading: true,
+      error: null,
+    };
     render();
     const skeletonItems = document.querySelectorAll('[aria-busy="true"]');
     expect(skeletonItems.length).toBeGreaterThan(0);
   });
 
-  it.skip('shows error state when query fails', () => {
-    server.use(
-      http.get('/api/products', () => {
-        return HttpResponse.json(
-          { success: false, errorDetails: { message: 'Server error', code: 'INTERNAL_ERROR' } },
-          { status: 500 }
-        );
-      })
-    );
+  it('shows error state when query fails', () => {
+    mockProductsData = {
+      data: undefined,
+      isLoading: false,
+      error: { message: 'Server error' },
+    };
     render();
     expect(screen.getByText(/failed to load/i)).toBeInTheDocument();
   });
 
-  it.skip('shows empty state with no filters active', () => {
-    server.use(
-      http.get('/api/products', () => {
-        return HttpResponse.json({
-          success: true,
-          data: { ...mockPaginatedResult, items: [], totalCount: 0 },
-        });
-      })
-    );
+  it('shows empty state with no filters active', () => {
+    mockProductsData = {
+      data: { ...mockPaginatedResult, items: [], totalCount: 0 },
+      isLoading: false,
+      error: null,
+    };
     render('/');
     expect(screen.getByText(/no products/i)).toBeInTheDocument();
   });
 
-  it.skip('shows "no matches" empty state when filters are active', () => {
+  it('shows "no matches" empty state when filters are active', () => {
+    mockProductsData = {
+      data: { ...mockPaginatedResult, items: [], totalCount: 0 },
+      isLoading: false,
+      error: null,
+    };
     render('/?search=nonexistent');
     expect(screen.getByText(/no products match/i)).toBeInTheDocument();
   });
 
-  it.skip('renders product grid when data is returned', () => {
+  it('renders product grid when data is returned', () => {
     render();
     expect(screen.getByText('Test Widget')).toBeInTheDocument();
   });

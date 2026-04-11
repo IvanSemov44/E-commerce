@@ -13,12 +13,14 @@ vi.mock('react-i18next', () => ({
 
 const mockMethods = ['credit_card', 'debit_card', 'paypal', 'apple_pay'];
 
+let mockPaymentData = {
+  data: { methods: mockMethods },
+  isLoading: false,
+  error: null as null | unknown,
+};
+
 vi.mock('@/features/checkout/api/paymentsApi', () => ({
-  useGetPaymentMethodsQuery: () => ({
-    data: { methods: mockMethods },
-    isLoading: false,
-    error: null,
-  }),
+  useGetPaymentMethodsQuery: () => mockPaymentData,
 }));
 
 const setupPaymentMethodsHandlers = (methods = mockMethods) => {
@@ -35,6 +37,11 @@ const setupPaymentMethodsHandlers = (methods = mockMethods) => {
 describe('PaymentMethodSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPaymentData = {
+      data: { methods: mockMethods },
+      isLoading: false,
+      error: null,
+    };
     server.resetHandlers();
     setupPaymentMethodsHandlers();
   });
@@ -80,20 +87,23 @@ describe('PaymentMethodSelector', () => {
     expect(screen.getByRole('group')).toBeInTheDocument();
   });
 
-  it.skip('shows loading skeleton while fetching', async () => {
-    server.use(
-      http.get('/api/checkout/payment-methods', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return HttpResponse.json({ success: true, data: { methods: mockMethods } });
-      })
-    );
+  it('shows loading skeleton while fetching', () => {
+    mockPaymentData = {
+      data: undefined,
+      isLoading: true,
+      error: null,
+    };
     renderWithProviders(<PaymentMethodSelector selectedMethod="" onMethodChange={vi.fn()} />);
 
     expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument();
   });
 
-  it.skip('renders nothing when methods list is empty', () => {
-    setupPaymentMethodsHandlers([]);
+  it('renders nothing when methods list is empty', () => {
+    mockPaymentData = {
+      data: { methods: [] },
+      isLoading: false,
+      error: null,
+    };
     const { container } = renderWithProviders(
       <PaymentMethodSelector selectedMethod="" onMethodChange={vi.fn()} />
     );
@@ -101,8 +111,12 @@ describe('PaymentMethodSelector', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it.skip('renders fallback icon for unknown payment method', () => {
-    setupPaymentMethodsHandlers(['unknown_method']);
+  it('renders fallback icon for unknown payment method', () => {
+    mockPaymentData = {
+      data: { methods: ['unknown_method'] },
+      isLoading: false,
+      error: null,
+    };
     renderWithProviders(
       <PaymentMethodSelector selectedMethod="unknown_method" onMethodChange={vi.fn()} />
     );

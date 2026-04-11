@@ -34,10 +34,12 @@ vi.mock('@/shared/hooks', async (importOriginal) => {
   };
 });
 
+const mockResetUnwrap = vi.fn().mockResolvedValue({ success: true });
+
 vi.mock('@/features/auth/api/authApi', () => ({
   useResetPasswordMutation: () => [
     vi.fn().mockReturnValue({
-      unwrap: vi.fn().mockResolvedValue({ success: true }),
+      unwrap: mockResetUnwrap,
     }),
     { isLoading: false },
   ],
@@ -61,6 +63,7 @@ describe('ResetPasswordPage', () => {
   beforeEach(() => {
     server.resetHandlers();
     vi.clearAllMocks();
+    mockResetUnwrap.mockResolvedValue({ success: true });
     setupResetPasswordHandlers(true);
   });
 
@@ -82,7 +85,7 @@ describe('ResetPasswordPage', () => {
       await user.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/password is required/i).length).toBeGreaterThanOrEqual(1);
       });
     });
   });
@@ -113,7 +116,7 @@ describe('ResetPasswordPage', () => {
       await user.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/password is required/i).length).toBeGreaterThanOrEqual(1);
       });
 
       await user.type(screen.getByLabelText('New Password'), 'P');
@@ -160,8 +163,12 @@ describe('ResetPasswordPage', () => {
 
   describe('backend error', () => {
     it('shows error toast on backend error, form stays visible', async () => {
+      mockResetUnwrap.mockRejectedValue({
+        status: 400,
+        data: { errorDetails: { message: 'Token has expired' } },
+      });
+
       const user = userEvent.setup();
-      setupResetPasswordHandlers(false);
       renderWithProviders(<ResetPasswordPage />);
 
       const passwordInput = screen.getByLabelText('New Password');

@@ -1,6 +1,6 @@
-import { useState, useMemo, useActionState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
 import { useApiErrorHandler } from '@/shared/hooks';
 import { createForgotPasswordSchema } from './forgotPasswordSchema';
@@ -19,6 +19,7 @@ export function useForgotPasswordForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [values, setValues] = useState<ForgotPasswordFormValues>(INITIAL_VALUES);
   const [submitted, setSubmitted] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setValues((prev) => ({ ...prev, email: e.target.value }));
@@ -33,25 +34,28 @@ export function useForgotPasswordForm() {
     setFieldErrors({ email: fieldIssue?.message });
   };
 
-  const [, action, isPending] = useActionState(async () => {
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsPending(true);
+
     const result = schema.safeParse(values);
 
     if (!result.success) {
       const message = result.error.issues[0]?.message;
       setFieldErrors({ email: message });
-      return null;
+      setIsPending(false);
+      return;
     }
 
     try {
       await forgotPassword({ email: result.data.email }).unwrap();
       setSubmitted(true);
     } catch (err) {
-      // Security: always show success to avoid email enumeration — but surface network errors
       handleError(err, t('common.error'));
+    } finally {
+      setIsPending(false);
     }
+  };
 
-    return null;
-  }, null);
-
-  return { values, fieldErrors, submitted, handleChange, handleBlur, action, isPending };
+  return { values, fieldErrors, submitted, handleChange, handleBlur, handleSubmit, isPending };
 }

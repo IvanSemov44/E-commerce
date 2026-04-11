@@ -74,7 +74,8 @@ vi.mock('@/shared/components', () => ({
   }) => {
     if (isLoading) return <>{loadingSkeleton.custom}</>;
     if (error) return <div data-testid="query-error">error</div>;
-    if (!data)
+    const dataObj = data as { items?: Array<unknown> } | undefined;
+    if (!data || (dataObj.items && dataObj.items.length === 0))
       return (
         <div>
           {emptyState.title}
@@ -86,7 +87,14 @@ vi.mock('@/shared/components', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string) => {
+      if (key === 'wishlist.title') return 'My Wishlist';
+      if (key === 'wishlist.continueShopping') return 'Continue Shopping';
+      if (key === 'wishlist.empty') return 'wishlist.empty';
+      return key;
+    },
+  }),
 }));
 
 vi.mock('react-router', async (importOriginal) => {
