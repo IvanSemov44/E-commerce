@@ -13,7 +13,8 @@ This folder is the single source of truth for how tests are written, organised, 
 2. **[naming-conventions.md](naming-conventions.md)** — method names, file names, class names.
 3. **[coverage-targets.md](coverage-targets.md)** — minimum expectations per layer and why.
 4. **[anti-patterns.md](anti-patterns.md)** — what NOT to do, with examples.
-5. Pattern doc for the layer you are working in:
+5. **[structure.md](structure.md)** — where tests live, quick reference map.
+6. Pattern doc for the layer you are working in:
    - Backend domain → [patterns/backend-domain-tests.md](patterns/backend-domain-tests.md)
    - Backend application → [patterns/backend-application-tests.md](patterns/backend-application-tests.md)
    - Backend integration → [patterns/backend-integration-tests.md](patterns/backend-integration-tests.md)
