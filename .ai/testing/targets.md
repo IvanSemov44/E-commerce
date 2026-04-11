@@ -8,9 +8,23 @@ This document maps current test coverage to target coverage, identifies gaps, an
 
 | Area | Test Files | Tests | Status |
 |---|---|---|---|
-| **Backend** | 81 | ~500+ | 8 BC test projects + ECommerce.Tests |
-| **Frontend** | 108 | 891 | All passing |
-| **Total** | 189 | ~1400+ | Healthy baseline |
+| **Backend BC Tests** | 8 projects | 397 | Domain + Application (Catalog, Identity, Inventory, Ordering, Promotions, Reviews, Shopping) |
+| **Backend Integration** | 1 project | 698 | ECommerce.Tests (API, Unit, Integration) |
+| **Frontend Storefront** | 108 | 891 | All passing |
+| **Total** | 109+ | 1986 | |
+
+### Backend BC Test Breakdown
+
+| BC | Test Files | Test Methods |
+|---|---|---|
+| Catalog | 5 | 118 |
+| Identity | 4 | 94 |
+| Inventory | 5 | 55 |
+| Ordering | 3 | 30 |
+| Promotions | 3 | 39 |
+| Reviews | 2 | 38 |
+| Shopping | 3 | 23 |
+| **Subtotal** | **25** | **397** |
 
 ---
 
@@ -20,17 +34,17 @@ This document maps current test coverage to target coverage, identifies gaps, an
 
 | Layer | Target | Current | Gap |
 |---|---|---|---|
-| **L1: Domain** | 100% aggregate methods covered | ~70% | Missing handler tests in some BCs |
-| **L2: Application** | 80% handler coverage | ~60% | Shopping, Ordering gaps |
-| **L3: Integration** | Every endpoint: 200 + 400 + 401 | Partial | Some endpoints lack full matrix |
+| **L1: Domain** | 100% aggregate methods covered | ~80% | Some domain methods lack tests |
+| **L2: Application** | 80% handler coverage | ~65% | Shopping (23 tests), Ordering (30 tests) low |
+| **L3: Integration** | Every endpoint: 200 + 400 + 401 | ~70% | Some endpoints lack full matrix |
 | **L5: Projection Sync** | insert + update + delete per handler | Partial | Update path often missing |
 
 ### Frontend Targets
 
 | Layer | Target | Current | Gap |
 |---|---|---|---|
-| **F1: Components** | Every component: render + states + interactions | ~80% | Missing for some shared UI |
-| **F2: Hooks** | Every custom hook: initial + transition | ~75% | useCartOperations, useDebounce |
+| **F1: Components** | Every component: render + states + interactions | ~85% | Order pages, some shared UI |
+| **F2: Hooks** | Every custom hook: initial + transition | ~80% | useCartOperations, useDebounce |
 | **F3: Slices** | Every action + non-trivial selector | Complete | — |
 | **F4: E2E** | Critical journeys + auth-gated | Partial | Limited coverage |
 
@@ -40,39 +54,42 @@ This document maps current test coverage to target coverage, identifies gaps, an
 
 ### High Priority
 
-| Gap | Layer | BC/Feature | Action |
-|---|---|---|---|
-| Projection sync update path | L5 | Reviews | Add update tests for handlers |
-| MSW migration | F1 | Storefront | 52 files still use vi.mock |
-| Shopping handler coverage | L2 | Shopping.Application | Add handler tests |
-| OrderDetailPage tests | F1 | Orders | Add page-level tests |
+| Gap | Layer | BC/Feature | Current → Target | Action |
+|---|---|---|---|---|
+| Shopping handler coverage | L2 | Shopping | 23 → 50+ | Add handler tests |
+| Ordering handler coverage | L2 | Ordering | 30 → 50+ | Add handler tests |
+| Projection sync update path | L5 | Reviews | Partial → Complete | Add update tests |
+| MSW migration | F1 | Storefront | Partial → Complete | Convert vi.mock to MSW |
 
 ### Medium Priority
 
 | Gap | Layer | BC/Feature | Action |
 |---|---|---|---|
-| Ordering handler stats | L2 | Ordering.Application | Add GetOrderStats tests |
+| Inventory handler tests | L2 | Inventory | Add more handler tests |
+| Promotions handler tests | L2 | Promotions | Add more handler tests |
 | useCartOperations | F2 | Cart | Add hook tests |
-| useDebounce | F2 | Shared | Add hook tests |
+| OrderDetailPage | F1 | Orders | Add page tests |
 
 ### Low Priority
 
-| Gap | Layer | BC/Feature | Action |
+| Gap | Layer | Feature | Action |
 |---|---|---|---|
 | ProfilePage | F1 | Profile | Add page tests |
-| EmptyState, QuantityControl | F1 | Shared UI | Add component tests |
+| useDebounce | F2 | Shared | Add hook tests |
+| EmptyState | F1 | Shared UI | Add component tests |
 
 ---
 
 ## Roadmap to Targets
 
-### Phase 1: Backend Domain & Application (In Progress)
+### Phase 1: Backend Domain & Application
 
 **Goal:** Close L1/L2 gaps
 
-- [ ] Shopping.Application — add handler tests (4 → 19+)
-- [ ] Ordering.Application — add GetOrderStats handler tests
-- [ ] Reviews.Application — add remaining handler tests
+- [ ] Shopping.Application — add handler tests (23 → 50+)
+- [ ] Ordering.Application — add handler tests (30 → 50+)
+- [ ] Inventory.Application — add handler tests (55 → 60+)
+- [ ] Promotions.Application — add handler tests (39 → 50+)
 - [ ] Verify 80% handler coverage across all BCs
 
 ### Phase 2: Backend Projection Sync
@@ -95,9 +112,9 @@ This document maps current test coverage to target coverage, identifies gaps, an
 
 **Goal:** Close F1/F2 gaps
 
-- [ ] MSW migration: convert remaining 52 vi.mock files to MSW handlers
+- [ ] MSW migration: convert vi.mock files to MSW handlers
 - [ ] Add OrderDetailPage, OrderHistoryPage tests
-- [ ] Add useCartOperations, useDebounce hook tests
+- [ ] Add useCartOperations hook tests
 - [ ] Add missing shared UI component tests
 
 ### Phase 5: E2E Expansion
@@ -115,7 +132,7 @@ This document maps current test coverage to target coverage, identifies gaps, an
 Once all phases complete, enforce via CI:
 
 - **coverlet thresholds** in each .csproj
-- **Frontend coverage** via Vitest coverage (TBD)
+- **Frontend coverage** via Vitest coverage
 - **No PR merge** without test file for new handler/component
 
 ---
