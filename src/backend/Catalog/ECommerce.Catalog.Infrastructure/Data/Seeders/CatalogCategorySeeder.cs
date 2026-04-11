@@ -1,19 +1,20 @@
 ﻿using ECommerce.SharedKernel.Entities;
+using ECommerce.Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECommerce.Infrastructure.Data.Seeders;
+namespace ECommerce.Catalog.Infrastructure.Data.Seeders;
 
 /// <summary>
 /// Seeds category data into the database.
 /// </summary>
-public class CategorySeeder : ICategorySeeder
+public sealed class CatalogCategorySeeder
 {
-    public async Task SeedAsync(AppDbContext context)
+    public static async Task SeedAsync(CatalogDbContext context, CancellationToken cancellationToken = default)
     {
         try
         {
             // Check if categories already exist
-            if (await context.Categories.AnyAsync())
+            if (await context.Categories.AnyAsync(cancellationToken))
             {
                 return; // Database already seeded
             }
@@ -49,8 +50,8 @@ public class CategorySeeder : ICategorySeeder
                 }
             };
 
-            await context.Categories.AddRangeAsync(categories);
-            await context.SaveChangesAsync();
+            await context.Categories.AddRangeAsync(categories, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {

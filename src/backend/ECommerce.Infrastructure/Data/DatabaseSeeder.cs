@@ -11,8 +11,6 @@ namespace ECommerce.Infrastructure.Data;
 /// </summary>
 public class DatabaseSeeder(
     IUserSeeder userSeeder,
-    ICategorySeeder categorySeeder,
-    IProductSeeder productSeeder,
     ILogger<DatabaseSeeder> logger)
 {
     /// <summary>
@@ -42,14 +40,6 @@ public class DatabaseSeeder(
             // Seed users first (no dependencies)
             logger.LogInformation("Seeding users...");
             await userSeeder.SeedAsync(context);
-
-            // Seed categories (no dependencies)
-            logger.LogInformation("Seeding categories...");
-            await categorySeeder.SeedAsync(context);
-
-            // Seed products and product images (depends on categories)
-            logger.LogInformation("Seeding products...");
-            await productSeeder.SeedAsync(context);
 
             logger.LogInformation("Database seeding completed successfully!");
         }

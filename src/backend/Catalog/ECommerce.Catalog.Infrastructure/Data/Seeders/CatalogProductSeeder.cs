@@ -1,27 +1,28 @@
 ﻿using ECommerce.SharedKernel.Entities;
+using ECommerce.Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECommerce.Infrastructure.Data.Seeders;
+namespace ECommerce.Catalog.Infrastructure.Data.Seeders;
 
 /// <summary>
 /// Seeds product and product image data into the database.
 /// </summary>
-public class ProductSeeder : IProductSeeder
+public sealed class CatalogProductSeeder
 {
-    public async Task SeedAsync(AppDbContext context)
+    public static async Task SeedAsync(CatalogDbContext context, CancellationToken cancellationToken = default)
     {
         try
         {
             // Check if products already exist
-            if (await context.Products.AnyAsync())
+            if (await context.Products.AnyAsync(cancellationToken))
             {
                 return; // Database already seeded
             }
 
             // Get categories (assuming they've been seeded)
-            var electronics = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "electronics");
-            var fashion = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "fashion");
-            var home = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "home-garden");
+            var electronics = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "electronics", cancellationToken);
+            var fashion = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "fashion", cancellationToken);
+            var home = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "home-garden", cancellationToken);
 
             if (electronics == null || fashion == null || home == null)
             {
@@ -29,11 +30,11 @@ public class ProductSeeder : IProductSeeder
             }
 
             var products = CreateProducts(electronics, fashion, home);
-            await context.Products.AddRangeAsync(products);
-            await context.SaveChangesAsync();
+            await context.Products.AddRangeAsync(products, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
 
             // Seed product images
-            await SeedProductImagesAsync(context, products);
+            await SeedProductImagesAsync(context, products, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -83,7 +84,7 @@ public class ProductSeeder : IProductSeeder
         };
     }
 
-    private static async Task SeedProductImagesAsync(AppDbContext context, List<Product> products)
+    private static async Task SeedProductImagesAsync(CatalogDbContext context, List<Product> products, CancellationToken cancellationToken)
     {
         var productImageMap = CreateProductImageMap();
         var productImages = new List<ProductImage>();
@@ -124,8 +125,8 @@ public class ProductSeeder : IProductSeeder
             }
         }
 
-        await context.ProductImages.AddRangeAsync(productImages);
-        await context.SaveChangesAsync();
+        await context.ProductImages.AddRangeAsync(productImages, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private static Dictionary<string, List<(string Url, string Alt)>> CreateProductImageMap()

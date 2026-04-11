@@ -1,5 +1,7 @@
 ﻿using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Integration;
+using ECommerce.Catalog.Infrastructure.Persistence;
+using ECommerce.Catalog.Infrastructure.Data.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -10,6 +12,8 @@ namespace ECommerce.API.Services;
 /// </summary>
 public sealed class AppDbContextInitializationService(
     IAppDbInitializationService appDbInitializationService,
+    CatalogDbContext catalogDbContext,
+    CatalogDataSeeder catalogDataSeeder,
     IntegrationPersistenceDbContext integrationPersistenceDbContext,
     ReviewsProductProjectionBackfillService reviewsBackfillService)
 {
@@ -21,8 +25,28 @@ public sealed class AppDbContextInitializationService(
 
         if (!environment.IsEnvironment("Test"))
         {
+            await SeedCatalogContextAsync(environment);
             await EnsureIntegrationSchemaAsync();
             await BackfillReviewsProductProjectionsAsync();
+        }
+    }
+
+    private async Task SeedCatalogContextAsync(IWebHostEnvironment environment, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (environment.IsProduction() &&
+                !string.Equals(Environment.GetEnvironmentVariable("ENABLE_PRODUCTION_SEEDING"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Information("Skipping Catalog context seeding in Production (set ENABLE_PRODUCTION_SEEDING=true to enable).");
+                return;
+            }
+
+            await catalogDataSeeder.SeedAsync(catalogDbContext, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "An error occurred while seeding Catalog context data.");
         }
     }
 
