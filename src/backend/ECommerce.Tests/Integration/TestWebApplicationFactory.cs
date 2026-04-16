@@ -21,6 +21,8 @@ using ECommerce.Infrastructure.Integration;
 using ECommerce.SharedKernel.Entities;
 using ECommerce.SharedKernel.DTOs;
 using ECommerce.SharedKernel.Interfaces;
+using CatalogCategory = ECommerce.Catalog.Domain.Aggregates.Category.Category;
+using CatalogProduct = ECommerce.Catalog.Domain.Aggregates.Product.Product;
 using ECommerce.Payments.Application.Interfaces;
 using SharedOrderStatus = ECommerce.SharedKernel.Enums.OrderStatus;
 using SharedPaymentStatus = ECommerce.SharedKernel.Enums.PaymentStatus;
@@ -37,6 +39,8 @@ using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Infrastructure.Persistence;
 using BCrypt.Net;
 using Microsoft.Extensions.Hosting;
+using DotNet.Testcontainers.Builders;
+using Testcontainers.PostgreSql;
 
 namespace ECommerce.Tests.Integration;
 
@@ -111,15 +115,20 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _reviewsDatabaseName = $"IntegrationTestsReviewsDb_{Guid.NewGuid():N}";
     private readonly string _shoppingDatabaseName = $"IntegrationTestsShoppingDb_{Guid.NewGuid():N}";
     private readonly string _promotionsDatabaseName = $"IntegrationTestsPromotionsDb_{Guid.NewGuid():N}";
+    private PostgreSqlContainer? _catalogPostgresContainer;
+    private string? _catalogPostgresConnectionString;
+    private readonly object _catalogContainerSync = new();
     private readonly FakePromoCodeRepository _promoCodeRepository = new();
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
-    private static readonly Guid SeededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid _seededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
     private static readonly string _defaultConnectionString =
         Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
         ?? "Host=localhost;Database=ECommerceDb;Username=ecommerce;Password=local-dev-password-123";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        var catalogPostgresConnectionString = TryGetCatalogPostgresConnectionString();
+
         // Reset auth state at the beginning of each WebHost configuration
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
         ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
@@ -218,9 +227,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<CatalogDbContext>(options =>
             {
-                options.UseInMemoryDatabase(_catalogDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                options.UseNpgsql(catalogPostgresConnectionString);
             });
 
             services.AddDbContext<IntegrationPersistenceDbContext>(options =>
@@ -291,10 +298,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 db.Database.EnsureCreated();
 
                 var reviewsDb = scopedServices.GetRequiredService<ReviewsDbContext>();
-                reviewsDb.Database.EnsureCreated();
+                reviewsDb.Database.Migrate();
 
                 var catalogDb = scopedServices.GetRequiredService<CatalogDbContext>();
-                catalogDb.Database.EnsureCreated();
+                catalogDb.Database.Migrate();
 
                 var integrationDb = scopedServices.GetRequiredService<IntegrationPersistenceDbContext>();
                 integrationDb.Database.EnsureCreated();
@@ -355,25 +362,29 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     inventoryDb.InventoryItems.Add(inventoryResultForInventoryDb.GetDataOrThrow());
                 }
 
-                catalogDb.Categories.Add(new Category
+                var categoryResult = CatalogCategory.Create("Test Category", null, "test-category");
+                if (categoryResult.IsSuccess)
                 {
-                    Id = categoryId,
-                    Name = "Test Category",
-                    Slug = "test-category",
-                    IsActive = true
-                });
+                    var category = categoryResult.GetDataOrThrow();
+                    SetEntityId(category, categoryId);
+                    catalogDb.Categories.Add(category);
+                }
 
-                catalogDb.Products.Add(new Product
+                var productResult = CatalogProduct.Create(
+                    "IntegrationProduct",
+                    10.0m,
+                    "USD",
+                    categoryId,
+                    "TEST-SKU-001",
+                    "integration-product");
+                if (productResult.IsSuccess)
                 {
-                    Id = productId,
-                    Name = "IntegrationProduct",
-                    Slug = "integration-product",
-                    Price = 10.0m,
-                    StockQuantity = 100,
-                    IsActive = true,
-                    Sku = "TEST-SKU-001",
-                    CategoryId = categoryId
-                });
+                    var product = productResult.GetDataOrThrow();
+                    SetEntityId(product, productId);
+                    product.SetStock(100);
+                    product.Activate();
+                    catalogDb.Products.Add(product);
+                }
 
                 orderingDb.Products.Add(new ECommerce.Ordering.Infrastructure.Persistence.ProductReadModel
                 {
@@ -467,7 +478,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                         promoCodeResult.GetDataOrThrow(),
                         discountValueResult.GetDataOrThrow(),
                         null);
-                    SetEntityId(promo, SeededPromoCodeId);
+                    SetEntityId(promo, _seededPromoCodeId);
                     _promoCodeRepository.Seed(promo);
                 }
 
@@ -523,6 +534,64 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         });
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        StopCatalogContainerAsync().GetAwaiter().GetResult();
+        base.Dispose(disposing);
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await StopCatalogContainerAsync();
+        GC.SuppressFinalize(this);
+        await base.DisposeAsync();
+    }
+
+    private string TryGetCatalogPostgresConnectionString()
+    {
+        if (_catalogPostgresConnectionString is not null)
+            return _catalogPostgresConnectionString;
+
+        lock (_catalogContainerSync)
+        {
+            if (_catalogPostgresConnectionString is not null)
+                return _catalogPostgresConnectionString;
+
+            try
+            {
+                _catalogPostgresContainer = new PostgreSqlBuilder()
+                    .WithImage("postgres:16-alpine")
+                    .WithDatabase(_catalogDatabaseName.ToLowerInvariant())
+                    .WithUsername("postgres")
+                    .WithPassword("postgres")
+                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
+                    .WithCleanUp(true)
+                    .Build();
+
+                _catalogPostgresContainer.StartAsync().GetAwaiter().GetResult();
+                _catalogPostgresConnectionString = _catalogPostgresContainer.GetConnectionString();
+                return _catalogPostgresConnectionString;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Catalog PostgreSQL Testcontainer failed to start. " +
+                    "Verify Docker is running and accessible.",
+                    ex);
+            }
+        }
+    }
+
+    private async Task StopCatalogContainerAsync()
+    {
+        if (_catalogPostgresContainer is null)
+            return;
+
+        await _catalogPostgresContainer.DisposeAsync();
+        _catalogPostgresContainer = null;
+        _catalogPostgresConnectionString = null;
+    }
+
     /// <summary>
     /// Generates a JWT token for testing with specified roles.
     /// </summary>
@@ -576,6 +645,16 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         return client;
     }
 
+    public HttpClient CreateAuthenticatedClientNoRedirect()
+    {
+        var client = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestUserId, "Customer");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return client;
+    }
+
     /// <summary>
     /// Creates an authenticated HTTP client with admin privileges.
     /// CSRF is skipped in Test environment, so no CSRF token handling needed.
@@ -590,6 +669,16 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         return client;
     }
 
+    public HttpClient CreateAdminClientNoRedirect()
+    {
+        var client = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestAdminUserId, "Admin");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return client;
+    }
+
     /// <summary>
     /// Creates an unauthenticated HTTP client (no Authorization header).
     /// This allows [Authorize] decorators to properly reject the request with 401.
@@ -597,6 +686,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     public HttpClient CreateUnauthenticatedClient()
     {
         var client = CreateClient();
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return client;
+    }
+
+    public HttpClient CreateUnauthenticatedClientNoRedirect()
+    {
+        var client = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
         client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
         return client;

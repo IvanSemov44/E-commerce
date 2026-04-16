@@ -2,6 +2,7 @@
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Infrastructure.Data.Seeders;
+using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -14,6 +15,7 @@ public sealed class AppDbContextInitializationService(
     IAppDbInitializationService appDbInitializationService,
     CatalogDbContext catalogDbContext,
     CatalogDataSeeder catalogDataSeeder,
+    ReviewsDbContext reviewsDbContext,
     IntegrationPersistenceDbContext integrationPersistenceDbContext,
     ReviewsProductProjectionBackfillService reviewsBackfillService)
 {
@@ -22,6 +24,8 @@ public sealed class AppDbContextInitializationService(
         // Keep startup data lifecycle in one place: schema first, then data seed, then projection backfill.
         // This ordering avoids backfill running against stale schema/data during app boot.
         await appDbInitializationService.InitializeAsync(environment);
+        await MigrateCatalogContextAsync();
+        await MigrateReviewsContextAsync();
 
         if (!environment.IsEnvironment("Test"))
         {
@@ -29,6 +33,42 @@ public sealed class AppDbContextInitializationService(
             await EnsureIntegrationSchemaAsync();
             await BackfillReviewsProductProjectionsAsync();
         }
+    }
+
+    private async Task MigrateCatalogContextAsync(CancellationToken cancellationToken = default)
+    {
+        var providerName = catalogDbContext.Database.ProviderName ?? string.Empty;
+        if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) || !catalogDbContext.Database.IsRelational())
+        {
+            Log.Information("Skipping Catalog migration for non-relational provider: {Provider}", providerName);
+            return;
+        }
+
+        var pending = await catalogDbContext.Database.GetPendingMigrationsAsync(cancellationToken);
+        if (!pending.Any())
+            return;
+
+        Log.Information("Applying {Count} pending Catalog migration(s)...", pending.Count());
+        await catalogDbContext.Database.MigrateAsync(cancellationToken);
+        Log.Information("Catalog migrations applied successfully.");
+    }
+
+    private async Task MigrateReviewsContextAsync(CancellationToken cancellationToken = default)
+    {
+        var providerName = reviewsDbContext.Database.ProviderName ?? string.Empty;
+        if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) || !reviewsDbContext.Database.IsRelational())
+        {
+            Log.Information("Skipping Reviews migration for non-relational provider: {Provider}", providerName);
+            return;
+        }
+
+        var pending = await reviewsDbContext.Database.GetPendingMigrationsAsync(cancellationToken);
+        if (!pending.Any())
+            return;
+
+        Log.Information("Applying {Count} pending Reviews migration(s)...", pending.Count());
+        await reviewsDbContext.Database.MigrateAsync(cancellationToken);
+        Log.Information("Reviews migrations applied successfully.");
     }
 
     private async Task SeedCatalogContextAsync(IWebHostEnvironment environment, CancellationToken cancellationToken = default)
