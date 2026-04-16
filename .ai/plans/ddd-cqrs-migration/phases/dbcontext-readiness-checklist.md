@@ -112,3 +112,11 @@ Canonical checklist index:
 
 ## Minimum Definition of Ready
 A context is ready only when all 16 checks are satisfied with concrete evidence.
+
+
+
+
+
+Low: coverage gap on new aggregate overloads.
+New methods introduced in Category.cs:52 and Product.cs:95 are not directly unit-tested at domain level.
+Current tests catch them indirectly through handlers, but direct domain tests would better protect invariants and error mapping.

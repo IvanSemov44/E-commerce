@@ -140,7 +140,12 @@ public class OrdersControllerTests : IntegrationTestBase
 }
 ```
 
-Integration tests use `TestWebApplicationFactory` with a real PostgreSQL test database. The DB is reset between test runs.
+Integration tests use `TestWebApplicationFactory`.
+
+- Catalog runs against PostgreSQL Testcontainers by default for relational query/constraint fidelity.
+- Other bounded contexts in this host remain in-memory for fast feedback unless explicitly changed.
+
+Tests fail fast if Docker is unavailable.
 
 ---
 
