@@ -2,7 +2,6 @@
 using ECommerce.API.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Unit.HealthChecks;
@@ -43,7 +42,7 @@ public class HealthCheckResponseWriterTests
         await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        _httpContext.Response.StatusCode.ShouldBe(StatusCodes.Status200OK);
     }
 
     [TestMethod]
@@ -56,7 +55,7 @@ public class HealthCheckResponseWriterTests
         await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        _httpContext.Response.StatusCode.ShouldBe(StatusCodes.Status200OK);
     }
 
     [TestMethod]
@@ -69,7 +68,7 @@ public class HealthCheckResponseWriterTests
         await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        _httpContext.Response.StatusCode.ShouldBe(StatusCodes.Status503ServiceUnavailable);
     }
 
     [TestMethod]
@@ -82,7 +81,7 @@ public class HealthCheckResponseWriterTests
         await HealthCheckResponseWriter.WriteHealthCheckResponse(_httpContext, healthReport);
 
         // Assert
-        _httpContext.Response.ContentType.Should().Be("application/json");
+        _httpContext.Response.ContentType.ShouldBe("application/json");
     }
 
     [TestMethod]
@@ -98,7 +97,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("\"status\": \"Healthy\"");
+        response.ShouldContain("\"status\": \"Healthy\"");
     }
 
     [TestMethod]
@@ -114,7 +113,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("timestamp");
+        response.ShouldContain("timestamp");
     }
 
     [TestMethod]
@@ -130,7 +129,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("totalDurationMs");
+        response.ShouldContain("totalDurationMs");
     }
 
     [TestMethod]
@@ -146,7 +145,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("checks");
+        response.ShouldContain("checks");
     }
 
     [TestMethod]
@@ -167,8 +166,8 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("memory");
-        response.Should().Contain("database");
+        response.ShouldContain("memory");
+        response.ShouldContain("database");
     }
 
     [TestMethod]
@@ -189,7 +188,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("AllocatedMB");
+        response.ShouldContain("AllocatedMB");
     }
 
     [TestMethod]
@@ -210,7 +209,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("tags");
+        response.ShouldContain("tags");
     }
 
     #endregion
@@ -227,7 +226,7 @@ public class HealthCheckResponseWriterTests
         await HealthCheckResponseWriter.WriteLivenessResponse(_httpContext, healthReport);
 
         // Assert
-        _httpContext.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        _httpContext.Response.StatusCode.ShouldBe(StatusCodes.Status200OK);
     }
 
     [TestMethod]
@@ -240,7 +239,7 @@ public class HealthCheckResponseWriterTests
         await HealthCheckResponseWriter.WriteLivenessResponse(_httpContext, healthReport);
 
         // Assert
-        _httpContext.Response.ContentType.Should().Be("application/json");
+        _httpContext.Response.ContentType.ShouldBe("application/json");
     }
 
     [TestMethod]
@@ -256,7 +255,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("\"status\": \"healthy\"");
+        response.ShouldContain("\"status\": \"healthy\"");
     }
 
     [TestMethod]
@@ -272,7 +271,7 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().Contain("timestamp");
+        response.ShouldContain("timestamp");
     }
 
     [TestMethod]
@@ -288,8 +287,8 @@ public class HealthCheckResponseWriterTests
         _responseBody.Position = 0;
         var reader = new StreamReader(_responseBody);
         var response = await reader.ReadToEndAsync();
-        response.Should().NotContain("checks");
-        response.Should().NotContain("totalDurationMs");
+        response.ShouldNotContain("checks");
+        response.ShouldNotContain("totalDurationMs");
     }
 
     #endregion

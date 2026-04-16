@@ -1,11 +1,11 @@
 ﻿using ECommerce.SharedKernel.Entities;
-using ECommerce.Infrastructure.Data;
 using ECommerce.Payments.Application.Interfaces;
+using ECommerce.Payments.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Payments.Infrastructure.Persistence.Repositories;
 
-public sealed class PaymentOrderRepository(AppDbContext dbContext) : IPaymentOrderRepository
+public sealed class PaymentOrderRepository(PaymentsDbContext dbContext) : IPaymentOrderRepository
 {
     public Task<Order?> GetByIdAsync(Guid orderId, bool trackChanges, CancellationToken cancellationToken = default)
     {

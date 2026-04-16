@@ -25,6 +25,4 @@ public interface IProductRepository
     Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default);
     Task<int> GetActiveProductsCountAsync(CancellationToken ct = default);
     Task AddAsync(Product product, CancellationToken ct = default);
-    Task UpdateAsync(Product product, CancellationToken ct = default);
-    Task DeleteAsync(Product product, CancellationToken ct = default);
 }

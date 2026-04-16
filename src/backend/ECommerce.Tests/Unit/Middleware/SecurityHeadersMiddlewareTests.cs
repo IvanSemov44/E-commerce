@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using FluentAssertions;
 using ECommerce.API.Middleware;
 
 namespace ECommerce.Tests.Unit.Middleware;
@@ -28,8 +27,8 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("X-Frame-Options");
-        context.Response.Headers["X-Frame-Options"].ToString().Should().Be("DENY");
+        context.Response.Headers.ContainsKey("X-Frame-Options").ShouldBeTrue();
+        context.Response.Headers["X-Frame-Options"].ToString().ShouldBe("DENY");
     }
 
     [TestMethod]
@@ -42,8 +41,8 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("X-Content-Type-Options");
-        context.Response.Headers["X-Content-Type-Options"].ToString().Should().Be("nosniff");
+        context.Response.Headers.ContainsKey("X-Content-Type-Options").ShouldBeTrue();
+        context.Response.Headers["X-Content-Type-Options"].ToString().ShouldBe("nosniff");
     }
 
     [TestMethod]
@@ -56,8 +55,8 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("X-XSS-Protection");
-        context.Response.Headers["X-XSS-Protection"].ToString().Should().Be("1; mode=block");
+        context.Response.Headers.ContainsKey("X-XSS-Protection").ShouldBeTrue();
+        context.Response.Headers["X-XSS-Protection"].ToString().ShouldBe("1; mode=block");
     }
 
     [TestMethod]
@@ -70,8 +69,8 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("Referrer-Policy");
-        context.Response.Headers["Referrer-Policy"].ToString().Should().Be("strict-origin-when-cross-origin");
+        context.Response.Headers.ContainsKey("Referrer-Policy").ShouldBeTrue();
+        context.Response.Headers["Referrer-Policy"].ToString().ShouldBe("strict-origin-when-cross-origin");
     }
 
     [TestMethod]
@@ -84,8 +83,8 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("Permissions-Policy");
-        context.Response.Headers["Permissions-Policy"].ToString().Should().Be("camera=(), microphone=(), geolocation=()");
+        context.Response.Headers.ContainsKey("Permissions-Policy").ShouldBeTrue();
+        context.Response.Headers["Permissions-Policy"].ToString().ShouldBe("camera=(), microphone=(), geolocation=()");
     }
 
     [TestMethod]
@@ -98,13 +97,13 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("Content-Security-Policy");
+        context.Response.Headers.ContainsKey("Content-Security-Policy").ShouldBeTrue();
         var csp = context.Response.Headers["Content-Security-Policy"].ToString();
-        csp.Should().Contain("default-src 'self'");
-        csp.Should().Contain("script-src 'self'");
-        csp.Should().Contain("style-src 'self' 'unsafe-inline'");
-        csp.Should().Contain("img-src 'self' data: https:");
-        csp.Should().Contain("font-src 'self' https:");
+        csp.ShouldContain("default-src 'self'");
+        csp.ShouldContain("script-src 'self'");
+        csp.ShouldContain("style-src 'self' 'unsafe-inline'");
+        csp.ShouldContain("img-src 'self' data: https:");
+        csp.ShouldContain("font-src 'self' https:");
     }
 
     [TestMethod]
@@ -117,7 +116,7 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().NotContainKey("Strict-Transport-Security");
+        context.Response.Headers.ContainsKey("Strict-Transport-Security").ShouldBeFalse();
     }
 
     [TestMethod]
@@ -130,10 +129,10 @@ public class SecurityHeadersMiddlewareTests
         await _middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("Strict-Transport-Security");
+        context.Response.Headers.ContainsKey("Strict-Transport-Security").ShouldBeTrue();
         var hsts = context.Response.Headers["Strict-Transport-Security"].ToString();
-        hsts.Should().Contain("max-age=31536000");
-        hsts.Should().Contain("includeSubDomains");
+        hsts.ShouldContain("max-age=31536000");
+        hsts.ShouldContain("includeSubDomains");
     }
 
     [TestMethod]
@@ -158,7 +157,7 @@ public class SecurityHeadersMiddlewareTests
         // Assert
         foreach (var header in expectedHeaders)
         {
-            context.Response.Headers.Should().ContainKey(header, $"because {header} should be set");
+            context.Response.Headers.ContainsKey(header).ShouldBeTrue();
         }
     }
 
@@ -178,7 +177,7 @@ public class SecurityHeadersMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        wasNextCalled.Should().BeTrue();
+        wasNextCalled.ShouldBeTrue();
     }
 
     #region Helper Methods

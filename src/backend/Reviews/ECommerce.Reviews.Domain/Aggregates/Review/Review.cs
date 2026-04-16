@@ -1,5 +1,6 @@
 ﻿using ECommerce.Reviews.Domain.Enums;
 using ECommerce.Reviews.Domain.Errors;
+using ECommerce.Reviews.Domain.Events;
 using ECommerce.Reviews.Domain.ValueObjects;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.SharedKernel.Results;
@@ -46,7 +47,11 @@ public class Review : AggregateRoot
         Rating rating,
         ReviewContent content,
         Guid? orderId = null)
-        => new(productId, userId, rating, content, orderId);
+    {
+        var review = new Review(productId, userId, rating, content, orderId);
+        review.AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(review.ProductId));
+        return review;
+    }
 
     public Result Edit(Rating rating, ReviewContent content, DateTime updatedAt)
     {
@@ -56,6 +61,7 @@ public class Review : AggregateRoot
         Rating = rating;
         Content = content;
         UpdatedAt = updatedAt;
+        AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
         return Result.Ok();
     }
 
@@ -66,6 +72,7 @@ public class Review : AggregateRoot
 
         Status = ReviewStatus.Approved;
         UpdatedAt = updatedAt;
+        AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
         return Result.Ok();
     }
 
@@ -73,6 +80,12 @@ public class Review : AggregateRoot
     {
         Status = ReviewStatus.Rejected;
         UpdatedAt = updatedAt;
+        AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
+    }
+
+    public void NotifyRatingProjectionChanged()
+    {
+        AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
     }
 
     public void Flag(DateTime updatedAt)

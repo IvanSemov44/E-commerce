@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
     <ProjectReference Include="..\ECommerce.Reviews.Domain\ECommerce.Reviews.Domain.csproj" />
     <ProjectReference Include="..\ECommerce.Reviews.Application\ECommerce.Reviews.Application.csproj" />
     <ProjectReference Include="..\..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />

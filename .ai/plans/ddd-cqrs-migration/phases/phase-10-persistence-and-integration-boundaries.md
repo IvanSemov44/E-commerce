@@ -1,8 +1,49 @@
 # Phase 10: Persistence Ownership and Integration Boundary Hardening
 
-Status: Proposed (not started)
+Status: Completed
 Owner: @ivans
 Created: 2026-04-08
+Last updated: 2026-04-08
+
+## Completion summary
+
+Phase 10 is complete.
+
+Key outcomes delivered:
+
+- Temporary bridges BR-001 through BR-005 are closed in the bridge register.
+- Shared AppDbContext business/runtime bridge usage was removed from active migration targets.
+- Cross-context transaction choreography was removed from business command flow.
+- Integration reliability persistence was isolated into dedicated integration context wiring.
+- Startup and data-protection composition were hardened to reduce API-level shared-context coupling.
+
+Validation evidence (across slices):
+
+- `dotnet build src/backend/ECommerce.API/ECommerce.API.csproj` succeeded on final slices.
+- Targeted payment/integration characterization gates used during cutovers remained green.
+- Bridge register contains per-bridge closure notes and test gates.
+
+## Kickoff baseline completed
+
+The following Phase 10 prerequisites are already complete:
+
+- Phase 9 is merged into `main` and marked completed.
+- Phase 10 branch is created and pushed: `feature/phase-10-persistence-and-integration-boundaries`.
+- Accidental duplicate nested backend test files under `src/backend/src/backend/...` were removed.
+- Repository hygiene/build validation passed after cleanup (`dotnet build src/backend/ECommerce.sln`).
+
+This document now tracks active Phase 10 execution from that clean baseline.
+
+## AppDbContext decision playbook
+
+Use this as the canonical execution guide for `AppDbContext` scope, boundaries, and cutover rules:
+
+- `.ai/plans/ddd-cqrs-migration/phases/phase-10-appdbcontext-playbook.md`
+
+PR 1 working artifacts:
+- `.ai/plans/ddd-cqrs-migration/phases/phase-10-ownership-matrix.md`
+- `.ai/plans/ddd-cqrs-migration/phases/phase-10-appdbcontext-allowlist.md`
+- `.ai/plans/ddd-cqrs-migration/phases/phase-10-temporary-bridge-register.md`
 
 ## Why this phase exists
 
@@ -21,6 +62,9 @@ This phase closes that gap.
 Short answer:
 - Finish Phase 9 first.
 - Start Phase 10 immediately after Phase 9 exit criteria are green.
+
+Current state:
+- This gate is satisfied. Phase 9 closure is complete and Phase 10 has started.
 
 Reasoning:
 - Phase 9 is currently in progress and is mostly code-ownership cleanup.
@@ -83,12 +127,36 @@ If a flow needs strict cross-context consistency, redesign with:
 
 ## Workstreams
 
+## Mandatory architecture decisions (missing before, now required)
+
+Before PR 2, lock these decisions in writing (ADR-style note in this phase folder):
+
+1. Technical context strategy:
+   - keep and re-scope `ECommerce.Infrastructure` as technical context, or
+   - introduce explicit `Integration`/`Platform`/`Operations` context and retire current shared role.
+2. AppDbContext end-state:
+   - infra-only with explicit entity allowlist, or
+   - fully removed.
+3. Dashboard persistence contract:
+   - projection/read-model only (never business write source of truth).
+
+No implementation PR proceeds without these decisions.
+
 ## Workstream A: Ownership Baseline
 
 Deliverables:
 - table ownership matrix
 - dependency scan report
 - approved target schema map
+
+Required ownership matrix columns (minimum):
+- table/view name
+- write owner context
+- allowed readers
+- reader mechanism (projection/query API)
+- direct cross-context access allowed? (yes/no)
+- migration bridge? (yes/no + removal phase)
+- rollback impact
 
 Checks:
 - each table has exactly one write owner
@@ -104,6 +172,9 @@ Checks:
 - no bounded-context business repository depends on shared AppDbContext
 - any remaining AppDbContext usage is explicitly infrastructure-scoped
 
+Hard guardrail:
+- maintain an explicit AppDbContext entity allowlist (integration/ops entities only in final state).
+
 ## Workstream C: Transaction Boundary Hardening
 
 Deliverables:
@@ -113,6 +184,9 @@ Deliverables:
 Checks:
 - no partial-commit risk from sequential commit across unrelated context transactions
 - failure semantics tested
+
+Hard guardrail:
+- forbid any new multi-DbContext UoW coordinator implementation.
 
 ## Workstream D: Event and Projection Reliability
 
@@ -126,6 +200,11 @@ Checks:
 - duplicate event handling tests pass
 - projection lag and failure visibility in logs/metrics
 
+Operational SLOs (define and track):
+- projection freshness target (for example P95 lag threshold per projection)
+- dead-letter growth threshold and alerting rule
+- replay completion time target
+
 ## Workstream E: Schema and Data Migration
 
 Deliverables:
@@ -137,6 +216,39 @@ Checks:
 - row-count and checksum verification for moved data
 - uniqueness and key constraints validated post-cutover
 - zero-downtime or controlled downtime procedure documented
+
+Cutover runbook must include:
+- pre-cutover checks
+- dual-read/verification window steps
+- explicit rollback trigger conditions
+- post-cutover validation checklist
+
+## Dependency rules for DDD compliance (missing before, now explicit)
+
+Allowed high-level dependencies:
+1. API -> Application + Infrastructure + SharedKernel + Contracts
+2. Application -> Domain + SharedKernel + Contracts
+3. Infrastructure -> Application + Domain + SharedKernel + Contracts
+4. Domain -> SharedKernel only
+
+Disallowed dependencies:
+1. Domain -> Infrastructure
+2. Business context Domain/Application -> another context Infrastructure
+3. Shared technical context -> business write-model ownership
+
+Temporary migration exceptions must be:
+- documented in PR,
+- time-boxed to a target phase,
+- removed before Phase 10 done.
+
+## Known DDD violation patterns to eliminate in this phase
+
+1. Cross-context transaction choreography for a single business command.
+2. Shared AppDbContext used as business data backdoor across contexts.
+3. Dashboard/ops store becoming business-authoritative state.
+4. Direct cross-context reads that bypass projections/integration contracts.
+
+These patterns are considered blockers for Phase 10 completion.
 
 ## PR slicing strategy
 
@@ -150,6 +262,8 @@ Each PR must include:
 - tests
 - migration verification notes
 - rollback notes
+- dependency impact note (which allowed/disallowed dependency rules are touched)
+- temporary bridge declaration (if any) with removal target
 
 ## Definition of done for Phase 10
 
@@ -158,6 +272,8 @@ Each PR must include:
 3. Cross-context consistency relies on events/outbox, not direct relational coupling.
 4. Migration and schema validator behavior matches final ownership model.
 5. Runbooks exist for replay, dead-letter recovery, and drift checks.
+6. Technical context boundary is explicit (project + ownership + allowlist documented).
+7. No open temporary bridge exceptions remain without approved follow-up issue and due phase.
 
 ## Risks and mitigations
 
@@ -175,10 +291,31 @@ Mitigation: local transaction boundary only + outbox + compensation
 
 ## Immediate next actions
 
-1. Finish remaining Phase 9 steps and mark closure status.
-2. Create Phase 10 kickoff branch and publish ownership matrix.
-3. Select one pilot context for first persistence cutover (recommended: Catalog or Shopping).
-4. Implement and validate one full end-to-end migration slice before scaling to other contexts.
+1. Complete and approve the ownership matrix artifact.
+2. Complete and approve the AppDbContext allowlist artifact.
+3. Register all temporary bridges with removal phases and test gates.
+4. Lock the `AppDbContext` decision using the Phase 10 AppDbContext playbook.
+5. Select one pilot context for first persistence cutover (recommended: Catalog or Shopping).
+6. Deliver PR 1 (decision + ownership matrix + allowlist + bridge register) with validation notes and rollback notes.
+7. Deliver PR 2 for the first bounded-context shared-context dependency chain removal.
+
+## Repository hygiene guardrails for Phase 10
+
+To avoid accidental duplicate trees or stale code paths during persistence migration:
+
+1. Do not create nested repo mirrors (for example `src/backend/src/backend`).
+2. Before each PR, run a tracked-file sanity check for nested duplicates and out-of-scope roots.
+3. Keep migration/code changes in scoped PR slices; avoid mixed cleanup + schema cutover in one commit unless cleanup is required to unblock the slice.
+
+Recommended checks before opening each PR:
+
+```powershell
+git status --short
+git ls-files | rg "^src/backend/src/"
+dotnet build src/backend/ECommerce.sln -v minimal
+```
+
+Expected result for the duplicate-path check: no output.
 
 ## Notes for maintainers
 

@@ -17,8 +17,8 @@ public static class DependencyInjection
         services.AddDbContext<InventoryDbContext>((serviceProvider, options) =>
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+            var connectionString = configuration.GetConnectionString("InventoryConnection")
+                ?? throw new InvalidOperationException("Connection string 'InventoryConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
             options.ConfigureWarnings(warnings => warnings

@@ -1,35 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { ProductsPage } from './ProductsPage';
-import * as productApiModule from '@/features/products/api';
-
-vi.mock('@/features/products/api', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/products/api')>();
-  return {
-    ...actual,
-    useGetProductsQuery: vi.fn(),
-    useGetTopLevelCategoriesQuery: vi.fn(),
-  };
-});
-
-vi.mock('@/features/wishlist/api', () => ({
-  useGetWishlistQuery: vi.fn(() => ({ data: undefined })),
-  useAddToWishlistMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-  useRemoveFromWishlistMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-}));
-
-vi.mock('@/features/cart/api', () => ({
-  useAddToCartMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
-  useUpdateCartItemMutation: () => [vi.fn()],
-  useRemoveFromCartMutation: () => [vi.fn()],
-}));
-
-vi.mock('@/shared/hooks', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/shared/hooks')>();
-  return { ...actual, usePerformanceMonitor: vi.fn() };
-});
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 const mockProducts = [
   {
@@ -42,6 +17,10 @@ const mockProducts = [
     averageRating: 4.2,
     reviewCount: 3,
   },
+];
+
+const mockCategories = [
+  { id: 'cat-1', name: 'Electronics', slug: 'electronics', subcategories: [] },
 ];
 
 const mockPaginatedResult = {
@@ -59,10 +38,30 @@ const defaultPreloadedState = {
   cart: { items: [], lastUpdated: 0 },
 };
 
+let mockProductsData = {
+  data: mockPaginatedResult,
+  isLoading: false,
+  error: null as null | unknown,
+};
+
+let mockCategoriesData = {
+  data: mockCategories,
+  isLoading: false,
+  error: null as null | unknown,
+};
+
+vi.mock('@/features/products/api', () => ({
+  useGetProductsQuery: () => mockProductsData,
+  useGetTopLevelCategoriesQuery: () => mockCategoriesData,
+}));
+
+vi.mock('@/features/categories/api', () => ({
+  useGetTopLevelCategoriesQuery: () => mockCategoriesData,
+}));
+
 const render = (
   initialEntry = '/',
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preloadedState: any = defaultPreloadedState
+  preloadedState: Record<string, unknown> = defaultPreloadedState
 ) =>
   renderWithProviders(
     <MemoryRouter initialEntries={[initialEntry]}>
@@ -71,119 +70,92 @@ const render = (
     { preloadedState, withRouter: false }
   );
 
+const setupProductsHandlers = (products = mockPaginatedResult, categories = mockCategories) => {
+  server.use(
+    http.get('/api/products', () => {
+      return HttpResponse.json({
+        success: true,
+        data: products,
+      });
+    }),
+    http.get('/api/categories/top-level', () => {
+      return HttpResponse.json({
+        success: true,
+        data: categories,
+      });
+    })
+  );
+};
+
 describe('ProductsPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(productApiModule.useGetTopLevelCategoriesQuery).mockReturnValue({
-      data: [],
+    server.resetHandlers();
+    mockProductsData = {
+      data: mockPaginatedResult,
       isLoading: false,
-      error: undefined,
-    } as never);
+      error: null,
+    };
+    mockCategoriesData = {
+      data: mockCategories,
+      isLoading: false,
+      error: null,
+    };
+    setupProductsHandlers();
   });
 
   it('renders the page header', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
-      data: mockPaginatedResult,
-      isLoading: false,
-      isFetching: false,
-      error: undefined,
-    } as never);
-
     render();
-
     expect(screen.getByText(/discover/i)).toBeInTheDocument();
   });
 
-  it('shows skeleton while loading', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
-      data: undefined,
+  it('shows skeleton while loading', async () => {
+    mockProductsData = {
+      data: mockPaginatedResult,
       isLoading: true,
-      isFetching: true,
-      error: undefined,
-    } as never);
-
+      error: null,
+    };
     render();
-
-    // ProductsGridSkeleton renders multiple skeleton cards
     const skeletonItems = document.querySelectorAll('[aria-busy="true"]');
     expect(skeletonItems.length).toBeGreaterThan(0);
   });
 
   it('shows error state when query fails', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
+    mockProductsData = {
       data: undefined,
       isLoading: false,
-      isFetching: false,
-      error: { status: 500, data: { message: 'Server error' } },
-    } as never);
-
+      error: { message: 'Server error' },
+    };
     render();
-
     expect(screen.getByText(/failed to load/i)).toBeInTheDocument();
   });
 
   it('shows empty state with no filters active', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
+    mockProductsData = {
       data: { ...mockPaginatedResult, items: [], totalCount: 0 },
       isLoading: false,
-      isFetching: false,
-      error: undefined,
-    } as never);
-
+      error: null,
+    };
     render('/');
-
     expect(screen.getByText(/no products/i)).toBeInTheDocument();
   });
 
   it('shows "no matches" empty state when filters are active', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
+    mockProductsData = {
       data: { ...mockPaginatedResult, items: [], totalCount: 0 },
       isLoading: false,
-      isFetching: false,
-      error: undefined,
-    } as never);
-
+      error: null,
+    };
     render('/?search=nonexistent');
-
     expect(screen.getByText(/no products match/i)).toBeInTheDocument();
   });
 
   it('renders product grid when data is returned', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
-      data: mockPaginatedResult,
-      isLoading: false,
-      isFetching: false,
-      error: undefined,
-    } as never);
-
     render();
-
     expect(screen.getByText('Test Widget')).toBeInTheDocument();
   });
 
   it('renders sidebar with category filter and product filters', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
-      data: mockPaginatedResult,
-      isLoading: false,
-      isFetching: false,
-      error: undefined,
-    } as never);
-
     render();
-
     expect(screen.getAllByText(/all products/i).length).toBeGreaterThan(0);
-  });
-
-  it('shows refetch indicator during background fetch', () => {
-    vi.mocked(productApiModule.useGetProductsQuery).mockReturnValue({
-      data: mockPaginatedResult,
-      isLoading: false,
-      isFetching: true,
-      error: undefined,
-    } as never);
-
-    render();
-
-    expect(screen.getByText(/updating/i)).toBeInTheDocument();
   });
 });

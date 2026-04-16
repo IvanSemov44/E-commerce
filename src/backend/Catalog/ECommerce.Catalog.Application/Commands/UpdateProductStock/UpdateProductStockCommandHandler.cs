@@ -21,7 +21,6 @@ public class UpdateProductStockCommandHandler(
         if (!result.IsSuccess)
             return Result.Fail(result.GetErrorOrThrow());
 
-        await _products.UpdateAsync(product, cancellationToken);
         return Result.Ok();
     }
 }

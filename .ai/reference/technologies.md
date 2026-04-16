@@ -14,7 +14,7 @@ Owner: @ivans
 - React 19
 - TypeScript
 - Redux Toolkit + RTK Query
-- React Router v7 (Library Mode now; Framework Mode migration planned — see `.ai/workflows/rr7-framework-migration.md`)
+- React Router v7 Framework Mode (file-based routes via `flatRoutes()` — see `.ai/workflows/rr7-framework-migration.md`)
 - Vite 7
 - CSS Modules
 

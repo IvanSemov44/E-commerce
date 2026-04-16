@@ -1,6 +1,5 @@
 ﻿using ECommerce.Contracts;
 using ECommerce.Infrastructure.Integration;
-using ECommerce.Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,7 +10,7 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class Phase8MessageBrokerIntegrationTests
 {
-    private static IntegrationEventDispatcher CreateDispatcher(AppDbContext dbContext, IPublisher mediator)
+    private static IntegrationEventDispatcher CreateDispatcher(IntegrationPersistenceDbContext dbContext, IPublisher mediator)
     {
         var sagaMock = new Mock<IOrderFulfillmentSagaService>(MockBehavior.Loose);
         return new IntegrationEventDispatcher(
@@ -31,11 +30,11 @@ public class Phase8MessageBrokerIntegrationTests
             false,
             DateTime.UtcNow);
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"inbox-product-test-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
 
         var mediatorMock = new Mock<IPublisher>(MockBehavior.Strict);
         mediatorMock
@@ -63,11 +62,11 @@ public class Phase8MessageBrokerIntegrationTests
             IdempotencyKey = idempotencyKey
         };
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"inbox-product-dup-test-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
 
         var mediatorMock = new Mock<IPublisher>(MockBehavior.Strict);
         mediatorMock
@@ -101,11 +100,11 @@ public class Phase8MessageBrokerIntegrationTests
             IdempotencyKey = idempotencyKey
         };
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"inbox-test-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
 
         var mediatorMock = new Mock<IPublisher>(MockBehavior.Strict);
         mediatorMock
@@ -141,11 +140,11 @@ public class Phase8MessageBrokerIntegrationTests
             IdempotencyKey = idempotencyKey
         };
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"inbox-failure-test-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
         var processor = new InboxIdempotencyProcessor(dbContext);
 
         Func<Task> act = () => processor.ExecuteAsync(
@@ -153,7 +152,7 @@ public class Phase8MessageBrokerIntegrationTests
             _ => throw new InvalidOperationException("boom"),
             CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await Should.ThrowAsync<InvalidOperationException>(act);
 
         var inbox = await dbContext.InboxMessages.SingleAsync(x => x.IdempotencyKey == idempotencyKey);
         Assert.AreEqual(1, inbox.AttemptCount);
@@ -176,11 +175,11 @@ public class Phase8MessageBrokerIntegrationTests
             IdempotencyKey = idempotencyKey
         };
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"inbox-retry-test-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
         var processor = new InboxIdempotencyProcessor(dbContext);
 
         Func<Task> act = () => processor.ExecuteAsync(
@@ -188,7 +187,7 @@ public class Phase8MessageBrokerIntegrationTests
             _ => throw new InvalidOperationException("transient"),
             CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await Should.ThrowAsync<InvalidOperationException>(act);
 
         await processor.ExecuteAsync(message, _ => Task.CompletedTask, CancellationToken.None);
 
@@ -215,11 +214,11 @@ public class Phase8MessageBrokerIntegrationTests
             IdempotencyKey = idempotencyKey
         };
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"inbox-address-dup-test-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new AppDbContext(options);
+        await using var dbContext = new IntegrationPersistenceDbContext(options);
 
         var mediatorMock = new Mock<IPublisher>(MockBehavior.Strict);
         mediatorMock

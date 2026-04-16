@@ -1,4 +1,4 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.API.Behaviors;
 using ECommerce.API.Common.Extensions;
 using FluentValidation;
@@ -19,6 +19,7 @@ using ECommerce.Reviews.Application.Commands;
 using ECommerce.Reviews.Infrastructure;
 using ECommerce.Ordering.Infrastructure;
 using ECommerce.Ordering.Application.Commands.PlaceOrder;
+using ECommerce.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 
 // ============================================================================
@@ -46,7 +47,8 @@ builder.Configuration.ValidateRequiredConfiguration();
 builder.Services.AddForwardedHeadersConfiguration();
 
 // Database
-builder.Services.AddPostgreSqlDatabase(builder.Configuration);
+builder.Services.AddInfrastructurePersistence(builder.Configuration);
+builder.Services.AddInfrastructureSeeders();
 
 // Data Protection - persistent key storage for containerized environments
 builder.Services.AddDataProtectionConfiguration(builder.Configuration);

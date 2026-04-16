@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ECommerce.Catalog.Domain.ValueObjects;
 using ECommerce.Catalog.Domain.Aggregates.Category;
@@ -12,6 +13,21 @@ namespace ECommerce.Catalog.Tests.Domain;
 public class CategoryTests
 {
     private static T Unwrap<T>(Result<T> result) => result.GetDataOrThrow();
+
+    [TestMethod]
+    public void ApiContract_Rename_UsesValueObjectOverloadOnly()
+    {
+        MethodInfo? valueObjectMethod = typeof(Category).GetMethod(
+            "Rename",
+            [typeof(CategoryName)]);
+
+        MethodInfo? primitiveMethod = typeof(Category).GetMethod(
+            "Rename",
+            [typeof(string)]);
+
+        Assert.IsNotNull(valueObjectMethod);
+        Assert.IsNull(primitiveMethod);
+    }
 
     [TestMethod]
     public void CategoryName_EmptyString_ReturnsFailure()

@@ -15,7 +15,6 @@ using ECommerce.Catalog.Application.Commands.SetPrimaryImage;
 using ECommerce.Catalog.Application.Commands.CreateCategory;
 using ECommerce.Catalog.Application.Commands.UpdateCategory;
 using ECommerce.Catalog.Application.Commands.DeleteCategory;
-
 namespace ECommerce.Catalog.Tests.Application;
 
 [TestClass]
@@ -26,7 +25,6 @@ public class CommandHandlerTests
     sealed class FakeProductRepository : IProductRepository
     {
         public List<Product> Store = new();
-            public int UpdateCallCount;
 
         public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
@@ -95,25 +93,12 @@ public class CommandHandlerTests
             Store.Add(product);
             return Task.CompletedTask;
         }
-
-            public Task UpdateAsync(Product product, CancellationToken ct = default)
-            {
-                UpdateCallCount++;
-                return Task.CompletedTask;
-            }
-
-        public Task DeleteAsync(Product product, CancellationToken ct = default)
-        {
-            Store.Remove(product);
-            return Task.CompletedTask;
-        }
     }
 
     sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<Category> Store = new();
         public bool HasProductsReturn;
-            public int UpdateCallCount;
 
         public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
@@ -158,18 +143,6 @@ public class CommandHandlerTests
             Store.Add(category);
             return Task.CompletedTask;
         }
-
-            public Task UpdateAsync(Category category, CancellationToken ct = default)
-            {
-                UpdateCallCount++;
-                return Task.CompletedTask;
-            }
-
-        public Task DeleteAsync(Category category, CancellationToken ct = default)
-        {
-            Store.Remove(category);
-            return Task.CompletedTask;
-        }
     }
 
     private static Product CreateValidProduct(FakeCategoryRepository categories, FakeProductRepository products, Guid? categoryId = null)
@@ -206,7 +179,7 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task CreateProductCommandHandler_Handle_ValidCommand_ReturnsProductDetailDto()
+    public async Task CreateProductCommandHandler_Handle_ValidCommand_ReturnsCreatedProductId()
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
@@ -217,9 +190,10 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var dto = res.GetDataOrThrow();
-        Assert.AreEqual("Name", dto.Name);
-        Assert.AreEqual("SKU-123", dto.Sku);
+        var productId = res.GetDataOrThrow();
+        var created = products.Store.Single(p => p.Id == productId);
+        Assert.AreEqual("Name", created.Name.Value);
+        Assert.AreEqual("SKU-123", created.Sku!.Value);
     }
 
     [TestMethod]
@@ -268,7 +242,7 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task UpdateProductCommandHandler_Handle_ValidCommand_UpdatesProductAndReturnsDto()
+    public async Task UpdateProductCommandHandler_Handle_ValidCommand_UpdatesProductAndReturnsId()
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
@@ -280,8 +254,9 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var dto = res.GetDataOrThrow();
-        Assert.AreEqual("NewName", dto.Name);
+        var updatedProductId = res.GetDataOrThrow();
+        Assert.AreEqual(product.Id, updatedProductId);
+        Assert.AreEqual("NewName", product.Name.Value);
     }
 
     [TestMethod]
@@ -296,18 +271,6 @@ public class CommandHandlerTests
 
         Assert.IsFalse(res.IsSuccess);
         Assert.AreEqual("PRODUCT_NOT_FOUND", res.GetErrorOrThrow().Code);
-    }
-
-    [TestMethod]
-    public async Task UpdateProductCommandHandler_Handle_ProductNotFound_DoesNotCallUpdateAsync()
-    {
-        var products = new FakeProductRepository();
-        var categories = new FakeCategoryRepository();
-        var handler = new UpdateProductCommandHandler(products, categories);
-
-        await handler.Handle(new UpdateProductCommand(Guid.NewGuid(), "N", null, Guid.NewGuid()), CancellationToken.None);
-
-        Assert.AreEqual(0, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -337,7 +300,8 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        Assert.IsFalse(products.Store.Any(p => p.Id == product.Id));
+        var deleted = products.Store.First(p => p.Id == product.Id);
+        Assert.AreEqual(ProductStatus.Inactive, deleted.Status);
     }
 
     [TestMethod]
@@ -354,7 +318,7 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task UpdateProductPriceCommandHandler_Handle_ValidPrice_UpdatesPriceAndReturnsDto()
+    public async Task UpdateProductPriceCommandHandler_Handle_ValidPrice_UpdatesPriceAndReturnsId()
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
@@ -365,9 +329,9 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var dto = res.GetDataOrThrow();
-        Assert.AreEqual(20m, dto.Price);
-        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
+        var updatedProductId = res.GetDataOrThrow();
+        Assert.AreEqual(product.Id, updatedProductId);
+        Assert.AreEqual(20m, product.Price.Amount);
     }
 
     [TestMethod]
@@ -400,6 +364,24 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
+    public async Task UpdateProductPriceCommandHandler_Handle_CategoryMissing_DoesNotMutatePrice()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var product = CreateValidProduct(categories, products);
+        categories.Store.Clear();
+        var originalPrice = product.Price.Amount;
+        var handler = new UpdateProductPriceCommandHandler(products, categories);
+
+        var cmd = new UpdateProductPriceCommand(product.Id, 20m, "USD");
+        var res = await handler.Handle(cmd, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
+        Assert.AreEqual(originalPrice, product.Price.Amount);
+    }
+
+    [TestMethod]
     public async Task ActivateProductCommandHandler_Handle_DraftProduct_ReturnsActiveStatus()
     {
         var products = new FakeProductRepository();
@@ -411,7 +393,6 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
         Assert.AreEqual(ProductStatus.Active, product.Status);
     }
 
@@ -442,7 +423,6 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
         Assert.AreEqual(ProductStatus.Inactive, product.Status);
     }
 
@@ -452,8 +432,7 @@ public class CommandHandlerTests
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
         var product = CreateValidProduct(categories, products);
-        var backing = typeof(Product).GetField("<Status>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        backing!.SetValue(product, ProductStatus.Discontinued);
+        product.Discontinue();
 
         var handler = new DeactivateProductCommandHandler(products);
         var cmd = new DeactivateProductCommand(product.Id);
@@ -489,7 +468,6 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
     }
 
     [TestMethod]
@@ -521,7 +499,7 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task AddProductImageCommandHandler_Handle_ValidImage_AddsImageAndReturnsDto()
+    public async Task AddProductImageCommandHandler_Handle_ValidImage_AddsImageAndReturnsId()
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
@@ -532,9 +510,9 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var dto = res.GetDataOrThrow();
-        Assert.IsTrue(dto.Images.Any());
-        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
+        var updatedProductId = res.GetDataOrThrow();
+        Assert.AreEqual(product.Id, updatedProductId);
+        Assert.IsTrue(product.Images.Any());
     }
 
     [TestMethod]
@@ -568,7 +546,25 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task SetPrimaryImageCommandHandler_Handle_ValidImageId_SetsPrimaryAndReturnsDto()
+    public async Task AddProductImageCommandHandler_Handle_CategoryMissing_DoesNotAddImage()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var product = CreateValidProduct(categories, products);
+        categories.Store.Clear();
+        int imageCountBefore = product.Images.Count;
+        var handler = new AddProductImageCommandHandler(products, categories);
+
+        var cmd = new AddProductImageCommand(product.Id, "http://img", "alt");
+        var res = await handler.Handle(cmd, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
+        Assert.AreEqual(imageCountBefore, product.Images.Count);
+    }
+
+    [TestMethod]
+    public async Task SetPrimaryImageCommandHandler_Handle_ValidImageId_SetsPrimaryAndReturnsId()
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
@@ -582,9 +578,9 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var dto = res.GetDataOrThrow();
-        Assert.IsTrue(dto.Images.Any(i => i.Id == id && i.IsPrimary));
-        Assert.IsGreaterThanOrEqualTo(1, products.UpdateCallCount);
+        var updatedProductId = res.GetDataOrThrow();
+        Assert.AreEqual(product.Id, updatedProductId);
+        Assert.IsTrue(product.Images.Any(i => i.Id == id && i.IsPrimary));
     }
 
     [TestMethod]
@@ -617,7 +613,28 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task CreateCategoryCommandHandler_Handle_ValidCommand_ReturnsCategoryDto()
+    public async Task SetPrimaryImageCommandHandler_Handle_CategoryMissing_DoesNotChangePrimary()
+    {
+        var products = new FakeProductRepository();
+        var categories = new FakeCategoryRepository();
+        var product = CreateValidProduct(categories, products);
+        product.AddImage("http://a", null);
+        product.AddImage("http://b", null);
+        var imageId = product.Images.Skip(1).First().Id;
+        bool wasPrimaryBefore = product.Images.First(i => i.Id == imageId).IsPrimary;
+        categories.Store.Clear();
+        var handler = new SetPrimaryImageCommandHandler(products, categories);
+
+        var cmd = new SetPrimaryImageCommand(product.Id, imageId);
+        var res = await handler.Handle(cmd, CancellationToken.None);
+
+        Assert.IsFalse(res.IsSuccess);
+        Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
+        Assert.AreEqual(wasPrimaryBefore, product.Images.First(i => i.Id == imageId).IsPrimary);
+    }
+
+    [TestMethod]
+    public async Task CreateCategoryCommandHandler_Handle_ValidCommand_ReturnsCreatedCategoryId()
     {
         var categories = new FakeCategoryRepository();
         var handler = new CreateCategoryCommandHandler(categories);
@@ -626,8 +643,9 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var dto = res.GetDataOrThrow();
-        Assert.AreEqual("NewCat", dto.Name);
+        var categoryId = res.GetDataOrThrow();
+        var created = categories.Store.Single(c => c.Id == categoryId);
+        Assert.AreEqual("NewCat", created.Name.Value);
     }
 
     [TestMethod]
@@ -644,7 +662,7 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task UpdateCategoryCommandHandler_Handle_ValidCommand_UpdatesAndReturnsDto()
+    public async Task UpdateCategoryCommandHandler_Handle_ValidCommand_UpdatesTrackedAggregateAndReturnsId()
     {
         var categories = new FakeCategoryRepository();
         var parent = CreateValidCategory(categories);
@@ -655,9 +673,9 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var dto = res.GetDataOrThrow();
-        Assert.AreEqual("Renamed", dto.Name);
-        Assert.IsGreaterThanOrEqualTo(1, categories.UpdateCallCount);
+        var updatedCategoryId = res.GetDataOrThrow();
+        Assert.AreEqual(cat.Id, updatedCategoryId);
+        Assert.AreEqual("Renamed", cat.Name.Value);
     }
 
     [TestMethod]
@@ -678,6 +696,7 @@ public class CommandHandlerTests
     {
         var categories = new FakeCategoryRepository();
         var cat = CreateValidCategory(categories);
+        var originalName = cat.Name.Value;
         var handler = new UpdateCategoryCommandHandler(categories);
 
         var cmd = new UpdateCategoryCommand(cat.Id, "N", cat.Id);
@@ -685,10 +704,11 @@ public class CommandHandlerTests
 
         Assert.IsFalse(res.IsSuccess);
         Assert.AreEqual("CATEGORY_CIRCULAR", res.GetErrorOrThrow().Code);
+        Assert.AreEqual(originalName, cat.Name.Value);
     }
 
     [TestMethod]
-    public async Task DeleteCategoryCommandHandler_Handle_EmptyCategory_DeletesAndReturnsOk()
+    public async Task DeleteCategoryCommandHandler_Handle_EmptyCategory_DeactivatesAndReturnsOk()
     {
         var categories = new FakeCategoryRepository();
         var cat = CreateValidCategory(categories);
@@ -698,7 +718,8 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        Assert.IsFalse(categories.Store.Any(c => c.Id == cat.Id));
+        var stored = categories.Store.Single(c => c.Id == cat.Id);
+        Assert.IsFalse(stored.IsActive);
     }
 
     [TestMethod]

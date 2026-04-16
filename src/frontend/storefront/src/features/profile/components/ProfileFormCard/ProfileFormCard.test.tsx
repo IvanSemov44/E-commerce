@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
-import ProfileFormCard from './ProfileFormCard';
+import { ProfileFormCard } from './ProfileFormCard';
 
 const mockSetIsEditMode = vi.fn();
 const mockHandleCancel = vi.fn();
@@ -29,7 +29,7 @@ const defaultHookValues = {
   handleCancel: mockHandleCancel,
 };
 
-vi.mock('../../hooks/useProfileForm', () => ({
+vi.mock('./useProfileForm', () => ({
   useProfileForm: vi.fn(() => defaultHookValues),
 }));
 

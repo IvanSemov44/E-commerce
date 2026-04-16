@@ -104,11 +104,11 @@ public class OutboxDispatcherReliabilityTests
         string databasePrefix,
         OutboxDispatcherOptions options)
     {
-        var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
+        var dbOptions = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
             .UseInMemoryDatabase($"{databasePrefix}-{Guid.NewGuid():N}")
             .Options;
 
-        var dbContext = new AppDbContext(dbOptions);
+        var dbContext = new IntegrationPersistenceDbContext(dbOptions);
 
         var services = new ServiceCollection();
         services.AddSingleton(dbContext);
@@ -141,11 +141,11 @@ public class OutboxDispatcherReliabilityTests
         };
 
     private sealed class DispatcherHarness(
-        AppDbContext dbContext,
+        IntegrationPersistenceDbContext dbContext,
         ServiceProvider rootProvider,
         OutboxDispatcherHostedService dispatcher) : IDisposable
     {
-        public AppDbContext DbContext { get; } = dbContext;
+        public IntegrationPersistenceDbContext DbContext { get; } = dbContext;
 
         public OutboxDispatcherHostedService Dispatcher { get; } = dispatcher;
 

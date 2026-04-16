@@ -48,11 +48,6 @@ public class ProductStatsQueryHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Product product, CancellationToken ct = default)
-            => Task.CompletedTask;
-
-        public Task DeleteAsync(Product product, CancellationToken ct = default)
-            => Task.CompletedTask;
     }
 
     [TestMethod]

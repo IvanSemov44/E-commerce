@@ -7,7 +7,7 @@ namespace ECommerce.Infrastructure.Integration;
 /// <summary>
 /// Persists integration events into the relational outbox table.
 /// </summary>
-public sealed class EfIntegrationEventOutbox(AppDbContext dbContext) : IIntegrationEventOutbox
+public sealed class EfIntegrationEventOutbox(IntegrationPersistenceDbContext dbContext) : IIntegrationEventOutbox
 {
     public Task EnqueueAsync<TEvent>(TEvent integrationEvent, CancellationToken cancellationToken = default)
         where TEvent : IntegrationEvent

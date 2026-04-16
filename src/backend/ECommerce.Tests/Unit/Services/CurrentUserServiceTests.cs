@@ -1,6 +1,5 @@
 using ECommerce.Infrastructure.Services;
 using ECommerce.SharedKernel.Enums;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System.Security.Claims;
@@ -41,7 +40,7 @@ public class CurrentUserServiceTests
 
         // Act & Assert
         var action = () => new CurrentUserService(_httpContextAccessorMock.Object);
-        action.Should().NotThrow();
+Should.NotThrow(        action);
     }
 
     #endregion
@@ -68,7 +67,7 @@ public class CurrentUserServiceTests
         var result = service.UserId;
 
         // Assert
-        result.Should().Be(userId);
+        result.ShouldBe(userId);
     }
 
     [TestMethod]
@@ -91,7 +90,7 @@ public class CurrentUserServiceTests
         var result = service.UserId;
 
         // Assert
-        result.Should().Be(userId);
+        result.ShouldBe(userId);
     }
 
     [TestMethod]
@@ -116,7 +115,7 @@ public class CurrentUserServiceTests
         var result = service.UserId;
 
         // Assert
-        result.Should().Be(userIdFromNameId);
+        result.ShouldBe(userIdFromNameId);
     }
 
     [TestMethod]
@@ -131,9 +130,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.UserId;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("User ID not found in token");
+        Action action = () => { _ = service.UserId; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("User ID not found in token");
     }
 
     [TestMethod]
@@ -152,9 +150,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.UserId;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("User ID not found in token");
+        Action action = () => { _ = service.UserId; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("User ID not found in token");
     }
 
     [TestMethod]
@@ -166,9 +163,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.UserId;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("User ID not found in token");
+        Action action = () => { _ = service.UserId; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("User ID not found in token");
     }
 
     [TestMethod]
@@ -181,9 +177,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.UserId;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("User ID not found in token");
+        Action action = () => { _ = service.UserId; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("User ID not found in token");
     }
 
     #endregion
@@ -210,7 +205,7 @@ public class CurrentUserServiceTests
         var result = service.UserIdOrNull;
 
         // Assert
-        result.Should().Be(userId);
+        result.ShouldBe(userId);
     }
 
     [TestMethod]
@@ -228,7 +223,7 @@ public class CurrentUserServiceTests
         var result = service.UserIdOrNull;
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     [TestMethod]
@@ -250,7 +245,7 @@ public class CurrentUserServiceTests
         var result = service.UserIdOrNull;
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     [TestMethod]
@@ -265,7 +260,7 @@ public class CurrentUserServiceTests
         var result = service.UserIdOrNull;
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     #endregion
@@ -289,7 +284,7 @@ public class CurrentUserServiceTests
         var result = service.SessionId;
 
         // Assert
-        result.Should().Be(sessionId);
+        result.ShouldBe(sessionId);
     }
 
     [TestMethod]
@@ -304,7 +299,7 @@ public class CurrentUserServiceTests
         var result = service.SessionId;
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     [TestMethod]
@@ -319,7 +314,7 @@ public class CurrentUserServiceTests
         var result = service.SessionId;
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     #endregion
@@ -346,7 +341,7 @@ public class CurrentUserServiceTests
         var result = service.Email;
 
         // Assert
-        result.Should().Be(email);
+        result.ShouldBe(email);
     }
 
     [TestMethod]
@@ -361,9 +356,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.Email;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("Email not found in token");
+        Action action = () => { _ = service.Email; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("Email not found in token");
     }
 
     [TestMethod]
@@ -375,9 +369,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.Email;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("Email not found in token");
+        Action action = () => { _ = service.Email; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("Email not found in token");
     }
 
     #endregion
@@ -403,7 +396,7 @@ public class CurrentUserServiceTests
         var result = service.Role;
 
         // Assert
-        result.Should().Be(UserRole.Admin);
+        result.ShouldBe(UserRole.Admin);
     }
 
     [TestMethod]
@@ -425,7 +418,7 @@ public class CurrentUserServiceTests
         var result = service.Role;
 
         // Assert
-        result.Should().Be(UserRole.Customer);
+        result.ShouldBe(UserRole.Customer);
     }
 
     [TestMethod]
@@ -440,9 +433,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.Role;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("Role not found in token");
+        Action action = () => { _ = service.Role; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("Role not found in token");
     }
 
     [TestMethod]
@@ -461,9 +453,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.Role;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("Role not found in token");
+        Action action = () => { _ = service.Role; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("Role not found in token");
     }
 
     [TestMethod]
@@ -475,9 +466,8 @@ public class CurrentUserServiceTests
         var service = new CurrentUserService(_httpContextAccessorMock.Object);
 
         // Act & Assert
-        var action = () => service.Role;
-        action.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("Role not found in token");
+        Action action = () => { _ = service.Role; };
+        Should.Throw<UnauthorizedAccessException>(action).Message.ShouldBe("Role not found in token");
     }
 
     #endregion
@@ -503,7 +493,7 @@ public class CurrentUserServiceTests
         var result = service.IsAuthenticated;
 
         // Assert
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [TestMethod]
@@ -521,7 +511,7 @@ public class CurrentUserServiceTests
         var result = service.IsAuthenticated;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [TestMethod]
@@ -536,7 +526,7 @@ public class CurrentUserServiceTests
         var result = service.IsAuthenticated;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [TestMethod]
@@ -552,7 +542,7 @@ public class CurrentUserServiceTests
         var result = service.IsAuthenticated;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [TestMethod]
@@ -568,7 +558,7 @@ public class CurrentUserServiceTests
         var result = service.IsAuthenticated;
 
         // Assert
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     #endregion

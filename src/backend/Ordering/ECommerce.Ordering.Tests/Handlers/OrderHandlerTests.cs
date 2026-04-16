@@ -6,7 +6,6 @@ using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.Interfaces;
 using ECommerce.Ordering.Domain.ValueObjects;
 using ECommerce.SharedKernel.Results;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Ordering.Tests.Handlers;
@@ -100,8 +99,8 @@ public class ConfirmOrderCommandHandlerTests
 
         var result = await handler.Handle(cmd, default);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Status.Should().Be("Confirmed");
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Status.ShouldBe("Confirmed");
     }
 
     [TestMethod]
@@ -113,7 +112,7 @@ public class ConfirmOrderCommandHandlerTests
 
         var result = await handler.Handle(cmd, default);
 
-        result.IsSuccess.Should().BeFalse();
+        result.IsSuccess.ShouldBeFalse();
     }
 
     private static Order CreateTestOrder()
@@ -149,7 +148,7 @@ public class ShipOrderCommandHandlerTests
         var result = await handler.Handle(cmd, default);
 
         // Handler correctly returns failure when domain validation prevents the state transition
-        result.IsSuccess.Should().BeFalse();
+        result.IsSuccess.ShouldBeFalse();
     }
 
     [TestMethod]
@@ -162,7 +161,7 @@ public class ShipOrderCommandHandlerTests
 
         var result = await handler.Handle(cmd, default);
 
-        result.IsSuccess.Should().BeFalse();
+        result.IsSuccess.ShouldBeFalse();
     }
 
     private static Order CreateTestOrder()
@@ -193,8 +192,8 @@ public class CancelOrderCommandHandlerTests
 
         var result = await handler.Handle(cmd, default);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Status.Should().Be("Cancelled");
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Status.ShouldBe("Cancelled");
     }
 
     [TestMethod]
@@ -210,8 +209,8 @@ public class CancelOrderCommandHandlerTests
 
         var result = await handler.Handle(cmd, default);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Status.Should().Be("Cancelled");
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Status.ShouldBe("Cancelled");
     }
 
     private static Order CreateTestOrder()
@@ -242,8 +241,8 @@ public class GetOrderByIdQueryHandlerTests
 
         var result = await handler.Handle(query, default);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Id.Should().Be(order.Id);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Id.ShouldBe(order.Id);
     }
 
     [TestMethod]
@@ -255,7 +254,7 @@ public class GetOrderByIdQueryHandlerTests
 
         var result = await handler.Handle(query, default);
 
-        result.IsSuccess.Should().BeFalse();
+        result.IsSuccess.ShouldBeFalse();
     }
 
     private static Order CreateTestOrder()

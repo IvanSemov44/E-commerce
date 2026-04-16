@@ -2,7 +2,6 @@ using FluentValidation.TestHelper;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Contracts.DTOs.Orders;
 using ECommerce.Contracts.Validators.Orders;
-using FluentAssertions;
 
 namespace ECommerce.Tests.Unit.Validators;
 
@@ -126,7 +125,7 @@ public class OrderValidatorsTests
         var result = _createOrderValidator.TestValidate(dto);
 
         // Assert
-        result.Errors.Count.Should().BeGreaterThan(0); // Will have item validation errors
+        result.Errors.Count.ShouldBeGreaterThan(0); // Will have item validation errors
     }
 
     [TestMethod]
@@ -146,7 +145,7 @@ public class OrderValidatorsTests
         var result = _createOrderValidator.TestValidate(dto);
 
         // Assert
-        result.Errors.Count.Should().BeGreaterThan(0);
+        result.Errors.Count.ShouldBeGreaterThan(0);
     }
 
     [TestMethod]

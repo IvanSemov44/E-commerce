@@ -3,24 +3,32 @@ import { act } from '@testing-library/react';
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
 import { baseApi } from '@/shared/lib/api/baseApi';
 import { useProfileForm } from '../useProfileForm';
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
-vi.mock('../../../api/profileApi', () => ({
-  useGetProfileQuery: vi.fn(() => ({
-    data: {
-      id: '1',
-      email: 'test@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      phone: '1234567890',
-      avatarUrl: '',
-    },
-    isLoading: false,
-  })),
-  useUpdateProfileMutation: vi.fn(() => [
-    vi.fn().mockResolvedValue({ data: {} }),
-    { isLoading: false },
-  ]),
-}));
+const setupHandlers = () => {
+  server.use(
+    http.get('/api/profile', () => {
+      return HttpResponse.json({
+        success: true,
+        data: {
+          id: '1',
+          email: 'test@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          phone: '1234567890',
+          avatarUrl: '',
+        },
+      });
+    }),
+    http.put('/api/profile', async () => {
+      return HttpResponse.json({
+        success: true,
+        data: { id: '1', firstName: 'John', lastName: 'Doe' },
+      });
+    })
+  );
+};
 
 describe('useProfileForm', () => {
   let store: ReturnType<typeof renderHookWithProviders>['store'];
@@ -44,6 +52,7 @@ describe('useProfileForm', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setupHandlers();
   });
 
   afterEach(() => {

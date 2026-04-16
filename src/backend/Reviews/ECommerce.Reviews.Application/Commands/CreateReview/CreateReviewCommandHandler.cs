@@ -11,8 +11,7 @@ namespace ECommerce.Reviews.Application.CommandHandlers;
 
 public class CreateReviewCommandHandler(
     IReviewRepository reviewRepository,
-    ICatalogService catalogService,
-    ECommerce.SharedKernel.Interfaces.IUnitOfWork unitOfWork) : IRequestHandler<CreateReviewCommand, Result<ReviewDetailDto>>
+    ICatalogService catalogService) : IRequestHandler<CreateReviewCommand, Result<ReviewDetailDto>>
 {
     public async Task<Result<ReviewDetailDto>> Handle(CreateReviewCommand request, CancellationToken cancellationToken)
     {
@@ -39,7 +38,6 @@ public class CreateReviewCommandHandler(
             request.OrderId);
 
         await reviewRepository.AddAsync(review, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<ReviewDetailDto>.Ok(review.ToDetailDto());
     }

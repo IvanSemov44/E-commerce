@@ -1,4 +1,4 @@
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -258,8 +258,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// </summary>
     /// <param name="command">Product creation command payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The newly created product.</returns>
-    /// <response code="201">Product created successfully.</response>
+    /// <returns>Redirect to the created product resource.</returns>
+    /// <response code="302">Redirect to product details.</response>
     /// <response code="400">Invalid product data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to create products.</response>
@@ -267,7 +267,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
@@ -277,7 +277,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command, ct);
         return result.ToActionResult(
-            dto => CreatedAtAction(nameof(GetProductById), new { id = dto.Id }, ApiResponse<ProductDetailDto>.Ok(dto, "Product created")),
+            id => RedirectToAction(nameof(GetProductById), new { id }),
             Problem);
     }
 
@@ -287,8 +287,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <param name="id">The product ID.</param>
     /// <param name="command">Product update command payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The updated product.</returns>
-    /// <response code="200">Product updated successfully.</response>
+    /// <returns>Redirect to the updated product resource.</returns>
+    /// <response code="302">Redirect to product details.</response>
     /// <response code="400">Invalid product data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to update products.</response>
@@ -296,7 +296,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateProduct(
@@ -306,7 +306,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
         return result.ToActionResult(
-            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Product updated")),
+            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
             Problem);
     }
 
@@ -338,8 +338,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <param name="id">The product ID.</param>
     /// <param name="command">Price update command payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The updated product.</returns>
-    /// <response code="200">Price updated successfully.</response>
+    /// <returns>Redirect to the updated product resource.</returns>
+    /// <response code="302">Redirect to product details.</response>
     /// <response code="400">Invalid price data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to update price.</response>
@@ -347,7 +347,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable price data (validation errors).</response>
     [HttpPut("{id:guid}/price")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateProductPrice(
@@ -357,7 +357,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
         return result.ToActionResult(
-            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Price updated")),
+            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
             Problem);
     }
 
@@ -431,8 +431,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <param name="id">The product ID.</param>
     /// <param name="command">Image addition command payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The product with the newly added image.</returns>
-    /// <response code="200">Image added successfully.</response>
+    /// <returns>Redirect to the updated product resource.</returns>
+    /// <response code="302">Redirect to product details.</response>
     /// <response code="400">Invalid image data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to add images.</response>
@@ -440,7 +440,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable image data (e.g. max images reached).</response>
     [HttpPost("{id:guid}/images")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> AddProductImage(
@@ -450,7 +450,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command with { ProductId = id }, ct);
         return result.ToActionResult(
-            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Image added")),
+            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
             Problem);
     }
 
@@ -460,18 +460,18 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <param name="id">The product ID.</param>
     /// <param name="imageId">The image ID to set as primary.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The product with the primary image updated.</returns>
-    /// <response code="200">Primary image set successfully.</response>
+    /// <returns>Redirect to the updated product resource.</returns>
+    /// <response code="302">Redirect to product details.</response>
     /// <response code="404">Product or image not found.</response>
     [HttpPost("{id:guid}/images/{imageId:guid}/primary")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetPrimaryImage(Guid id, Guid imageId, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new SetPrimaryImageCommand(id, imageId), ct);
         return result.ToActionResult(
-            data => Ok(ApiResponse<ProductDetailDto>.Ok(data, "Primary image set")),
+            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
             Problem);
     }
 }

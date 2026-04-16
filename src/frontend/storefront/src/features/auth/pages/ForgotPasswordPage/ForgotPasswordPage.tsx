@@ -7,7 +7,7 @@ import styles from './ForgotPasswordPage.module.css';
 
 export function ForgotPasswordPage() {
   const { t } = useTranslation();
-  const { values, fieldErrors, submitted, handleChange, handleBlur, action, isPending } =
+  const { values, fieldErrors, submitted, handleChange, handleBlur, handleSubmit, isPending } =
     useForgotPasswordForm();
 
   return (
@@ -32,7 +32,7 @@ export function ForgotPasswordPage() {
             <p className={styles.description}>{t('forgotPassword.subtitle')}</p>
 
             <form
-              action={action}
+              onSubmit={handleSubmit}
               noValidate
               aria-labelledby="forgot-password-title"
               className={styles.form}

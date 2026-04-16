@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
-using FluentAssertions;
 using ECommerce.API.Middleware;
 
 namespace ECommerce.Tests.Unit.Middleware;
@@ -221,7 +220,7 @@ public class CsrfMiddlewareTests
 
         // Assert
         _mockAntiforgery.Verify(a => a.GetAndStoreTokens(context), Times.Once);
-        context.Response.Headers.ContainsKey("Set-Cookie").Should().BeTrue();
+        context.Response.Headers.ContainsKey("Set-Cookie").ShouldBeTrue();
     }
 
     [TestMethod]
@@ -387,8 +386,8 @@ public class CsrfMiddlewareTests
         await _middleware.InvokeAsync(context, _mockAntiforgery.Object);
 
         // Assert
-        context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-        context.Response.ContentType.Should().StartWith("application/json");
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        context.Response.ContentType.ShouldStartWith("application/json");
     }
 
     [TestMethod]

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -105,10 +105,10 @@ public class CategoriesControllerTests
     #region Create Category Tests
 
     [TestMethod]
-    public async Task CreateCategory_WithAdminAndValidData_ReturnsCreated()
+    public async Task CreateCategory_WithAdminAndValidData_ReturnsRedirect()
     {
         // Arrange
-        using var client = _factory.CreateAdminClient();
+        using var client = _factory.CreateAdminClientNoRedirect();
         var createCategoryDto = new
         {
             Name = "Electronics",
@@ -122,8 +122,9 @@ public class CategoriesControllerTests
         var response = await client.PostAsync("/api/categories", content);
 
         // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.Forbidden,
-            "Create should return Created or Forbidden based on role");
+        Assert.AreEqual(HttpStatusCode.Found, response.StatusCode);
+        Assert.IsNotNull(response.Headers.Location, "Create should include redirect location");
+        StringAssert.StartsWith(response.Headers.Location!.ToString(), "/api/categories/");
     }
 
     [TestMethod]

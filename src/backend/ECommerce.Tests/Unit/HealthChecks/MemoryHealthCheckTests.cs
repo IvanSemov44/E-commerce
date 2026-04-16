@@ -2,7 +2,6 @@
 using ECommerce.API.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -37,8 +36,8 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert
-        result.Status.Should().Be(HealthStatus.Healthy);
-        result.Description.Should().Contain("Memory usage normal");
+        result.Status.ShouldBe(HealthStatus.Healthy);
+        result.Description.ShouldContain("Memory usage normal");
     }
 
     [TestMethod]
@@ -52,8 +51,8 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert - Memory will definitely be above 80% of 1MB
-        result.Status.Should().Be(HealthStatus.Degraded);
-        result.Description.Should().Contain("Memory usage high");
+        result.Status.ShouldBe(HealthStatus.Degraded);
+        result.Description.ShouldContain("Memory usage high");
     }
 
     [TestMethod]
@@ -67,8 +66,8 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert
-        result.Status.Should().Be(HealthStatus.Degraded);
-        result.Description.Should().Contain("exceeds threshold");
+        result.Status.ShouldBe(HealthStatus.Degraded);
+        result.Description.ShouldContain("exceeds threshold");
     }
 
     [TestMethod]
@@ -82,11 +81,11 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert
-        result.Data.Should().ContainKey("AllocatedMB");
-        result.Data.Should().ContainKey("ThresholdMB");
-        result.Data.Should().ContainKey("Gen0Collections");
-        result.Data.Should().ContainKey("Gen1Collections");
-        result.Data.Should().ContainKey("Gen2Collections");
+        result.Data.ContainsKey("AllocatedMB").ShouldBeTrue();
+        result.Data.ContainsKey("ThresholdMB").ShouldBeTrue();
+        result.Data.ContainsKey("Gen0Collections").ShouldBeTrue();
+        result.Data.ContainsKey("Gen1Collections").ShouldBeTrue();
+        result.Data.ContainsKey("Gen2Collections").ShouldBeTrue();
     }
 
     [TestMethod]
@@ -100,7 +99,7 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert
-        result.Data["ThresholdMB"].Should().Be(512);
+        result.Data["ThresholdMB"].ShouldBe(512);
     }
 
     [TestMethod]
@@ -115,7 +114,7 @@ public class MemoryHealthCheckTests
 
         // Assert
         var allocatedMB = (long)result.Data["AllocatedMB"];
-        allocatedMB.Should().BeGreaterOrEqualTo(0);
+        allocatedMB.ShouldBeGreaterThanOrEqualTo(0);
     }
 
     [TestMethod]
@@ -133,9 +132,9 @@ public class MemoryHealthCheckTests
         var gen1 = (int)result.Data["Gen1Collections"];
         var gen2 = (int)result.Data["Gen2Collections"];
 
-        gen0.Should().BeGreaterOrEqualTo(0);
-        gen1.Should().BeGreaterOrEqualTo(0);
-        gen2.Should().BeGreaterOrEqualTo(0);
+        gen0.ShouldBeGreaterThanOrEqualTo(0);
+        gen1.ShouldBeGreaterThanOrEqualTo(0);
+        gen2.ShouldBeGreaterThanOrEqualTo(0);
     }
 
     [TestMethod]
@@ -150,7 +149,7 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), cts.Token);
 
         // Assert
-        result.Should().NotBeNull();
+        result.Status.ShouldBe(HealthStatus.Healthy);
     }
 
     [TestMethod]
@@ -164,7 +163,7 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert
-        result.Data["ThresholdMB"].Should().Be(2048);
+        result.Data["ThresholdMB"].ShouldBe(2048);
     }
 
     [TestMethod]
@@ -178,7 +177,7 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert
-        result.Status.Should().Be(HealthStatus.Healthy);
+        result.Status.ShouldBe(HealthStatus.Healthy);
     }
 
     [TestMethod]
@@ -192,7 +191,7 @@ public class MemoryHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
 
         // Assert - Any memory usage will exceed 0
-        result.Status.Should().Be(HealthStatus.Degraded);
+        result.Status.ShouldBe(HealthStatus.Degraded);
     }
 }
 

@@ -98,23 +98,11 @@ public class QueryHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Product product, CancellationToken ct = default)
-        {
-            UpdateCallCount++;
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(Product product, CancellationToken ct = default)
-        {
-            Store.Remove(product);
-            return Task.CompletedTask;
-        }
     }
 
     sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<Category> Store = new();
-        public int UpdateCallCount;
         public Task<Category?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Id == id));
         public Task<Category?> GetBySlugAsync(string slug, CancellationToken ct = default) => Task.FromResult(Store.FirstOrDefault(c => c.Slug.Value == slug));
         public Task<IReadOnlyList<Category>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Category>>(Store.AsReadOnly());
@@ -136,18 +124,6 @@ public class QueryHandlerTests
         public Task AddAsync(Category category, CancellationToken ct = default)
         {
             Store.Add(category);
-            return Task.CompletedTask;
-        }
-
-        public Task UpdateAsync(Category category, CancellationToken ct = default)
-        {
-            UpdateCallCount++;
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(Category category, CancellationToken ct = default)
-        {
-            Store.Remove(category);
             return Task.CompletedTask;
         }
     }

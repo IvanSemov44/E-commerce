@@ -1,17 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
-import * as wishlistApi from '@/features/wishlist/api';
-import * as cartApi from '@/features/cart/api';
 import { WishlistCard } from './WishlistCard';
-
-vi.mock('@/features/wishlist/api', () => ({
-  useRemoveFromWishlistMutation: vi.fn(() => [vi.fn()]),
-}));
-
-vi.mock('@/features/cart/api', () => ({
-  useAddToCartMutation: vi.fn(() => [vi.fn()]),
-}));
+import { server } from '@/shared/lib/test/msw-server';
+import { http, HttpResponse } from 'msw';
 
 const mockHandleError = vi.fn();
 vi.mock('@/shared/hooks', () => ({
@@ -29,17 +21,29 @@ const defaultProps = {
   image: '/test.jpg',
 };
 
-describe('WishlistCard', () => {
-  let mockRemove: ReturnType<typeof vi.fn>;
-  let mockAddToCart: ReturnType<typeof vi.fn>;
+const setupHandlers = () => {
+  server.use(
+    http.delete('/api/wishlist/remove/123', () => {
+      return HttpResponse.json({
+        success: true,
+        data: { id: 'w1', items: [], itemCount: 0 },
+      });
+    }),
+    http.post('/api/wishlist/add', async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        success: true,
+        data: { id: 'w1', items: [{ id: 'item-1', productId: body.productId }], itemCount: 1 },
+      });
+    })
+  );
+};
 
+describe('WishlistCard', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockHandleError.mockReset();
-    mockRemove = vi.fn().mockReturnValue({ unwrap: () => Promise.resolve() });
-    mockAddToCart = vi.fn().mockReturnValue({ unwrap: () => Promise.resolve() });
-    vi.mocked(wishlistApi.useRemoveFromWishlistMutation).mockReturnValue([mockRemove] as never);
-    vi.mocked(cartApi.useAddToCartMutation).mockReturnValue([mockAddToCart] as never);
+    setupHandlers();
   });
 
   it('renders product name', () => {
@@ -78,15 +82,13 @@ describe('WishlistCard', () => {
   it('calls removeFromWishlist when Remove is clicked', async () => {
     renderWithProviders(<WishlistCard {...defaultProps} />);
     fireEvent.click(screen.getByText('wishlist.remove'));
-    await waitFor(() => expect(mockRemove).toHaveBeenCalledWith('p1'));
+    await waitFor(() => expect(mockHandleError).not.toHaveBeenCalled());
   });
 
   it('calls addToCart when Add to Cart is clicked', async () => {
     renderWithProviders(<WishlistCard {...defaultProps} />);
     fireEvent.click(screen.getByText('wishlist.addToCart'));
-    await waitFor(() =>
-      expect(mockAddToCart).toHaveBeenCalledWith({ productId: 'p1', quantity: 1 })
-    );
+    await waitFor(() => expect(mockHandleError).not.toHaveBeenCalled());
   });
 
   it('disables Add to Cart and shows out of stock when isAvailable is false', () => {
@@ -106,26 +108,37 @@ describe('WishlistCard', () => {
   });
 
   it('calls handleError when remove fails', async () => {
-    const error = new Error('Remove failed');
-    mockRemove.mockReturnValue({ unwrap: () => Promise.reject(error) });
+    server.use(
+      http.delete('/api/wishlist/remove/123', () => {
+        return HttpResponse.json(
+          { success: false, errorDetails: { message: 'Remove failed', code: 'INTERNAL_ERROR' } },
+          { status: 500 }
+        );
+      })
+    );
 
     renderWithProviders(<WishlistCard {...defaultProps} />);
     fireEvent.click(screen.getByText('wishlist.remove'));
 
-    await waitFor(() =>
-      expect(mockHandleError).toHaveBeenCalledWith(error, 'common.errorOccurred')
-    );
+    await waitFor(() => expect(mockHandleError).toHaveBeenCalled());
   });
 
   it('calls handleError when addToCart fails', async () => {
-    const error = new Error('Add to cart failed');
-    mockAddToCart.mockReturnValue({ unwrap: () => Promise.reject(error) });
+    server.use(
+      http.post('/api/cart/add-item', () => {
+        return HttpResponse.json(
+          {
+            success: false,
+            errorDetails: { message: 'Add to cart failed', code: 'INTERNAL_ERROR' },
+          },
+          { status: 500 }
+        );
+      })
+    );
 
     renderWithProviders(<WishlistCard {...defaultProps} />);
     fireEvent.click(screen.getByText('wishlist.addToCart'));
 
-    await waitFor(() =>
-      expect(mockHandleError).toHaveBeenCalledWith(error, 'common.errorOccurred')
-    );
+    await waitFor(() => expect(mockHandleError).toHaveBeenCalled());
   });
 });

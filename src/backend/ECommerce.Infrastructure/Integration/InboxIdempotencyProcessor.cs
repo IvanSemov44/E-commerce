@@ -7,7 +7,7 @@ namespace ECommerce.Infrastructure.Integration;
 /// <summary>
 /// Executes integration event handling with inbox-based deduplication.
 /// </summary>
-public sealed class InboxIdempotencyProcessor(AppDbContext dbContext)
+public sealed class InboxIdempotencyProcessor(IntegrationPersistenceDbContext dbContext)
 {
     public async Task ExecuteAsync<TEvent>(
         TEvent integrationEvent,

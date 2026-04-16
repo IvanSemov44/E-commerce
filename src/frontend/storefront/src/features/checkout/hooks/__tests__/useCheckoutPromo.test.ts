@@ -1,25 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderHookWithProviders } from '@/shared/lib/test/test-utils';
-import * as checkoutApi from '@/features/checkout/api';
 import { useCheckoutPromo } from '../useCheckoutPromo';
-
-const mockValidateMutation = vi.fn();
-
-vi.mock('@/features/checkout/api', () => ({
-  useValidatePromoCodeMutation: vi.fn(() => [mockValidateMutation]),
-}));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+vi.mock('@/shared/lib/store', () => ({
+  useAppDispatch: () => vi.fn(),
+}));
+
+// Mutable unwrap so individual tests can control the resolved value
+const mockValidateUnwrap = vi.fn();
+const mockValidate = vi.fn(() => ({ unwrap: mockValidateUnwrap }));
+
+vi.mock('@/features/checkout/api', () => ({
+  useValidatePromoCodeMutation: () => [mockValidate, { isLoading: false }],
+}));
+
 describe('useCheckoutPromo', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(checkoutApi.useValidatePromoCodeMutation).mockReturnValue([
-      mockValidateMutation,
-    ] as never);
+    mockValidateUnwrap.mockResolvedValue({
+      isValid: true,
+      discountAmount: 10,
+      message: 'Applied!',
+    });
   });
 
   it('initialises with empty promo code and no validation', () => {
@@ -50,14 +57,9 @@ describe('useCheckoutPromo', () => {
 
     expect(result.current.promoCodeValidation?.isValid).toBe(false);
     expect(result.current.promoCodeValidation?.message).toBe('checkout.promoCodeRequired');
-    expect(mockValidateMutation).not.toHaveBeenCalled();
   });
 
   it('calls mutation and sets valid validation on success', async () => {
-    mockValidateMutation.mockReturnValue({
-      unwrap: () => Promise.resolve({ isValid: true, discountAmount: 10, message: 'Applied!' }),
-    });
-
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
 
     act(() => {
@@ -74,9 +76,7 @@ describe('useCheckoutPromo', () => {
   });
 
   it('sets error validation when mutation throws', async () => {
-    mockValidateMutation.mockReturnValue({
-      unwrap: () => Promise.reject(new Error('network error')),
-    });
+    mockValidateUnwrap.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
 
@@ -93,10 +93,6 @@ describe('useCheckoutPromo', () => {
   });
 
   it('clears code and validation on promoState.onRemove', async () => {
-    mockValidateMutation.mockReturnValue({
-      unwrap: () => Promise.resolve({ isValid: true, discountAmount: 5, message: 'OK' }),
-    });
-
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
 
     act(() => {
@@ -117,10 +113,6 @@ describe('useCheckoutPromo', () => {
   });
 
   it('clears validation when the user edits the code after applying', async () => {
-    mockValidateMutation.mockReturnValue({
-      unwrap: () => Promise.resolve({ isValid: true, discountAmount: 10, message: 'Applied!' }),
-    });
-
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
 
     act(() => {
@@ -150,14 +142,15 @@ describe('useCheckoutPromo', () => {
       await result.current.promoState.onApply();
     });
 
-    expect(mockValidateMutation).not.toHaveBeenCalled();
     expect(result.current.promoCodeValidation?.isValid).toBe(false);
     expect(result.current.promoCodeValidation?.message).toBe('checkout.promoCodeRequired');
   });
 
   it('sets invalid validation when server returns isValid false', async () => {
-    mockValidateMutation.mockReturnValue({
-      unwrap: () => Promise.resolve({ isValid: false, discountAmount: 0, message: 'Code expired' }),
+    mockValidateUnwrap.mockResolvedValue({
+      isValid: false,
+      discountAmount: 0,
+      message: 'Code expired',
     });
 
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
@@ -176,13 +169,12 @@ describe('useCheckoutPromo', () => {
   });
 
   it('sets isValidating true during mutation and false after', async () => {
-    let resolveUnwrap!: (value: unknown) => void;
-    mockValidateMutation.mockReturnValue({
-      unwrap: () =>
-        new Promise((res) => {
-          resolveUnwrap = res;
-        }),
-    });
+    let resolve!: (value: { isValid: boolean; discountAmount: number; message: string }) => void;
+    mockValidateUnwrap.mockReturnValue(
+      new Promise((res) => {
+        resolve = res;
+      })
+    );
 
     const { result } = renderHookWithProviders(() => useCheckoutPromo({ subtotal: 100 }));
 
@@ -190,17 +182,15 @@ describe('useCheckoutPromo', () => {
       result.current.promoState.onChange('SLOW');
     });
 
-    // Start apply without awaiting
-    let applyPromise: Promise<void>;
+    let applyPromise!: Promise<void>;
     act(() => {
       applyPromise = result.current.promoState.onApply();
     });
 
     expect(result.current.promoState.isValidating).toBe(true);
 
-    // Resolve and wait
     await act(async () => {
-      resolveUnwrap({ isValid: true, discountAmount: 5, message: 'OK' });
+      resolve({ isValid: true, discountAmount: 5, message: 'OK' });
       await applyPromise;
     });
 

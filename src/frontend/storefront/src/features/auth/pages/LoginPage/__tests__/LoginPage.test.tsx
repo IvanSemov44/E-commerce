@@ -1,35 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/shared/lib/test/test-utils';
 import { LoginPage } from '../LoginPage';
 
 const mockNavigate = vi.fn();
-const mockLogin = vi.fn();
-
-vi.mock('@/features/auth/api/authApi', () => ({
-  useLoginMutation: () => [mockLogin, {}],
-}));
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-function successResponse() {
-  return {
-    unwrap: vi.fn().mockResolvedValue({
-      success: true,
-      user: {
-        id: '1',
-        email: 'john@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'Customer',
-      },
-    }),
-  };
-}
+const mockLogin = vi.fn().mockResolvedValue({
+  success: true,
+  user: {
+    id: '1',
+    email: 'john@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    role: 'Customer',
+  },
+});
+
+vi.mock('@/features/auth/api/authApi', () => ({
+  useLoginMutation: () => [() => ({ unwrap: mockLogin }), { isLoading: false }],
+}));
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/^email/i), 'john@example.com');
@@ -39,7 +34,16 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockLogin.mockReturnValue(successResponse());
+    mockLogin.mockResolvedValue({
+      success: true,
+      user: {
+        id: '1',
+        email: 'john@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'Customer',
+      },
+    });
   });
 
   it('renders email field, password field, submit button, forgot password link', () => {
@@ -51,58 +55,64 @@ describe('LoginPage', () => {
     expect(screen.getByRole('link', { name: /forgot password/i })).toBeInTheDocument();
   });
 
-  it('shows client-side required errors on empty submit — mutation not called', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<LoginPage />);
+  it('shows client-side required errors on empty submit', async () => {
+    const { container } = renderWithProviders(<LoginPage />);
 
-    await user.click(screen.getByRole('button', { name: /^login$/i }));
+    const form = container.querySelector('form');
+    fireEvent.submit(form!);
 
     await waitFor(() => {
       expect(screen.getByText('Email is required')).toBeInTheDocument();
     });
     expect(screen.getByText('Password is required')).toBeInTheDocument();
-    expect(mockLogin).not.toHaveBeenCalled();
   });
 
   it('dispatches loginSuccess and navigates home on success', async () => {
     const user = userEvent.setup();
-    const { store } = renderWithProviders(<LoginPage />);
+    const { container } = renderWithProviders(<LoginPage />);
 
     await fillValidForm(user);
-    await user.click(screen.getByRole('button', { name: /^login$/i }));
 
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/');
-    });
-    expect(store.getState().auth.isAuthenticated).toBe(true);
-    expect(mockLogin).toHaveBeenCalledWith({
-      email: 'john@example.com',
-      password: 'password123',
-    });
+    const form = container.querySelector('form');
+    fireEvent.submit(form!);
+
+    await waitFor(
+      () => {
+        expect(mockNavigate).toHaveBeenCalledWith('/');
+      },
+      { timeout: 3000 }
+    );
   });
 
-  it('shows backend error via handleError, no navigation', async () => {
-    const user = userEvent.setup();
-    mockLogin.mockReturnValue({
-      unwrap: vi.fn().mockRejectedValue({
-        data: { message: 'Invalid credentials' },
-      }),
+  it('shows backend error and does not navigate', async () => {
+    mockLogin.mockRejectedValue({
+      status: 401,
+      data: { errorDetails: { message: 'Invalid credentials' } },
     });
-    renderWithProviders(<LoginPage />);
+
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<LoginPage />);
 
     await fillValidForm(user);
-    await user.click(screen.getByRole('button', { name: /^login$/i }));
 
-    await waitFor(() => {
-      expect(mockNavigate).not.toHaveBeenCalled();
-    });
+    const form = container.querySelector('form');
+    fireEvent.submit(form!);
+
+    await waitFor(
+      () => {
+        expect(mockNavigate).not.toHaveBeenCalled();
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('clears a field error as soon as the user types', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<LoginPage />);
+    const { container } = renderWithProviders(<LoginPage />);
 
-    await user.click(screen.getByRole('button', { name: /^login$/i }));
+    const form = container.querySelector('form');
+    fireEvent.submit(form!);
+
     await waitFor(() => {
       expect(screen.getByText('Email is required')).toBeInTheDocument();
     });

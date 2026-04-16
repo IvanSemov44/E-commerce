@@ -1,6 +1,5 @@
 ﻿using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Infrastructure.Services;
-using FluentAssertions;
 
 namespace ECommerce.Tests.Unit.Services;
 
@@ -33,8 +32,8 @@ public class InMemoryPaymentStoreTests
 
         // Assert
         var result = await _store.GetPaymentAsync(paymentId);
-        result.Should().NotBeNull();
-        result!.PaymentIntentId.Should().Be(details.PaymentIntentId);
+        result.ShouldNotBeNull();
+        result!.PaymentIntentId.ShouldBe(details.PaymentIntentId);
     }
 
     [TestMethod]
@@ -51,8 +50,8 @@ public class InMemoryPaymentStoreTests
 
         // Assert
         var result = await _store.GetPaymentAsync(paymentId);
-        result.Should().NotBeNull();
-        result!.OrderId.Should().Be(updatedDetails.OrderId);
+        result.ShouldNotBeNull();
+        result!.OrderId.ShouldBe(updatedDetails.OrderId);
     }
 
     [TestMethod]
@@ -69,9 +68,9 @@ public class InMemoryPaymentStoreTests
         await _store.StorePaymentAsync(payment3.Item1, payment3.Item2);
 
         // Assert
-        (await _store.GetPaymentAsync("payment-1")).Should().NotBeNull();
-        (await _store.GetPaymentAsync("payment-2")).Should().NotBeNull();
-        (await _store.GetPaymentAsync("payment-3")).Should().NotBeNull();
+        (await _store.GetPaymentAsync("payment-1")).ShouldNotBeNull();
+        (await _store.GetPaymentAsync("payment-2")).ShouldNotBeNull();
+        (await _store.GetPaymentAsync("payment-3")).ShouldNotBeNull();
     }
 
     #endregion
@@ -90,12 +89,12 @@ public class InMemoryPaymentStoreTests
         var result = await _store.GetPaymentAsync(paymentId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.PaymentIntentId.Should().Be(details.PaymentIntentId);
-        result.OrderId.Should().Be(details.OrderId);
-        result.Amount.Should().Be(details.Amount);
-        result.Currency.Should().Be(details.Currency);
-        result.Status.Should().Be(details.Status);
+        result.ShouldNotBeNull();
+        result!.PaymentIntentId.ShouldBe(details.PaymentIntentId);
+        result.OrderId.ShouldBe(details.OrderId);
+        result.Amount.ShouldBe(details.Amount);
+        result.Currency.ShouldBe(details.Currency);
+        result.Status.ShouldBe(details.Status);
     }
 
     [TestMethod]
@@ -108,7 +107,7 @@ public class InMemoryPaymentStoreTests
         var result = await _store.GetPaymentAsync(paymentId);
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     [TestMethod]
@@ -124,7 +123,7 @@ public class InMemoryPaymentStoreTests
         var result = await _store.GetPaymentAsync(paymentId);
 
         // Assert
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     #endregion
@@ -144,7 +143,7 @@ public class InMemoryPaymentStoreTests
 
         // Assert
         var result = await _store.GetPaymentAsync(paymentId);
-        result.Should().BeNull();
+        result.ShouldBeNull();
     }
 
     [TestMethod]
@@ -157,7 +156,7 @@ public class InMemoryPaymentStoreTests
         var action = async () => await _store.RemovePaymentAsync(paymentId);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -173,8 +172,8 @@ public class InMemoryPaymentStoreTests
         await _store.RemovePaymentAsync(payment1.Item1);
 
         // Assert
-        (await _store.GetPaymentAsync(payment1.Item1)).Should().BeNull();
-        (await _store.GetPaymentAsync(payment2.Item1)).Should().NotBeNull();
+        (await _store.GetPaymentAsync(payment1.Item1)).ShouldBeNull();
+        (await _store.GetPaymentAsync(payment2.Item1)).ShouldNotBeNull();
     }
 
     #endregion
@@ -204,7 +203,7 @@ public class InMemoryPaymentStoreTests
         for (int i = 0; i < paymentCount; i++)
         {
             var result = await _store.GetPaymentAsync($"payment-{i}");
-            result.Should().NotBeNull($"payment-{i} should exist");
+            result.ShouldNotBeNull();
         }
     }
 
@@ -228,11 +227,11 @@ public class InMemoryPaymentStoreTests
         var results = await Task.WhenAll(tasks);
 
         // Assert - All reads should return the same payment
-        results.Should().AllSatisfy(r =>
+        foreach (PaymentDetailsDto? r in results)
         {
-            r.Should().NotBeNull();
-            r!.PaymentIntentId.Should().Be(details.PaymentIntentId);
-        });
+            r.ShouldNotBeNull();
+            r!.PaymentIntentId.ShouldBe(details.PaymentIntentId);
+        }
     }
 
     [TestMethod]
@@ -269,7 +268,7 @@ public class InMemoryPaymentStoreTests
 
         // Act & Assert - Should not throw any exceptions
         var action = async () => await Task.WhenAll(tasks);
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion

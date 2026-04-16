@@ -1,6 +1,5 @@
 using ECommerce.Infrastructure.Services;
 using ECommerce.SharedKernel.DTOs;
-using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -48,7 +47,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -61,7 +60,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -74,7 +73,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -87,7 +86,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -100,7 +99,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -114,7 +113,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -127,7 +126,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -141,7 +140,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -155,7 +154,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -169,7 +168,7 @@ public class SmtpEmailServiceTests
         var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
 
         // Assert
-        service.Should().NotBeNull();
+        service.ShouldNotBeNull();
     }
 
     #endregion
@@ -189,7 +188,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendWelcomeEmailAsync(email, firstName, verificationLink);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -204,7 +203,7 @@ public class SmtpEmailServiceTests
             "test@example.com", "John", "https://example.com/verify", cts.Token);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -224,7 +223,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendEmailVerificationAsync(email, firstName, verificationLink);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -244,7 +243,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendPasswordResetEmailAsync(email, firstName, resetLink);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -263,7 +262,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendOrderConfirmationEmailAsync(email, order);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -278,7 +277,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendOrderConfirmationEmailAsync(email, order);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -296,7 +295,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendOrderConfirmationEmailAsync(email, order);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -316,7 +315,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendOrderShippedEmailAsync(email, order, trackingNumber);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -335,7 +334,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendOrderDeliveredEmailAsync(email, order);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -355,7 +354,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendAbandonedCartEmailAsync(email, firstName, cart);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -371,7 +370,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendAbandonedCartEmailAsync(email, firstName, cart);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -387,7 +386,7 @@ public class SmtpEmailServiceTests
         var action = async () => await service.SendAbandonedCartEmailAsync(email, firstName, cart);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -410,7 +409,7 @@ public class SmtpEmailServiceTests
             email, firstName, productName, currentStock, threshold);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -430,7 +429,7 @@ public class SmtpEmailServiceTests
             email, firstName, productName, currentStock, threshold, sku);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     [TestMethod]
@@ -449,7 +448,7 @@ public class SmtpEmailServiceTests
             email, firstName, productName, currentStock, threshold, "");
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion
@@ -471,7 +470,7 @@ public class SmtpEmailServiceTests
             email, firstName, subject, htmlContent);
 
         // Assert
-        await action.Should().NotThrowAsync();
+        await Should.NotThrowAsync(action);
     }
 
     #endregion

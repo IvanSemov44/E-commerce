@@ -77,19 +77,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDi
     {
         base.OnModelCreating(modelBuilder);
 
-        // Apply all entity configurations from the Configurations namespace
-        // Each configuration class handles its own entity's mapping and conventions
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserConfiguration).Assembly);
+        // PR5 slice 2: AppDbContext is platform-only for all providers.
+        modelBuilder.Ignore<User>();
+        modelBuilder.Ignore<RefreshToken>();
+        modelBuilder.Ignore<Address>();
+        modelBuilder.Ignore<Category>();
+        modelBuilder.Ignore<Product>();
+        modelBuilder.Ignore<ProductImage>();
+        modelBuilder.Ignore<Review>();
+        modelBuilder.Ignore<Cart>();
+        modelBuilder.Ignore<CartItem>();
+        modelBuilder.Ignore<Wishlist>();
+        modelBuilder.Ignore<Order>();
+        modelBuilder.Ignore<OrderItem>();
+        modelBuilder.Ignore<ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode>();
+        modelBuilder.Ignore<ECommerce.SharedKernel.Entities.InventoryLog>();
+        modelBuilder.Ignore<ECommerce.Inventory.Domain.Aggregates.InventoryItem.InventoryItem>();
 
-        // Apply configurations from additional assemblies registered by bounded context modules
-        System.Reflection.Assembly[] additionalAssemblies;
-        lock (_configurationAssemblyLock)
-        {
-            additionalAssemblies = _additionalConfigurationAssemblies.ToArray();
-        }
-
-        foreach (var assembly in additionalAssemblies)
-            modelBuilder.ApplyConfigurationsFromAssembly(assembly);
+        // Integration reliability persistence is owned by IntegrationPersistenceDbContext.
+        modelBuilder.Ignore<OutboxMessage>();
+        modelBuilder.Ignore<DeadLetterMessage>();
+        modelBuilder.Ignore<OrderFulfillmentSagaState>();
+        modelBuilder.Ignore<InboxMessage>();
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

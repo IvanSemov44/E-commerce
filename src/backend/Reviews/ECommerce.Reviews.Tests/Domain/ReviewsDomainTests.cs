@@ -1,4 +1,5 @@
 ﻿using ECommerce.Reviews.Domain.Aggregates.Review;
+using ECommerce.Reviews.Domain.Events;
 using ECommerce.Reviews.Domain.Errors;
 using ECommerce.Reviews.Domain.Enums;
 using ECommerce.Reviews.Domain.ValueObjects;
@@ -19,8 +20,8 @@ public class ReviewsDomainTests
     {
         Result<Rating> result = Rating.Create(value);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.RatingRange.Code);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.RatingRange.Code);
     }
 
     [TestMethod]
@@ -31,8 +32,8 @@ public class ReviewsDomainTests
     {
         Result<Rating> result = Rating.Create(value);
 
-        result.IsSuccess.Should().BeTrue();
-        result.GetDataOrThrow().Value.Should().Be(value);
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Value.ShouldBe(value);
     }
 
     [TestMethod]
@@ -40,8 +41,8 @@ public class ReviewsDomainTests
     {
         Result<ReviewContent> result = ReviewContent.Create("Nice", "   ");
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ReviewBodyEmpty.Code);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewBodyEmpty.Code);
     }
 
     [TestMethod]
@@ -49,8 +50,8 @@ public class ReviewsDomainTests
     {
         Result<ReviewContent> result = ReviewContent.Create("Nice", "too short");
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ReviewBodyShort.Code);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewBodyShort.Code);
     }
 
     [TestMethod]
@@ -60,8 +61,8 @@ public class ReviewsDomainTests
 
         Result<ReviewContent> result = ReviewContent.Create("Nice", comment);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ReviewBodyLong.Code);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewBodyLong.Code);
     }
 
     [TestMethod]
@@ -69,10 +70,10 @@ public class ReviewsDomainTests
     {
         Result<ReviewContent> result = ReviewContent.Create("  Nice title  ", "  Great product overall!  ");
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsSuccess.ShouldBeTrue();
         ReviewContent content = result.GetDataOrThrow();
-        content.Title.Should().Be("Nice title");
-        content.Body.Should().Be("Great product overall!");
+        content.Title.ShouldBe("Nice title");
+        content.Body.ShouldBe("Great product overall!");
     }
 
     [TestMethod]
@@ -80,10 +81,18 @@ public class ReviewsDomainTests
     {
         Review review = CreateReview();
 
-        review.Status.Should().Be(ReviewStatus.Pending);
-        review.HelpfulCount.Should().Be(0);
-        review.FlagCount.Should().Be(0);
-        review.IsVerifiedPurchase.Should().BeFalse();
+        review.Status.ShouldBe(ReviewStatus.Pending);
+        review.HelpfulCount.ShouldBe(0);
+        review.FlagCount.ShouldBe(0);
+        review.IsVerifiedPurchase.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void Review_Create_CollectsRatingProjectionDomainEvent()
+    {
+        Review review = CreateReview();
+
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
     }
 
     [TestMethod]
@@ -96,11 +105,11 @@ public class ReviewsDomainTests
 
         Result result = review.Edit(rating, content, updatedAt);
 
-        result.IsSuccess.Should().BeTrue();
-        review.Rating.Value.Should().Be(4);
-        review.Content.Title.Should().Be("Updated");
-        review.Content.Body.Should().Be("Updated review text");
-        review.UpdatedAt.Should().Be(updatedAt);
+        result.IsSuccess.ShouldBeTrue();
+        review.Rating.Value.ShouldBe(4);
+        review.Content.Title.ShouldBe("Updated");
+        review.Content.Body.ShouldBe("Updated review text");
+        review.UpdatedAt.ShouldBe(updatedAt);
     }
 
     [TestMethod]
@@ -114,8 +123,8 @@ public class ReviewsDomainTests
             ReviewContent.Create("Updated", "Updated review text").GetDataOrThrow(),
             DateTime.UtcNow);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ReviewAlreadyApproved.Code);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewAlreadyApproved.Code);
     }
 
     [TestMethod]
@@ -126,9 +135,9 @@ public class ReviewsDomainTests
 
         Result result = review.Approve(updatedAt);
 
-        result.IsSuccess.Should().BeTrue();
-        review.Status.Should().Be(ReviewStatus.Approved);
-        review.UpdatedAt.Should().Be(updatedAt);
+        result.IsSuccess.ShouldBeTrue();
+        review.Status.ShouldBe(ReviewStatus.Approved);
+        review.UpdatedAt.ShouldBe(updatedAt);
     }
 
     [TestMethod]
@@ -139,8 +148,8 @@ public class ReviewsDomainTests
 
         Result result = review.Approve(DateTime.UtcNow);
 
-        result.IsSuccess.Should().BeFalse();
-        result.GetErrorOrThrow().Code.Should().Be(ReviewsErrors.ReviewAlreadyApproved.Code);
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewAlreadyApproved.Code);
     }
 
     [TestMethod]
@@ -151,8 +160,20 @@ public class ReviewsDomainTests
 
         review.Reject(updatedAt);
 
-        review.Status.Should().Be(ReviewStatus.Rejected);
-        review.UpdatedAt.Should().Be(updatedAt);
+        review.Status.ShouldBe(ReviewStatus.Rejected);
+        review.UpdatedAt.ShouldBe(updatedAt);
+    }
+
+    [TestMethod]
+    public void Review_Approve_CollectsNewRatingProjectionDomainEvent()
+    {
+        Review review = CreateReview();
+        review.ClearDomainEvents();
+
+        Result result = review.Approve(DateTime.UtcNow);
+
+        result.IsSuccess.ShouldBeTrue();
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
     }
 
     [TestMethod]
@@ -163,9 +184,9 @@ public class ReviewsDomainTests
 
         review.Flag(updatedAt);
 
-        review.Status.Should().Be(ReviewStatus.Flagged);
-        review.FlagCount.Should().Be(1);
-        review.UpdatedAt.Should().Be(updatedAt);
+        review.Status.ShouldBe(ReviewStatus.Flagged);
+        review.FlagCount.ShouldBe(1);
+        review.UpdatedAt.ShouldBe(updatedAt);
     }
 
     [TestMethod]
@@ -176,7 +197,7 @@ public class ReviewsDomainTests
         review.MarkAsHelpful(DateTime.UtcNow.AddMinutes(-1));
         review.MarkAsHelpful(DateTime.UtcNow);
 
-        review.HelpfulCount.Should().Be(2);
+        review.HelpfulCount.ShouldBe(2);
     }
 
     [TestMethod]
@@ -186,7 +207,7 @@ public class ReviewsDomainTests
 
         review.MarkAsVerifiedPurchase();
 
-        review.IsVerifiedPurchase.Should().BeTrue();
+        review.IsVerifiedPurchase.ShouldBeTrue();
     }
 
     private static Review CreateReview()

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ECommerce.SharedKernel.Constants;
 using ECommerce.Contracts;
 using ECommerce.Infrastructure.Data;
@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Integration;
 
-public sealed class DeadLetterReplayService(AppDbContext dbContext) : IDeadLetterReplayService
+public sealed class DeadLetterReplayService(IntegrationPersistenceDbContext dbContext) : IDeadLetterReplayService
 {
     public async Task<Result<DeadLetterPageDto>> GetDeadLettersAsync(
         int page,

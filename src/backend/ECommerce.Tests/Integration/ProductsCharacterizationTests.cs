@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -39,6 +39,14 @@ public class ProductsCharacterizationTests
     {
         string content = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
+    }
+
+    private static Guid ExtractIdFromLocation(HttpResponseMessage response, string expectedPrefix)
+    {
+        Assert.IsNotNull(response.Headers.Location, "Redirect response must include Location header");
+        string location = response.Headers.Location!.ToString();
+        StringAssert.StartsWith(location, expectedPrefix);
+        return Guid.Parse(location[(location.LastIndexOf('/') + 1)..]);
     }
 
     // ---------- PRODUCTS ----------
@@ -130,10 +138,10 @@ public class ProductsCharacterizationTests
     }
 
     [TestMethod]
-    public async Task PostProduct_AdminValid_Returns201AndMatches()
+    public async Task PostProduct_AdminValid_Returns302WithLocation()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         // create category first
         var createCat = new { Name = "TempCat", Slug = "temp-cat-" + Guid.NewGuid().ToString().Substring(0,8) };
 
@@ -141,9 +149,8 @@ public class ProductsCharacterizationTests
         HttpResponseMessage catRes = await client.PostAsync("/api/categories", Serialize(createCat), TestContext.CancellationToken);
 
         // Assert category created
-        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
-        Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Guid catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         // Arrange (product)
         var slug = "prod-" + Guid.NewGuid().ToString().Substring(0,8);
@@ -153,16 +160,16 @@ public class ProductsCharacterizationTests
         HttpResponseMessage res = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.Created, res.StatusCode);
-        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res, TestContext.CancellationToken);
-        Assert.IsTrue(api != null && api.Success && api.Data!.GetProperty("name").GetString() == "NewProduct");
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Guid productId = ExtractIdFromLocation(res, "/api/products/");
+        Assert.AreNotEqual(Guid.Empty, productId);
     }
 
     [TestMethod]
     public async Task PostProduct_AdminMissingName_Returns400()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var create = new { Slug = "no-name-" + Guid.NewGuid().ToString().Substring(0,8), Price = 5m, StockQuantity = 1 };
 
         // Act
@@ -176,7 +183,7 @@ public class ProductsCharacterizationTests
     public async Task PostProduct_AdminNegativePrice_Returns400()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var create = new { Name = "BadPrice", Slug = "bad-price-" + Guid.NewGuid().ToString().Substring(0,8), Price = -1m, StockQuantity = 1 };
 
         // Act
@@ -190,7 +197,7 @@ public class ProductsCharacterizationTests
     public async Task PostProduct_DuplicateSlug_Returns422WithCode()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         // create category
         var createCat = new { Name = "DupCat", Slug = "dup-cat-" + Guid.NewGuid().ToString().Substring(0,8) };
 
@@ -198,9 +205,8 @@ public class ProductsCharacterizationTests
         HttpResponseMessage catRes = await client.PostAsync("/api/categories", Serialize(createCat), TestContext.CancellationToken);
 
         // Assert category created
-        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
-        Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Guid catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         // Arrange (product)
         var slug = "dup-slug-" + Guid.NewGuid().ToString().Substring(0,8);
@@ -211,11 +217,36 @@ public class ProductsCharacterizationTests
         HttpResponseMessage r2 = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.Created, r1.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
         Assert.AreEqual((HttpStatusCode)422, r2.StatusCode);
         ApiResponse<object>? api = await Deserialize<object>(r2, TestContext.CancellationToken);
         Assert.IsFalse(api!.Success);
         Assert.AreEqual(ErrorCodes.DuplicateProductSlug, api.ErrorDetails!.Code);
+    }
+
+    [TestMethod]
+    public async Task PostProduct_DuplicateSku_Returns422WithCode()
+    {
+        // Arrange
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
+        var createCat = new { Name = "DupSkuCat", Slug = "dup-sku-cat-" + Guid.NewGuid().ToString().Substring(0,8) };
+
+        HttpResponseMessage catRes = await client.PostAsync("/api/categories", Serialize(createCat), TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Guid catId = ExtractIdFromLocation(catRes, "/api/categories/");
+
+        var sku = "dup-sku-" + Guid.NewGuid().ToString().Substring(0,8);
+        var first = new { Name = "SkuOne", Slug = "sku-one-" + Guid.NewGuid().ToString().Substring(0,8), Price = 1m, StockQuantity = 1, CategoryId = catId, Sku = sku };
+        var second = new { Name = "SkuTwo", Slug = "sku-two-" + Guid.NewGuid().ToString().Substring(0,8), Price = 1m, StockQuantity = 1, CategoryId = catId, Sku = sku };
+
+        HttpResponseMessage r1 = await client.PostAsync("/api/products", Serialize(first), TestContext.CancellationToken);
+        HttpResponseMessage r2 = await client.PostAsync("/api/products", Serialize(second), TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
+        Assert.IsTrue(r2.StatusCode == (HttpStatusCode)422 || r2.StatusCode == HttpStatusCode.Conflict);
+        ApiResponse<object>? api = await Deserialize<object>(r2, TestContext.CancellationToken);
+        Assert.IsFalse(api!.Success);
+        Assert.AreEqual(ErrorCodes.SkuAlreadyExists, api.ErrorDetails!.Code);
     }
 
     [TestMethod]
@@ -247,10 +278,10 @@ public class ProductsCharacterizationTests
     }
 
     [TestMethod]
-    public async Task PutProduct_AdminExistingValid_Returns200AndUpdated()
+    public async Task PutProduct_AdminExistingValid_Returns302WithLocation()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         // Create product first
         var createCat = new { Name = "PutCat", Slug = "put-cat-" + Guid.NewGuid().ToString().Substring(0,8) };
 
@@ -258,9 +289,8 @@ public class ProductsCharacterizationTests
         HttpResponseMessage catRes = await client.PostAsync("/api/categories", Serialize(createCat), TestContext.CancellationToken);
 
         // Assert category created
-        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
-        Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Guid catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         // Arrange (create product)
         var create = new { Name = "ToUpdate", Slug = "to-update-" + Guid.NewGuid().ToString().Substring(0,8), Price = 5m, StockQuantity = 2, CategoryId = catId };
@@ -269,9 +299,8 @@ public class ProductsCharacterizationTests
         HttpResponseMessage r = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
 
         // Assert product created
-        Assert.AreEqual(HttpStatusCode.Created, r.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(r, TestContext.CancellationToken);
-        Guid id = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, r.StatusCode);
+        Guid id = ExtractIdFromLocation(r, "/api/products/");
 
         // Arrange (update)
         var update = new { Name = "UpdatedName", Slug = "updated-slug-" + Guid.NewGuid().ToString().Substring(0,8), Price = 6m, StockQuantity = 3, CategoryId = catId };
@@ -280,16 +309,16 @@ public class ProductsCharacterizationTests
         HttpResponseMessage res = await client.PutAsync($"/api/products/{id}", Serialize(update), TestContext.CancellationToken);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res, TestContext.CancellationToken);
-        Assert.AreEqual("UpdatedName", api!.Data!.GetProperty("name").GetString());
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Guid redirectedId = ExtractIdFromLocation(res, "/api/products/");
+        Assert.AreEqual(id, redirectedId);
     }
 
     [TestMethod]
     public async Task PutProduct_AdminNonexistent_Returns404()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var update = new { Name = "No", Slug = "no-" + Guid.NewGuid().ToString().Substring(0,8), Price = 1m, StockQuantity = 1 };
 
         // Act
@@ -303,7 +332,7 @@ public class ProductsCharacterizationTests
     public async Task PutProduct_AdminMissingName_Returns400()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var update = new { Slug = "no-name-" + Guid.NewGuid().ToString().Substring(0,8), Price = 1m, StockQuantity = 1 };
 
         // Act
@@ -345,7 +374,7 @@ public class ProductsCharacterizationTests
     public async Task DeleteProduct_AdminExisting_ReturnsSuccess()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         // create product
         var createCat = new { Name = "DelCat", Slug = "del-cat-" + Guid.NewGuid().ToString().Substring(0,8) };
 
@@ -353,9 +382,8 @@ public class ProductsCharacterizationTests
         HttpResponseMessage catRes = await client.PostAsync("/api/categories", Serialize(createCat), TestContext.CancellationToken);
 
         // Assert category created
-        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
-        ApiResponse<JsonElement>? catApi = await Deserialize<JsonElement>(catRes, TestContext.CancellationToken);
-        Guid catId = Guid.Parse(catApi!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Guid catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         // Arrange (product)
         var create = new { Name = "ToDelete", Slug = "to-delete-" + Guid.NewGuid().ToString().Substring(0,8), Price = 2m, StockQuantity = 1, CategoryId = catId };
@@ -364,9 +392,8 @@ public class ProductsCharacterizationTests
         HttpResponseMessage r = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
 
         // Assert product created
-        Assert.AreEqual(HttpStatusCode.Created, r.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(r, TestContext.CancellationToken);
-        Guid id = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, r.StatusCode);
+        Guid id = ExtractIdFromLocation(r, "/api/products/");
 
         // Act (delete)
         HttpResponseMessage res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/products/{id}"), TestContext.CancellationToken);

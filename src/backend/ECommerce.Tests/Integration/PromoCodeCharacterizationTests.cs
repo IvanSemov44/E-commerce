@@ -10,7 +10,7 @@ public class PromoCodeCharacterizationTests
 {
     private static TestWebApplicationFactory _factory = null!;
     private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
-    private static readonly Guid SeededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid _seededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
 
     [TestInitialize]
     public void Setup()
@@ -128,7 +128,7 @@ public class PromoCodeCharacterizationTests
     public async Task GetPromoCodeById_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var response = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}");
+        var response = await client.GetAsync($"/api/promo-codes/{_seededPromoCodeId}");
         Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -136,7 +136,7 @@ public class PromoCodeCharacterizationTests
     public async Task GetPromoCodeById_CustomerRole_Returns403()
     {
         using var client = _factory.CreateAuthenticatedClient();
-        var response = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}");
+        var response = await client.GetAsync($"/api/promo-codes/{_seededPromoCodeId}");
         Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -144,7 +144,7 @@ public class PromoCodeCharacterizationTests
     public async Task GetPromoCodeById_Admin_SeededId_Returns200WithCorrectShape()
     {
         using var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/api/promo-codes/{SeededPromoCodeId}");
+        var response = await client.GetAsync($"/api/promo-codes/{_seededPromoCodeId}");
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
         var data = JsonSerializer.Deserialize<JsonElement>(
@@ -246,7 +246,7 @@ public class PromoCodeCharacterizationTests
     public async Task UpdatePromoCode_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var response = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}",
+        var response = await client.PutAsync($"/api/promo-codes/{_seededPromoCodeId}",
             new StringContent("{}", Encoding.UTF8, "application/json"));
         Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -256,7 +256,7 @@ public class PromoCodeCharacterizationTests
     {
         using var client = _factory.CreateAdminClient();
         var dto = new { IsActive = true };
-        var response = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}",
+        var response = await client.PutAsync($"/api/promo-codes/{_seededPromoCodeId}",
             new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json"));
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
@@ -279,7 +279,7 @@ public class PromoCodeCharacterizationTests
     public async Task DeactivatePromoCode_Anonymous_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var response = await client.PutAsync($"/api/promo-codes/{SeededPromoCodeId}/deactivate", null);
+        var response = await client.PutAsync($"/api/promo-codes/{_seededPromoCodeId}/deactivate", null);
         Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 

@@ -49,6 +49,17 @@ public sealed class Category : AggregateRoot
         Slug = Slug.Create(newName.Value).GetDataOrThrow();
     }
 
+    public Result UpdateDetails(CategoryName newName, Guid? newParentId)
+    {
+        if (newParentId == Id)
+            return Result.Fail(CatalogErrors.CategoryCircularParent);
+
+        Name = newName;
+        Slug = Slug.Create(newName.Value).GetDataOrThrow();
+        ParentId = newParentId;
+        return Result.Ok();
+    }
+
     public void Deactivate() => IsActive = false;
 
     public Result MoveTo(Guid? newParentId)

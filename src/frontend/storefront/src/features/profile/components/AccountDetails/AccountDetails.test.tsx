@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import AccountDetails from './AccountDetails';
+import { AccountDetails } from './AccountDetails';
 import styles from './AccountDetails.module.css';
 
 describe('AccountDetails', () => {

@@ -1,4 +1,5 @@
 ﻿using ECommerce.SharedKernel.Interfaces;
+using ECommerce.SharedKernel.Results;
 using MediatR;
 
 namespace ECommerce.API.Behaviors;
@@ -25,6 +26,13 @@ public class TransactionBehavior<TRequest, TResponse>(IUnitOfWork unitOfWork)
         try
         {
             var response = await next(cancellationToken);
+
+            if (IsFailedResultResponse(response))
+            {
+                await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                return response;
+            }
+
             await unitOfWork.CommitTransactionAsync(cancellationToken);
             return response;
         }
@@ -33,5 +41,31 @@ public class TransactionBehavior<TRequest, TResponse>(IUnitOfWork unitOfWork)
             await unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
         }
+    }
+
+    private static bool IsFailedResultResponse(TResponse response)
+    {
+        if (response is Result nonGenericResult)
+            return !nonGenericResult.IsSuccess;
+
+        var responseType = response?.GetType();
+        if (responseType is null)
+            return false;
+
+        var isSuccessProperty = responseType.GetProperty(nameof(Result.IsSuccess));
+        if (isSuccessProperty?.PropertyType != typeof(bool))
+            return false;
+
+        var declaringType = isSuccessProperty.DeclaringType;
+        if (declaringType is null)
+            return false;
+
+        bool isGenericSharedKernelResult = declaringType.IsGenericType
+            && declaringType.GetGenericTypeDefinition() == typeof(Result<>);
+
+        if (!isGenericSharedKernelResult)
+            return false;
+
+        return !(bool)isSuccessProperty.GetValue(response)!;
     }
 }

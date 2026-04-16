@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace ECommerce.Infrastructure.Integration;
 
 public sealed class OrderFulfillmentSagaService(
-    AppDbContext dbContext,
+    IntegrationPersistenceDbContext dbContext,
     IOrderCompensationService compensationService,
     IOptions<OrderFulfillmentSagaOptions> options) : IOrderFulfillmentSagaService
 {

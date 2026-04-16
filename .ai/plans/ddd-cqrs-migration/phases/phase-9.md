@@ -1,6 +1,6 @@
 # Phase 9: API Layer Reorganization & Old Service/Repository Cleanup
 
-**Status**: In Progress — Step 7 branch work is complete and validated locally; awaiting merge.
+**Status**: Completed — all Phase 9 steps are merged to `main`.
 
 **Learn**: Bounded context ownership at the API layer, vertical slice organization, incremental deletion of legacy monolith code.
 
@@ -102,12 +102,18 @@ If the build is red before you start — stop. Do not proceed. Report the error.
 | Step 0A | **Merged** | Native Shopping BC handlers introduced in `ECommerce.Shopping.Application/` (bridge was removed in Step 0B). |
 | Step 0B | **Merged** | Native Shopping handlers own wishlist. No bridge or old WishlistService references remain. |
 | Step 1 | **Merged** | Payments BC created under `src/backend/Payments/`; `PaymentsController` moved to Features and old `IPaymentService`/`PaymentService` removed. |
-| Step 2 | Not Started | DashboardService still live. Prep checklist: `phase-9-step-2-prep.md` |
-| Step 3 | Not Started | All controllers still in `Controllers/`. Prep checklist: `phase-9-step-3-prep.md` |
-| Step 4 | In Progress (Branch Complete) | Shared folder reorganization implemented on `feature/phase-9-step-4-shared-folder`; pending merge. Prep checklist: `phase-9-step-4-prep.md` |
+| Step 2 | **Merged** | Dashboard moved to CQRS/MediatR patterns; legacy dashboard service path removed from active API flow. Prep checklist: `phase-9-step-2-prep.md` |
+| Step 3 | **Merged** | Controllers are organized under `Features/*/Controllers`; legacy flat `Controllers/` layout retired. Prep checklist: `phase-9-step-3-prep.md` |
+| Step 4 | **Merged** | Shared API support code was reorganized and namespace-aligned (`Shared` -> `Common`) with consumers updated. Prep checklist: `phase-9-step-4-prep.md` |
 | Step 5 | **Merged** | Legacy repository implementations/interfaces removed; inventory compatibility bridge deleted. Prep checklist: `phase-9-step-5-prep.md` |
 | Step 6 | **Merged** | `ECommerce.Application` deleted after DTO/validator/interface/service migration to Contracts/SharedKernel/Infrastructure. Prep checklist: `phase-9-step-6-prep.md` |
-| Step 7 | In Progress (Branch Complete) | `ECommerce.Core` is detached from live references and from solution on this branch; pending merge. Prep checklist: `phase-9-step-7-prep.md` |
+| Step 7 | **Merged** | `ECommerce.Core` removed from solution and runtime usage; SharedKernel owns moved contracts/entities. Prep checklist: `phase-9-step-7-prep.md` |
+
+### Phase 10 Handoff
+
+- Handoff branch created: `feature/phase-10-persistence-and-integration-boundaries`.
+- Baseline cleanup completed before Phase 10 implementation (accidental nested duplicate test files removed).
+- Build validation after cleanup succeeded: `dotnet build src/backend/ECommerce.sln -v minimal`.
 
 ### Step 0 Checklist
 

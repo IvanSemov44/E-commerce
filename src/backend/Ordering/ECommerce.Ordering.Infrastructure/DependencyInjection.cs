@@ -20,8 +20,8 @@ public static class DependencyInjection
         services.AddDbContext<OrderingDbContext>((serviceProvider, options) =>
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+            var connectionString = configuration.GetConnectionString("OrderingConnection")
+                ?? throw new InvalidOperationException("Connection string 'OrderingConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
             options.ConfigureWarnings(warnings => warnings

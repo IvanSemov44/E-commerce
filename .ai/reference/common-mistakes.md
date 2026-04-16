@@ -75,5 +75,5 @@ Before implementing a feature or refactor, scan this file and explicitly check t
 - Mistakes 1-3, 10-11: `.ai/backend/services.md`, `.ai/backend/repositories.md`, `.ai/backend/query-patterns.md`
 - Mistake 12: `.ai/workflows/adding-feature.md`
 - Mistakes 4-6: `.ai/backend/entities.md`, `.ai/backend/api-contracts.md`, `.ai/backend/error-handling.md`
-- Mistakes 7-9: `.ai/frontend/api-integration.md`, `.ai/frontend/redux.md`, `.ai/frontend/type-safety.md`
+- Mistakes 7-9: `.ai/frontend/storefront/api-integration.md`, `.ai/frontend/storefront/redux.md`, `.ai/frontend/storefront/type-safety.md`
 - Full flow reference: `.ai/workflows/adding-feature.md`

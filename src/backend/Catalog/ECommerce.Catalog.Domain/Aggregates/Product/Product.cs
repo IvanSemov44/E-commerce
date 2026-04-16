@@ -19,7 +19,6 @@ public sealed class Product : AggregateRoot
     public string? Description { get; private set; }
     public ProductStatus Status { get; private set; }
     public bool IsFeatured { get; private set; }
-    public bool IsDeleted { get; private set; }
     public int StockQuantity { get; private set; }
     public Guid CategoryId { get; private set; }
 
@@ -76,11 +75,10 @@ public sealed class Product : AggregateRoot
             Status = ProductStatus.Draft,
             IsFeatured = false,
             StockQuantity = 0,
-            IsDeleted = false,
             CategoryId = categoryId,
         };
 
-        product.AddDomainEvent(new ProductCreatedEvent(product.Id, name.Value, categoryId));
+        product.AddDomainEvent(new ProductCreatedEvent(product.Id, name.Value, priceResult.GetDataOrThrow().Amount, categoryId));
         return Result<Product>.Ok(product);
     }
 
@@ -92,19 +90,20 @@ public sealed class Product : AggregateRoot
         Slug = Slug.Create(name.Value).GetDataOrThrow();
         Description = description;
         CategoryId = categoryId;
+        AddDomainEvent(new ProductUpdatedEvent(Id, name.Value, Price.Amount));
     }
 
     public void UpdatePrice(Money newPrice)
     {
         var oldPrice = Price;
         Price = newPrice;
-        AddDomainEvent(new ProductPriceChangedEvent(Id, oldPrice, newPrice));
+        AddDomainEvent(new ProductPriceChangedEvent(Id, Name.Value, oldPrice, newPrice));
     }
 
     public Result Activate()
     {
-        if (Status == ProductStatus.Active) return Result.Ok();
-        Status = ProductStatus.Active;
+        if (Status != ProductStatus.Active)
+            Status = ProductStatus.Active;
         return Result.Ok();
     }
 
@@ -117,9 +116,17 @@ public sealed class Product : AggregateRoot
         return Result.Ok();
     }
 
+    public void Feature() => IsFeatured = true;
+    public void Unfeature() => IsFeatured = false;
+
+    public void Discontinue() => Status = ProductStatus.Discontinued;
+
     public void Delete()
     {
-        IsDeleted = true;
+        Status = ProductStatus.Inactive;
+        var snapshots = _images
+            .ConvertAll(i => new ProductImageSnapshot(i.Id, i.Url, i.IsPrimary));
+        AddDomainEvent(new ProductDeletedEvent(Id, Name.Value, Price.Amount, snapshots));
     }
 
     public Result AddImage(string url, string? altText)
@@ -128,7 +135,9 @@ public sealed class Product : AggregateRoot
             return Result.Fail(CatalogErrors.ProductMaxImages);
         bool isPrimary = _images.Count == 0;
         int order = _images.Count;
-        _images.Add(new ProductImage(Guid.NewGuid(), Id, url, altText, isPrimary, order));
+        var imageId = Guid.NewGuid();
+        _images.Add(new ProductImage(imageId, Id, url, altText, isPrimary, order));
+        AddDomainEvent(new ProductImageAddedEvent(Id, imageId, url, isPrimary));
         return Result.Ok();
     }
 
@@ -137,8 +146,15 @@ public sealed class Product : AggregateRoot
         ProductImage? image = _images.FirstOrDefault(i => i.Id == imageId);
         if (image is null)
             return Result.Fail(CatalogErrors.ProductImageNotFound);
+        var oldPrimary = _images.FirstOrDefault(i => i.IsPrimary);
         foreach (ProductImage img in _images) img.SetPrimary(false);
         image.SetPrimary(true);
+        AddDomainEvent(new ProductPrimaryImageSetEvent(
+            Id,
+            image.Id,
+            image.Url,
+            oldPrimary?.Id,
+            oldPrimary?.Url));
         return Result.Ok();
     }
 
@@ -149,4 +165,5 @@ public sealed class Product : AggregateRoot
         StockQuantity = quantity;
         return Result.Ok();
     }
+
 }
