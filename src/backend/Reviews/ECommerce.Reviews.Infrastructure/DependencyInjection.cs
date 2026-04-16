@@ -1,6 +1,7 @@
 ﻿using ECommerce.Reviews.Application;
 using ECommerce.Reviews.Infrastructure.EventHandlers;
 using ECommerce.Reviews.Infrastructure.IntegrationEvents;
+using ECommerce.Reviews.Infrastructure.Integration;
 using ECommerce.Reviews.Domain.Events;
 using ECommerce.Reviews.Domain.Interfaces;
 using ECommerce.Reviews.Infrastructure.Persistence;
@@ -34,6 +35,9 @@ public static class DependencyInjection
         services.AddScoped<INotificationHandler<ProductProjectionUpdatedIntegrationEvent>, ProductProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<ReviewRatingProjectionChangedDomainEvent>, ReviewRatingProjectionChangedDomainEventHandler>();
         services.AddReviewsApplication();
+
+        // Reviews-owned outbox dispatcher — polls reviews.outbox_messages
+        services.AddHostedService<ReviewsOutboxDispatcherHostedService>();
 
         return services;
     }
