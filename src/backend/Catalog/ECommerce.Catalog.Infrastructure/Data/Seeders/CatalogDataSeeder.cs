@@ -3,8 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Catalog.Infrastructure.Data.Seeders;
 
-public sealed class CatalogDataSeeder(
-    ILogger<CatalogDataSeeder> logger)
+public sealed class CatalogDataSeeder(ILogger<CatalogDataSeeder> logger)
 {
     public async Task SeedAsync(CatalogDbContext context, CancellationToken cancellationToken = default)
     {

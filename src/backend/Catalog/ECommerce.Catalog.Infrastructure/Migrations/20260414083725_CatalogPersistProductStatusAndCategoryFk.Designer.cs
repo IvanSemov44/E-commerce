@@ -3,6 +3,7 @@ using System;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ECommerce.Catalog.Infrastructure.Migrations
 {
     [DbContext(typeof(CatalogDbContext))]
-    partial class CatalogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414083725_CatalogPersistProductStatusAndCategoryFk")]
+    partial class CatalogPersistProductStatusAndCategoryFk
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,53 +25,6 @@ namespace ECommerce.Catalog.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("ECommerce.Catalog.Domain.Aggregates.Category.Category", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("Id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("CreatedAt");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("IsActive");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("Name");
-
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ParentId");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("Slug");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("UpdatedAt");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("ParentId");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
-
-                    b.ToTable("Categories", "catalog");
-                });
 
             modelBuilder.Entity("ECommerce.Catalog.Domain.Aggregates.Product.Product", b =>
                 {
@@ -97,10 +53,6 @@ namespace ECommerce.Catalog.Infrastructure.Migrations
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean")
                         .HasColumnName("IsFeatured");
-
-                    b.Property<int>("LowStockThreshold")
-                        .HasColumnType("integer")
-                        .HasColumnName("LowStockThreshold");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -230,89 +182,7 @@ namespace ECommerce.Catalog.Infrastructure.Migrations
                     b.ToTable("ProductRatings", "catalog");
                 });
 
-            modelBuilder.Entity("ECommerce.Infrastructure.Data.DeadLetterMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EventData")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<DateTime>("FailedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("IdempotencyKey")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("OutboxMessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RequeuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FailedAt");
-
-                    b.HasIndex("OutboxMessageId");
-
-                    b.ToTable("dead_letter_messages", "catalog");
-                });
-
-            modelBuilder.Entity("ECommerce.Infrastructure.Data.InboxMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<Guid>("IdempotencyKey")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ReceivedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("ProcessedAt");
-
-                    b.HasIndex("ReceivedAt");
-
-                    b.ToTable("inbox_messages", "catalog");
-                });
-
-            modelBuilder.Entity("ECommerce.Infrastructure.Data.OutboxMessage", b =>
+            modelBuilder.Entity("ECommerce.SharedKernel.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -321,64 +191,56 @@ namespace ECommerce.Catalog.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DeadLetteredAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("Description");
 
-                    b.Property<string>("EventData")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<Guid>("IdempotencyKey")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeadLettered")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastError")
+                    b.Property<string>("ImageUrl")
                         .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("ImageUrl");
 
-                    b.Property<DateTime?>("NextAttemptAt")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("IsActive");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("Name");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ParentId");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("Slug");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("SortOrder");
+
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAt");
+                    b.HasIndex("ParentId");
 
-                    b.HasIndex("IdempotencyKey")
+                    b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.HasIndex("IsDeadLettered");
-
-                    b.HasIndex("NextAttemptAt");
-
-                    b.HasIndex("ProcessedAt");
-
-                    b.ToTable("outbox_messages", "catalog");
-                });
-
-            modelBuilder.Entity("ECommerce.Catalog.Domain.Aggregates.Category.Category", b =>
-                {
-                    b.HasOne("ECommerce.Catalog.Domain.Aggregates.Category.Category", null)
-                        .WithMany()
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.ToTable("Categories", "catalog");
                 });
 
             modelBuilder.Entity("ECommerce.Catalog.Domain.Aggregates.Product.Product", b =>
                 {
-                    b.HasOne("ECommerce.Catalog.Domain.Aggregates.Category.Category", null)
+                    b.HasOne("ECommerce.SharedKernel.Entities.Category", null)
                         .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -394,9 +256,24 @@ namespace ECommerce.Catalog.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ECommerce.SharedKernel.Entities.Category", b =>
+                {
+                    b.HasOne("ECommerce.SharedKernel.Entities.Category", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Parent");
+                });
+
             modelBuilder.Entity("ECommerce.Catalog.Domain.Aggregates.Product.Product", b =>
                 {
                     b.Navigation("Images");
+                });
+
+            modelBuilder.Entity("ECommerce.SharedKernel.Entities.Category", b =>
+                {
+                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }

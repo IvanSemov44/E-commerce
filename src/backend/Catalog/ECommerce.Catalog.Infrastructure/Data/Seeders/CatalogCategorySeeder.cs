@@ -1,4 +1,4 @@
-﻿using ECommerce.SharedKernel.Entities;
+﻿using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,33 +21,9 @@ public sealed class CatalogCategorySeeder
 
             var categories = new List<Category>
             {
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Electronics",
-                    Slug = "electronics",
-                    Description = "Electronic devices and gadgets",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Fashion",
-                    Slug = "fashion",
-                    Description = "Clothing and apparel",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Home & Garden",
-                    Slug = "home-garden",
-                    Description = "Home and garden products",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                }
+                Category.Create("Electronics", slugRaw: "electronics").GetDataOrThrow(),
+                Category.Create("Fashion", slugRaw: "fashion").GetDataOrThrow(),
+                Category.Create("Home & Garden", slugRaw: "home-garden").GetDataOrThrow()
             };
 
             await context.Categories.AddRangeAsync(categories, cancellationToken);

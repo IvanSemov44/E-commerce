@@ -1,36 +1,44 @@
-﻿using ECommerce.SharedKernel.Entities;
+﻿using ECommerce.Catalog.Domain.Aggregates.Category;
+using ECommerce.Catalog.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ECommerce.Catalog.Infrastructure.Configurations;
 
-public class CategoryConfiguration : IEntityTypeConfiguration<Category>
+public class CategoryAggregateConfiguration : IEntityTypeConfiguration<Category>
 {
     public void Configure(EntityTypeBuilder<Category> builder)
     {
         builder.ToTable("Categories", "catalog");
         builder.HasKey(c => c.Id);
         builder.HasIndex(c => c.Slug).IsUnique();
+        builder.HasIndex(c => c.IsActive);
+
+        builder.Property(c => c.Id).HasColumnName("Id");
+        builder.Property(c => c.CreatedAt).HasColumnName("CreatedAt");
+        builder.Property(c => c.UpdatedAt).HasColumnName("UpdatedAt");
 
         builder.Property(c => c.Name)
             .HasColumnName("Name")
+            .HasMaxLength(100)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasConversion(
+                n => n.Value,
+                s => CategoryName.Create(s).GetDataOrThrow());
 
         builder.Property(c => c.Slug)
             .HasColumnName("Slug")
+            .HasMaxLength(100)
             .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(c => c.Description).HasColumnName("Description").HasMaxLength(1000).IsRequired(false);
-        builder.Property(c => c.ImageUrl).HasColumnName("ImageUrl").HasMaxLength(2000).IsRequired(false);
-        builder.Property(c => c.SortOrder).HasColumnName("SortOrder");
+            .HasConversion(
+                s => s.Value,
+                s => Slug.Create(s).GetDataOrThrow());
 
         builder.Property(c => c.ParentId).HasColumnName("ParentId");
         builder.Property(c => c.IsActive).HasColumnName("IsActive");
 
-        builder.HasOne(c => c.Parent)
-            .WithMany(c => c.Children)
+        builder.HasOne<Category>()
+            .WithMany()
             .HasForeignKey(c => c.ParentId)
             .OnDelete(DeleteBehavior.SetNull);
     }
