@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
@@ -133,15 +133,15 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     /// </summary>
     /// <param name="command">Category creation command payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The newly created category.</returns>
-    /// <response code="201">Category created successfully.</response>
+    /// <returns>Redirect to the created category resource.</returns>
+    /// <response code="302">Redirect to category details.</response>
     /// <response code="400">Invalid category data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to create categories.</response>
     /// <response code="422">Unprocessable category data (validation errors).</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> CreateCategory(
@@ -150,7 +150,7 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command, ct);
         return result.ToActionResult(
-            dto => CreatedAtAction(nameof(GetCategoryById), new { id = dto.Id }, ApiResponse<CategoryDto>.Ok(dto, "Category created")),
+            id => RedirectToAction(nameof(GetCategoryById), new { id }),
             Problem);
     }
 
@@ -160,8 +160,8 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     /// <param name="id">The category ID.</param>
     /// <param name="command">Category update command payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The updated category.</returns>
-    /// <response code="200">Category updated successfully.</response>
+    /// <returns>Redirect to the updated category resource.</returns>
+    /// <response code="302">Redirect to category details.</response>
     /// <response code="400">Invalid category data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to update categories.</response>
@@ -169,7 +169,7 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable category data (validation errors).</response>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateCategory(
@@ -179,7 +179,7 @@ public class CatalogCategoriesController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
         return result.ToActionResult(
-            data => Ok(ApiResponse<CategoryDto>.Ok(data, "Category updated")),
+            categoryId => RedirectToAction(nameof(GetCategoryById), new { id = categoryId }),
             Problem);
     }
 

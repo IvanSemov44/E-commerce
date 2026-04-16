@@ -1,4 +1,5 @@
 ﻿using ECommerce.Catalog.Infrastructure.Persistence;
+using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,7 @@ public sealed class ReviewsProductProjectionBackfillService(
 
         var catalogProducts = await _catalogDbContext.Products
             .AsNoTracking()
-            .Select(x => new { x.Id, x.IsActive })
+            .Select(x => new { x.Id, IsActive = x.Status == ProductStatus.Active })
             .ToListAsync(cancellationToken);
 
         var reviewProductsById = await _reviewsDbContext.Products

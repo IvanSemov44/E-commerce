@@ -1,9 +1,11 @@
 ﻿using System.Net;
 using System.Text.Json;
 using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Constants;
 using ECommerce.SharedKernel.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace ECommerce.API.Middleware;
 
@@ -86,6 +88,10 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
             ConflictException => (StatusCodes.Status409Conflict,
                 ApiResponse<object>.Failure(exception.Message, "CONFLICT")),
 
+            // DB update failures mapped to business-friendly error responses
+            DbUpdateException dbUpdateException when TryMapDbUpdateException(dbUpdateException, out var mappedResponse)
+                => mappedResponse,
+
             // Concurrency conflict - EF Core optimistic locking violations (409)
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
                 ApiResponse<object>.Failure(
@@ -103,6 +109,44 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
                     "An internal server error occurred. Please try again later.",
                     "INTERNAL_SERVER_ERROR"))
         };
+    }
+
+    private static bool TryMapDbUpdateException(
+        DbUpdateException exception,
+        out (int StatusCode, ApiResponse<object> ApiResponse) mapped)
+    {
+        if (exception.InnerException is not PostgresException postgres)
+        {
+            mapped = default;
+            return false;
+        }
+
+        if (postgres.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            string errorCode = postgres.ConstraintName?.Contains("Slug", StringComparison.OrdinalIgnoreCase) == true
+                ? ErrorCodes.DuplicateProductSlug
+                : postgres.ConstraintName?.Contains("Sku", StringComparison.OrdinalIgnoreCase) == true
+                    ? ErrorCodes.SkuAlreadyExists
+                    : "CONFLICT";
+
+            mapped = (StatusCodes.Status409Conflict,
+                ApiResponse<object>.Failure("A duplicate resource already exists.", errorCode));
+            return true;
+        }
+
+        if (postgres.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+        {
+            string errorCode = postgres.ConstraintName?.Contains("CategoryId", StringComparison.OrdinalIgnoreCase) == true
+                ? ErrorCodes.CategoryNotFound
+                : "CONFLICT";
+
+            mapped = (StatusCodes.Status409Conflict,
+                ApiResponse<object>.Failure("Referenced resource was not found.", errorCode));
+            return true;
+        }
+
+        mapped = default;
+        return false;
     }
 }
 

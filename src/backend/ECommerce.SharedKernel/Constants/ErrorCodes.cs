@@ -33,6 +33,7 @@ public static class ErrorCodes
 
     // Product slug errors
     public const string DuplicateProductSlug = "DUPLICATE_PRODUCT_SLUG";
+    public const string SkuAlreadyExists = "SKU_ALREADY_EXISTS";
 
     // Promo Code errors
     public const string InvalidPromoCode = "INVALID_PROMO_CODE";
