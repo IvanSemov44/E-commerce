@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -239,10 +239,10 @@ public class ProductsControllerTests
     #region Create Product Tests
 
     [TestMethod]
-    public async Task CreateProduct_WithAdminAndValidData_ReturnsCreated()
+    public async Task CreateProduct_WithAdminAndValidData_ReturnsRedirect()
     {
         // Arrange
-        using var client = _factory.CreateAdminClient();
+        using var client = _factory.CreateAdminClientNoRedirect();
         var createProductDto = new
         {
             Name = "New Test Product",
@@ -258,7 +258,9 @@ public class ProductsControllerTests
         var response = await client.PostAsync("/api/products", content);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Found, response.StatusCode);
+        Assert.IsNotNull(response.Headers.Location, "Create should include redirect location");
+        StringAssert.StartsWith(response.Headers.Location!.ToString(), "/api/products/");
     }
 
     [TestMethod]
@@ -354,10 +356,10 @@ public class ProductsControllerTests
     }
 
     [TestMethod]
-    public async Task UpdateProduct_WithAdminAndValidData_ReturnsOk()
+    public async Task UpdateProduct_WithAdminAndValidData_ReturnsRedirect()
     {
         // Arrange
-        using var client = _factory.CreateAdminClient();
+        using var client = _factory.CreateAdminClientNoRedirect();
         var updateProductDto = new
         {
             Name = "Updated Integration Product",
@@ -372,7 +374,9 @@ public class ProductsControllerTests
         var response = await client.PutAsync($"/api/products/{ExistingProductId}", content);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Found, response.StatusCode);
+        Assert.IsNotNull(response.Headers.Location, "Update should include redirect location");
+        StringAssert.StartsWith(response.Headers.Location!.ToString(), "/api/products/");
     }
 
     #endregion

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -40,6 +40,14 @@ public class CategoriesCharacterizationTests
         return JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
     }
 
+    private static Guid ExtractIdFromLocation(HttpResponseMessage response, string expectedPrefix)
+    {
+        Assert.IsNotNull(response.Headers.Location, "Redirect response must include Location header");
+        string location = response.Headers.Location!.ToString();
+        StringAssert.StartsWith(location, expectedPrefix);
+        return Guid.Parse(location[(location.LastIndexOf('/') + 1)..]);
+    }
+
     // ---------- CATEGORIES ----------
 
     [TestMethod]
@@ -62,12 +70,11 @@ public class CategoriesCharacterizationTests
     public async Task GetCategoryById_Existing_Returns200()
     {
         // Arrange — create category prerequisite
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var create = new { Name = "CatForGet", Slug = "cat-get-" + Guid.NewGuid().ToString().Substring(0,8) };
         HttpResponseMessage cRes = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, cRes.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(cRes, TestContext.CancellationToken);
-        Guid id = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+        Guid id = ExtractIdFromLocation(cRes, "/api/categories/");
 
         // Act
         using HttpClient anon = _factory.CreateUnauthenticatedClient();
@@ -94,11 +101,11 @@ public class CategoriesCharacterizationTests
     public async Task GetCategoryBySlug_Existing_Returns200()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         string slug = "cat-slug-" + Guid.NewGuid().ToString().Substring(0,8);
         var create = new { Name = "SlugCat", Slug = slug };
         HttpResponseMessage cRes = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, cRes.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
 
         // Act
         using HttpClient anon = _factory.CreateUnauthenticatedClient();
@@ -122,10 +129,10 @@ public class CategoriesCharacterizationTests
     }
 
     [TestMethod]
-    public async Task PostCategory_AdminValid_Returns201AndMatches()
+    public async Task PostCategory_AdminValid_Returns302WithLocation()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         string slug = "cat-create-" + Guid.NewGuid().ToString().Substring(0,8);
         var create = new { Name = "CreateCat", Slug = slug };
 
@@ -133,16 +140,16 @@ public class CategoriesCharacterizationTests
         HttpResponseMessage res = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.Created, res.StatusCode);
-        ApiResponse<JsonElement>? api = await Deserialize<JsonElement>(res, TestContext.CancellationToken);
-        Assert.AreEqual("CreateCat", api!.Data!.GetProperty("name").GetString());
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Guid id = ExtractIdFromLocation(res, "/api/categories/");
+        Assert.AreNotEqual(Guid.Empty, id);
     }
 
     [TestMethod]
     public async Task PostCategory_AdminMissingName_Returns400()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var create = new { Slug = "no-name-cat-" + Guid.NewGuid().ToString().Substring(0,8) };
 
         // Act
@@ -156,7 +163,7 @@ public class CategoriesCharacterizationTests
     public async Task PostCategory_DuplicateSlug_Returns422WithCode()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         string slug = "dup-cat-" + Guid.NewGuid().ToString().Substring(0,8);
         var create = new { Name = "Dup1", Slug = slug };
 
@@ -164,7 +171,7 @@ public class CategoriesCharacterizationTests
         HttpResponseMessage r1 = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
 
         // Assert first created
-        Assert.AreEqual(HttpStatusCode.Created, r1.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
 
         // Act (create duplicate)
         HttpResponseMessage r2 = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
@@ -205,15 +212,14 @@ public class CategoriesCharacterizationTests
     }
 
     [TestMethod]
-    public async Task PutCategory_AdminExisting_Returns200()
+    public async Task PutCategory_AdminExisting_Returns302()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var create = new { Name = "PutCat", Slug = "put-cat-" + Guid.NewGuid().ToString().Substring(0,8) };
         HttpResponseMessage cRes = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, cRes.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(cRes, TestContext.CancellationToken);
-        Guid id = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+        Guid id = ExtractIdFromLocation(cRes, "/api/categories/");
 
         var update = new { Name = "PutUpdated", Slug = "put-up-" + Guid.NewGuid().ToString().Substring(0,8) };
 
@@ -221,7 +227,9 @@ public class CategoriesCharacterizationTests
         HttpResponseMessage res = await client.PutAsync($"/api/categories/{id}", Serialize(update), TestContext.CancellationToken);
 
         // Assert
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Guid redirectedId = ExtractIdFromLocation(res, "/api/categories/");
+        Assert.AreEqual(id, redirectedId);
     }
 
     [TestMethod]
@@ -268,12 +276,11 @@ public class CategoriesCharacterizationTests
     public async Task DeleteCategory_AdminExisting_NoProducts_ReturnsSuccess()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         var create = new { Name = "DelCatNoProd", Slug = "del-cat-noprod-" + Guid.NewGuid().ToString().Substring(0,8) };
         HttpResponseMessage cRes = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, cRes.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(cRes, TestContext.CancellationToken);
-        Guid id = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+        Guid id = ExtractIdFromLocation(cRes, "/api/categories/");
 
         // Act
         HttpResponseMessage res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/categories/{id}"), TestContext.CancellationToken);
@@ -299,18 +306,17 @@ public class CategoriesCharacterizationTests
     public async Task DeleteCategory_WithProducts_Returns422AndCode()
     {
         // Arrange
-        using HttpClient client = _factory.CreateAdminClient();
+        using HttpClient client = _factory.CreateAdminClientNoRedirect();
         // create category
         var createCat = new { Name = "CatHasProd", Slug = "cat-has-prod-" + Guid.NewGuid().ToString().Substring(0,8) };
         HttpResponseMessage cRes = await client.PostAsync("/api/categories", Serialize(createCat), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, cRes.StatusCode);
-        ApiResponse<JsonElement>? created = await Deserialize<JsonElement>(cRes, TestContext.CancellationToken);
-        Guid catId = Guid.Parse(created!.Data!.GetProperty("id").GetString()!);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+        Guid catId = ExtractIdFromLocation(cRes, "/api/categories/");
 
         // create product in that category
         var createProd = new { Name = "PInCat", Slug = "pincat-" + Guid.NewGuid().ToString().Substring(0,8), Price = 1m, StockQuantity = 1, CategoryId = catId };
         HttpResponseMessage pRes = await client.PostAsync("/api/products", Serialize(createProd), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Created, pRes.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Found, pRes.StatusCode);
 
         // Act
         HttpResponseMessage del = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/categories/{catId}"), TestContext.CancellationToken);

@@ -1,7 +1,8 @@
 ﻿using ECommerce.API.Services;
+using ECommerce.Catalog.Domain.Aggregates.Category;
+using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
-using ECommerce.SharedKernel.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,29 +20,24 @@ public class ReviewsProductProjectionBackfillCharacterizationTests
         var service = scope.ServiceProvider.GetRequiredService<ReviewsProductProjectionBackfillService>();
 
         var categoryId = Guid.NewGuid();
-        catalogDb.Categories.Add(new Category { Id = categoryId, Name = "Category", Slug = "category", IsActive = true });
-        catalogDb.Products.Add(new Product
-        {
-            Id = Guid.NewGuid(),
-            Name = "P1",
-            Slug = "p1",
-            Price = 10m,
-            StockQuantity = 2,
-            IsActive = true,
-            Sku = "SKU-1",
-            CategoryId = categoryId
-        });
-        catalogDb.Products.Add(new Product
-        {
-            Id = Guid.NewGuid(),
-            Name = "P2",
-            Slug = "p2",
-            Price = 20m,
-            StockQuantity = 3,
-            IsActive = false,
-            Sku = "SKU-2",
-            CategoryId = categoryId
-        });
+        var categoryResult = Category.Create("Category", null, "category");
+        Assert.IsTrue(categoryResult.IsSuccess);
+        var category = categoryResult.GetDataOrThrow();
+        SetEntityId(category, categoryId);
+        catalogDb.Categories.Add(category);
+
+        var p1Result = Product.Create("P1", 10m, "USD", categoryId, "SKU-1", "p1");
+        Assert.IsTrue(p1Result.IsSuccess);
+        var p1 = p1Result.GetDataOrThrow();
+        p1.SetStock(2);
+        p1.Activate();
+        catalogDb.Products.Add(p1);
+
+        var p2Result = Product.Create("P2", 20m, "USD", categoryId, "SKU-2", "p2");
+        Assert.IsTrue(p2Result.IsSuccess);
+        var p2 = p2Result.GetDataOrThrow();
+        p2.SetStock(3);
+        catalogDb.Products.Add(p2);
         await catalogDb.SaveChangesAsync();
 
         var result = await service.BackfillAsync();
@@ -62,18 +58,18 @@ public class ReviewsProductProjectionBackfillCharacterizationTests
 
         var categoryId = Guid.NewGuid();
         var productId = Guid.NewGuid();
-        catalogDb.Categories.Add(new Category { Id = categoryId, Name = "Category", Slug = "category", IsActive = true });
-        catalogDb.Products.Add(new Product
-        {
-            Id = productId,
-            Name = "P1",
-            Slug = "p1",
-            Price = 10m,
-            StockQuantity = 2,
-            IsActive = false,
-            Sku = "SKU-1",
-            CategoryId = categoryId
-        });
+        var categoryResult = Category.Create("Category", null, "category");
+        Assert.IsTrue(categoryResult.IsSuccess);
+        var category = categoryResult.GetDataOrThrow();
+        SetEntityId(category, categoryId);
+        catalogDb.Categories.Add(category);
+
+        var productResult = Product.Create("P1", 10m, "USD", categoryId, "SKU-1", "p1");
+        Assert.IsTrue(productResult.IsSuccess);
+        var product = productResult.GetDataOrThrow();
+        SetEntityId(product, productId);
+        product.SetStock(2);
+        catalogDb.Products.Add(product);
         await catalogDb.SaveChangesAsync();
 
         reviewsDb.Products.Add(new ProductReadModel
@@ -111,5 +107,11 @@ public class ReviewsProductProjectionBackfillCharacterizationTests
 
         var provider = services.BuildServiceProvider();
         return provider.CreateAsyncScope();
+    }
+
+    private static void SetEntityId(object entity, Guid id)
+    {
+        var property = entity.GetType().BaseType?.GetProperty("Id") ?? entity.GetType().GetProperty("Id");
+        property?.SetValue(entity, id);
     }
 }
