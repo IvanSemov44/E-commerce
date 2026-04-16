@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
@@ -21,7 +21,7 @@ public class DeleteCategoryCommandHandler(
         if (hasProducts)
             return Result.Fail(CatalogApplicationErrors.CategoryHasProducts);
 
-        await _categories.DeleteAsync(category, cancellationToken);
+        category.Deactivate();
 
         return Result.Ok();
     }

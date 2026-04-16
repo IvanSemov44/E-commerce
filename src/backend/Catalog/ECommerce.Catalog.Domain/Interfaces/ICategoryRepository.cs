@@ -22,6 +22,4 @@ public interface ICategoryRepository
     /// </summary>
     Task<(IReadOnlyList<Category> Items, int TotalCount)> GetTopLevelPagedAsync(int page, int pageSize, CancellationToken ct = default);
     Task AddAsync(Category category, CancellationToken ct = default);
-    Task UpdateAsync(Category category, CancellationToken ct = default);
-    Task DeleteAsync(Category category, CancellationToken ct = default);
 }

@@ -2,7 +2,6 @@
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
-using ECommerce.Catalog.Application.DTOs.Products;
 
 namespace ECommerce.Catalog.Application.Commands.UpdateProduct;
 
@@ -14,4 +13,4 @@ public record UpdateProductCommand(
     /// New category for the product. Null means keep the existing category unchanged.
     /// </summary>
     Guid? CategoryId = null
-) : IRequest<Result<ProductDetailDto>>, ITransactionalCommand;
+) : IRequest<Result<Guid>>, ITransactionalCommand;

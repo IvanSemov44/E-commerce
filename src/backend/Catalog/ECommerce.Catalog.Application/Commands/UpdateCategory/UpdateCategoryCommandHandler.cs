@@ -1,10 +1,9 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
-using ECommerce.Catalog.Application.DTOs.Categories;
-using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.ValueObjects;
 
@@ -12,26 +11,22 @@ namespace ECommerce.Catalog.Application.Commands.UpdateCategory;
 
 public class UpdateCategoryCommandHandler(
     ICategoryRepository _categories
-) : IRequestHandler<UpdateCategoryCommand, Result<CategoryDto>>
+) : IRequestHandler<UpdateCategoryCommand, Result<Guid>>
 {
-    public async Task<Result<CategoryDto>> Handle(UpdateCategoryCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(UpdateCategoryCommand command, CancellationToken cancellationToken)
     {
         var category = await _categories.GetByIdAsync(command.Id, cancellationToken);
         if (category is null)
-            return Result<CategoryDto>.Fail(CatalogApplicationErrors.CategoryNotFound);
+            return Result<Guid>.Fail(CatalogApplicationErrors.CategoryNotFound);
 
         var nameResult = CategoryName.Create(command.Name);
         if (!nameResult.IsSuccess)
-            return Result<CategoryDto>.Fail(nameResult.GetErrorOrThrow());
+            return Result<Guid>.Fail(nameResult.GetErrorOrThrow());
 
-        category.Rename(nameResult.GetDataOrThrow());
+        var updateResult = category.UpdateDetails(nameResult.GetDataOrThrow(), command.ParentId);
+        if (!updateResult.IsSuccess)
+            return Result<Guid>.Fail(updateResult.GetErrorOrThrow());
 
-        var moveResult = category.MoveTo(command.ParentId);
-        if (!moveResult.IsSuccess)
-            return Result<CategoryDto>.Fail(moveResult.GetErrorOrThrow());
-
-        await _categories.UpdateAsync(category, cancellationToken);
-
-        return Result<CategoryDto>.Ok(category.ToDto());
+        return Result<Guid>.Ok(category.Id);
     }
 }
