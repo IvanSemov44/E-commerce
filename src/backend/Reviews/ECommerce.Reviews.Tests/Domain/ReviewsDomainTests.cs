@@ -99,29 +99,22 @@ public class ReviewsDomainTests
     public void Review_Edit_PendingReview_UpdatesValues()
     {
         Review review = CreateReview();
-        Rating rating = Rating.Create(4).GetDataOrThrow();
-        ReviewContent content = ReviewContent.Create("Updated", "Updated review text").GetDataOrThrow();
-        DateTime updatedAt = DateTime.UtcNow.AddMinutes(-5);
 
-        Result result = review.Edit(rating, content, updatedAt);
+        Result result = review.Edit(4, "Updated", "Updated review text");
 
         result.IsSuccess.ShouldBeTrue();
         review.Rating.Value.ShouldBe(4);
         review.Content.Title.ShouldBe("Updated");
         review.Content.Body.ShouldBe("Updated review text");
-        review.UpdatedAt.ShouldBe(updatedAt);
     }
 
     [TestMethod]
     public void Review_Edit_ApprovedReview_ReturnsFailure()
     {
         Review review = CreateReview();
-        review.Approve(DateTime.UtcNow);
+        review.Approve();
 
-        Result result = review.Edit(
-            Rating.Create(4).GetDataOrThrow(),
-            ReviewContent.Create("Updated", "Updated review text").GetDataOrThrow(),
-            DateTime.UtcNow);
+        Result result = review.Edit(4, "Updated", "Updated review text");
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewAlreadyApproved.Code);
@@ -131,22 +124,20 @@ public class ReviewsDomainTests
     public void Review_Approve_PendingReview_Succeeds()
     {
         Review review = CreateReview();
-        DateTime updatedAt = DateTime.UtcNow.AddMinutes(-2);
 
-        Result result = review.Approve(updatedAt);
+        Result result = review.Approve();
 
         result.IsSuccess.ShouldBeTrue();
         review.Status.ShouldBe(ReviewStatus.Approved);
-        review.UpdatedAt.ShouldBe(updatedAt);
     }
 
     [TestMethod]
     public void Review_Approve_AlreadyApproved_ReturnsFailure()
     {
         Review review = CreateReview();
-        review.Approve(DateTime.UtcNow);
+        review.Approve();
 
-        Result result = review.Approve(DateTime.UtcNow);
+        Result result = review.Approve();
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewAlreadyApproved.Code);
@@ -156,12 +147,10 @@ public class ReviewsDomainTests
     public void Review_Reject_SetsRejectedStatus()
     {
         Review review = CreateReview();
-        DateTime updatedAt = DateTime.UtcNow.AddMinutes(-1);
 
-        review.Reject(updatedAt);
+        review.Reject();
 
         review.Status.ShouldBe(ReviewStatus.Rejected);
-        review.UpdatedAt.ShouldBe(updatedAt);
     }
 
     [TestMethod]
@@ -170,7 +159,7 @@ public class ReviewsDomainTests
         Review review = CreateReview();
         review.ClearDomainEvents();
 
-        Result result = review.Approve(DateTime.UtcNow);
+        Result result = review.Approve();
 
         result.IsSuccess.ShouldBeTrue();
         review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
@@ -180,13 +169,11 @@ public class ReviewsDomainTests
     public void Review_Flag_IncrementsCounterAndMarksFlagged()
     {
         Review review = CreateReview();
-        DateTime updatedAt = DateTime.UtcNow.AddMinutes(-1);
 
-        review.Flag(updatedAt);
+        review.Flag();
 
         review.Status.ShouldBe(ReviewStatus.Flagged);
         review.FlagCount.ShouldBe(1);
-        review.UpdatedAt.ShouldBe(updatedAt);
     }
 
     [TestMethod]
@@ -194,8 +181,8 @@ public class ReviewsDomainTests
     {
         Review review = CreateReview();
 
-        review.MarkAsHelpful(DateTime.UtcNow.AddMinutes(-1));
-        review.MarkAsHelpful(DateTime.UtcNow);
+        review.MarkAsHelpful();
+        review.MarkAsHelpful();
 
         review.HelpfulCount.ShouldBe(2);
     }
@@ -210,6 +197,96 @@ public class ReviewsDomainTests
         review.IsVerifiedPurchase.ShouldBeTrue();
     }
 
+    [TestMethod]
+    public void Review_Delete_SetsSoftDeleteAndRaisesRatingEvent()
+    {
+        Review review = CreateReview();
+        review.ClearDomainEvents();
+
+        review.Delete();
+
+        review.DeletedAt.ShouldNotBeNull();
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    [TestMethod]
+    public void Review_Edit_NullRating_KeepsExistingRating()
+    {
+        Review review = CreateReview();
+        int originalRating = review.Rating.Value;
+
+        Result result = review.Edit(null, "Updated", "Updated review text here");
+
+        result.IsSuccess.ShouldBeTrue();
+        review.Rating.Value.ShouldBe(originalRating);
+    }
+
+    [TestMethod]
+    public void Review_Edit_NullComment_KeepsExistingComment()
+    {
+        Review review = CreateReview();
+        string originalBody = review.Content.Body;
+
+        Result result = review.Edit(4, "Updated title", null);
+
+        result.IsSuccess.ShouldBeTrue();
+        review.Content.Body.ShouldBe(originalBody);
+    }
+
+    [TestMethod]
+    public void Review_Edit_RaisesRatingProjectionDomainEvent()
+    {
+        Review review = CreateReview();
+        review.ClearDomainEvents();
+
+        review.Edit(4, "Updated", "Updated review text here");
+
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    [TestMethod]
+    public void Review_Edit_InvalidRating_ReturnsFailure()
+    {
+        Review review = CreateReview();
+
+        Result result = review.Edit(0, "Updated", "Updated review text here");
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.RatingRange.Code);
+    }
+
+    [TestMethod]
+    public void Review_Reject_WasApproved_RaisesRatingProjectionDomainEvent()
+    {
+        Review review = CreateReview();
+        review.Approve();
+        review.ClearDomainEvents();
+
+        review.Reject();
+
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    [TestMethod]
+    public void Review_Reject_WasPending_DoesNotRaiseRatingProjectionDomainEvent()
+    {
+        Review review = CreateReview();
+        review.ClearDomainEvents();
+
+        review.Reject();
+
+        review.DomainEvents.OfType<ReviewRatingProjectionChangedDomainEvent>().ShouldBeEmpty();
+    }
+
+    [TestMethod]
+    public void ReviewContent_Create_NullTitle_Succeeds()
+    {
+        Result<ReviewContent> result = ReviewContent.Create(null, "Great product overall!");
+
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().Title.ShouldBeNull();
+    }
+
     private static Review CreateReview()
     {
         Guid productId = Guid.NewGuid();
@@ -217,6 +294,6 @@ public class ReviewsDomainTests
         Rating rating = Rating.Create(5).GetDataOrThrow();
         ReviewContent content = ReviewContent.Create("Great", "Great product overall!").GetDataOrThrow();
 
-        return Review.Create(productId, userId, rating, content, null);
+        return Review.Create(productId, userId, rating, content);
     }
 }

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,7 +18,12 @@ public class ReviewsControllerTests
     [TestInitialize]
     public void Setup()
     {
-        _factory = new TestWebApplicationFactory();
+        _factory = new TestWebApplicationFactory(
+            useReviewsPostgresContainer: true,
+            useCatalogPostgresContainer: false);
+        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
+        ConditionalTestAuthHandler.CurrentUserId = Guid.NewGuid().ToString();
+        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
     }
 
     [TestCleanup]

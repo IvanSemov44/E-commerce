@@ -47,6 +47,32 @@ public class ReviewsProductProjectionSyncCharacterizationTests
         Assert.IsNull(await db.Products.SingleOrDefaultAsync(x => x.Id == productId));
     }
 
+    [TestMethod]
+    public async Task PublishProduct_WhenProjectionExists_UpdatesProjection()
+    {
+        var productId = Guid.NewGuid();
+
+        await using var scope = CreateScope($"reviews-product-update-{Guid.NewGuid():N}");
+        var db = scope.ServiceProvider.GetRequiredService<ReviewsDbContext>();
+        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+
+        db.Products.Add(new ProductReadModel
+        {
+            Id = productId,
+            IsActive = false,
+            UpdatedAt = DateTime.UtcNow.AddDays(-1)
+        });
+        await db.SaveChangesAsync();
+
+        var updatedAt = DateTime.UtcNow;
+        await publisher.Publish(new ProductProjectionUpdatedIntegrationEvent(productId, "Updated Widget", 29.99m, false, updatedAt), CancellationToken.None);
+
+        var projection = await db.Products.SingleOrDefaultAsync(x => x.Id == productId);
+        Assert.IsNotNull(projection);
+        Assert.IsTrue(projection.IsActive);
+        Assert.AreEqual(updatedAt, projection.UpdatedAt);
+    }
+
     private static AsyncServiceScope CreateScope(string databaseName)
     {
         var services = new ServiceCollection();

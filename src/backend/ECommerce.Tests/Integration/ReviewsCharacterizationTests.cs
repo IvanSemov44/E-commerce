@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using ECommerce.Contracts.DTOs.Common;
@@ -18,7 +18,12 @@ public class ReviewsCharacterizationTests
     [TestInitialize]
     public void Setup()
     {
-        _factory = new TestWebApplicationFactory();
+        _factory = new TestWebApplicationFactory(
+            useReviewsPostgresContainer: true,
+            useCatalogPostgresContainer: false);
+        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
+        ConditionalTestAuthHandler.CurrentUserId = Guid.NewGuid().ToString();
+        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
     }
 
     [TestCleanup]
@@ -186,7 +191,7 @@ public class ReviewsCharacterizationTests
     // ────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task UpdateReview_ValidRequest_Returns200AndUpdatesReview()
+    public async Task UpdateReview_ValidRequest_Returns204AndUpdatesReview()
     {
         using var client = _factory.CreateAuthenticatedClient();
 
@@ -198,8 +203,12 @@ public class ReviewsCharacterizationTests
             Comment = "Updated comment body"
         }));
 
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
-        var envelope = await ReadResponseAsync<ReviewDetailDto>(response);
+        Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode, await response.Content.ReadAsStringAsync());
+
+        var verifyResponse = await client.GetAsync($"/api/reviews/{created.Id}");
+        Assert.AreEqual(HttpStatusCode.OK, verifyResponse.StatusCode, await verifyResponse.Content.ReadAsStringAsync());
+
+        var envelope = await ReadResponseAsync<ReviewDetailDto>(verifyResponse);
         Assert.AreEqual(4, envelope.Data!.Rating);
         Assert.AreEqual("Updated Title", envelope.Data.Title);
         Assert.AreEqual("Updated comment body", envelope.Data.Comment);

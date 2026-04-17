@@ -103,8 +103,12 @@ public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOpti
     }
 }
 
-public class TestWebApplicationFactory : WebApplicationFactory<Program>
+public class TestWebApplicationFactory(
+    bool useReviewsPostgresContainer = false,
+    bool useCatalogPostgresContainer = true) : WebApplicationFactory<Program>
 {
+    private readonly bool _useReviewsPostgresContainer = useReviewsPostgresContainer;
+    private readonly bool _useCatalogPostgresContainer = useCatalogPostgresContainer;
     private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
     private readonly string _catalogDatabaseName = $"IntegrationTestsCatalogDb_{Guid.NewGuid():N}";
     private readonly string _integrationDatabaseName = $"IntegrationTestsIntegrationDb_{Guid.NewGuid():N}";
@@ -118,6 +122,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     private PostgreSqlContainer? _catalogPostgresContainer;
     private string? _catalogPostgresConnectionString;
     private readonly object _catalogContainerSync = new();
+    private PostgreSqlContainer? _reviewsPostgresContainer;
+    private string? _reviewsPostgresConnectionString;
+    private readonly object _reviewsContainerSync = new();
     private readonly FakePromoCodeRepository _promoCodeRepository = new();
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
     private static readonly Guid _seededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
@@ -127,7 +134,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var catalogPostgresConnectionString = TryGetCatalogPostgresConnectionString();
+        var catalogPostgresConnectionString = _useCatalogPostgresContainer
+            ? TryGetCatalogPostgresConnectionString()
+            : null;
+        var reviewsPostgresConnectionString = _useReviewsPostgresContainer
+            ? TryGetReviewsPostgresConnectionString()
+            : null;
 
         // Reset auth state at the beginning of each WebHost configuration
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
@@ -143,6 +155,16 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Issuer", "test");
         builder.UseSetting("Jwt:Audience", "test");
         builder.UseSetting("ConnectionStrings:DefaultConnection", _defaultConnectionString);
+        builder.UseSetting(
+            "ConnectionStrings:CatalogConnection",
+            _useCatalogPostgresContainer
+                ? catalogPostgresConnectionString!
+                : _defaultConnectionString);
+        builder.UseSetting(
+            "ConnectionStrings:ReviewsConnection",
+            _useReviewsPostgresContainer
+                ? reviewsPostgresConnectionString!
+                : _defaultConnectionString);
         builder.UseSetting("Serilog:MinimumLevel:Default", "Debug");
         builder.UseSetting("RateLimiting:GlobalLimit", "100000");
         builder.UseSetting("RateLimiting:AuthLimit", "100000");
@@ -218,17 +240,39 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
-            services.AddDbContext<ReviewsDbContext>(options =>
+            if (_useReviewsPostgresContainer)
             {
-                options.UseInMemoryDatabase(_reviewsDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
+                services.AddDbContext<ReviewsDbContext>(options =>
+                {
+                    options.UseNpgsql(reviewsPostgresConnectionString!);
+                });
+            }
+            else
+            {
+                services.AddDbContext<ReviewsDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(_reviewsDatabaseName);
+                    options.UseInternalServiceProvider(inMemoryServiceProvider);
+                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                });
+            }
 
-            services.AddDbContext<CatalogDbContext>(options =>
+            if (_useCatalogPostgresContainer)
             {
-                options.UseNpgsql(catalogPostgresConnectionString);
-            });
+                services.AddDbContext<CatalogDbContext>(options =>
+                {
+                    options.UseNpgsql(catalogPostgresConnectionString!);
+                });
+            }
+            else
+            {
+                services.AddDbContext<CatalogDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(_catalogDatabaseName);
+                    options.UseInternalServiceProvider(inMemoryServiceProvider);
+                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                });
+            }
 
             services.AddDbContext<IntegrationPersistenceDbContext>(options =>
             {
@@ -298,10 +342,24 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 db.Database.EnsureCreated();
 
                 var reviewsDb = scopedServices.GetRequiredService<ReviewsDbContext>();
-                reviewsDb.Database.Migrate();
+                if (_useReviewsPostgresContainer)
+                {
+                    reviewsDb.Database.EnsureCreated();
+                }
+                else
+                {
+                    reviewsDb.Database.EnsureCreated();
+                }
 
                 var catalogDb = scopedServices.GetRequiredService<CatalogDbContext>();
-                catalogDb.Database.Migrate();
+                if (_useCatalogPostgresContainer)
+                {
+                    catalogDb.Database.Migrate();
+                }
+                else
+                {
+                    catalogDb.Database.EnsureCreated();
+                }
 
                 var integrationDb = scopedServices.GetRequiredService<IntegrationPersistenceDbContext>();
                 integrationDb.Database.EnsureCreated();
@@ -537,12 +595,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         StopCatalogContainerAsync().GetAwaiter().GetResult();
+        StopReviewsContainerAsync().GetAwaiter().GetResult();
         base.Dispose(disposing);
     }
 
     public override async ValueTask DisposeAsync()
     {
         await StopCatalogContainerAsync();
+        await StopReviewsContainerAsync();
         GC.SuppressFinalize(this);
         await base.DisposeAsync();
     }
@@ -590,6 +650,51 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         await _catalogPostgresContainer.DisposeAsync();
         _catalogPostgresContainer = null;
         _catalogPostgresConnectionString = null;
+    }
+
+    private string TryGetReviewsPostgresConnectionString()
+    {
+        if (_reviewsPostgresConnectionString is not null)
+            return _reviewsPostgresConnectionString;
+
+        lock (_reviewsContainerSync)
+        {
+            if (_reviewsPostgresConnectionString is not null)
+                return _reviewsPostgresConnectionString;
+
+            try
+            {
+                _reviewsPostgresContainer = new PostgreSqlBuilder()
+                    .WithImage("postgres:16-alpine")
+                    .WithDatabase(_reviewsDatabaseName.ToLowerInvariant())
+                    .WithUsername("postgres")
+                    .WithPassword("postgres")
+                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
+                    .WithCleanUp(true)
+                    .Build();
+
+                _reviewsPostgresContainer.StartAsync().GetAwaiter().GetResult();
+                _reviewsPostgresConnectionString = _reviewsPostgresContainer.GetConnectionString();
+                return _reviewsPostgresConnectionString;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Reviews PostgreSQL Testcontainer failed to start. " +
+                    "Verify Docker is running and accessible.",
+                    ex);
+            }
+        }
+    }
+
+    private async Task StopReviewsContainerAsync()
+    {
+        if (_reviewsPostgresContainer is null)
+            return;
+
+        await _reviewsPostgresContainer.DisposeAsync();
+        _reviewsPostgresContainer = null;
+        _reviewsPostgresConnectionString = null;
     }
 
     /// <summary>

@@ -1,5 +1,10 @@
-﻿using ECommerce.Reviews.Application.CommandHandlers;
-using ECommerce.Reviews.Application.Commands;
+﻿using ECommerce.Reviews.Application.Commands.ApproveReview;
+using ECommerce.Reviews.Application.Commands.CreateReview;
+using ECommerce.Reviews.Application.Commands.DeleteReview;
+using ECommerce.Reviews.Application.Commands.FlagReview;
+using ECommerce.Reviews.Application.Commands.MarkReviewHelpful;
+using ECommerce.Reviews.Application.Commands.RejectReview;
+using ECommerce.Reviews.Application.Commands.UpdateReview;
 using ECommerce.Reviews.Application.DTOs;
 using ECommerce.Reviews.Application.DTOs.Common;
 using ECommerce.Reviews.Application.Interfaces;
@@ -22,7 +27,7 @@ public class ReviewsHandlerTests
     public async Task CreateReview_ValidRequest_CreatesReview()
     {
         var repository = new FakeReviewRepository();
-        var catalog = new FakeCatalogService();
+        var catalog = new FakeProductProjectionService();
         var handler = new CreateReviewCommandHandler(repository, catalog);
 
         Guid productId = Guid.NewGuid();
@@ -30,7 +35,7 @@ public class ReviewsHandlerTests
         catalog.AddProduct(productId);
 
         var result = await handler.Handle(
-            new CreateReviewCommand(productId, userId, null, 5, "Nice", "Great product overall!"),
+            new CreateReviewCommand(productId, userId, 5, "Nice", "Great product overall!"),
             CancellationToken.None);
 
         result.IsSuccess.ShouldBeTrue();
@@ -42,11 +47,11 @@ public class ReviewsHandlerTests
     public async Task CreateReview_ProductMissing_ReturnsProductNotFound()
     {
         var repository = new FakeReviewRepository();
-        var catalog = new FakeCatalogService();
+        var catalog = new FakeProductProjectionService();
         var handler = new CreateReviewCommandHandler(repository, catalog);
 
         var result = await handler.Handle(
-            new CreateReviewCommand(Guid.NewGuid(), Guid.NewGuid(), null, 5, "Nice", "Great product overall!"),
+            new CreateReviewCommand(Guid.NewGuid(), Guid.NewGuid(), 5, "Nice", "Great product overall!"),
             CancellationToken.None);
 
         result.IsSuccess.ShouldBeFalse();
@@ -57,7 +62,7 @@ public class ReviewsHandlerTests
     public async Task CreateReview_DuplicateReview_ReturnsDuplicateReview()
     {
         var repository = new FakeReviewRepository();
-        var catalog = new FakeCatalogService();
+        var catalog = new FakeProductProjectionService();
         var handler = new CreateReviewCommandHandler(repository, catalog);
 
         Guid productId = Guid.NewGuid();
@@ -66,7 +71,7 @@ public class ReviewsHandlerTests
         repository.Seed(CreateReview(productId, userId));
 
         var result = await handler.Handle(
-            new CreateReviewCommand(productId, userId, null, 4, "Nice", "Great product overall!"),
+            new CreateReviewCommand(productId, userId, 4, "Nice", "Great product overall!"),
             CancellationToken.None);
 
         result.IsSuccess.ShouldBeFalse();
@@ -86,8 +91,6 @@ public class ReviewsHandlerTests
             CancellationToken.None);
 
         result.IsSuccess.ShouldBeTrue();
-        result.GetDataOrThrow().Rating.ShouldBe(4);
-        result.GetDataOrThrow().Title.ShouldBe("Updated");
     }
 
     [TestMethod]
@@ -111,7 +114,7 @@ public class ReviewsHandlerTests
     {
         var repository = new FakeReviewRepository();
         var review = CreateReview();
-        review.Approve(DateTime.UtcNow);
+        review.Approve();
         repository.Seed(review);
         var handler = new UpdateReviewCommandHandler(repository);
 
@@ -136,7 +139,7 @@ public class ReviewsHandlerTests
             CancellationToken.None);
 
         result.IsSuccess.ShouldBeTrue();
-        repository.Reviews.ShouldBeEmpty();
+        repository.Reviews.Single(r => r.Id == review.Id).DeletedAt.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -185,7 +188,7 @@ public class ReviewsHandlerTests
     public async Task GetProductReviews_ReturnsApprovedReviewsOnly()
     {
         var repository = new FakeReviewRepository();
-        var catalog = new FakeCatalogService();
+        var catalog = new FakeProductProjectionService();
         var productId = Guid.NewGuid();
         catalog.AddProduct(productId);
 
@@ -207,7 +210,7 @@ public class ReviewsHandlerTests
     public async Task GetProductAverageRating_ReturnsAverage()
     {
         var repository = new FakeReviewRepository();
-        var catalog = new FakeCatalogService();
+        var catalog = new FakeProductProjectionService();
         var productId = Guid.NewGuid();
         catalog.AddProduct(productId);
 
@@ -273,6 +276,240 @@ public class ReviewsHandlerTests
     }
 
     [TestMethod]
+    public async Task CreateReview_InvalidRating_ReturnsRatingRangeError()
+    {
+        var repository = new FakeReviewRepository();
+        var catalog = new FakeProductProjectionService();
+        var handler = new CreateReviewCommandHandler(repository, catalog);
+
+        Guid productId = Guid.NewGuid();
+        catalog.AddProduct(productId);
+
+        var result = await handler.Handle(
+            new CreateReviewCommand(productId, Guid.NewGuid(), 0, "Nice", "Great product overall!"),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.RatingRange.Code);
+    }
+
+    [TestMethod]
+    public async Task CreateReview_EmptyComment_ReturnsBodyEmptyError()
+    {
+        var repository = new FakeReviewRepository();
+        var catalog = new FakeProductProjectionService();
+        var handler = new CreateReviewCommandHandler(repository, catalog);
+
+        Guid productId = Guid.NewGuid();
+        catalog.AddProduct(productId);
+
+        var result = await handler.Handle(
+            new CreateReviewCommand(productId, Guid.NewGuid(), 5, "Nice", "   "),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewBodyEmpty.Code);
+    }
+
+    [TestMethod]
+    public async Task CreateReview_TooShortComment_ReturnsBodyShortError()
+    {
+        var repository = new FakeReviewRepository();
+        var catalog = new FakeProductProjectionService();
+        var handler = new CreateReviewCommandHandler(repository, catalog);
+
+        Guid productId = Guid.NewGuid();
+        catalog.AddProduct(productId);
+
+        var result = await handler.Handle(
+            new CreateReviewCommand(productId, Guid.NewGuid(), 5, "Nice", "Too short"),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewBodyShort.Code);
+    }
+
+    [TestMethod]
+    public async Task ApproveReview_ReviewNotFound_ReturnsNotFound()
+    {
+        var repository = new FakeReviewRepository();
+        var handler = new ApproveReviewCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new ApproveReviewCommand(Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewNotFound.Code);
+    }
+
+    [TestMethod]
+    public async Task ApproveReview_AlreadyApproved_ReturnsAlreadyApprovedError()
+    {
+        var repository = new FakeReviewRepository();
+        var review = CreateReview(approved: true);
+        repository.Seed(review);
+        var handler = new ApproveReviewCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new ApproveReviewCommand(review.Id),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewAlreadyApproved.Code);
+    }
+
+    [TestMethod]
+    public async Task RejectReview_ReviewNotFound_ReturnsNotFound()
+    {
+        var repository = new FakeReviewRepository();
+        var handler = new RejectReviewCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new RejectReviewCommand(Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewNotFound.Code);
+    }
+
+    [TestMethod]
+    public async Task FlagReview_ReviewNotFound_ReturnsNotFound()
+    {
+        var repository = new FakeReviewRepository();
+        var handler = new FlagReviewCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new FlagReviewCommand(Guid.NewGuid(), null),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewNotFound.Code);
+    }
+
+    [TestMethod]
+    public async Task MarkReviewHelpful_ReviewNotFound_ReturnsNotFound()
+    {
+        var repository = new FakeReviewRepository();
+        var handler = new MarkReviewHelpfulCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new MarkReviewHelpfulCommand(Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewNotFound.Code);
+    }
+
+    [TestMethod]
+    public async Task DeleteReview_AdminCanDeleteAnyReview()
+    {
+        var repository = new FakeReviewRepository();
+        var review = CreateReview();
+        repository.Seed(review);
+        var handler = new DeleteReviewCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new DeleteReviewCommand(review.Id, Guid.NewGuid(), true),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue();
+        repository.Reviews.Single(r => r.Id == review.Id).DeletedAt.ShouldNotBeNull();
+    }
+
+    [TestMethod]
+    public async Task UpdateReview_ReviewNotFound_ReturnsNotFound()
+    {
+        var repository = new FakeReviewRepository();
+        var handler = new UpdateReviewCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new UpdateReviewCommand(Guid.NewGuid(), Guid.NewGuid(), false, 4, "Updated", "Updated review text"),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ReviewNotFound.Code);
+    }
+
+    [TestMethod]
+    public async Task UpdateReview_AdminCanUpdateAnyReview()
+    {
+        var repository = new FakeReviewRepository();
+        var review = CreateReview();
+        repository.Seed(review);
+        var handler = new UpdateReviewCommandHandler(repository);
+
+        var result = await handler.Handle(
+            new UpdateReviewCommand(review.Id, Guid.NewGuid(), true, 3, "Admin edit", "Admin updated this review text"),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public async Task GetProductReviews_ProductNotFound_ReturnsProductNotFound()
+    {
+        var repository = new FakeReviewRepository();
+        var catalog = new FakeProductProjectionService();
+        var handler = new GetProductReviewsQueryHandler(repository, catalog);
+
+        var result = await handler.Handle(
+            new GetProductReviewsQuery(Guid.NewGuid(), 1, 10),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ProductNotFound.Code);
+    }
+
+    [TestMethod]
+    public async Task GetProductAverageRating_ProductNotFound_ReturnsProductNotFound()
+    {
+        var repository = new FakeReviewRepository();
+        var catalog = new FakeProductProjectionService();
+        var handler = new GetProductAverageRatingQueryHandler(repository, catalog);
+
+        var result = await handler.Handle(
+            new GetProductAverageRatingQuery(Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.GetErrorOrThrow().Code.ShouldBe(ReviewsErrors.ProductNotFound.Code);
+    }
+
+    [TestMethod]
+    public async Task GetProductAverageRating_NoApprovedReviews_ReturnsZero()
+    {
+        var repository = new FakeReviewRepository();
+        var catalog = new FakeProductProjectionService();
+        Guid productId = Guid.NewGuid();
+        catalog.AddProduct(productId);
+        repository.Seed(CreateReview(productId: productId, approved: false));
+        var handler = new GetProductAverageRatingQueryHandler(repository, catalog);
+
+        var result = await handler.Handle(
+            new GetProductAverageRatingQuery(productId),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().ShouldBe(0m);
+    }
+
+    [TestMethod]
+    public async Task GetUserReviews_NoReviews_ReturnsEmptyResult()
+    {
+        var repository = new FakeReviewRepository();
+        var handler = new GetUserReviewsQueryHandler(repository);
+
+        var result = await handler.Handle(
+            new GetUserReviewsQuery(Guid.NewGuid(), 1, 10),
+            CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().TotalCount.ShouldBe(0);
+        result.GetDataOrThrow().Items.ShouldBeEmpty();
+    }
+
+    [TestMethod]
     public async Task GetUserReviews_ReturnsOnlyUserReviews()
     {
         var repository = new FakeReviewRepository();
@@ -301,13 +538,13 @@ public class ReviewsHandlerTests
     {
         Rating ratingValue = Rating.Create(rating).GetDataOrThrow();
         ReviewContent content = ReviewContent.Create(title, comment).GetDataOrThrow();
-        Review review = Review.Create(productId ?? Guid.NewGuid(), userId ?? Guid.NewGuid(), ratingValue, content, null);
+        Review review = Review.Create(productId ?? Guid.NewGuid(), userId ?? Guid.NewGuid(), ratingValue, content);
 
         if (approved)
-            review.Approve(DateTime.UtcNow.AddMinutes(-10));
+            review.Approve();
 
         if (flagged)
-            review.Flag(DateTime.UtcNow.AddMinutes(-5));
+            review.Flag();
 
         return review;
     }
@@ -399,22 +636,10 @@ public class ReviewsHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpsertAsync(Review review, CancellationToken cancellationToken = default)
-        {
-            _reviews[review.Id] = review;
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(Review review, CancellationToken cancellationToken = default)
-        {
-            _reviews.Remove(review.Id);
-            return Task.CompletedTask;
-        }
-
         public void Seed(Review review) => _reviews[review.Id] = review;
     }
 
-    private sealed class FakeCatalogService : ICatalogService
+    private sealed class FakeProductProjectionService : IProductProjectionService
     {
         private readonly HashSet<Guid> _productIds = new();
 
