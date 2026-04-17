@@ -24,4 +24,22 @@ public sealed class OrderIntegrationEventPublisher(IIntegrationEventOutbox outbo
 
         return outbox.EnqueueAsync(integrationEvent, cancellationToken);
     }
+
+    public Task PublishOrderDeliveredAsync(
+        Guid orderId,
+        Guid userId,
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default)
+    {
+        var integrationEvent = new OrderDeliveredIntegrationEvent(
+            orderId,
+            userId,
+            productIds.ToArray(),
+            DateTime.UtcNow)
+        {
+            CorrelationId = orderId
+        };
+
+        return outbox.EnqueueAsync(integrationEvent, cancellationToken);
+    }
 }

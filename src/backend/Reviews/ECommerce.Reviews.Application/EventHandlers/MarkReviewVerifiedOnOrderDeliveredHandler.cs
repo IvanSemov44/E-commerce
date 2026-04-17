@@ -1,7 +1,4 @@
-﻿using MediatR;
-using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.Ordering.Domain.Events;
+﻿using ECommerce.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Reviews.Application.EventHandlers;
@@ -9,10 +6,10 @@ namespace ECommerce.Reviews.Application.EventHandlers;
 public class MarkReviewVerifiedOnOrderDeliveredHandler(
     IReviewRepository reviews,
     IUnitOfWork uow,
-    ILogger<MarkReviewVerifiedOnOrderDeliveredHandler> logger) : INotificationHandler<OrderDeliveredEvent>
+    ILogger<MarkReviewVerifiedOnOrderDeliveredHandler> logger) : INotificationHandler<OrderDeliveredIntegrationEvent>
 {
 
-    public async Task Handle(OrderDeliveredEvent notification, CancellationToken ct)
+    public async Task Handle(OrderDeliveredIntegrationEvent notification, CancellationToken ct)
     {
         try
         {
@@ -22,7 +19,6 @@ public class MarkReviewVerifiedOnOrderDeliveredHandler(
                 foreach (var review in items.Where(r => r.UserId == notification.UserId && !r.IsVerifiedPurchase))
                 {
                     review.MarkAsVerifiedPurchase();
-                    await reviews.UpsertAsync(review, ct);
                 }
             }
             await uow.SaveChangesAsync(ct);

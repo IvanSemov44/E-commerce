@@ -8,4 +8,10 @@ public interface IOrderIntegrationEventPublisher
         IReadOnlyCollection<Guid> productIds,
         decimal totalAmount,
         CancellationToken cancellationToken = default);
+
+    Task PublishOrderDeliveredAsync(
+        Guid orderId,
+        Guid userId,
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default);
 }
