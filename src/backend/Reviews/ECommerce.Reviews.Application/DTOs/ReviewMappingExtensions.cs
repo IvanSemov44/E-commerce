@@ -1,7 +1,4 @@
-﻿using ECommerce.Reviews.Domain.Aggregates.Review;
-using ECommerce.Reviews.Domain.Enums;
-
-namespace ECommerce.Reviews.Application.DTOs;
+﻿namespace ECommerce.Reviews.Application.DTOs;
 
 public static class ReviewMappingExtensions
 {

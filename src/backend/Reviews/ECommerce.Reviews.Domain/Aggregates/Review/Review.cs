@@ -11,13 +11,13 @@ public class Review : AggregateRoot
 {
     public Guid ProductId { get; private set; }
     public Guid? UserId { get; private set; }
-    public Guid? OrderId { get; private set; }
     public Rating Rating { get; private set; } = null!;
     public ReviewContent Content { get; private set; } = null!;
     public ReviewStatus Status { get; private set; }
     public bool IsVerifiedPurchase { get; private set; }
     public int HelpfulCount { get; private set; }
     public int FlagCount { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
 
     private Review()
     {
@@ -27,12 +27,10 @@ public class Review : AggregateRoot
         Guid productId,
         Guid userId,
         Rating rating,
-        ReviewContent content,
-        Guid? orderId)
+        ReviewContent content)
     {
         ProductId = productId;
         UserId = userId;
-        OrderId = orderId;
         Rating = rating;
         Content = content;
         Status = ReviewStatus.Pending;
@@ -45,60 +43,78 @@ public class Review : AggregateRoot
         Guid productId,
         Guid userId,
         Rating rating,
-        ReviewContent content,
-        Guid? orderId = null)
+        ReviewContent content)
     {
-        var review = new Review(productId, userId, rating, content, orderId);
+        var review = new Review(productId, userId, rating, content);
         review.AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(review.ProductId));
         return review;
     }
 
-    public Result Edit(Rating rating, ReviewContent content, DateTime updatedAt)
+    public Result Edit(int? rating, string? title, string? comment)
     {
         if (Status == ReviewStatus.Approved)
             return Result.Fail(ReviewsErrors.ReviewAlreadyApproved);
 
-        Rating = rating;
-        Content = content;
-        UpdatedAt = updatedAt;
+        if (rating.HasValue)
+        {
+            var ratingResult = Rating.Create(rating.Value);
+            if (!ratingResult.IsSuccess)
+                return Result.Fail(ratingResult.GetErrorOrThrow());
+            Rating = ratingResult.GetDataOrThrow();
+        }
+
+        string resolvedTitle = string.IsNullOrWhiteSpace(title) ? Content.Title ?? string.Empty : title;
+        string resolvedBody  = string.IsNullOrWhiteSpace(comment) ? Content.Body : comment;
+        var contentResult = ReviewContent.Create(resolvedTitle, resolvedBody);
+        if (!contentResult.IsSuccess)
+            return Result.Fail(contentResult.GetErrorOrThrow());
+
+        Content = contentResult.GetDataOrThrow();
+        UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
         return Result.Ok();
     }
 
-    public Result Approve(DateTime updatedAt)
+    public Result Approve()
     {
         if (Status == ReviewStatus.Approved)
             return Result.Fail(ReviewsErrors.ReviewAlreadyApproved);
 
         Status = ReviewStatus.Approved;
-        UpdatedAt = updatedAt;
+        UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
         return Result.Ok();
     }
 
-    public void Reject(DateTime updatedAt)
+    public void Reject()
     {
+        // Only approved reviews affect the rating projection — rejecting a pending review is a no-op for ratings.
+        bool wasApproved = Status == ReviewStatus.Approved;
         Status = ReviewStatus.Rejected;
-        UpdatedAt = updatedAt;
-        AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
+        UpdatedAt = DateTime.UtcNow;
+        if (wasApproved)
+            AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
     }
 
-    public void NotifyRatingProjectionChanged()
+    public void Delete()
     {
+        DeletedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+        // Raise rating event so consumers recompute the average after this review is soft-deleted.
         AddDomainEvent(new ReviewRatingProjectionChangedDomainEvent(ProductId));
     }
 
-    public void Flag(DateTime updatedAt)
+    public void Flag()
     {
         Status = ReviewStatus.Flagged;
         FlagCount++;
-        UpdatedAt = updatedAt;
+        UpdatedAt = DateTime.UtcNow;
     }
 
-    public void MarkAsHelpful(DateTime updatedAt)
+    public void MarkAsHelpful()
     {
         HelpfulCount++;
-        UpdatedAt = updatedAt;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkAsVerifiedPurchase()

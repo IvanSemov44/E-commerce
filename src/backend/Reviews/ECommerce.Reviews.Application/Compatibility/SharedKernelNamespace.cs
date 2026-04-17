@@ -1,1 +1,0 @@
-﻿namespace ECommerce.SharedKernel;

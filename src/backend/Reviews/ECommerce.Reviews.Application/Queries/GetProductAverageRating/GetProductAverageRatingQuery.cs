@@ -1,6 +1,3 @@
-﻿using ECommerce.SharedKernel;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.Queries;
+﻿namespace ECommerce.Reviews.Application.Queries;
 
 public record GetProductAverageRatingQuery(Guid ProductId) : IRequest<Result<decimal>>;

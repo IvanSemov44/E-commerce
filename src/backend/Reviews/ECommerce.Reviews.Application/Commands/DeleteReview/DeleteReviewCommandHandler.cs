@@ -1,9 +1,4 @@
-﻿using ECommerce.Reviews.Domain.Errors;
-using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.CommandHandlers;
+﻿namespace ECommerce.Reviews.Application.Commands.DeleteReview;
 
 public class DeleteReviewCommandHandler(
     IReviewRepository reviewRepository) : IRequestHandler<DeleteReviewCommand, Result>
@@ -17,9 +12,7 @@ public class DeleteReviewCommandHandler(
         if (!request.IsAdmin && review.UserId != request.UserId)
             return Result.Fail(ReviewsErrors.Unauthorized);
 
-        review.NotifyRatingProjectionChanged();
-
-        await reviewRepository.DeleteAsync(review, cancellationToken);
+        review.Delete();
 
         return Result.Ok();
     }

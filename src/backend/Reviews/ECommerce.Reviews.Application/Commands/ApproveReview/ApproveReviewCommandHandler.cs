@@ -1,9 +1,4 @@
-﻿using ECommerce.Reviews.Domain.Errors;
-using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.CommandHandlers;
+﻿namespace ECommerce.Reviews.Application.Commands.ApproveReview;
 
 public class ApproveReviewCommandHandler(
     IReviewRepository reviewRepository) : IRequestHandler<ApproveReviewCommand, Result>
@@ -14,12 +9,6 @@ public class ApproveReviewCommandHandler(
         if (review is null)
             return Result.Fail(ReviewsErrors.ReviewNotFound);
 
-        Result approveResult = review.Approve(DateTime.UtcNow);
-        if (!approveResult.IsSuccess)
-            return approveResult;
-
-        await reviewRepository.UpsertAsync(review, cancellationToken);
-
-        return Result.Ok();
+        return review.Approve();
     }
 }

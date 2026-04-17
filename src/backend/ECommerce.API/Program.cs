@@ -15,12 +15,13 @@ using ECommerce.Promotions.Application.Commands.CreatePromoCode;
 using ECommerce.Payments.Infrastructure;
 using ECommerce.Payments.Application.Commands.ProcessPayment;
 using ECommerce.Payments.Application.Interfaces;
-using ECommerce.Reviews.Application.Commands;
+using ECommerce.Reviews.Application.Commands.CreateReview;
 using ECommerce.Reviews.Infrastructure;
 using ECommerce.Ordering.Infrastructure;
 using ECommerce.Ordering.Application.Commands.PlaceOrder;
 using ECommerce.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using ECommerce.Identity.Application.Commands.Register;
 
 // ============================================================================
 // E-Commerce API - Application Entry Point
@@ -117,12 +118,12 @@ builder.Services.AddMediatR(cfg =>
 
     // Uncomment each line when that bounded context's Application project is created:
     cfg.RegisterServicesFromAssembly(typeof(CreateProductCommand).Assembly);
-    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
-    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Inventory.Application.Commands.ReduceStock.ReduceStockCommand).Assembly);
-    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(RegisterCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(ReduceStockCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(AddToCartCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(CreateReviewCommand).Assembly);
-    cfg.RegisterServicesFromAssembly(typeof(ECommerce.Ordering.Application.Commands.PlaceOrder.PlaceOrderCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(PlaceOrderCommand).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(ProcessPaymentCommand).Assembly);
 
     // Pipeline order matters: outermost first
@@ -137,12 +138,14 @@ builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 // Also register validators from the Catalog application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(CreateProductCommand).Assembly);
 // Also register validators from the Shopping application assembly
-builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(AddToCartCommand).Assembly);
 // Also register validators from the Promotions application assembly
-builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Promotions.Application.Commands.CreatePromoCode.CreatePromoCodeCommand).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(CreatePromoCodeCommand).Assembly);
 // Also register validators from the Identity application assembly
-builder.Services.AddValidatorsFromAssembly(typeof(ECommerce.Identity.Application.Commands.Register.RegisterCommand).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(RegisterCommand).Assembly);
 builder.Services.AddValidatorsFromAssembly(typeof(ProcessPaymentCommand).Assembly);
+// Also register validators from the Reviews application assembly
+builder.Services.AddValidatorsFromAssembly(typeof(CreateReviewCommand).Assembly);
 
 // Controllers & Validation
 builder.Services.AddControllers()

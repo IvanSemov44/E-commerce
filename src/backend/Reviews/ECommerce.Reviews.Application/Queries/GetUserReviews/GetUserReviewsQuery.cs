@@ -1,9 +1,4 @@
-﻿using ECommerce.Reviews.Application.DTOs;
-using ECommerce.Reviews.Application.DTOs.Common;
-using ECommerce.SharedKernel;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.Queries;
+﻿namespace ECommerce.Reviews.Application.Queries;
 
 public record GetUserReviewsQuery(
     Guid UserId,

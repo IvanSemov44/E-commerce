@@ -1,13 +1,7 @@
-﻿using ECommerce.Reviews.Domain.Errors;
-using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.CommandHandlers;
+﻿namespace ECommerce.Reviews.Application.Commands.FlagReview;
 
 public class FlagReviewCommandHandler(
-    IReviewRepository reviewRepository,
-    ECommerce.SharedKernel.Interfaces.IUnitOfWork unitOfWork) : IRequestHandler<FlagReviewCommand, Result>
+    IReviewRepository reviewRepository) : IRequestHandler<FlagReviewCommand, Result>
 {
     public async Task<Result> Handle(FlagReviewCommand request, CancellationToken cancellationToken)
     {
@@ -15,10 +9,7 @@ public class FlagReviewCommandHandler(
         if (review is null)
             return Result.Fail(ReviewsErrors.ReviewNotFound);
 
-        review.Flag(DateTime.UtcNow);
-        await reviewRepository.UpsertAsync(review, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
+        review.Flag();
         return Result.Ok();
     }
 }

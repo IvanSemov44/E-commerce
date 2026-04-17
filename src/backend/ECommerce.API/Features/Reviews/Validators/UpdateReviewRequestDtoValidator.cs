@@ -1,7 +1,7 @@
-﻿using ECommerce.Reviews.Application.DTOs;
+using ECommerce.Reviews.Application.DTOs;
 using FluentValidation;
 
-namespace ECommerce.Reviews.Application.Validators;
+namespace ECommerce.API.Features.Reviews.Validators;
 
 public class UpdateReviewRequestDtoValidator : AbstractValidator<UpdateReviewRequestDto>
 {

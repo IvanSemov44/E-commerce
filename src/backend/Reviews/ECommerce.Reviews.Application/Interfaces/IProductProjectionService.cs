@@ -1,6 +1,6 @@
-﻿namespace ECommerce.Reviews.Application.Interfaces;
+namespace ECommerce.Reviews.Application.Interfaces;
 
-public interface ICatalogService
+public interface IProductProjectionService
 {
     Task<bool> ProductExistsAsync(Guid productId, CancellationToken cancellationToken = default);
 }

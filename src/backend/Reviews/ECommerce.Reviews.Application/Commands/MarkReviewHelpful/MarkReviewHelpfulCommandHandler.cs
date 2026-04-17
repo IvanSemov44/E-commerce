@@ -1,13 +1,7 @@
-﻿using ECommerce.Reviews.Domain.Errors;
-using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.CommandHandlers;
+﻿namespace ECommerce.Reviews.Application.Commands.MarkReviewHelpful;
 
 public class MarkReviewHelpfulCommandHandler(
-    IReviewRepository reviewRepository,
-    ECommerce.SharedKernel.Interfaces.IUnitOfWork unitOfWork) : IRequestHandler<MarkReviewHelpfulCommand, Result>
+    IReviewRepository reviewRepository) : IRequestHandler<MarkReviewHelpfulCommand, Result>
 {
     public async Task<Result> Handle(MarkReviewHelpfulCommand request, CancellationToken cancellationToken)
     {
@@ -15,10 +9,7 @@ public class MarkReviewHelpfulCommandHandler(
         if (review is null)
             return Result.Fail(ReviewsErrors.ReviewNotFound);
 
-        review.MarkAsHelpful(DateTime.UtcNow);
-        await reviewRepository.UpsertAsync(review, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
+        review.MarkAsHelpful();
         return Result.Ok();
     }
 }

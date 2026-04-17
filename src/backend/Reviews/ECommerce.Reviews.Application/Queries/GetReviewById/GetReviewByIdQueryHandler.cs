@@ -1,10 +1,4 @@
-﻿using ECommerce.Reviews.Application.DTOs;
-using ECommerce.Reviews.Domain.Errors;
-using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.QueryHandlers;
+﻿namespace ECommerce.Reviews.Application.QueryHandlers;
 
 public class GetReviewByIdQueryHandler(
     IReviewRepository reviewRepository) : IRequestHandler<GetReviewByIdQuery, Result<ReviewDetailDto>>

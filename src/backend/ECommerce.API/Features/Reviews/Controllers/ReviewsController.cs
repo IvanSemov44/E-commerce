@@ -1,12 +1,15 @@
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Common.Extensions;
 using ECommerce.API.Common.Helpers;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Reviews.Application.Commands;
+using ECommerce.Reviews.Application.Commands.ApproveReview;
+using ECommerce.Reviews.Application.Commands.CreateReview;
+using ECommerce.Reviews.Application.Commands.DeleteReview;
+using ECommerce.Reviews.Application.Commands.RejectReview;
+using ECommerce.Reviews.Application.Commands.UpdateReview;
 using ECommerce.Reviews.Application.DTOs;
-using ECommerce.Reviews.Application.DTOs.Common;
 using ECommerce.SharedKernel.Enums;
 using ECommerce.Reviews.Application.Queries;
 using ECommerce.SharedKernel.Results;
@@ -225,7 +228,7 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
         _logger.LogInformation("Creating review for product {ProductId} by user {UserId}", dto.ProductId, userId.Value);
 
         var result = await _mediator.Send(
-            new CreateReviewCommand(dto.ProductId, userId.Value, dto.OrderId, dto.Rating, dto.Title, dto.Comment),
+            new CreateReviewCommand(dto.ProductId, userId.Value, dto.Rating, dto.Title, dto.Comment),
             cancellationToken);
 
         return result.ToActionResult(
@@ -242,15 +245,15 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
     /// <param name="reviewId">The review ID.</param>
     /// <param name="dto">The updated review details.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The updated review.</returns>
-    /// <response code="200">Review updated successfully.</response>
+    /// <returns>No content on success.</returns>
+    /// <response code="204">Review updated successfully.</response>
     /// <response code="400">Invalid review data or rating out of range.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="404">Review not found or user does not have permission to update this review.</response>
     [HttpPut("{reviewId:guid}")]
     [Authorize]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<ReviewDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -260,7 +263,7 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
     {
         var userId = _currentUser.UserIdOrNull;
         if (!userId.HasValue)
-            return Unauthorized(ApiResponse<ReviewDetailDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
+            return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var role = _currentUser.RoleOrNull;
         var isAdmin = role == UserRole.Admin || role == UserRole.SuperAdmin;
@@ -270,9 +273,7 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
             new UpdateReviewCommand(reviewId, userId.Value, isAdmin, dto.Rating, dto.Title, dto.Comment),
             cancellationToken);
 
-        return result.ToActionResult(
-            success => Ok(ApiResponse<ReviewDetailDto>.Ok(success, "Review updated successfully")),
-            MapError);
+        return result.ToActionResult(NoContent, MapError);
     }
 
     /// <summary>

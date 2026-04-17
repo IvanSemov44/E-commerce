@@ -1,8 +1,4 @@
-﻿using ECommerce.Reviews.Application.DTOs;
-using ECommerce.SharedKernel;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.Commands;
+﻿namespace ECommerce.Reviews.Application.Commands.UpdateReview;
 
 public record UpdateReviewCommand(
     Guid ReviewId,
@@ -10,4 +6,4 @@ public record UpdateReviewCommand(
     bool IsAdmin,
     int? Rating,
     string? Title,
-    string? Comment) : IRequest<Result<ReviewDetailDto>>, ITransactionalCommand;
+    string? Comment) : IRequest<Result>, ITransactionalCommand;

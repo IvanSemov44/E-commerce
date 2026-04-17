@@ -1,6 +1,4 @@
-using FluentValidation;
-
-namespace ECommerce.Reviews.Application.Commands;
+﻿namespace ECommerce.Reviews.Application.Commands.DeleteReview;
 
 public class DeleteReviewCommandValidator : AbstractValidator<DeleteReviewCommand>
 {

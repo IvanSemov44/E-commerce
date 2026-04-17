@@ -1,16 +1,8 @@
-﻿using ECommerce.Reviews.Application.DTOs;
-using ECommerce.Reviews.Application.DTOs.Common;
-using ECommerce.Reviews.Application.Interfaces;
-using ECommerce.Reviews.Domain.Errors;
-using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
-namespace ECommerce.Reviews.Application.QueryHandlers;
+﻿namespace ECommerce.Reviews.Application.QueryHandlers;
 
 public class GetProductReviewsQueryHandler(
     IReviewRepository reviewRepository,
-    ICatalogService catalogService) : IRequestHandler<GetProductReviewsQuery, Result<PaginatedResult<ReviewDto>>>
+    IProductProjectionService catalogService) : IRequestHandler<GetProductReviewsQuery, Result<PaginatedResult<ReviewDto>>>
 {
     public async Task<Result<PaginatedResult<ReviewDto>>> Handle(GetProductReviewsQuery request, CancellationToken cancellationToken)
     {

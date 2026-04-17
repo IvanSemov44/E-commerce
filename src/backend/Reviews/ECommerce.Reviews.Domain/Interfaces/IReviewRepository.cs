@@ -43,8 +43,4 @@ public interface IReviewRepository
     Task<bool> ExistsAsync(Guid productId, Guid authorId, CancellationToken cancellationToken = default);
 
     Task AddAsync(Review review, CancellationToken cancellationToken = default);
-
-    Task UpsertAsync(Review review, CancellationToken cancellationToken = default);
-
-    Task DeleteAsync(Review review, CancellationToken cancellationToken = default);
 }
