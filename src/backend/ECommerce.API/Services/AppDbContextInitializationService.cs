@@ -24,15 +24,16 @@ public sealed class AppDbContextInitializationService(
         // Keep startup data lifecycle in one place: schema first, then data seed, then projection backfill.
         // This ordering avoids backfill running against stale schema/data during app boot.
         await appDbInitializationService.InitializeAsync(environment);
+
+        if (environment.IsEnvironment("Test"))
+            return;
+
         await MigrateCatalogContextAsync();
         await MigrateReviewsContextAsync();
 
-        if (!environment.IsEnvironment("Test"))
-        {
-            await SeedCatalogContextAsync(environment);
-            await EnsureIntegrationSchemaAsync();
-            await BackfillReviewsProductProjectionsAsync();
-        }
+        await SeedCatalogContextAsync(environment);
+        await EnsureIntegrationSchemaAsync();
+        await BackfillReviewsProductProjectionsAsync();
     }
 
     private async Task MigrateCatalogContextAsync(CancellationToken cancellationToken = default)
