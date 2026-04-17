@@ -3,6 +3,7 @@ using System;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ECommerce.Reviews.Infrastructure.Migrations
 {
     [DbContext(typeof(ReviewsDbContext))]
-    partial class ReviewsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417131849_Reviews_SchemaAndSoftDelete_Consolidated")]
+    partial class Reviews_SchemaAndSoftDelete_Consolidated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,64 +25,7 @@ namespace ECommerce.Reviews.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("ECommerce.Reviews.Domain.Aggregates.Review.Review", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("CreatedAt");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("DeletedAt");
-
-                    b.Property<int>("FlagCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("FlagCount");
-
-                    b.Property<int>("HelpfulCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("HelpfulCount");
-
-                    b.Property<bool>("IsVerifiedPurchase")
-                        .HasColumnType("boolean")
-                        .HasColumnName("IsVerifiedPurchase");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer")
-                        .HasColumnName("Rating");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Status");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("UpdatedAt");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FlagCount");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("ProductId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("Reviews", "reviews");
-                });
-
-            modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.DeadLetterMessage", b =>
+            modelBuilder.Entity("ECommerce.Infrastructure.Data.DeadLetterMessage", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -122,7 +68,7 @@ namespace ECommerce.Reviews.Infrastructure.Migrations
                     b.ToTable("dead_letter_messages", "reviews");
                 });
 
-            modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.InboxMessage", b =>
+            modelBuilder.Entity("ECommerce.Infrastructure.Data.InboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -161,7 +107,7 @@ namespace ECommerce.Reviews.Infrastructure.Migrations
                     b.ToTable("inbox_messages", "reviews");
                 });
 
-            modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.OutboxMessage", b =>
+            modelBuilder.Entity("ECommerce.Infrastructure.Data.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -215,6 +161,66 @@ namespace ECommerce.Reviews.Infrastructure.Migrations
                     b.HasIndex("ProcessedAt");
 
                     b.ToTable("outbox_messages", "reviews");
+                });
+
+            modelBuilder.Entity("ECommerce.Reviews.Domain.Aggregates.Review.Review", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DeletedAt");
+
+                    b.Property<int>("FlagCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("FlagCount");
+
+                    b.Property<int>("HelpfulCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("HelpfulCount");
+
+                    b.Property<bool>("IsVerifiedPurchase")
+                        .HasColumnType("boolean")
+                        .HasColumnName("IsVerifiedPurchase");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer")
+                        .HasColumnName("Rating");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("Status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("UpdatedAt");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlagCount");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ProductId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("Reviews", "reviews");
                 });
 
             modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.ProductReadModel", b =>

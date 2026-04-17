@@ -1,5 +1,4 @@
-﻿using ECommerce.Reviews.Application;
-using ECommerce.Reviews.Infrastructure.EventHandlers;
+﻿using ECommerce.Reviews.Infrastructure.EventHandlers;
 using ECommerce.Reviews.Infrastructure.IntegrationEvents;
 using ECommerce.Reviews.Infrastructure.Integration;
 using ECommerce.Reviews.Domain.Events;
@@ -12,6 +11,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ECommerce.Reviews.Application.Interfaces;
 
 namespace ECommerce.Reviews.Infrastructure;
 
@@ -22,6 +22,9 @@ public static class DependencyInjection
         string connectionString = configuration.GetConnectionString("ReviewsConnection")
             ?? throw new InvalidOperationException("Connection string 'ReviewsConnection' is not configured.");
 
+        services.Configure<ReviewsOutboxDispatcherOptions>(
+            configuration.GetSection("IntegrationMessaging:Outbox"));
+
         services.AddDbContext<ReviewsDbContext>(options =>
         {
             options.UseNpgsql(connectionString);
@@ -30,11 +33,10 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IReviewRepository, ReviewRepository>();
-        services.AddScoped<ECommerce.Reviews.Application.Interfaces.ICatalogService, CatalogService>();
-        services.AddScoped<ECommerce.Reviews.Application.Interfaces.IReviewRatingProjectionEventPublisher, ReviewRatingProjectionEventPublisher>();
+        services.AddScoped<IProductProjectionService, ProductProjectionService>();
+        services.AddScoped<IReviewRatingProjectionEventPublisher, ReviewRatingProjectionEventPublisher>();
         services.AddScoped<INotificationHandler<ProductProjectionUpdatedIntegrationEvent>, ProductProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<ReviewRatingProjectionChangedDomainEvent>, ReviewRatingProjectionChangedDomainEventHandler>();
-        services.AddReviewsApplication();
 
         // Reviews-owned outbox dispatcher — polls reviews.outbox_messages
         services.AddHostedService<ReviewsOutboxDispatcherHostedService>();

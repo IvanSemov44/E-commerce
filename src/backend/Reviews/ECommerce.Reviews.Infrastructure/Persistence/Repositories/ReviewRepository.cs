@@ -1,7 +1,6 @@
 ﻿using ECommerce.Reviews.Domain.Aggregates.Review;
 using ECommerce.Reviews.Domain.Enums;
 using ECommerce.Reviews.Domain.Interfaces;
-using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Reviews.Infrastructure.Persistence.Repositories;
@@ -134,7 +133,7 @@ public class ReviewRepository(ReviewsDbContext db) : IReviewRepository
     {
         decimal? average = await db.Reviews.AsNoTracking()
             .Where(review => review.ProductId == productId && review.Status == ReviewStatus.Approved)
-            .Select(review => (decimal?)review.Rating.Value)
+            .Select(review => (decimal?)EF.Property<int>(review, "Rating"))
             .AverageAsync(cancellationToken);
 
         return average ?? 0m;
@@ -145,16 +144,4 @@ public class ReviewRepository(ReviewsDbContext db) : IReviewRepository
 
     public Task AddAsync(Review review, CancellationToken cancellationToken = default)
         => db.Reviews.AddAsync(review, cancellationToken).AsTask();
-
-    public Task UpsertAsync(Review review, CancellationToken cancellationToken = default)
-    {
-        db.Reviews.Update(review);
-        return Task.CompletedTask;
-    }
-
-    public Task DeleteAsync(Review review, CancellationToken cancellationToken = default)
-    {
-        db.Reviews.Remove(review);
-        return Task.CompletedTask;
-    }
 }

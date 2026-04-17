@@ -3,6 +3,7 @@ using System;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ECommerce.Reviews.Infrastructure.Migrations
 {
     [DbContext(typeof(ReviewsDbContext))]
-    partial class ReviewsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417134110_Reviews_RemoveOrderIdFromReview")]
+    partial class Reviews_RemoveOrderIdFromReview
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,6 +24,144 @@ namespace ECommerce.Reviews.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("ECommerce.Infrastructure.Data.DeadLetterMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventData")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("FailedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("IdempotencyKey")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("OutboxMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RequeuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FailedAt");
+
+                    b.HasIndex("OutboxMessageId");
+
+                    b.ToTable("dead_letter_messages", "reviews");
+                });
+
+            modelBuilder.Entity("ECommerce.Infrastructure.Data.InboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid>("IdempotencyKey")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("ProcessedAt");
+
+                    b.HasIndex("ReceivedAt");
+
+                    b.ToTable("inbox_messages", "reviews");
+                });
+
+            modelBuilder.Entity("ECommerce.Infrastructure.Data.OutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeadLetteredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventData")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid>("IdempotencyKey")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeadLettered")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("IsDeadLettered");
+
+                    b.HasIndex("NextAttemptAt");
+
+                    b.HasIndex("ProcessedAt");
+
+                    b.ToTable("outbox_messages", "reviews");
+                });
 
             modelBuilder.Entity("ECommerce.Reviews.Domain.Aggregates.Review.Review", b =>
                 {
@@ -77,144 +218,6 @@ namespace ECommerce.Reviews.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Reviews", "reviews");
-                });
-
-            modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.DeadLetterMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EventData")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<DateTime>("FailedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("IdempotencyKey")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("OutboxMessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RequeuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FailedAt");
-
-                    b.HasIndex("OutboxMessageId");
-
-                    b.ToTable("dead_letter_messages", "reviews");
-                });
-
-            modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.InboxMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<Guid>("IdempotencyKey")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ReceivedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("ProcessedAt");
-
-                    b.HasIndex("ReceivedAt");
-
-                    b.ToTable("inbox_messages", "reviews");
-                });
-
-            modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.OutboxMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeadLetteredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EventData")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<Guid>("IdempotencyKey")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeadLettered")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime?>("NextAttemptAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("IsDeadLettered");
-
-                    b.HasIndex("NextAttemptAt");
-
-                    b.HasIndex("ProcessedAt");
-
-                    b.ToTable("outbox_messages", "reviews");
                 });
 
             modelBuilder.Entity("ECommerce.Reviews.Infrastructure.Persistence.ProductReadModel", b =>

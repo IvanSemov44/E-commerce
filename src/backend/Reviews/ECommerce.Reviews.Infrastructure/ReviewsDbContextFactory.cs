@@ -1,4 +1,4 @@
-using ECommerce.Reviews.Infrastructure.Persistence;
+﻿using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -12,8 +12,11 @@ public sealed class ReviewsDbContextFactory : IDesignTimeDbContextFactory<Review
 {
     public ReviewsDbContext CreateDbContext(string[] args)
     {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__ReviewsConnection")
+            ?? "Host=localhost;Database=ECommerceDb;Username=ecommerce;Password=local-dev-password-123";
+
         var options = new DbContextOptionsBuilder<ReviewsDbContext>()
-            .UseNpgsql("Host=localhost;Database=ecommerce_reviews;Username=postgres;Password=postgres")
+            .UseNpgsql(connectionString)
             .Options;
 
         return new ReviewsDbContext(options);

@@ -1,6 +1,5 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ECommerce.Contracts;
-using ECommerce.Infrastructure.Data;
 using ECommerce.Reviews.Application.Interfaces;
 using ECommerce.Reviews.Domain.Interfaces;
 using ECommerce.Reviews.Infrastructure.Persistence;

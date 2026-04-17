@@ -1,5 +1,4 @@
-﻿using ECommerce.Reviews.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ECommerce.Reviews.Infrastructure.Persistence.Configurations;
@@ -8,7 +7,7 @@ public class ProductReadModelConfiguration : IEntityTypeConfiguration<ProductRea
 {
     public void Configure(EntityTypeBuilder<ProductReadModel> builder)
     {
-        builder.ToTable("ReviewProductProjections");
+        builder.ToTable("ReviewProductProjections", "reviews");
 
         builder.HasKey(product => product.Id);
 

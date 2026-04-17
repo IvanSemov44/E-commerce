@@ -1,5 +1,4 @@
-using ECommerce.Infrastructure.Data;
-using ECommerce.Reviews.Domain.Aggregates.Review;
+﻿using ECommerce.Reviews.Domain.Aggregates.Review;
 using ECommerce.SharedKernel.Domain;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,5 +1,4 @@
 ﻿using ECommerce.Reviews.Domain.Aggregates.Review;
-using ECommerce.Reviews.Domain.Enums;
 using ECommerce.Reviews.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -10,7 +9,7 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
 {
     public void Configure(EntityTypeBuilder<Review> builder)
     {
-        builder.ToTable("Reviews");
+        builder.ToTable("Reviews", "reviews");
 
         builder.HasKey(review => review.Id);
 
@@ -19,9 +18,6 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
 
         builder.Property(review => review.UserId)
             .IsRequired();
-
-        builder.Property(review => review.OrderId)
-            .IsRequired(false);
 
         builder.Property(review => review.Rating)
             .HasConversion(
@@ -67,6 +63,12 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
         builder.Property(review => review.UpdatedAt)
             .HasColumnName("UpdatedAt")
             .IsRequired();
+
+        builder.Property(review => review.DeletedAt)
+            .HasColumnName("DeletedAt")
+            .IsRequired(false);
+
+        builder.HasQueryFilter(review => review.DeletedAt == null);
 
         builder.HasIndex(review => new { review.ProductId, review.UserId }).IsUnique();
         builder.HasIndex(review => review.Status);

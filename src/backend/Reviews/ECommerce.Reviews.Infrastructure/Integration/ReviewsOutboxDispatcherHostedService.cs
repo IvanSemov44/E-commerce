@@ -1,7 +1,5 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ECommerce.Contracts;
-using ECommerce.Infrastructure.Data;
-using ECommerce.Infrastructure.Integration;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,11 +15,11 @@ namespace ECommerce.Reviews.Infrastructure.Integration;
 /// </summary>
 public sealed class ReviewsOutboxDispatcherHostedService(
     IServiceScopeFactory serviceScopeFactory,
-    IOptions<OutboxDispatcherOptions> options,
+    IOptions<ReviewsOutboxDispatcherOptions> options,
     ILogger<ReviewsOutboxDispatcherHostedService> logger) : BackgroundService
 {
     private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(5);
-    private readonly OutboxDispatcherOptions _options = options.Value;
+    private readonly ReviewsOutboxDispatcherOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
