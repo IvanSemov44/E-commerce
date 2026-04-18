@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Commands.UpdateCartItemQuantity;
 
 public class UpdateCartItemQuantityCommandValidator : AbstractValidator<UpdateCartItemQuantityCommand>

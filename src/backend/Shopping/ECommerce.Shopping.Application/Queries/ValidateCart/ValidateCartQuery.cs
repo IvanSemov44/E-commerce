@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Queries.ValidateCart;
 
 public record ValidateCartQuery(

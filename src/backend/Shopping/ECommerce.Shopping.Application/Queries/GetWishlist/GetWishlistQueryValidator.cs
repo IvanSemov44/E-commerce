@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Queries.GetWishlist;
 
 public class GetWishlistQueryValidator : AbstractValidator<GetWishlistQuery>

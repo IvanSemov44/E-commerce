@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Commands.AddToCart;
 
 public class AddToCartCommandValidator : AbstractValidator<AddToCartCommand>

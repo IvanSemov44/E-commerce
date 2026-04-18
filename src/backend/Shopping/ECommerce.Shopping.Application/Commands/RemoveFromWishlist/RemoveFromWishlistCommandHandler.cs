@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Commands.RemoveFromWishlist;
 
 public class RemoveFromWishlistCommandHandler(

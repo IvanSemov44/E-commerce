@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Errors;
 
 public static class ShoppingApplicationErrors

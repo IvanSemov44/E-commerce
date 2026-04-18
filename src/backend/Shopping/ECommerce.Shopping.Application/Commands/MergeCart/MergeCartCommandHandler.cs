@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Commands.MergeCart;
 
 public class MergeCartCommandHandler(

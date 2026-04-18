@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Queries.IsProductInWishlist;
 
 public class IsProductInWishlistQueryHandler(IWishlistRepository _wishlists)

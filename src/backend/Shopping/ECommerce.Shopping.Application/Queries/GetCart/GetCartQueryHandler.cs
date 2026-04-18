@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Queries.GetCart;
 
 public class GetCartQueryHandler(ICartRepository _carts)

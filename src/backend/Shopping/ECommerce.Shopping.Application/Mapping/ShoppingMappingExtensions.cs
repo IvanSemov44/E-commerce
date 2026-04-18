@@ -1,4 +1,3 @@
-
 namespace ECommerce.Shopping.Application.Mapping;
 
 public static class ShoppingMappingExtensions
