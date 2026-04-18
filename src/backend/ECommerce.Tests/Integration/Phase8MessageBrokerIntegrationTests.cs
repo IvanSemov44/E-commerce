@@ -12,11 +12,9 @@ public class Phase8MessageBrokerIntegrationTests
 {
     private static IntegrationEventDispatcher CreateDispatcher(IntegrationPersistenceDbContext dbContext, IPublisher mediator)
     {
-        var sagaMock = new Mock<IOrderFulfillmentSagaService>(MockBehavior.Loose);
         return new IntegrationEventDispatcher(
             new InboxIdempotencyProcessor(dbContext),
             mediator,
-            sagaMock.Object,
             NullLogger<IntegrationEventDispatcher>.Instance);
     }
 

@@ -544,8 +544,7 @@ public class TestWebApplicationFactory(
                 {
                     Id = productId,
                     IsActive = true,
-                    Price = 10.0m,
-                    Sku = "TEST-SKU-001"
+                    Price = 10.0m
                 });
 
                 reviewsDb.Products.Add(new ECommerce.Reviews.Infrastructure.Persistence.ProductReadModel

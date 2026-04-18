@@ -17,8 +17,7 @@ public class ShoppingReaderCharacterizationTests
         {
             Id = activeProductId,
             IsActive = true,
-            Price = 49.50m,
-            Sku = "SKU-001"
+            Price = 49.50m
         });
         await db.SaveChangesAsync();
 
@@ -41,8 +40,7 @@ public class ShoppingReaderCharacterizationTests
         {
             Id = inactiveProductId,
             IsActive = false,
-            Price = 10m,
-            Sku = "SKU-INACTIVE"
+            Price = 10m
         });
         await db.SaveChangesAsync();
 
@@ -54,24 +52,24 @@ public class ShoppingReaderCharacterizationTests
     }
 
     [TestMethod]
-    public async Task ProductExistsAsync_ReturnsTrueOnlyForActiveProduct()
+    public async Task GetProductPriceAsync_ReturnsPriceOnlyForActiveProduct()
     {
         var activeProductId = Guid.NewGuid();
         var inactiveProductId = Guid.NewGuid();
 
         await using var db = CreateShoppingDbContext();
         db.Products.AddRange(
-            new ProductReadModel { Id = activeProductId, IsActive = true, Price = 5m, Sku = "A" },
-            new ProductReadModel { Id = inactiveProductId, IsActive = false, Price = 6m, Sku = "B" });
+            new ProductReadModel { Id = activeProductId, IsActive = true, Price = 5m },
+            new ProductReadModel { Id = inactiveProductId, IsActive = false, Price = 6m });
         await db.SaveChangesAsync();
 
         var sut = new ShoppingDbReader(db);
 
-        var activeExists = await sut.ProductExistsAsync(activeProductId, CancellationToken.None);
-        var inactiveExists = await sut.ProductExistsAsync(inactiveProductId, CancellationToken.None);
+        var activeProduct = await sut.GetProductPriceAsync(activeProductId, CancellationToken.None);
+        var inactiveProduct = await sut.GetProductPriceAsync(inactiveProductId, CancellationToken.None);
 
-        Assert.IsTrue(activeExists);
-        Assert.IsFalse(inactiveExists);
+        Assert.IsNotNull(activeProduct);
+        Assert.IsNull(inactiveProduct);
     }
 
     [TestMethod]
