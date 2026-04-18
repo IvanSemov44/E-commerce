@@ -21,12 +21,16 @@ public sealed class RabbitMqIntegrationConsumerHostedService(
     {
         ["integration.ProductProjectionUpdatedIntegrationEvent"] = typeof(ProductProjectionUpdatedIntegrationEvent),
         ["integration.ProductImageProjectionUpdatedIntegrationEvent"] = typeof(ProductImageProjectionUpdatedIntegrationEvent),
+        ["integration.ProductRatingProjectionUpdatedIntegrationEvent"] = typeof(ProductRatingProjectionUpdatedIntegrationEvent),
         ["integration.PromoCodeProjectionUpdatedIntegrationEvent"] = typeof(PromoCodeProjectionUpdatedIntegrationEvent),
         ["integration.AddressProjectionUpdatedIntegrationEvent"] = typeof(AddressProjectionUpdatedIntegrationEvent),
         ["integration.InventoryStockProjectionUpdatedIntegrationEvent"] = typeof(InventoryStockProjectionUpdatedIntegrationEvent),
         ["integration.OrderPlacedIntegrationEvent"] = typeof(OrderPlacedIntegrationEvent),
         ["integration.InventoryReservedIntegrationEvent"] = typeof(InventoryReservedIntegrationEvent),
-        ["integration.InventoryReservationFailedIntegrationEvent"] = typeof(InventoryReservationFailedIntegrationEvent)
+        ["integration.InventoryReservationFailedIntegrationEvent"] = typeof(InventoryReservationFailedIntegrationEvent),
+        ["integration.CartItemAddedIntegrationEvent"] = typeof(CartItemAddedIntegrationEvent),
+        ["integration.CartItemQuantityUpdatedIntegrationEvent"] = typeof(CartItemQuantityUpdatedIntegrationEvent),
+        ["integration.CartClearedIntegrationEvent"] = typeof(CartClearedIntegrationEvent)
     };
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

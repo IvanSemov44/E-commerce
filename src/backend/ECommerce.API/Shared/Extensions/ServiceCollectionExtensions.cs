@@ -7,12 +7,14 @@ using ECommerce.Infrastructure.Services;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.Contracts.Validators.Auth;
 using ECommerce.Infrastructure;
+using ECommerce.Infrastructure.Integration.EventHandlers;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Inventory.Infrastructure;
 using ECommerce.Shopping.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
 using ECommerce.Payments.Infrastructure;
 using ECommerce.Contracts;
+using MediatR;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Antiforgery;
@@ -297,7 +299,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<ECommerce.Promotions.Application.Validators.ValidatePromoCodeRequestDtoValidator>();
 
         // Cross-context UoW used by MediatR handlers.
-        services.AddScoped<ECommerce.SharedKernel.Interfaces.IUnitOfWork, CrossContextMediatRUnitOfWork>();
+        services.AddScoped<IUnitOfWork, CrossContextMediatRUnitOfWork>();
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection("IntegrationMessaging:Outbox"));
@@ -307,6 +309,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderFulfillmentSagaService, OrderFulfillmentSagaService>();
         services.AddScoped<IOrderCompensationService, SagaOrderCompensationService>();
         services.AddScoped<InboxIdempotencyProcessor>();
+        services.AddScoped<INotificationHandler<OrderPlacedIntegrationEvent>, OrderPlacedIntegrationEventHandler>();
+        services.AddScoped<INotificationHandler<InventoryReservedIntegrationEvent>, InventoryReservedIntegrationEventHandler>();
+        services.AddScoped<INotificationHandler<InventoryReservationFailedIntegrationEvent>, InventoryReservationFailedIntegrationEventHandler>();
         services.AddHostedService<OutboxDispatcherHostedService>();
         services.AddHostedService<OrderFulfillmentSagaTimeoutHostedService>();
 
