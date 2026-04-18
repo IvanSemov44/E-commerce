@@ -4,7 +4,6 @@ using ECommerce.Shopping.Application.DTOs;
 using ECommerce.Shopping.Application.Errors;
 using ECommerce.Shopping.Application.Interfaces;
 using ECommerce.Shopping.Application.Mapping;
-using ECommerce.Shopping.Application.Helpers;
 using ECommerce.Shopping.Domain.Interfaces;
 
 namespace ECommerce.Shopping.Application.Commands.AddToCart;
@@ -20,7 +19,12 @@ public class AddToCartCommandHandler(
         if (product is null)
             return Result<CartDto>.Fail(ShoppingApplicationErrors.ProductNotFound);
 
-        var cart = await _carts.ResolveCartAsync(command.UserId, command.SessionId, ct);
+        var cart = command.UserId is Guid uid
+            ? await _carts.GetOrCreateForUserAsync(uid, ct)
+            : command.SessionId is not null
+                ? await _carts.GetOrCreateForSessionAsync(command.SessionId, ct)
+                : null;
+
         if (cart is null)
             return Result<CartDto>.Fail(ShoppingApplicationErrors.CartNotFound);
 
