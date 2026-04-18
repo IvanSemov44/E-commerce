@@ -105,9 +105,6 @@ builder.Services.AddReviewsInfrastructure(builder.Configuration);
 // Inventory Infrastructure (Phase 3)
 builder.Services.AddInventoryInfrastructure();
 
-// Shopping Infrastructure (Phase 4)
-builder.Services.AddShoppingInfrastructure();
-
 // Ordering Infrastructure (Phase 7)
 builder.Services.AddOrderingInfrastructure();
 
