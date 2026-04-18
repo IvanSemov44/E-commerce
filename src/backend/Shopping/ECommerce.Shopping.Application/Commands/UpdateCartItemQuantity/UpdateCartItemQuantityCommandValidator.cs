@@ -1,4 +1,3 @@
-using FluentValidation;
 
 namespace ECommerce.Shopping.Application.Commands.UpdateCartItemQuantity;
 

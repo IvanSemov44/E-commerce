@@ -1,9 +1,3 @@
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Shopping.Application.DTOs;
-using ECommerce.Shopping.Application.Mapping;
-using ECommerce.Shopping.Application.Errors;
-using ECommerce.Shopping.Domain.Interfaces;
 
 namespace ECommerce.Shopping.Application.Queries.GetCart;
 

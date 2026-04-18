@@ -1,4 +1,3 @@
-using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.Shopping.Application.Errors;
 

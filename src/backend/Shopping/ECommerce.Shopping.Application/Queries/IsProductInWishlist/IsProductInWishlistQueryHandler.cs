@@ -1,7 +1,3 @@
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Shopping.Domain.Aggregates.Wishlist;
-using ECommerce.Shopping.Domain.Interfaces;
 
 namespace ECommerce.Shopping.Application.Queries.IsProductInWishlist;
 

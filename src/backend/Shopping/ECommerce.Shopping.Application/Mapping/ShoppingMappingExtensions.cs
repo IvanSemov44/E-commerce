@@ -1,6 +1,3 @@
-using ECommerce.Shopping.Application.DTOs;
-using ECommerce.Shopping.Domain.Aggregates.Cart;
-using ECommerce.Shopping.Domain.Aggregates.Wishlist;
 
 namespace ECommerce.Shopping.Application.Mapping;
 

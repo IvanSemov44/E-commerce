@@ -1,0 +1,11 @@
+global using MediatR;
+global using ECommerce.SharedKernel.Results;
+global using ECommerce.SharedKernel.Interfaces;
+global using ECommerce.Shopping.Application.DTOs;
+global using ECommerce.Shopping.Application.Errors;
+global using ECommerce.Shopping.Application.Interfaces;
+global using ECommerce.Shopping.Application.Mapping;
+global using ECommerce.Shopping.Domain.Interfaces;
+global using ECommerce.Shopping.Domain.Aggregates.Cart;
+global using ECommerce.Shopping.Domain.Aggregates.Wishlist;
+global using FluentValidation;

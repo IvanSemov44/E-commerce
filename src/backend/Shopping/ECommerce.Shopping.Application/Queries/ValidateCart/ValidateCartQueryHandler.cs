@@ -1,8 +1,4 @@
 ﻿using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Shopping.Application.Errors;
-using ECommerce.Shopping.Application.Interfaces;
-using ECommerce.Shopping.Domain.Interfaces;
 
 namespace ECommerce.Shopping.Application.Queries.ValidateCart;
 

@@ -1,5 +1,4 @@
 ﻿using ECommerce.Shopping.Application.DTOs;
-using FluentValidation;
 
 namespace ECommerce.Shopping.Application.Validators.Wishlist;
 
