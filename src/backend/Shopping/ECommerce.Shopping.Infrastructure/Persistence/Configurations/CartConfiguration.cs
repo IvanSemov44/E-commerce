@@ -1,4 +1,4 @@
-using ECommerce.Shopping.Domain.Aggregates.Cart;
+﻿using ECommerce.Shopping.Domain.Aggregates.Cart;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,6 +12,9 @@ public class CartConfiguration : IEntityTypeConfiguration<Cart>
         builder.HasKey(c => c.Id);
 
         builder.HasIndex(c => c.SessionId);
+
+         builder.Property(c => c.SessionId)
+             .HasMaxLength(100);
 
         builder.Property(c => c.RowVersion)
                .IsRowVersion()

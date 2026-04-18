@@ -1,39 +1,82 @@
-using ECommerce.Contracts;
+﻿using ECommerce.Contracts;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Shopping.Infrastructure.IntegrationEvents;
 
-public sealed class CatalogProductProjectionUpdatedIntegrationEventHandler(ShoppingDbContext db)
+public sealed class CatalogProductProjectionUpdatedIntegrationEventHandler(
+    ShoppingDbContext db,
+    ILogger<CatalogProductProjectionUpdatedIntegrationEventHandler> logger)
     : INotificationHandler<ProductProjectionUpdatedIntegrationEvent>
 {
     public async Task Handle(ProductProjectionUpdatedIntegrationEvent notification, CancellationToken cancellationToken)
     {
-        var existing = await db.Products
-            .FirstOrDefaultAsync(x => x.Id == notification.ProductId, cancellationToken);
-
-        if (notification.IsDeleted)
+        try
         {
-            if (existing is not null)
+            var existing = await db.Products
+                .FirstOrDefaultAsync(x => x.Id == notification.ProductId, cancellationToken);
+
+            if (notification.IsDeleted)
             {
-                db.Products.Remove(existing);
-                await db.SaveChangesAsync(cancellationToken);
+                if (existing is not null)
+                {
+                    db.Products.Remove(existing);
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+
+                logger.LogInformation(
+                    "Shopping product projection removed: ProductId={ProductId}, IdempotencyKey={IdempotencyKey}",
+                    notification.ProductId,
+                    notification.IdempotencyKey);
+
+                return;
             }
 
-            return;
-        }
+            if (existing is null)
+            {
+                existing = new ProductReadModel { Id = notification.ProductId };
+                db.Products.Add(existing);
+            }
 
-        if (existing is null)
+            existing.IsActive = true;
+            existing.Price = notification.Price;
+            existing.UpdatedAt = notification.OccurredAt == default ? DateTime.UtcNow : notification.OccurredAt;
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Shopping product projection upserted: ProductId={ProductId}, IdempotencyKey={IdempotencyKey}",
+                notification.ProductId,
+                notification.IdempotencyKey);
+        }
+        catch (DbUpdateConcurrencyException ex)
         {
-            existing = new ProductReadModel { Id = notification.ProductId };
-            db.Products.Add(existing);
+            logger.LogWarning(
+                ex,
+                "Shopping product projection concurrency conflict: ProductId={ProductId}, IdempotencyKey={IdempotencyKey}",
+                notification.ProductId,
+                notification.IdempotencyKey);
+            throw;
         }
-
-        existing.IsActive = true;
-        existing.Price = notification.Price;
-        existing.UpdatedAt = notification.OccurredAt == default ? DateTime.UtcNow : notification.OccurredAt;
-
-        await db.SaveChangesAsync(cancellationToken);
+        catch (DbUpdateException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Shopping product projection database update failed: ProductId={ProductId}, IdempotencyKey={IdempotencyKey}",
+                notification.ProductId,
+                notification.IdempotencyKey);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Shopping product projection handler failed: ProductId={ProductId}, IdempotencyKey={IdempotencyKey}",
+                notification.ProductId,
+                notification.IdempotencyKey);
+            throw;
+        }
     }
 }
