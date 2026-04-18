@@ -11,6 +11,7 @@ public class WishlistConfiguration : IEntityTypeConfiguration<Wishlist>
         builder.ToTable("Wishlists");
         builder.HasKey(w => w.Id);
         builder.Property(w => w.UserId).IsRequired();
-        builder.Ignore(w => w.ProductIds);
+        builder.HasIndex(w => w.UserId).IsUnique();
+        builder.PrimitiveCollection(w => w.ProductIds).HasColumnName("ProductIds");
     }
 }

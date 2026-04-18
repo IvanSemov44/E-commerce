@@ -19,11 +19,9 @@ public class CartConfiguration : IEntityTypeConfiguration<Cart>
                .IsRowVersion()
                .IsConcurrencyToken();
 
-        builder.HasMany<CartItem>("_items")
+        builder.HasMany(c => c.Items)
                .WithOne()
                .HasForeignKey(i => i.CartId)
                .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Navigation(c => c.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

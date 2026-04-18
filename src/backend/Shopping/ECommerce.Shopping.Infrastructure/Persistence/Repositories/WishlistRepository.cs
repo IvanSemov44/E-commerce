@@ -1,4 +1,3 @@
-﻿using SharedWishlistEntity = ECommerce.SharedKernel.Entities.Wishlist;
 using ECommerce.Shopping.Domain.Aggregates.Wishlist;
 using ECommerce.Shopping.Domain.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence;
@@ -8,37 +7,16 @@ namespace ECommerce.Shopping.Infrastructure.Persistence.Repositories;
 
 public class WishlistRepository(ShoppingDbContext _db) : IWishlistRepository
 {
-    public async Task<Wishlist?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
-    {
-        var rows = await _db.Wishlists
-            .Where(w => w.UserId == userId)
-            .ToListAsync(ct);
-
-        if (rows.Count == 0) return null;
-
-        var wishlist = Wishlist.Create(userId);
-        foreach (var row in rows)
-            wishlist.AddProduct(row.ProductId);
-
-        return wishlist;
-    }
+    public Task<Wishlist?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
+        => _db.Wishlists.FirstOrDefaultAsync(w => w.UserId == userId, ct);
 
     public async Task UpsertAsync(Wishlist wishlist, CancellationToken ct = default)
     {
-        var existing = await _db.Wishlists
-            .Where(w => w.UserId == wishlist.UserId)
-            .ToListAsync(ct);
+        var exists = await _db.Wishlists.AnyAsync(w => w.Id == wishlist.Id, ct);
 
-        _db.Wishlists.RemoveRange(existing);
-
-        foreach (var productId in wishlist.ProductIds)
-        {
-            await _db.Wishlists.AddAsync(new SharedWishlistEntity
-            {
-                Id = Guid.NewGuid(),
-                UserId = wishlist.UserId,
-                ProductId = productId
-            }, ct);
-        }
+        if (exists)
+            _db.Wishlists.Update(wishlist);
+        else
+            await _db.Wishlists.AddAsync(wishlist, ct);
     }
 }
