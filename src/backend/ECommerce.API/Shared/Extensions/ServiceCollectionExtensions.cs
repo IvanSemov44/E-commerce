@@ -5,7 +5,7 @@ using ECommerce.API.Services;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Infrastructure.Services;
 using ECommerce.SharedKernel.Domain;
-using ECommerce.Contracts.Validators.Cart;
+using ECommerce.Contracts.Validators.Auth;
 using ECommerce.Infrastructure;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Inventory.Infrastructure;
@@ -293,7 +293,7 @@ public static class ServiceCollectionExtensions
     {
         // FluentValidation
         services.AddFluentValidationAutoValidation();
-        services.AddValidatorsFromAssemblyContaining<AddToCartDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<LoginDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<ECommerce.Promotions.Application.Validators.ValidatePromoCodeRequestDtoValidator>();
 
         // Cross-context UoW used by MediatR handlers.

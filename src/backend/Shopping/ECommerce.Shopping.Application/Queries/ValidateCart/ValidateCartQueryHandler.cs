@@ -1,6 +1,4 @@
-﻿using MediatR;
-
-namespace ECommerce.Shopping.Application.Queries.ValidateCart;
+﻿namespace ECommerce.Shopping.Application.Queries.ValidateCart;
 
 public class ValidateCartQueryHandler(
     ICartRepository _carts,
@@ -17,10 +15,12 @@ public class ValidateCartQueryHandler(
 
         foreach (var item in cart.Items)
         {
-            var inStock = await _stockReader.IsInStockAsync(item.ProductId, item.Quantity, ct);
+            bool inStock = await _stockReader.IsInStockAsync(item.ProductId, item.Quantity, ct);
             if (!inStock)
+            {
                 return Result.Fail(new DomainError("INSUFFICIENT_STOCK",
                     $"Product {item.ProductId} has insufficient stock."));
+            }
         }
 
         return Result.Ok();

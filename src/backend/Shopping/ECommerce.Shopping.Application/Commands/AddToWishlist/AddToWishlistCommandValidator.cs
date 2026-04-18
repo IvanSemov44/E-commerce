@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-
-namespace ECommerce.Shopping.Application.Commands.AddToWishlist;
+﻿namespace ECommerce.Shopping.Application.Commands.AddToWishlist;
 
 public class AddToWishlistCommandValidator : AbstractValidator<AddToWishlistCommand>
 {
