@@ -1,4 +1,4 @@
-﻿using ECommerce.Shopping.Application.Commands.AddToCart;
+using ECommerce.Shopping.Application.Commands.AddToCart;
 using ECommerce.Shopping.Application.DTOs;
 using ECommerce.Shopping.Application.Queries.GetCart;
 using ECommerce.Shopping.Tests.Application;
@@ -55,24 +55,23 @@ public class GetCartQueryHandlerTests
 [TestClass]
 public class AddToCartCommandHandlerTests
 {
-    private static (FakeCartRepository cartRepo, FakeShoppingProductReader dbReader, FakeUnitOfWork uow, AddToCartCommandHandler handler) Build()
+    private static (FakeCartRepository cartRepo, FakeShoppingProductReader dbReader, AddToCartCommandHandler handler) Build()
     {
         var cartRepo = new FakeCartRepository();
         var dbReader = new FakeShoppingProductReader();
-        var uow = new FakeUnitOfWork();
-        return (cartRepo, dbReader, uow, new AddToCartCommandHandler(cartRepo, dbReader, uow));
+        return (cartRepo, dbReader, new AddToCartCommandHandler(cartRepo, dbReader));
     }
 
     [TestClass]
     public class Handle
     {
         [TestMethod]
-        public async Task ValidProduct_AddsItemAndCommits()
+        public async Task ValidProduct_AddsItem()
         {
             var userId = Guid.NewGuid();
             var productId = Guid.NewGuid();
             var cart = Cart.Create(userId);
-            var (cartRepo, dbReader, uow, handler) = Build();
+            var (cartRepo, dbReader, handler) = Build();
             cartRepo.Store.Add(cart);
             dbReader.Products[productId] = (9.99m, "USD");
 
@@ -82,7 +81,6 @@ public class AddToCartCommandHandlerTests
 
             result.IsSuccess.ShouldBeTrue();
             cartRepo.Store.First().Items.Count.ShouldBe(1);
-            uow.SaveChangesCount.ShouldBe(1);
         }
 
         [TestMethod]
@@ -91,7 +89,7 @@ public class AddToCartCommandHandlerTests
             var userId = Guid.NewGuid();
             var productId = Guid.NewGuid();
             var cart = Cart.Create(userId);
-            var (cartRepo, dbReader, uow, handler) = Build();
+            var (cartRepo, dbReader, handler) = Build();
             cartRepo.Store.Add(cart);
 
             var result = await handler.Handle(

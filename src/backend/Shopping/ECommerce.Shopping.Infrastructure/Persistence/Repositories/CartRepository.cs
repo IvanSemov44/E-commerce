@@ -15,24 +15,27 @@ public class CartRepository(ShoppingDbContext _db) : ICartRepository
     public Task<Cart?> GetBySessionIdAsync(string sessionId, CancellationToken ct = default)
         => _db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.SessionId == sessionId, ct);
 
-    public async Task UpsertAsync(Cart cart, CancellationToken ct = default)
+    public async Task<Cart> GetOrCreateForUserAsync(Guid userId, CancellationToken ct = default)
     {
-        var existing = await _db.Carts
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.Id == cart.Id, ct);
-
-        if (existing is not null)
-            _db.Carts.Remove(existing);
-
+        var cart = await _db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId, ct);
+        if (cart is not null) return cart;
+        cart = Cart.Create(userId);
         await _db.Carts.AddAsync(cart, ct);
+        return cart;
     }
 
-    public async Task DeleteAsync(Cart cart, CancellationToken ct = default)
+    public async Task<Cart> GetOrCreateForSessionAsync(string sessionId, CancellationToken ct = default)
     {
-        var existing = await _db.Carts
-            .FirstOrDefaultAsync(c => c.Id == cart.Id, ct);
+        var cart = await _db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.SessionId == sessionId, ct);
+        if (cart is not null) return cart;
+        cart = Cart.CreateAnonymous(sessionId);
+        await _db.Carts.AddAsync(cart, ct);
+        return cart;
+    }
 
-        if (existing is not null)
-            _db.Carts.Remove(existing);
+    public Task DeleteAsync(Cart cart, CancellationToken ct = default)
+    {
+        _db.Carts.Remove(cart);
+        return Task.CompletedTask;
     }
 }

@@ -19,11 +19,22 @@ sealed class FakeCartRepository : ICartRepository
     public Task<Cart?> GetBySessionIdAsync(string sessionId, CancellationToken ct = default)
         => Task.FromResult(Store.FirstOrDefault(c => c.SessionId == sessionId));
 
-    public Task UpsertAsync(Cart cart, CancellationToken ct = default)
+    public Task<Cart> GetOrCreateForUserAsync(Guid userId, CancellationToken ct = default)
     {
-        Store.RemoveAll(c => c.Id == cart.Id);
+        var cart = Store.FirstOrDefault(c => c.UserId == userId);
+        if (cart is not null) return Task.FromResult(cart);
+        cart = Cart.Create(userId);
         Store.Add(cart);
-        return Task.CompletedTask;
+        return Task.FromResult(cart);
+    }
+
+    public Task<Cart> GetOrCreateForSessionAsync(string sessionId, CancellationToken ct = default)
+    {
+        var cart = Store.FirstOrDefault(c => c.SessionId == sessionId);
+        if (cart is not null) return Task.FromResult(cart);
+        cart = Cart.CreateAnonymous(sessionId);
+        Store.Add(cart);
+        return Task.FromResult(cart);
     }
 
     public Task DeleteAsync(Cart cart, CancellationToken ct = default)
@@ -40,11 +51,13 @@ sealed class FakeWishlistRepository : IWishlistRepository
     public Task<Wishlist?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
         => Task.FromResult(Store.FirstOrDefault(w => w.UserId == userId));
 
-    public Task UpsertAsync(Wishlist wishlist, CancellationToken ct = default)
+    public Task<Wishlist> GetOrCreateForUserAsync(Guid userId, CancellationToken ct = default)
     {
-        Store.RemoveAll(w => w.UserId == wishlist.UserId);
+        var wishlist = Store.FirstOrDefault(w => w.UserId == userId);
+        if (wishlist is not null) return Task.FromResult(wishlist);
+        wishlist = Wishlist.Create(userId);
         Store.Add(wishlist);
-        return Task.CompletedTask;
+        return Task.FromResult(wishlist);
     }
 }
 
