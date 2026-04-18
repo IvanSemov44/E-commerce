@@ -48,7 +48,7 @@ sealed class FakeWishlistRepository : IWishlistRepository
     }
 }
 
-sealed class FakeShoppingDbReader : IShoppingDbReader
+sealed class FakeShoppingProductReader : IShoppingProductReader
 {
     public Dictionary<Guid, (decimal Price, string Currency)> Products = new();
 
@@ -58,10 +58,10 @@ sealed class FakeShoppingDbReader : IShoppingDbReader
             return Task.FromResult<ProductPriceInfo?>(new ProductPriceInfo(info.Price, info.Currency));
         return Task.FromResult<ProductPriceInfo?>(null);
     }
+}
 
-    public Task<bool> ProductExistsAsync(Guid productId, CancellationToken ct)
-        => Task.FromResult(Products.ContainsKey(productId));
-
+sealed class FakeStockAvailabilityReader : IStockAvailabilityReader
+{
     public Task<bool> IsInStockAsync(Guid productId, int quantity, CancellationToken ct)
         => Task.FromResult(true);
 }

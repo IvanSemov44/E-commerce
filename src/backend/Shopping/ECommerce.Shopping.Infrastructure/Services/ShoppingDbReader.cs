@@ -1,30 +1,23 @@
-﻿using ECommerce.SharedKernel.Entities;
-using ECommerce.Shopping.Application.Interfaces;
+﻿using ECommerce.Shopping.Application.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Shopping.Infrastructure.Services;
 
 public class ShoppingDbReader(
-    ShoppingDbContext shoppingDb) : IShoppingDbReader
+    ShoppingDbContext shoppingDb) : IShoppingProductReader, IStockAvailabilityReader
 {
     public async Task<ProductPriceInfo?> GetProductPriceAsync(Guid productId, CancellationToken ct)
     {
         var product = await shoppingDb.Products
             .AsNoTracking()
             .Where(p => p.Id == productId && p.IsActive)
-            .Select(p => new { p.Price, p.Sku })
+            .Select(p => new { p.Price })
             .FirstOrDefaultAsync(ct);
 
         if (product is null) return null;
-        var currency = string.IsNullOrEmpty(product.Sku) ? "USD" : "USD";
-        return new ProductPriceInfo(product.Price, currency);
+        return new ProductPriceInfo(product.Price, "USD");
     }
-
-    public Task<bool> ProductExistsAsync(Guid productId, CancellationToken ct)
-        => shoppingDb.Products
-            .AsNoTracking()
-            .AnyAsync(p => p.Id == productId && p.IsActive, ct);
 
     public Task<bool> IsInStockAsync(Guid productId, int quantity, CancellationToken ct)
         => shoppingDb.InventoryItems

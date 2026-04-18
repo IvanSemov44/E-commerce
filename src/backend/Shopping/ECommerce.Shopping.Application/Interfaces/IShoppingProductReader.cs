@@ -5,5 +5,4 @@ public record ProductPriceInfo(decimal Price, string Currency);
 public interface IShoppingProductReader
 {
     Task<ProductPriceInfo?> GetProductPriceAsync(Guid productId, CancellationToken ct);
-    Task<bool> ProductExistsAsync(Guid productId, CancellationToken ct);
 }

@@ -3,7 +3,6 @@ using ECommerce.Shopping.Domain.Interfaces;
 using ECommerce.Shopping.Infrastructure.Persistence.Repositories;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using ECommerce.Shopping.Infrastructure.Services;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +16,7 @@ public static class DependencyInjection
         services.AddDbContext<ShoppingDbContext>((serviceProvider, options) =>
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString("ShoppingConnection")
+            string connectionString = configuration.GetConnectionString("ShoppingConnection")
                 ?? throw new InvalidOperationException("Connection string 'ShoppingConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
@@ -27,14 +26,8 @@ public static class DependencyInjection
 
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
-        services.AddScoped<IShoppingDbReader, ShoppingDbReader>();
         services.AddScoped<IShoppingProductReader, ShoppingDbReader>();
         services.AddScoped<IStockAvailabilityReader, ShoppingDbReader>();
-
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssemblies(
-                typeof(ECommerce.Shopping.Application.Commands.AddToCart.AddToCartCommand).Assembly,
-                typeof(DependencyInjection).Assembly));
 
         return services;
     }

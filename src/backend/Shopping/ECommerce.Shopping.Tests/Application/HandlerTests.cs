@@ -55,10 +55,10 @@ public class GetCartQueryHandlerTests
 [TestClass]
 public class AddToCartCommandHandlerTests
 {
-    private static (FakeCartRepository cartRepo, FakeShoppingDbReader dbReader, FakeUnitOfWork uow, AddToCartCommandHandler handler) Build()
+    private static (FakeCartRepository cartRepo, FakeShoppingProductReader dbReader, FakeUnitOfWork uow, AddToCartCommandHandler handler) Build()
     {
         var cartRepo = new FakeCartRepository();
-        var dbReader = new FakeShoppingDbReader();
+        var dbReader = new FakeShoppingProductReader();
         var uow = new FakeUnitOfWork();
         return (cartRepo, dbReader, uow, new AddToCartCommandHandler(cartRepo, dbReader, uow));
     }

@@ -18,8 +18,8 @@ public class AddToWishlistCommandHandler(
 {
     public async Task<Result<WishlistDto>> Handle(AddToWishlistCommand command, CancellationToken ct)
     {
-        var productExists = await _productReader.ProductExistsAsync(command.ProductId, ct);
-        if (!productExists)
+        var product = await _productReader.GetProductPriceAsync(command.ProductId, ct);
+        if (product is null)
             return Result<WishlistDto>.Fail(ShoppingApplicationErrors.ProductNotFound);
 
         var wishlist = await _wishlists.GetByUserIdAsync(command.UserId, ct)
