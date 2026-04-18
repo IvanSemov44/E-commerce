@@ -5,4 +5,4 @@ public record AddToCartCommand(
     string? SessionId,
     Guid ProductId,
     int  Quantity
-) : IRequest<Result<CartDto>>, ITransactionalCommand;
+) : IRequest<Result>, ITransactionalCommand;

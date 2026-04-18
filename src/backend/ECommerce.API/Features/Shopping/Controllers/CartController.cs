@@ -14,30 +14,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Features.Shopping.Controllers;
 
-/// <summary>
-/// Controller for shopping cart management operations. Uses MediatR CQRS pattern.
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Cart")]
-public class CartController(IMediator mediator, ICurrentUserService currentUser, ILogger<CartController> logger) : ControllerBase
+public class CartController(IMediator _mediator, ICurrentUserService _currentUser, ILogger<CartController> _logger) : ControllerBase
 {
-    private readonly IMediator _mediator = mediator;
-    private readonly ICurrentUserService _currentUser = currentUser;
-    private readonly ILogger<CartController> _logger = logger;
-
-    /// <summary>
-    /// Retrieves the authenticated user's shopping cart, creating an empty cart if one doesn't exist.
-    /// </summary>
-    /// <param name="cancellationToken"></param>
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<CartDto>>> GetCart(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetCart(CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserIdOrNull;
         if (!userId.HasValue)
@@ -45,171 +33,112 @@ public class CartController(IMediator mediator, ICurrentUserService currentUser,
 
         var result = await _mediator.Send(new GetCartQuery(userId, null), cancellationToken);
         if (!result.IsSuccess)
-            return MapShoppingError<CartDto>(result.GetErrorOrThrow());
+            return MapError(result.GetErrorOrThrow());
 
-        return Ok(ApiResponse<CartDto>.Ok(MapShoppingCartDtoToApiDto(result.GetDataOrThrow()), "Cart retrieved successfully"));
+        return Ok(ApiResponse<CartDto>.Ok(MapToApiDto(result.GetDataOrThrow()), "Cart retrieved successfully"));
     }
 
-    /// <summary>
-    /// Retrieves the cart for the current user or session, creating a new cart if one doesn't exist.
-    /// </summary>
     [HttpPost("get-or-create")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<CartDto>>> GetOrCreateCart(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetOrCreateCart(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
-        var sessionId = _currentUser.SessionId;
-
-        var result = await _mediator.Send(new GetCartQuery(userId, sessionId), cancellationToken);
+        var result = await _mediator.Send(new GetCartQuery(_currentUser.UserIdOrNull, _currentUser.SessionId), cancellationToken);
         if (!result.IsSuccess)
-            return MapShoppingError<CartDto>(result.GetErrorOrThrow());
+            return MapError(result.GetErrorOrThrow());
 
-        return Ok(ApiResponse<CartDto>.Ok(MapShoppingCartDtoToApiDto(result.GetDataOrThrow()), "Cart retrieved or created successfully"));
+        return Ok(ApiResponse<CartDto>.Ok(MapToApiDto(result.GetDataOrThrow()), "Cart retrieved successfully"));
     }
 
-    /// <summary>
-    /// Adds a product to the shopping cart or increments its quantity if already present.
-    /// </summary>
     [HttpPost("add-item")]
     [AllowAnonymous]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<CartDto>>> AddToCart([FromBody] AddToCartDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddToCart([FromBody] AddToCartDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
-        var sessionId = _currentUser.SessionId;
-
         var result = await _mediator.Send(
-            new AddToCartCommand(userId, sessionId, dto.ProductId, dto.Quantity),
+            new AddToCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, dto.ProductId, dto.Quantity),
             cancellationToken);
 
         if (!result.IsSuccess)
-            return MapShoppingError<CartDto>(result.GetErrorOrThrow());
+            return MapError(result.GetErrorOrThrow());
 
         _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
-        return Ok(ApiResponse<CartDto>.Ok(MapShoppingCartDtoToApiDto(result.GetDataOrThrow()), "Item added to cart successfully"));
+        return NoContent();
     }
 
-    /// <summary>
-    /// Updates the quantity of a specific item in the shopping cart.
-    /// </summary>
-    [HttpPut("update-item/{cartItemId:guid}")]
     [HttpPut("items/{cartItemId:guid}")]
     [AllowAnonymous]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<CartDto>>> UpdateCartItem(Guid cartItemId, [FromBody] UpdateCartItemDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateCartItem(Guid cartItemId, [FromBody] UpdateCartItemDto dto, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
-        var sessionId = _currentUser.SessionId;
-
         var result = await _mediator.Send(
-            new UpdateCartItemQuantityCommand(userId, sessionId, cartItemId, dto.Quantity),
+            new UpdateCartItemQuantityCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, cartItemId, dto.Quantity),
             cancellationToken);
 
         if (!result.IsSuccess)
-            return MapShoppingError<CartDto>(result.GetErrorOrThrow());
+            return MapError(result.GetErrorOrThrow());
 
         _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
-        return Ok(ApiResponse<CartDto>.Ok(MapShoppingCartDtoToApiDto(result.GetDataOrThrow()), "Cart item updated successfully"));
+        return NoContent();
     }
 
-    /// <summary>
-    /// Removes a specific item from the shopping cart.
-    /// </summary>
-    [HttpDelete("remove-item/{cartItemId:guid}")]
     [HttpDelete("items/{cartItemId:guid}")]
-    [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<CartDto>>> RemoveFromCart(Guid cartItemId, CancellationToken cancellationToken)
+    public async Task<IActionResult> RemoveFromCart(Guid cartItemId, CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
-        var sessionId = _currentUser.SessionId;
-
         var result = await _mediator.Send(
-            new RemoveFromCartCommand(userId, sessionId, cartItemId),
+            new RemoveFromCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, cartItemId),
             cancellationToken);
 
         if (!result.IsSuccess)
-            return MapShoppingError<CartDto>(result.GetErrorOrThrow());
+            return MapError(result.GetErrorOrThrow());
 
         _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
-        return Ok(ApiResponse<CartDto>.Ok(MapShoppingCartDtoToApiDto(result.GetDataOrThrow()), "Item removed from cart successfully"));
+        return NoContent();
     }
 
-    /// <summary>
-    /// Removes all items from the shopping cart.
-    /// </summary>
-    [HttpPost("clear")]
     [HttpDelete]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<CartDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<CartDto>>> ClearCart(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ClearCart(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserIdOrNull;
-        var sessionId = _currentUser.SessionId;
-
-        var result = await _mediator.Send(
-            new ClearCartCommand(userId, sessionId),
-            cancellationToken);
-
-        if (!result.IsSuccess)
-            return MapShoppingError<CartDto>(result.GetErrorOrThrow());
-
-        _logger.LogInformation("Cart cleared");
-        return Ok(ApiResponse<CartDto>.Ok(MapShoppingCartDtoToApiDto(result.GetDataOrThrow()), "Cart cleared successfully"));
+        await _mediator.Send(new ClearCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId), cancellationToken);
+        return NoContent();
     }
 
-    /// <summary>
-    /// Maps Shopping domain errors to HTTP responses.
-    /// </summary>
-    private ActionResult<ApiResponse<T>> MapShoppingError<T>(DomainError error) => error.Code switch
+    private ObjectResult MapError(DomainError error) => error.Code switch
     {
         "CART_NOT_FOUND" or "CART_ITEM_NOT_FOUND" or "PRODUCT_NOT_FOUND"
-            => NotFound(ApiResponse<T>.Failure(error.Message, error.Code)),
+            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
         "QUANTITY_INVALID" or "PRODUCT_NOT_AVAILABLE" or "INSUFFICIENT_STOCK" or "VALIDATION_FAILED"
-            => BadRequest(ApiResponse<T>.Failure(error.Message, error.Code)),
+            => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
         "FORBIDDEN"
-            => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<T>.Failure(error.Message, error.Code)),
-        _ => StatusCode(StatusCodes.Status500InternalServerError, ApiResponse<T>.Failure(error.Message, error.Code))
+            => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(error.Message, error.Code)),
+        _ => StatusCode(StatusCodes.Status500InternalServerError, ApiResponse<object>.Failure(error.Message, error.Code))
     };
 
-    /// <summary>
-    /// Converts Shopping application CartDto to API CartDto.
-    /// </summary>
-    private static CartDto MapShoppingCartDtoToApiDto(ECommerce.Shopping.Application.DTOs.CartDto shoppingCart)
+    private static CartDto MapToApiDto(ECommerce.Shopping.Application.DTOs.CartDto cart) => new()
     {
-        return new CartDto
+        Id = cart.Id,
+        UserId = cart.UserId == Guid.Empty ? null : cart.UserId,
+        Items = cart.Items.Select(i => new CartItemDto
         {
-            Id = shoppingCart.Id,
-            UserId = shoppingCart.UserId == Guid.Empty ? null : shoppingCart.UserId,
-            Items = shoppingCart.Items.Select(i => new CartItemDto
-            {
-                Id = i.Id,
-                ProductId = i.ProductId,
-                ProductName = "", // Shopping DTO doesn't provide product name
-                Quantity = i.Quantity,
-                Price = i.UnitPrice,
-                Total = i.LineTotal
-            }).ToList(),
-            Subtotal = shoppingCart.Subtotal,
-            Total = shoppingCart.Subtotal // Shopping DTO only has Subtotal
-        };
-    }
+            Id = i.Id,
+            ProductId = i.ProductId,
+            ProductName = "",
+            Quantity = i.Quantity,
+            Price = i.UnitPrice,
+            Total = i.LineTotal
+        }).ToList(),
+        Subtotal = cart.Subtotal,
+        Total = cart.Subtotal
+    };
 }
-
-

@@ -37,6 +37,15 @@ sealed class FakeCartRepository : ICartRepository
         return Task.FromResult(cart);
     }
 
+    public Task<Cart?> ResolveAsync(Guid? userId, string? sessionId, CancellationToken ct = default)
+    {
+        if (userId is Guid uid)
+            return Task.FromResult<Cart?>(Store.FirstOrDefault(c => c.UserId == uid) ?? Cart.Create(uid));
+        if (sessionId is not null)
+            return Task.FromResult<Cart?>(Store.FirstOrDefault(c => c.SessionId == sessionId) ?? Cart.CreateAnonymous(sessionId));
+        return Task.FromResult<Cart?>(null);
+    }
+
     public Task DeleteAsync(Cart cart, CancellationToken ct = default)
     {
         Store.RemoveAll(c => c.Id == cart.Id);

@@ -6,4 +6,4 @@ namespace ECommerce.Shopping.Application.Commands.MergeCart;
 /// Items from the session cart are added to the user cart (idempotent).
 /// </summary>
 public record MergeCartCommand(Guid UserId, string SessionId)
-    : IRequest<Result<CartDto>>, ITransactionalCommand;
+    : IRequest<Result>, ITransactionalCommand;

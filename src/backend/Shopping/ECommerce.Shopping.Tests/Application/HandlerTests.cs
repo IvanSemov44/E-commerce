@@ -1,8 +1,6 @@
 using ECommerce.Shopping.Application.Commands.AddToCart;
-using ECommerce.Shopping.Application.DTOs;
 using ECommerce.Shopping.Application.Queries.GetCart;
 using ECommerce.Shopping.Tests.Application;
-using MediatR;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ECommerce.Shopping.Domain.Aggregates.Cart;
 using ECommerce.SharedKernel.Results;

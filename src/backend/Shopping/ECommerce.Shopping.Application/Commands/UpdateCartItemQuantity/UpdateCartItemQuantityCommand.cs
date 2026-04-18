@@ -5,4 +5,4 @@ public record UpdateCartItemQuantityCommand(
     string? SessionId,
     Guid CartItemId,
     int  NewQuantity
-) : IRequest<Result<CartDto>>, ITransactionalCommand;
+) : IRequest<Result>, ITransactionalCommand;

@@ -4,4 +4,4 @@ public record RemoveFromCartCommand(
     Guid? UserId,
     string? SessionId,
     Guid CartItemId
-) : IRequest<Result<CartDto>>, ITransactionalCommand;
+) : IRequest<Result>, ITransactionalCommand;

@@ -33,6 +33,15 @@ public class CartRepository(ShoppingDbContext _db) : ICartRepository
         return cart;
     }
 
+    public async Task<Cart?> ResolveAsync(Guid? userId, string? sessionId, CancellationToken ct = default)
+    {
+        if (userId is Guid uid)
+            return await GetOrCreateForUserAsync(uid, ct);
+        if (sessionId is not null)
+            return await GetOrCreateForSessionAsync(sessionId, ct);
+        return null;
+    }
+
     public Task DeleteAsync(Cart cart, CancellationToken ct = default)
     {
         _db.Carts.Remove(cart);
