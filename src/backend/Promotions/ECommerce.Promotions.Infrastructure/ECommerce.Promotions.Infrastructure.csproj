@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.6" />
     <ProjectReference Include="..\..\ECommerce.Infrastructure\ECommerce.Infrastructure.csproj" />
     <ProjectReference Include="..\ECommerce.Promotions.Domain\ECommerce.Promotions.Domain.csproj" />
     <ProjectReference Include="..\ECommerce.Promotions.Application\ECommerce.Promotions.Application.csproj" />
