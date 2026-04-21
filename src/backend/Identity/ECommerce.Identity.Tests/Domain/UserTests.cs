@@ -330,7 +330,7 @@ public class UserTests
     // ── RevokeRefreshToken ────────────────────────────────────────────────────
 
     [TestMethod]
-    public void RevokeRefreshToken_ExistingToken_ReturnsTrue()
+    public void RevokeRefreshToken_ExistingToken_Succeeds()
     {
         var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
         var user = userResult.GetDataOrThrow();
@@ -338,18 +338,49 @@ public class UserTests
 
         var result = user.RevokeRefreshToken("token-to-revoke");
 
-        Assert.IsTrue(result);
+        Assert.IsTrue(result.IsSuccess);
         Assert.IsTrue(user.RefreshTokens.First(t => t.Token == "token-to-revoke").IsRevoked);
     }
 
     [TestMethod]
-    public void RevokeRefreshToken_UnknownToken_ReturnsFalse()
+    public void RevokeRefreshToken_UnknownToken_ReturnsFailure()
     {
         var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
         var user = userResult.GetDataOrThrow();
 
         var result = user.RevokeRefreshToken("nonexistent");
 
-        Assert.IsFalse(result);
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.TokenInvalid.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── SetDefaultBillingAddress ──────────────────────────────────────────────
+
+    [TestMethod]
+    public void SetDefaultBillingAddress_ValidId_SwitchesDefault()
+    {
+        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
+        var user = userResult.GetDataOrThrow();
+        user.AddAddress("123 Main St", "City", "US", null);
+        user.AddAddress("456 Oak Ave", "City", "US", null);
+
+        var second = user.Addresses.Last();
+        var result = user.SetDefaultBillingAddress(second.Id);
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.IsTrue(second.IsDefaultBilling);
+        Assert.IsFalse(user.Addresses.First().IsDefaultBilling);
+    }
+
+    [TestMethod]
+    public void SetDefaultBillingAddress_UnknownId_ReturnsFailure()
+    {
+        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
+        var user = userResult.GetDataOrThrow();
+
+        var result = user.SetDefaultBillingAddress(Guid.NewGuid());
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.AddressNotFound.Code, result.GetErrorOrThrow().Code);
     }
 }

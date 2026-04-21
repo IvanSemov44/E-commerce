@@ -1,4 +1,4 @@
-﻿using ECommerce.Identity.Domain.Errors;
+using ECommerce.Identity.Domain.Errors;
 using ECommerce.Identity.Domain.Events;
 using ECommerce.Identity.Domain.ValueObjects;
 using ECommerce.SharedKernel.Domain;
@@ -7,10 +7,6 @@ using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.Identity.Domain.Aggregates.User;
 
-/// <summary>
-/// User aggregate root — manages identity, authentication, and profile data.
-/// All child entities (Address, RefreshToken) are created/managed exclusively through this root.
-/// </summary>
 public sealed class User : AggregateRoot
 {
     // ── Properties ──────────────────────────────────────────────────────────────
@@ -35,43 +31,6 @@ public sealed class User : AggregateRoot
 
     // ── Factory ─────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Reconstitutes a User aggregate from persisted state.
-    /// Used by Infrastructure to rebuild aggregates from EF Core entities.
-    /// All value objects are assumed to be pre-validated (already stored in DB).
-    /// </summary>
-    internal static User Reconstitute(
-        Guid id,
-        Email email,
-        PersonName name,
-        PasswordHash passwordHash,
-        string? phoneNumber,
-        UserRole role,
-        bool isEmailVerified,
-        string? emailVerificationToken,
-        string? passwordResetToken,
-        DateTime? passwordResetExpiry)
-    {
-        return new User
-        {
-            Id = id,
-            Email = email,
-            Name = name,
-            PasswordHash = passwordHash,
-            PhoneNumber = phoneNumber,
-            Role = role,
-            IsEmailVerified = isEmailVerified,
-            EmailVerificationToken = emailVerificationToken,
-            PasswordResetToken = passwordResetToken,
-            PasswordResetExpiry = passwordResetExpiry,
-        };
-    }
-
-    /// <summary>
-    /// Creates a new user from raw values. The aggregate is the sole guardian
-    /// of invariants — it creates and validates value objects internally.
-    /// Caller (RegisterCommandHandler) is responsible for uniqueness checks.
-    /// </summary>
     public static Result<User> Register(string rawEmail, string firstName, string lastName, PasswordHash passwordHash)
     {
         var emailResult = Email.Create(rawEmail);
@@ -92,6 +51,38 @@ public sealed class User : AggregateRoot
 
         user.AddDomainEvent(new UserRegisteredEvent(user.Id, user.Email.Value));
         return Result<User>.Ok(user);
+    }
+
+    internal static User Reconstitute(
+        Guid id,
+        Email email,
+        PersonName name,
+        PasswordHash passwordHash,
+        string? phoneNumber,
+        UserRole role,
+        bool isEmailVerified,
+        string? emailVerificationToken,
+        string? passwordResetToken,
+        DateTime? passwordResetExpiry,
+        IEnumerable<Address> addresses,
+        IEnumerable<RefreshToken> refreshTokens)
+    {
+        var user = new User
+        {
+            Id = id,
+            Email = email,
+            Name = name,
+            PasswordHash = passwordHash,
+            PhoneNumber = phoneNumber,
+            Role = role,
+            IsEmailVerified = isEmailVerified,
+            EmailVerificationToken = emailVerificationToken,
+            PasswordResetToken = passwordResetToken,
+            PasswordResetExpiry = passwordResetExpiry,
+        };
+        user._addresses.AddRange(addresses);
+        user._refreshTokens.AddRange(refreshTokens);
+        return user;
     }
 
     // ── Email Verification ──────────────────────────────────────────────────────
@@ -150,15 +141,13 @@ public sealed class User : AggregateRoot
 
     public Result AddAddress(string street, string city, string country, string? postalCode)
     {
-        if (string.IsNullOrWhiteSpace(street))  return Result.Fail(IdentityErrors.AddressStreetEmpty);
-        if (string.IsNullOrWhiteSpace(city))    return Result.Fail(IdentityErrors.AddressCityEmpty);
-        if (string.IsNullOrWhiteSpace(country)) return Result.Fail(IdentityErrors.AddressCountryEmpty);
-        if (_addresses.Count >= MaxAddresses)   return Result.Fail(IdentityErrors.AddressLimit);
+        if (_addresses.Count >= MaxAddresses)
+            return Result.Fail(IdentityErrors.AddressLimit);
 
-        var address = new Address(
-            Guid.NewGuid(),
-            street.Trim(), city.Trim(), country.Trim(), postalCode?.Trim());
+        var result = Address.Create(street, city, country, postalCode);
+        if (!result.IsSuccess) return Result.Fail(result.GetErrorOrThrow());
 
+        var address = result.GetDataOrThrow();
         if (_addresses.Count == 0)
         {
             address.SetDefaultShipping(true);
@@ -179,6 +168,16 @@ public sealed class User : AggregateRoot
         return Result.Ok();
     }
 
+    public Result SetDefaultBillingAddress(Guid addressId)
+    {
+        var address = _addresses.FirstOrDefault(a => a.Id == addressId);
+        if (address is null) return Result.Fail(IdentityErrors.AddressNotFound);
+
+        foreach (var a in _addresses) a.SetDefaultBilling(false);
+        address.SetDefaultBilling(true);
+        return Result.Ok();
+    }
+
     public Result DeleteAddress(Guid addressId)
     {
         var address = _addresses.FirstOrDefault(a => a.Id == addressId);
@@ -191,31 +190,6 @@ public sealed class User : AggregateRoot
     // ── Refresh Token Management ────────────────────────────────────────────────
 
     private const int MaxRefreshTokens = 5;
-
-    /// <summary>
-    /// Adds an address from persisted state (reconstitution).
-    /// Used by Infrastructure to rebuild from EF Core entities.
-    /// </summary>
-    internal void AddReconstitutedAddress(
-        Guid id, string street, string city, string country, string? postalCode,
-        bool isDefaultShipping, bool isDefaultBilling)
-    {
-        var address = new Address(id, street, city, country, postalCode);
-        address.SetDefaultShipping(isDefaultShipping);
-        address.SetDefaultBilling(isDefaultBilling);
-        _addresses.Add(address);
-    }
-
-    /// <summary>
-    /// Adds a refresh token that was previously persisted (reconstitution).
-    /// Used by Infrastructure to rebuild from EF Core entities.
-    /// </summary>
-    internal void AddReconstitutedRefreshToken(
-        Guid id, string token, DateTime expiresAt, DateTime createdAt, bool isRevoked, string? revokedReason)
-    {
-        var rt = new RefreshToken(id, Id, token, expiresAt, createdAt, isRevoked, revokedReason);
-        _refreshTokens.Add(rt);
-    }
 
     public RefreshToken AddRefreshToken(string token, DateTime expiresAt)
     {
@@ -232,16 +206,12 @@ public sealed class User : AggregateRoot
     public RefreshToken? GetActiveRefreshToken(string token) =>
         _refreshTokens.FirstOrDefault(t => t.Token == token && t.IsActive);
 
-    /// <summary>
-    /// Revokes a specific refresh token by its value.
-    /// Returns true if the token was found and revoked, false otherwise.
-    /// </summary>
-    public bool RevokeRefreshToken(string token)
+    public Result RevokeRefreshToken(string token)
     {
         var refreshToken = _refreshTokens.FirstOrDefault(t => t.Token == token);
-        if (refreshToken is null) return false;
+        if (refreshToken is null) return Result.Fail(IdentityErrors.TokenInvalid);
         refreshToken.Revoke("Rotated");
-        return true;
+        return Result.Ok();
     }
 
     public void RevokeAllRefreshTokens(string reason)
