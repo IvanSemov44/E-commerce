@@ -15,7 +15,7 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasDefaultSchema("public");
+        modelBuilder.HasDefaultSchema("identity");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserAggregateConfiguration).Assembly);
     }
 

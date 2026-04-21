@@ -36,7 +36,8 @@ public class AddressEntityConfiguration : IEntityTypeConfiguration<Address>
 
         builder.Property(a => a.IsDefaultBilling)
             .HasColumnName("IsDefaultBilling")
-            .IsRequired(false);
+            .IsRequired()
+            .HasDefaultValue(false);
 
         // Legacy columns — not part of the domain model; retained in DB to avoid data loss.
         builder.Property<string>("Type").HasColumnName("Type").HasMaxLength(50).IsRequired(false);

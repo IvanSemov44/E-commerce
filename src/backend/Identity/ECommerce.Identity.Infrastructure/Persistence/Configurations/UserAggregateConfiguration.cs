@@ -51,6 +51,7 @@ public class UserAggregateConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany<Address>(u => u.Addresses)
             .WithOne()
             .HasForeignKey("UserId")
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(u => u.Addresses)
