@@ -1,4 +1,3 @@
-using ECommerce.Identity.Application.DTOs;
 using ECommerce.Identity.Domain.Aggregates.User;
 
 namespace ECommerce.Identity.Application.Extensions;

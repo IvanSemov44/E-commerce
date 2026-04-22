@@ -1,14 +1,7 @@
-﻿using ECommerce.Identity.Application.Errors;
-using ECommerce.Identity.Domain.Interfaces;
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
 namespace ECommerce.Identity.Application.Commands.Logout;
 
 public class LogoutCommandHandler(
-    IUserRepository users,
-    IUnitOfWork uow
+    IUserRepository users
 ) : IRequestHandler<LogoutCommand, Result>
 {
     public async Task<Result> Handle(LogoutCommand command, CancellationToken ct)
@@ -18,8 +11,6 @@ public class LogoutCommandHandler(
 
         // Idempotent: silently succeed even if token not found
         user.RevokeRefreshToken(command.RefreshToken);
-        await users.UpdateAsync(user, ct);
-        await uow.SaveChangesAsync(ct);
         return Result.Ok();
     }
 }

@@ -1,9 +1,4 @@
-using ECommerce.Identity.Application.DTOs;
-using ECommerce.Identity.Application.Errors;
 using ECommerce.Identity.Application.Extensions;
-using ECommerce.Identity.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
 
 namespace ECommerce.Identity.Application.Queries.GetCurrentUser;
 

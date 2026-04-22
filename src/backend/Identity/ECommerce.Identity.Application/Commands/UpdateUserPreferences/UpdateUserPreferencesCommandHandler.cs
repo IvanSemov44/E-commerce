@@ -1,15 +1,7 @@
-using ECommerce.Identity.Application.DTOs;
-using ECommerce.Identity.Application.Errors;
-using ECommerce.Identity.Domain.Interfaces;
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
 namespace ECommerce.Identity.Application.Commands.UpdateUserPreferences;
 
 public class UpdateUserPreferencesCommandHandler(
-    IUserRepository users,
-    IUnitOfWork uow
+    IUserRepository users
 ) : IRequestHandler<UpdateUserPreferencesCommand, Result<UserPreferencesDto>>
 {
     public async Task<Result<UserPreferencesDto>> Handle(UpdateUserPreferencesCommand command, CancellationToken ct)
@@ -25,8 +17,6 @@ public class UpdateUserPreferencesCommandHandler(
             command.Language,
             command.Currency,
             command.NewsletterSubscribed);
-
-        await uow.SaveChangesAsync(ct);
         return Result<UserPreferencesDto>.Ok(dto);
     }
 }

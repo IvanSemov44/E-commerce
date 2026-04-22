@@ -1,7 +1,3 @@
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
-
 namespace ECommerce.Identity.Application.Commands.ForgotPassword;
 
 /// <summary>
