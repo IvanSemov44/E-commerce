@@ -1,4 +1,4 @@
-using ECommerce.Identity.Domain.Errors;
+﻿using ECommerce.Identity.Domain.Errors;
 using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.Identity.Domain.ValueObjects;
@@ -13,8 +13,10 @@ public sealed record PersonName
 
     public static Result<PersonName> Create(string? first, string? last)
     {
-        if (string.IsNullOrWhiteSpace(first)) return Result<PersonName>.Fail(IdentityErrors.NameFirstEmpty);
-        if (string.IsNullOrWhiteSpace(last))  return Result<PersonName>.Fail(IdentityErrors.NameLastEmpty);
+        if (string.IsNullOrWhiteSpace(first))
+            return Result<PersonName>.Fail(IdentityErrors.NameFirstEmpty);
+        if (string.IsNullOrWhiteSpace(last))
+            return Result<PersonName>.Fail(IdentityErrors.NameLastEmpty);
 
         string f = first.Trim();
         string l = last.Trim();
