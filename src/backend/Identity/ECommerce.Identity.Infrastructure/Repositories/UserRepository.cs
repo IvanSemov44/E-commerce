@@ -1,9 +1,5 @@
-using ECommerce.Identity.Domain.Aggregates.User;
-using ECommerce.Identity.Domain.Interfaces;
-using ECommerce.Identity.Domain.ValueObjects;
-using ECommerce.Identity.Infrastructure.Persistence;
+﻿using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.SharedKernel.Enums;
-using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Identity.Infrastructure.Repositories;
 
@@ -31,19 +27,6 @@ public class UserRepository(IdentityDbContext _db) : IUserRepository
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         => await _db.Users.AddAsync(user, cancellationToken);
-
-    public Task UpdateAsync(User user, CancellationToken cancellationToken = default)
-    {
-        // EF Core change tracking detects mutations on loaded entities automatically.
-        // All mutating handlers load before they mutate, so SaveChangesAsync picks up the diff.
-        return Task.CompletedTask;
-    }
-
-    public Task DeleteAsync(User user, CancellationToken cancellationToken = default)
-    {
-        _db.Users.Remove(user);
-        return Task.CompletedTask;
-    }
 
     private IQueryable<User> LoadUser() =>
         _db.Users

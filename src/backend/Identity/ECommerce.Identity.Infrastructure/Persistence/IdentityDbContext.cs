@@ -1,15 +1,24 @@
-using ECommerce.Identity.Domain.Aggregates.User;
 using ECommerce.Identity.Infrastructure.Persistence.Configurations;
+using ECommerce.Identity.Infrastructure.Persistence.Converters;
 using ECommerce.SharedKernel.Domain;
-using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Identity.Infrastructure.Persistence;
 
-public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : DbContext(options)
+public class IdentityDbContext(
+    DbContextOptions<IdentityDbContext> options,
+    IDomainEventDispatcher? dispatcher = null) : DbContext(options)
 {
+    private readonly IDomainEventDispatcher? _dispatcher = dispatcher;
+
     public DbSet<User> Users => Set<User>();
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<Email>().HaveConversion<EmailConverter>();
+        configurationBuilder.Properties<PasswordHash>().HaveConversion<PasswordHashConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,7 +28,7 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserAggregateConfiguration).Assembly);
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var utcNow = DateTime.UtcNow;
 
@@ -35,6 +44,18 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
             }
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        var aggregates = ChangeTracker.Entries<AggregateRoot>()
+            .Where(e => e.Entity.DomainEvents.Count != 0)
+            .Select(e => e.Entity)
+            .ToList();
+
+        var events = aggregates.SelectMany(a => a.DomainEvents).ToList();
+        foreach (var aggregate in aggregates)
+            aggregate.ClearDomainEvents();
+
+        if (_dispatcher is not null && events.Count != 0)
+            await _dispatcher.DispatchEventsAsync(events, cancellationToken);
+
+        return await base.SaveChangesAsync(cancellationToken);
     }
 }
