@@ -1,4 +1,4 @@
-﻿using ECommerce.Identity.Application.Interfaces;
+﻿using ECommerce.Identity.Domain.Interfaces;
 
 namespace ECommerce.Identity.Infrastructure.Services;
 
