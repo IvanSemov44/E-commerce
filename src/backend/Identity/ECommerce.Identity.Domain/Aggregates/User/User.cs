@@ -1,5 +1,6 @@
-using ECommerce.Identity.Domain.Errors;
+﻿using ECommerce.Identity.Domain.Errors;
 using ECommerce.Identity.Domain.Events;
+using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.SharedKernel.Enums;
@@ -20,18 +21,20 @@ public sealed class User : AggregateRoot
     public string? EmailVerificationToken { get; private set; }
     public string? PasswordResetToken { get; private set; }
     public DateTime? PasswordResetExpiry { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public bool IsDeleted => DeletedAt.HasValue;
 
     private readonly List<Address> _addresses = new();
     private readonly List<RefreshToken> _refreshTokens = new();
 
-    public IReadOnlyCollection<Address> Addresses => _addresses.AsReadOnly();
-    public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
+    public IReadOnlyCollection<Address> Addresses => _addresses.Where(a => !a.IsDeleted).ToList().AsReadOnly();
+    public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.Where(t => !t.IsDeleted).ToList().AsReadOnly();
 
     private User() { } // EF Core
 
     // ── Factory ─────────────────────────────────────────────────────────────────
 
-    public static Result<User> Register(string rawEmail, string firstName, string lastName, PasswordHash passwordHash)
+    public static Result<User> Register(string rawEmail, string firstName, string lastName, string rawPassword, IPasswordHasher hasher)
     {
         var emailResult = Email.Create(rawEmail);
         if (!emailResult.IsSuccess) return Result<User>.Fail(emailResult.GetErrorOrThrow());
@@ -39,11 +42,17 @@ public sealed class User : AggregateRoot
         var nameResult = PersonName.Create(firstName, lastName);
         if (!nameResult.IsSuccess) return Result<User>.Fail(nameResult.GetErrorOrThrow());
 
+        var pwValidation = PasswordHash.ValidateRawPassword(rawPassword);
+        if (!pwValidation.IsSuccess) return Result<User>.Fail(pwValidation.GetErrorOrThrow());
+
+        var hashResult = PasswordHash.FromHash(hasher.Hash(rawPassword));
+        if (!hashResult.IsSuccess) return Result<User>.Fail(hashResult.GetErrorOrThrow());
+
         var user = new User
         {
             Email = emailResult.GetDataOrThrow(),
             Name = nameResult.GetDataOrThrow(),
-            PasswordHash = passwordHash,
+            PasswordHash = hashResult.GetDataOrThrow(),
             Role = UserRole.Customer,
             IsEmailVerified = false,
             EmailVerificationToken = Guid.NewGuid().ToString("N"),
@@ -51,38 +60,6 @@ public sealed class User : AggregateRoot
 
         user.AddDomainEvent(new UserRegisteredEvent(user.Id, user.Email.Value));
         return Result<User>.Ok(user);
-    }
-
-    internal static User Reconstitute(
-        Guid id,
-        Email email,
-        PersonName name,
-        PasswordHash passwordHash,
-        string? phoneNumber,
-        UserRole role,
-        bool isEmailVerified,
-        string? emailVerificationToken,
-        string? passwordResetToken,
-        DateTime? passwordResetExpiry,
-        IEnumerable<Address> addresses,
-        IEnumerable<RefreshToken> refreshTokens)
-    {
-        var user = new User
-        {
-            Id = id,
-            Email = email,
-            Name = name,
-            PasswordHash = passwordHash,
-            PhoneNumber = phoneNumber,
-            Role = role,
-            IsEmailVerified = isEmailVerified,
-            EmailVerificationToken = emailVerificationToken,
-            PasswordResetToken = passwordResetToken,
-            PasswordResetExpiry = passwordResetExpiry,
-        };
-        user._addresses.AddRange(addresses);
-        user._refreshTokens.AddRange(refreshTokens);
-        return user;
     }
 
     // ── Email Verification ──────────────────────────────────────────────────────
@@ -103,25 +80,63 @@ public sealed class User : AggregateRoot
 
     // ── Profile ─────────────────────────────────────────────────────────────────
 
-    public void UpdateProfile(PersonName name, string? phoneNumber)
+    public Result UpdateProfile(string firstName, string lastName, string? phoneNumber)
     {
-        Name = name;
+        var nameResult = PersonName.Create(firstName, lastName);
+        if (!nameResult.IsSuccess) return Result.Fail(nameResult.GetErrorOrThrow());
+
+        Name = nameResult.GetDataOrThrow();
         PhoneNumber = phoneNumber;
+        return Result.Ok();
     }
 
     // ── Password ────────────────────────────────────────────────────────────────
 
-    public void ChangePassword(PasswordHash newHash)
+    public bool VerifyPassword(string rawPassword, IPasswordHasher hasher)
+        => hasher.Verify(rawPassword, PasswordHash.Hash);
+
+    public Result ChangePassword(string oldPassword, string newPassword, IPasswordHasher hasher)
     {
-        PasswordHash = newHash;
-        foreach (var token in _refreshTokens) token.Revoke("Password changed");
+        if (!hasher.Verify(oldPassword, PasswordHash.Hash))
+            return Result.Fail(IdentityErrors.InvalidCredentials);
+
+        var setResult = SetNewPassword(newPassword, hasher);
+        if (!setResult.IsSuccess) return setResult;
+
+        foreach (var token in _refreshTokens)
+            token.Revoke("Password changed");
         AddDomainEvent(new PasswordChangedEvent(Id));
+        return Result.Ok();
     }
 
-    public void SetPasswordResetToken(string token, DateTime expiry)
+    public Result ResetPassword(string newPassword, IPasswordHasher hasher)
     {
-        PasswordResetToken = token;
-        PasswordResetExpiry = expiry;
+        var setResult = SetNewPassword(newPassword, hasher);
+        if (!setResult.IsSuccess) return setResult;
+
+        foreach (var token in _refreshTokens)
+            token.Revoke("Password reset");
+        ClearPasswordResetToken();
+        AddDomainEvent(new PasswordChangedEvent(Id));
+        return Result.Ok();
+    }
+
+    private Result SetNewPassword(string newPassword, IPasswordHasher hasher)
+    {
+        var pwValidation = PasswordHash.ValidateRawPassword(newPassword);
+        if (!pwValidation.IsSuccess) return pwValidation;
+
+        var hashResult = PasswordHash.FromHash(hasher.Hash(newPassword));
+        if (!hashResult.IsSuccess) return Result.Fail(hashResult.GetErrorOrThrow());
+
+        PasswordHash = hashResult.GetDataOrThrow();
+        return Result.Ok();
+    }
+
+    public void RequestPasswordReset()
+    {
+        PasswordResetToken = Guid.NewGuid().ToString("N");
+        PasswordResetExpiry = DateTime.UtcNow.AddHours(1);
     }
 
     public bool IsPasswordResetTokenValid(string token) =>
@@ -155,6 +170,7 @@ public sealed class User : AggregateRoot
         }
 
         _addresses.Add(address);
+        AddDomainEvent(new AddressAddedEvent(Id, address.Id, address.Street, address.City, address.Country, address.PostalCode));
         return Result.Ok();
     }
 
@@ -165,6 +181,7 @@ public sealed class User : AggregateRoot
 
         foreach (var a in _addresses) a.SetDefaultShipping(false);
         address.SetDefaultShipping(true);
+        AddDomainEvent(new AddressDefaultShippingChangedEvent(Id, address.Id, address.Street, address.City, address.Country, address.PostalCode));
         return Result.Ok();
     }
 
@@ -180,10 +197,22 @@ public sealed class User : AggregateRoot
 
     public Result DeleteAddress(Guid addressId)
     {
-        var address = _addresses.FirstOrDefault(a => a.Id == addressId);
+        var address = _addresses.FirstOrDefault(a => a.Id == addressId && !a.IsDeleted);
         if (address is null) return Result.Fail(IdentityErrors.AddressNotFound);
 
-        _addresses.Remove(address);
+        AddDomainEvent(new AddressDeletedEvent(Id, address.Id, address.Street, address.City, address.Country, address.PostalCode));
+        address.Delete();
+
+        var activeAddresses = _addresses.Where(a => !a.IsDeleted).ToList();
+        if (activeAddresses.Count > 0)
+        {
+            if (!activeAddresses.Any(a => a.IsDefaultShipping))
+                activeAddresses[0].SetDefaultShipping(true);
+
+            if (!activeAddresses.Any(a => a.IsDefaultBilling))
+                activeAddresses[0].SetDefaultBilling(true);
+        }
+
         return Result.Ok();
     }
 
@@ -193,7 +222,7 @@ public sealed class User : AggregateRoot
 
     public RefreshToken AddRefreshToken(string token, DateTime expiresAt)
     {
-        var active = _refreshTokens.Where(t => t.IsActive).ToList();
+        var active = _refreshTokens.Where(t => t.IsActive && !t.IsDeleted).ToList();
 
         if (active.Count >= MaxRefreshTokens)
             active.MinBy(t => t.CreatedAt)?.Revoke("Max tokens reached");
@@ -204,18 +233,49 @@ public sealed class User : AggregateRoot
     }
 
     public RefreshToken? GetActiveRefreshToken(string token) =>
-        _refreshTokens.FirstOrDefault(t => t.Token == token && t.IsActive);
+        _refreshTokens.FirstOrDefault(t => t.Token == token && t.IsActive && !t.IsDeleted);
+
+    public Result<string> RotateRefreshToken(string currentToken, string newRawToken, DateTime expiresAt)
+    {
+        var existing = GetActiveRefreshToken(currentToken);
+        if (existing is null) return Result<string>.Fail(IdentityErrors.TokenRevoked);
+
+        existing.Revoke("Rotated");
+        AddRefreshToken(newRawToken, expiresAt);
+        return Result<string>.Ok(newRawToken);
+    }
 
     public Result RevokeRefreshToken(string token)
     {
-        var refreshToken = _refreshTokens.FirstOrDefault(t => t.Token == token);
-        if (refreshToken is null) return Result.Fail(IdentityErrors.TokenInvalid);
-        refreshToken.Revoke("Rotated");
+        var refreshToken = _refreshTokens.FirstOrDefault(t => t.Token == token && !t.IsDeleted);
+
+        if (refreshToken is null)
+            return Result.Fail(IdentityErrors.TokenInvalid);
+
+        refreshToken.Revoke("Logged out");
         return Result.Ok();
     }
 
     public void RevokeAllRefreshTokens(string reason)
     {
-        foreach (var t in _refreshTokens) t.Revoke(reason);
+        foreach (var t in _refreshTokens.Where(t => !t.IsDeleted)) t.Revoke(reason);
+    }
+
+    public void DeleteAccount()
+    {
+        if (IsDeleted)
+            return;
+
+        DeletedAt = DateTime.UtcNow;
+
+        foreach (var address in _addresses.Where(a => !a.IsDeleted))
+            address.Delete();
+
+        foreach (var token in _refreshTokens.Where(t => !t.IsDeleted))
+            token.Delete("Account deleted");
+
+        EmailVerificationToken = null;
+        PasswordResetToken = null;
+        PasswordResetExpiry = null;
     }
 }

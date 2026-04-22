@@ -1,4 +1,4 @@
-using ECommerce.Identity.Domain.Errors;
+﻿using ECommerce.Identity.Domain.Errors;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.SharedKernel.Results;
 
@@ -12,6 +12,8 @@ public sealed class Address : Entity
     public string? PostalCode { get; private set; }
     public bool IsDefaultShipping { get; private set; }
     public bool IsDefaultBilling { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public bool IsDeleted => DeletedAt.HasValue;
 
     private Address() { } // EF Core
 
@@ -19,13 +21,6 @@ public sealed class Address : Entity
     {
         Id = id;
         (Street, City, Country, PostalCode) = (street, city, country, postalCode);
-    }
-
-    internal Address(Guid id, string street, string city, string country, string? postalCode,
-        bool isDefaultShipping, bool isDefaultBilling) : this(id, street, city, country, postalCode)
-    {
-        IsDefaultShipping = isDefaultShipping;
-        IsDefaultBilling = isDefaultBilling;
     }
 
     internal static Result<Address> Create(string street, string city, string country, string? postalCode)
@@ -41,4 +36,11 @@ public sealed class Address : Entity
 
     internal void SetDefaultShipping(bool value) => IsDefaultShipping = value;
     internal void SetDefaultBilling(bool value)  => IsDefaultBilling = value;
+
+    internal void Delete()
+    {
+        DeletedAt = DateTime.UtcNow;
+        IsDefaultShipping = false;
+        IsDefaultBilling = false;
+    }
 }

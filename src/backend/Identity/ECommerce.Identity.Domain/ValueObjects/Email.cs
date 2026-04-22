@@ -13,14 +13,23 @@ public sealed record Email
 
     private Email(string value) => Value = value;
 
-    public static Result<Email> Create(string? raw) =>
-        string.IsNullOrWhiteSpace(raw)
-            ? Result<Email>.Fail(IdentityErrors.EmailEmpty)
-            : raw.Trim().ToLowerInvariant() is var normalized && normalized.Length > 256
-                ? Result<Email>.Fail(IdentityErrors.EmailTooLong)
-                : !normalized.Contains('@') || normalized.IndexOf('.', normalized.IndexOf('@')) < 0
-                    ? Result<Email>.Fail(IdentityErrors.EmailInvalid)
-                    : Result<Email>.Ok(new Email(normalized));
+    public static Result<Email> Create(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return Result<Email>.Fail(IdentityErrors.EmailEmpty);
+
+        var normalized = raw.Trim().ToLowerInvariant();
+
+        if (normalized.Length > 256)
+            return Result<Email>.Fail(IdentityErrors.EmailTooLong);
+
+        var atIndex = normalized.IndexOf('@');
+        var dotAfterAtIndex = atIndex >= 0 ? normalized.IndexOf('.', atIndex) : -1;
+        if (atIndex < 0 || dotAfterAtIndex < 0)
+            return Result<Email>.Fail(IdentityErrors.EmailInvalid);
+
+        return Result<Email>.Ok(new Email(normalized));
+    }
 
     public static implicit operator string(Email email) => email.Value;
     public override string ToString() => Value;

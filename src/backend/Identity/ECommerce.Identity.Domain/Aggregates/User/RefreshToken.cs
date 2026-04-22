@@ -13,9 +13,11 @@ public sealed class RefreshToken : Entity
     public DateTime ExpiresAt { get; private set; }
     public bool IsRevoked { get; private set; }
     public string? RevokedReason { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public bool IsDeleted => DeletedAt.HasValue;
 
     public bool IsExpired => DateTime.UtcNow > ExpiresAt;
-    public bool IsActive => !IsRevoked && !IsExpired;
+    public bool IsActive => !IsDeleted && !IsRevoked && !IsExpired;
 
     private RefreshToken() { } // EF Core
 
@@ -46,5 +48,11 @@ public sealed class RefreshToken : Entity
     {
         IsRevoked = true;
         RevokedReason = reason;
+    }
+
+    internal void Delete(string reason)
+    {
+        Revoke(reason);
+        DeletedAt = DateTime.UtcNow;
     }
 }
