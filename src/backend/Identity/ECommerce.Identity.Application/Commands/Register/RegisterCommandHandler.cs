@@ -1,4 +1,4 @@
-using ECommerce.Identity.Domain.Aggregates.User;
+﻿using ECommerce.Identity.Domain.Aggregates.User;
 
 namespace ECommerce.Identity.Application.Commands.Register;
 
@@ -14,7 +14,8 @@ public class RegisterCommandHandler(
             return Result<AuthTokenDto>.Fail(IdentityApplicationErrors.EmailTaken);
 
         var userResult = User.Register(command.Email, command.FirstName, command.LastName, command.Password, hasher);
-        if (!userResult.IsSuccess) return Result<AuthTokenDto>.Fail(userResult.GetErrorOrThrow());
+        if (!userResult.IsSuccess)
+            return Result<AuthTokenDto>.Fail(userResult.GetErrorOrThrow());
 
         var user = userResult.GetDataOrThrow();
         var accessToken = jwt.GenerateAccessToken(user);
