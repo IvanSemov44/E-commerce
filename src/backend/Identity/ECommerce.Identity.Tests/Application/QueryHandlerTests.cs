@@ -14,31 +14,25 @@ public class QueryHandlerTests
         private readonly List<User> _store = new();
 
         public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-            => Task.FromResult(_store.FirstOrDefault(x => x.Id == id));
+            => Task.FromResult(_store.FirstOrDefault(x => x.Id == id && !x.IsDeleted));
 
         public Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default)
-            => Task.FromResult(_store.FirstOrDefault(x => x.Email.Value == email.Value));
+            => Task.FromResult(_store.FirstOrDefault(x => x.Email.Value == email.Value && !x.IsDeleted));
 
         public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
-            => Task.FromResult(_store.Any(x => x.Email.Value == email));
+            => Task.FromResult(_store.Any(x => !x.IsDeleted && x.Email.Value == email));
 
         public Task<User?> GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
-            => Task.FromResult(_store.FirstOrDefault(x => x.RefreshTokens.Any(t => t.Token == token)));
+            => Task.FromResult(_store.FirstOrDefault(x => !x.IsDeleted && x.RefreshTokens.Any(t => t.Token == token)));
 
         public Task<int> GetCustomersCountAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(_store.Count(x => x.Role == UserRole.Customer));
+            => Task.FromResult(_store.Count(x => !x.IsDeleted && x.Role == UserRole.Customer));
 
         public Task AddAsync(User user, CancellationToken cancellationToken = default)
         {
             _store.Add(user);
             return Task.CompletedTask;
         }
-
-        public Task UpdateAsync(User user, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-
-        public Task DeleteAsync(User user, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
     }
 
     [TestMethod]
@@ -55,15 +49,16 @@ public class QueryHandlerTests
         Assert.AreEqual(2, result.GetDataOrThrow().TotalCustomers);
     }
 
+    private sealed class FakePasswordHasher : IPasswordHasher
+    {
+        public string Hash(string raw) => $"HASH:{raw}";
+        public bool Verify(string raw, string hash) => hash == $"HASH:{raw}";
+    }
+
     private static User CreateUser(string emailValue, UserRole role)
     {
-        var email = Email.Create(emailValue).GetDataOrThrow();
-        var name = PersonName.Create("Test", "User").GetDataOrThrow();
-        var password = PasswordHash.FromHash("HASH:Password123").GetDataOrThrow();
-
-        var user = User.Register(email.Value, name.First, name.Last, password).GetDataOrThrow();
+        var user = User.Register(emailValue, "Test", "User", "Password123", new FakePasswordHasher()).GetDataOrThrow();
         _ = role;
-
         return user;
     }
 }

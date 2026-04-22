@@ -36,32 +36,23 @@ public class CommandHandlerTests
         public List<User> Store = new();
 
         public Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default)
-            => Task.FromResult(Store.FirstOrDefault(u => u.Id == id));
+            => Task.FromResult(Store.FirstOrDefault(u => u.Id == id && !u.IsDeleted));
 
         public Task<User?> GetByEmailAsync(Email email, CancellationToken ct = default)
-            => Task.FromResult(Store.FirstOrDefault(u => u.Email.Value == email.Value));
+            => Task.FromResult(Store.FirstOrDefault(u => u.Email.Value == email.Value && !u.IsDeleted));
 
         public Task<bool> EmailExistsAsync(string email, CancellationToken ct = default)
-            => Task.FromResult(Store.Any(u => string.Equals(u.Email.Value, email, StringComparison.OrdinalIgnoreCase)));
+            => Task.FromResult(Store.Any(u => !u.IsDeleted && string.Equals(u.Email.Value, email, StringComparison.OrdinalIgnoreCase)));
 
         public Task<User?> GetByRefreshTokenAsync(string token, CancellationToken ct = default)
-            => Task.FromResult(Store.FirstOrDefault(u => u.RefreshTokens.Any(t => t.Token == token)));
+            => Task.FromResult(Store.FirstOrDefault(u => !u.IsDeleted && u.RefreshTokens.Any(t => t.Token == token)));
 
         public Task<int> GetCustomersCountAsync(CancellationToken ct = default)
-            => Task.FromResult(Store.Count(u => u.Role == UserRole.Customer));
+            => Task.FromResult(Store.Count(u => !u.IsDeleted && u.Role == UserRole.Customer));
 
         public Task AddAsync(User user, CancellationToken ct = default)
         {
             Store.Add(user);
-            return Task.CompletedTask;
-        }
-
-        public Task UpdateAsync(User user, CancellationToken ct = default)
-            => Task.CompletedTask; // In-memory, already in Store
-
-        public Task DeleteAsync(User user, CancellationToken ct = default)
-        {
-            Store.Remove(user);
             return Task.CompletedTask;
         }
     }
@@ -90,27 +81,11 @@ public class CommandHandlerTests
         public void Dispose() { }
     }
 
-    sealed class FakeAddressProjectionEventPublisher : IAddressProjectionEventPublisher
-    {
-        public Task PublishAddressProjectionUpdatedAsync(
-            Guid addressId,
-            Guid userId,
-            string streetLine1,
-            string city,
-            string country,
-            string postalCode,
-            bool isDeleted,
-            CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-    }
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static User SeedUser(FakeUserRepository repo, string email = "test@example.com", string rawPassword = "Password1")
     {
-        var hash = $"HASH:{rawPassword}";
-        var userResult = User.Register(email, "Test", "User", PasswordHash.FromHash(hash).GetDataOrThrow());
-        var user = userResult.GetDataOrThrow();
+        var user = User.Register(email, "Test", "User", rawPassword, new FakePasswordHasher()).GetDataOrThrow();
         repo.Store.Add(user);
         return user;
     }
@@ -123,8 +98,7 @@ public class CommandHandlerTests
         var repo   = new FakeUserRepository();
         var hasher = new FakePasswordHasher();
         var jwt    = new FakeJwtTokenService();
-        var uow    = new FakeUnitOfWork();
-        var handler = new RegisterCommandHandler(repo, hasher, jwt, uow);
+        var handler = new RegisterCommandHandler(repo, hasher, jwt);
 
         var result = await handler.Handle(
             new RegisterCommand("Jane", "Doe", "jane@example.com", "SecurePass1"),
@@ -142,7 +116,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         SeedUser(repo, "jane@example.com");
-        var handler = new RegisterCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new RegisterCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new RegisterCommand("Jane", "Doe", "jane@example.com", "SecurePass1"),
@@ -156,7 +130,7 @@ public class CommandHandlerTests
     public async Task RegisterHandler_InvalidEmail_ReturnsFailure()
     {
         var handler = new RegisterCommandHandler(
-            new FakeUserRepository(), new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+            new FakeUserRepository(), new FakePasswordHasher(), new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new RegisterCommand("Jane", "Doe", "not-an-email", "SecurePass1"),
@@ -169,7 +143,7 @@ public class CommandHandlerTests
     public async Task RegisterHandler_WeakPassword_ReturnsFailure()
     {
         var handler = new RegisterCommandHandler(
-            new FakeUserRepository(), new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+            new FakeUserRepository(), new FakePasswordHasher(), new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new RegisterCommand("Jane", "Doe", "jane@example.com", "abc"), // too short
@@ -182,7 +156,7 @@ public class CommandHandlerTests
     public async Task RegisterHandler_ValidCommand_UserStoredInRepository()
     {
         var repo    = new FakeUserRepository();
-        var handler = new RegisterCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new RegisterCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService());
 
         await handler.Handle(
             new RegisterCommand("Jane", "Doe", "jane@example.com", "SecurePass1"),
@@ -199,7 +173,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         SeedUser(repo, "user@example.com", "Password1");
-        var handler = new LoginCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new LoginCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new LoginCommand("user@example.com", "Password1"),
@@ -214,7 +188,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         SeedUser(repo, "user@example.com", "Password1");
-        var handler = new LoginCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new LoginCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new LoginCommand("user@example.com", "WrongPassword1"),
@@ -228,7 +202,7 @@ public class CommandHandlerTests
     public async Task LoginHandler_UnknownEmail_ReturnsInvalidCredentials()
     {
         var handler = new LoginCommandHandler(
-            new FakeUserRepository(), new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+            new FakeUserRepository(), new FakePasswordHasher(), new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new LoginCommand("ghost@example.com", "Password1"),
@@ -244,7 +218,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo, "user@example.com", "Password1");
-        var handler = new LoginCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new LoginCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService());
 
         await handler.Handle(new LoginCommand("user@example.com", "Password1"), CancellationToken.None);
 
@@ -259,7 +233,7 @@ public class CommandHandlerTests
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
         user.AddRefreshToken("active-token", DateTime.UtcNow.AddDays(30));
-        var handler = new LogoutCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new LogoutCommandHandler(repo);
 
         var result = await handler.Handle(
             new LogoutCommand(user.Id, "active-token"),
@@ -273,7 +247,7 @@ public class CommandHandlerTests
     public async Task LogoutHandler_UnknownUser_ReturnsUserNotFound()
     {
         // Actual implementation returns UserNotFound when user not found
-        var handler = new LogoutCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new LogoutCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new LogoutCommand(Guid.NewGuid(), "some-token"),
@@ -291,7 +265,7 @@ public class CommandHandlerTests
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
         user.AddRefreshToken("valid-refresh", DateTime.UtcNow.AddDays(30));
-        var handler = new RefreshTokenCommandHandler(repo, new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new RefreshTokenCommandHandler(repo, new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new RefreshTokenCommand("valid-refresh"),
@@ -306,7 +280,7 @@ public class CommandHandlerTests
     public async Task RefreshTokenHandler_TokenNotFound_ReturnsTokenInvalid()
     {
         var handler = new RefreshTokenCommandHandler(
-            new FakeUserRepository(), new FakeJwtTokenService(), new FakeUnitOfWork());
+            new FakeUserRepository(), new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new RefreshTokenCommand("nonexistent-token"),
@@ -323,7 +297,7 @@ public class CommandHandlerTests
         var user = SeedUser(repo);
         user.AddRefreshToken("revoked-token", DateTime.UtcNow.AddDays(30));
         user.RevokeRefreshToken("revoked-token"); // Use public API to revoke
-        var handler = new RefreshTokenCommandHandler(repo, new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new RefreshTokenCommandHandler(repo, new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new RefreshTokenCommand("revoked-token"),
@@ -339,7 +313,7 @@ public class CommandHandlerTests
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
         user.AddRefreshToken("expired-token", DateTime.UtcNow.AddDays(-1)); // already expired
-        var handler = new RefreshTokenCommandHandler(repo, new FakeJwtTokenService(), new FakeUnitOfWork());
+        var handler = new RefreshTokenCommandHandler(repo, new FakeJwtTokenService());
 
         var result = await handler.Handle(
             new RefreshTokenCommand("expired-token"),
@@ -357,7 +331,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo, "user@example.com", "OldPass1");
-        var handler = new ChangePasswordCommandHandler(repo, new FakePasswordHasher(), new FakeUnitOfWork());
+        var handler = new ChangePasswordCommandHandler(repo, new FakePasswordHasher());
 
         var result = await handler.Handle(
             new ChangePasswordCommand(user.Id, "OldPass1", "NewPass1"),
@@ -372,7 +346,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo, "user@example.com", "OldPass1");
-        var handler = new ChangePasswordCommandHandler(repo, new FakePasswordHasher(), new FakeUnitOfWork());
+        var handler = new ChangePasswordCommandHandler(repo, new FakePasswordHasher());
 
         var result = await handler.Handle(
             new ChangePasswordCommand(user.Id, "WrongOld1", "NewPass1"),
@@ -386,7 +360,7 @@ public class CommandHandlerTests
     public async Task ChangePasswordHandler_UserNotFound_ReturnsUserNotFound()
     {
         var handler = new ChangePasswordCommandHandler(
-            new FakeUserRepository(), new FakePasswordHasher(), new FakeUnitOfWork());
+            new FakeUserRepository(), new FakePasswordHasher());
 
         var result = await handler.Handle(
             new ChangePasswordCommand(Guid.NewGuid(), "OldPass1", "NewPass1"),
@@ -403,7 +377,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        var handler = new UpdateProfileCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new UpdateProfileCommandHandler(repo);
 
         var result = await handler.Handle(
             new UpdateProfileCommand(user.Id, "Updated", "Name", "+1234567890"),
@@ -418,7 +392,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task UpdateProfileHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new UpdateProfileCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new UpdateProfileCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new UpdateProfileCommand(Guid.NewGuid(), "First", "Last", null),
@@ -435,7 +409,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        var handler = new AddAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new AddAddressCommandHandler(repo);
 
         var result = await handler.Handle(
             new AddAddressCommand(user.Id, "123 Main St", "Springfield", "US", "12345"),
@@ -454,7 +428,7 @@ public class CommandHandlerTests
         for (int i = 0; i < 5; i++)
             user.AddAddress($"{i} Street", "City", "US", null);
 
-        var handler = new AddAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new AddAddressCommandHandler(repo);
 
         var result = await handler.Handle(
             new AddAddressCommand(user.Id, "6th Street", "City", "US", null),
@@ -467,7 +441,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task AddAddressHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new AddAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new AddAddressCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new AddAddressCommand(Guid.NewGuid(), "123 Main St", "City", "US", null),
@@ -485,7 +459,7 @@ public class CommandHandlerTests
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
         string token = user.EmailVerificationToken!;
-        var handler = new VerifyEmailCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new VerifyEmailCommandHandler(repo);
 
         var result = await handler.Handle(
             new VerifyEmailCommand(user.Id, token),
@@ -500,7 +474,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        var handler = new VerifyEmailCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new VerifyEmailCommandHandler(repo);
 
         var result = await handler.Handle(
             new VerifyEmailCommand(user.Id, "bad-token"),
@@ -513,7 +487,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task VerifyEmailHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new VerifyEmailCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new VerifyEmailCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new VerifyEmailCommand(Guid.NewGuid(), "some-token"),
@@ -530,7 +504,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         SeedUser(repo, "user@example.com");
-        var handler = new ForgotPasswordCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new ForgotPasswordCommandHandler(repo);
 
         var result = await handler.Handle(
             new ForgotPasswordCommand("user@example.com"),
@@ -543,7 +517,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task ForgotPasswordHandler_UnknownEmail_AlsoSucceeds()
     {
-        var handler = new ForgotPasswordCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new ForgotPasswordCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new ForgotPasswordCommand("ghost@example.com"),
@@ -563,7 +537,7 @@ public class CommandHandlerTests
         user.AddAddress("123 Main St", "City", "US", null);
         user.AddAddress("456 Oak Ave", "City", "US", null);
         var secondAddressId = user.Addresses.Last().Id;
-        var handler = new SetDefaultAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new SetDefaultAddressCommandHandler(repo);
 
         var result = await handler.Handle(
             new SetDefaultAddressCommand(user.Id, secondAddressId),
@@ -576,7 +550,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task SetDefaultAddressHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new SetDefaultAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new SetDefaultAddressCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new SetDefaultAddressCommand(Guid.NewGuid(), Guid.NewGuid()),
@@ -592,7 +566,7 @@ public class CommandHandlerTests
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
         user.AddAddress("123 Main St", "City", "US", null);
-        var handler = new SetDefaultAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new SetDefaultAddressCommandHandler(repo);
 
         var result = await handler.Handle(
             new SetDefaultAddressCommand(user.Id, Guid.NewGuid()), // nonexistent address id
@@ -611,7 +585,7 @@ public class CommandHandlerTests
         var user = SeedUser(repo);
         user.AddAddress("123 Main St", "City", "US", null);
         var addressId = user.Addresses.First().Id;
-        var handler = new DeleteAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new DeleteAddressCommandHandler(repo);
 
         var result = await handler.Handle(
             new DeleteAddressCommand(user.Id, addressId),
@@ -624,7 +598,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task DeleteAddressHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new DeleteAddressCommandHandler(new FakeUserRepository(), new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new DeleteAddressCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new DeleteAddressCommand(Guid.NewGuid(), Guid.NewGuid()),
@@ -639,14 +613,14 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        var handler = new DeleteAddressCommandHandler(repo, new FakeUnitOfWork(), new FakeAddressProjectionEventPublisher());
+        var handler = new DeleteAddressCommandHandler(repo);
 
         var result = await handler.Handle(
             new DeleteAddressCommand(user.Id, Guid.NewGuid()),
             CancellationToken.None);
 
         Assert.IsFalse(result.IsSuccess);
-        Assert.AreEqual(IdentityApplicationErrors.AddressNotFound.Code, result.GetErrorOrThrow().Code);
+        Assert.AreEqual(IdentityErrors.AddressNotFound.Code, result.GetErrorOrThrow().Code);
     }
 
     // ── DeleteAccountCommandHandler ───────────────────────────────────────────
@@ -656,20 +630,21 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        var handler = new DeleteAccountCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new DeleteAccountCommandHandler(repo);
 
         var result = await handler.Handle(
             new DeleteAccountCommand(user.Id),
             CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.IsEmpty(repo.Store);
+        Assert.AreEqual(1, repo.Store.Count);
+        Assert.IsTrue(user.IsDeleted);
     }
 
     [TestMethod]
     public async Task DeleteAccountHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new DeleteAccountCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new DeleteAccountCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new DeleteAccountCommand(Guid.NewGuid()),
@@ -686,11 +661,12 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo, "user@example.com", "OldPass1");
-        user.SetPasswordResetToken("valid-token", DateTime.UtcNow.AddHours(1));
-        var handler = new ResetPasswordCommandHandler(repo, new FakePasswordHasher(), new FakeUnitOfWork());
+        user.RequestPasswordReset();
+        var token = user.PasswordResetToken!;
+        var handler = new ResetPasswordCommandHandler(repo, new FakePasswordHasher());
 
         var result = await handler.Handle(
-            new ResetPasswordCommand("user@example.com", "valid-token", "NewPass1"),
+            new ResetPasswordCommand("user@example.com", token, "NewPass1"),
             CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
@@ -703,8 +679,8 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        user.SetPasswordResetToken("valid-token", DateTime.UtcNow.AddHours(1));
-        var handler = new ResetPasswordCommandHandler(repo, new FakePasswordHasher(), new FakeUnitOfWork());
+        user.RequestPasswordReset();
+        var handler = new ResetPasswordCommandHandler(repo, new FakePasswordHasher());
 
         var result = await handler.Handle(
             new ResetPasswordCommand("user@example.com", "wrong-token", "NewPass1"),
@@ -718,7 +694,7 @@ public class CommandHandlerTests
     public async Task ResetPasswordHandler_UnknownEmail_ReturnsInvalidCredentials()
     {
         var handler = new ResetPasswordCommandHandler(
-            new FakeUserRepository(), new FakePasswordHasher(), new FakeUnitOfWork());
+            new FakeUserRepository(), new FakePasswordHasher());
 
         var result = await handler.Handle(
             new ResetPasswordCommand("ghost@example.com", "any-token", "NewPass1"),
@@ -733,11 +709,12 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        user.SetPasswordResetToken("valid-token", DateTime.UtcNow.AddHours(1));
-        var handler = new ResetPasswordCommandHandler(repo, new FakePasswordHasher(), new FakeUnitOfWork());
+        user.RequestPasswordReset();
+        var token = user.PasswordResetToken!;
+        var handler = new ResetPasswordCommandHandler(repo, new FakePasswordHasher());
 
         var result = await handler.Handle(
-            new ResetPasswordCommand("user@example.com", "valid-token", "weak"),
+            new ResetPasswordCommand("user@example.com", token, "weak"),
             CancellationToken.None);
 
         Assert.IsFalse(result.IsSuccess);
@@ -783,7 +760,7 @@ public class CommandHandlerTests
     {
         var repo = new FakeUserRepository();
         var user = SeedUser(repo);
-        var handler = new UpdateUserPreferencesCommandHandler(repo, new FakeUnitOfWork());
+        var handler = new UpdateUserPreferencesCommandHandler(repo);
 
         var result = await handler.Handle(
             new UpdateUserPreferencesCommand(user.Id, false, true, false, "bg", "BGN", true),
@@ -800,7 +777,7 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task UpdateUserPreferencesHandler_UserNotFound_ReturnsUserNotFound()
     {
-        var handler = new UpdateUserPreferencesCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
+        var handler = new UpdateUserPreferencesCommandHandler(new FakeUserRepository());
 
         var result = await handler.Handle(
             new UpdateUserPreferencesCommand(Guid.NewGuid(), true, false, true, "en", "USD", false),

@@ -175,7 +175,33 @@
    ```
    With `OwnsOne`, EF's shadow property name is `Slug_Value` (not `Slug`), so `EF.Property<string>(p, "Slug")` in `HasIndex` silently references a non-existent property — the unique constraint is never applied. This is a silent data integrity bug.
 
-44. **Multi-property value objects use `OwnsOne()` with explicit column names.** For `class : ValueObject` with multiple properties (Money, PersonName, DateRange), use `builder.OwnsOne(...)` and always call `.HasColumnName(...)` on each property. Never rely on EF's auto-generated `PropertyName_FieldName` format.
+44. **Multi-property value objects use `ComplexProperty` (EF Core 8+).** For `sealed record` VOs with multiple properties (Money, PersonName, DateRange), use `builder.ComplexProperty(...)` and call `.HasColumnName(...)` only where the property name differs from the column name. Never use `OwnsOne()` for value objects — it creates owned entity tracking overhead and fights with private constructors. `ComplexProperty` is a pure value snapshot with no entity identity.
+
+   ```csharp
+   builder.ComplexProperty(u => u.Name, nameBuilder =>
+   {
+       nameBuilder.Property(n => n.First).HasColumnName("FirstName").HasMaxLength(100);
+       nameBuilder.Property(n => n.Last).HasColumnName("LastName").HasMaxLength(100);
+   });
+   ```
+
+   **Register single-property VO converters globally via `ConfigureConventions`.** Instead of repeating `HasConversion(to, from)` in every entity configuration, define a dedicated `ValueConverter<VO, primitive>` class and register it once in the DbContext. Every property of that VO type across the entire model is automatically mapped.
+
+   ```csharp
+   // Infrastructure/Persistence/Converters/EmailConverter.cs
+   public sealed class EmailConverter() : ValueConverter<Email, string>(
+       e => e.Value,
+       v => Email.Create(v).GetDataOrThrow());
+
+   // DbContext
+   protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+   {
+       configurationBuilder.Properties<Email>().HaveConversion<EmailConverter>();
+   }
+
+   // Entity configuration — no HasConversion needed
+   builder.Property(u => u.Email).HasMaxLength(255);
+   ```
 
 45. **Enums are always stored as strings.** Every enum property must have `.HasConversion<string>()` in its EF configuration. Never store enums as integers (data corruption risk on reorder).
 
@@ -244,10 +270,46 @@ Aggregate domain methods     ← business invariants, state machine rules → Re
    - `ICurrentUserService` in the handler → use for ownership checks where a user can only act on their OWN data (a user can only update their OWN profile, not another user's). Check at the top of the handler before loading anything.
    - Do NOT duplicate: if the controller already guards a role, the handler does NOT also check that role. The controller is the outer guard for HTTP; the handler only adds checks for cross-user scenarios.
 
-53. **`record` vs `class : ValueObject` — when to use which.**
-   - `sealed record` → single-property value objects (`Email`, `Slug`, `Sku`, `ProductName`). .NET record equality compares all properties by value automatically. One property = no ambiguity.
-   - `sealed class : ValueObject` → multi-property value objects (`Money`, `PersonName`, `DateRange`). Override `GetEqualityComponents()` to define what makes two instances equal.
-   - Never use `class : ValueObject` for single-property VOs — the `record` is simpler and has less ceremony.
+53. **All value objects are `sealed record`. Never use `class : ValueObject`.**
+   Every VO in this codebase is a `sealed record` — for both single-property and multi-property VOs. Records give immutability and value equality without a base class.
+
+   - **Single-property VO** (`Email`, `Slug`, `ProductName`): record equality works out of the box — one property, nothing to override.
+   - **Multi-property VO** (`Money`, `PersonName`, `DateRange`): override `Equals(T? other)` and `GetHashCode()` when the equality rule is non-trivial (e.g. case-insensitive name comparison). The `==` operator on records automatically delegates to `Equals`.
+
+   ```csharp
+   // ✅ single-property — record equality is sufficient
+   public sealed record Email
+   {
+       public string Value { get; }
+       private Email(string value) => Value = value;
+       public static Result<Email> Create(string? raw) => ...
+   }
+
+   // ✅ multi-property with custom equality (case-insensitive)
+   public sealed record PersonName
+   {
+       public string First { get; }
+       public string Last { get; }
+       private PersonName(string first, string last) => (First, Last) = (first, last);
+       public static Result<PersonName> Create(string? first, string? last) => ...
+
+       public bool Equals(PersonName? other) =>
+           other is not null &&
+           First.Equals(other.First, StringComparison.OrdinalIgnoreCase) &&
+           Last.Equals(other.Last, StringComparison.OrdinalIgnoreCase);
+
+       public override int GetHashCode() =>
+           HashCode.Combine(First.ToLowerInvariant(), Last.ToLowerInvariant());
+   }
+
+   // ❌ wrong — base class adds ceremony, breaks with records, not needed in modern C#
+   public sealed class PersonName : ValueObject
+   {
+       protected override IEnumerable<object?> GetEqualityComponents() { ... }
+   }
+   ```
+
+   The `ValueObject` base class in SharedKernel exists only for legacy reasons. Do not use it in new code.
 
 54. **Domain event handlers run inside the save transaction — keep them fast and non-throwing.**
    Domain events are dispatched by `IDomainEventDispatcher` inside `SaveChangesAsync`, after the DB write but within the same transaction scope. If an event handler throws, the transaction rolls back and the aggregate save is undone. Therefore:
@@ -256,6 +318,24 @@ Aggregate domain methods     ← business invariants, state machine rules → Re
    - Heavy work (sending emails, calling Stripe) belongs in a background job triggered by the event, not executed synchronously inside the handler.
 
 55. **InMemory database does not enforce unique constraints.** `HasIndex(...).IsUnique()` is silently ignored by the EF Core InMemory provider. Characterization tests that use InMemory will not catch duplicate slug/sku/email violations at the DB level. The handler's existence checks (e.g. `SlugExistsAsync`) must be present and tested explicitly. For full constraint validation, use Testcontainers with a real Postgres instance in integration tests. If `Product.Create("")` returns `Result.Fail(CatalogErrors.NameEmpty)`, that is correct — the domain enforces its own invariants. But the FluentValidation validator should have already caught the empty string before the handler ever called `Product.Create`. An empty string reaching the aggregate is a gap in the validation layer, not proof that the domain is doing the right job. Both layers must exist and each must do its own job.
+
+## Global Usings Rules
+
+56. **One `GlobalUsings.cs` per project. Any namespace used in 3 or more files in the same project belongs there.** Do not repeat the same `using` directive across files — that is noise. Put it in `GlobalUsings.cs` at the project root and remove it from individual files.
+
+   ```csharp
+   // Infrastructure/GlobalUsings.cs
+   global using ECommerce.Identity.Domain.Aggregates.User;
+   global using ECommerce.Identity.Domain.ValueObjects;
+   global using ECommerce.Identity.Infrastructure.Persistence;
+   global using Microsoft.EntityFrameworkCore;
+   global using Microsoft.EntityFrameworkCore.Metadata.Builders;
+   global using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+   ```
+
+   The threshold is 3 files — fewer than that is not worth the indirection. Migration-generated files are exempt (they are auto-generated and should not be touched).
+
+   When a using only appears in one or two files, leave it local. Pulling rarely-used namespaces into the global file makes it harder to understand each file's actual dependencies.
 
 ## Naming Conventions
 

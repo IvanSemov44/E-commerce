@@ -37,6 +37,9 @@ using ECommerce.Shopping.Infrastructure.Persistence;
 using ECommerce.Promotions.Application.Interfaces;
 using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Infrastructure.Persistence;
+using ECommerce.Identity.Domain.Interfaces;
+using ECommerce.Identity.Domain.ValueObjects;
+using IdentityUser = ECommerce.Identity.Domain.Aggregates.User.User;
 using BCrypt.Net;
 using Microsoft.Extensions.Hosting;
 using DotNet.Testcontainers.Builders;
@@ -388,29 +391,21 @@ public class TestWebApplicationFactory(
                 var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
                 var adminId = Guid.Parse(ConditionalTestAuthHandler.TestAdminUserId);
 
-                identityDb.Users.Add(new User
-                {
-                    Id = userId,
-                    Email = "integration@test.com",
-                    FirstName = "Integration",
-                    LastName = "User",
-                    Role = SharedKernel.Enums.UserRole.Customer,
-                    PasswordHash = passwordHash,
-                    IsEmailVerified = true,
-                    CreatedAt = DateTime.UtcNow
-                });
+                identityDb.Users.Add(CreateSeedIdentityUser(
+                    userId,
+                    "integration@test.com",
+                    "Integration",
+                    "User",
+                    SharedKernel.Enums.UserRole.Customer,
+                    passwordHash));
 
-                identityDb.Users.Add(new User
-                {
-                    Id = adminId,
-                    Email = "admin@test.com",
-                    FirstName = "Admin",
-                    LastName = "User",
-                    Role = SharedKernel.Enums.UserRole.Admin,
-                    PasswordHash = passwordHash,
-                    IsEmailVerified = true,
-                    CreatedAt = DateTime.UtcNow
-                });
+                identityDb.Users.Add(CreateSeedIdentityUser(
+                    adminId,
+                    "admin@test.com",
+                    "Admin",
+                    "User",
+                    SharedKernel.Enums.UserRole.Admin,
+                    passwordHash));
 
                 var categoryId = Guid.Parse("66666666-6666-6666-6666-666666666666");
                 var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -858,6 +853,34 @@ public class TestWebApplicationFactory(
     {
         var property = entity.GetType().BaseType?.GetProperty("Id") ?? entity.GetType().GetProperty("Id");
         property?.SetValue(entity, id);
+    }
+
+    private sealed class PrecomputedHasher(string hash) : IPasswordHasher
+    {
+        public string Hash(string _) => hash;
+        public bool Verify(string raw, string h) => BCrypt.Net.BCrypt.Verify(raw, h);
+    }
+
+    private static IdentityUser CreateSeedIdentityUser(
+        Guid id,
+        string email,
+        string firstName,
+        string lastName,
+        SharedKernel.Enums.UserRole role,
+        string passwordHash)
+    {
+        var user = IdentityUser.Register(email, firstName, lastName, "TestPassword123!", new PrecomputedHasher(passwordHash)).GetDataOrThrow();
+
+        SetEntityId(user, id);
+
+        if (!string.IsNullOrWhiteSpace(user.EmailVerificationToken))
+            user.VerifyEmail(user.EmailVerificationToken);
+
+        // Tests seed both customer and admin identities.
+        var roleProperty = user.GetType().GetProperty(nameof(IdentityUser.Role));
+        roleProperty?.SetValue(user, role);
+
+        return user;
     }
 
     private sealed class TestUnitOfWork(IServiceProvider serviceProvider) : IUnitOfWork

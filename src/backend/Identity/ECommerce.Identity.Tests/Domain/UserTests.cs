@@ -1,6 +1,7 @@
-﻿using ECommerce.Identity.Domain.Aggregates.User;
+using ECommerce.Identity.Domain.Aggregates.User;
 using ECommerce.Identity.Domain.Errors;
 using ECommerce.Identity.Domain.Events;
+using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
 using ECommerce.SharedKernel.Enums;
 
@@ -11,15 +12,23 @@ public class UserTests
 {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static PasswordHash MakeHash(string hash = "$2a$12$fakehash")
-        => PasswordHash.FromHash(hash).GetDataOrThrow();
+    private sealed class FakePasswordHasher : IPasswordHasher
+    {
+        public string Hash(string rawPassword) => $"$2a$12${rawPassword}_hashed";
+        public bool Verify(string rawPassword, string hash) => hash == $"$2a$12${rawPassword}_hashed";
+    }
+
+    private static readonly FakePasswordHasher Hasher = new();
+
+    private static User MakeUser(string email = "test@example.com", string firstName = "John", string lastName = "Doe", string password = "ValidPass1")
+        => User.Register(email, firstName, lastName, password, Hasher).GetDataOrThrow();
 
     // ── Register ──────────────────────────────────────────────────────────────
 
     [TestMethod]
     public void Register_ValidInput_CreatesUserWithCustomerRole()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
+        var userResult = User.Register("test@example.com", "John", "Doe", "ValidPass1", Hasher);
 
         Assert.IsTrue(userResult.IsSuccess);
         var user = userResult.GetDataOrThrow();
@@ -33,8 +42,7 @@ public class UserTests
     [TestMethod]
     public void Register_RaisesUserRegisteredEvent()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var events = user.DomainEvents.ToList();
         Assert.HasCount(1, events);
@@ -48,22 +56,28 @@ public class UserTests
     [TestMethod]
     public void Register_NewUser_HasNoAddresses()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         Assert.IsEmpty(user.Addresses);
     }
 
     [TestMethod]
     public void Register_InvalidEmail_ReturnsFailure()
     {
-        var result = User.Register("not-an-email", "John", "Doe", MakeHash());
+        var result = User.Register("not-an-email", "John", "Doe", "ValidPass1", Hasher);
         Assert.IsFalse(result.IsSuccess);
     }
 
     [TestMethod]
     public void Register_EmptyFirstName_ReturnsFailure()
     {
-        var result = User.Register("test@example.com", "", "Doe", MakeHash());
+        var result = User.Register("test@example.com", "", "Doe", "ValidPass1", Hasher);
+        Assert.IsFalse(result.IsSuccess);
+    }
+
+    [TestMethod]
+    public void Register_WeakPassword_ReturnsFailure()
+    {
+        var result = User.Register("test@example.com", "John", "Doe", "weak", Hasher);
         Assert.IsFalse(result.IsSuccess);
     }
 
@@ -72,8 +86,7 @@ public class UserTests
     [TestMethod]
     public void VerifyEmail_CorrectToken_SetsVerifiedAndClearsToken()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         string token = user.EmailVerificationToken!;
 
         var result = user.VerifyEmail(token);
@@ -86,8 +99,7 @@ public class UserTests
     [TestMethod]
     public void VerifyEmail_WrongToken_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.VerifyEmail("wrong-token");
 
@@ -99,12 +111,11 @@ public class UserTests
     [TestMethod]
     public void VerifyEmail_AlreadyVerified_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         string token = user.EmailVerificationToken!;
-        user.VerifyEmail(token); // first call succeeds
+        user.VerifyEmail(token);
 
-        var result = user.VerifyEmail(token); // second call
+        var result = user.VerifyEmail(token);
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(IdentityErrors.EmailAlreadyVerified.Code, result.GetErrorOrThrow().Code);
@@ -113,8 +124,7 @@ public class UserTests
     [TestMethod]
     public void VerifyEmail_RaisesEmailVerifiedEvent()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         user.ClearDomainEvents();
         string token = user.EmailVerificationToken!;
 
@@ -129,24 +139,33 @@ public class UserTests
     [TestMethod]
     public void ChangePassword_UpdatesHash()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash("$2a$12$oldhash"));
-        var user = userResult.GetDataOrThrow();
-        var newHash = MakeHash("$2a$12$newhash");
+        var user = MakeUser(password: "OldPass1");
 
-        user.ChangePassword(newHash);
+        var result = user.ChangePassword("OldPass1", "NewPass1!", Hasher);
 
-        Assert.AreEqual("$2a$12$newhash", user.PasswordHash.Hash);
+        Assert.IsTrue(result.IsSuccess);
+        Assert.AreEqual("$2a$12$NewPass1!_hashed", user.PasswordHash.Hash);
+    }
+
+    [TestMethod]
+    public void ChangePassword_WrongOldPassword_Fails()
+    {
+        var user = MakeUser(password: "OldPass1");
+
+        var result = user.ChangePassword("wrongpw", "NewPass1!", Hasher);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.InvalidCredentials, result.GetErrorOrThrow());
     }
 
     [TestMethod]
     public void ChangePassword_RevokesAllRefreshTokens()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser(password: "OldPass1");
         user.AddRefreshToken("token-1", DateTime.UtcNow.AddDays(30));
         user.AddRefreshToken("token-2", DateTime.UtcNow.AddDays(30));
 
-        user.ChangePassword(MakeHash("$2a$12$newhash"));
+        user.ChangePassword("OldPass1", "NewPass1!", Hasher);
 
         Assert.IsTrue(user.RefreshTokens.All(t => t.IsRevoked));
     }
@@ -154,11 +173,10 @@ public class UserTests
     [TestMethod]
     public void ChangePassword_RaisesPasswordChangedEvent()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser(password: "OldPass1");
         user.ClearDomainEvents();
 
-        user.ChangePassword(MakeHash("$2a$12$newhash"));
+        user.ChangePassword("OldPass1", "NewPass1!", Hasher);
 
         Assert.HasCount(1, user.DomainEvents);
         Assert.IsInstanceOfType<PasswordChangedEvent>(user.DomainEvents.First());
@@ -169,8 +187,7 @@ public class UserTests
     [TestMethod]
     public void AddAddress_FirstAddress_BecomesDefaultShippingAndBilling()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.AddAddress("123 Main St", "Springfield", "US", "12345");
 
@@ -184,8 +201,7 @@ public class UserTests
     [TestMethod]
     public void AddAddress_SecondAddress_DoesNotReplaceDefault()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         user.AddAddress("123 Main St", "Springfield", "US", "12345");
 
         user.AddAddress("456 Oak Ave", "Shelbyville", "US", "67890");
@@ -197,8 +213,7 @@ public class UserTests
     [TestMethod]
     public void AddAddress_EmptyStreet_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.AddAddress("", "City", "US", null);
 
@@ -209,8 +224,7 @@ public class UserTests
     [TestMethod]
     public void AddAddress_EmptyCity_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.AddAddress("123 Main St", "", "US", null);
 
@@ -221,8 +235,7 @@ public class UserTests
     [TestMethod]
     public void AddAddress_EmptyCountry_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.AddAddress("123 Main St", "City", "", null);
 
@@ -233,8 +246,7 @@ public class UserTests
     [TestMethod]
     public void AddAddress_ExceedsLimit_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         for (int i = 0; i < 5; i++)
             user.AddAddress($"{i} Street", "City", "US", null);
 
@@ -249,8 +261,7 @@ public class UserTests
     [TestMethod]
     public void SetDefaultShippingAddress_ValidId_SwitchesDefault()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         user.AddAddress("123 Main St", "City", "US", null);
         user.AddAddress("456 Oak Ave", "City", "US", null);
 
@@ -265,8 +276,7 @@ public class UserTests
     [TestMethod]
     public void SetDefaultShippingAddress_UnknownId_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.SetDefaultShippingAddress(Guid.NewGuid());
 
@@ -279,8 +289,7 @@ public class UserTests
     [TestMethod]
     public void AddRefreshToken_AddsTokenToCollection()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         user.AddRefreshToken("raw-token", DateTime.UtcNow.AddDays(30));
 
@@ -291,25 +300,21 @@ public class UserTests
     [TestMethod]
     public void AddRefreshToken_WhenFiveActive_RevokesOldest()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         for (int i = 0; i < 5; i++)
             user.AddRefreshToken($"token-{i}", DateTime.UtcNow.AddDays(30));
 
         user.AddRefreshToken("token-new", DateTime.UtcNow.AddDays(30));
 
-        // Oldest (token-0) should be revoked
         Assert.IsTrue(user.RefreshTokens.First(t => t.Token == "token-0").IsRevoked);
-        // New token is active
         Assert.IsTrue(user.RefreshTokens.First(t => t.Token == "token-new").IsActive);
     }
 
     [TestMethod]
     public void GetActiveRefreshToken_ExpiredToken_ReturnsNull()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
-        user.AddRefreshToken("expired-token", DateTime.UtcNow.AddDays(-1)); // already expired
+        var user = MakeUser();
+        user.AddRefreshToken("expired-token", DateTime.UtcNow.AddDays(-1));
 
         var found = user.GetActiveRefreshToken("expired-token");
 
@@ -319,8 +324,7 @@ public class UserTests
     [TestMethod]
     public void GetActiveRefreshToken_UnknownToken_ReturnsNull()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var found = user.GetActiveRefreshToken("nonexistent");
 
@@ -332,8 +336,7 @@ public class UserTests
     [TestMethod]
     public void RevokeRefreshToken_ExistingToken_Succeeds()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         user.AddRefreshToken("token-to-revoke", DateTime.UtcNow.AddDays(30));
 
         var result = user.RevokeRefreshToken("token-to-revoke");
@@ -345,8 +348,7 @@ public class UserTests
     [TestMethod]
     public void RevokeRefreshToken_UnknownToken_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.RevokeRefreshToken("nonexistent");
 
@@ -359,8 +361,7 @@ public class UserTests
     [TestMethod]
     public void SetDefaultBillingAddress_ValidId_SwitchesDefault()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
         user.AddAddress("123 Main St", "City", "US", null);
         user.AddAddress("456 Oak Ave", "City", "US", null);
 
@@ -375,8 +376,7 @@ public class UserTests
     [TestMethod]
     public void SetDefaultBillingAddress_UnknownId_ReturnsFailure()
     {
-        var userResult = User.Register("test@example.com", "John", "Doe", MakeHash());
-        var user = userResult.GetDataOrThrow();
+        var user = MakeUser();
 
         var result = user.SetDefaultBillingAddress(Guid.NewGuid());
 
