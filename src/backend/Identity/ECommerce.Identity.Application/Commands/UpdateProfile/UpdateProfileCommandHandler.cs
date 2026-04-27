@@ -1,4 +1,4 @@
-using ECommerce.Identity.Application.Extensions;
+﻿using ECommerce.Identity.Application.Extensions;
 
 namespace ECommerce.Identity.Application.Commands.UpdateProfile;
 
@@ -9,10 +9,12 @@ public class UpdateProfileCommandHandler(
     public async Task<Result<UserProfileDto>> Handle(UpdateProfileCommand command, CancellationToken ct)
     {
         var user = await users.GetByIdAsync(command.UserId, ct);
-        if (user is null) return Result<UserProfileDto>.Fail(IdentityApplicationErrors.UserNotFound);
+        if (user is null)
+            return Result<UserProfileDto>.Fail(IdentityApplicationErrors.UserNotFound);
 
         var result = user.UpdateProfile(command.FirstName, command.LastName, command.PhoneNumber);
-        if (!result.IsSuccess) return Result<UserProfileDto>.Fail(result.GetErrorOrThrow());
+        if (!result.IsSuccess)
+            return Result<UserProfileDto>.Fail(result.GetErrorOrThrow());
 
         return Result<UserProfileDto>.Ok(user.ToProfileDto());
     }

@@ -18,7 +18,6 @@ public class ForgotPasswordCommandHandler(
 
         user.RequestPasswordReset();
 
-        // TODO: raise PasswordResetRequestedEvent to trigger email via event handler
         return Result.Ok();
     }
 }

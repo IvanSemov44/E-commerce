@@ -1,4 +1,4 @@
-namespace ECommerce.Identity.Application.Commands.UpdateUserPreferences;
+﻿namespace ECommerce.Identity.Application.Commands.UpdateUserPreferences;
 
 public class UpdateUserPreferencesCommandHandler(
     IUserRepository users
@@ -7,7 +7,8 @@ public class UpdateUserPreferencesCommandHandler(
     public async Task<Result<UserPreferencesDto>> Handle(UpdateUserPreferencesCommand command, CancellationToken ct)
     {
         var user = await users.GetByIdAsync(command.UserId, ct);
-        if (user is null) return Result<UserPreferencesDto>.Fail(IdentityApplicationErrors.UserNotFound);
+        if (user is null)
+            return Result<UserPreferencesDto>.Fail(IdentityApplicationErrors.UserNotFound);
 
         // Preferences are not yet persisted in the User aggregate — return the requested values
         var dto = new UserPreferencesDto(
