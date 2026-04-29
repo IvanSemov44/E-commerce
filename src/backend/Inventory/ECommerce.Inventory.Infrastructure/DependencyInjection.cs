@@ -41,6 +41,7 @@ public static class DependencyInjection
 
         services.AddScoped<INotificationHandler<StockReducedEvent>, StockReducedEventHandler>();
         services.AddScoped<INotificationHandler<StockReplenishedEvent>, StockReplenishedEventHandler>();
+        services.AddScoped<INotificationHandler<StockAdjustedEvent>, StockAdjustedEventHandler>();
         services.AddScoped<INotificationHandler<LowStockDetectedEvent>, LowStockDetectedEventHandler>();
         services.AddScoped<INotificationHandler<OrderPlacedIntegrationEvent>, OrderPlacedIntegrationEventHandler>();
 

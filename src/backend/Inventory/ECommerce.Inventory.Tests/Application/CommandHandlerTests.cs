@@ -24,8 +24,8 @@ public class CommandHandlerTests
         var repo = new FakeInventoryItemRepository();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new IncreaseStockCommandHandler(repo);
-        var result = await handler.Handle(new IncreaseStockCommand(productId, 20, "restock"), default);
+        var result = await new IncreaseStockCommandHandler(repo)
+            .Handle(new IncreaseStockCommand(productId, 20, "restock"), default);
 
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual(50, result.GetDataOrThrow().NewQuantity);
@@ -34,10 +34,8 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task IncreaseStock_UnknownProduct_ReturnsInventoryItemNotFound()
     {
-        var repo = new FakeInventoryItemRepository();
-
-        var handler = new IncreaseStockCommandHandler(repo);
-        var result = await handler.Handle(new IncreaseStockCommand(Guid.NewGuid(), 10, "restock"), default);
+        var result = await new IncreaseStockCommandHandler(new FakeInventoryItemRepository())
+            .Handle(new IncreaseStockCommand(Guid.NewGuid(), 10, "restock"), default);
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(InventoryApplicationErrors.InventoryItemNotFound.Code, result.GetErrorOrThrow().Code);
@@ -50,8 +48,8 @@ public class CommandHandlerTests
         var repo = new FakeInventoryItemRepository();
         repo.Store.Add(MakeItem(productId));
 
-        var handler = new IncreaseStockCommandHandler(repo);
-        var result = await handler.Handle(new IncreaseStockCommand(productId, 0, "restock"), default);
+        var result = await new IncreaseStockCommandHandler(repo)
+            .Handle(new IncreaseStockCommand(productId, 0, "restock"), default);
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(InventoryErrors.IncreaseAmountInvalid.Code, result.GetErrorOrThrow().Code);
@@ -64,8 +62,8 @@ public class CommandHandlerTests
         var repo = new FakeInventoryItemRepository();
         repo.Store.Add(MakeItem(productId, quantity: 50));
 
-        var handler = new ReduceStockCommandHandler(repo);
-        var result = await handler.Handle(new ReduceStockCommand(productId, 20, "sale"), default);
+        var result = await new ReduceStockCommandHandler(repo)
+            .Handle(new ReduceStockCommand(productId, 20, "sale"), default);
 
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual(30, result.GetDataOrThrow().NewQuantity);
@@ -78,8 +76,8 @@ public class CommandHandlerTests
         var repo = new FakeInventoryItemRepository();
         repo.Store.Add(MakeItem(productId, quantity: 5));
 
-        var handler = new ReduceStockCommandHandler(repo);
-        var result = await handler.Handle(new ReduceStockCommand(productId, 10, "sale"), default);
+        var result = await new ReduceStockCommandHandler(repo)
+            .Handle(new ReduceStockCommand(productId, 10, "sale"), default);
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(InventoryErrors.InsufficientStock.Code, result.GetErrorOrThrow().Code);
@@ -88,10 +86,8 @@ public class CommandHandlerTests
     [TestMethod]
     public async Task ReduceStock_UnknownProduct_ReturnsInventoryItemNotFound()
     {
-        var repo = new FakeInventoryItemRepository();
-
-        var handler = new ReduceStockCommandHandler(repo);
-        var result = await handler.Handle(new ReduceStockCommand(Guid.NewGuid(), 5, "sale"), default);
+        var result = await new ReduceStockCommandHandler(new FakeInventoryItemRepository())
+            .Handle(new ReduceStockCommand(Guid.NewGuid(), 5, "sale"), default);
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(InventoryApplicationErrors.InventoryItemNotFound.Code, result.GetErrorOrThrow().Code);
@@ -102,11 +98,10 @@ public class CommandHandlerTests
     {
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
-        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new AdjustStockCommandHandler(repo, projectionPublisher);
-        var result = await handler.Handle(new AdjustStockCommand(productId, 100, "inventory_count"), default);
+        var result = await new AdjustStockCommandHandler(repo)
+            .Handle(new AdjustStockCommand(productId, 100, "inventory_count"), default);
 
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual(100, result.GetDataOrThrow().NewQuantity);
@@ -118,11 +113,10 @@ public class CommandHandlerTests
     {
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
-        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new AdjustStockCommandHandler(repo, projectionPublisher);
-        var result = await handler.Handle(new AdjustStockCommand(productId, 0, "write-off"), default);
+        var result = await new AdjustStockCommandHandler(repo)
+            .Handle(new AdjustStockCommand(productId, 0, "write-off"), default);
 
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual(0, result.GetDataOrThrow().NewQuantity);
@@ -133,28 +127,26 @@ public class CommandHandlerTests
     {
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
-        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
         repo.Store.Add(MakeItem(productId, quantity: 30));
 
-        var handler = new AdjustStockCommandHandler(repo, projectionPublisher);
-        var result = await handler.Handle(new AdjustStockCommand(productId, -1, "error"), default);
+        var result = await new AdjustStockCommandHandler(repo)
+            .Handle(new AdjustStockCommand(productId, -1, "error"), default);
 
         Assert.IsFalse(result.IsSuccess);
     }
 
     [TestMethod]
-    public async Task AdjustStock_CallsProjectionPublisher()
+    public async Task AdjustStock_RaisesStockAdjustedEvent()
     {
         var productId = Guid.NewGuid();
         var repo = new FakeInventoryItemRepository();
-        var projectionPublisher = new FakeInventoryProjectionEventPublisher();
-        repo.Store.Add(MakeItem(productId, quantity: 30));
+        var item = MakeItem(productId, quantity: 30);
+        repo.Store.Add(item);
 
-        var handler = new AdjustStockCommandHandler(repo, projectionPublisher);
-        await handler.Handle(new AdjustStockCommand(productId, 50, "audit"), default);
+        await new AdjustStockCommandHandler(repo)
+            .Handle(new AdjustStockCommand(productId, 50, "audit"), default);
 
-        Assert.HasCount(1, projectionPublisher.Calls);
-        Assert.AreEqual(productId, projectionPublisher.Calls[0].ProductId);
-        Assert.AreEqual(50, projectionPublisher.Calls[0].Quantity);
+        Assert.HasCount(1, item.DomainEvents);
+        Assert.IsInstanceOfType<ECommerce.Inventory.Domain.Events.StockAdjustedEvent>(item.DomainEvents.First());
     }
 }

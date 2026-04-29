@@ -1,8 +1,6 @@
 namespace ECommerce.Inventory.Application.Commands.AdjustStock;
 
-public class AdjustStockCommandHandler(
-    IInventoryItemRepository _repo,
-    IInventoryProjectionEventPublisher _projectionPublisher)
+public class AdjustStockCommandHandler(IInventoryItemRepository _repo)
     : IRequestHandler<AdjustStockCommand, Result<StockAdjustmentResultDto>>
 {
     public async Task<Result<StockAdjustmentResultDto>> Handle(
@@ -16,12 +14,6 @@ public class AdjustStockCommandHandler(
         var result = item.Adjust(command.NewQuantity, command.Reason);
         if (!result.IsSuccess)
             return Result<StockAdjustmentResultDto>.Fail(result.GetErrorOrThrow());
-
-        await _projectionPublisher.PublishStockProjectionUpdatedAsync(
-            command.ProductId,
-            item.Stock.Quantity,
-            command.Reason,
-            cancellationToken);
 
         return Result<StockAdjustmentResultDto>.Ok(new StockAdjustmentResultDto(
             command.ProductId,

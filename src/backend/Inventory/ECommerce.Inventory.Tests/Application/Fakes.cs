@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ECommerce.Inventory.Application.Interfaces;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using ECommerce.Inventory.Domain.Interfaces;
 
@@ -43,21 +42,6 @@ sealed class FakeInventoryItemRepository : IInventoryItemRepository
         else
             Store.Add(item);
 
-        return Task.CompletedTask;
-    }
-}
-
-sealed class FakeInventoryProjectionEventPublisher : IInventoryProjectionEventPublisher
-{
-    public List<(Guid ProductId, int Quantity, string Reason)> Calls { get; } = new();
-
-    public Task PublishStockProjectionUpdatedAsync(
-        Guid productId,
-        int quantity,
-        string reason,
-        CancellationToken cancellationToken = default)
-    {
-        Calls.Add((productId, quantity, reason));
         return Task.CompletedTask;
     }
 }

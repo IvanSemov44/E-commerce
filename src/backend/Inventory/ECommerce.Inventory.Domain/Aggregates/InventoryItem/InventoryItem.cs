@@ -76,6 +76,7 @@ public sealed class InventoryItem : AggregateRoot
         int delta = newQuantity - Stock.Quantity;
         Stock = stockResult.GetDataOrThrow();
         _logEntries.Add(InventoryLog.Create(Id, delta, reason, Stock.Quantity));
+        AddDomainEvent(new StockAdjustedEvent(ProductId, Stock.Quantity, reason));
         return Result.Ok();
     }
 }

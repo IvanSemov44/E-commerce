@@ -219,14 +219,15 @@ public class InventoryItemTests
     }
 
     [TestMethod]
-    public void Adjust_DoesNotRaiseDomainEvents()
+    public void Adjust_RaisesStockAdjustedEvent()
     {
         var item = InventoryItem.Create(_testProductId, 30, 10).GetDataOrThrow();
         item.ClearDomainEvents();
 
         item.Adjust(100, "correction");
 
-        Assert.IsEmpty(item.DomainEvents);
+        Assert.HasCount(1, item.DomainEvents);
+        Assert.IsInstanceOfType<StockAdjustedEvent>(item.DomainEvents.First());
     }
 
     [TestMethod]
