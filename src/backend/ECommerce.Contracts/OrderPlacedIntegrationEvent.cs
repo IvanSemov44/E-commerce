@@ -1,4 +1,4 @@
-﻿namespace ECommerce.Contracts;
+namespace ECommerce.Contracts;
 
 /// <summary>
 /// Published by Ordering when a new order is created.
@@ -11,6 +11,8 @@ public record OrderPlacedIntegrationEvent(
     DateTime OccurredAt = default)
     : IntegrationEvent
 {
+    public int[] Quantities { get; init; } = Array.Empty<int>();
+
     public OrderPlacedIntegrationEvent()
         : this(Guid.Empty, Guid.Empty, Array.Empty<Guid>(), 0m)
     {

@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ECommerce.Inventory.Application.EventHandlers;
+using ECommerce.Inventory.Infrastructure.EventHandlers;
 using ECommerce.Inventory.Application.Interfaces;
 using ECommerce.Inventory.Domain.Events;
 
@@ -29,8 +29,8 @@ public class EventHandlerTests
     public async Task Handle_LowStockDetectedEvent_CallsEmailService()
     {
         var email = new FakeEmailService();
-        var handler = new SendLowStockAlertOnLowStockDetectedHandler(
-            email, NullLogger<SendLowStockAlertOnLowStockDetectedHandler>.Instance);
+        var handler = new LowStockDetectedEventHandler(
+            email, NullLogger<LowStockDetectedEventHandler>.Instance);
 
         var productId = Guid.NewGuid();
         await handler.Handle(new LowStockDetectedEvent(productId, 5, 10), default);
@@ -45,8 +45,8 @@ public class EventHandlerTests
     public async Task Handle_EmailServiceThrows_DoesNotRethrow()
     {
         var email = new FakeEmailService { ShouldThrow = true };
-        var handler = new SendLowStockAlertOnLowStockDetectedHandler(
-            email, NullLogger<SendLowStockAlertOnLowStockDetectedHandler>.Instance);
+        var handler = new LowStockDetectedEventHandler(
+            email, NullLogger<LowStockDetectedEventHandler>.Instance);
 
         var exception = await Record.ExceptionAsync(() =>
             handler.Handle(new LowStockDetectedEvent(Guid.NewGuid(), 2, 10), default));
@@ -58,8 +58,8 @@ public class EventHandlerTests
     public async Task Handle_EmailServiceThrows_DoesNotCallSaveOrOtherSideEffects()
     {
         var email = new FakeEmailService { ShouldThrow = true };
-        var handler = new SendLowStockAlertOnLowStockDetectedHandler(
-            email, NullLogger<SendLowStockAlertOnLowStockDetectedHandler>.Instance);
+        var handler = new LowStockDetectedEventHandler(
+            email, NullLogger<LowStockDetectedEventHandler>.Instance);
 
         await handler.Handle(new LowStockDetectedEvent(Guid.NewGuid(), 2, 10), default);
 

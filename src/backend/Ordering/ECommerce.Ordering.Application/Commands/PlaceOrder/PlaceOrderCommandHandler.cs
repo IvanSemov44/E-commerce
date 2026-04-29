@@ -93,6 +93,7 @@ public class PlaceOrderCommandHandler(
             order.Id,
             order.UserId,
             order.Items.Select(x => x.ProductId).ToArray(),
+            order.Items.Select(x => x.Quantity).ToArray(),
             order.Total,
             ct);
 

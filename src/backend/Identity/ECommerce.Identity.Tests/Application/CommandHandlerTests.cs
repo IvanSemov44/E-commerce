@@ -637,7 +637,7 @@ public class CommandHandlerTests
             CancellationToken.None);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(1, repo.Store.Count);
+        Assert.HasCount(1, repo.Store);
         Assert.IsTrue(user.IsDeleted);
     }
 
@@ -818,5 +818,73 @@ public class CommandHandlerTests
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(IdentityApplicationErrors.UserNotFound.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── RefreshTokenCommandHandler (additional) ───────────────────────────────
+
+    [TestMethod]
+    public async Task RefreshTokenHandler_ValidToken_RevokesOldToken()
+    {
+        var repo = new FakeUserRepository();
+        var user = SeedUser(repo);
+        user.AddRefreshToken("original-token", DateTime.UtcNow.AddDays(30));
+        var handler = new RefreshTokenCommandHandler(repo, new FakeJwtTokenService());
+
+        await handler.Handle(new RefreshTokenCommand("original-token"), CancellationToken.None);
+
+        Assert.IsTrue(user.RefreshTokens.First(t => t.Token == "original-token").IsRevoked);
+    }
+
+    // ── LoginCommandHandler (additional) ─────────────────────────────────────
+
+    [TestMethod]
+    public async Task LoginHandler_UnverifiedEmail_CanStillLogin()
+    {
+        // Policy: email verification is NOT required to log in
+        var repo = new FakeUserRepository();
+        SeedUser(repo, "unverified@example.com", "Password1");
+        // SeedUser does not call VerifyEmail, so IsEmailVerified is false
+        var handler = new LoginCommandHandler(repo, new FakePasswordHasher(), new FakeJwtTokenService());
+
+        var result = await handler.Handle(
+            new LoginCommand("unverified@example.com", "Password1"),
+            CancellationToken.None);
+
+        Assert.IsTrue(result.IsSuccess);
+    }
+
+    // ── UpdateProfileCommandHandler (additional) ──────────────────────────────
+
+    [TestMethod]
+    public async Task UpdateProfileHandler_InvalidName_ReturnsFailure()
+    {
+        var repo = new FakeUserRepository();
+        var user = SeedUser(repo);
+        var handler = new UpdateProfileCommandHandler(repo);
+
+        var result = await handler.Handle(
+            new UpdateProfileCommand(user.Id, "", "Last", null),
+            CancellationToken.None);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.NameFirstEmpty.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── ResetPasswordCommandHandler (additional) ──────────────────────────────
+
+    [TestMethod]
+    public async Task ResetPasswordHandler_NoResetRequested_ReturnsTokenInvalid()
+    {
+        // User exists but never called RequestPasswordReset — token is null
+        var repo = new FakeUserRepository();
+        SeedUser(repo, "user@example.com");
+        var handler = new ResetPasswordCommandHandler(repo, new FakePasswordHasher());
+
+        var result = await handler.Handle(
+            new ResetPasswordCommand("user@example.com", "any-token", "NewPass1"),
+            CancellationToken.None);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.TokenInvalid.Code, result.GetErrorOrThrow().Code);
     }
 }

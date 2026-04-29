@@ -1,6 +1,5 @@
 ﻿using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using ECommerce.Inventory.Domain.Interfaces;
-using ECommerce.Inventory.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Inventory.Infrastructure.Persistence.Repositories;

@@ -1,4 +1,4 @@
-﻿namespace ECommerce.Ordering.Application.Interfaces;
+namespace ECommerce.Ordering.Application.Interfaces;
 
 public interface IOrderIntegrationEventPublisher
 {
@@ -6,6 +6,7 @@ public interface IOrderIntegrationEventPublisher
         Guid orderId,
         Guid customerId,
         IReadOnlyCollection<Guid> productIds,
+        IReadOnlyCollection<int> quantities,
         decimal totalAmount,
         CancellationToken cancellationToken = default);
 

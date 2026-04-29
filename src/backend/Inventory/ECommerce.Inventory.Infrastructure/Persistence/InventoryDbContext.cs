@@ -1,12 +1,21 @@
-﻿using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
-using Microsoft.EntityFrameworkCore;
+using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using ECommerce.Inventory.Infrastructure.Persistence.Configurations;
+using ECommerce.SharedKernel.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Inventory.Infrastructure.Persistence;
 
-public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : DbContext(options)
+public class InventoryDbContext(
+    DbContextOptions<InventoryDbContext> options,
+    IDomainEventDispatcher? dispatcher = null) : DbContext(options)
 {
+    private readonly IDomainEventDispatcher? _dispatcher = dispatcher;
+
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<InventoryLog> InventoryLogs => Set<InventoryLog>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
+    public DbSet<DeadLetterMessage> DeadLetterMessages => Set<DeadLetterMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -14,22 +23,40 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
 
         modelBuilder.HasDefaultSchema("inventory");
         modelBuilder.ApplyConfiguration(new InventoryItemConfiguration());
-        modelBuilder.Entity<InventoryItem>().ToTable("InventoryItems");
+        modelBuilder.ApplyConfiguration(new InventoryLogConfiguration());
+        modelBuilder.ApplyConfiguration(new InventoryOutboxConfiguration());
+        modelBuilder.ApplyConfiguration(new InventoryInboxConfiguration());
+        modelBuilder.ApplyConfiguration(new InventoryDeadLetterConfiguration());
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // InventoryLog entries are append-only. In EF InMemory + OwnsMany scenarios,
-        // newly added owned entities can be tracked as Modified instead of Added,
-        // which causes DbUpdateConcurrencyException ("entity does not exist in store").
-        // Normalize to Added before persisting.
-        var modifiedLogs = ChangeTracker.Entries<InventoryLog>()
-            .Where(e => e.State == EntityState.Modified)
+        var utcNow = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<Entity>())
+        {
+            if (entry.State == EntityState.Modified)
+                entry.Property(nameof(Entity.UpdatedAt)).CurrentValue = utcNow;
+
+            if (entry.State == EntityState.Added)
+            {
+                entry.Property(nameof(Entity.CreatedAt)).CurrentValue = utcNow;
+                entry.Property(nameof(Entity.UpdatedAt)).CurrentValue = utcNow;
+            }
+        }
+
+        var aggregates = ChangeTracker.Entries<AggregateRoot>()
+            .Where(e => e.Entity.DomainEvents.Count != 0)
+            .Select(e => e.Entity)
             .ToList();
 
-        foreach (var entry in modifiedLogs)
-            entry.State = EntityState.Added;
+        var events = aggregates.SelectMany(a => a.DomainEvents).ToList();
+        foreach (var aggregate in aggregates)
+            aggregate.ClearDomainEvents();
 
-        return base.SaveChangesAsync(cancellationToken);
+        if (_dispatcher is not null && events.Count != 0)
+            await _dispatcher.DispatchEventsAsync(events, cancellationToken);
+
+        return await base.SaveChangesAsync(cancellationToken);
     }
 }

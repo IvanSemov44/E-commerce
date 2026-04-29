@@ -1,9 +1,10 @@
-﻿using ECommerce.Contracts;
+using ECommerce.Contracts;
 using ECommerce.Inventory.Application.Interfaces;
+using ECommerce.Inventory.Infrastructure.Integration;
 
 namespace ECommerce.Inventory.Infrastructure.Services;
 
-public sealed class InventoryReservationEventPublisher(IIntegrationEventOutbox outbox) : IInventoryReservationEventPublisher
+public sealed class InventoryReservationEventPublisher(IInventoryOutboxEventWriter outbox) : IInventoryReservationEventPublisher
 {
     public Task PublishInventoryReservedAsync(
         Guid orderId,

@@ -1,9 +1,10 @@
-﻿using ECommerce.Contracts;
+using ECommerce.Contracts;
 using ECommerce.Inventory.Application.Interfaces;
+using ECommerce.Inventory.Infrastructure.Integration;
 
 namespace ECommerce.Inventory.Infrastructure.Services;
 
-public class InventoryProjectionEventPublisher(IIntegrationEventOutbox outbox) : IInventoryProjectionEventPublisher
+public class InventoryProjectionEventPublisher(IInventoryOutboxEventWriter outbox) : IInventoryProjectionEventPublisher
 {
     public Task PublishStockProjectionUpdatedAsync(
         Guid productId,

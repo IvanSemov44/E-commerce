@@ -383,4 +383,359 @@ public class UserTests
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(IdentityErrors.AddressNotFound.Code, result.GetErrorOrThrow().Code);
     }
+
+    // ── AddAddress domain events ──────────────────────────────────────────────
+
+    [TestMethod]
+    public void AddAddress_RaisesAddressAddedEvent()
+    {
+        var user = MakeUser();
+        user.ClearDomainEvents();
+
+        user.AddAddress("123 Main St", "City", "US", "12345");
+
+        Assert.HasCount(1, user.DomainEvents);
+        Assert.IsInstanceOfType<AddressAddedEvent>(user.DomainEvents.First());
+        var evt = (AddressAddedEvent)user.DomainEvents.First();
+        Assert.AreEqual(user.Id, evt.UserId);
+        Assert.AreEqual("123 Main St", evt.Street);
+    }
+
+    [TestMethod]
+    public void SetDefaultShippingAddress_RaisesAddressDefaultShippingChangedEvent()
+    {
+        var user = MakeUser();
+        user.AddAddress("123 Main St", "City", "US", null);
+        user.AddAddress("456 Oak Ave", "City", "US", null);
+        user.ClearDomainEvents();
+
+        user.SetDefaultShippingAddress(user.Addresses.Last().Id);
+
+        Assert.HasCount(1, user.DomainEvents);
+        Assert.IsInstanceOfType<AddressDefaultShippingChangedEvent>(user.DomainEvents.First());
+    }
+
+    // ── DeleteAddress ─────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void DeleteAddress_ExistingAddress_SoftDeletesIt()
+    {
+        var user = MakeUser();
+        user.AddAddress("123 Main St", "City", "US", null);
+        var addressId = user.Addresses.First().Id;
+
+        var result = user.DeleteAddress(addressId);
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.IsEmpty(user.Addresses); // filtered out after soft delete
+    }
+
+    [TestMethod]
+    public void DeleteAddress_RaisesAddressDeletedEvent()
+    {
+        var user = MakeUser();
+        user.AddAddress("123 Main St", "City", "US", null);
+        var addressId = user.Addresses.First().Id;
+        user.ClearDomainEvents();
+
+        user.DeleteAddress(addressId);
+
+        Assert.HasCount(1, user.DomainEvents);
+        Assert.IsInstanceOfType<AddressDeletedEvent>(user.DomainEvents.First());
+    }
+
+    [TestMethod]
+    public void DeleteAddress_DefaultShipping_AutoAssignsRemainingAsDefault()
+    {
+        var user = MakeUser();
+        user.AddAddress("1 Main St", "City", "US", null); // becomes default shipping
+        user.AddAddress("2 Oak Ave", "City", "US", null);
+        var defaultId = user.Addresses.First().Id;
+        var remaining = user.Addresses.Last();
+
+        user.DeleteAddress(defaultId);
+
+        Assert.IsTrue(remaining.IsDefaultShipping);
+    }
+
+    [TestMethod]
+    public void DeleteAddress_DefaultBilling_AutoAssignsRemainingAsDefault()
+    {
+        var user = MakeUser();
+        user.AddAddress("1 Main St", "City", "US", null); // becomes default billing
+        user.AddAddress("2 Oak Ave", "City", "US", null);
+        var defaultId = user.Addresses.First().Id;
+        var remaining = user.Addresses.Last();
+
+        user.DeleteAddress(defaultId);
+
+        Assert.IsTrue(remaining.IsDefaultBilling);
+    }
+
+    [TestMethod]
+    public void DeleteAddress_NonDefault_DefaultAddressUnchanged()
+    {
+        var user = MakeUser();
+        user.AddAddress("1 Main St", "City", "US", null); // default shipping + billing
+        user.AddAddress("2 Oak Ave", "City", "US", null);
+        var first = user.Addresses.First();
+        var secondId = user.Addresses.Last().Id;
+
+        user.DeleteAddress(secondId);
+
+        Assert.IsTrue(first.IsDefaultShipping);
+        Assert.IsTrue(first.IsDefaultBilling);
+    }
+
+    [TestMethod]
+    public void DeleteAddress_UnknownId_ReturnsFailure()
+    {
+        var user = MakeUser();
+
+        var result = user.DeleteAddress(Guid.NewGuid());
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.AddressNotFound.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── UpdateProfile ─────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void UpdateProfile_ValidInput_UpdatesNameAndPhone()
+    {
+        var user = MakeUser();
+
+        var result = user.UpdateProfile("Jane", "Smith", "+9876543210");
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.AreEqual("Jane", user.Name.First);
+        Assert.AreEqual("Smith", user.Name.Last);
+        Assert.AreEqual("+9876543210", user.PhoneNumber);
+    }
+
+    [TestMethod]
+    public void UpdateProfile_EmptyFirstName_ReturnsFailure()
+    {
+        var user = MakeUser();
+
+        var result = user.UpdateProfile("", "Smith", null);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.NameFirstEmpty.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── ChangePassword (additional) ───────────────────────────────────────────
+
+    [TestMethod]
+    public void ChangePassword_WeakNewPassword_ReturnsFailure()
+    {
+        var user = MakeUser(password: "OldPass1");
+
+        var result = user.ChangePassword("OldPass1", "weak", Hasher);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.PasswordTooShort.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── RotateRefreshToken ────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void RotateRefreshToken_ValidToken_RevokesOldAndReturnsNew()
+    {
+        var user = MakeUser();
+        user.AddRefreshToken("old-token", DateTime.UtcNow.AddDays(30));
+
+        var result = user.RotateRefreshToken("old-token", "new-token", DateTime.UtcNow.AddDays(30));
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.AreEqual("new-token", result.GetDataOrThrow());
+        Assert.IsTrue(user.RefreshTokens.First(t => t.Token == "old-token").IsRevoked);
+        Assert.IsTrue(user.RefreshTokens.First(t => t.Token == "new-token").IsActive);
+    }
+
+    [TestMethod]
+    public void RotateRefreshToken_RevokedToken_ReturnsTokenRevoked()
+    {
+        var user = MakeUser();
+        user.AddRefreshToken("token", DateTime.UtcNow.AddDays(30));
+        user.RevokeRefreshToken("token");
+
+        var result = user.RotateRefreshToken("token", "new-token", DateTime.UtcNow.AddDays(30));
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.TokenRevoked.Code, result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public void RotateRefreshToken_ExpiredToken_ReturnsTokenRevoked()
+    {
+        var user = MakeUser();
+        user.AddRefreshToken("expired-token", DateTime.UtcNow.AddDays(-1));
+
+        var result = user.RotateRefreshToken("expired-token", "new-token", DateTime.UtcNow.AddDays(30));
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.TokenRevoked.Code, result.GetErrorOrThrow().Code);
+    }
+
+    // ── RequestPasswordReset / IsPasswordResetTokenValid ──────────────────────
+
+    [TestMethod]
+    public void RequestPasswordReset_SetsTokenAndFutureExpiry()
+    {
+        var user = MakeUser();
+
+        user.RequestPasswordReset();
+
+        Assert.IsNotNull(user.PasswordResetToken);
+        Assert.IsTrue(user.PasswordResetExpiry > DateTime.UtcNow);
+    }
+
+    [TestMethod]
+    public void IsPasswordResetTokenValid_CorrectToken_ReturnsTrue()
+    {
+        var user = MakeUser();
+        user.RequestPasswordReset();
+
+        Assert.IsTrue(user.IsPasswordResetTokenValid(user.PasswordResetToken!));
+    }
+
+    [TestMethod]
+    public void IsPasswordResetTokenValid_WrongToken_ReturnsFalse()
+    {
+        var user = MakeUser();
+        user.RequestPasswordReset();
+
+        Assert.IsFalse(user.IsPasswordResetTokenValid("wrong-token"));
+    }
+
+    [TestMethod]
+    public void IsPasswordResetTokenValid_NoResetRequested_ReturnsFalse()
+    {
+        var user = MakeUser();
+
+        Assert.IsFalse(user.IsPasswordResetTokenValid("any-token"));
+    }
+
+    // ── ResetPassword ─────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ResetPassword_ValidPassword_UpdatesHash()
+    {
+        var user = MakeUser(password: "OldPass1");
+
+        var result = user.ResetPassword("NewPass1!", Hasher);
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.IsTrue(Hasher.Verify("NewPass1!", user.PasswordHash.Hash));
+    }
+
+    [TestMethod]
+    public void ResetPassword_WeakNewPassword_ReturnsFailure()
+    {
+        var user = MakeUser();
+
+        var result = user.ResetPassword("weak", Hasher);
+
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.PasswordTooShort.Code, result.GetErrorOrThrow().Code);
+    }
+
+    [TestMethod]
+    public void ResetPassword_RevokesAllRefreshTokens()
+    {
+        var user = MakeUser();
+        user.AddRefreshToken("token-1", DateTime.UtcNow.AddDays(30));
+        user.AddRefreshToken("token-2", DateTime.UtcNow.AddDays(30));
+
+        user.ResetPassword("NewPass1!", Hasher);
+
+        Assert.IsTrue(user.RefreshTokens.All(t => t.IsRevoked));
+    }
+
+    [TestMethod]
+    public void ResetPassword_RaisesPasswordChangedEvent()
+    {
+        var user = MakeUser();
+        user.ClearDomainEvents();
+
+        user.ResetPassword("NewPass1!", Hasher);
+
+        Assert.HasCount(1, user.DomainEvents);
+        Assert.IsInstanceOfType<PasswordChangedEvent>(user.DomainEvents.First());
+    }
+
+    [TestMethod]
+    public void ResetPassword_ClearsPasswordResetToken()
+    {
+        var user = MakeUser();
+        user.RequestPasswordReset();
+
+        user.ResetPassword("NewPass1!", Hasher);
+
+        Assert.IsNull(user.PasswordResetToken);
+        Assert.IsNull(user.PasswordResetExpiry);
+    }
+
+    // ── DeleteAccount ─────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void DeleteAccount_SoftDeletesUser()
+    {
+        var user = MakeUser();
+
+        user.DeleteAccount();
+
+        Assert.IsTrue(user.IsDeleted);
+        Assert.IsNotNull(user.DeletedAt);
+    }
+
+    [TestMethod]
+    public void DeleteAccount_SoftDeletesAllAddresses()
+    {
+        var user = MakeUser();
+        user.AddAddress("1 Main St", "City", "US", null);
+        user.AddAddress("2 Oak Ave", "City", "US", null);
+
+        user.DeleteAccount();
+
+        Assert.IsEmpty(user.Addresses); // all filtered out after soft delete
+    }
+
+    [TestMethod]
+    public void DeleteAccount_RevokesAllRefreshTokens()
+    {
+        var user = MakeUser();
+        user.AddRefreshToken("token-1", DateTime.UtcNow.AddDays(30));
+        user.AddRefreshToken("token-2", DateTime.UtcNow.AddDays(30));
+
+        user.DeleteAccount();
+
+        Assert.IsEmpty(user.RefreshTokens); // tokens deleted (filtered by !IsDeleted)
+    }
+
+    [TestMethod]
+    public void DeleteAccount_ClearsVerificationAndResetTokens()
+    {
+        var user = MakeUser();
+        user.RequestPasswordReset();
+
+        user.DeleteAccount();
+
+        Assert.IsNull(user.EmailVerificationToken);
+        Assert.IsNull(user.PasswordResetToken);
+        Assert.IsNull(user.PasswordResetExpiry);
+    }
+
+    [TestMethod]
+    public void DeleteAccount_WhenAlreadyDeleted_IsIdempotent()
+    {
+        var user = MakeUser();
+        user.DeleteAccount();
+        var firstDeletedAt = user.DeletedAt;
+
+        user.DeleteAccount(); // second call should be a no-op
+
+        Assert.AreEqual(firstDeletedAt, user.DeletedAt);
+    }
 }

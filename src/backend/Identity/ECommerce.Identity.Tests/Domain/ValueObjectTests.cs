@@ -123,6 +123,14 @@ public class ValueObjectTests
         Assert.AreNotEqual(a, b);
     }
 
+    [TestMethod]
+    public void PersonName_LastNameTooLong_ReturnsFailure()
+    {
+        var result = PersonName.Create("John", new string('a', 101));
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(IdentityErrors.NameTooLong.Code, result.GetErrorOrThrow().Code);
+    }
+
     // ── PasswordHash ──────────────────────────────────────────────────────────
 
     [TestMethod]

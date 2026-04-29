@@ -1,4 +1,4 @@
-﻿using ECommerce.Contracts;
+using ECommerce.Contracts;
 using ECommerce.Ordering.Application.Interfaces;
 
 namespace ECommerce.Ordering.Infrastructure.Services;
@@ -9,6 +9,7 @@ public sealed class OrderIntegrationEventPublisher(IIntegrationEventOutbox outbo
         Guid orderId,
         Guid customerId,
         IReadOnlyCollection<Guid> productIds,
+        IReadOnlyCollection<int> quantities,
         decimal totalAmount,
         CancellationToken cancellationToken = default)
     {
@@ -19,7 +20,8 @@ public sealed class OrderIntegrationEventPublisher(IIntegrationEventOutbox outbo
             totalAmount,
             DateTime.UtcNow)
         {
-            CorrelationId = orderId
+            CorrelationId = orderId,
+            Quantities = quantities.ToArray()
         };
 
         return outbox.EnqueueAsync(integrationEvent, cancellationToken);
