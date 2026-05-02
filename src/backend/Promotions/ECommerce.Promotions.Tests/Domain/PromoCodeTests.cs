@@ -129,8 +129,7 @@ public class PromoCodeTests
 
         promoCode.RecordUsage();
 
-        Assert.HasCount(1, promoCode.DomainEvents);
-        Assert.IsInstanceOfType<PromoCodeExhaustedEvent>(promoCode.DomainEvents.First());
+        Assert.IsInstanceOfType<PromoCodeExhaustedEvent>(promoCode.DomainEvents.Last());
     }
 
     [TestMethod]
@@ -140,8 +139,7 @@ public class PromoCodeTests
 
         promoCode.RecordUsage();
 
-        Assert.HasCount(1, promoCode.DomainEvents);
-        Assert.IsInstanceOfType<PromoCodeAppliedEvent>(promoCode.DomainEvents.First());
+        Assert.IsInstanceOfType<PromoCodeAppliedEvent>(promoCode.DomainEvents.Last());
     }
 
     [TestMethod]

@@ -10,10 +10,10 @@ namespace ECommerce.Promotions.Tests.Handlers;
 public class CommandHandlerTests
 {
     [TestMethod]
-    public async Task CreatePromoCode_ValidData_ReturnsDetailDto()
+    public async Task CreatePromoCode_ValidData_ReturnsId()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new CreatePromoCodeCommandHandler(repo);
 
         var command = new CreatePromoCodeCommand(
             Code: "SUMMER10",
@@ -28,23 +28,24 @@ public class CommandHandlerTests
         var result = await handler.Handle(command, default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual("SUMMER10", result.GetDataOrThrow().Code);
-        Assert.AreEqual(50, result.GetDataOrThrow().MaxUses);
-        Assert.IsTrue(repo.Contains(result.GetDataOrThrow().Id));
+        var id = result.GetDataOrThrow();
+        Assert.AreNotEqual(Guid.Empty, id);
+        Assert.IsTrue(repo.Contains(id));
     }
 
     [TestMethod]
     public async Task CreatePromoCode_NormalizesCodeToUpper()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new CreatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("summer10", "Percentage", 10),
             default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual("SUMMER10", result.GetDataOrThrow().Code);
+        var saved = await repo.GetByIdAsync(result.GetDataOrThrow());
+        Assert.AreEqual("SUMMER10", saved!.Code.Value);
     }
 
     [TestMethod]
@@ -52,7 +53,7 @@ public class CommandHandlerTests
     {
         var repo = new FakePromoCodeRepository();
         repo.Seed(PromoCodeFactory.Active("SAVE20"));
-        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new CreatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("SAVE20", "Percentage", 10),
@@ -66,7 +67,7 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_InvalidPercentage_ReturnsError()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new CreatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("TEST123", "Percentage", 0),
@@ -80,7 +81,7 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_InvalidDateRange_ReturnsError()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new CreatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand(
@@ -99,15 +100,16 @@ public class CommandHandlerTests
     public async Task CreatePromoCode_InvalidDiscountType_DefaultsToPercentage()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new CreatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new CreatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new CreatePromoCodeCommand("TEST123", "NotAType", 15),
             default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual("Percentage", result.GetDataOrThrow().DiscountType);
-        Assert.AreEqual(15m, result.GetDataOrThrow().DiscountValue);
+        var saved = await repo.GetByIdAsync(result.GetDataOrThrow());
+        Assert.AreEqual("Percentage", saved!.Discount.Type.ToString());
+        Assert.AreEqual(15m, saved.Discount.Amount);
     }
 
     [TestMethod]
@@ -116,21 +118,22 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new UpdatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(promo.Id, IsActive: false),
             default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.IsFalse(result.GetDataOrThrow().IsActive);
+        Assert.AreEqual(promo.Id, result.GetDataOrThrow());
+        Assert.IsFalse((await repo.GetByIdAsync(promo.Id))!.IsActive);
     }
 
     [TestMethod]
     public async Task UpdatePromoCode_UnknownId_ReturnsPromoNotFound()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new UpdatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(Guid.NewGuid(), IsActive: false),
@@ -146,7 +149,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new UpdatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(
@@ -159,11 +162,12 @@ public class CommandHandlerTests
             default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual("Fixed", result.GetDataOrThrow().DiscountType);
-        Assert.AreEqual(5m, result.GetDataOrThrow().DiscountValue);
-        Assert.AreEqual(25m, result.GetDataOrThrow().MinimumOrderAmount);
-        Assert.AreEqual(10m, result.GetDataOrThrow().MaxDiscountAmount);
-        Assert.AreEqual(9, result.GetDataOrThrow().MaxUses);
+        var saved = await repo.GetByIdAsync(promo.Id);
+        Assert.AreEqual("Fixed", saved!.Discount.Type.ToString());
+        Assert.AreEqual(5m, saved.Discount.Amount);
+        Assert.AreEqual(25m, saved.MinimumOrderAmount);
+        Assert.AreEqual(10m, saved.MaxDiscountAmount);
+        Assert.AreEqual(9, saved.MaxUses);
     }
 
     [TestMethod]
@@ -172,7 +176,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new UpdatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(
@@ -191,7 +195,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new UpdatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new UpdatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(
             new UpdatePromoCodeCommand(
@@ -201,8 +205,9 @@ public class CommandHandlerTests
             default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual("Percentage", result.GetDataOrThrow().DiscountType);
-        Assert.AreEqual(12m, result.GetDataOrThrow().DiscountValue);
+        var saved = await repo.GetByIdAsync(promo.Id);
+        Assert.AreEqual("Percentage", saved!.Discount.Type.ToString());
+        Assert.AreEqual(12m, saved.Discount.Amount);
     }
 
     [TestMethod]
@@ -211,7 +216,7 @@ public class CommandHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new DeactivatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new DeactivatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(new DeactivatePromoCodeCommand(promo.Id), default);
 
@@ -223,7 +228,7 @@ public class CommandHandlerTests
     public async Task DeactivatePromoCode_UnknownId_ReturnsPromoNotFound()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new DeactivatePromoCodeCommandHandler(repo, new FakePromoProjectionEventPublisher());
+        var handler = new DeactivatePromoCodeCommandHandler(repo);
 
         var result = await handler.Handle(new DeactivatePromoCodeCommand(Guid.NewGuid()), default);
 
