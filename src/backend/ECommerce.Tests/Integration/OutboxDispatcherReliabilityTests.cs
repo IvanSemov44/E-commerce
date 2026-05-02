@@ -1,7 +1,7 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ECommerce.Contracts;
-using ECommerce.Infrastructure.Data;
-using ECommerce.Infrastructure.Integration;
+using ECommerce.Ordering.Infrastructure.Integration;
+using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,7 +16,7 @@ public class OutboxDispatcherReliabilityTests
     public async Task Dispatch_WhenPublishFails_SchedulesRetryWithBackoff()
     {
         var bus = new TestIntegrationEventBus(failuresBeforeSuccess: 1);
-        using var harness = CreateHarness(bus, "outbox-retry-schedule", new OutboxDispatcherOptions
+        using var harness = CreateHarness(bus, "outbox-retry-schedule", new OrderingOutboxDispatcherOptions
         {
             MaxRetryAttempts = 5,
             BaseRetryDelaySeconds = 2,
@@ -43,7 +43,7 @@ public class OutboxDispatcherReliabilityTests
     public async Task Dispatch_WhenRetriesExhausted_MovesMessageToDeadLetter()
     {
         var bus = new TestIntegrationEventBus(failuresBeforeSuccess: int.MaxValue);
-        using var harness = CreateHarness(bus, "outbox-dead-letter", new OutboxDispatcherOptions
+        using var harness = CreateHarness(bus, "outbox-dead-letter", new OrderingOutboxDispatcherOptions
         {
             MaxRetryAttempts = 3,
             BaseRetryDelaySeconds = 1,
@@ -77,7 +77,7 @@ public class OutboxDispatcherReliabilityTests
     public async Task Dispatch_WhenPublishSucceeds_MarksMessageProcessed()
     {
         var bus = new TestIntegrationEventBus(failuresBeforeSuccess: 0);
-        using var harness = CreateHarness(bus, "outbox-success", new OutboxDispatcherOptions
+        using var harness = CreateHarness(bus, "outbox-success", new OrderingOutboxDispatcherOptions
         {
             MaxRetryAttempts = 3,
             BaseRetryDelaySeconds = 1,
@@ -102,13 +102,13 @@ public class OutboxDispatcherReliabilityTests
     private static DispatcherHarness CreateHarness(
         IIntegrationEventBus integrationEventBus,
         string databasePrefix,
-        OutboxDispatcherOptions options)
+        OrderingOutboxDispatcherOptions options)
     {
-        var dbOptions = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var dbOptions = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase($"{databasePrefix}-{Guid.NewGuid():N}")
             .Options;
 
-        var dbContext = new IntegrationPersistenceDbContext(dbOptions);
+        var dbContext = new OrderingDbContext(dbOptions);
 
         var services = new ServiceCollection();
         services.AddSingleton(dbContext);
@@ -117,10 +117,10 @@ public class OutboxDispatcherReliabilityTests
         var rootProvider = services.BuildServiceProvider();
         var scopeFactory = new FixedServiceScopeFactory(rootProvider);
 
-        var dispatcher = new OutboxDispatcherHostedService(
+        var dispatcher = new OrderingOutboxDispatcherHostedService(
             scopeFactory,
             Options.Create(options),
-            NullLogger<OutboxDispatcherHostedService>.Instance);
+            NullLogger<OrderingOutboxDispatcherHostedService>.Instance);
 
         return new DispatcherHarness(dbContext, rootProvider, dispatcher);
     }
@@ -141,13 +141,13 @@ public class OutboxDispatcherReliabilityTests
         };
 
     private sealed class DispatcherHarness(
-        IntegrationPersistenceDbContext dbContext,
+        OrderingDbContext dbContext,
         ServiceProvider rootProvider,
-        OutboxDispatcherHostedService dispatcher) : IDisposable
+        OrderingOutboxDispatcherHostedService dispatcher) : IDisposable
     {
-        public IntegrationPersistenceDbContext DbContext { get; } = dbContext;
+        public OrderingDbContext DbContext { get; } = dbContext;
 
-        public OutboxDispatcherHostedService Dispatcher { get; } = dispatcher;
+        public OrderingOutboxDispatcherHostedService Dispatcher { get; } = dispatcher;
 
         public void Dispose()
         {

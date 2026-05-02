@@ -9,7 +9,6 @@ using ECommerce.Identity.Infrastructure;
 using ECommerce.Inventory.Application.Commands.ReduceStock;
 using ECommerce.Inventory.Infrastructure;
 using ECommerce.Shopping.Application.Commands.AddToCart;
-using ECommerce.Shopping.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
 using ECommerce.Promotions.Application.Commands.CreatePromoCode;
 using ECommerce.Payments.Infrastructure;
@@ -48,7 +47,7 @@ builder.Configuration.ValidateRequiredConfiguration();
 builder.Services.AddForwardedHeadersConfiguration();
 
 // Database
-builder.Services.AddInfrastructurePersistence(builder.Configuration);
+builder.Services.AddInfrastructurePersistence();
 builder.Services.AddInfrastructureSeeders();
 
 // Data Protection - persistent key storage for containerized environments

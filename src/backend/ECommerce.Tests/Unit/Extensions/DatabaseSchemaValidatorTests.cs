@@ -1,5 +1,5 @@
 ﻿using ECommerce.API.Common.Extensions;
-using ECommerce.Infrastructure.Integration;
+using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -8,15 +8,15 @@ namespace ECommerce.Tests.Unit.Extensions;
 [TestClass]
 public class DatabaseSchemaValidatorTests
 {
-    private IntegrationPersistenceDbContext _context = null!;
+    private OrderingDbContext _context = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var options = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        _context = new IntegrationPersistenceDbContext(options);
+        _context = new OrderingDbContext(options);
     }
 
     [TestCleanup]

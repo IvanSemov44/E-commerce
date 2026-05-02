@@ -7,17 +7,15 @@ using ECommerce.Infrastructure.Services;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.Contracts.Validators.Auth;
 using ECommerce.Infrastructure;
-using ECommerce.Infrastructure.Integration.EventHandlers;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Inventory.Infrastructure;
+using ECommerce.Ordering.Application.Interfaces;
 using ECommerce.Shopping.Infrastructure;
 using ECommerce.Promotions.Infrastructure;
 using ECommerce.Payments.Infrastructure;
 using ECommerce.Contracts;
-using MediatR;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Json;
@@ -303,17 +301,7 @@ public static class ServiceCollectionExtensions
         // Domain event dispatcher for publishing domain events after save
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection("IntegrationMessaging:Outbox"));
-        services.Configure<OrderFulfillmentSagaOptions>(configuration.GetSection("IntegrationMessaging:OrderFulfillmentSaga"));
-        services.AddScoped<IIntegrationEventOutbox, EfIntegrationEventOutbox>();
-        services.AddScoped<IDeadLetterReplayService, DeadLetterReplayService>();
-        services.AddScoped<IOrderFulfillmentSagaService, OrderFulfillmentSagaService>();
         services.AddScoped<IOrderCompensationService, SagaOrderCompensationService>();
-        services.AddScoped<InboxIdempotencyProcessor>();
-        services.AddScoped<INotificationHandler<OrderPlacedIntegrationEvent>, OrderPlacedIntegrationEventHandler>();
-        services.AddScoped<INotificationHandler<InventoryReservedIntegrationEvent>, InventoryReservedIntegrationEventHandler>();
-        services.AddScoped<INotificationHandler<InventoryReservationFailedIntegrationEvent>, InventoryReservationFailedIntegrationEventHandler>();
-        services.AddHostedService<OutboxDispatcherHostedService>();
-        services.AddHostedService<OrderFulfillmentSagaTimeoutHostedService>();
 
         // HTTP context accessor
         services.AddHttpContextAccessor();

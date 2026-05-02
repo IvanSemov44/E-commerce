@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace ECommerce.Infrastructure.Integration;
 
 public sealed class IntegrationEventDispatcher(
-    InboxIdempotencyProcessor inbox,
+    IInboxProcessor inbox,
     IPublisher mediator,
     ILogger<IntegrationEventDispatcher> logger) : IIntegrationEventDispatcher
 {

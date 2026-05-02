@@ -117,7 +117,7 @@ public class TestWebApplicationFactory(
     private readonly bool _usePromotionsPostgresContainer = usePromotionsPostgresContainer;
     private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
     private readonly string _catalogDatabaseName = $"IntegrationTestsCatalogDb_{Guid.NewGuid():N}";
-    private readonly string _integrationDatabaseName = $"IntegrationTestsIntegrationDb_{Guid.NewGuid():N}";
+
     private readonly string _identityDatabaseName = $"IntegrationTestsIdentityDb_{Guid.NewGuid():N}";
     private readonly string _inventoryDatabaseName = $"IntegrationTestsInventoryDb_{Guid.NewGuid():N}";
     private readonly string _orderingDatabaseName = $"IntegrationTestsOrderingDb_{Guid.NewGuid():N}";
@@ -195,9 +195,6 @@ public class TestWebApplicationFactory(
             var catalogDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<CatalogDbContext>));
             if (catalogDescriptor != null) services.Remove(catalogDescriptor);
 
-            var integrationDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<IntegrationPersistenceDbContext>));
-            if (integrationDescriptor != null) services.Remove(integrationDescriptor);
-
             var identityDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<IdentityDbContext>));
             if (identityDescriptor != null) services.Remove(identityDescriptor);
 
@@ -267,13 +264,6 @@ public class TestWebApplicationFactory(
                     options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
                 });
             }
-
-            services.AddDbContext<IntegrationPersistenceDbContext>(options =>
-            {
-                options.UseInMemoryDatabase(_integrationDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
 
             services.AddDbContext<IdentityDbContext>(options =>
             {
@@ -361,9 +351,6 @@ public class TestWebApplicationFactory(
                 {
                     catalogDb.Database.EnsureCreated();
                 }
-
-                var integrationDb = scopedServices.GetRequiredService<IntegrationPersistenceDbContext>();
-                integrationDb.Database.EnsureCreated();
 
                 var identityDb = scopedServices.GetRequiredService<IdentityDbContext>();
                 identityDb.Database.EnsureCreated();
@@ -919,7 +906,6 @@ public class TestWebApplicationFactory(
         {
             var total = 0;
 
-            total += await SaveIfAvailableAsync<IntegrationPersistenceDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<IdentityDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<ReviewsDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<CatalogDbContext>(cancellationToken);

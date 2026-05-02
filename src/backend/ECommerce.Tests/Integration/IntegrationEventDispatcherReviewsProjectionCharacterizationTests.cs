@@ -1,5 +1,7 @@
 ﻿using ECommerce.Contracts;
 using ECommerce.Infrastructure.Integration;
+using ECommerce.Ordering.Infrastructure.Integration;
+using ECommerce.Ordering.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,10 +62,10 @@ public class IntegrationEventDispatcherReviewsProjectionCharacterizationTests
         services.AddLogging();
         services.AddDbContext<ReviewsDbContext>(options =>
             options.UseInMemoryDatabase($"{databasePrefix}-reviews"));
-        services.AddDbContext<IntegrationPersistenceDbContext>(options =>
-            options.UseInMemoryDatabase($"{databasePrefix}-integration"));
+        services.AddDbContext<OrderingDbContext>(options =>
+            options.UseInMemoryDatabase($"{databasePrefix}-ordering"));
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(ReviewsDbContext).Assembly));
-        services.AddScoped<InboxIdempotencyProcessor>();
+        services.AddScoped<IInboxProcessor, InboxIdempotencyProcessor>();
         services.AddScoped<IIntegrationEventDispatcher, IntegrationEventDispatcher>();
 
         var provider = services.BuildServiceProvider();

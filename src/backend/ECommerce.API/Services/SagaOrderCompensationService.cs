@@ -1,4 +1,4 @@
-﻿using ECommerce.Infrastructure.Integration;
+﻿using ECommerce.Ordering.Application.Interfaces;
 using ECommerce.Ordering.Application.Commands.CancelOrder;
 using MediatR;
 

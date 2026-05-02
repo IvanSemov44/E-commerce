@@ -1,5 +1,4 @@
-﻿using ECommerce.Infrastructure.Integration;
-using ECommerce.Catalog.Infrastructure.Persistence;
+﻿using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Infrastructure.Data.Seeders;
 using ECommerce.Payments.Infrastructure.Persistence;
 using ECommerce.Promotions.Infrastructure.Persistence;
@@ -19,7 +18,6 @@ public sealed class AppDbContextInitializationService(
     PaymentsDbContext paymentsDbContext,
     PromotionsDbContext promotionsDbContext,
     ReviewsDbContext reviewsDbContext,
-    IntegrationPersistenceDbContext integrationPersistenceDbContext,
     ReviewsProductProjectionBackfillService reviewsBackfillService)
 {
     public async Task InitializeAsync(IWebHostEnvironment environment)
@@ -35,7 +33,6 @@ public sealed class AppDbContextInitializationService(
         await MigrateReviewsContextAsync();
 
         await SeedCatalogContextAsync(environment);
-        await EnsureIntegrationSchemaAsync();
         await BackfillReviewsProductProjectionsAsync();
     }
 
@@ -137,18 +134,6 @@ public sealed class AppDbContextInitializationService(
         {
             Log.Warning(ex, "An error occurred while seeding Catalog context data.");
         }
-    }
-
-    private async Task EnsureIntegrationSchemaAsync(CancellationToken cancellationToken = default)
-    {
-        var providerName = integrationPersistenceDbContext.Database.ProviderName ?? string.Empty;
-        if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ||
-            !integrationPersistenceDbContext.Database.IsRelational())
-            return;
-
-        // IntegrationPersistenceDbContext currently does not own migration files.
-        // EnsureCreated keeps outbox/inbox/saga/dead-letter tables present in dedicated integration DBs.
-        await integrationPersistenceDbContext.Database.EnsureCreatedAsync(cancellationToken);
     }
 
     private async Task BackfillReviewsProductProjectionsAsync()

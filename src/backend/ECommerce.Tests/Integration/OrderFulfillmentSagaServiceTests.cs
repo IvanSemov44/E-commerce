@@ -1,5 +1,7 @@
-﻿using ECommerce.Contracts;
-using ECommerce.Infrastructure.Integration;
+using ECommerce.Contracts;
+using ECommerce.Ordering.Application.Interfaces;
+using ECommerce.Ordering.Infrastructure.Integration;
+using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -9,7 +11,7 @@ namespace ECommerce.Tests.Integration;
 public class OrderFulfillmentSagaServiceTests
 {
     private static OrderFulfillmentSagaService CreateService(
-        IntegrationPersistenceDbContext dbContext,
+        OrderingDbContext dbContext,
         TestOrderCompensationService? compensationService = null,
         OrderFulfillmentSagaOptions? options = null)
     {
@@ -22,11 +24,11 @@ public class OrderFulfillmentSagaServiceTests
     [TestMethod]
     public async Task StartThenReserved_MarksSagaCompleted()
     {
-        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var options = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase($"saga-success-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new IntegrationPersistenceDbContext(options);
+        await using var dbContext = new OrderingDbContext(options);
     var compensationService = new TestOrderCompensationService();
     var service = CreateService(dbContext, compensationService);
 
@@ -57,11 +59,11 @@ public class OrderFulfillmentSagaServiceTests
     [TestMethod]
     public async Task StartThenReservationFailed_MarksSagaCompensatedFailed()
     {
-        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var options = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase($"saga-failed-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new IntegrationPersistenceDbContext(options);
+        await using var dbContext = new OrderingDbContext(options);
     var compensationService = new TestOrderCompensationService();
     var service = CreateService(dbContext, compensationService);
 
@@ -90,11 +92,11 @@ public class OrderFulfillmentSagaServiceTests
     [TestMethod]
     public async Task DuplicateFinalEvent_DoesNotChangeCompletedTimestamp()
     {
-        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var options = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase($"saga-duplicate-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new IntegrationPersistenceDbContext(options);
+        await using var dbContext = new OrderingDbContext(options);
     var service = CreateService(dbContext);
 
         var correlationId = Guid.NewGuid();
@@ -122,11 +124,11 @@ public class OrderFulfillmentSagaServiceTests
     [TestMethod]
     public async Task UnknownOrderInventoryEvent_IsIgnoredSafely()
     {
-        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var options = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase($"saga-unknown-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new IntegrationPersistenceDbContext(options);
+        await using var dbContext = new OrderingDbContext(options);
     var service = CreateService(dbContext);
 
         await service.HandleInventoryReservedAsync(new InventoryReservedIntegrationEvent(Guid.NewGuid(), [Guid.NewGuid()], [1]), CancellationToken.None);
@@ -138,11 +140,11 @@ public class OrderFulfillmentSagaServiceTests
     [TestMethod]
     public async Task HandleTimeoutsAsync_TimedOutSaga_IsCompensatedAndMarkedFailed()
     {
-        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var options = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase($"saga-timeout-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new IntegrationPersistenceDbContext(options);
+        await using var dbContext = new OrderingDbContext(options);
         var compensationService = new TestOrderCompensationService();
         var service = CreateService(dbContext, compensationService, new OrderFulfillmentSagaOptions
         {
@@ -180,11 +182,11 @@ public class OrderFulfillmentSagaServiceTests
     [TestMethod]
     public async Task HandleTimeoutsAsync_CompletedSaga_IsIgnored()
     {
-        var options = new DbContextOptionsBuilder<IntegrationPersistenceDbContext>()
+        var options = new DbContextOptionsBuilder<OrderingDbContext>()
             .UseInMemoryDatabase($"saga-timeout-completed-{Guid.NewGuid():N}")
             .Options;
 
-        await using var dbContext = new IntegrationPersistenceDbContext(options);
+        await using var dbContext = new OrderingDbContext(options);
         var compensationService = new TestOrderCompensationService();
         var service = CreateService(dbContext, compensationService, new OrderFulfillmentSagaOptions
         {
