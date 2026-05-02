@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
 using ECommerce.SharedKernel.Interfaces;
@@ -274,6 +274,19 @@ public class PaymentsControllerTests
         // Arrange
         using var client = _factory.CreateAdminClient();
         var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
+
+        // First process a payment so a Payment entity exists to refund
+        var processPaymentDto = new
+        {
+            OrderId = orderId,
+            PaymentMethod = "credit_card",
+            Amount = 100.00m,
+            CardToken = "tok_visa"
+        };
+        var processContent = new StringContent(JsonSerializer.Serialize(processPaymentDto), Encoding.UTF8, "application/json");
+        var processResponse = await client.PostAsync("/api/payments/process", processContent);
+        Assert.AreEqual(HttpStatusCode.OK, processResponse.StatusCode, "Payment processing must succeed before refund test.");
+
         var idempotencyKey = Guid.NewGuid().ToString();
 
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
