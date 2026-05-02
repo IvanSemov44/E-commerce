@@ -1,5 +1,4 @@
-﻿using ECommerce.Infrastructure;
-using ECommerce.Infrastructure.Integration;
+﻿using ECommerce.Infrastructure.Integration;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Infrastructure.Data.Seeders;
 using ECommerce.Payments.Infrastructure.Persistence;
@@ -11,10 +10,10 @@ using Serilog;
 namespace ECommerce.API.Services;
 
 /// <summary>
-/// Encapsulates AppDbContext migration + seed startup flow so API composition stays thin.
+/// Runs schema migration and seed startup flow for all bounded contexts.
 /// </summary>
 public sealed class AppDbContextInitializationService(
-    IAppDbInitializationService appDbInitializationService,
+    DataProtectionKeysContext dataProtectionKeysContext,
     CatalogDbContext catalogDbContext,
     CatalogDataSeeder catalogDataSeeder,
     PaymentsDbContext paymentsDbContext,
@@ -25,9 +24,7 @@ public sealed class AppDbContextInitializationService(
 {
     public async Task InitializeAsync(IWebHostEnvironment environment)
     {
-        // Keep startup data lifecycle in one place: schema first, then data seed, then projection backfill.
-        // This ordering avoids backfill running against stale schema/data during app boot.
-        await appDbInitializationService.InitializeAsync(environment);
+        await EnsureDataProtectionSchemaAsync();
 
         if (environment.IsEnvironment("Test"))
             return;
@@ -40,6 +37,15 @@ public sealed class AppDbContextInitializationService(
         await SeedCatalogContextAsync(environment);
         await EnsureIntegrationSchemaAsync();
         await BackfillReviewsProductProjectionsAsync();
+    }
+
+    private async Task EnsureDataProtectionSchemaAsync(CancellationToken cancellationToken = default)
+    {
+        var providerName = dataProtectionKeysContext.Database.ProviderName ?? string.Empty;
+        if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) || !dataProtectionKeysContext.Database.IsRelational())
+            return;
+
+        await dataProtectionKeysContext.Database.EnsureCreatedAsync(cancellationToken);
     }
 
     private async Task MigrateCatalogContextAsync(CancellationToken cancellationToken = default)

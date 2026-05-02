@@ -1,5 +1,4 @@
-using ECommerce.Payments.Domain.Aggregates.Payment;
-using ECommerce.Payments.Domain.Enums;
+﻿using ECommerce.Payments.Domain.Aggregates.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -22,6 +21,6 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.ProcessedAt);
         builder.Property(p => p.FailureReason).HasMaxLength(500);
 
-        builder.HasIndex(p => p.OrderId);
+        builder.HasIndex(p => p.OrderId).IsUnique();
     }
 }

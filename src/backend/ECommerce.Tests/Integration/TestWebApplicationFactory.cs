@@ -188,15 +188,7 @@ public class TestWebApplicationFactory(
 
         builder.ConfigureTestServices(services =>
         {
-            // Register Promotions configuration assembly before replacing DbContext
-            // This ensures the PromoCode entity configuration is available
-            ECommerce.Infrastructure.Data.AppDbContext.RegisterConfigurationAssembly(
-                typeof(ECommerce.Promotions.Infrastructure.DependencyInjection).Assembly);
-
-            // Replace AppDbContext with InMemory DB
-            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (descriptor != null) services.Remove(descriptor);
-
+            // Replace BC DbContexts with InMemory DB
             var reviewsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ReviewsDbContext>));
             if (reviewsDescriptor != null) services.Remove(reviewsDescriptor);
 
@@ -241,14 +233,6 @@ public class TestWebApplicationFactory(
             var inMemoryServiceProvider = new ServiceCollection()
                 .AddEntityFrameworkInMemoryDatabase()
                 .BuildServiceProvider();
-
-            services.AddDbContext<AppDbContext>(options =>
-            {
-                options.UseInMemoryDatabase(_databaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                // Suppress transaction warnings for InMemory provider (doesn't support transactions)
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
 
             if (_useReviewsPostgresContainer)
             {
@@ -358,9 +342,6 @@ public class TestWebApplicationFactory(
             using (var scope = sp.CreateScope())
             {
                 var scopedServices = scope.ServiceProvider;
-                var db = scopedServices.GetRequiredService<AppDbContext>();
-                db.Database.EnsureCreated();
-
                 var reviewsDb = scopedServices.GetRequiredService<ReviewsDbContext>();
                 if (_useReviewsPostgresContainer)
                 {
@@ -938,7 +919,6 @@ public class TestWebApplicationFactory(
         {
             var total = 0;
 
-            total += await SaveIfAvailableAsync<AppDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<IntegrationPersistenceDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<IdentityDbContext>(cancellationToken);
             total += await SaveIfAvailableAsync<ReviewsDbContext>(cancellationToken);
