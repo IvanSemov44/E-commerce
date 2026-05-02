@@ -1,25 +1,17 @@
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Domain;
-using ECommerce.Ordering.Application.DTOs;
-using ECommerce.Ordering.Application.Mapping;
-using ECommerce.Ordering.Domain.Interfaces;
+﻿namespace ECommerce.Ordering.Application.Commands.ShipOrder;
 
-namespace ECommerce.Ordering.Application.Commands.ShipOrder;
-
-public class ShipOrderCommandHandler(IOrderRepository orders) : IRequestHandler<ShipOrderCommand, Result<OrderDto>>
+public class ShipOrderCommandHandler(IOrderRepository orders) : IRequestHandler<ShipOrderCommand, Result<Guid>>
 {
-    public async Task<Result<OrderDto>> Handle(ShipOrderCommand command, CancellationToken ct)
+    public async Task<Result<Guid>> Handle(ShipOrderCommand command, CancellationToken ct)
     {
         var order = await orders.GetByIdAsync(command.OrderId, ct);
         if (order is null)
-            return Result<OrderDto>.Fail(new DomainError("ORDER_NOT_FOUND", "Order not found."));
+            return Result<Guid>.Fail(OrderingApplicationErrors.OrderNotFound);
 
         var result = order.Ship(command.TrackingNumber);
         if (!result.IsSuccess)
-            return Result<OrderDto>.Fail(result.GetErrorOrThrow());
+            return Result<Guid>.Fail(result.GetErrorOrThrow());
 
-        await orders.UpdateAsync(order, ct);
-        return Result<OrderDto>.Ok(order.ToDto());
+        return Result<Guid>.Ok(order.Id);
     }
 }

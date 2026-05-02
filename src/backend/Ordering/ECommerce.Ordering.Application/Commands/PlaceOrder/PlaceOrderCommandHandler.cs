@@ -1,45 +1,33 @@
-﻿using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.SharedKernel.Domain;
-using ECommerce.Ordering.Application.DTOs;
-using ECommerce.Ordering.Application.Mapping;
-using ECommerce.Ordering.Application.Interfaces;
-using ECommerce.Ordering.Domain.Aggregates.Order;
-using ECommerce.Ordering.Domain.Interfaces;
+﻿using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.ValueObjects;
 
 namespace ECommerce.Ordering.Application.Commands.PlaceOrder;
 
 public class PlaceOrderCommandHandler(
     IOrderRepository orders,
-    IUnitOfWork uow,
     IProductCatalogReader productReader,
     IPromoCodeLookup promoCodeLookup,
     IShippingAddressReader shippingAddressReader,
-    ECommerce.Ordering.Application.Interfaces.ICurrentUserService currentUser,
-    IOrderIntegrationEventPublisher orderIntegrationEventPublisher
-) : IRequestHandler<PlaceOrderCommand, Result<OrderDto>>
+    ICurrentUserService currentUser
+) : IRequestHandler<PlaceOrderCommand, Result<Guid>>
 {
-    public async Task<Result<OrderDto>> Handle(PlaceOrderCommand command, CancellationToken ct)
+    public async Task<Result<Guid>> Handle(PlaceOrderCommand command, CancellationToken ct)
     {
-        var userId = currentUser.UserId;
+        var userId = currentUser.UserIdOrNull;
         if (userId is null)
-            return Result<OrderDto>.Fail(new DomainError("UNAUTHORIZED", "User not authenticated."));
+            return Result<Guid>.Fail(OrderingApplicationErrors.Unauthorized);
 
-        var productIds = command.CartItems.Select(x => x.ProductId).ToList();
+        var productIds = command.CartItems.Select(x => x.ProductId).Distinct().ToList();
         var products = await productReader.GetProductsAsync(productIds, ct);
 
         if (products.Count != productIds.Count)
-            return Result<OrderDto>.Fail(OrderingApplicationErrors.ProductsUnavailable);
+            return Result<Guid>.Fail(OrderingApplicationErrors.ProductsUnavailable);
 
-        var orderItems = command.CartItems.Select(ci =>
+        var orderItems = command.CartItems.ConvertAll(ci =>
         {
             var p = products.First(x => x.ProductId == ci.ProductId);
             return new OrderItemData(p.ProductId, p.ProductName, p.UnitPrice, ci.Quantity, p.ImageUrl);
-        }).ToList();
-
-        var subtotal = orderItems.Sum(i => i.UnitPrice * i.Quantity);
+        });
 
         decimal discountAmount = 0;
         Guid? promoCodeId = null;
@@ -48,7 +36,7 @@ public class PlaceOrderCommandHandler(
         {
             var promoResult = await promoCodeLookup.GetPromoCodeAsync(command.PromoCode, ct);
             if (promoResult is null)
-                return Result<OrderDto>.Fail(OrderingApplicationErrors.PromoCodeNotFound);
+                return Result<Guid>.Fail(OrderingApplicationErrors.PromoCodeNotFound);
 
             var (discount, promoId) = promoResult.Value;
             discountAmount = discount;
@@ -57,19 +45,10 @@ public class PlaceOrderCommandHandler(
 
         var address = await shippingAddressReader.GetShippingAddressAsync(userId.Value, command.ShippingAddressId, ct);
         if (address is null)
-            return Result<OrderDto>.Fail(OrderingApplicationErrors.AddressNotFound);
+            return Result<Guid>.Fail(OrderingApplicationErrors.AddressNotFound);
 
         var shippingAddress = ShippingAddress.Create(
             address.Street, address.City, address.Country, address.PostalCode);
-
-        var payment = PaymentInfo.Create(
-            command.PaymentReference,
-            command.PaymentMethod,
-            subtotal - discountAmount + command.ShippingCost + command.TaxAmount,
-            DateTime.UtcNow);
-
-        if (!payment.IsSuccess)
-            return Result<OrderDto>.Fail(payment.GetErrorOrThrow());
 
         var orderResult = Order.Place(
             userId.Value,
@@ -77,36 +56,18 @@ public class PlaceOrderCommandHandler(
             orderItems,
             command.ShippingCost,
             command.TaxAmount,
-            payment.GetDataOrThrow(),
+            command.PaymentReference,
+            command.PaymentMethod,
             discountAmount,
             promoCodeId);
 
         if (!orderResult.IsSuccess)
-            return Result<OrderDto>.Fail(orderResult.GetErrorOrThrow());
+            return Result<Guid>.Fail(orderResult.GetErrorOrThrow());
 
         var order = orderResult.GetDataOrThrow();
 
         await orders.AddAsync(order, ct);
-        await uow.SaveChangesAsync(ct);
 
-        await orderIntegrationEventPublisher.PublishOrderPlacedAsync(
-            order.Id,
-            order.UserId,
-            order.Items.Select(x => x.ProductId).ToArray(),
-            order.Items.Select(x => x.Quantity).ToArray(),
-            order.Total,
-            ct);
-
-        await uow.SaveChangesAsync(ct);
-
-        return Result<OrderDto>.Ok(order.ToDto());
+        return Result<Guid>.Ok(order.Id);
     }
-}
-
-public static class OrderingApplicationErrors
-{
-    public static readonly DomainError ProductsUnavailable = new("PRODUCTS_UNAVAILABLE", "One or more products are unavailable.");
-    public static readonly DomainError PromoCodeNotFound = new("PROMO_CODE_NOT_FOUND", "Promo code not found.");
-    public static readonly DomainError PromoCodeInvalid = new("PROMO_CODE_INVALID", "Promo code is invalid or expired.");
-    public static readonly DomainError AddressNotFound = new("ADDRESS_NOT_FOUND", "Shipping address not found.");
 }

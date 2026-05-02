@@ -1,8 +1,3 @@
-﻿using MediatR;
-using ECommerce.SharedKernel.Interfaces;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Ordering.Application.DTOs;
+﻿namespace ECommerce.Ordering.Application.Commands.ConfirmOrder;
 
-namespace ECommerce.Ordering.Application.Commands.ConfirmOrder;
-
-public record ConfirmOrderCommand(Guid OrderId) : IRequest<Result<OrderDto>>, ITransactionalCommand;
+public record ConfirmOrderCommand(Guid OrderId) : IRequest<Result<Guid>>, ITransactionalCommand;

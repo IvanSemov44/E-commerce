@@ -1,10 +1,6 @@
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Ordering.Application.DTOs;
+﻿namespace ECommerce.Ordering.Application.Commands.PlaceOrder;
 
-namespace ECommerce.Ordering.Application.Commands.PlaceOrder;
-
-public record PlaceOrderCommand : IRequest<Result<OrderDto>>
+public record PlaceOrderCommand : IRequest<Result<Guid>>
 {
     public required Guid UserId { get; init; }
     public required Guid ShippingAddressId { get; init; }
@@ -17,5 +13,3 @@ public record PlaceOrderCommand : IRequest<Result<OrderDto>>
 }
 
 public record CartItemInput(Guid ProductId, int Quantity);
-
-public record PlaceOrderResponse(Guid OrderId, string OrderNumber);
