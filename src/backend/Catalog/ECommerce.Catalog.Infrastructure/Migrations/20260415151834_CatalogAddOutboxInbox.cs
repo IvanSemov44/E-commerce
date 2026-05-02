@@ -11,14 +11,6 @@ namespace ECommerce.Catalog.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "LowStockThreshold",
-                schema: "catalog",
-                table: "Products",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
-
             migrationBuilder.CreateTable(
                 name: "inbox_messages",
                 schema: "catalog",
@@ -120,11 +112,6 @@ namespace ECommerce.Catalog.Infrastructure.Migrations
             migrationBuilder.DropTable(
                 name: "outbox_messages",
                 schema: "catalog");
-
-            migrationBuilder.DropColumn(
-                name: "LowStockThreshold",
-                schema: "catalog",
-                table: "Products");
         }
     }
 }
