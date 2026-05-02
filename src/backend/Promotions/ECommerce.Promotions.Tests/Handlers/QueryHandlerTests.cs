@@ -1,9 +1,8 @@
 ﻿using ECommerce.Promotions.Application.DTOs.Common;
-using ECommerce.Promotions.Application.Queries.GetPromoCode;
+using ECommerce.Promotions.Application.Queries.GetPromoCodeById;
 using ECommerce.Promotions.Application.Queries.GetPromoCodes;
 using ECommerce.Promotions.Application.Queries.ValidatePromoCode;
 using ECommerce.Promotions.Domain.Errors;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Promotions.Tests.Handlers;
 
@@ -70,9 +69,9 @@ public class QueryHandlerTests
         var repo = new FakePromoCodeRepository();
         var promo = PromoCodeFactory.Active("SAVE20");
         repo.Seed(promo);
-        var handler = new GetPromoCodeQueryHandler(repo);
+        var handler = new GetPromoCodeByIdQueryHandler(repo);
 
-        var result = await handler.Handle(new GetPromoCodeQuery(promo.Id), default);
+        var result = await handler.Handle(new GetPromoCodeByIdQuery(promo.Id), default);
 
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual("SAVE20", result.GetDataOrThrow().Code);
@@ -83,9 +82,9 @@ public class QueryHandlerTests
     public async Task GetPromoCode_UnknownId_ReturnsPromoNotFound()
     {
         var repo = new FakePromoCodeRepository();
-        var handler = new GetPromoCodeQueryHandler(repo);
+        var handler = new GetPromoCodeByIdQueryHandler(repo);
 
-        var result = await handler.Handle(new GetPromoCodeQuery(Guid.NewGuid()), default);
+        var result = await handler.Handle(new GetPromoCodeByIdQuery(Guid.NewGuid()), default);
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(PromotionsErrors.PromoNotFound.Code, result.GetErrorOrThrow().Code);

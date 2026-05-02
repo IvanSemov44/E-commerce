@@ -1,4 +1,4 @@
-using ECommerce.SharedKernel.Domain;
+﻿using ECommerce.SharedKernel.Domain;
 
 namespace ECommerce.Promotions.Domain.Events;
 
