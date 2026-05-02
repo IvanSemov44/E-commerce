@@ -1,4 +1,4 @@
-using ECommerce.Contracts;
+﻿using ECommerce.Contracts;
 using ECommerce.Payments.Application;
 using ECommerce.Payments.Application.Interfaces;
 using ECommerce.Payments.Domain.Events;
@@ -42,6 +42,8 @@ public static class DependencyInjection
         services.AddScoped<IPaymentsOutboxEventWriter, PaymentsOutboxEventWriter>();
 
         services.AddScoped<INotificationHandler<PaymentProcessedEvent>, PaymentProcessedEventHandler>();
+        services.AddScoped<INotificationHandler<PaymentFailedEvent>, PaymentFailedEventHandler>();
+        services.AddScoped<INotificationHandler<PaymentRefundedEvent>, PaymentRefundedEventHandler>();
         services.AddScoped<INotificationHandler<OrderPlacedIntegrationEvent>, OrderPlacedIntegrationEventHandler>();
 
         services.AddHostedService<PaymentsOutboxDispatcherHostedService>();
