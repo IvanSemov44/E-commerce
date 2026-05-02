@@ -1,4 +1,4 @@
-using ECommerce.Identity.Infrastructure.Persistence.Configurations;
+﻿using ECommerce.Identity.Infrastructure.Persistence.Configurations;
 using ECommerce.Identity.Infrastructure.Persistence.Converters;
 using ECommerce.SharedKernel.Domain;
 
@@ -34,17 +34,8 @@ public class IdentityDbContext(
     {
         var utcNow = DateTime.UtcNow;
 
-        foreach (var entry in ChangeTracker.Entries<Entity>())
-        {
-            if (entry.State == EntityState.Modified)
-                entry.Property(nameof(Entity.UpdatedAt)).CurrentValue = utcNow;
-
-            if (entry.State == EntityState.Added)
-            {
-                entry.Property(nameof(Entity.CreatedAt)).CurrentValue = utcNow;
-                entry.Property(nameof(Entity.UpdatedAt)).CurrentValue = utcNow;
-            }
-        }
+        foreach (var entry in ChangeTracker.Entries<Entity>().Where(e => e.State == EntityState.Modified))
+            entry.Property(nameof(Entity.UpdatedAt)).CurrentValue = utcNow;
 
         var aggregates = ChangeTracker.Entries<AggregateRoot>()
             .Where(e => e.Entity.DomainEvents.Count != 0)
