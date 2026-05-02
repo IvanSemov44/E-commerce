@@ -3,7 +3,7 @@
 public record PaymentDetailsDto
 {
     public Guid OrderId { get; init; }
-    public string PaymentIntentId { get; init; } = null!;
+    public string? PaymentIntentId { get; init; }
     public string Status { get; init; } = null!;
     public string PaymentMethod { get; init; } = null!;
     public decimal Amount { get; init; }
