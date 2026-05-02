@@ -1,9 +1,12 @@
-﻿using ECommerce.Promotions.Application;
-using ECommerce.Promotions.Application.Interfaces;
+﻿using ECommerce.Contracts;
+using ECommerce.Promotions.Application;
+using ECommerce.Promotions.Domain.Events;
 using ECommerce.Promotions.Domain.Interfaces;
+using ECommerce.Promotions.Infrastructure.EventHandlers;
+using ECommerce.Promotions.Infrastructure.Integration;
 using ECommerce.Promotions.Infrastructure.Persistence;
 using ECommerce.Promotions.Infrastructure.Persistence.Repositories;
-using ECommerce.Promotions.Infrastructure.Services;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,9 +28,20 @@ public static class DependencyInjection
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
+        // Outbox: write integration events into promotions.outbox_messages
+        services.AddScoped<IIntegrationEventOutbox, EfPromotionsIntegrationEventOutbox>();
+
+        // Outbox dispatcher: poll promotions.outbox_messages and publish to the bus
+        services.AddOptions<PromotionsOutboxOptions>();
+        services.AddHostedService<PromotionsOutboxDispatcherHostedService>();
+
         // Register repositories
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
-        services.AddScoped<IPromoProjectionEventPublisher, PromoProjectionEventPublisher>();
+
+        // Register domain event handlers
+        services.AddScoped<INotificationHandler<PromoCodeChangedEvent>, PromoCodeChangedEventHandler>();
+        services.AddScoped<INotificationHandler<PromoCodeAppliedEvent>, PromoCodeAppliedEventHandler>();
+        services.AddScoped<INotificationHandler<PromoCodeExhaustedEvent>, PromoCodeExhaustedEventHandler>();
 
         // Register application layer
         services.AddPromotionsApplication();
