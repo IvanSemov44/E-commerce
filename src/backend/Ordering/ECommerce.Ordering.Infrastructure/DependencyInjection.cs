@@ -36,6 +36,8 @@ public static class DependencyInjection
 
         services.AddOptions<OrderingOutboxDispatcherOptions>();
         services.AddSingleton<IConfigureOptions<OrderingOutboxDispatcherOptions>, OrderingOutboxDispatcherOptionsSetup>();
+        services.AddOptions<OrderFulfillmentSagaOptions>();
+        services.AddSingleton<IConfigureOptions<OrderFulfillmentSagaOptions>, OrderFulfillmentSagaOptionsSetup>();
 
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IDbReader, DbReader>();
@@ -44,8 +46,15 @@ public static class DependencyInjection
         services.AddScoped<IShippingAddressReader, DbReader>();
         services.AddScoped<IOrderingOutboxEventWriter, OrderingOutboxEventWriter>();
 
+        services.AddScoped<IOrderFulfillmentSagaService, OrderFulfillmentSagaService>();
+        services.AddScoped<IInboxProcessor, InboxIdempotencyProcessor>();
+        services.AddScoped<InboxIdempotencyProcessor>();
+
         services.AddScoped<INotificationHandler<OrderPlacedEvent>, OrderPlacedEventHandler>();
         services.AddScoped<INotificationHandler<OrderDeliveredEvent>, OrderDeliveredEventHandler>();
+        services.AddScoped<INotificationHandler<OrderPlacedIntegrationEvent>, OrderPlacedIntegrationEventHandler>();
+        services.AddScoped<INotificationHandler<InventoryReservedIntegrationEvent>, InventoryReservedIntegrationEventHandler>();
+        services.AddScoped<INotificationHandler<InventoryReservationFailedIntegrationEvent>, InventoryReservationFailedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<ProductProjectionUpdatedIntegrationEvent>, ProductProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<ProductImageProjectionUpdatedIntegrationEvent>, ProductImageProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<PromoCodeProjectionUpdatedIntegrationEvent>, PromoCodeProjectionUpdatedIntegrationEventHandler>();
@@ -53,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationHandler<PaymentProcessedIntegrationEvent>, PaymentProcessedIntegrationEventHandler>();
 
         services.AddHostedService<OrderingOutboxDispatcherHostedService>();
+        services.AddHostedService<OrderFulfillmentSagaTimeoutHostedService>();
 
         services.AddOrderingApplication();
 

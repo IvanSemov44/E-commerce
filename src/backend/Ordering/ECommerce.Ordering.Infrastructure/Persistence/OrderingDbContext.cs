@@ -19,6 +19,7 @@ public class OrderingDbContext(
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
     public DbSet<DeadLetterMessage> DeadLetterMessages => Set<DeadLetterMessage>();
+    public DbSet<OrderFulfillmentSagaState> OrderFulfillmentSagaStates => Set<OrderFulfillmentSagaState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
