@@ -46,10 +46,6 @@ builder.Configuration.ValidateRequiredConfiguration();
 // This must be called BEFORE other services that use IHttpContextAccessor
 builder.Services.AddForwardedHeadersConfiguration();
 
-// Database
-builder.Services.AddInfrastructurePersistence();
-builder.Services.AddInfrastructureSeeders();
-
 // Data Protection - persistent key storage for containerized environments
 builder.Services.AddDataProtectionConfiguration(builder.Configuration);
 

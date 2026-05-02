@@ -1,11 +1,10 @@
-using ECommerce.SharedKernel.DTOs;
+﻿using ECommerce.SharedKernel.DTOs;
 using ECommerce.SharedKernel.Extensions;
 using ECommerce.SharedKernel.Interfaces;
 using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Threading;
 
 namespace ECommerce.Infrastructure.Services;
 
