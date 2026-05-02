@@ -1,25 +1,24 @@
-﻿using ECommerce.Payments.Domain.Enums;
+﻿using ECommerce.Payments.Domain.Aggregates.Payment;
 using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Application.Errors;
 using ECommerce.Payments.Application.Interfaces;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Payments.Application.Commands.ProcessPayment;
 
 public sealed class ProcessPaymentCommandHandler(
-    IPaymentOrderRepository orderRepository,
+    IPaymentRepository paymentRepository,
+    IPaymentOrderQuery orderQuery,
+    IPaymentGateway paymentGateway,
     IPaymentStore paymentStore,
     IIdempotencyStore idempotencyStore,
-    IConfiguration configuration,
     ILogger<ProcessPaymentCommandHandler> logger)
     : IRequestHandler<ProcessPaymentCommand, Result<PaymentResponseDto>>
 {
-    private static readonly HashSet<string> SupportedPaymentMethods = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> _supportedMethods = new(StringComparer.Ordinal)
     {
         "stripe", "paypal", "credit_card", "debit_card", "apple_pay", "google_pay"
     };
@@ -39,143 +38,93 @@ public sealed class ProcessPaymentCommandHandler(
             return Result<PaymentResponseDto>.Fail(PaymentsApplicationErrors.IdempotencyInProgress);
 
         var dto = command.Payment;
+        var method = NormalizeMethod(dto.PaymentMethod);
 
-        var order = await orderRepository.GetByIdAsync(dto.OrderId, trackChanges: true, cancellationToken);
+        var order = await orderQuery.GetByOrderIdAsync(dto.OrderId, cancellationToken);
         if (order is null)
         {
             await idempotencyStore.AbandonAsync(key, cancellationToken);
             return Result<PaymentResponseDto>.Fail(PaymentsApplicationErrors.OrderNotFound);
         }
 
-        var method = NormalizePaymentMethod(dto.PaymentMethod);
-        if (!SupportedPaymentMethods.Contains(method))
+        if (!_supportedMethods.Contains(method))
         {
             await idempotencyStore.AbandonAsync(key, cancellationToken);
             return Result<PaymentResponseDto>.Fail(PaymentsApplicationErrors.UnsupportedPaymentMethod);
         }
 
-        if (dto.Amount != order.TotalAmount)
+        if (dto.Amount != order.Amount)
         {
             await idempotencyStore.AbandonAsync(key, cancellationToken);
             return Result<PaymentResponseDto>.Fail(PaymentsApplicationErrors.PaymentAmountMismatch);
         }
 
-        var paymentIntentId = GenerateMockPaymentIntentId(method);
-        var transactionId = Guid.NewGuid().ToString("N")[..20].ToUpperInvariant();
-        var paymentSucceeds = !ShouldSimulatePaymentFailure(configuration);
-
         try
         {
-            if (paymentSucceeds)
+            var charge = await paymentGateway.ChargeAsync(method, dto.Amount, cancellationToken);
+            var payment = Payment.Initiate(dto.OrderId, dto.PaymentMethod, dto.Amount);
+
+            if (charge.Succeeded)
             {
-                order.PaymentStatus = (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Paid;
-                order.PaymentMethod = dto.PaymentMethod;
-                order.PaymentIntentId = paymentIntentId;
-                order.Status = ECommerce.SharedKernel.Enums.OrderStatus.Confirmed;
+                payment.MarkPaid(charge.PaymentIntentId, charge.TransactionId);
+                await paymentRepository.AddAsync(payment, cancellationToken);
 
-                await orderRepository.UpdateAsync(order, cancellationToken);
-
-                var paymentDetails = new PaymentDetailsDto
+                await paymentStore.StorePaymentAsync(charge.PaymentIntentId, new PaymentDetailsDto
                 {
                     OrderId = dto.OrderId,
-                    PaymentIntentId = paymentIntentId,
+                    PaymentIntentId = charge.PaymentIntentId,
                     Status = "completed",
                     PaymentMethod = dto.PaymentMethod,
                     Amount = dto.Amount,
-                    Currency = order.Currency,
                     CreatedAt = DateTime.UtcNow,
                     ProcessedAt = DateTime.UtcNow
-                };
-
-                await paymentStore.StorePaymentAsync(paymentIntentId, paymentDetails, cancellationToken);
+                }, cancellationToken);
 
                 var response = new PaymentResponseDto
                 {
                     Success = true,
-                    PaymentIntentId = paymentIntentId,
-                    TransactionId = transactionId,
+                    PaymentIntentId = charge.PaymentIntentId,
+                    TransactionId = charge.TransactionId,
                     Message = "Payment processed successfully",
                     Status = "completed",
                     Amount = dto.Amount,
                     PaymentMethod = dto.PaymentMethod,
                     ProcessedAt = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, string>
-                    {
-                        { "OrderNumber", order.OrderNumber },
-                        { "Provider", GetPaymentProviderName(method) }
-                    }
+                    Metadata = new Dictionary<string, string> { { "Provider", charge.ProviderName } }
                 };
 
                 await idempotencyStore.CompleteAsync(key, response, TimeSpan.FromHours(24), cancellationToken);
                 return Result<PaymentResponseDto>.Ok(response);
             }
 
-            order.PaymentStatus = (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Failed;
-            order.PaymentIntentId = paymentIntentId;
-            await orderRepository.UpdateAsync(order, cancellationToken);
+            payment.MarkFailed(charge.FailureReason ?? "Payment declined");
+            await paymentRepository.AddAsync(payment, cancellationToken);
 
             var failed = new PaymentResponseDto
             {
                 Success = false,
-                PaymentIntentId = paymentIntentId,
-                Message = PaymentsApplicationErrors.PaymentDeclined.Message,
+                PaymentIntentId = charge.PaymentIntentId,
+                Message = charge.FailureReason ?? PaymentsApplicationErrors.PaymentDeclined.Message,
                 Status = "failed",
                 Amount = dto.Amount,
                 PaymentMethod = dto.PaymentMethod,
-                ProcessedAt = DateTime.UtcNow,
-                Metadata = new Dictionary<string, string> { { "OrderNumber", order.OrderNumber } }
+                ProcessedAt = DateTime.UtcNow
             };
 
             await idempotencyStore.AbandonAsync(key, cancellationToken);
             return Result<PaymentResponseDto>.Ok(failed);
         }
-        catch (DbUpdateConcurrencyException ex)
+        catch (Exception ex)
         {
-            logger.LogWarning(ex, "Concurrency conflict while processing payment for order {OrderId}", dto.OrderId);
+            logger.LogWarning(ex, "Error while processing payment for order {OrderId}", dto.OrderId);
             await idempotencyStore.AbandonAsync(key, cancellationToken);
-            return Result<PaymentResponseDto>.Fail(PaymentsApplicationErrors.ConcurrencyConflict);
+            return Result<PaymentResponseDto>.Fail(PaymentsApplicationErrors.InternalError);
         }
     }
 
-    private static string NormalizePaymentMethod(string paymentMethod)
+    private static string NormalizeMethod(string method)
     {
-        var normalized = paymentMethod.ToLowerInvariant();
+        var normalized = method.ToLowerInvariant();
         return normalized == "card" ? "credit_card" : normalized;
     }
-
-    private static string GenerateMockPaymentIntentId(string method)
-    {
-        var prefix = method switch
-        {
-            "stripe" => "pi_",
-            "paypal" => "ppi_",
-            "apple_pay" => "ap_",
-            "google_pay" => "gp_",
-            _ => "pi_"
-        };
-
-        return string.Concat(prefix, Guid.NewGuid().ToString("N").AsSpan(0, 20));
-    }
-
-    private static string GetPaymentProviderName(string method) => method switch
-    {
-        "stripe" => "Stripe",
-        "paypal" => "PayPal",
-        "apple_pay" => "Apple Pay",
-        "google_pay" => "Google Pay",
-        "credit_card" => "Credit Card",
-        "debit_card" => "Debit Card",
-        _ => "Unknown"
-    };
-
-    private static bool ShouldSimulatePaymentFailure(IConfiguration configuration)
-    {
-        var simulateFailures = configuration.GetValue<bool>("Payment:SimulateFailures", false);
-        if (!simulateFailures)
-            return false;
-
-        var random = new Random();
-        return random.Next(0, 100) < 5;
-    }
 }
-

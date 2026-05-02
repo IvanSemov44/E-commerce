@@ -1,17 +1,16 @@
-﻿using ECommerce.Payments.Domain.Enums;
 using ECommerce.Payments.Application.DTOs;
 using ECommerce.Payments.Application.Errors;
 using ECommerce.Payments.Application.Interfaces;
+using ECommerce.Payments.Domain.Enums;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Payments.Application.Commands.RefundPayment;
 
 public sealed class RefundPaymentCommandHandler(
-    IPaymentOrderRepository orderRepository,
+    IPaymentRepository paymentRepository,
     IIdempotencyStore idempotencyStore,
     ILogger<RefundPaymentCommandHandler> logger)
     : IRequestHandler<RefundPaymentCommand, Result<RefundResponseDto>>
@@ -30,27 +29,31 @@ public sealed class RefundPaymentCommandHandler(
         if (start.Status == IdempotencyStartStatus.InProgress)
             return Result<RefundResponseDto>.Fail(PaymentsApplicationErrors.IdempotencyInProgress);
 
-        var order = await orderRepository.GetByIdAsync(command.OrderId, trackChanges: true, cancellationToken);
-        if (order is null)
+        var payment = await paymentRepository.GetByOrderIdAsync(command.OrderId, cancellationToken);
+        if (payment is null)
         {
             await idempotencyStore.AbandonAsync(key, cancellationToken);
             return Result<RefundResponseDto>.Fail(PaymentsApplicationErrors.OrderNotFound);
         }
 
-        if (order.PaymentStatus != (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Paid)
+        if (payment.Status != PaymentStatus.Paid)
         {
             await idempotencyStore.AbandonAsync(key, cancellationToken);
             return Result<RefundResponseDto>.Fail(PaymentsApplicationErrors.InvalidRefund);
         }
 
-        var refundAmount = command.Refund.Amount ?? order.TotalAmount;
+        var refundResult = payment.Refund();
+        if (!refundResult.IsSuccess)
+        {
+            await idempotencyStore.AbandonAsync(key, cancellationToken);
+            return Result<RefundResponseDto>.Fail(refundResult.GetErrorOrThrow());
+        }
+
+        var refundAmount = command.Refund.Amount ?? payment.Amount;
         var refundId = Guid.NewGuid().ToString("N")[..16].ToUpperInvariant();
 
         try
         {
-            order.PaymentStatus = (ECommerce.SharedKernel.Enums.PaymentStatus)(int)PaymentStatus.Refunded;
-            await orderRepository.UpdateAsync(order, cancellationToken);
-
             var response = new RefundResponseDto
             {
                 Success = true,
@@ -64,12 +67,11 @@ public sealed class RefundPaymentCommandHandler(
             await idempotencyStore.CompleteAsync(key, response, TimeSpan.FromHours(24), cancellationToken);
             return Result<RefundResponseDto>.Ok(response);
         }
-        catch (DbUpdateConcurrencyException ex)
+        catch (Exception ex)
         {
-            logger.LogWarning(ex, "Concurrency conflict while refunding payment for order {OrderId}", command.OrderId);
+            logger.LogWarning(ex, "Error while refunding payment for order {OrderId}", command.OrderId);
             await idempotencyStore.AbandonAsync(key, cancellationToken);
-            return Result<RefundResponseDto>.Fail(PaymentsApplicationErrors.ConcurrencyConflict);
+            return Result<RefundResponseDto>.Fail(PaymentsApplicationErrors.InternalError);
         }
     }
 }
-
