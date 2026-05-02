@@ -1,4 +1,4 @@
-using ECommerce.Infrastructure.Data;
+using ECommerce.Catalog.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

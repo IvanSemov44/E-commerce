@@ -1,6 +1,6 @@
-﻿using ECommerce.Catalog.Domain.Aggregates.Category;
+using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Domain.Aggregates.Product;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Catalog.Infrastructure.Data;
 using ECommerce.SharedKernel.Domain;
 using Microsoft.EntityFrameworkCore;
 

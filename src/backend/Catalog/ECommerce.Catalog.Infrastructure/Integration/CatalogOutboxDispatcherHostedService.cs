@@ -1,7 +1,7 @@
 using System.Text.Json;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Contracts;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Catalog.Infrastructure.Data;
 using ECommerce.Infrastructure.Integration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

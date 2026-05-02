@@ -1,8 +1,8 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ECommerce.Catalog.Application.Interfaces;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Contracts;
-using ECommerce.Infrastructure.Data;
+using ECommerce.Catalog.Infrastructure.Data;
 
 namespace ECommerce.Catalog.Infrastructure.Services;
 
