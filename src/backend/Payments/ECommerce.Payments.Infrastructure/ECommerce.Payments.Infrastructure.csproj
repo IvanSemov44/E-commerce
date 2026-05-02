@@ -9,10 +9,12 @@
   <ItemGroup>
     <ProjectReference Include="..\ECommerce.Payments.Application\ECommerce.Payments.Application.csproj" />
     <ProjectReference Include="..\ECommerce.Payments.Domain\ECommerce.Payments.Domain.csproj" />
+    <ProjectReference Include="..\..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
   </ItemGroup>
 
