@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ECommerce.Payments.Application\ECommerce.Payments.Application.csproj" />
-    <ProjectReference Include="..\ECommerce.Payments.Core\ECommerce.Payments.Core.csproj" />
+    <ProjectReference Include="..\ECommerce.Payments.Domain\ECommerce.Payments.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
