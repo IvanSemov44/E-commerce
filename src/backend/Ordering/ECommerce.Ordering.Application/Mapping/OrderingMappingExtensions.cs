@@ -1,5 +1,4 @@
-using ECommerce.Ordering.Application.DTOs;
-using ECommerce.Ordering.Domain.Aggregates.Order;
+﻿using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.ValueObjects;
 
 namespace ECommerce.Ordering.Application.Mapping;
@@ -13,7 +12,7 @@ public static class OrderingMappingExtensions
         OrderNumber = order.OrderNumber,
         Status = order.Status.Name,
         Total = order.Total,
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = order.CreatedAt,
         Items = order.Items.Select(ToDto).ToList()
     };
 

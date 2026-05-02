@@ -1,7 +1,4 @@
 ﻿using ECommerce.Ordering.Application.DTOs.Dashboard;
-using ECommerce.Ordering.Domain.Interfaces;
-using ECommerce.SharedKernel.Results;
-using MediatR;
 
 namespace ECommerce.Ordering.Application.Queries.GetOrderStats;
 

@@ -1,8 +1,4 @@
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Ordering.Application.DTOs;
-using ECommerce.Ordering.Application.Mapping;
-using ECommerce.Ordering.Domain.Interfaces;
+﻿using ECommerce.Ordering.Application.Mapping;
 
 namespace ECommerce.Ordering.Application.Queries.GetOrders;
 
