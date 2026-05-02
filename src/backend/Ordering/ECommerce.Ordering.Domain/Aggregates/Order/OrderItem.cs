@@ -1,8 +1,9 @@
 using ECommerce.SharedKernel.Domain;
+using ECommerce.SharedKernel.Interfaces;
 
 namespace ECommerce.Ordering.Domain.Aggregates.Order;
 
-public sealed class OrderItem : Entity
+public sealed class OrderItem : Entity, ISoftDeletable
 {
     public Guid OrderId { get; private set; }
     public Guid ProductId { get; private set; }
@@ -10,8 +11,11 @@ public sealed class OrderItem : Entity
     public decimal UnitPrice { get; private set; }
     public int Quantity { get; private set; }
     public string? ProductImageUrl { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
 
     private OrderItem() { }
+
+    public void SoftDelete() => DeletedAt = DateTime.UtcNow;
 
     internal static OrderItem Create(Guid id, Guid orderId, Guid productId, string productName, decimal unitPrice, int quantity, string? imageUrl)
     {

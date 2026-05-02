@@ -13,5 +13,4 @@ public interface IOrderRepository
     Task<Dictionary<DateTime, int>> GetOrdersTrendAsync(int days, CancellationToken ct = default);
     Task<Dictionary<DateTime, decimal>> GetRevenueTrendAsync(int days, CancellationToken ct = default);
     Task AddAsync(Order order, CancellationToken ct = default);
-    Task UpdateAsync(Order order, CancellationToken ct = default);
 }

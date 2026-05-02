@@ -1,4 +1,5 @@
 using ECommerce.SharedKernel.Domain;
+using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Ordering.Domain.Errors;
 using ECommerce.Ordering.Domain.Events;
@@ -8,7 +9,7 @@ namespace ECommerce.Ordering.Domain.Aggregates.Order;
 
 public sealed record OrderItemData(Guid ProductId, string ProductName, decimal UnitPrice, int Quantity, string? ImageUrl);
 
-public sealed class Order : AggregateRoot
+public sealed class Order : AggregateRoot, ISoftDeletable
 {
     public string OrderNumber { get; private set; } = null!;
     public Guid UserId { get; private set; }
@@ -21,11 +22,14 @@ public sealed class Order : AggregateRoot
     public decimal ShippingCost { get; private set; }
     public decimal TaxAmount { get; private set; }
     public decimal Total { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
 
     private readonly List<OrderItem> _items = new();
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
 
     private Order() { }
+
+    public void SoftDelete() => DeletedAt = DateTime.UtcNow;
 
     public static Result<Order> Place(
         Guid userId,
@@ -33,7 +37,8 @@ public sealed class Order : AggregateRoot
         IReadOnlyList<OrderItemData> items,
         decimal shippingCost,
         decimal taxAmount,
-        PaymentInfo payment,
+        string paymentReference,
+        string paymentMethod,
         decimal discountAmount = 0,
         Guid? promoCodeId = null)
     {
@@ -46,13 +51,17 @@ public sealed class Order : AggregateRoot
         if (total <= 0)
             return Result<Order>.Fail(OrderingErrors.OrderTotalInvalid);
 
+        var paymentResult = PaymentInfo.Create(paymentReference, paymentMethod, total, DateTime.UtcNow);
+        if (!paymentResult.IsSuccess)
+            return Result<Order>.Fail(paymentResult.GetErrorOrThrow());
+
         var order = new Order
         {
             OrderNumber = GenerateOrderNumber(),
             UserId = userId,
             ShippingAddress = shippingAddress,
             Status = OrderStatus.Pending,
-            Payment = payment,
+            Payment = paymentResult.GetDataOrThrow(),
             PromoCodeId = promoCodeId,
             Subtotal = subtotal,
             DiscountAmount = discountAmount,
