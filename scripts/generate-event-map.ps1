@@ -9,23 +9,19 @@ Get-ChildItem -Path $contractsPath -Filter "*IntegrationEvent.cs" -Recurse | For
 }
 
 # Find Publishers
-# Look for "new SomeIntegrationEvent("
 $publishers = @()
 Get-ChildItem -Path $backendPath -Filter "*.cs" -Recurse | Where-Object { $_.FullName -notmatch "ECommerce.Contracts|Tests|obj|bin" } | ForEach-Object {
     $file = $_
     $content = Get-Content $file.FullName -Raw
     
-    # Extract module from path
     $relativePath = $file.FullName.Substring((Resolve-Path $backendPath).Path.Length).Trim('\','/')
     $parts = $relativePath.Split('\/')
     $module = $parts[0]
     
-    # Ignore generic infrastructure projects
     if ($module -eq "ECommerce.Infrastructure" -or $module -eq "ECommerce.API" -or $module -eq "ECommerce.SharedKernel") {
         return
     }
     
-    # regex to find "new XyzIntegrationEvent"
     $matches = [regex]::Matches($content, "new\s+(\w+IntegrationEvent)")
     foreach ($match in $matches) {
         $eventName = $match.Groups[1].Value
@@ -39,7 +35,6 @@ Get-ChildItem -Path $backendPath -Filter "*.cs" -Recurse | Where-Object { $_.Ful
 }
 
 # Find Consumers
-# Look for "INotificationHandler<XyzIntegrationEvent>"
 $consumers = @()
 Get-ChildItem -Path $backendPath -Filter "*.cs" -Recurse | Where-Object { $_.FullName -notmatch "ECommerce.Contracts|Tests|obj|bin" } | ForEach-Object {
     $file = $_
@@ -69,7 +64,7 @@ $publishers = $publishers | Sort-Object -Property Module, Event -Unique
 $consumers = $consumers | Sort-Object -Property Module, Event -Unique
 
 # Generate Mermaid
-$mermaid = "```mermaid`n"
+$mermaid = '```mermaid' + "`n"
 $mermaid += "graph TD`n"
 
 $mermaid += "`n    %% Modules`n"
@@ -82,7 +77,6 @@ foreach ($m in $modules) {
 $mermaid += "`n    %% Events`n"
 $activeEvents = ($publishers.Event + $consumers.Event) | Sort-Object | Select-Object -Unique
 foreach ($e in $activeEvents) {
-    # Remove 'IntegrationEvent' suffix for cleaner diagram
     $shortName = $e -replace "IntegrationEvent", ""
     $mermaid += "    $e([$shortName])`n"
     $mermaid += "    style $e fill:#e8f4f8,stroke:#82b1ff,stroke-width:2px,color:#000000`n"
@@ -98,7 +92,6 @@ foreach ($c in $consumers) {
     $mermaid += "    $($c.Event) -->|Consumes| $($c.Module)`n"
 }
 
-$mermaid += "```"
+$mermaid += '```' + "`n"
 
-$mermaid | Out-File -FilePath "scripts/event-map.md" -Encoding utf8
-Write-Output "Mermaid diagram successfully generated."
+Write-Host $mermaid
