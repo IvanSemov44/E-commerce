@@ -1,4 +1,4 @@
-using ECommerce.SharedKernel.Results;
+﻿using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.Promotions.Domain.Errors;
 
@@ -9,6 +9,7 @@ public static class PromotionsErrors
     public static readonly DomainError CodeChars = new("CODE_CHARS", "Promo code may only contain letters, digits, and hyphens");
     public static readonly DomainError DiscountPercentRange = new("DISCOUNT_PERCENT_RANGE", "Percentage discount must be between 1 and 100");
     public static readonly DomainError DiscountAmountPositive = new("DISCOUNT_AMOUNT_POSITIVE", "Fixed discount amount must be greater than 0");
+    public static readonly DomainError InvalidDiscountType = new("INVALID_DISCOUNT_TYPE", "Discount type must be 'PERCENTAGE' or 'FIXED'");
     public static readonly DomainError DateRangeInvalid = new("DATE_RANGE_INVALID", "Start date must be before end date");
 
     public static readonly DomainError PromoNotFound = new("PROMO_CODE_NOT_FOUND", "Promo code not found");

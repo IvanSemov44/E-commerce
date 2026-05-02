@@ -1,6 +1,5 @@
-using MediatR;
+﻿using MediatR;
 using ECommerce.SharedKernel.Results;
-using ECommerce.Promotions.Application.DTOs;
 
 namespace ECommerce.Promotions.Application.Commands.CreatePromoCode;
 
@@ -13,4 +12,4 @@ public record CreatePromoCodeCommand(
     int? MaxUses = null,
     decimal? MinimumOrderAmount = null,
     decimal? MaxDiscountAmount = null
-) : IRequest<Result<PromoCodeDto>>;
+) : IRequest<Result<Guid>>;

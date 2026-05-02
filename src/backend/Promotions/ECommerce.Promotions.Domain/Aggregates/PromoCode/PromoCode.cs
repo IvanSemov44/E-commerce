@@ -1,4 +1,4 @@
-using ECommerce.SharedKernel.Domain;
+﻿using ECommerce.SharedKernel.Domain;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Promotions.Domain.Errors;
 using ECommerce.Promotions.Domain.Events;
@@ -16,6 +16,7 @@ public sealed class PromoCode : AggregateRoot
     public bool IsActive { get; private set; }
     public decimal? MinimumOrderAmount { get; private set; }
     public decimal? MaxDiscountAmount { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
     public byte[]? RowVersion { get; private set; }
 
     private PromoCode() { }
@@ -31,7 +32,7 @@ public sealed class PromoCode : AggregateRoot
         DateTime? updatedAt = null)
     {
         var now = createdAt ?? DateTime.UtcNow;
-        return new PromoCode
+        var promo = new PromoCode
         {
             Id = Guid.NewGuid(),
             Code = code,
@@ -45,6 +46,8 @@ public sealed class PromoCode : AggregateRoot
             CreatedAt = now,
             UpdatedAt = updatedAt ?? now
         };
+        promo.AddDomainEvent(new PromoCodeChangedEvent(promo.Id, promo.Code.Value, promo.Discount.Amount, promo.IsActive, false));
+        return promo;
     }
 
     public bool IsValidNow(DateTime now)
@@ -81,13 +84,67 @@ public sealed class PromoCode : AggregateRoot
     {
         IsActive = false;
         UpdatedAt = now ?? DateTime.UtcNow;
+        AddDomainEvent(new PromoCodeChangedEvent(Id, Code.Value, Discount.Amount, IsActive, false));
+    }
+
+    public void SoftDelete(DateTime? now = null)
+    {
+        DeletedAt = now ?? DateTime.UtcNow;
+        IsActive = false;
+        UpdatedAt = DeletedAt.Value;
+        AddDomainEvent(new PromoCodeChangedEvent(Id, Code.Value, Discount.Amount, IsActive, true));
+    }
+
+    /// <summary>
+    /// Called by the application layer with raw primitive inputs.
+    /// Builds value objects and validates internally.
+    /// </summary>
+    public static Result<PromoCode> Create(
+        string code,
+        string discountType,
+        decimal discountValue,
+        DateTime? validFrom = null,
+        DateTime? validUntil = null,
+        int? maxUses = null,
+        decimal? minimumOrderAmount = null,
+        decimal? maxDiscountAmount = null)
+    {
+        var codeResult = PromoCodeString.Create(code);
+        if (!codeResult.IsSuccess)
+            return Result<PromoCode>.Fail(codeResult.GetErrorOrThrow());
+
+        var discountResult = discountType.Trim().ToUpperInvariant() switch
+        {
+            "PERCENTAGE" => DiscountValue.Percentage(discountValue),
+            "FIXED" => DiscountValue.Fixed(discountValue),
+            _ => Result<DiscountValue>.Fail(PromotionsErrors.InvalidDiscountType)
+        };
+        if (!discountResult.IsSuccess)
+            return Result<PromoCode>.Fail(discountResult.GetErrorOrThrow());
+
+        DateRange? validPeriod = null;
+        if (validFrom.HasValue && validUntil.HasValue)
+        {
+            var periodResult = DateRange.Create(validFrom.Value, validUntil.Value);
+            if (!periodResult.IsSuccess)
+                return Result<PromoCode>.Fail(periodResult.GetErrorOrThrow());
+            validPeriod = periodResult.GetDataOrThrow();
+        }
+
+        return Result<PromoCode>.Ok(Create(
+            codeResult.GetDataOrThrow(),
+            discountResult.GetDataOrThrow(),
+            validPeriod,
+            maxUses,
+            minimumOrderAmount,
+            maxDiscountAmount));
     }
 
     public Result Update(
-        PromoCodeString? code = null,
-        DiscountValue? discount = null,
-        DateRange? validPeriod = null,
-        bool clearValidPeriod = false,
+        string? discountType = null,
+        decimal? discountValue = null,
+        DateTime? validFrom = null,
+        DateTime? validUntil = null,
         int? maxUses = null,
         bool clearMaxUses = false,
         decimal? minimumOrderAmount = null,
@@ -97,11 +154,26 @@ public sealed class PromoCode : AggregateRoot
         bool? isActive = null,
         DateTime? updatedAt = null)
     {
-        if (code is not null) Code = code;
-        if (discount is not null) Discount = discount;
+        if (discountType is not null && discountValue.HasValue)
+        {
+            var discountResult = discountType.Trim().ToUpperInvariant() switch
+            {
+                "PERCENTAGE" => DiscountValue.Percentage(discountValue.Value),
+                "FIXED" => DiscountValue.Fixed(discountValue.Value),
+                _ => Result<DiscountValue>.Fail(PromotionsErrors.InvalidDiscountType)
+            };
+            if (!discountResult.IsSuccess)
+                return Result.Fail(discountResult.GetErrorOrThrow());
+            Discount = discountResult.GetDataOrThrow();
+        }
 
-        if (clearValidPeriod) ValidPeriod = null;
-        else if (validPeriod is not null) ValidPeriod = validPeriod;
+        if (validFrom.HasValue && validUntil.HasValue)
+        {
+            var periodResult = DateRange.Create(validFrom.Value, validUntil.Value);
+            if (!periodResult.IsSuccess)
+                return Result.Fail(periodResult.GetErrorOrThrow());
+            ValidPeriod = periodResult.GetDataOrThrow();
+        }
 
         if (clearMaxUses) MaxUses = null;
         else if (maxUses.HasValue) MaxUses = maxUses;
@@ -115,6 +187,7 @@ public sealed class PromoCode : AggregateRoot
         if (isActive.HasValue) IsActive = isActive.Value;
 
         UpdatedAt = updatedAt ?? DateTime.UtcNow;
+        AddDomainEvent(new PromoCodeChangedEvent(Id, Code.Value, Discount.Amount, IsActive, false));
         return Result.Ok();
     }
 }

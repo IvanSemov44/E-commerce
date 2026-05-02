@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using ECommerce.SharedKernel.Results;
-using ECommerce.Promotions.Application.DTOs;
 
 namespace ECommerce.Promotions.Application.Commands.UpdatePromoCode;
 
@@ -14,4 +13,4 @@ public record UpdatePromoCodeCommand(
     int? MaxUses = null,
     decimal? MinimumOrderAmount = null,
     decimal? MaxDiscountAmount = null
-) : IRequest<Result<PromoCodeDto>>;
+) : IRequest<Result<Guid>>;
