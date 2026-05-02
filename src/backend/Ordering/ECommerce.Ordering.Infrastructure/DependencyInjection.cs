@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationHandler<ProductImageProjectionUpdatedIntegrationEvent>, ProductImageProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<PromoCodeProjectionUpdatedIntegrationEvent>, PromoCodeProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<AddressProjectionUpdatedIntegrationEvent>, AddressProjectionUpdatedIntegrationEventHandler>();
+        services.AddScoped<INotificationHandler<PaymentProcessedIntegrationEvent>, PaymentProcessedIntegrationEventHandler>();
 
         services.AddHostedService<OrderingOutboxDispatcherHostedService>();
 

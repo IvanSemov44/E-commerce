@@ -24,8 +24,6 @@ using ECommerce.SharedKernel.Interfaces;
 using CatalogCategory = ECommerce.Catalog.Domain.Aggregates.Category.Category;
 using CatalogProduct = ECommerce.Catalog.Domain.Aggregates.Product.Product;
 using ECommerce.Payments.Application.Interfaces;
-using SharedOrderStatus = ECommerce.SharedKernel.Enums.OrderStatus;
-using SharedPaymentStatus = ECommerce.SharedKernel.Enums.PaymentStatus;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
 using OrderingOrder = ECommerce.Ordering.Domain.Aggregates.Order.Order;
@@ -557,19 +555,14 @@ public class TestWebApplicationFactory(
                 });
 
                 var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
-                paymentsDb.Orders.Add(new Order
+                paymentsDb.PaymentOrders.Add(new PaymentOrderReadModel
                 {
-                    Id = orderId,
-                    OrderNumber = "TEST-ORDER-001",
+                    Id = Guid.NewGuid(),
+                    OrderId = orderId,
+                    Amount = 100.00m,
                     UserId = userId,
-                    Status = SharedOrderStatus.Pending,
-                    PaymentStatus = SharedPaymentStatus.Paid,
-                    Subtotal = 100.00m,
-                    DiscountAmount = 0.00m,
-                    ShippingAmount = 10.00m,
-                    TaxAmount = 0.00m,
-                    TotalAmount = 100.00m,
-                    Currency = "USD"
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 });
 
                 catalogDb.SaveChanges();
