@@ -1,15 +1,18 @@
-﻿using ECommerce.Ordering.Application;
+﻿using ECommerce.Contracts;
+using ECommerce.Ordering.Application;
 using ECommerce.Ordering.Application.Interfaces;
+using ECommerce.Ordering.Domain.Events;
 using ECommerce.Ordering.Domain.Interfaces;
+using ECommerce.Ordering.Infrastructure.EventHandlers;
+using ECommerce.Ordering.Infrastructure.Integration;
 using ECommerce.Ordering.Infrastructure.IntegrationEvents;
 using ECommerce.Ordering.Infrastructure.Persistence;
-using ECommerce.Ordering.Infrastructure.Persistence.Repositories;
-using ECommerce.Ordering.Infrastructure.Services;
-using ECommerce.Contracts;
+using ECommerce.Ordering.Infrastructure.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace ECommerce.Ordering.Infrastructure;
 
@@ -17,6 +20,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddOrderingInfrastructure(this IServiceCollection services)
     {
+        services.AddSingleton<SoftDeleteInterceptor>();
+
         services.AddDbContext<OrderingDbContext>((serviceProvider, options) =>
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
@@ -24,21 +29,30 @@ public static class DependencyInjection
                 ?? throw new InvalidOperationException("Connection string 'OrderingConnection' is not configured.");
 
             options.UseNpgsql(connectionString);
+            options.AddInterceptors(serviceProvider.GetRequiredService<SoftDeleteInterceptor>());
             options.ConfigureWarnings(warnings => warnings
                 .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
+        services.AddOptions<OrderingOutboxDispatcherOptions>();
+        services.AddSingleton<IConfigureOptions<OrderingOutboxDispatcherOptions>, OrderingOutboxDispatcherOptionsSetup>();
+
         services.AddScoped<IOrderRepository, OrderRepository>();
-        services.AddScoped<ICurrentUserService, OrderingCurrentUserService>();
         services.AddScoped<IDbReader, DbReader>();
         services.AddScoped<IProductCatalogReader, DbReader>();
         services.AddScoped<IPromoCodeLookup, DbReader>();
         services.AddScoped<IShippingAddressReader, DbReader>();
-        services.AddScoped<IOrderIntegrationEventPublisher, OrderIntegrationEventPublisher>();
+        services.AddScoped<IOrderingOutboxEventWriter, OrderingOutboxEventWriter>();
+
+        services.AddScoped<INotificationHandler<OrderPlacedEvent>, OrderPlacedEventHandler>();
+        services.AddScoped<INotificationHandler<OrderDeliveredEvent>, OrderDeliveredEventHandler>();
         services.AddScoped<INotificationHandler<ProductProjectionUpdatedIntegrationEvent>, ProductProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<ProductImageProjectionUpdatedIntegrationEvent>, ProductImageProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<PromoCodeProjectionUpdatedIntegrationEvent>, PromoCodeProjectionUpdatedIntegrationEventHandler>();
         services.AddScoped<INotificationHandler<AddressProjectionUpdatedIntegrationEvent>, AddressProjectionUpdatedIntegrationEventHandler>();
+
+        services.AddHostedService<OrderingOutboxDispatcherHostedService>();
+
         services.AddOrderingApplication();
 
         return services;
