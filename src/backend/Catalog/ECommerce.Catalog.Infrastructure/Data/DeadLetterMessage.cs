@@ -1,4 +1,4 @@
-namespace ECommerce.Catalog.Infrastructure.Data;
+﻿namespace ECommerce.Catalog.Infrastructure.Data;
 
 /// <summary>
 /// Stores permanently failed integration events for operational recovery.

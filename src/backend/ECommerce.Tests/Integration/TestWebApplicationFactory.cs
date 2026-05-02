@@ -16,7 +16,6 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using ECommerce.Infrastructure.Data;
 using ECommerce.Infrastructure.Integration;
 using ECommerce.SharedKernel.Entities;
 using ECommerce.SharedKernel.DTOs;

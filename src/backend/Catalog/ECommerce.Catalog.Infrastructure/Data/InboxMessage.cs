@@ -1,4 +1,4 @@
-namespace ECommerce.Catalog.Infrastructure.Data;
+﻿namespace ECommerce.Catalog.Infrastructure.Data;
 
 /// <summary>
 /// Tracks consumed integration events to prevent duplicate processing.

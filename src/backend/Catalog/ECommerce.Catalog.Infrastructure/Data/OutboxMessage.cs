@@ -1,4 +1,4 @@
-namespace ECommerce.Catalog.Infrastructure.Data;
+﻿namespace ECommerce.Catalog.Infrastructure.Data;
 
 /// <summary>
 /// Stores integration events until they are dispatched by the Catalog outbox worker.
