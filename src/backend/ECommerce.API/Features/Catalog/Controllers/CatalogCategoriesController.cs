@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.Common.Extensions;
 using ECommerce.API.Common.Helpers;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Results;
-using ECommerce.Catalog.Application.DTOs.Common;
 using ECommerce.Catalog.Application.Commands.CreateCategory;
 using ECommerce.Catalog.Application.Commands.DeleteCategory;
 using ECommerce.Catalog.Application.Commands.UpdateCategory;

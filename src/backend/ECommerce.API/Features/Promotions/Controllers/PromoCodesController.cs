@@ -1,4 +1,4 @@
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -98,7 +98,7 @@ public class PromoCodesController(IMediator mediator) : ControllerBase
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<PromoCodeDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -119,10 +119,10 @@ public class PromoCodesController(IMediator mediator) : ControllerBase
 
         var result = await mediator.Send(cmd, ct);
         return result.ToActionResult(
-            createdDto => CreatedAtAction(
+            id => CreatedAtAction(
                 nameof(GetPromoCodeById),
-                new { id = createdDto.Id },
-                ApiResponse<PromoCodeDto>.Ok(createdDto, "Promo code created successfully")),
+                new { id },
+                ApiResponse<Guid>.Ok(id, "Promo code created successfully")),
             MapError);
     }
 
@@ -130,7 +130,7 @@ public class PromoCodesController(IMediator mediator) : ControllerBase
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<PromoCodeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -154,7 +154,7 @@ public class PromoCodesController(IMediator mediator) : ControllerBase
 
         var result = await mediator.Send(cmd, ct);
         return result.ToActionResult(
-            updatedDto => Ok(ApiResponse<PromoCodeDto>.Ok(updatedDto, "Promo code updated successfully")),
+            updatedId => Ok(ApiResponse<Guid>.Ok(updatedId, "Promo code updated successfully")),
             MapError);
     }
 
@@ -175,7 +175,7 @@ public class PromoCodesController(IMediator mediator) : ControllerBase
             MapError);
     }
 
-    /// <summary>Delete a promo code (Admin only) — hard delete.</summary>
+    /// <summary>Delete a promo code (Admin only) — soft delete.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]

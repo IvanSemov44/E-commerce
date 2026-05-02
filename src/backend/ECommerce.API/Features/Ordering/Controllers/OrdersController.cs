@@ -12,6 +12,7 @@ using ECommerce.Ordering.Application.Commands.ShipOrder;
 using ECommerce.Ordering.Application.Commands.CancelOrder;
 using ECommerce.Ordering.Application.Queries.GetOrderById;
 using ECommerce.SharedKernel.Results;
+using AppOrderDto = ECommerce.Ordering.Application.DTOs.OrderDto;
 using OrderingQueries = ECommerce.Ordering.Application.Queries;
 
 namespace ECommerce.API.Features.Ordering.Controllers;
@@ -41,7 +42,7 @@ public class OrdersController(
     [HttpPost]
     [AllowAnonymous]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
@@ -65,16 +66,15 @@ public class OrdersController(
             TaxAmount = 0m
         };
 
-        var cmdResult = await _mediator.Send(cmd, cancellationToken);
-        var result = (ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>)cmdResult;
+        var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Success success)
+        if (result is Result<Guid>.Success success)
         {
-            return CreatedAtAction(nameof(GetOrderById), new { id = success.Data.Id },
-                ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(success.Data), "Order created successfully"));
+            return CreatedAtAction(nameof(GetOrderById), new { id = success.Data },
+                ApiResponse<Guid>.Ok(success.Data, "Order created successfully"));
         }
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Failure failure)
+        if (result is Result<Guid>.Failure failure)
         {
             var statusCode = failure.Error.Code switch
             {
@@ -106,19 +106,14 @@ public class OrdersController(
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Retrieving order {OrderId}", id);
-        var currentUserId = _currentUser.UserIdOrNull;
-        var role = _currentUser.RoleOrNull;
-        var isAdmin = _currentUser.IsAuthenticated &&
-                     (role == UserRole.Admin || role == UserRole.SuperAdmin);
 
         var query = new OrderingQueries.GetOrderById.GetOrderByIdQuery(id);
-        var skResult = await _mediator.Send(query, cancellationToken);
-        var result = (ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>)skResult;
+        var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Success success)
+        if (result is Result<AppOrderDto>.Success success)
             return Ok(ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(success.Data), "Order retrieved successfully"));
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Failure failure)
+        if (result is Result<AppOrderDto>.Failure failure)
         {
             var statusCode = failure.Error.Code switch
             {
@@ -144,13 +139,12 @@ public class OrdersController(
     {
         _logger.LogInformation("Confirming order {OrderId}", id);
         var cmd = new ConfirmOrderCommand(id);
-        var cmdResult = await _mediator.Send(cmd, cancellationToken);
-        var result = (ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>)cmdResult;
+        var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Success success)
-            return Ok(ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(success.Data), "Order confirmed"));
+        if (result is Result<Guid>.Success success)
+            return Ok(ApiResponse<Guid>.Ok(success.Data, "Order confirmed"));
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Failure failure)
+        if (result is Result<Guid>.Failure failure)
         {
             var statusCode = failure.Error.Code switch
             {
@@ -169,20 +163,19 @@ public class OrdersController(
     [HttpPost("{id:guid}/ship")]
     [Authorize]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> ShipOrder(Guid id, [FromBody] ShipOrderRequestDto dto, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Shipping order {OrderId} with tracking {Tracking}", id, dto.TrackingNumber);
         var cmd = new ShipOrderCommand(id, dto.TrackingNumber);
-        var cmdResult = await _mediator.Send(cmd, cancellationToken);
-        var result = (ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>)cmdResult;
+        var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Success success)
-            return Ok(ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(success.Data), "Order shipped"));
+        if (result is Result<Guid>.Success success)
+            return Ok(ApiResponse<Guid>.Ok(success.Data, "Order shipped"));
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Failure failure)
+        if (result is Result<Guid>.Failure failure)
         {
             var statusCode = failure.Error.Code switch
             {
@@ -214,7 +207,7 @@ public class OrdersController(
         var query = new OrderingQueries.GetOrders.GetOrdersQuery();
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is ECommerce.SharedKernel.Results.Result<List<ECommerce.Ordering.Application.DTOs.OrderDto>>.Success success)
+        if (result is Result<List<AppOrderDto>>.Success success)
         {
             var allOrders = success.Data.Select(MapToOrderDetailDto).ToList();
             var total = allOrders.Count;
@@ -229,7 +222,7 @@ public class OrdersController(
             return Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(paginatedResult, "Orders retrieved successfully"));
         }
 
-        if (result is ECommerce.SharedKernel.Results.Result<List<ECommerce.Ordering.Application.DTOs.OrderDto>>.Failure failure)
+        if (result is Result<List<AppOrderDto>>.Failure failure)
             return StatusCode(500, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
 
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
@@ -256,7 +249,7 @@ public class OrdersController(
         var query = new OrderingQueries.GetUserOrders.GetUserOrdersQuery(userId.Value);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is ECommerce.SharedKernel.Results.Result<List<ECommerce.Ordering.Application.DTOs.OrderDto>>.Success success)
+        if (result is Result<List<AppOrderDto>>.Success success)
         {
             var allOrders = success.Data.Select(MapToOrderDetailDto).ToList();
             var total = allOrders.Count;
@@ -271,7 +264,7 @@ public class OrdersController(
             return Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(paginatedResult, "Orders retrieved successfully"));
         }
 
-        if (result is ECommerce.SharedKernel.Results.Result<List<ECommerce.Ordering.Application.DTOs.OrderDto>>.Failure failure)
+        if (result is Result<List<AppOrderDto>>.Failure failure)
             return StatusCode(500, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
 
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
@@ -282,7 +275,7 @@ public class OrdersController(
     /// </summary>
     [HttpPost("{id:guid}/cancel")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<OrderDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> CancelOrder(
@@ -292,13 +285,12 @@ public class OrdersController(
     {
         _logger.LogInformation("Cancelling order {OrderId}", id);
         var cmd = new CancelOrderCommand(id, dto?.Reason ?? "");
-        var cmdResult = await _mediator.Send(cmd, cancellationToken);
-        var result = (ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>)cmdResult;
+        var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Success success)
-            return Ok(ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(success.Data), "Order cancelled"));
+        if (result is Result<Guid>.Success success)
+            return Ok(ApiResponse<Guid>.Ok(success.Data, "Order cancelled"));
 
-        if (result is ECommerce.SharedKernel.Results.Result<ECommerce.Ordering.Application.DTOs.OrderDto>.Failure failure)
+        if (result is Result<Guid>.Failure failure)
         {
             var statusCode = failure.Error.Code switch
             {
@@ -337,7 +329,7 @@ public class OrdersController(
         return false;
     }
 
-    private static OrderDetailDto MapToOrderDetailDto(ECommerce.Ordering.Application.DTOs.OrderDto order)
+    private static OrderDetailDto MapToOrderDetailDto(AppOrderDto order)
     {
         return new OrderDetailDto
         {

@@ -2,6 +2,7 @@
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Infrastructure.Data.Seeders;
+using ECommerce.Promotions.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -15,6 +16,7 @@ public sealed class AppDbContextInitializationService(
     IAppDbInitializationService appDbInitializationService,
     CatalogDbContext catalogDbContext,
     CatalogDataSeeder catalogDataSeeder,
+    PromotionsDbContext promotionsDbContext,
     ReviewsDbContext reviewsDbContext,
     IntegrationPersistenceDbContext integrationPersistenceDbContext,
     ReviewsProductProjectionBackfillService reviewsBackfillService)
@@ -29,6 +31,7 @@ public sealed class AppDbContextInitializationService(
             return;
 
         await MigrateCatalogContextAsync();
+    await MigratePromotionsContextAsync();
         await MigrateReviewsContextAsync();
 
         await SeedCatalogContextAsync(environment);
@@ -52,6 +55,24 @@ public sealed class AppDbContextInitializationService(
         Log.Information("Applying {Count} pending Catalog migration(s)...", pending.Count());
         await catalogDbContext.Database.MigrateAsync(cancellationToken);
         Log.Information("Catalog migrations applied successfully.");
+    }
+
+    private async Task MigratePromotionsContextAsync(CancellationToken cancellationToken = default)
+    {
+        var providerName = promotionsDbContext.Database.ProviderName ?? string.Empty;
+        if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) || !promotionsDbContext.Database.IsRelational())
+        {
+            Log.Information("Skipping Promotions migration for non-relational provider: {Provider}", providerName);
+            return;
+        }
+
+        var pending = await promotionsDbContext.Database.GetPendingMigrationsAsync(cancellationToken);
+        if (!pending.Any())
+            return;
+
+        Log.Information("Applying {Count} pending Promotions migration(s)...", pending.Count());
+        await promotionsDbContext.Database.MigrateAsync(cancellationToken);
+        Log.Information("Promotions migrations applied successfully.");
     }
 
     private async Task MigrateReviewsContextAsync(CancellationToken cancellationToken = default)
