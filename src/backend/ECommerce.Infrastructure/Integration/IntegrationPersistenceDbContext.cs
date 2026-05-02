@@ -1,5 +1,4 @@
 ﻿using ECommerce.Infrastructure.Data;
-using ECommerce.Infrastructure.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Integration;
