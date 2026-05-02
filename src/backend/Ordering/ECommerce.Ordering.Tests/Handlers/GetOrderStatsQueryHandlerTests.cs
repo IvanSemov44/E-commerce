@@ -57,8 +57,6 @@ public class GetOrderStatsQueryHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateAsync(Order order, CancellationToken ct = default)
-            => Task.CompletedTask;
     }
 
     [TestMethod]
@@ -86,7 +84,6 @@ public class GetOrderStatsQueryHandlerTests
             new(Guid.NewGuid(), "Product", amount, 1, null)
         };
         var shipping = ShippingAddress.Create("Street", "City", "US", "00000");
-        var payment = PaymentInfo.Create(Guid.NewGuid().ToString("N"), "card", amount, DateTime.UtcNow).GetDataOrThrow();
-        return Order.Place(Guid.NewGuid(), shipping, items, 0m, 0m, payment).GetDataOrThrow();
+        return Order.Place(Guid.NewGuid(), shipping, items, 0m, 0m, Guid.NewGuid().ToString("N"), "card").GetDataOrThrow();
     }
 }

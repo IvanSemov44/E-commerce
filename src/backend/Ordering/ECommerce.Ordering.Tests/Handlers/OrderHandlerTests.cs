@@ -1,4 +1,6 @@
-﻿using ECommerce.Ordering.Application.Commands.ConfirmOrder;
+﻿using System.Linq;
+using ECommerce.Ordering.Application.Commands.ConfirmOrder;
+using ECommerce.Ordering.Application.Commands.DeliverOrder;
 using ECommerce.Ordering.Application.Commands.ShipOrder;
 using ECommerce.Ordering.Application.Commands.CancelOrder;
 using ECommerce.Ordering.Application.Queries.GetOrderById;
@@ -75,11 +77,6 @@ public sealed class FakeOrderRepository : IOrderRepository
         return Task.CompletedTask;
     }
 
-    public Task UpdateAsync(Order order, CancellationToken ct = default)
-    {
-        _store[order.Id] = order;
-        return Task.CompletedTask;
-    }
 
     public void Seed(Order order) => _store[order.Id] = order;
 }
@@ -100,7 +97,8 @@ public class ConfirmOrderCommandHandlerTests
         var result = await handler.Handle(cmd, default);
 
         result.IsSuccess.ShouldBeTrue();
-        result.GetDataOrThrow().Status.ShouldBe("Confirmed");
+        result.GetDataOrThrow().ShouldBe(order.Id);
+        order.Status.ShouldBe(OrderStatus.Confirmed);
     }
 
     [TestMethod]
@@ -122,9 +120,7 @@ public class ConfirmOrderCommandHandlerTests
             new(Guid.NewGuid(), "Test Product", 100m, 1, null)
         };
         var address = ShippingAddress.Create("123 Main St", "NYC", "USA", "10001");
-        var payment = PaymentInfo.Create("PAY123", "card", 115m, DateTime.UtcNow).GetDataOrThrow();
-
-        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, payment).GetDataOrThrow();
+        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card").GetDataOrThrow();
     }
 }
 
@@ -171,9 +167,7 @@ public class ShipOrderCommandHandlerTests
             new(Guid.NewGuid(), "Test Product", 100m, 1, null)
         };
         var address = ShippingAddress.Create("123 Main St", "NYC", "USA", "10001");
-        var payment = PaymentInfo.Create("PAY123", "card", 115m, DateTime.UtcNow).GetDataOrThrow();
-
-        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, payment).GetDataOrThrow();
+        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card").GetDataOrThrow();
     }
 }
 
@@ -193,7 +187,8 @@ public class CancelOrderCommandHandlerTests
         var result = await handler.Handle(cmd, default);
 
         result.IsSuccess.ShouldBeTrue();
-        result.GetDataOrThrow().Status.ShouldBe("Cancelled");
+        result.GetDataOrThrow().ShouldBe(order.Id);
+        order.Status.ShouldBe(OrderStatus.Cancelled);
     }
 
     [TestMethod]
@@ -210,7 +205,8 @@ public class CancelOrderCommandHandlerTests
         var result = await handler.Handle(cmd, default);
 
         result.IsSuccess.ShouldBeTrue();
-        result.GetDataOrThrow().Status.ShouldBe("Cancelled");
+        result.GetDataOrThrow().ShouldBe(order.Id);
+        order.Status.ShouldBe(OrderStatus.Cancelled);
     }
 
     private static Order CreateTestOrder()
@@ -220,9 +216,63 @@ public class CancelOrderCommandHandlerTests
             new(Guid.NewGuid(), "Test Product", 100m, 1, null)
         };
         var address = ShippingAddress.Create("123 Main St", "NYC", "USA", "10001");
-        var payment = PaymentInfo.Create("PAY123", "card", 115m, DateTime.UtcNow).GetDataOrThrow();
+        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card").GetDataOrThrow();
+    }
+}
 
-        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, payment).GetDataOrThrow();
+[TestClass]
+public class DeliverOrderCommandHandlerTests
+{
+    [TestMethod]
+    public async Task Handle_ConfirmedOrder_DeliversSuccessfully()
+    {
+        var order = CreateShippedOrder();
+        var repo = new FakeOrderRepository();
+        repo.Seed(order);
+
+        var handler = new DeliverOrderCommandHandler(repo);
+        var result = await handler.Handle(new DeliverOrderCommand(order.Id), default);
+
+        result.IsSuccess.ShouldBeTrue();
+        result.GetDataOrThrow().ShouldBe(order.Id);
+        order.Status.ShouldBe(OrderStatus.Delivered);
+    }
+
+    [TestMethod]
+    public async Task Handle_DeliversOrder_RaisesOrderDeliveredEvent()
+    {
+        var order = CreateShippedOrder();
+        var repo = new FakeOrderRepository();
+        repo.Seed(order);
+        order.ClearDomainEvents();
+
+        await new DeliverOrderCommandHandler(repo).Handle(new DeliverOrderCommand(order.Id), default);
+
+        var events = order.DomainEvents.OfType<ECommerce.Ordering.Domain.Events.OrderDeliveredEvent>().ToList();
+        events.Count.ShouldBe(1);
+        events[0].OrderId.ShouldBe(order.Id);
+    }
+
+    [TestMethod]
+    public async Task Handle_UnknownOrder_ReturnsFailed()
+    {
+        var handler = new DeliverOrderCommandHandler(new FakeOrderRepository());
+        var result = await handler.Handle(new DeliverOrderCommand(Guid.NewGuid()), default);
+
+        result.IsSuccess.ShouldBeFalse();
+    }
+
+    private static Order CreateShippedOrder()
+    {
+        var items = new List<OrderItemData>
+        {
+            new(Guid.NewGuid(), "Test Product", 100m, 1, null)
+        };
+        var address = ShippingAddress.Create("123 Main St", "NYC", "USA", "10001");
+        var order = Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card").GetDataOrThrow();
+        // Domain has no Process() method; force to Shipped via reflection to enable Deliver() transition
+        typeof(Order).GetProperty("Status")!.SetValue(order, OrderStatus.Shipped);
+        return order;
     }
 }
 
@@ -264,8 +314,6 @@ public class GetOrderByIdQueryHandlerTests
             new(Guid.NewGuid(), "Test Product", 100m, 1, null)
         };
         var address = ShippingAddress.Create("123 Main St", "NYC", "USA", "10001");
-        var payment = PaymentInfo.Create("PAY123", "card", 115m, DateTime.UtcNow).GetDataOrThrow();
-
-        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, payment).GetDataOrThrow();
+        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card").GetDataOrThrow();
     }
 }

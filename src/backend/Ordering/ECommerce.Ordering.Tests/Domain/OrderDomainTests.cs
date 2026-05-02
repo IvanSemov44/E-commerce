@@ -1,8 +1,6 @@
-using ECommerce.Ordering.Domain.Aggregates.Order;
+﻿using ECommerce.Ordering.Domain.Aggregates.Order;
 using ECommerce.Ordering.Domain.Errors;
 using ECommerce.Ordering.Domain.ValueObjects;
-using ECommerce.SharedKernel.Results;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Ordering.Tests.Domain;
 
@@ -110,9 +108,7 @@ public class OrderTests
     {
         var address = ShippingAddress.Create("123 Main St", "NYC", "USA", "10001");
         var items = new List<OrderItemData>();
-        var payment = PaymentInfo.Create("PAY123", "card", 100m, DateTime.UtcNow).GetDataOrThrow();
-
-        var result = Order.Place(Guid.NewGuid(), address, items, 10m, 5m, payment);
+        var result = Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card");
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(OrderingErrors.OrderEmpty.Code);
@@ -126,9 +122,7 @@ public class OrderTests
         {
             new(Guid.NewGuid(), "Product", 100m, 1, null)
         };
-        var payment = PaymentInfo.Create("PAY123", "card", 50m, DateTime.UtcNow).GetDataOrThrow();
-
-        var result = Order.Place(Guid.NewGuid(), address, items, 10m, 5m, payment, discountAmount: 200m);
+        var result = Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card", discountAmount: 200m);
 
         result.IsSuccess.ShouldBeFalse();
         result.GetErrorOrThrow().Code.ShouldBe(OrderingErrors.OrderTotalInvalid.Code);
@@ -143,9 +137,7 @@ public class OrderTests
         {
             new(Guid.NewGuid(), "Product", 100m, 1, null)
         };
-        var payment = PaymentInfo.Create("PAY123", "card", 115m, DateTime.UtcNow).GetDataOrThrow();
-
-        var result = Order.Place(userId, address, items, 10m, 5m, payment);
+        var result = Order.Place(userId, address, items, 10m, 5m, "PAY123", "card");
 
         result.IsSuccess.ShouldBeTrue();
         var order = result.GetDataOrThrow();
@@ -166,10 +158,8 @@ public class OrderTests
         {
             new(Guid.NewGuid(), "Product", 100m, 1, null)
         };
-        var payment = PaymentInfo.Create("PAY123", "card", 104m, DateTime.UtcNow).GetDataOrThrow();
-
         var result = Order.Place(
-            Guid.NewGuid(), address, items, 10m, 5m, payment, discountAmount: 11m);
+            Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card", discountAmount: 11m);
 
         result.IsSuccess.ShouldBeTrue();
         var order = result.GetDataOrThrow();
@@ -238,8 +228,6 @@ public class OrderTests
             new(Guid.NewGuid(), "Test Product", 100m, 1, null)
         };
         var address = ShippingAddress.Create("123 Main St", "NYC", "USA", "10001");
-        var payment = PaymentInfo.Create("PAY123", "card", 115m, DateTime.UtcNow).GetDataOrThrow();
-
-        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, payment).GetDataOrThrow();
+        return Order.Place(Guid.NewGuid(), address, items, 10m, 5m, "PAY123", "card").GetDataOrThrow();
     }
 }
