@@ -2,6 +2,7 @@
 using ECommerce.Infrastructure.Integration;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Catalog.Infrastructure.Data.Seeders;
+using ECommerce.Payments.Infrastructure.Persistence;
 using ECommerce.Promotions.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public sealed class AppDbContextInitializationService(
     IAppDbInitializationService appDbInitializationService,
     CatalogDbContext catalogDbContext,
     CatalogDataSeeder catalogDataSeeder,
+    PaymentsDbContext paymentsDbContext,
     PromotionsDbContext promotionsDbContext,
     ReviewsDbContext reviewsDbContext,
     IntegrationPersistenceDbContext integrationPersistenceDbContext,
@@ -31,7 +33,8 @@ public sealed class AppDbContextInitializationService(
             return;
 
         await MigrateCatalogContextAsync();
-    await MigratePromotionsContextAsync();
+        await MigratePaymentsContextAsync();
+        await MigratePromotionsContextAsync();
         await MigrateReviewsContextAsync();
 
         await SeedCatalogContextAsync(environment);
@@ -55,6 +58,24 @@ public sealed class AppDbContextInitializationService(
         Log.Information("Applying {Count} pending Catalog migration(s)...", pending.Count());
         await catalogDbContext.Database.MigrateAsync(cancellationToken);
         Log.Information("Catalog migrations applied successfully.");
+    }
+
+    private async Task MigratePaymentsContextAsync(CancellationToken cancellationToken = default)
+    {
+        var providerName = paymentsDbContext.Database.ProviderName ?? string.Empty;
+        if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase) || !paymentsDbContext.Database.IsRelational())
+        {
+            Log.Information("Skipping Payments migration for non-relational provider: {Provider}", providerName);
+            return;
+        }
+
+        var pending = await paymentsDbContext.Database.GetPendingMigrationsAsync(cancellationToken);
+        if (!pending.Any())
+            return;
+
+        Log.Information("Applying {Count} pending Payments migration(s)...", pending.Count());
+        await paymentsDbContext.Database.MigrateAsync(cancellationToken);
+        Log.Information("Payments migrations applied successfully.");
     }
 
     private async Task MigratePromotionsContextAsync(CancellationToken cancellationToken = default)
