@@ -28,14 +28,17 @@ using SharedOrderStatus = ECommerce.SharedKernel.Enums.OrderStatus;
 using SharedPaymentStatus = ECommerce.SharedKernel.Enums.PaymentStatus;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
+using OrderingOrder = ECommerce.Ordering.Domain.Aggregates.Order.Order;
+using OrderingOrderItem = ECommerce.Ordering.Domain.Aggregates.Order.OrderItem;
+using OrderingOrderItemData = ECommerce.Ordering.Domain.Aggregates.Order.OrderItemData;
+using OrderingShippingAddress = ECommerce.Ordering.Domain.ValueObjects.ShippingAddress;
+using OrderingOrderStatus = ECommerce.Ordering.Domain.ValueObjects.OrderStatus;
 using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using ECommerce.Identity.Infrastructure.Persistence;
 using ECommerce.Ordering.Infrastructure.Persistence;
 using ECommerce.Payments.Infrastructure.Persistence;
 using ECommerce.Shopping.Infrastructure.Persistence;
-using ECommerce.Promotions.Application.Interfaces;
-using ECommerce.Promotions.Domain.Interfaces;
 using ECommerce.Promotions.Infrastructure.Persistence;
 using ECommerce.Identity.Domain.Interfaces;
 using ECommerce.Identity.Domain.ValueObjects;
@@ -108,10 +111,12 @@ public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOpti
 
 public class TestWebApplicationFactory(
     bool useReviewsPostgresContainer = false,
-    bool useCatalogPostgresContainer = true) : WebApplicationFactory<Program>
+    bool useCatalogPostgresContainer = true,
+    bool usePromotionsPostgresContainer = true) : WebApplicationFactory<Program>
 {
     private readonly bool _useReviewsPostgresContainer = useReviewsPostgresContainer;
     private readonly bool _useCatalogPostgresContainer = useCatalogPostgresContainer;
+    private readonly bool _usePromotionsPostgresContainer = usePromotionsPostgresContainer;
     private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
     private readonly string _catalogDatabaseName = $"IntegrationTestsCatalogDb_{Guid.NewGuid():N}";
     private readonly string _integrationDatabaseName = $"IntegrationTestsIntegrationDb_{Guid.NewGuid():N}";
@@ -128,7 +133,9 @@ public class TestWebApplicationFactory(
     private PostgreSqlContainer? _reviewsPostgresContainer;
     private string? _reviewsPostgresConnectionString;
     private readonly object _reviewsContainerSync = new();
-    private readonly FakePromoCodeRepository _promoCodeRepository = new();
+    private PostgreSqlContainer? _promotionsPostgresContainer;
+    private string? _promotionsPostgresConnectionString;
+    private readonly object _promotionsContainerSync = new();
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
     private static readonly Guid _seededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
     private static readonly string _defaultConnectionString =
@@ -142,6 +149,9 @@ public class TestWebApplicationFactory(
             : null;
         var reviewsPostgresConnectionString = _useReviewsPostgresContainer
             ? TryGetReviewsPostgresConnectionString()
+            : null;
+        var promotionsPostgresConnectionString = _usePromotionsPostgresContainer
+            ? TryGetPromotionsPostgresConnectionString()
             : null;
 
         // Reset auth state at the beginning of each WebHost configuration
@@ -167,6 +177,11 @@ public class TestWebApplicationFactory(
             "ConnectionStrings:ReviewsConnection",
             _useReviewsPostgresContainer
                 ? reviewsPostgresConnectionString!
+                : _defaultConnectionString);
+        builder.UseSetting(
+            "ConnectionStrings:PromotionsConnection",
+            _usePromotionsPostgresContainer
+                ? promotionsPostgresConnectionString!
                 : _defaultConnectionString);
         builder.UseSetting("Serilog:MinimumLevel:Default", "Debug");
         builder.UseSetting("RateLimiting:GlobalLimit", "100000");
@@ -220,12 +235,6 @@ public class TestWebApplicationFactory(
             // Replace webhook verification service with test implementation (always returns true)
             services.RemoveAll(typeof(IWebhookVerificationService));
             services.AddScoped<IWebhookVerificationService, TestWebhookVerificationService>();
-
-            services.RemoveAll<IPromoCodeRepository>();
-            services.AddSingleton<IPromoCodeRepository>(_promoCodeRepository);
-
-            services.RemoveAll<IPromoProjectionEventPublisher>();
-            services.AddSingleton<IPromoProjectionEventPublisher, NoOpPromoProjectionEventPublisher>();
 
             services.RemoveAll<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher>();
             services.AddScoped<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher, NoOpInventoryProjectionEventPublisher>();
@@ -312,12 +321,22 @@ public class TestWebApplicationFactory(
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
-            services.AddDbContext<PromotionsDbContext>(options =>
+            if (_usePromotionsPostgresContainer)
             {
-                options.UseInMemoryDatabase(_promotionsDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
+                services.AddDbContext<PromotionsDbContext>(options =>
+                {
+                    options.UseNpgsql(promotionsPostgresConnectionString!);
+                });
+            }
+            else
+            {
+                services.AddDbContext<PromotionsDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(_promotionsDatabaseName);
+                    options.UseInternalServiceProvider(inMemoryServiceProvider);
+                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                });
+            }
 
             services.AddDbContext<ShoppingDbContext>(options =>
             {
@@ -380,7 +399,14 @@ public class TestWebApplicationFactory(
                 paymentsDb.Database.EnsureCreated();
 
                 var promotionsDb = scopedServices.GetRequiredService<PromotionsDbContext>();
-                promotionsDb.Database.EnsureCreated();
+                if (_usePromotionsPostgresContainer)
+                {
+                    promotionsDb.Database.Migrate();
+                }
+                else
+                {
+                    promotionsDb.Database.EnsureCreated();
+                }
 
                 var shoppingDb = scopedServices.GetRequiredService<ShoppingDbContext>();
                 shoppingDb.Database.EnsureCreated();
@@ -469,70 +495,44 @@ public class TestWebApplicationFactory(
 
                 // Seed a pending order in OrderingDbContext so ship/cancel handlers can find it
                 var testOrderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
-                orderingDb.Orders.Add(new ECommerce.SharedKernel.Entities.Order
+                var testAddress = OrderingShippingAddress.Create("123 Test St", "Test City", "US", "12345");
+                var testItems = new List<OrderingOrderItemData>
                 {
-                    Id = testOrderId,
-                    OrderNumber = "TEST-ORDER-001",
-                    UserId = userId,
-                    Status = SharedOrderStatus.Pending,
-                    PaymentStatus = SharedPaymentStatus.Paid,
-                    Subtotal = 20.00m,
-                    DiscountAmount = 0.00m,
-                    ShippingAmount = 10.00m,
-                    TaxAmount = 0.00m,
-                    TotalAmount = 30.00m,
-                    Currency = "USD",
-                    RowVersion = Array.Empty<byte>()
-                });
-                orderingDb.OrderItems.Add(new ECommerce.SharedKernel.Entities.OrderItem
+                    new(productId, "IntegrationProduct", 10.00m, 2, null)
+                };
+                var pendingOrderResult = OrderingOrder.Place(userId, testAddress, testItems, 10.00m, 0m, "PAY-REF-TEST", "Card");
+                if (pendingOrderResult.IsSuccess)
                 {
-                    Id = Guid.NewGuid(),
-                    OrderId = testOrderId,
-                    ProductId = productId,
-                    ProductName = "IntegrationProduct",
-                    UnitPrice = 10.00m,
-                    Quantity = 2,
-                    TotalPrice = 20.00m
-                });
+                    var pendingOrder = pendingOrderResult.GetDataOrThrow();
+                    SetEntityId(pendingOrder, testOrderId);
+                    orderingDb.Orders.Add(pendingOrder);
+                }
 
                 // Seed a shipped order so cancel-shipped tests can find it
                 var shippedOrderId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-                orderingDb.Orders.Add(new ECommerce.SharedKernel.Entities.Order
+                var shippedOrderResult = OrderingOrder.Place(userId, testAddress, testItems, 10.00m, 0m, "PAY-REF-SHIPPED", "Card");
+                if (shippedOrderResult.IsSuccess)
                 {
-                    Id = shippedOrderId,
-                    OrderNumber = "TEST-ORDER-SHIPPED-001",
-                    UserId = userId,
-                    Status = SharedOrderStatus.Shipped,
-                    PaymentStatus = SharedPaymentStatus.Paid,
-                    Subtotal = 20.00m,
-                    DiscountAmount = 0.00m,
-                    ShippingAmount = 10.00m,
-                    TaxAmount = 0.00m,
-                    TotalAmount = 30.00m,
-                    Currency = "USD",
-                    RowVersion = Array.Empty<byte>()
-                });
-                orderingDb.OrderItems.Add(new ECommerce.SharedKernel.Entities.OrderItem
-                {
-                    Id = Guid.NewGuid(),
-                    OrderId = shippedOrderId,
-                    ProductId = productId,
-                    ProductName = "IntegrationProduct",
-                    UnitPrice = 10.00m,
-                    Quantity = 2,
-                    TotalPrice = 20.00m
-                });
+                    var shippedOrder = shippedOrderResult.GetDataOrThrow();
+                    SetEntityId(shippedOrder, shippedOrderId);
+                    // Bypass state machine with reflection (test seeding only)
+                    var statusProp = typeof(OrderingOrder).GetProperty("Status", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    statusProp?.SetValue(shippedOrder, OrderingOrderStatus.Shipped);
+                    orderingDb.Orders.Add(shippedOrder);
+                }
 
                 var promoCodeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE20");
                 var discountValueResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(20);
-                if (promoCodeResult.IsSuccess && discountValueResult.IsSuccess)
+                var validPeriodResult = ECommerce.Promotions.Domain.ValueObjects.DateRange.Create(
+                    DateTime.UtcNow.AddYears(-1), DateTime.UtcNow.AddYears(10));
+                if (promoCodeResult.IsSuccess && discountValueResult.IsSuccess && validPeriodResult.IsSuccess)
                 {
                     var promo = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode.Create(
                         promoCodeResult.GetDataOrThrow(),
                         discountValueResult.GetDataOrThrow(),
-                        null);
+                        validPeriodResult.GetDataOrThrow());
                     SetEntityId(promo, _seededPromoCodeId);
-                    _promoCodeRepository.Seed(promo);
+                    promotionsDb.PromoCodes.Add(promo);
                 }
 
                 shoppingDb.Products.Add(new ECommerce.Shopping.Infrastructure.Persistence.ProductReadModel
@@ -577,6 +577,7 @@ public class TestWebApplicationFactory(
                 inventoryDb.SaveChanges();
                 orderingDb.SaveChanges();
                 paymentsDb.SaveChanges();
+                promotionsDb.SaveChanges();
                 shoppingDb.SaveChanges();
                 reviewsDb.SaveChanges();
             }
@@ -590,6 +591,7 @@ public class TestWebApplicationFactory(
     {
         StopCatalogContainerAsync().GetAwaiter().GetResult();
         StopReviewsContainerAsync().GetAwaiter().GetResult();
+        StopPromotionsContainerAsync().GetAwaiter().GetResult();
         base.Dispose(disposing);
     }
 
@@ -597,6 +599,7 @@ public class TestWebApplicationFactory(
     {
         await StopCatalogContainerAsync();
         await StopReviewsContainerAsync();
+        await StopPromotionsContainerAsync();
         GC.SuppressFinalize(this);
         await base.DisposeAsync();
     }
@@ -689,6 +692,51 @@ public class TestWebApplicationFactory(
         await _reviewsPostgresContainer.DisposeAsync();
         _reviewsPostgresContainer = null;
         _reviewsPostgresConnectionString = null;
+    }
+
+    private string TryGetPromotionsPostgresConnectionString()
+    {
+        if (_promotionsPostgresConnectionString is not null)
+            return _promotionsPostgresConnectionString;
+
+        lock (_promotionsContainerSync)
+        {
+            if (_promotionsPostgresConnectionString is not null)
+                return _promotionsPostgresConnectionString;
+
+            try
+            {
+                _promotionsPostgresContainer = new PostgreSqlBuilder()
+                    .WithImage("postgres:16-alpine")
+                    .WithDatabase(_promotionsDatabaseName.ToLowerInvariant())
+                    .WithUsername("postgres")
+                    .WithPassword("postgres")
+                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
+                    .WithCleanUp(true)
+                    .Build();
+
+                _promotionsPostgresContainer.StartAsync().GetAwaiter().GetResult();
+                _promotionsPostgresConnectionString = _promotionsPostgresContainer.GetConnectionString();
+                return _promotionsPostgresConnectionString;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Promotions PostgreSQL Testcontainer failed to start. " +
+                    "Verify Docker is running and accessible.",
+                    ex);
+            }
+        }
+    }
+
+    private async Task StopPromotionsContainerAsync()
+    {
+        if (_promotionsPostgresContainer is null)
+            return;
+
+        await _promotionsPostgresContainer.DisposeAsync();
+        _promotionsPostgresContainer = null;
+        _promotionsPostgresConnectionString = null;
     }
 
     /// <summary>
@@ -833,18 +881,6 @@ public class TestWebApplicationFactory(
             Guid productId,
             int quantity,
             string reason,
-            CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-    }
-
-    private sealed class NoOpPromoProjectionEventPublisher : IPromoProjectionEventPublisher
-    {
-        public Task PublishPromoProjectionUpdatedAsync(
-            Guid promoCodeId,
-            string code,
-            decimal discountValue,
-            bool isActive,
-            bool isDeleted,
             CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }
