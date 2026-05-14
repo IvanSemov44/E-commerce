@@ -1,8 +1,11 @@
-namespace ECommerce.Shopping.Application.DTOs;
+﻿namespace ECommerce.Shopping.Application.DTOs;
 
-public record CartDto(
-    Guid            Id,
-    Guid            UserId,
-    List<CartItemDto> Items,
-    decimal         Subtotal
-);
+public record CartDto
+{
+    public Guid Id { get; init; }
+    public Guid? UserId { get; init; }
+    public string? SessionId { get; init; }
+    public List<CartItemDto> Items { get; init; } = [];
+    public decimal Subtotal { get; init; }
+    public decimal Total { get; init; }
+}

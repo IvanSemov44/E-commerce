@@ -1,10 +1,12 @@
-namespace ECommerce.Shopping.Application.DTOs;
+﻿namespace ECommerce.Shopping.Application.DTOs;
 
-public record CartItemDto(
-    Guid    Id,
-    Guid    ProductId,
-    int     Quantity,
-    decimal UnitPrice,
-    string  Currency,
-    decimal LineTotal
-);
+public record CartItemDto
+{
+    public Guid Id { get; init; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string? ProductImage { get; init; }
+    public decimal Price { get; init; }
+    public int Quantity { get; init; }
+    public decimal Total { get; init; }
+}
