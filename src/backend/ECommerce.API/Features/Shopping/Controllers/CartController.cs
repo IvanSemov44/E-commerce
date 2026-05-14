@@ -1,6 +1,6 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Contracts.DTOs.Cart;
+using ECommerce.Shopping.Application.DTOs;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Shopping.Application.Commands.AddToCart;
 using ECommerce.Shopping.Application.Commands.UpdateCartItemQuantity;
@@ -35,7 +35,7 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
         if (!result.IsSuccess)
             return MapError(result.GetErrorOrThrow());
 
-        return Ok(ApiResponse<CartDto>.Ok(MapToApiDto(result.GetDataOrThrow()), "Cart retrieved successfully"));
+        return Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart retrieved successfully"));
     }
 
     [HttpPost("get-or-create")]
@@ -47,7 +47,7 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
         if (!result.IsSuccess)
             return MapError(result.GetErrorOrThrow());
 
-        return Ok(ApiResponse<CartDto>.Ok(MapToApiDto(result.GetDataOrThrow()), "Cart retrieved successfully"));
+        return Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart retrieved successfully"));
     }
 
     [HttpPost("add-item")]
@@ -123,22 +123,5 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
         "FORBIDDEN"
             => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(error.Message, error.Code)),
         _ => StatusCode(StatusCodes.Status500InternalServerError, ApiResponse<object>.Failure(error.Message, error.Code))
-    };
-
-    private static CartDto MapToApiDto(ECommerce.Shopping.Application.DTOs.CartDto cart) => new()
-    {
-        Id = cart.Id,
-        UserId = cart.UserId == Guid.Empty ? null : cart.UserId,
-        Items = cart.Items.Select(i => new CartItemDto
-        {
-            Id = i.Id,
-            ProductId = i.ProductId,
-            ProductName = "",
-            Quantity = i.Quantity,
-            Price = i.UnitPrice,
-            Total = i.LineTotal
-        }).ToList(),
-        Subtotal = cart.Subtotal,
-        Total = cart.Subtotal
     };
 }

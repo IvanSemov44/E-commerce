@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
-using ECommerce.Contracts.DTOs.Orders;
+using ECommerce.Ordering.Application.DTOs;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Enums;
@@ -12,7 +12,6 @@ using ECommerce.Ordering.Application.Commands.ShipOrder;
 using ECommerce.Ordering.Application.Commands.CancelOrder;
 using ECommerce.Ordering.Application.Queries.GetOrderById;
 using ECommerce.SharedKernel.Results;
-using AppOrderDto = ECommerce.Ordering.Application.DTOs.OrderDto;
 using OrderingQueries = ECommerce.Ordering.Application.Queries;
 
 namespace ECommerce.API.Features.Ordering.Controllers;
@@ -110,10 +109,10 @@ public class OrdersController(
         var query = new OrderingQueries.GetOrderById.GetOrderByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is Result<AppOrderDto>.Success success)
+        if (result is Result<OrderDto>.Success success)
             return Ok(ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(success.Data), "Order retrieved successfully"));
 
-        if (result is Result<AppOrderDto>.Failure failure)
+        if (result is Result<OrderDto>.Failure failure)
         {
             var statusCode = failure.Error.Code switch
             {
@@ -207,7 +206,7 @@ public class OrdersController(
         var query = new OrderingQueries.GetOrders.GetOrdersQuery();
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is Result<List<AppOrderDto>>.Success success)
+        if (result is Result<List<OrderDto>>.Success success)
         {
             var allOrders = success.Data.Select(MapToOrderDetailDto).ToList();
             var total = allOrders.Count;
@@ -222,7 +221,7 @@ public class OrdersController(
             return Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(paginatedResult, "Orders retrieved successfully"));
         }
 
-        if (result is Result<List<AppOrderDto>>.Failure failure)
+        if (result is Result<List<OrderDto>>.Failure failure)
             return StatusCode(500, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
 
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
@@ -249,7 +248,7 @@ public class OrdersController(
         var query = new OrderingQueries.GetUserOrders.GetUserOrdersQuery(userId.Value);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is Result<List<AppOrderDto>>.Success success)
+        if (result is Result<List<OrderDto>>.Success success)
         {
             var allOrders = success.Data.Select(MapToOrderDetailDto).ToList();
             var total = allOrders.Count;
@@ -264,7 +263,7 @@ public class OrdersController(
             return Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(paginatedResult, "Orders retrieved successfully"));
         }
 
-        if (result is Result<List<AppOrderDto>>.Failure failure)
+        if (result is Result<List<OrderDto>>.Failure failure)
             return StatusCode(500, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
 
         return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
@@ -329,7 +328,7 @@ public class OrdersController(
         return false;
     }
 
-    private static OrderDetailDto MapToOrderDetailDto(AppOrderDto order)
+    private static OrderDetailDto MapToOrderDetailDto(OrderDto order)
     {
         return new OrderDetailDto
         {

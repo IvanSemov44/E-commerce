@@ -22,7 +22,7 @@ using ECommerce.Catalog.Application.Queries.GetProductBySlug;
 using ECommerce.Catalog.Application.Queries.GetProducts;
 using ECommerce.Catalog.Application.Queries.GetProductsByCategory;
 using ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
-using ECommerce.Contracts.DTOs.Inventory;
+using ECommerce.Inventory.Application.DTOs;
 using ECommerce.Catalog.Application.Commands.UpdateProductStock;
 using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
 using ECommerce.Catalog.Application.Queries.SearchProducts;

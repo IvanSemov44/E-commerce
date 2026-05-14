@@ -1,5 +1,5 @@
-using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Contracts.DTOs.Users;
+﻿using ECommerce.Contracts.DTOs.Common;
+using ECommerce.Identity.Application.DTOs;
 using ECommerce.Identity.Application.Commands.ChangePassword;
 using ECommerce.Identity.Application.Commands.DeleteAddress;
 using ECommerce.Identity.Application.Commands.UpdateProfile;
@@ -103,7 +103,7 @@ public class ProfileController(IMediator mediator, ILogger<ProfileController> lo
     [ProducesResponseType(typeof(ApiResponse<ECommerce.Identity.Application.DTOs.UserPreferencesDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdatePreferences([FromBody] ECommerce.Contracts.DTOs.Users.UserPreferencesDto dto, CancellationToken ct)
+    public async Task<IActionResult> UpdatePreferences([FromBody] UserPreferencesDto dto, CancellationToken ct)
     {
         var userId = GetUserId();
         if (!userId.HasValue)

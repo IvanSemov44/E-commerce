@@ -1,7 +1,7 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.API.Common.Helpers;
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Contracts.DTOs.Inventory;
+using ECommerce.Inventory.Application.DTOs;
 using ECommerce.Inventory.Application.Commands.IncreaseStock;
 using ECommerce.Inventory.Application.Commands.ReduceStock;
 using ECommerce.Inventory.Application.Commands.AdjustStock;
