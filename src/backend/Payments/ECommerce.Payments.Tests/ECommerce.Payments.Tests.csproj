@@ -28,7 +28,6 @@
     <ProjectReference Include="..\ECommerce.Payments.Application\ECommerce.Payments.Application.csproj" />
     <ProjectReference Include="..\ECommerce.Payments.Domain\ECommerce.Payments.Domain.csproj" />
     <ProjectReference Include="..\ECommerce.Payments.Infrastructure\ECommerce.Payments.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\ECommerce.Tests\ECommerce.Tests.csproj" />
   </ItemGroup>
 
 </Project>
