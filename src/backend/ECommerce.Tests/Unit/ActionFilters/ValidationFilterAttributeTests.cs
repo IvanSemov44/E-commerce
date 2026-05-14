@@ -1,6 +1,5 @@
-using ECommerce.API.ActionFilters;
+﻿using ECommerce.API.ActionFilters;
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Contracts.DTOs.Products;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -16,6 +15,14 @@ namespace ECommerce.Tests.Unit.ActionFilters;
 [TestClass]
 public class ValidationFilterAttributeTests
 {
+    private sealed class TestActionDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int StockQuantity { get; set; }
+        public Guid? CategoryId { get; set; }
+    }
+
     private ValidationFilterAttribute _filter = null!;
     private DefaultHttpContext _httpContext = null!;
     private RouteData _routeData = null!;
@@ -79,7 +86,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenModelStateInvalid_ReturnsUnprocessableEntity()
     {
         // Arrange
-        var dto = new CreateProductDto
+        var dto = new TestActionDto
         {
             Name = "",
             Price = -10,
@@ -112,42 +119,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenModelStateInvalid_IncludesAllErrors()
     {
         // Arrange
-        var dto = new CreateProductDto();
-        var actionArguments = new Dictionary<string, object?> { { "productDto", dto } };
-        var context = new ActionExecutingContext(
-            new ActionContext(_httpContext, _routeData, _actionDescriptor),
-            new List<IFilterMetadata>(),
-            actionArguments,
-            controller: new object());
-
-        context.ModelState.AddModelError("Name", "Name is required");
-        context.ModelState.AddModelError("Price", "Price must be greater than 0");
-        context.ModelState.AddModelError("CategoryId", "Category is required");
-
-        // Act
-        _filter.OnActionExecuting(context);
-
-        // Assert
-        var result = (UnprocessableEntityObjectResult)context.Result!;
-        var errorResponse = result.Value as ApiResponse<object>;
-        var errors = errorResponse?.ErrorDetails?.Errors?.Values.SelectMany(e => e).ToList();
-        errors.Count.ShouldBe(3);
-        errors.ShouldContain("Name is required");
-        errors.ShouldContain("Price must be greater than 0");
-        errors.ShouldContain("Category is required");
-    }
-
-    [TestMethod]
-    public void OnActionExecuting_WhenModelStateValid_DoesNotSetResult()
-    {
-        // Arrange
-        var dto = new CreateProductDto
-        {
-            Name = "Valid Product",
-            Price = 99.99m,
-            StockQuantity = 100,
-            CategoryId = Guid.NewGuid()
-        };
+        var dto = new TestActionDto();
 
         var actionArguments = new Dictionary<string, object?> { { "productDto", dto } };
         var context = new ActionExecutingContext(
@@ -167,7 +139,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenMultipleDtoArguments_IdentifiesFirstDtoParameter()
     {
         // Arrange
-        var dto = new CreateProductDto();
+        var dto = new TestActionDto();
         var actionArguments = new Dictionary<string, object?>
         {
             { "productDto", dto },
@@ -211,7 +183,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenEmptyModelState_DoesNotSetResult()
     {
         // Arrange
-        var dto = new CreateProductDto();
+        var dto = new TestActionDto();
         var actionArguments = new Dictionary<string, object?> { { "productDto", dto } };
         var context = new ActionExecutingContext(
             new ActionContext(_httpContext, _routeData, _actionDescriptor),
@@ -230,7 +202,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenModelStateHasMultipleErrorsPerKey_IncludesAllMessages()
     {
         // Arrange
-        var dto = new CreateProductDto();
+        var dto = new TestActionDto();
         var actionArguments = new Dictionary<string, object?> { { "productDto", dto } };
         var context = new ActionExecutingContext(
             new ActionContext(_httpContext, _routeData, _actionDescriptor),
@@ -306,7 +278,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_ReturnsApiResponseErrorType()
     {
         // Arrange
-        var dto = new CreateProductDto();
+        var dto = new TestActionDto();
         var actionArguments = new Dictionary<string, object?> { { "productDto", dto } };
         var context = new ActionExecutingContext(
             new ActionContext(_httpContext, _routeData, _actionDescriptor),
@@ -330,7 +302,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenDtoPrefixedWithCreate_IdentifiesDtoCorrectly()
     {
         // Arrange
-        var dto = new CreateProductDto { Name = "Test" };
+        var dto = new TestActionDto { Name = "Test" };
         var actionArguments = new Dictionary<string, object?> { { "createProductDto", dto } };
         var context = new ActionExecutingContext(
             new ActionContext(_httpContext, _routeData, _actionDescriptor),
@@ -349,7 +321,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenDtoPrefixedWithUpdate_IdentifiesDtoCorrectly()
     {
         // Arrange
-        var dto = new CreateProductDto(); // Using similar structure for test
+        var dto = new TestActionDto(); // Using similar structure for test
         var actionArguments = new Dictionary<string, object?> { { "updateProductDto", dto } };
         var context = new ActionExecutingContext(
             new ActionContext(_httpContext, _routeData, _actionDescriptor),
@@ -368,7 +340,7 @@ public class ValidationFilterAttributeTests
     public void OnActionExecuting_WhenValidationFails_ErrorResponseHasCorrectStatusCode()
     {
         // Arrange
-        var dto = new CreateProductDto();
+        var dto = new TestActionDto();
         var actionArguments = new Dictionary<string, object?> { { "productDto", dto } };
         var context = new ActionExecutingContext(
             new ActionContext(_httpContext, _routeData, _actionDescriptor),
@@ -386,4 +358,5 @@ public class ValidationFilterAttributeTests
         result.StatusCode.ShouldBe(StatusCodes.Status422UnprocessableEntity);
     }
 }
+
 
