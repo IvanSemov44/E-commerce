@@ -5,216 +5,146 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ECommerce.Tests.Integration;
 
-/// <summary>
-/// Integration tests for WishlistController endpoints.
-/// Tests wishlist/favorites management functionality.
-/// </summary>
 [TestClass]
 public class WishlistControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    public TestContext TestContext { get; set; } = null!;
+
     [TestInitialize]
-    public void Setup()
-    {
-        _factory = new TestWebApplicationFactory();
-    }
+    public void Setup() => _factory = new TestWebApplicationFactory();
 
     [TestCleanup]
     public void Cleanup()
     {
-        // Reset authentication state
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
         ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         _factory?.Dispose();
     }
 
-    #region Get Wishlist Tests
+    private static StringContent Json(object dto) =>
+        new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+    // ── GET /api/wishlist ────────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetWishlist_WithAuthenticatedUser_ReturnsOk()
+    public async Task GetWishlist_Authenticated_Returns200()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/wishlist");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "GetWishlist should return OK or NotFound");
+        var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
     }
 
     [TestMethod]
-    public async Task GetWishlist_Unauthenticated_ReturnsUnauthorized()
+    public async Task GetWishlist_ResponseShape_HasDataProperty()
     {
-        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+        var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        Assert.IsTrue(json.TryGetProperty("data", out _), "Response must have 'data'");
+    }
+
+    [TestMethod]
+    public async Task GetWishlist_Unauthenticated_Returns401()
+    {
         using var client = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/wishlist");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
-            "Unauthenticated should return Unauthorized");
+        var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
     }
 
-    [TestMethod]
-    public async Task GetWishlist_ReturnsCorrectFormat()
-    {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/wishlist");
-        var responseContent = await response.Content.ReadAsStringAsync();
-
-        // Assert
-        if (response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(responseContent))
-        {
-            var jsonOptions = _jsonOptions;
-            var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-            Assert.IsTrue(responseData.TryGetProperty("data", out _), "Response should have data property");
-        }
-    }
-
-    #endregion
-
-    #region Add to Wishlist Tests
+    // ── POST /api/wishlist/add ───────────────────────────────────────────────
 
     [TestMethod]
     public async Task AddToWishlist_WithValidProductId_ReturnsOk()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-        var addWishlistDto = new
-        {
-            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222")
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(addWishlistDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/wishlist/add", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.BadRequest,
-            "AddToWishlist should return OK, Created, or BadRequest");
+        var res = await client.PostAsync("/api/wishlist/add",
+            Json(new { ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222") }),
+            TestContext.CancellationToken);
+        Assert.IsTrue(res.StatusCode is HttpStatusCode.OK or HttpStatusCode.Created or HttpStatusCode.BadRequest);
     }
 
     [TestMethod]
-    public async Task AddToWishlist_Unauthenticated_ReturnsUnauthorized()
+    public async Task AddToWishlist_MissingProductId_Returns400()
     {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-        var addWishlistDto = new
-        {
-            ProductId = Guid.NewGuid()
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(addWishlistDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/wishlist/add", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
-            "Unauthenticated cannot add to wishlist");
+        using var client = _factory.CreateAuthenticatedClient();
+        var res = await client.PostAsync("/api/wishlist/add",
+            new StringContent("{}", Encoding.UTF8, "application/json"),
+            TestContext.CancellationToken);
+        Assert.IsTrue(res.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity);
     }
 
-    #endregion
+    [TestMethod]
+    public async Task AddToWishlist_Unauthenticated_Returns401()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+        var res = await client.PostAsync("/api/wishlist/add", Json(new { ProductId = Guid.NewGuid() }), TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
 
-    #region Remove from Wishlist Tests
+    // ── DELETE /api/wishlist/remove/{productId} ──────────────────────────────
 
     [TestMethod]
     public async Task RemoveFromWishlist_WithExistingItem_ReturnsOk()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-        var productId = Guid.NewGuid();
-
-        // Act
-        var response = await client.DeleteAsync($"/api/wishlist/remove/{productId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.NotFound,
-            "RemoveFromWishlist should return OK, NoContent, or NotFound");
+        var res = await client.DeleteAsync($"/api/wishlist/remove/{Guid.NewGuid()}", TestContext.CancellationToken);
+        Assert.IsTrue(res.StatusCode is HttpStatusCode.OK or HttpStatusCode.NoContent or HttpStatusCode.NotFound);
     }
 
     [TestMethod]
-    public async Task RemoveFromWishlist_Unauthenticated_ReturnsUnauthorized()
+    public async Task RemoveFromWishlist_Unauthenticated_Returns401()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
-        var productId = Guid.NewGuid();
-
-        // Act
-        var response = await client.DeleteAsync($"/api/wishlist/remove/{productId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
-            "Unauthenticated cannot remove from wishlist");
+        var res = await client.DeleteAsync($"/api/wishlist/remove/{Guid.NewGuid()}", TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
     }
 
-    #endregion
-
-    #region Check Item Tests
+    // ── GET /api/wishlist/contains/{productId} ───────────────────────────────
 
     [TestMethod]
-    public async Task CheckItemInWishlist_WithValidProductId_ReturnsOk()
+    public async Task IsProductInWishlist_Authenticated_Returns200WithBool()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-        var productId = Guid.NewGuid();
-
-        // Act
-        var response = await client.GetAsync($"/api/wishlist/contains/{productId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "CheckItem should return OK with boolean or NotFound");
+        var res = await client.GetAsync($"/api/wishlist/contains/{Guid.NewGuid()}", TestContext.CancellationToken);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
+        Assert.IsTrue(data.ValueKind is JsonValueKind.True or JsonValueKind.False, "data must be a boolean");
     }
 
     [TestMethod]
-    public async Task CheckItemInWishlist_Unauthenticated_ReturnsUnauthorized()
+    public async Task IsProductInWishlist_Unauthenticated_Returns401()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
-        var productId = Guid.NewGuid();
-
-        // Act
-        var response = await client.GetAsync($"/api/wishlist/check/{productId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.NotFound,
-            $"Wishlist endpoint should return Unauthorized, Forbidden, or NotFound for unauthenticated user, got {response.StatusCode}");
+        var res = await client.GetAsync($"/api/wishlist/contains/{Guid.NewGuid()}", TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
     }
 
-    #endregion
-
-    #region Response Format Tests
+    // ── POST /api/wishlist/clear ─────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetWishlist_ReturnsStandardApiResponse()
+    public async Task ClearWishlist_Authenticated_Returns200OrConflict()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/wishlist");
-        var responseContent = await response.Content.ReadAsStringAsync();
-
-        // Assert
-        if (!string.IsNullOrEmpty(responseContent) && response.StatusCode == HttpStatusCode.OK)
-        {
-            var jsonOptions = _jsonOptions;
-            var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-            Assert.IsTrue(responseData.TryGetProperty("success", out _) || responseData.TryGetProperty("data", out _),
-                "Response should have success or data property");
-        }
+        var res = await client.PostAsync("/api/wishlist/clear",
+            new StringContent("", Encoding.UTF8, "application/json"),
+            TestContext.CancellationToken);
+        Assert.IsTrue(res.StatusCode is HttpStatusCode.OK or HttpStatusCode.Conflict,
+            $"Expected 200 or 409, got {(int)res.StatusCode}");
     }
 
-    #endregion
+    [TestMethod]
+    public async Task ClearWishlist_Unauthenticated_Returns401()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+        var res = await client.PostAsync("/api/wishlist/clear",
+            new StringContent("", Encoding.UTF8, "application/json"),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
 }

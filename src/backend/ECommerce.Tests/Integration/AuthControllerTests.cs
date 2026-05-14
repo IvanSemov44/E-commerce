@@ -1,9 +1,6 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ECommerce.Contracts.DTOs.Auth;
-using ECommerce.Contracts.DTOs.Common;
 
 namespace ECommerce.Tests.Integration;
 

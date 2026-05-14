@@ -109,11 +109,15 @@ public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOpti
 public class TestWebApplicationFactory(
     bool useReviewsPostgresContainer = false,
     bool useCatalogPostgresContainer = true,
-    bool usePromotionsPostgresContainer = true) : WebApplicationFactory<Program>
+    bool usePromotionsPostgresContainer = true,
+    bool useOrderingPostgresContainer = true,
+    bool usePaymentsPostgresContainer = true) : WebApplicationFactory<Program>
 {
     private readonly bool _useReviewsPostgresContainer = useReviewsPostgresContainer;
     private readonly bool _useCatalogPostgresContainer = useCatalogPostgresContainer;
     private readonly bool _usePromotionsPostgresContainer = usePromotionsPostgresContainer;
+    private readonly bool _useOrderingPostgresContainer = useOrderingPostgresContainer;
+    private readonly bool _usePaymentsPostgresContainer = usePaymentsPostgresContainer;
     private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
     private readonly string _catalogDatabaseName = $"IntegrationTestsCatalogDb_{Guid.NewGuid():N}";
 
@@ -133,6 +137,12 @@ public class TestWebApplicationFactory(
     private PostgreSqlContainer? _promotionsPostgresContainer;
     private string? _promotionsPostgresConnectionString;
     private readonly object _promotionsContainerSync = new();
+    private PostgreSqlContainer? _orderingPostgresContainer;
+    private string? _orderingPostgresConnectionString;
+    private readonly object _orderingContainerSync = new();
+    private PostgreSqlContainer? _paymentsPostgresContainer;
+    private string? _paymentsPostgresConnectionString;
+    private readonly object _paymentsContainerSync = new();
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
     private static readonly Guid _seededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
     private static readonly string _defaultConnectionString =
@@ -149,6 +159,12 @@ public class TestWebApplicationFactory(
             : null;
         var promotionsPostgresConnectionString = _usePromotionsPostgresContainer
             ? TryGetPromotionsPostgresConnectionString()
+            : null;
+        var orderingPostgresConnectionString = _useOrderingPostgresContainer
+            ? TryGetOrderingPostgresConnectionString()
+            : null;
+        var paymentsPostgresConnectionString = _usePaymentsPostgresContainer
+            ? TryGetPaymentsPostgresConnectionString()
             : null;
 
         // Reset auth state at the beginning of each WebHost configuration
@@ -278,19 +294,39 @@ public class TestWebApplicationFactory(
                 options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
 
-            services.AddDbContext<OrderingDbContext>(options =>
+            if (_useOrderingPostgresContainer)
             {
-                options.UseInMemoryDatabase(_orderingDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
+                services.AddDbContext<OrderingDbContext>(options =>
+                {
+                    options.UseNpgsql(orderingPostgresConnectionString!);
+                });
+            }
+            else
+            {
+                services.AddDbContext<OrderingDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(_orderingDatabaseName);
+                    options.UseInternalServiceProvider(inMemoryServiceProvider);
+                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                });
+            }
 
-            services.AddDbContext<PaymentsDbContext>(options =>
+            if (_usePaymentsPostgresContainer)
             {
-                options.UseInMemoryDatabase(_paymentsDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
+                services.AddDbContext<PaymentsDbContext>(options =>
+                {
+                    options.UseNpgsql(paymentsPostgresConnectionString!);
+                });
+            }
+            else
+            {
+                services.AddDbContext<PaymentsDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(_paymentsDatabaseName);
+                    options.UseInternalServiceProvider(inMemoryServiceProvider);
+                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                });
+            }
 
             if (_usePromotionsPostgresContainer)
             {
@@ -358,10 +394,16 @@ public class TestWebApplicationFactory(
                 inventoryDb.Database.EnsureCreated();
 
                 var orderingDb = scopedServices.GetRequiredService<OrderingDbContext>();
-                orderingDb.Database.EnsureCreated();
+                if (_useOrderingPostgresContainer)
+                    orderingDb.Database.Migrate();
+                else
+                    orderingDb.Database.EnsureCreated();
 
                 var paymentsDb = scopedServices.GetRequiredService<PaymentsDbContext>();
-                paymentsDb.Database.EnsureCreated();
+                if (_usePaymentsPostgresContainer)
+                    paymentsDb.Database.Migrate();
+                else
+                    paymentsDb.Database.EnsureCreated();
 
                 var promotionsDb = scopedServices.GetRequiredService<PromotionsDbContext>();
                 if (_usePromotionsPostgresContainer)
@@ -552,6 +594,8 @@ public class TestWebApplicationFactory(
         StopCatalogContainerAsync().GetAwaiter().GetResult();
         StopReviewsContainerAsync().GetAwaiter().GetResult();
         StopPromotionsContainerAsync().GetAwaiter().GetResult();
+        StopOrderingContainerAsync().GetAwaiter().GetResult();
+        StopPaymentsContainerAsync().GetAwaiter().GetResult();
         base.Dispose(disposing);
     }
 
@@ -560,6 +604,8 @@ public class TestWebApplicationFactory(
         await StopCatalogContainerAsync();
         await StopReviewsContainerAsync();
         await StopPromotionsContainerAsync();
+        await StopOrderingContainerAsync();
+        await StopPaymentsContainerAsync();
         GC.SuppressFinalize(this);
         await base.DisposeAsync();
     }
@@ -697,6 +743,96 @@ public class TestWebApplicationFactory(
         await _promotionsPostgresContainer.DisposeAsync();
         _promotionsPostgresContainer = null;
         _promotionsPostgresConnectionString = null;
+    }
+
+    private string TryGetOrderingPostgresConnectionString()
+    {
+        if (_orderingPostgresConnectionString is not null)
+            return _orderingPostgresConnectionString;
+
+        lock (_orderingContainerSync)
+        {
+            if (_orderingPostgresConnectionString is not null)
+                return _orderingPostgresConnectionString;
+
+            try
+            {
+                _orderingPostgresContainer = new PostgreSqlBuilder()
+                    .WithImage("postgres:16-alpine")
+                    .WithDatabase(_orderingDatabaseName.ToLowerInvariant())
+                    .WithUsername("postgres")
+                    .WithPassword("postgres")
+                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
+                    .WithCleanUp(true)
+                    .Build();
+
+                _orderingPostgresContainer.StartAsync().GetAwaiter().GetResult();
+                _orderingPostgresConnectionString = _orderingPostgresContainer.GetConnectionString();
+                return _orderingPostgresConnectionString;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Ordering PostgreSQL Testcontainer failed to start. " +
+                    "Verify Docker is running and accessible.",
+                    ex);
+            }
+        }
+    }
+
+    private async Task StopOrderingContainerAsync()
+    {
+        if (_orderingPostgresContainer is null)
+            return;
+
+        await _orderingPostgresContainer.DisposeAsync();
+        _orderingPostgresContainer = null;
+        _orderingPostgresConnectionString = null;
+    }
+
+    private string TryGetPaymentsPostgresConnectionString()
+    {
+        if (_paymentsPostgresConnectionString is not null)
+            return _paymentsPostgresConnectionString;
+
+        lock (_paymentsContainerSync)
+        {
+            if (_paymentsPostgresConnectionString is not null)
+                return _paymentsPostgresConnectionString;
+
+            try
+            {
+                _paymentsPostgresContainer = new PostgreSqlBuilder()
+                    .WithImage("postgres:16-alpine")
+                    .WithDatabase(_paymentsDatabaseName.ToLowerInvariant())
+                    .WithUsername("postgres")
+                    .WithPassword("postgres")
+                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
+                    .WithCleanUp(true)
+                    .Build();
+
+                _paymentsPostgresContainer.StartAsync().GetAwaiter().GetResult();
+                _paymentsPostgresConnectionString = _paymentsPostgresContainer.GetConnectionString();
+                return _paymentsPostgresConnectionString;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Payments PostgreSQL Testcontainer failed to start. " +
+                    "Verify Docker is running and accessible.",
+                    ex);
+            }
+        }
+    }
+
+    private async Task StopPaymentsContainerAsync()
+    {
+        if (_paymentsPostgresContainer is null)
+            return;
+
+        await _paymentsPostgresContainer.DisposeAsync();
+        _paymentsPostgresContainer = null;
+        _paymentsPostgresConnectionString = null;
     }
 
     /// <summary>
