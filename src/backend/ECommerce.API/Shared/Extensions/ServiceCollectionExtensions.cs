@@ -4,6 +4,7 @@ using ECommerce.API.HealthChecks;
 using ECommerce.API.Services;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Infrastructure.Services;
+using ECommerce.Identity.Infrastructure.Services;
 using ECommerce.SharedKernel.Domain;
 using ECommerce.Contracts.Validators.Auth;
 using ECommerce.Infrastructure;
@@ -295,6 +296,10 @@ public static class ServiceCollectionExtensions
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<LoginDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<ECommerce.Promotions.Application.Validators.ValidatePromoCodeRequestDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<ECommerce.Identity.Application.Validators.UpdateProfileDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<ECommerce.Shopping.Application.Validators.AddToCartDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<ECommerce.Ordering.Application.Validators.CreateOrderDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<ECommerce.Inventory.Application.Validators.AdjustStockRequestValidator>();
 
         // Cross-context UoW used by MediatR handlers.
         services.AddScoped<IUnitOfWork, CrossContextMediatRUnitOfWork>();
