@@ -28,7 +28,7 @@
     <PackageReference Include="Bogus" Version="35.6.1" />
 
     <!-- BCrypt for password hashing -->
-    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
 
     <!-- Code Coverage -->
     <PackageReference Include="coverlet.collector" Version="6.0.2">
