@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="MSTest" Version="4.0.1" />
     <PackageReference Include="Shouldly" Version="4.2.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.2">
@@ -25,6 +26,7 @@
     <ProjectReference Include="..\ECommerce.Identity.Domain\ECommerce.Identity.Domain.csproj" />
     <ProjectReference Include="..\..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
     <ProjectReference Include="..\ECommerce.Identity.Application\ECommerce.Identity.Application.csproj" />
+    <ProjectReference Include="..\ECommerce.Identity.Infrastructure\ECommerce.Identity.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

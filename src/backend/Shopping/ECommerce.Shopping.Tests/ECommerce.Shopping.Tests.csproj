@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.5" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="MSTest" Version="4.0.1" />
     <PackageReference Include="Shouldly" Version="4.2.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.2">
@@ -25,6 +27,7 @@
     <ProjectReference Include="..\ECommerce.Shopping.Domain\ECommerce.Shopping.Domain.csproj" />
     <ProjectReference Include="..\..\ECommerce.SharedKernel\ECommerce.SharedKernel.csproj" />
     <ProjectReference Include="..\ECommerce.Shopping.Application\ECommerce.Shopping.Application.csproj" />
+    <ProjectReference Include="..\ECommerce.Shopping.Infrastructure\ECommerce.Shopping.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
