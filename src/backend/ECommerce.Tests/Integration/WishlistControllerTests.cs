@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Shouldly;
 
 namespace ECommerce.Tests.Integration;
 
@@ -10,6 +10,7 @@ public class WishlistControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly Guid SeededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     public TestContext TestContext { get; set; } = null!;
 
@@ -28,123 +29,197 @@ public class WishlistControllerTests
     private static StringContent Json(object dto) =>
         new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
+    private static async Task<JsonElement> ReadData(HttpResponseMessage res) =>
+        JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions)
+            .GetProperty("data");
+
     // ── GET /api/wishlist ────────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetWishlist_Authenticated_Returns200()
+    public async Task GetWishlist_Authenticated_Returns200WithEmptyList()
     {
         using var client = _factory.CreateAuthenticatedClient();
-        var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-    }
 
-    [TestMethod]
-    public async Task GetWishlist_ResponseShape_HasDataProperty()
-    {
-        using var client = _factory.CreateAuthenticatedClient();
         var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
-        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out _), "Response must have 'data'");
+
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await ReadData(res);
+        data.GetProperty("productIds").GetArrayLength().ShouldBe(0);
     }
 
     [TestMethod]
     public async Task GetWishlist_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
+
         var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     // ── POST /api/wishlist/add ───────────────────────────────────────────────
 
     [TestMethod]
-    public async Task AddToWishlist_WithValidProductId_ReturnsOk()
+    public async Task AddToWishlist_SeededProduct_Returns204()
     {
         using var client = _factory.CreateAuthenticatedClient();
+
         var res = await client.PostAsync("/api/wishlist/add",
-            Json(new { ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222") }),
+            Json(new { ProductId = SeededProductId }),
             TestContext.CancellationToken);
-        Assert.IsTrue(res.StatusCode is HttpStatusCode.OK or HttpStatusCode.Created or HttpStatusCode.BadRequest);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
     [TestMethod]
-    public async Task AddToWishlist_MissingProductId_Returns400()
+    public async Task AddToWishlist_ThenGetWishlist_ContainsProduct()
     {
         using var client = _factory.CreateAuthenticatedClient();
-        var res = await client.PostAsync("/api/wishlist/add",
-            new StringContent("{}", Encoding.UTF8, "application/json"),
+
+        await client.PostAsync("/api/wishlist/add",
+            Json(new { ProductId = SeededProductId }),
             TestContext.CancellationToken);
-        Assert.IsTrue(res.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity);
+
+        var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await ReadData(res);
+        var productIds = data.GetProperty("productIds");
+        productIds.GetArrayLength().ShouldBe(1);
+        productIds[0].GetGuid().ShouldBe(SeededProductId);
     }
 
     [TestMethod]
     public async Task AddToWishlist_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var res = await client.PostAsync("/api/wishlist/add", Json(new { ProductId = Guid.NewGuid() }), TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+
+        var res = await client.PostAsync("/api/wishlist/add",
+            Json(new { ProductId = SeededProductId }),
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     // ── DELETE /api/wishlist/remove/{productId} ──────────────────────────────
 
     [TestMethod]
-    public async Task RemoveFromWishlist_WithExistingItem_ReturnsOk()
+    public async Task RemoveFromWishlist_AnyProductId_Returns204()
     {
         using var client = _factory.CreateAuthenticatedClient();
-        var res = await client.DeleteAsync($"/api/wishlist/remove/{Guid.NewGuid()}", TestContext.CancellationToken);
-        Assert.IsTrue(res.StatusCode is HttpStatusCode.OK or HttpStatusCode.NoContent or HttpStatusCode.NotFound);
+
+        var res = await client.DeleteAsync($"/api/wishlist/remove/{Guid.NewGuid()}",
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    [TestMethod]
+    public async Task RemoveFromWishlist_AfterAdd_ProductNoLongerInList()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/wishlist/add",
+            Json(new { ProductId = SeededProductId }),
+            TestContext.CancellationToken);
+
+        await client.DeleteAsync($"/api/wishlist/remove/{SeededProductId}",
+            TestContext.CancellationToken);
+
+        var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
+        var data = await ReadData(res);
+        data.GetProperty("productIds").GetArrayLength().ShouldBe(0);
     }
 
     [TestMethod]
     public async Task RemoveFromWishlist_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var res = await client.DeleteAsync($"/api/wishlist/remove/{Guid.NewGuid()}", TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+
+        var res = await client.DeleteAsync($"/api/wishlist/remove/{Guid.NewGuid()}",
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     // ── GET /api/wishlist/contains/{productId} ───────────────────────────────
 
     [TestMethod]
-    public async Task IsProductInWishlist_Authenticated_Returns200WithBool()
+    public async Task IsProductInWishlist_ProductNotAdded_ReturnsFalse()
     {
         using var client = _factory.CreateAuthenticatedClient();
-        var res = await client.GetAsync($"/api/wishlist/contains/{Guid.NewGuid()}", TestContext.CancellationToken);
-        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
-        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
-        Assert.IsTrue(data.ValueKind is JsonValueKind.True or JsonValueKind.False, "data must be a boolean");
+
+        var res = await client.GetAsync($"/api/wishlist/contains/{Guid.NewGuid()}",
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await ReadData(res);
+        data.GetBoolean().ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public async Task IsProductInWishlist_AfterAdd_ReturnsTrue()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/wishlist/add",
+            Json(new { ProductId = SeededProductId }),
+            TestContext.CancellationToken);
+
+        var res = await client.GetAsync($"/api/wishlist/contains/{SeededProductId}",
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await ReadData(res);
+        data.GetBoolean().ShouldBeTrue();
     }
 
     [TestMethod]
     public async Task IsProductInWishlist_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var res = await client.GetAsync($"/api/wishlist/contains/{Guid.NewGuid()}", TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+
+        var res = await client.GetAsync($"/api/wishlist/contains/{Guid.NewGuid()}",
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     // ── POST /api/wishlist/clear ─────────────────────────────────────────────
 
     [TestMethod]
-    public async Task ClearWishlist_Authenticated_Returns200OrConflict()
+    public async Task ClearWishlist_Authenticated_Returns204()
     {
         using var client = _factory.CreateAuthenticatedClient();
-        var res = await client.PostAsync("/api/wishlist/clear",
-            new StringContent("", Encoding.UTF8, "application/json"),
+
+        var res = await client.PostAsync("/api/wishlist/clear", null, TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    [TestMethod]
+    public async Task ClearWishlist_AfterAdd_WishlistIsEmpty()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/wishlist/add",
+            Json(new { ProductId = SeededProductId }),
             TestContext.CancellationToken);
-        Assert.IsTrue(res.StatusCode is HttpStatusCode.OK or HttpStatusCode.Conflict,
-            $"Expected 200 or 409, got {(int)res.StatusCode}");
+
+        await client.PostAsync("/api/wishlist/clear", null, TestContext.CancellationToken);
+
+        var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
+        var data = await ReadData(res);
+        data.GetProperty("productIds").GetArrayLength().ShouldBe(0);
     }
 
     [TestMethod]
     public async Task ClearWishlist_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
-        var res = await client.PostAsync("/api/wishlist/clear",
-            new StringContent("", Encoding.UTF8, "application/json"),
-            TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+
+        var res = await client.PostAsync("/api/wishlist/clear", null, TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 }

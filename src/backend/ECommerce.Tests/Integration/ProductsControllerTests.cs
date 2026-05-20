@@ -1,438 +1,359 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Constants;
 
 namespace ECommerce.Tests.Integration;
 
-/// <summary>
-/// Integration tests for ProductsController endpoints.
-/// Tests product retrieval with various filters and CRUD operations.
-/// </summary>
 [TestClass]
 public class ProductsControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
-    private static readonly Guid ExistingProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid _seededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+    public TestContext TestContext { get; set; } = null!;
 
     [TestInitialize]
-    public void Setup()
-    {
-        _factory = new TestWebApplicationFactory();
-    }
+    public void Setup() => _factory = new TestWebApplicationFactory();
 
     [TestCleanup]
     public void Cleanup()
     {
-        // Reset authentication state
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
         ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         _factory?.Dispose();
     }
 
-    #region Get Products Tests
+    private static StringContent Serialize(object dto) =>
+        new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+    private static async Task<ApiResponse<T>?> Deserialize<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        string content = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
+    }
+
+    private static Guid ExtractIdFromLocation(HttpResponseMessage response, string expectedPrefix)
+    {
+        Assert.IsNotNull(response.Headers.Location, "Redirect response must include Location header");
+        string location = response.Headers.Location!.ToString();
+        StringAssert.StartsWith(location, expectedPrefix);
+        return Guid.Parse(location[(location.LastIndexOf('/') + 1)..]);
+    }
+
+    // ── GET /api/products ────────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetProducts_WithDefaultQuery_ReturnsSuccessfulResponse()
+    public async Task GetProducts_Returns200AndArray()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/products");
+        var res = await client.GetAsync("/api/products", TestContext.CancellationToken);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.IsTrue(json.TryGetProperty("data", out var data) && data.ValueKind != JsonValueKind.Null);
     }
 
     [TestMethod]
-    public async Task GetProducts_WithPagination_ReturnsPaginatedResult()
+    public async Task GetProductById_Existing_Returns200AndProduct()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/products?page=1&pageSize=10");
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var res = await client.GetAsync($"/api/products/{_seededProductId}", TestContext.CancellationToken);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = _jsonOptions;
-        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-        Assert.IsTrue(responseData.TryGetProperty("data", out _), "Response should have data property");
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var api = await Deserialize<JsonElement>(res, TestContext.CancellationToken);
+        Assert.IsTrue(api != null && api.Success && api.Data!.TryGetProperty("id", out _));
     }
 
     [TestMethod]
-    public async Task GetProducts_WithMinPriceFilter_ReturnsFilteredResult()
+    public async Task GetProductById_Nonexistent_Returns404()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/products?minPrice=5");
+        var res = await client.GetAsync($"/api/products/{Guid.NewGuid()}", TestContext.CancellationToken);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
     }
 
     [TestMethod]
-    public async Task GetProducts_WithMaxPriceFilter_ReturnsFilteredResult()
+    public async Task GetProductBySlug_Existing_Returns200()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/products?maxPrice=50");
+        var res = await client.GetAsync("/api/products/slug/integration-product", TestContext.CancellationToken);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
     }
 
     [TestMethod]
-    public async Task GetProducts_WithSearchQuery_ReturnsSearchResults()
+    public async Task GetProductBySlug_Nonexistent_Returns404()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/products?search=integration");
+        var res = await client.GetAsync("/api/products/slug/does-not-exist-xyz", TestContext.CancellationToken);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    #endregion
-
-    #region Get Featured Products Tests
-
-    [TestMethod]
-    public async Task GetFeaturedProducts_WithDefaultCount_ReturnsSuccessfulResponse()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/products/featured");
-        var responseContent = await response.Content.ReadAsStringAsync();
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = _jsonOptions;
-        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-
-        Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have data property");
-        Assert.IsTrue(data.TryGetProperty("items", out var items), "Featured response should have items");
-        Assert.AreEqual(JsonValueKind.Array, items.ValueKind);
-        Assert.IsTrue(data.TryGetProperty("totalCount", out _), "Featured response should have totalCount");
-        Assert.IsTrue(data.TryGetProperty("page", out _), "Featured response should have page");
-        Assert.IsTrue(data.TryGetProperty("pageSize", out _), "Featured response should have pageSize");
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
     }
 
     [TestMethod]
-    public async Task GetFeaturedProducts_WithCustomPageSize_ReturnsSuccessfulResponse()
+    public async Task GetFeaturedProducts_Returns200AndItems()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/products/featured?page=1&pageSize=5");
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var res = await client.GetAsync("/api/products/featured", TestContext.CancellationToken);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = _jsonOptions;
-        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-
-        Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have data property");
-        Assert.IsTrue(data.TryGetProperty("items", out var items), "Featured response should have items");
-        Assert.AreEqual(JsonValueKind.Array, items.ValueKind);
-        Assert.IsLessThanOrEqualTo(5, items.GetArrayLength(), "Featured items should not exceed requested pageSize");
-
-        Assert.IsTrue(data.TryGetProperty("pageSize", out var pageSize), "Featured response should have pageSize");
-        Assert.AreEqual(5, pageSize.GetInt32());
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.IsTrue(json.TryGetProperty("data", out var data) && data.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array);
     }
 
-    #endregion
-
-    #region Get Product By Id Tests
+    // ── POST /api/products ───────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetProductById_WithExistingProduct_ReturnsSuccessfulResponse()
+    public async Task PostProduct_AdminValid_Returns302WithLocation()
     {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync($"/api/products/{ExistingProductId}");
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task GetProductById_WithNonexistentProduct_ReturnsNotFound()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-        var nonexistentId = Guid.NewGuid();
-
-        // Act
-        var response = await client.GetAsync($"/api/products/{nonexistentId}");
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task GetProductById_ReturnsCorrectProductDetails()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync($"/api/products/{ExistingProductId}");
-        var responseContent = await response.Content.ReadAsStringAsync();
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        var jsonOptions = _jsonOptions;
-        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-        Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have product data");
-        Assert.IsTrue(data.TryGetProperty("id", out _), "Product should have ID");
-        Assert.IsTrue(data.TryGetProperty("name", out _), "Product should have name");
-    }
-
-    #endregion
-
-    #region Get Product By Slug Tests
-
-    [TestMethod]
-    public async Task GetProductBySlug_WithExistingSlug_ReturnsSuccessfulResponse()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/products/slug/integration-product");
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task GetProductBySlug_WithNonexistentSlug_ReturnsNotFound()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/products/slug/nonexistent-product");
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    #endregion
-
-    #region Create Product Tests
-
-    [TestMethod]
-    public async Task CreateProduct_WithAdminAndValidData_ReturnsRedirect()
-    {
-        // Arrange
         using var client = _factory.CreateAdminClientNoRedirect();
-        var createProductDto = new
-        {
-            Name = "New Test Product",
-            Slug = "new-test-product-" + Guid.NewGuid().ToString().Substring(0, 8),
-            Price = 49.99m,
-            CategoryId = "66666666-6666-6666-6666-666666666666",
-            StockQuantity = 50
-        };
+        var catRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "TempCat", Slug = "temp-cat-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        var catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
-        var content = new StringContent(JsonSerializer.Serialize(createProductDto), Encoding.UTF8, "application/json");
+        var res = await client.PostAsync("/api/products",
+            Serialize(new { Name = "NewProduct", Slug = "prod-" + Guid.NewGuid().ToString()[..8], Price = 9.99m, StockQuantity = 10, CategoryId = catId }),
+            TestContext.CancellationToken);
 
-        // Act
-        var response = await client.PostAsync("/api/products", content);
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.Found, response.StatusCode);
-        Assert.IsNotNull(response.Headers.Location, "Create should include redirect location");
-        StringAssert.StartsWith(response.Headers.Location!.ToString(), "/api/products/");
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Assert.AreNotEqual(Guid.Empty, ExtractIdFromLocation(res, "/api/products/"));
     }
 
     [TestMethod]
-    public async Task CreateProduct_WithoutAdminRole_ReturnsForbidden()
+    public async Task PostProduct_AdminMissingName_Returns400()
     {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient(); // Customer role
-        var createProductDto = new
-        {
-            Name = "New Test Product",
-            Slug = "forbidden-product-" + Guid.NewGuid().ToString().Substring(0, 8),
-            Price = 49.99m,
-            StockQuantity = 50
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(createProductDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/products", content);
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task CreateProduct_WithMissingName_ReturnsBadRequest()
-    {
-        // Arrange
-        using var client = _factory.CreateAdminClient();
-        var createProductDto = new
-        {
-            Slug = "test-product",
-            Price = 29.99m,
-            StockQuantity = 100
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(createProductDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/products", content);
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task CreateProduct_WithInvalidPrice_ReturnsBadRequest()
-    {
-        // Arrange
-        using var client = _factory.CreateAdminClient();
-        var createProductDto = new
-        {
-            Name = "Test Product",
-            Slug = "test-product-" + Guid.NewGuid().ToString().Substring(0, 8),
-            Price = -10m,  // Invalid negative price
-            StockQuantity = 100
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(createProductDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/products", content);
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    #endregion
-
-    #region Update Product Tests
-
-    [TestMethod]
-    public async Task UpdateProduct_WithAdminAndNonexistentProduct_ReturnsNotFound()
-    {
-        // Arrange
-        using var client = _factory.CreateAdminClient();
-        var nonexistentId = Guid.NewGuid();
-        var updateProductDto = new
-        {
-            Name = "Updated Product",
-            Slug = "updated-product-" + Guid.NewGuid().ToString().Substring(0, 8),
-            Price = 39.99m,
-            StockQuantity = 75
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(updateProductDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PutAsync($"/api/products/{nonexistentId}", content);
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task UpdateProduct_WithAdminAndValidData_ReturnsRedirect()
-    {
-        // Arrange
         using var client = _factory.CreateAdminClientNoRedirect();
-        var updateProductDto = new
-        {
-            Name = "Updated Integration Product",
-            Slug = "updated-integration-" + Guid.NewGuid().ToString().Substring(0, 8),
-            Price = 19.99m,
-            StockQuantity = 150
-        };
 
-        var content = new StringContent(JsonSerializer.Serialize(updateProductDto), Encoding.UTF8, "application/json");
+        var res = await client.PostAsync("/api/products",
+            Serialize(new { Slug = "no-name-" + Guid.NewGuid().ToString()[..8], Price = 5m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
 
-        // Act
-        var response = await client.PutAsync($"/api/products/{ExistingProductId}", content);
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.Found, response.StatusCode);
-        Assert.IsNotNull(response.Headers.Location, "Update should include redirect location");
-        StringAssert.StartsWith(response.Headers.Location!.ToString(), "/api/products/");
-    }
-
-    #endregion
-
-    #region Delete Product Tests
-
-    [TestMethod]
-    public async Task DeleteProduct_WithAdminAndNonexistentProduct_ReturnsNotFound()
-    {
-        // Arrange
-        using var client = _factory.CreateAdminClient();
-        var nonexistentId = Guid.NewGuid();
-
-        // Act
-        var response = await client.DeleteAsync($"/api/products/{nonexistentId}");
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, res.StatusCode);
     }
 
     [TestMethod]
-    public async Task DeleteProduct_WithoutAdminRole_ReturnsForbidden()
+    public async Task PostProduct_AdminNegativePrice_Returns400()
     {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient(); // Customer role
-        var productId = Guid.NewGuid();
+        using var client = _factory.CreateAdminClientNoRedirect();
 
-        // Act
-        var response = await client.DeleteAsync($"/api/products/{productId}");
+        var res = await client.PostAsync("/api/products",
+            Serialize(new { Name = "BadPrice", Slug = "bad-price-" + Guid.NewGuid().ToString()[..8], Price = -1m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
 
-        // Assert
-        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, res.StatusCode);
     }
 
-    #endregion
+    [TestMethod]
+    public async Task PostProduct_DuplicateSlug_Returns422WithCode()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        var catRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "DupCat", Slug = "dup-cat-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        var catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
-    #region Response Format Tests
+        string slug = "dup-slug-" + Guid.NewGuid().ToString()[..8];
+        var create = new { Name = "P1", Slug = slug, Price = 1m, StockQuantity = 1, CategoryId = catId };
+        var r1 = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
+        var r2 = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
+        Assert.AreEqual((HttpStatusCode)422, r2.StatusCode);
+        var api = await Deserialize<object>(r2, TestContext.CancellationToken);
+        Assert.IsFalse(api!.Success);
+        Assert.AreEqual(ErrorCodes.DuplicateProductSlug, api.ErrorDetails!.Code);
+    }
 
     [TestMethod]
-    public async Task GetProducts_ReturnsCorrectResponseFormat()
+    public async Task PostProduct_DuplicateSku_Returns422WithCode()
     {
-        // Arrange
+        using var client = _factory.CreateAdminClientNoRedirect();
+        var catRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "DupSkuCat", Slug = "dup-sku-cat-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        var catId = ExtractIdFromLocation(catRes, "/api/categories/");
+
+        string sku = "dup-sku-" + Guid.NewGuid().ToString()[..8];
+        var first = new { Name = "SkuOne", Slug = "sku-one-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1, CategoryId = catId, Sku = sku };
+        var second = new { Name = "SkuTwo", Slug = "sku-two-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1, CategoryId = catId, Sku = sku };
+
+        var r1 = await client.PostAsync("/api/products", Serialize(first), TestContext.CancellationToken);
+        var r2 = await client.PostAsync("/api/products", Serialize(second), TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
+        Assert.AreEqual((HttpStatusCode)422, r2.StatusCode);
+        var api = await Deserialize<object>(r2, TestContext.CancellationToken);
+        Assert.IsFalse(api!.Success);
+        Assert.AreEqual(ErrorCodes.SkuAlreadyExists, api.ErrorDetails!.Code);
+    }
+
+    [TestMethod]
+    public async Task PostProduct_Unauthenticated_Returns401()
+    {
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/products");
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var res = await client.PostAsync("/api/products",
+            Serialize(new { Name = "X", Slug = "x-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
 
-        // Assert
-        var jsonOptions = _jsonOptions;
-        var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-
-        Assert.IsTrue(responseData.TryGetProperty("success", out var success) && success.GetBoolean(), "Response should have success=true");
-        Assert.IsTrue(responseData.TryGetProperty("data", out var data), "Response should have data property");
-        Assert.IsTrue(data.TryGetProperty("items", out _), "Data should have items");
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
     }
 
-    #endregion
+    [TestMethod]
+    public async Task PostProduct_CustomerRole_Returns403()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.PostAsync("/api/products",
+            Serialize(new { Name = "X", Slug = "x-cust-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    // ── PUT /api/products/{id} ───────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task PutProduct_AdminExistingValid_Returns302WithLocation()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        var catRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "PutCat", Slug = "put-cat-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        var catId = ExtractIdFromLocation(catRes, "/api/categories/");
+
+        var r = await client.PostAsync("/api/products",
+            Serialize(new { Name = "ToUpdate", Slug = "to-update-" + Guid.NewGuid().ToString()[..8], Price = 5m, StockQuantity = 2, CategoryId = catId }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, r.StatusCode);
+        var id = ExtractIdFromLocation(r, "/api/products/");
+
+        var res = await client.PutAsync($"/api/products/{id}",
+            Serialize(new { Name = "UpdatedName", Slug = "updated-slug-" + Guid.NewGuid().ToString()[..8], Price = 6m, StockQuantity = 3, CategoryId = catId }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Assert.AreEqual(id, ExtractIdFromLocation(res, "/api/products/"));
+    }
+
+    [TestMethod]
+    public async Task PutProduct_AdminNonexistent_Returns404()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+
+        var res = await client.PutAsync($"/api/products/{Guid.NewGuid()}",
+            Serialize(new { Name = "No", Slug = "no-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PutProduct_AdminMissingName_Returns400()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+
+        var res = await client.PutAsync($"/api/products/{_seededProductId}",
+            Serialize(new { Slug = "no-name-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PutProduct_Unauthenticated_Returns401()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.PutAsync($"/api/products/{_seededProductId}",
+            Serialize(new { Name = "A", Slug = "a-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PutProduct_CustomerRole_Returns403()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.PutAsync($"/api/products/{_seededProductId}",
+            Serialize(new { Name = "A", Slug = "a-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1 }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    // ── DELETE /api/products/{id} ────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task DeleteProduct_AdminExisting_Returns200()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        var catRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "DelCat", Slug = "del-cat-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        var catId = ExtractIdFromLocation(catRes, "/api/categories/");
+
+        var r = await client.PostAsync("/api/products",
+            Serialize(new { Name = "ToDelete", Slug = "to-delete-" + Guid.NewGuid().ToString()[..8], Price = 2m, StockQuantity = 1, CategoryId = catId }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, r.StatusCode);
+        var id = ExtractIdFromLocation(r, "/api/products/");
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/products/{id}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task DeleteProduct_AdminNonexistent_Returns404()
+    {
+        using var client = _factory.CreateAdminClient();
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/products/{Guid.NewGuid()}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task DeleteProduct_Unauthenticated_Returns401()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/products/{_seededProductId}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task DeleteProduct_CustomerRole_Returns403()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/products/{_seededProductId}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+    }
 }

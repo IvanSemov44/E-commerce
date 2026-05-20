@@ -1,415 +1,240 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using System.Text.Json;
+using Shouldly;
 
 namespace ECommerce.Tests.Integration;
 
-/// <summary>
-/// Integration tests for CartController endpoints.
-/// Tests shopping cart operations including add, remove, and update items.
-/// </summary>
 [TestClass]
 public class CartControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly Guid SeededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+    public TestContext TestContext { get; set; } = null!;
 
     [TestInitialize]
-    public void Setup()
-    {
-        _factory = new TestWebApplicationFactory();
-    }
+    public void Setup() => _factory = new TestWebApplicationFactory();
 
     [TestCleanup]
     public void Cleanup()
     {
-        // Reset authentication state
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
         ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         _factory?.Dispose();
     }
 
-    #region Get Cart Tests
+    private static StringContent Json(object dto) =>
+        new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+    private static async Task<JsonElement> ReadData(HttpResponseMessage res) =>
+        JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions)
+            .GetProperty("data");
+
+    // ── GET /api/cart ─────────────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetCart_WithAuthenticatedUser_ReturnsOk()
+    public async Task GetCart_Authenticated_NoCartSeeded_Returns404()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/cart");
+        var res = await client.GetAsync("/api/cart", TestContext.CancellationToken);
 
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "GetCart should return OK or NotFound");
+        res.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     [TestMethod]
-    public async Task GetCart_WithUnauthenticatedUser_ReturnsUnauthorized()
+    public async Task GetCart_AfterAddingItem_Returns200WithItem()
     {
-        // Arrange
+        using var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/cart/add-item",
+            Json(new { ProductId = SeededProductId, Quantity = 2 }),
+            TestContext.CancellationToken);
+
+        var res = await client.GetAsync("/api/cart", TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await ReadData(res);
+        var items = data.GetProperty("items");
+        items.GetArrayLength().ShouldBeGreaterThan(0);
+        items[0].GetProperty("productId").GetGuid().ShouldBe(SeededProductId);
+        items[0].GetProperty("quantity").GetInt32().ShouldBe(2);
+    }
+
+    [TestMethod]
+    public async Task GetCart_Unauthenticated_Returns401()
+    {
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/cart");
+        var res = await client.GetAsync("/api/cart", TestContext.CancellationToken);
 
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized,
-            "Unauthenticated should return Unauthorized");
+        res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    // ── POST /api/cart/get-or-create ──────────────────────────────────────────
+
     [TestMethod]
-    public async Task GetCart_ReturnsCorrectFormat()
+    public async Task GetOrCreateCart_Authenticated_Returns200WithEmptyCart()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/cart");
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var res = await client.PostAsync("/api/cart/get-or-create", null, TestContext.CancellationToken);
 
-        // Assert
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            var jsonOptions = _jsonOptions;
-            var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-            Assert.IsTrue(responseData.TryGetProperty("data", out _), "Response should have data property");
-        }
-    }
-
-    #endregion
-
-    #region Add Item Tests
-
-    [TestMethod]
-    public async Task AddItemToCart_WithValidProductId_ReturnsOk()
-    {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var addItemDto = new
-        {
-            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"), // Test product
-            Quantity = 1
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/cart/add-item", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest,
-            "AddItem should return OK or BadRequest");
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await ReadData(res);
+        data.GetProperty("items").GetArrayLength().ShouldBe(0);
     }
 
     [TestMethod]
-    public async Task AddItemToCart_WithInvalidQuantity_ReturnsBadRequest()
+    public async Task GetOrCreateCart_Anonymous_Returns200()
     {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var addItemDto = new
-        {
-            ProductId = Guid.NewGuid(),
-            Quantity = -1 // Invalid
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/cart/add-item", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity,
-            "Invalid quantity should return BadRequest or similar");
-    }
-
-    [TestMethod]
-    public async Task AddItemToCart_WithUnauthenticated_AllowedForGuests()
-    {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
-        var addItemDto = new
-        {
-            ProductId = Guid.NewGuid(),
-            Quantity = 1
-        };
 
-        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
+        var res = await client.PostAsync("/api/cart/get-or-create", null, TestContext.CancellationToken);
 
-        // Act
-        var response = await client.PostAsync("/api/cart/add-item", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.NotFound,
-            "Guest users can add to cart");
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
-    #endregion
-
-    #region Update Item Tests
+    // ── POST /api/cart/add-item ───────────────────────────────────────────────
 
     [TestMethod]
-    public async Task UpdateCartItem_WithValidQuantity_ReturnsOk()
+    public async Task AddItemToCart_SeededProduct_Returns204()
     {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var itemId = Guid.NewGuid();
-        var updateItemDto = new { Quantity = 5 };
-
-        var content = new StringContent(JsonSerializer.Serialize(updateItemDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PutAsync($"/api/cart/items/{itemId}", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.BadRequest,
-            "UpdateItem should return OK, NotFound, or BadRequest");
-    }
-
-    [TestMethod]
-    public async Task UpdateCartItem_WithZeroQuantity_ReturnsBadRequest()
-    {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var itemId = Guid.NewGuid();
-        var updateItemDto = new { Quantity = 0 };
-
-        var content = new StringContent(JsonSerializer.Serialize(updateItemDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PutAsync($"/api/cart/items/{itemId}", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.UnprocessableEntity,
-            "Zero quantity should return BadRequest");
-    }
-
-    #endregion
-
-    #region Remove Item Tests
-
-    [TestMethod]
-    public async Task RemoveItemFromCart_WithExistingItem_ReturnsNoContent()
-    {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var itemId = Guid.NewGuid();
-
-        // Act
-        var response = await client.DeleteAsync($"/api/cart/items/{itemId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "RemoveItem should return NoContent, OK, or NotFound");
-    }
-
-    [TestMethod]
-    public async Task RemoveItemFromCart_WithUnauthenticated_ReturnsUnauthorized()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-        var itemId = Guid.NewGuid();
-
-        // Act
-        var response = await client.DeleteAsync($"/api/cart/items/{itemId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden,
-            "Unauthenticated remove should return Unauthorized");
-    }
-
-    #endregion
-
-    #region Clear Cart Tests
-
-    [TestMethod]
-    public async Task ClearCart_WithAuthenticatedUser_ReturnsNoContent()
-    {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
 
-        // Act
-        var response = await client.DeleteAsync("/api/cart");
+        var res = await client.PostAsync("/api/cart/add-item",
+            Json(new { ProductId = SeededProductId, Quantity = 1 }),
+            TestContext.CancellationToken);
 
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "ClearCart should return NoContent or OK");
+        res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    #endregion
-
-    #region Response Format Tests
-
     [TestMethod]
-    public async Task GetCart_ReturnsStandardApiResponse()
+    public async Task AddItemToCart_ZeroQuantity_Returns422()
     {
-        // Arrange
         using var client = _factory.CreateAuthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/cart");
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var res = await client.PostAsync("/api/cart/add-item",
+            Json(new { ProductId = SeededProductId, Quantity = 0 }),
+            TestContext.CancellationToken);
 
-        // Assert
-        if (!string.IsNullOrEmpty(responseContent) && response.StatusCode == HttpStatusCode.OK)
-        {
-            var jsonOptions = _jsonOptions;
-            var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-            Assert.IsTrue(responseData.TryGetProperty("success", out _) || responseData.TryGetProperty("data", out _),
-                "Response should have success or data property");
-        }
-    }
-
-    #endregion
-
-    #region IDOR Protection Tests
-
-    [TestMethod]
-    public async Task ValidateCart_UserCannotValidateOtherUsersCart_ReturnsForbidden()
-    {
-        // Arrange - Create a cart for User A
-        using var clientUserA = _factory.CreateAuthenticatedClient();
-        var addItemDto = new
-        {
-            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            Quantity = 1
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
-        var addResponse = await clientUserA.PostAsync("/api/cart/add-item", content);
-
-        // Get the cart to find its ID - use POST since get-or-create is a POST endpoint
-        var cartResponse = await clientUserA.PostAsync("/api/cart/get-or-create", null);
-        if (cartResponse.StatusCode != HttpStatusCode.OK)
-        {
-            Assert.Inconclusive("Could not create cart for IDOR test");
-            return;
-        }
-
-        var cartContent = await cartResponse.Content.ReadAsStringAsync();
-        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
-        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
-
-        // Create client for User B (different user)
-        var userBToken = TestWebApplicationFactory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
-        using var clientUserB = _factory.CreateClient();
-        clientUserB.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userBToken);
-
-        // Act - User B tries to validate User A's cart
-        var validateResponse = await clientUserB.PostAsync($"/api/cart/validate/{cartId}", null);
-
-        // Assert - 403 if route enforces ownership; 404 if validate route does not exist
-        Assert.IsTrue(validateResponse.StatusCode == HttpStatusCode.Forbidden || validateResponse.StatusCode == HttpStatusCode.NotFound,
-            $"User B should be denied access to User A's cart. Got {validateResponse.StatusCode}");
+        res.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
     }
 
     [TestMethod]
-    public async Task ValidateCart_AdminCanValidateAnyCart_ReturnsSuccess()
+    public async Task AddItemToCart_NegativeQuantity_Returns422()
     {
-        // Arrange - Create a cart for a regular user
-        using var clientUser = _factory.CreateAuthenticatedClient();
-        var addItemDto = new
-        {
-            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            Quantity = 1
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
-        await clientUser.PostAsync("/api/cart/add-item", content);
-
-        // Get the cart to find its ID - use POST since get-or-create is a POST endpoint
-        var cartResponse = await clientUser.PostAsync("/api/cart/get-or-create", null);
-        if (cartResponse.StatusCode != HttpStatusCode.OK)
-        {
-            Assert.Inconclusive("Could not create cart for admin test");
-            return;
-        }
-
-        var cartContent = await cartResponse.Content.ReadAsStringAsync();
-        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
-        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
-
-        // Create admin client
-        using var adminClient = _factory.CreateAdminClient();
-
-        // Act - Admin validates user's cart
-        var validateResponse = await adminClient.PostAsync($"/api/cart/validate/{cartId}", null);
-
-        // Assert
-        Assert.IsTrue(validateResponse.StatusCode == HttpStatusCode.OK || validateResponse.StatusCode == HttpStatusCode.BadRequest || validateResponse.StatusCode == HttpStatusCode.NotFound,
-            "Admin should be able to validate any cart");
-    }
-
-    [TestMethod]
-    public async Task ValidateCart_UserCanValidateOwnCart_ReturnsSuccess()
-    {
-        // Arrange - Create and validate cart as same user
         using var client = _factory.CreateAuthenticatedClient();
-        var addItemDto = new
-        {
-            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            Quantity = 1
-        };
 
-        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
-        await client.PostAsync("/api/cart/add-item", content);
+        var res = await client.PostAsync("/api/cart/add-item",
+            Json(new { ProductId = SeededProductId, Quantity = -3 }),
+            TestContext.CancellationToken);
 
-        // Get the cart to find its ID - use POST since get-or-create is a POST endpoint
-        var cartResponse = await client.PostAsync("/api/cart/get-or-create", null);
-        if (cartResponse.StatusCode != HttpStatusCode.OK)
-        {
-            Assert.Inconclusive("Could not create cart for validation test");
-            return;
-        }
-
-        var cartContent = await cartResponse.Content.ReadAsStringAsync();
-        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
-        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
-
-        // Act - User validates their own cart
-        var validateResponse = await client.PostAsync($"/api/cart/validate/{cartId}", null);
-
-        // Assert - 200/400 if route exists; 404 if validate route does not exist
-        Assert.IsTrue(validateResponse.StatusCode == HttpStatusCode.OK || validateResponse.StatusCode == HttpStatusCode.BadRequest || validateResponse.StatusCode == HttpStatusCode.NotFound,
-            $"User should be able to validate their own cart or get 404 if route not implemented. Got {validateResponse.StatusCode}");
+        res.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
     }
 
     [TestMethod]
-    public async Task ValidateCart_GuestCartCanBeValidated_ReturnsSuccess()
+    public async Task AddItemToCart_NonexistentProduct_Returns404()
     {
-        // Arrange - Create a guest cart (no authentication)
-        using var guestClient = _factory.CreateUnauthenticatedClient();
+        using var client = _factory.CreateAuthenticatedClient();
 
-        // Get or create a guest cart
-        var cartResponse = await guestClient.PostAsync("/api/cart/get-or-create", null);
-        if (cartResponse.StatusCode != HttpStatusCode.OK)
-        {
-            Assert.Inconclusive("Could not create guest cart for validation test");
-            return;
-        }
+        var res = await client.PostAsync("/api/cart/add-item",
+            Json(new { ProductId = Guid.NewGuid(), Quantity = 1 }),
+            TestContext.CancellationToken);
 
-        var cartContent = await cartResponse.Content.ReadAsStringAsync();
-        var cartData = JsonSerializer.Deserialize<JsonElement>(cartContent);
-        var cartId = cartData.GetProperty("data").GetProperty("id").GetGuid();
-
-        // Add an item to the cart
-        var addItemDto = new
-        {
-            ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            Quantity = 1
-        };
-        var content = new StringContent(JsonSerializer.Serialize(addItemDto), Encoding.UTF8, "application/json");
-        await guestClient.PostAsync("/api/cart/add-item", content);
-
-        // Act - Validate the guest cart
-        var validateResponse = await guestClient.PostAsync($"/api/cart/validate/{cartId}", null);
-
-        // Assert - Guest carts should be validatable
-        Assert.IsTrue(validateResponse.StatusCode == HttpStatusCode.OK || validateResponse.StatusCode == HttpStatusCode.BadRequest || validateResponse.StatusCode == HttpStatusCode.NotFound,
-            "Guest cart should be validatable");
+        res.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    #endregion
+    // ── PUT /api/cart/items/{cartItemId} ──────────────────────────────────────
+
+    [TestMethod]
+    public async Task UpdateCartItem_NonexistentItem_Returns404()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.PutAsync($"/api/cart/items/{Guid.NewGuid()}",
+            Json(new { Quantity = 3 }),
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task UpdateCartItem_ZeroQuantity_Returns422()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.PutAsync($"/api/cart/items/{Guid.NewGuid()}",
+            Json(new { Quantity = 0 }),
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+    }
+
+    [TestMethod]
+    public async Task UpdateCartItem_AfterAdd_Returns204()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/cart/add-item",
+            Json(new { ProductId = SeededProductId, Quantity = 1 }),
+            TestContext.CancellationToken);
+
+        var cartRes = await client.GetAsync("/api/cart", TestContext.CancellationToken);
+        var cartData = await ReadData(cartRes);
+        var cartItemId = cartData.GetProperty("items")[0].GetProperty("id").GetGuid();
+
+        var res = await client.PutAsync($"/api/cart/items/{cartItemId}",
+            Json(new { Quantity = 5 }),
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    // ── DELETE /api/cart/items/{cartItemId} ───────────────────────────────────
+
+    [TestMethod]
+    public async Task RemoveCartItem_NonexistentItem_Returns404()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.DeleteAsync($"/api/cart/items/{Guid.NewGuid()}",
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task RemoveCartItem_AfterAdd_Returns204()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/cart/add-item",
+            Json(new { ProductId = SeededProductId, Quantity = 1 }),
+            TestContext.CancellationToken);
+
+        var cartRes = await client.GetAsync("/api/cart", TestContext.CancellationToken);
+        var cartData = await ReadData(cartRes);
+        var cartItemId = cartData.GetProperty("items")[0].GetProperty("id").GetGuid();
+
+        var res = await client.DeleteAsync($"/api/cart/items/{cartItemId}",
+            TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    // ── DELETE /api/cart ──────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task ClearCart_Always_Returns204()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.DeleteAsync("/api/cart", TestContext.CancellationToken);
+
+        res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
 }

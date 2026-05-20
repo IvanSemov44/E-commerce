@@ -98,23 +98,16 @@ public class ReviewsControllerTests
     }
 
     [TestMethod]
-    public async Task GetProductReviews_WithLargePageSize_IsClamped()
+    public async Task GetProductReviews_WithLargePageSize_Returns200WithClampedResults()
     {
         using var client = _factory.CreateUnauthenticatedClient();
 
         var response = await client.GetAsync($"/api/reviews/product/{SeededProductId}?page=1&pageSize=1000");
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound);
 
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            var json = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
-            if (json.TryGetProperty("data", out var data)
-                && data.TryGetProperty("items", out var items)
-                && items.ValueKind == JsonValueKind.Array)
-            {
-                Assert.IsTrue(items.GetArrayLength() <= 100, "pageSize should be clamped to 100");
-            }
-        }
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
+        var json = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
+        var items = json.GetProperty("data").GetProperty("items");
+        Assert.IsTrue(items.GetArrayLength() <= 100, "pageSize should be clamped to 100");
     }
 
     [TestMethod]
@@ -127,24 +120,23 @@ public class ReviewsControllerTests
     }
 
     [TestMethod]
-    public async Task GetReviewById_NonexistentId_ReturnsNotFound()
+    public async Task GetReviewById_NonexistentId_Returns404()
     {
         using var client = _factory.CreateUnauthenticatedClient();
 
         var response = await client.GetAsync($"/api/reviews/{Guid.NewGuid()}");
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.BadRequest);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [TestMethod]
-    public async Task GetMyReviews_WithPagination_ReturnsOk()
+    public async Task GetMyReviews_WithPagination_Returns200()
     {
         using var client = _factory.CreateAuthenticatedClient();
 
         var response = await client.GetAsync("/api/reviews/my-reviews?page=1&pageSize=10");
-        Assert.IsTrue(
-            response.StatusCode == HttpStatusCode.OK ||
-            response.StatusCode == HttpStatusCode.NotFound ||
-            response.StatusCode == HttpStatusCode.BadRequest);
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
     }
 
     // ── POST /api/reviews ────────────────────────────────────────────────────
@@ -230,7 +222,7 @@ public class ReviewsControllerTests
     }
 
     [TestMethod]
-    public async Task CreateReview_Unauthenticated_ReturnsUnauthorized()
+    public async Task CreateReview_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
 
@@ -242,7 +234,7 @@ public class ReviewsControllerTests
             Comment = "Good product"
         }));
 
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden);
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     // ── PUT /api/reviews/{reviewId} ──────────────────────────────────────────
@@ -313,12 +305,13 @@ public class ReviewsControllerTests
     }
 
     [TestMethod]
-    public async Task DeleteReview_Unauthenticated_ReturnsUnauthorized()
+    public async Task DeleteReview_Unauthenticated_Returns401()
     {
         using var client = _factory.CreateUnauthenticatedClient();
 
         var response = await client.DeleteAsync($"/api/reviews/{Guid.NewGuid()}");
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden);
+
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     // ── Admin-only routes ────────────────────────────────────────────────────

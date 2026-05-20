@@ -1,238 +1,307 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Constants;
 
 namespace ECommerce.Tests.Integration;
 
-/// <summary>
-/// Integration tests for CategoriesController endpoints.
-/// Tests category CRUD operations and retrieval.
-/// </summary>
 [TestClass]
 public class CategoriesControllerTests
 {
     private TestWebApplicationFactory _factory = null!;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    public TestContext TestContext { get; set; } = null!;
+
     [TestInitialize]
-    public void Setup()
-    {
-        _factory = new TestWebApplicationFactory();
-    }
+    public void Setup() => _factory = new TestWebApplicationFactory();
 
     [TestCleanup]
     public void Cleanup()
     {
-        // Reset authentication state
         ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
         ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
         ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         _factory?.Dispose();
     }
 
-    #region Get Categories Tests
+    private static StringContent Serialize(object dto) =>
+        new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+    private static async Task<ApiResponse<T>?> Deserialize<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        string content = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
+    }
+
+    private static Guid ExtractIdFromLocation(HttpResponseMessage response, string expectedPrefix)
+    {
+        Assert.IsNotNull(response.Headers.Location, "Redirect response must include Location header");
+        string location = response.Headers.Location!.ToString();
+        StringAssert.StartsWith(location, expectedPrefix);
+        return Guid.Parse(location[(location.LastIndexOf('/') + 1)..]);
+    }
+
+    // ── GET /api/categories ──────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task GetCategories_WithDefaultQuery_ReturnsSuccessful()
+    public async Task GetCategories_Returns200AndData()
     {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/categories");
+        var res = await client.GetAsync("/api/categories", TestContext.CancellationToken);
 
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "GetCategories should return OK or NotFound if no categories exist");
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        string body = await res.Content.ReadAsStringAsync();
+        var json = JsonSerializer.Deserialize<JsonElement>(body, _jsonOptions);
+        Assert.IsTrue(json.TryGetProperty("data", out _));
     }
 
     [TestMethod]
-    public async Task GetCategories_ReturnsCorrectFormat()
+    public async Task GetCategoryById_Existing_Returns200()
     {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        var response = await client.GetAsync("/api/categories");
-        var responseContent = await response.Content.ReadAsStringAsync();
-
-        // Assert
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            var jsonOptions = _jsonOptions;
-            var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-            Assert.IsTrue(responseData.TryGetProperty("data", out _), "Response should have data property");
-        }
-    }
-
-    #endregion
-
-    #region Get Category By ID Tests
-
-    [TestMethod]
-    public async Task GetCategoryById_WithExistingId_ReturnsOk()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-        var categoryId = Guid.NewGuid();
-
-        // Act
-        var response = await client.GetAsync($"/api/categories/{categoryId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "Should return OK if exists, NotFound otherwise");
-    }
-
-    [TestMethod]
-    public async Task GetCategoryById_WithNonexistentId_ReturnsNotFound()
-    {
-        // Arrange
-        using var client = _factory.CreateUnauthenticatedClient();
-        var nonexistentId = Guid.NewGuid();
-
-        // Act
-        var response = await client.GetAsync($"/api/categories/{nonexistentId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.OK,
-            "Non-existent category may return NotFound or OK with empty data");
-    }
-
-    #endregion
-
-    #region Create Category Tests
-
-    [TestMethod]
-    public async Task CreateCategory_WithAdminAndValidData_ReturnsRedirect()
-    {
-        // Arrange
         using var client = _factory.CreateAdminClientNoRedirect();
-        var createCategoryDto = new
-        {
-            Name = "Electronics",
-            Description = "Electronic devices and gadgets",
-            Slug = "electronics-" + Guid.NewGuid().ToString().Substring(0, 8)
-        };
+        var create = new { Name = "CatForGet", Slug = "cat-get-" + Guid.NewGuid().ToString()[..8] };
+        var cRes = await client.PostAsync("/api/categories", Serialize(create), TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+        var id = ExtractIdFromLocation(cRes, "/api/categories/");
 
-        var content = new StringContent(JsonSerializer.Serialize(createCategoryDto), Encoding.UTF8, "application/json");
+        using var anon = _factory.CreateUnauthenticatedClient();
+        var res = await anon.GetAsync($"/api/categories/{id}", TestContext.CancellationToken);
 
-        // Act
-        var response = await client.PostAsync("/api/categories", content);
-
-        // Assert
-        Assert.AreEqual(HttpStatusCode.Found, response.StatusCode);
-        Assert.IsNotNull(response.Headers.Location, "Create should include redirect location");
-        StringAssert.StartsWith(response.Headers.Location!.ToString(), "/api/categories/");
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
     }
 
     [TestMethod]
-    public async Task CreateCategory_WithCustomerRole_ReturnsForbidden()
+    public async Task GetCategoryById_Nonexistent_Returns404()
     {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var createCategoryDto = new
-        {
-            Name = "Fashion",
-            Description = "Fashion and apparel",
-            Slug = "fashion"
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(createCategoryDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PostAsync("/api/categories", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.Unauthorized,
-            "Customer should not be able to create categories");
-    }
-
-    #endregion
-
-    #region Update Category Tests
-
-    [TestMethod]
-    public async Task UpdateCategory_WithAdminAndValidData_ReturnsOk()
-    {
-        // Arrange
-        using var client = _factory.CreateAdminClient();
-        var categoryId = Guid.NewGuid();
-        var updateCategoryDto = new
-        {
-            Name = "Updated Category",
-            Description = "Updated description",
-            Slug = "updated-" + Guid.NewGuid().ToString().Substring(0, 8)
-        };
-
-        var content = new StringContent(JsonSerializer.Serialize(updateCategoryDto), Encoding.UTF8, "application/json");
-
-        // Act
-        var response = await client.PutAsync($"/api/categories/{categoryId}", content);
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound,
-            "Update should return OK or NotFound");
-    }
-
-    #endregion
-
-    #region Delete Category Tests
-
-    [TestMethod]
-    public async Task DeleteCategory_WithNonexistentId_ReturnsNotFound()
-    {
-        // Arrange
-        using var client = _factory.CreateAdminClient();
-        var nonexistentId = Guid.NewGuid();
-
-        // Act
-        var response = await client.DeleteAsync($"/api/categories/{nonexistentId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.OK,
-            "Delete should return NotFound or OK");
-    }
-
-    [TestMethod]
-    public async Task DeleteCategory_WithCustomerRole_ReturnsForbidden()
-    {
-        // Arrange
-        using var client = _factory.CreateAuthenticatedClient();
-        var categoryId = Guid.NewGuid();
-
-        // Act
-        var response = await client.DeleteAsync($"/api/categories/{categoryId}");
-
-        // Assert
-        Assert.IsTrue(response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.Unauthorized,
-            "Customer should not be able to delete categories");
-    }
-
-    #endregion
-
-    #region Response Format Tests
-
-    [TestMethod]
-    public async Task GetCategories_ReturnsStandardApiResponse()
-    {
-        // Arrange
         using var client = _factory.CreateUnauthenticatedClient();
 
-        // Act
-        var response = await client.GetAsync("/api/categories");
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var res = await client.GetAsync($"/api/categories/{Guid.NewGuid()}", TestContext.CancellationToken);
 
-        // Assert
-        if (!string.IsNullOrEmpty(responseContent) && response.StatusCode == HttpStatusCode.OK)
-        {
-            var jsonOptions = _jsonOptions;
-            var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent, jsonOptions);
-            Assert.IsTrue(responseData.TryGetProperty("success", out _) || responseData.TryGetProperty("data", out _),
-                "Response should have success or data property");
-        }
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
     }
 
-    #endregion
+    [TestMethod]
+    public async Task GetCategoryBySlug_Existing_Returns200()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        string slug = "cat-slug-" + Guid.NewGuid().ToString()[..8];
+        var cRes = await client.PostAsync("/api/categories", Serialize(new { Name = "SlugCat", Slug = slug }), TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+
+        using var anon = _factory.CreateUnauthenticatedClient();
+        var res = await anon.GetAsync($"/api/categories/slug/{slug}", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task GetCategoryBySlug_Nonexistent_Returns404()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync($"/api/categories/slug/{Guid.NewGuid()}", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    // ── POST /api/categories ─────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task PostCategory_AdminValid_Returns302WithLocation()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        string slug = "cat-create-" + Guid.NewGuid().ToString()[..8];
+
+        var res = await client.PostAsync("/api/categories", Serialize(new { Name = "CreateCat", Slug = slug }), TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Assert.AreNotEqual(Guid.Empty, ExtractIdFromLocation(res, "/api/categories/"));
+    }
+
+    [TestMethod]
+    public async Task PostCategory_AdminMissingName_Returns400()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+
+        var res = await client.PostAsync("/api/categories",
+            Serialize(new { Slug = "no-name-cat-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PostCategory_DuplicateSlug_Returns422WithCode()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        string slug = "dup-cat-" + Guid.NewGuid().ToString()[..8];
+
+        var r1 = await client.PostAsync("/api/categories", Serialize(new { Name = "Dup1", Slug = slug }), TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
+
+        var r2 = await client.PostAsync("/api/categories", Serialize(new { Name = "Dup1", Slug = slug }), TestContext.CancellationToken);
+
+        Assert.AreEqual((HttpStatusCode)422, r2.StatusCode);
+        var api = await Deserialize<object>(r2, TestContext.CancellationToken);
+        Assert.IsFalse(api!.Success);
+        Assert.AreEqual(ErrorCodes.DuplicateCategorySlug, api.ErrorDetails!.Code);
+    }
+
+    [TestMethod]
+    public async Task PostCategory_Unauthenticated_Returns401()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "U", Slug = "u-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PostCategory_CustomerRole_Returns403()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "U", Slug = "u-cust-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    // ── PUT /api/categories/{id} ─────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task PutCategory_AdminExisting_Returns302()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        var cRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "PutCat", Slug = "put-cat-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+        var id = ExtractIdFromLocation(cRes, "/api/categories/");
+
+        var res = await client.PutAsync($"/api/categories/{id}",
+            Serialize(new { Name = "PutUpdated", Slug = "put-up-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Assert.AreEqual(id, ExtractIdFromLocation(res, "/api/categories/"));
+    }
+
+    [TestMethod]
+    public async Task PutCategory_AdminNonexistent_Returns404()
+    {
+        using var client = _factory.CreateAdminClient();
+
+        var res = await client.PutAsync($"/api/categories/{Guid.NewGuid()}",
+            Serialize(new { Name = "No", Slug = "no-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PutCategory_Unauthenticated_Returns401()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.PutAsync($"/api/categories/{Guid.NewGuid()}",
+            Serialize(new { Name = "X" }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PutCategory_CustomerRole_Returns403()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.PutAsync($"/api/categories/{Guid.NewGuid()}",
+            Serialize(new { Name = "X" }),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    // ── DELETE /api/categories/{id} ──────────────────────────────────────────
+
+    [TestMethod]
+    public async Task DeleteCategory_AdminExisting_NoProducts_Returns200()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        var cRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "DelCatNoProd", Slug = "del-cat-noprod-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, cRes.StatusCode);
+        var id = ExtractIdFromLocation(cRes, "/api/categories/");
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/categories/{id}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task DeleteCategory_AdminNonexistent_Returns404()
+    {
+        using var client = _factory.CreateAdminClient();
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/categories/{Guid.NewGuid()}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task DeleteCategory_WithProducts_Returns422AndCode()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+        var catRes = await client.PostAsync("/api/categories",
+            Serialize(new { Name = "CatHasProd", Slug = "cat-has-prod-" + Guid.NewGuid().ToString()[..8] }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        var catId = ExtractIdFromLocation(catRes, "/api/categories/");
+
+        var pRes = await client.PostAsync("/api/products",
+            Serialize(new { Name = "PInCat", Slug = "pincat-" + Guid.NewGuid().ToString()[..8], Price = 1m, StockQuantity = 1, CategoryId = catId }),
+            TestContext.CancellationToken);
+        Assert.AreEqual(HttpStatusCode.Found, pRes.StatusCode);
+
+        var del = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/categories/{catId}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual((HttpStatusCode)422, del.StatusCode);
+        var api = await Deserialize<object>(del, TestContext.CancellationToken);
+        Assert.IsFalse(api!.Success);
+        Assert.AreEqual(ErrorCodes.CategoryHasProducts, api.ErrorDetails!.Code);
+    }
+
+    [TestMethod]
+    public async Task DeleteCategory_Unauthenticated_Returns401()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/categories/{Guid.NewGuid()}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task DeleteCategory_CustomerRole_Returns403()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/categories/{Guid.NewGuid()}"),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
+    }
 }

@@ -82,7 +82,7 @@ public class InventoryControllerTests
     {
         using var client = _factory.CreateUnauthenticatedClient();
         var res = await client.GetAsync($"/api/inventory/{_seededProductId}", TestContext.CancellationToken);
-        Assert.IsTrue(res.StatusCode is HttpStatusCode.OK or HttpStatusCode.NotFound);
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
     }
 
     [TestMethod]
@@ -105,15 +105,14 @@ public class InventoryControllerTests
     }
 
     [TestMethod]
-    public async Task CheckAvailableQuantity_ReturnsBoolean()
+    public async Task CheckAvailableQuantity_SeededProductWithSufficientStock_ReturnsAvailableTrue()
     {
         using var client = _factory.CreateUnauthenticatedClient();
         var res = await client.GetAsync($"/api/inventory/{_seededProductId}/available?quantity=1", TestContext.CancellationToken);
-        if (res.StatusCode == HttpStatusCode.OK)
-        {
-            var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
-            Assert.IsTrue(json.TryGetProperty("data", out _), "Response should have data property");
-        }
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.IsTrue(json.TryGetProperty("data", out var data), "Response must have 'data'");
+        Assert.IsTrue(data.GetProperty("isAvailable").GetBoolean(), "Seeded product has 100 stock, quantity 1 must be available");
     }
 
     // ── GET /api/inventory/{productId}/history ────────────────────────────────
@@ -269,13 +268,14 @@ public class InventoryControllerTests
     }
 
     [TestMethod]
-    public async Task UpdateProductStock_WithNegativeQuantity_ReturnsBadRequest()
+    public async Task UpdateProductStock_WithQuantityExceedingStock_Returns422()
     {
         using var client = _factory.CreateAdminClient();
+        // Seeded stock = 100; adjustment of -10000 drives stock negative → INSUFFICIENT_STOCK → 422
         var res = await client.PutAsync($"/api/inventory/{_seededProductId}",
-            Json(new { Quantity = -50, Reason = "correction" }),
+            Json(new { Quantity = -10000, Reason = "correction" }),
             TestContext.CancellationToken);
-        Assert.IsTrue(res.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity or HttpStatusCode.OK);
+        Assert.AreEqual(HttpStatusCode.UnprocessableEntity, res.StatusCode);
     }
 
     [TestMethod]
