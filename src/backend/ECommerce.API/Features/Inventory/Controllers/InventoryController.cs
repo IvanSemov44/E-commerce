@@ -1,7 +1,6 @@
-﻿using ECommerce.API.ActionFilters;
-using ECommerce.API.Common.Extensions;
+using ECommerce.API.ActionFilters;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.API.Common.Helpers;
-
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Pagination;
 using ECommerce.Inventory.Application.DTOs;
@@ -13,7 +12,6 @@ using ECommerce.Inventory.Application.Queries.GetInventory;
 using ECommerce.Inventory.Application.Queries.GetInventoryByProductId;
 using ECommerce.Inventory.Application.Queries.GetInventoryHistory;
 using ECommerce.Inventory.Application.Queries.GetLowStockItems;
-using ECommerce.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,19 +27,6 @@ public class InventoryController(IMediator mediator) : ControllerBase
 {
     private readonly IMediator _mediator = mediator;
 
-    private IActionResult MapError(DomainError error) => error.Code switch
-    {
-        "INVENTORY_ITEM_NOT_FOUND"
-            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "INSUFFICIENT_STOCK" or "STOCK_NEGATIVE"
-        or "REDUCE_AMOUNT_INVALID" or "INCREASE_AMOUNT_INVALID"
-        or "THRESHOLD_NEGATIVE"
-            => UnprocessableEntity(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "VALIDATION_FAILED"
-            => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
-        _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
-    };
-
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -51,14 +36,11 @@ public class InventoryController(IMediator mediator) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         (var page, var pageSize) = PaginationRequestNormalizer.Normalize(parameters.Page, parameters.PageSize);
-
         var result = await _mediator.Send(
             new GetInventoryQuery(page, pageSize, parameters.Search, parameters.LowStockOnly ?? false),
             cancellationToken);
-
         return result.ToActionResult(
-            data => Ok(ApiResponse<PaginatedResult<InventoryItemDto>>.Ok(data, "Inventory retrieved successfully")),
-            MapError);
+            data => Ok(ApiResponse<PaginatedResult<InventoryItemDto>>.Ok(data, "Inventory retrieved successfully")));
     }
 
     [HttpGet("low-stock")]
@@ -72,11 +54,9 @@ public class InventoryController(IMediator mediator) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         (page, pageSize) = PaginationRequestNormalizer.Normalize(page, pageSize);
-
         var result = await _mediator.Send(new GetLowStockItemsQuery(threshold, page, pageSize), cancellationToken);
         return result.ToActionResult(
-            data => Ok(ApiResponse<PaginatedResult<InventoryItemDto>>.Ok(data, "Low stock items retrieved successfully")),
-            MapError);
+            data => Ok(ApiResponse<PaginatedResult<InventoryItemDto>>.Ok(data, "Low stock items retrieved successfully")));
     }
 
     [HttpGet("{productId:guid}")]
@@ -87,8 +67,7 @@ public class InventoryController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(new GetInventoryByProductIdQuery(productId), cancellationToken);
         return result.ToActionResult(
-            data => Ok(ApiResponse<InventoryItemDto>.Ok(data, "Product stock retrieved successfully")),
-            MapError);
+            data => Ok(ApiResponse<InventoryItemDto>.Ok(data, "Product stock retrieved successfully")));
     }
 
     [HttpGet("{productId:guid}/available")]
@@ -101,8 +80,7 @@ public class InventoryController(IMediator mediator) : ControllerBase
         return result.ToActionResult(
             item => Ok(ApiResponse<StockAvailabilityResultDto>.Ok(
                 new StockAvailabilityResultDto(productId, quantity, item.Quantity >= quantity),
-                "Availability check completed")),
-            MapError);
+                "Availability check completed")));
     }
 
     [HttpGet("{productId:guid}/history")]
@@ -116,8 +94,7 @@ public class InventoryController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(new GetInventoryHistoryQuery(productId, page, pageSize), cancellationToken);
         return result.ToActionResult(
-            data => Ok(ApiResponse<List<InventoryLogEntryDto>>.Ok(data, "Inventory history retrieved successfully")),
-            MapError);
+            data => Ok(ApiResponse<List<InventoryLogEntryDto>>.Ok(data, "Inventory history retrieved successfully")));
     }
 
     [HttpPost("{productId:guid}/adjust")]
@@ -130,10 +107,8 @@ public class InventoryController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(
             new AdjustStockCommand(productId, request.Quantity, request.Reason ?? "adjustment"), cancellationToken);
-
         return result.ToActionResult(
-            data => Ok(ApiResponse<StockAdjustmentResultDto>.Ok(data, "Stock adjusted successfully")),
-            MapError);
+            data => Ok(ApiResponse<StockAdjustmentResultDto>.Ok(data, "Stock adjusted successfully")));
     }
 
     [HttpPost("{productId:guid}/restock")]
@@ -146,10 +121,8 @@ public class InventoryController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(
             new IncreaseStockCommand(productId, request.Quantity, request.Reason ?? "restock"), cancellationToken);
-
         return result.ToActionResult(
-            data => Ok(ApiResponse<StockAdjustmentResultDto>.Ok(data, $"Stock increased by {request.Quantity} units")),
-            MapError);
+            data => Ok(ApiResponse<StockAdjustmentResultDto>.Ok(data, $"Stock increased by {request.Quantity} units")));
     }
 
     [HttpPost("check-availability")]
@@ -161,12 +134,10 @@ public class InventoryController(IMediator mediator) : ControllerBase
     {
         var items = request.Items.Select(i => new StockCheckItem(i.ProductId, i.Quantity)).ToList();
         var result = await _mediator.Send(new CheckBulkStockAvailabilityQuery(items), cancellationToken);
-
         return result.ToActionResult(
             data => Ok(ApiResponse<BulkStockAvailabilityDto>.Ok(
                 data,
-                data.IsAvailable ? "All items are available" : "Some items have stock issues")),
-            MapError);
+                data.IsAvailable ? "All items are available" : "Some items have stock issues")));
     }
 
     [HttpPut("{productId:guid}")]
@@ -179,10 +150,8 @@ public class InventoryController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(
             new AdjustStockCommand(productId, request.Quantity, request.Reason ?? "stock_update"), cancellationToken);
-
         return result.ToActionResult(
-            data => Ok(ApiResponse<StockAdjustmentResultDto>.Ok(data, "Product stock updated successfully")),
-            MapError);
+            data => Ok(ApiResponse<StockAdjustmentResultDto>.Ok(data, "Product stock updated successfully")));
     }
 
     [HttpPut("bulk-update")]
@@ -195,9 +164,7 @@ public class InventoryController(IMediator mediator) : ControllerBase
     {
         var updates = request.Updates.Select(u => new BulkAdjustStockItem(u.ProductId, u.Quantity)).ToList();
         var result = await _mediator.Send(new BulkAdjustStockCommand(updates), cancellationToken);
-
         return result.ToActionResult(
-            data => Ok(ApiResponse<List<StockAdjustmentResultDto>>.Ok(data, "Stock updated successfully")),
-            MapError);
+            data => Ok(ApiResponse<List<StockAdjustmentResultDto>>.Ok(data, "Stock updated successfully")));
     }
 }

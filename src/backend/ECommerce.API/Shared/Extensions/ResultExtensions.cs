@@ -1,9 +1,8 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Results;
 
-namespace ECommerce.API.Common.Extensions;
+namespace ECommerce.API.Shared.Extensions;
 
 public static class ResultExtensions
 {
@@ -13,6 +12,11 @@ public static class ResultExtensions
         this Result<T> result,
         Func<T, IActionResult> onSuccess)
         => result.ToActionResult(onSuccess, error => error.ToHttpResult());
+
+    public static IActionResult ToActionResult<T>(
+        this Result<T> result,
+        Func<IActionResult> onSuccess)
+        => result.ToActionResult(_ => onSuccess(), error => error.ToHttpResult());
 
     public static IActionResult ToActionResult(
         this Result result,

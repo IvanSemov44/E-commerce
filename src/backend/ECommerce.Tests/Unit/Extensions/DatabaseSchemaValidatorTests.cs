@@ -1,4 +1,4 @@
-﻿using ECommerce.API.Common.Extensions;
+﻿using ECommerce.API.Shared.Extensions;
 using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

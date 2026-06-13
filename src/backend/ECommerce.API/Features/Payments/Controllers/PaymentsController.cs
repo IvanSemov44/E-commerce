@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using System.Text.Json;
 using ECommerce.API.ActionFilters;
-using ECommerce.API.Common.Extensions;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Payments.Application.Commands.ProcessPayment;
