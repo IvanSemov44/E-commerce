@@ -19,7 +19,7 @@ public class ValidateCartQueryHandler(
             if (!inStock)
             {
                 return Result.Fail(new DomainError("INSUFFICIENT_STOCK",
-                    $"Product {item.ProductId} has insufficient stock."));
+                    $"Product {item.ProductId} has insufficient stock.", ErrorType.Validation));
             }
         }
 
