@@ -1,4 +1,4 @@
-﻿namespace ECommerce.Reviews.Application.DTOs;
+namespace ECommerce.Reviews.Application.DTOs;
 
 public static class ReviewMappingExtensions
 {
