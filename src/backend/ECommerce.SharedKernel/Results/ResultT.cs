@@ -22,4 +22,28 @@ public abstract record Result<T>
     /// <summary>Returns the error. Safe to call only after confirming !IsSuccess.</summary>
     public DomainError GetErrorOrThrow() =>
         this is Failure f ? f.Error : throw new InvalidOperationException("Result is successful, no error to get.");
+
+    /// <summary>Transforms the success value. Failure passes through unchanged.</summary>
+    public Result<TOut> Map<TOut>(Func<T, TOut> fn) => this switch
+    {
+        Success s => Result<TOut>.Ok(fn(s.Data)),
+        Failure f => Result<TOut>.Fail(f.Error),
+        _ => throw new InvalidOperationException($"Unknown Result subtype: {GetType().Name}")
+    };
+
+    /// <summary>Chains an operation that itself returns a Result. Failure short-circuits.</summary>
+    public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> fn) => this switch
+    {
+        Success s => fn(s.Data),
+        Failure f => Result<TOut>.Fail(f.Error),
+        _ => throw new InvalidOperationException($"Unknown Result subtype: {GetType().Name}")
+    };
+
+    /// <summary>Collapses the result into a single value by providing handlers for both cases.</summary>
+    public TOut Match<TOut>(Func<T, TOut> onSuccess, Func<DomainError, TOut> onFailure) => this switch
+    {
+        Success s => onSuccess(s.Data),
+        Failure f => onFailure(f.Error),
+        _ => throw new InvalidOperationException($"Unknown Result subtype: {GetType().Name}")
+    };
 }

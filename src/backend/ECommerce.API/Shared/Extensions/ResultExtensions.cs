@@ -14,7 +14,12 @@ public static class ResultExtensions
         this Result<T> result,
         Func<T, IActionResult> onSuccess,
         Func<DomainError, IActionResult> onFailure)
-        => result is Result<T>.Success s ? onSuccess(s.Data) : onFailure(((Result<T>.Failure)result).Error);
+        => result switch
+        {
+            Result<T>.Success s => onSuccess(s.Data),
+            Result<T>.Failure f => onFailure(f.Error),
+            _ => throw new InvalidOperationException($"Unknown Result subtype: {result.GetType().Name}")
+        };
 
     /// <summary>
     /// Converts a non-generic <see cref="Result"/> (void operations) to an <see cref="IActionResult"/>
@@ -24,7 +29,12 @@ public static class ResultExtensions
         this Result result,
         Func<IActionResult> onSuccess,
         Func<DomainError, IActionResult> onFailure)
-        => result is Result.Success ? onSuccess() : onFailure(((Result.Failure)result).Error);
+        => result switch
+        {
+            Result.Success => onSuccess(),
+            Result.Failure f => onFailure(f.Error),
+            _ => throw new InvalidOperationException($"Unknown Result subtype: {result.GetType().Name}")
+        };
 }
 
 
