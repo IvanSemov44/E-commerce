@@ -3,176 +3,170 @@ using ECommerce.SharedKernel.DTOs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Net;
 
 namespace ECommerce.Identity.Tests.Infrastructure;
 
 [TestClass]
 public class SendGridEmailServiceTests
 {
-    private readonly Mock<IConfiguration> _configurationMock;
-    private readonly Mock<ILogger<SendGridEmailService>> _loggerMock;
-
-    public SendGridEmailServiceTests()
-    {
-        _configurationMock = new Mock<IConfiguration>();
-        _loggerMock = new Mock<ILogger<SendGridEmailService>>();
-    }
+    private Mock<IConfiguration> _config = null!;
+    private Mock<ILogger<SendGridEmailService>> _logger = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _configurationMock.Reset();
-        _loggerMock.Reset();
+        _config = new Mock<IConfiguration>();
+        _logger = new Mock<ILogger<SendGridEmailService>>();
 
-        _configurationMock.Setup(x => x["SendGrid:ApiKey"]).Returns("test-api-key");
-        _configurationMock.Setup(x => x["SendGrid:FromEmail"]).Returns("noreply@test.com");
-        _configurationMock.Setup(x => x["SendGrid:FromName"]).Returns("Test Store");
+        _config.Setup(x => x["SendGrid:ApiKey"]).Returns("test-api-key");
+        _config.Setup(x => x["SendGrid:FromEmail"]).Returns("noreply@test.com");
+        _config.Setup(x => x["SendGrid:FromName"]).Returns("Test Store");
+    }
+
+    // ── Constructor ──────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Constructor_WithEmptyApiKey_LogsWarning()
+    {
+        _config.Setup(x => x["SendGrid:ApiKey"]).Returns("");
+
+        _ = new SendGridEmailService(_config.Object, _logger.Object);
+
+        VerifyLog(LogLevel.Warning, "SendGrid API key not configured");
     }
 
     [TestMethod]
-    public void Constructor_WithValidConfiguration_InitializesCorrectly()
+    public void Constructor_WithValidApiKey_DoesNotLogWarning()
     {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        _ = new SendGridEmailService(_config.Object, _logger.Object);
+
+        _logger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    // ── Send* methods (invalid key → SendGrid rejects → LogError) ────────────
+    //
+    // These tests make a real HTTP call; SendGrid always rejects "test-api-key"
+    // with 401 (or throws on network failure), so the service logs an error.
+    // They verify that the error-handling path runs and does not propagate exceptions.
+
+    [TestMethod]
+    public async Task SendWelcomeEmailAsync_WithInvalidKey_LogsError()
+    {
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendWelcomeEmailAsync("test@example.com", "John", "https://example.com/verify");
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public void Constructor_WithMissingApiKey_UsesDisabledKey()
+    public async Task SendEmailVerificationAsync_WithInvalidKey_LogsError()
     {
-        _configurationMock.Setup(x => x["SendGrid:ApiKey"]).Returns((string?)null);
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendEmailVerificationAsync("test@example.com", "John", "https://example.com/verify");
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public void Constructor_WithEmptyApiKey_UsesDisabledKey()
+    public async Task SendPasswordResetEmailAsync_WithInvalidKey_LogsError()
     {
-        _configurationMock.Setup(x => x["SendGrid:ApiKey"]).Returns("");
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendPasswordResetEmailAsync("test@example.com", "John", "https://example.com/reset");
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public void Constructor_WithMissingFromEmail_UsesDefault()
+    public async Task SendOrderConfirmationEmailAsync_WithInvalidKey_LogsError()
     {
-        _configurationMock.Setup(x => x["SendGrid:FromEmail"]).Returns((string?)null);
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendOrderConfirmationEmailAsync("test@example.com", CreateTestOrder());
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public void Constructor_WithMissingFromName_UsesDefault()
+    public async Task SendOrderShippedEmailAsync_WithInvalidKey_LogsError()
     {
-        _configurationMock.Setup(x => x["SendGrid:FromName"]).Returns((string?)null);
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendOrderShippedEmailAsync("test@example.com", CreateTestOrder(), "TRACK123456");
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public async Task SendWelcomeEmailAsync_WithValidData_DoesNotThrow()
+    public async Task SendOrderDeliveredEmailAsync_WithInvalidKey_LogsError()
     {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendWelcomeEmailAsync(
-            "test@example.com", "John", "https://example.com/verify?token=abc123"));
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendOrderDeliveredEmailAsync("test@example.com", CreateTestOrder());
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public async Task SendWelcomeEmailAsync_WithCancellationToken_DoesNotThrow()
+    public async Task SendAbandonedCartEmailAsync_WithInvalidKey_LogsError()
     {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        using var cts = new CancellationTokenSource();
-        await Should.NotThrowAsync(() => service.SendWelcomeEmailAsync(
-            "test@example.com", "John", "https://example.com/verify", cts.Token));
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendAbandonedCartEmailAsync("test@example.com", "John", CreateTestCart());
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public async Task SendEmailVerificationAsync_WithValidData_DoesNotThrow()
+    public async Task SendLowStockAlertAsync_WithInvalidKey_LogsError()
     {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendEmailVerificationAsync(
-            "test@example.com", "John", "https://example.com/verify?token=abc123"));
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendLowStockAlertAsync("admin@example.com", "Admin", "Test Product", 5, 10);
+
+        VerifyLogError();
     }
 
     [TestMethod]
-    public async Task SendPasswordResetEmailAsync_WithValidData_DoesNotThrow()
+    public async Task SendMarketingEmailAsync_WithInvalidKey_LogsError()
     {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendPasswordResetEmailAsync(
-            "test@example.com", "John", "https://example.com/reset?token=abc123"));
+        var svc = new SendGridEmailService(_config.Object, _logger.Object);
+
+        await svc.SendMarketingEmailAsync("customer@example.com", "John", "Special Offer!", "<p>Content</p>");
+
+        VerifyLogError();
     }
 
-    [TestMethod]
-    public async Task SendOrderConfirmationEmailAsync_WithValidOrder_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderConfirmationEmailAsync(
-            "test@example.com", CreateTestOrder()));
-    }
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
-    [TestMethod]
-    public async Task SendOrderConfirmationEmailAsync_WithDiscount_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderConfirmationEmailAsync(
-            "test@example.com", CreateTestOrder() with { DiscountAmount = 10.00m }));
-    }
+    private void VerifyLog(LogLevel level, string messageFragment) =>
+        _logger.Verify(
+            x => x.Log(
+                level,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains(messageFragment)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
 
-    [TestMethod]
-    public async Task SendOrderShippedEmailAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderShippedEmailAsync(
-            "test@example.com", CreateTestOrder(), "TRACK123456"));
-    }
-
-    [TestMethod]
-    public async Task SendOrderDeliveredEmailAsync_WithValidOrder_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderDeliveredEmailAsync(
-            "test@example.com", CreateTestOrder()));
-    }
-
-    [TestMethod]
-    public async Task SendAbandonedCartEmailAsync_WithValidCart_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendAbandonedCartEmailAsync(
-            "test@example.com", "John", CreateTestCart()));
-    }
-
-    [TestMethod]
-    public async Task SendAbandonedCartEmailAsync_WithEmptyCart_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendAbandonedCartEmailAsync(
-            "test@example.com", "John", new CartEmailDto(Items: [])));
-    }
-
-    [TestMethod]
-    public async Task SendLowStockAlertAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendLowStockAlertAsync(
-            "admin@example.com", "Admin", "Test Product", 5, 10));
-    }
-
-    [TestMethod]
-    public async Task SendLowStockAlertAsync_WithSku_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendLowStockAlertAsync(
-            "admin@example.com", "Admin", "Test Product", 5, 10, "SKU-123"));
-    }
-
-    [TestMethod]
-    public async Task SendMarketingEmailAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SendGridEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendMarketingEmailAsync(
-            "customer@example.com", "John", "Special Offer!", "<p>Check out our new products!</p>"));
-    }
+    private void VerifyLogError() =>
+        _logger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
 
     private static OrderEmailDto CreateTestOrder() =>
         new(

@@ -9,217 +9,148 @@ namespace ECommerce.Identity.Tests.Infrastructure;
 [TestClass]
 public class SmtpEmailServiceTests
 {
-    private readonly Mock<IConfiguration> _configurationMock;
-    private readonly Mock<ILogger<SmtpEmailService>> _loggerMock;
-
-    public SmtpEmailServiceTests()
-    {
-        _configurationMock = new Mock<IConfiguration>();
-        _loggerMock = new Mock<ILogger<SmtpEmailService>>();
-    }
+    private Mock<IConfiguration> _config = null!;
+    private Mock<ILogger<SmtpEmailService>> _logger = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _configurationMock.Reset();
-        _loggerMock.Reset();
+        _config = new Mock<IConfiguration>();
+        _logger = new Mock<ILogger<SmtpEmailService>>();
 
-        _configurationMock.Setup(x => x["Smtp:Host"]).Returns("smtp.test.com");
-        _configurationMock.Setup(x => x["Smtp:Port"]).Returns("587");
-        _configurationMock.Setup(x => x["Smtp:Username"]).Returns("");
-        _configurationMock.Setup(x => x["Smtp:Password"]).Returns("");
-        _configurationMock.Setup(x => x["Smtp:FromEmail"]).Returns("noreply@test.com");
-        _configurationMock.Setup(x => x["Smtp:FromName"]).Returns("Test Store");
-        _configurationMock.Setup(x => x["Smtp:EnableSsl"]).Returns("true");
+        _config.Setup(x => x["Smtp:Host"]).Returns("smtp.test.com");
+        _config.Setup(x => x["Smtp:Port"]).Returns("587");
+        _config.Setup(x => x["Smtp:Username"]).Returns("");
+        _config.Setup(x => x["Smtp:Password"]).Returns("");
+        _config.Setup(x => x["Smtp:FromEmail"]).Returns("noreply@test.com");
+        _config.Setup(x => x["Smtp:FromName"]).Returns("Test Store");
+        _config.Setup(x => x["Smtp:EnableSsl"]).Returns("true");
+    }
+
+    // ── Constructor ──────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Constructor_NoCredentials_LogsDisabledWarning()
+    {
+        _ = new SmtpEmailService(_config.Object, _logger.Object);
+
+        VerifyLog(LogLevel.Warning, "SMTP credentials not configured");
     }
 
     [TestMethod]
-    public void Constructor_WithValidConfiguration_InitializesCorrectly()
+    public void Constructor_WithCredentials_LogsInitialized()
     {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        _config.Setup(x => x["Smtp:Username"]).Returns("user@test.com");
+        _config.Setup(x => x["Smtp:Password"]).Returns("password123");
+
+        _ = new SmtpEmailService(_config.Object, _logger.Object);
+
+        VerifyLog(LogLevel.Information, "SMTP Email Service initialized");
+    }
+
+    // ── Send* methods (disabled state — no network calls made) ───────────────
+
+    [TestMethod]
+    public async Task SendWelcomeEmailAsync_WhenDisabled_LogsWarning()
+    {
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendWelcomeEmailAsync("test@example.com", "John", "https://example.com/verify");
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithMissingHost_UsesDefault()
+    public async Task SendEmailVerificationAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:Host"]).Returns((string?)null);
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendEmailVerificationAsync("test@example.com", "John", "https://example.com/verify");
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithMissingPort_UsesDefault()
+    public async Task SendPasswordResetEmailAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:Port"]).Returns((string?)null);
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendPasswordResetEmailAsync("test@example.com", "John", "https://example.com/reset");
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithInvalidPort_UsesDefault()
+    public async Task SendOrderConfirmationEmailAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:Port"]).Returns("invalid");
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendOrderConfirmationEmailAsync("test@example.com", CreateTestOrder());
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithMissingEnableSsl_UsesDefault()
+    public async Task SendOrderShippedEmailAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:EnableSsl"]).Returns((string?)null);
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendOrderShippedEmailAsync("test@example.com", CreateTestOrder(), "TRACK123456");
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithMissingFromEmail_UsesUsername()
+    public async Task SendOrderDeliveredEmailAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:FromEmail"]).Returns((string?)null);
-        _configurationMock.Setup(x => x["Smtp:Username"]).Returns("user@test.com");
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendOrderDeliveredEmailAsync("test@example.com", CreateTestOrder());
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithMissingFromName_UsesDefault()
+    public async Task SendAbandonedCartEmailAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:FromName"]).Returns((string?)null);
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendAbandonedCartEmailAsync("test@example.com", "John", CreateTestCart());
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithCredentials_InitializesAsEnabled()
+    public async Task SendLowStockAlertAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:Username"]).Returns("user@test.com");
-        _configurationMock.Setup(x => x["Smtp:Password"]).Returns("password123");
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendLowStockAlertAsync("admin@example.com", "Admin", "Test Product", 5, 10);
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
     [TestMethod]
-    public void Constructor_WithOnlyUsername_InitializesAsDisabled()
+    public async Task SendMarketingEmailAsync_WhenDisabled_LogsWarning()
     {
-        _configurationMock.Setup(x => x["Smtp:Username"]).Returns("user@test.com");
-        _configurationMock.Setup(x => x["Smtp:Password"]).Returns("");
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
+        var svc = new SmtpEmailService(_config.Object, _logger.Object);
+
+        await svc.SendMarketingEmailAsync("customer@example.com", "John", "Special Offer!", "<p>Content</p>");
+
+        VerifyLog(LogLevel.Warning, "Email sending is disabled");
     }
 
-    [TestMethod]
-    public void Constructor_WithOnlyPassword_InitializesAsDisabled()
-    {
-        _configurationMock.Setup(x => x["Smtp:Username"]).Returns("");
-        _configurationMock.Setup(x => x["Smtp:Password"]).Returns("password123");
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        service.ShouldNotBeNull();
-    }
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
-    [TestMethod]
-    public async Task SendWelcomeEmailAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendWelcomeEmailAsync(
-            "test@example.com", "John", "https://example.com/verify?token=abc123"));
-    }
-
-    [TestMethod]
-    public async Task SendWelcomeEmailAsync_WithCancellationToken_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        using var cts = new CancellationTokenSource();
-        await Should.NotThrowAsync(() => service.SendWelcomeEmailAsync(
-            "test@example.com", "John", "https://example.com/verify", cts.Token));
-    }
-
-    [TestMethod]
-    public async Task SendEmailVerificationAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendEmailVerificationAsync(
-            "test@example.com", "John", "https://example.com/verify?token=abc123"));
-    }
-
-    [TestMethod]
-    public async Task SendPasswordResetEmailAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendPasswordResetEmailAsync(
-            "test@example.com", "John", "https://example.com/reset?token=abc123"));
-    }
-
-    [TestMethod]
-    public async Task SendOrderConfirmationEmailAsync_WithValidOrder_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderConfirmationEmailAsync(
-            "test@example.com", CreateTestOrder()));
-    }
-
-    [TestMethod]
-    public async Task SendOrderConfirmationEmailAsync_WithDiscount_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderConfirmationEmailAsync(
-            "test@example.com", CreateTestOrder() with { DiscountAmount = 10.00m }));
-    }
-
-    [TestMethod]
-    public async Task SendOrderShippedEmailAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderShippedEmailAsync(
-            "test@example.com", CreateTestOrder(), "TRACK123456"));
-    }
-
-    [TestMethod]
-    public async Task SendOrderDeliveredEmailAsync_WithValidOrder_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendOrderDeliveredEmailAsync(
-            "test@example.com", CreateTestOrder()));
-    }
-
-    [TestMethod]
-    public async Task SendAbandonedCartEmailAsync_WithValidCart_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendAbandonedCartEmailAsync(
-            "test@example.com", "John", CreateTestCart()));
-    }
-
-    [TestMethod]
-    public async Task SendAbandonedCartEmailAsync_WithEmptyCart_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendAbandonedCartEmailAsync(
-            "test@example.com", "John", new CartEmailDto(Items: [])));
-    }
-
-    [TestMethod]
-    public async Task SendLowStockAlertAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendLowStockAlertAsync(
-            "admin@example.com", "Admin", "Test Product", 5, 10));
-    }
-
-    [TestMethod]
-    public async Task SendLowStockAlertAsync_WithSku_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendLowStockAlertAsync(
-            "admin@example.com", "Admin", "Test Product", 5, 10, "SKU-123"));
-    }
-
-    [TestMethod]
-    public async Task SendMarketingEmailAsync_WithValidData_DoesNotThrow()
-    {
-        var service = new SmtpEmailService(_configurationMock.Object, _loggerMock.Object);
-        await Should.NotThrowAsync(() => service.SendMarketingEmailAsync(
-            "customer@example.com", "John", "Special Offer!", "<p>Check out our new products!</p>"));
-    }
+    private void VerifyLog(LogLevel level, string messageFragment) =>
+        _logger.Verify(
+            x => x.Log(
+                level,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains(messageFragment)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
 
     private static OrderEmailDto CreateTestOrder() =>
         new(
