@@ -1,5 +1,5 @@
 using ECommerce.API.ActionFilters;
-using ECommerce.API.Common.Extensions;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Shopping.Application.DTOs;
 using ECommerce.SharedKernel.Interfaces;
@@ -8,7 +8,6 @@ using ECommerce.Shopping.Application.Commands.UpdateCartItemQuantity;
 using ECommerce.Shopping.Application.Commands.RemoveFromCart;
 using ECommerce.Shopping.Application.Commands.ClearCart;
 using ECommerce.Shopping.Application.Queries.GetCart;
-using ECommerce.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,8 +33,7 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
 
         var result = await _mediator.Send(new GetCartQuery(userId, null), cancellationToken);
         return result.ToActionResult(
-            data => Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")),
-            MapError);
+            data => Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")));
     }
 
     [HttpPost("get-or-create")]
@@ -45,8 +43,7 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
     {
         var result = await _mediator.Send(new GetCartQuery(_currentUser.UserIdOrNull, _currentUser.SessionId), cancellationToken);
         return result.ToActionResult(
-            data => Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")),
-            MapError);
+            data => Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")));
     }
 
     [HttpPost("add-item")]
@@ -61,13 +58,11 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             new AddToCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, dto.ProductId, dto.Quantity),
             cancellationToken);
 
-        return result.ToActionResult(
-            () =>
-            {
-                _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
-                return NoContent();
-            },
-            MapError);
+        return result.ToActionResult(() =>
+        {
+            _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
+            return NoContent();
+        });
     }
 
     [HttpPut("items/{cartItemId:guid}")]
@@ -82,13 +77,11 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             new UpdateCartItemQuantityCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, cartItemId, dto.Quantity),
             cancellationToken);
 
-        return result.ToActionResult(
-            () =>
-            {
-                _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
-                return NoContent();
-            },
-            MapError);
+        return result.ToActionResult(() =>
+        {
+            _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
+            return NoContent();
+        });
     }
 
     [HttpDelete("items/{cartItemId:guid}")]
@@ -101,13 +94,11 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             new RemoveFromCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, cartItemId),
             cancellationToken);
 
-        return result.ToActionResult(
-            () =>
-            {
-                _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
-                return NoContent();
-            },
-            MapError);
+        return result.ToActionResult(() =>
+        {
+            _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
+            return NoContent();
+        });
     }
 
     [HttpDelete]
@@ -118,15 +109,4 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
         await _mediator.Send(new ClearCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId), cancellationToken);
         return NoContent();
     }
-
-    private ObjectResult MapError(DomainError error) => error.Code switch
-    {
-        "CART_NOT_FOUND" or "CART_ITEM_NOT_FOUND" or "PRODUCT_NOT_FOUND"
-            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "QUANTITY_INVALID" or "PRODUCT_NOT_AVAILABLE" or "INSUFFICIENT_STOCK" or "VALIDATION_FAILED"
-            => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
-        "FORBIDDEN"
-            => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(error.Message, error.Code)),
-        _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
-    };
 }

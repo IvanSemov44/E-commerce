@@ -1,8 +1,7 @@
 using ECommerce.API.ActionFilters;
-using ECommerce.API.Common.Extensions;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Interfaces;
-using ECommerce.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,8 +32,7 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
 
         var result = await mediator.Send(new GetWishlistQuery(userId.Value), cancellationToken);
         return result.ToActionResult(
-            data => Ok(ApiResponse<WishlistDto>.Ok(data, "Wishlist retrieved successfully")),
-            MapError);
+            data => Ok(ApiResponse<WishlistDto>.Ok(data, "Wishlist retrieved successfully")));
     }
 
     [HttpPost("add")]
@@ -49,13 +47,11 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await mediator.Send(new AddToWishlistCommand(userId.Value, dto.ProductId), cancellationToken);
-        return result.ToActionResult(
-            () =>
-            {
-                logger.LogInformation("Product {ProductId} added to wishlist for user {UserId}", dto.ProductId, userId.Value);
-                return NoContent();
-            },
-            MapError);
+        return result.ToActionResult(() =>
+        {
+            logger.LogInformation("Product {ProductId} added to wishlist for user {UserId}", dto.ProductId, userId.Value);
+            return NoContent();
+        });
     }
 
     [HttpDelete("remove/{productId:guid}")]
@@ -68,13 +64,11 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await mediator.Send(new RemoveFromWishlistCommand(userId.Value, productId), cancellationToken);
-        return result.ToActionResult(
-            () =>
-            {
-                logger.LogInformation("Product {ProductId} removed from wishlist for user {UserId}", productId, userId.Value);
-                return NoContent();
-            },
-            MapError);
+        return result.ToActionResult(() =>
+        {
+            logger.LogInformation("Product {ProductId} removed from wishlist for user {UserId}", productId, userId.Value);
+            return NoContent();
+        });
     }
 
     [HttpGet("contains/{productId:guid}")]
@@ -88,8 +82,7 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
 
         var result = await mediator.Send(new IsProductInWishlistQuery(userId.Value, productId), cancellationToken);
         return result.ToActionResult(
-            data => Ok(ApiResponse<bool>.Ok(data, "Check completed successfully")),
-            MapError);
+            data => Ok(ApiResponse<bool>.Ok(data, "Check completed successfully")));
     }
 
     [HttpPost("clear")]
@@ -102,19 +95,10 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await mediator.Send(new ClearWishlistCommand(userId.Value), cancellationToken);
-        return result.ToActionResult(
-            () =>
-            {
-                logger.LogInformation("Wishlist cleared for user {UserId}", userId.Value);
-                return NoContent();
-            },
-            MapError);
+        return result.ToActionResult(() =>
+        {
+            logger.LogInformation("Wishlist cleared for user {UserId}", userId.Value);
+            return NoContent();
+        });
     }
-
-    private IActionResult MapError(DomainError error) => error.Code switch
-    {
-        "PRODUCT_NOT_FOUND" or "WISHLIST_NOT_FOUND"
-            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
-        _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
-    };
 }
