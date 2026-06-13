@@ -52,6 +52,7 @@ If you're **debugging** → go to `.ai/workflows/troubleshooting.md`.
 |------|--------------|
 | [feature-status.md](feature-status.md) | Completion matrix per domain, test distribution, known gaps |
 | [senior-dev-next.md](senior-dev-next.md) | Effort/impact quadrant, prioritised action list, Day 1 plan |
+| [final-delivery-roadmap.md](final-delivery-roadmap.md) | End-to-end execution plan from refactor through final redeploy |
 
 ### Architecture Decision Records
 

@@ -83,6 +83,7 @@ Default admin after seed: `admin@ecommerce.com` / `Admin123!`
 |-|-|
 | [docs/feature-status.md](docs/feature-status.md) | Completion matrix, known gaps |
 | [docs/senior-dev-next.md](docs/senior-dev-next.md) | Prioritised next steps |
+| [docs/final-delivery-roadmap.md](docs/final-delivery-roadmap.md) | Delivery plan: refactor, parity tests, admin quality, and redeploy |
 | [docs/adr/](docs/adr/) | Architecture Decision Records |
 
 ### Contributing
