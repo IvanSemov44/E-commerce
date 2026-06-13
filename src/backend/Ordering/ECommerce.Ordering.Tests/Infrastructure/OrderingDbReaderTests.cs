@@ -1,4 +1,4 @@
-using ECommerce.Ordering.Infrastructure.Persistence;
+﻿using ECommerce.Ordering.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using OrderingAddressReadModel = ECommerce.Ordering.Infrastructure.Persistence.AddressReadModel;
 using OrderingDbContext = ECommerce.Ordering.Infrastructure.Persistence.OrderingDbContext;
@@ -37,7 +37,7 @@ public class OrderingDbReaderTests
             new List<Guid> { productWithPrimaryImageId, productWithoutPrimaryImageId },
             CancellationToken.None);
 
-        Assert.AreEqual(2, result.Count);
+        Assert.HasCount(2, result);
 
         var withPrimaryImage = result.Single(x => x.ProductId == productWithPrimaryImageId);
         Assert.AreEqual("Primary Image Product", withPrimaryImage.ProductName);
