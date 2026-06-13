@@ -1,30 +1,17 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Shouldly;
 
 namespace ECommerce.Tests.Integration;
 
 [TestClass]
 public class WishlistControllerTests
 {
-    private TestWebApplicationFactory _factory = null!;
+    private static readonly TestWebApplicationFactory _factory = SharedTestInfrastructure.Factory;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
-    private static readonly Guid SeededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid _seededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     public TestContext TestContext { get; set; } = null!;
-
-    [TestInitialize]
-    public void Setup() => _factory = new TestWebApplicationFactory();
-
-    [TestCleanup]
-    public void Cleanup()
-    {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-        _factory?.Dispose();
-    }
 
     private static StringContent Json(object dto) =>
         new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -38,7 +25,7 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task GetWishlist_Authenticated_Returns200WithEmptyList()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
 
@@ -62,10 +49,10 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task AddToWishlist_SeededProduct_Returns204()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         var res = await client.PostAsync("/api/wishlist/add",
-            Json(new { ProductId = SeededProductId }),
+            Json(new { ProductId = _seededProductId }),
             TestContext.CancellationToken);
 
         res.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -74,10 +61,10 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task AddToWishlist_ThenGetWishlist_ContainsProduct()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         await client.PostAsync("/api/wishlist/add",
-            Json(new { ProductId = SeededProductId }),
+            Json(new { ProductId = _seededProductId }),
             TestContext.CancellationToken);
 
         var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
@@ -86,7 +73,7 @@ public class WishlistControllerTests
         var data = await ReadData(res);
         var productIds = data.GetProperty("productIds");
         productIds.GetArrayLength().ShouldBe(1);
-        productIds[0].GetGuid().ShouldBe(SeededProductId);
+        productIds[0].GetGuid().ShouldBe(_seededProductId);
     }
 
     [TestMethod]
@@ -95,7 +82,7 @@ public class WishlistControllerTests
         using var client = _factory.CreateUnauthenticatedClient();
 
         var res = await client.PostAsync("/api/wishlist/add",
-            Json(new { ProductId = SeededProductId }),
+            Json(new { ProductId = _seededProductId }),
             TestContext.CancellationToken);
 
         res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -106,7 +93,7 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task RemoveFromWishlist_AnyProductId_Returns204()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         var res = await client.DeleteAsync($"/api/wishlist/remove/{Guid.NewGuid()}",
             TestContext.CancellationToken);
@@ -117,13 +104,13 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task RemoveFromWishlist_AfterAdd_ProductNoLongerInList()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         await client.PostAsync("/api/wishlist/add",
-            Json(new { ProductId = SeededProductId }),
+            Json(new { ProductId = _seededProductId }),
             TestContext.CancellationToken);
 
-        await client.DeleteAsync($"/api/wishlist/remove/{SeededProductId}",
+        await client.DeleteAsync($"/api/wishlist/remove/{_seededProductId}",
             TestContext.CancellationToken);
 
         var res = await client.GetAsync("/api/wishlist", TestContext.CancellationToken);
@@ -147,7 +134,7 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task IsProductInWishlist_ProductNotAdded_ReturnsFalse()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         var res = await client.GetAsync($"/api/wishlist/contains/{Guid.NewGuid()}",
             TestContext.CancellationToken);
@@ -160,13 +147,13 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task IsProductInWishlist_AfterAdd_ReturnsTrue()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         await client.PostAsync("/api/wishlist/add",
-            Json(new { ProductId = SeededProductId }),
+            Json(new { ProductId = _seededProductId }),
             TestContext.CancellationToken);
 
-        var res = await client.GetAsync($"/api/wishlist/contains/{SeededProductId}",
+        var res = await client.GetAsync($"/api/wishlist/contains/{_seededProductId}",
             TestContext.CancellationToken);
 
         res.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -190,7 +177,7 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task ClearWishlist_Authenticated_Returns204()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         var res = await client.PostAsync("/api/wishlist/clear", null, TestContext.CancellationToken);
 
@@ -200,10 +187,10 @@ public class WishlistControllerTests
     [TestMethod]
     public async Task ClearWishlist_AfterAdd_WishlistIsEmpty()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateFreshAuthenticatedClient();
 
         await client.PostAsync("/api/wishlist/add",
-            Json(new { ProductId = SeededProductId }),
+            Json(new { ProductId = _seededProductId }),
             TestContext.CancellationToken);
 
         await client.PostAsync("/api/wishlist/clear", null, TestContext.CancellationToken);

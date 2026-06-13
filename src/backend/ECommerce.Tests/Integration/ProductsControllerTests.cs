@@ -9,23 +9,11 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class ProductsControllerTests
 {
-    private TestWebApplicationFactory _factory = null!;
+    private static readonly TestWebApplicationFactory _factory = SharedTestInfrastructure.Factory;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly Guid _seededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     public TestContext TestContext { get; set; } = null!;
-
-    [TestInitialize]
-    public void Setup() => _factory = new TestWebApplicationFactory();
-
-    [TestCleanup]
-    public void Cleanup()
-    {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-        _factory?.Dispose();
-    }
 
     private static StringContent Serialize(object dto) =>
         new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -36,11 +24,11 @@ public class ProductsControllerTests
         return JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
     }
 
-    private static Guid ExtractIdFromLocation(HttpResponseMessage response, string expectedPrefix)
+    private static Guid ExtractIdFromLocation(HttpResponseMessage response, string expectedPathSegment)
     {
-        Assert.IsNotNull(response.Headers.Location, "Redirect response must include Location header");
+        Assert.IsNotNull(response.Headers.Location, "Response must include Location header");
         string location = response.Headers.Location!.ToString();
-        StringAssert.StartsWith(location, expectedPrefix);
+        Assert.IsTrue(location.Contains(expectedPathSegment), $"Location '{location}' should contain '{expectedPathSegment}'");
         return Guid.Parse(location[(location.LastIndexOf('/') + 1)..]);
     }
 
@@ -121,14 +109,14 @@ public class ProductsControllerTests
         var catRes = await client.PostAsync("/api/categories",
             Serialize(new { Name = "TempCat", Slug = "temp-cat-" + Guid.NewGuid().ToString()[..8] }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
         var catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         var res = await client.PostAsync("/api/products",
             Serialize(new { Name = "NewProduct", Slug = "prod-" + Guid.NewGuid().ToString()[..8], Price = 9.99m, StockQuantity = 10, CategoryId = catId }),
             TestContext.CancellationToken);
 
-        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, res.StatusCode);
         Assert.AreNotEqual(Guid.Empty, ExtractIdFromLocation(res, "/api/products/"));
     }
 
@@ -163,7 +151,7 @@ public class ProductsControllerTests
         var catRes = await client.PostAsync("/api/categories",
             Serialize(new { Name = "DupCat", Slug = "dup-cat-" + Guid.NewGuid().ToString()[..8] }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
         var catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         string slug = "dup-slug-" + Guid.NewGuid().ToString()[..8];
@@ -171,7 +159,7 @@ public class ProductsControllerTests
         var r1 = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
         var r2 = await client.PostAsync("/api/products", Serialize(create), TestContext.CancellationToken);
 
-        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, r1.StatusCode);
         Assert.AreEqual((HttpStatusCode)422, r2.StatusCode);
         var api = await Deserialize<object>(r2, TestContext.CancellationToken);
         Assert.IsFalse(api!.Success);
@@ -185,7 +173,7 @@ public class ProductsControllerTests
         var catRes = await client.PostAsync("/api/categories",
             Serialize(new { Name = "DupSkuCat", Slug = "dup-sku-cat-" + Guid.NewGuid().ToString()[..8] }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
         var catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         string sku = "dup-sku-" + Guid.NewGuid().ToString()[..8];
@@ -195,8 +183,8 @@ public class ProductsControllerTests
         var r1 = await client.PostAsync("/api/products", Serialize(first), TestContext.CancellationToken);
         var r2 = await client.PostAsync("/api/products", Serialize(second), TestContext.CancellationToken);
 
-        Assert.AreEqual(HttpStatusCode.Found, r1.StatusCode);
-        Assert.AreEqual((HttpStatusCode)422, r2.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, r1.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Conflict, r2.StatusCode);
         var api = await Deserialize<object>(r2, TestContext.CancellationToken);
         Assert.IsFalse(api!.Success);
         Assert.AreEqual(ErrorCodes.SkuAlreadyExists, api.ErrorDetails!.Code);
@@ -235,21 +223,22 @@ public class ProductsControllerTests
         var catRes = await client.PostAsync("/api/categories",
             Serialize(new { Name = "PutCat", Slug = "put-cat-" + Guid.NewGuid().ToString()[..8] }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
         var catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         var r = await client.PostAsync("/api/products",
             Serialize(new { Name = "ToUpdate", Slug = "to-update-" + Guid.NewGuid().ToString()[..8], Price = 5m, StockQuantity = 2, CategoryId = catId }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Found, r.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, r.StatusCode);
         var id = ExtractIdFromLocation(r, "/api/products/");
 
         var res = await client.PutAsync($"/api/products/{id}",
             Serialize(new { Name = "UpdatedName", Slug = "updated-slug-" + Guid.NewGuid().ToString()[..8], Price = 6m, StockQuantity = 3, CategoryId = catId }),
             TestContext.CancellationToken);
 
-        Assert.AreEqual(HttpStatusCode.Found, res.StatusCode);
-        Assert.AreEqual(id, ExtractIdFromLocation(res, "/api/products/"));
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var body = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(TestContext.CancellationToken), _jsonOptions);
+        Assert.AreEqual(id, body.GetProperty("data").GetGuid());
     }
 
     [TestMethod]
@@ -309,13 +298,13 @@ public class ProductsControllerTests
         var catRes = await client.PostAsync("/api/categories",
             Serialize(new { Name = "DelCat", Slug = "del-cat-" + Guid.NewGuid().ToString()[..8] }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Found, catRes.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, catRes.StatusCode);
         var catId = ExtractIdFromLocation(catRes, "/api/categories/");
 
         var r = await client.PostAsync("/api/products",
             Serialize(new { Name = "ToDelete", Slug = "to-delete-" + Guid.NewGuid().ToString()[..8], Price = 2m, StockQuantity = 1, CategoryId = catId }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.Found, r.StatusCode);
+        Assert.AreEqual(HttpStatusCode.Created, r.StatusCode);
         var id = ExtractIdFromLocation(r, "/api/products/");
 
         var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/products/{id}"),

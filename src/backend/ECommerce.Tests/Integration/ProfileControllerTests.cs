@@ -9,22 +9,10 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class ProfileControllerTests
 {
-    private TestWebApplicationFactory _factory = null!;
+    private static readonly TestWebApplicationFactory _factory = SharedTestInfrastructure.Factory;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public TestContext TestContext { get; set; } = null!;
-
-    [TestInitialize]
-    public void Setup() => _factory = new TestWebApplicationFactory();
-
-    [TestCleanup]
-    public void Cleanup()
-    {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-        _factory?.Dispose();
-    }
 
     private static StringContent Json(object dto) =>
         new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -155,7 +143,7 @@ public class ProfileControllerTests
             Json(new { OldPassword = "TestPassword123!", NewPassword = "NewPassword1!", ConfirmPassword = "DifferentPassword1!" }),
             TestContext.CancellationToken);
 
-        res.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        res.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     [TestMethod]

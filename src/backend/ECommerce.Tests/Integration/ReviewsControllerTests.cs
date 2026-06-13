@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using ECommerce.Contracts.DTOs.Common;
@@ -13,27 +13,7 @@ public class ReviewsControllerTests
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly Guid SeededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    private TestWebApplicationFactory _factory = null!;
-
-    [TestInitialize]
-    public void Setup()
-    {
-        _factory = new TestWebApplicationFactory(
-            useReviewsPostgresContainer: true,
-            useCatalogPostgresContainer: false);
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = Guid.NewGuid().ToString();
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-    }
-
-    [TestCleanup]
-    public void Cleanup()
-    {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-        _factory?.Dispose();
-    }
+    private static readonly TestWebApplicationFactory _factory = SharedTestInfrastructure.Factory;
 
     private static async Task<ReviewDetailDto> CreateReviewAsync(
         HttpClient client,
@@ -64,12 +44,22 @@ public class ReviewsControllerTests
         return JsonSerializer.Deserialize<ResponseEnvelope<object>>(content, _jsonOptions)!;
     }
 
+    private static HttpClient CreateUniqueCustomerClient()
+    {
+        var userToken = TestWebApplicationFactory.GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", userToken);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return client;
+    }
+
     // ── GET /api/reviews/product/{productId} ─────────────────────────────────
 
     [TestMethod]
     public async Task GetProductReviews_ApprovedReview_Returns200AndIncludesReview()
     {
-        using var customerClient = _factory.CreateAuthenticatedClient();
+        using var customerClient = CreateUniqueCustomerClient();
         using var adminClient = _factory.CreateAdminClient();
 
         var created = await CreateReviewAsync(customerClient);
@@ -144,7 +134,7 @@ public class ReviewsControllerTests
     [TestMethod]
     public async Task CreateReview_ValidRequest_Returns201WithLocationAndPendingStatus()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = CreateUniqueCustomerClient();
 
         var response = await client.PostAsync("/api/reviews", BuildJsonBody(new
         {
@@ -166,7 +156,7 @@ public class ReviewsControllerTests
     [TestMethod]
     public async Task CreateReview_DuplicateUserProduct_Returns409WithErrorCode()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = CreateUniqueCustomerClient();
 
         await CreateReviewAsync(client, title: "First Review", comment: "This is a unique review body");
 
@@ -242,7 +232,7 @@ public class ReviewsControllerTests
     [TestMethod]
     public async Task UpdateReview_ValidRequest_Returns204AndPersistsChanges()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = CreateUniqueCustomerClient();
 
         var created = await CreateReviewAsync(client, rating: 3, title: "Original Title", comment: "Original comment body");
 
@@ -284,7 +274,7 @@ public class ReviewsControllerTests
     [TestMethod]
     public async Task DeleteReview_ExistingId_ReturnsOk()
     {
-        using var client = _factory.CreateAuthenticatedClient();
+        using var client = CreateUniqueCustomerClient();
 
         var created = await CreateReviewAsync(client, title: "Delete Me", comment: "Delete this review after creation");
         var response = await client.DeleteAsync($"/api/reviews/{created.Id}");
@@ -337,7 +327,7 @@ public class ReviewsControllerTests
     [TestMethod]
     public async Task GetPendingReviews_Admin_Returns200AndIncludesPendingReview()
     {
-        using var customerClient = _factory.CreateAuthenticatedClient();
+        using var customerClient = CreateUniqueCustomerClient();
         using var adminClient = _factory.CreateAdminClient();
 
         var created = await CreateReviewAsync(customerClient, rating: 4, title: "Pending Baseline", comment: "Pending review body that should appear for admins");

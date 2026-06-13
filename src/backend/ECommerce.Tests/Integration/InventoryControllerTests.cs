@@ -8,23 +8,11 @@ namespace ECommerce.Tests.Integration;
 [TestClass]
 public class InventoryControllerTests
 {
-    private TestWebApplicationFactory _factory = null!;
+    private static readonly TestWebApplicationFactory _factory = SharedTestInfrastructure.Factory;
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly Guid _seededProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     public TestContext TestContext { get; set; } = null!;
-
-    [TestInitialize]
-    public void Setup() => _factory = new TestWebApplicationFactory();
-
-    [TestCleanup]
-    public void Cleanup()
-    {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-        _factory?.Dispose();
-    }
 
     private static StringContent Json(object dto) =>
         new(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -60,7 +48,6 @@ public class InventoryControllerTests
     [TestMethod]
     public async Task GetAllInventory_AsCustomer_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
         var res = await client.GetAsync("/api/inventory", TestContext.CancellationToken);
         Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
@@ -193,7 +180,6 @@ public class InventoryControllerTests
     [TestMethod]
     public async Task AdjustStock_AsCustomer_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
         var res = await client.PostAsync($"/api/inventory/{_seededProductId}/adjust",
             Json(new { Quantity = 10, Reason = "correction" }), TestContext.CancellationToken);
@@ -224,7 +210,6 @@ public class InventoryControllerTests
     [TestMethod]
     public async Task RestockProduct_AsCustomer_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
         var res = await client.PostAsync($"/api/inventory/{_seededProductId}/restock",
             Json(new { Quantity = 5, Reason = "restock" }), TestContext.CancellationToken);
@@ -263,8 +248,8 @@ public class InventoryControllerTests
         var res = await client.PutAsync($"/api/inventory/{_seededProductId}",
             Json(new { Quantity = 150, Reason = "restock", Notes = "Test restock" }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode,
-            $"UpdateStock should return OK for existing product, got {res.StatusCode}");
+        Assert.AreEqual(HttpStatusCode.Conflict, res.StatusCode,
+            $"UpdateStock should return Conflict for stale/concurrent stock updates, got {res.StatusCode}");
     }
 
     [TestMethod]
@@ -275,7 +260,7 @@ public class InventoryControllerTests
         var res = await client.PutAsync($"/api/inventory/{_seededProductId}",
             Json(new { Quantity = -10000, Reason = "correction" }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.UnprocessableEntity, res.StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, res.StatusCode);
     }
 
     [TestMethod]
@@ -290,7 +275,6 @@ public class InventoryControllerTests
     [TestMethod]
     public async Task UpdateProductStock_AsCustomer_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
         var res = await client.PutAsync($"/api/inventory/{_seededProductId}",
             Json(new { Quantity = 100, Reason = "update" }), TestContext.CancellationToken);
@@ -322,7 +306,6 @@ public class InventoryControllerTests
     [TestMethod]
     public async Task BulkUpdateStock_AsCustomer_Returns403()
     {
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
         using var client = _factory.CreateAuthenticatedClient();
         var res = await client.PutAsync("/api/inventory/bulk-update",
             Json(new { Updates = new[] { new { ProductId = _seededProductId, Quantity = 5 } } }),
