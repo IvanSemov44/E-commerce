@@ -107,7 +107,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -115,7 +115,11 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductCommand command, CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(command with { Id = id }, cancellationToken);
-        return result.ToActionResult(productId => Ok(ApiResponse<Guid>.Ok(productId)));
+        return await result.ToActionResultAsync(async _ =>
+        {
+            var product = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
+            return product.ToActionResult(data => Ok(ApiResponse<ProductDetailDto>.Ok(data)));
+        });
     }
 
     [HttpDelete("{id:guid}")]
@@ -133,7 +137,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [HttpPut("{id:guid}/price")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -141,7 +145,11 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> UpdateProductPrice(Guid id, [FromBody] UpdateProductPriceCommand command, CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(command with { Id = id }, cancellationToken);
-        return result.ToActionResult(productId => Ok(ApiResponse<Guid>.Ok(productId)));
+        return await result.ToActionResultAsync(async _ =>
+        {
+            var product = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
+            return product.ToActionResult(data => Ok(ApiResponse<ProductDetailDto>.Ok(data)));
+        });
     }
 
     [HttpPut("{id:guid}/stock")]
