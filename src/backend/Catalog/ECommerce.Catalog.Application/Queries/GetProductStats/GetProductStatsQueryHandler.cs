@@ -5,7 +5,7 @@ using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.SharedKernel.Results;
 using MediatR;
 
-namespace ECommerce.Catalog.Application.Queries.GetProductStats;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetProductStatsQueryHandler(IProductRepository products)
     : IRequestHandler<GetProductStatsQuery, Result<ProductStatsDto>>

@@ -2,8 +2,8 @@
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Categories;
-using ECommerce.Catalog.Application.DTOs.Common;
+using ECommerce.SharedKernel.Pagination;
 
-namespace ECommerce.Catalog.Application.Queries.GetCategories;
+namespace ECommerce.Catalog.Application.Queries;
 
 public record GetCategoriesQuery(int Page = 1, int PageSize = 20) : IRequest<Result<PaginatedResult<CategoryDto>>>;

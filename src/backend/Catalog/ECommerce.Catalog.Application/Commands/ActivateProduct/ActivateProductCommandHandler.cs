@@ -5,7 +5,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.ActivateProduct;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class ActivateProductCommandHandler(
     IProductRepository _products

@@ -3,7 +3,7 @@ using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.UpdateProductStock;
+namespace ECommerce.Catalog.Application.Commands;
 
 public record UpdateProductStockCommand(
     Guid Id,

@@ -7,7 +7,7 @@ using ECommerce.Catalog.Application.DTOs.Categories;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetCategoryById;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetCategoryByIdQueryHandler(
     ICategoryRepository _categories

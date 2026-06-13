@@ -2,9 +2,9 @@
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Products;
-using ECommerce.Catalog.Application.DTOs.Common;
+using ECommerce.SharedKernel.Pagination;
 
-namespace ECommerce.Catalog.Application.Queries.GetProducts;
+namespace ECommerce.Catalog.Application.Queries;
 
 public record GetProductsQuery(
 	int Page = 1,

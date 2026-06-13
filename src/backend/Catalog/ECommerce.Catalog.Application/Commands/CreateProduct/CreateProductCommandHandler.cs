@@ -7,7 +7,7 @@ using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.CreateProduct;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class CreateProductCommandHandler(
     IProductRepository _products,

@@ -7,7 +7,7 @@ using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.Aggregates.Category;
 
-namespace ECommerce.Catalog.Application.Commands.CreateCategory;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class CreateCategoryCommandHandler(
     ICategoryRepository _categories

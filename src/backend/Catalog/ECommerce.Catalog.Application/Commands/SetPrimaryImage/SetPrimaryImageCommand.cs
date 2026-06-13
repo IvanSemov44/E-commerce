@@ -3,7 +3,7 @@ using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.SetPrimaryImage;
+namespace ECommerce.Catalog.Application.Commands;
 
 public record SetPrimaryImageCommand(
     Guid ProductId,

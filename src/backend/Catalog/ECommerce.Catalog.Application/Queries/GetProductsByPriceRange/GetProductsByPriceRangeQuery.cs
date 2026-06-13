@@ -1,8 +1,8 @@
 ﻿using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Products;
-using ECommerce.Catalog.Application.DTOs.Common;
+using ECommerce.SharedKernel.Pagination;
 
-namespace ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
+namespace ECommerce.Catalog.Application.Queries;
 
 public record GetProductsByPriceRangeQuery(decimal? MinPrice, decimal? MaxPrice, int Page = 1, int PageSize = 20) : IRequest<Result<PaginatedResult<ProductDto>>>;

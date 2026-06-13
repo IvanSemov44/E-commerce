@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +8,7 @@ using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetLowStockProducts;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetLowStockProductsQueryHandler(
     IProductRepository _products

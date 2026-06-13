@@ -3,7 +3,7 @@ using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.UpdateCategory;
+namespace ECommerce.Catalog.Application.Commands;
 
 public record UpdateCategoryCommand(
     Guid Id,

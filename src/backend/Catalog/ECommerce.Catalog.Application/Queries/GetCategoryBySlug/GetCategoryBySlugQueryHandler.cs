@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
@@ -7,7 +7,7 @@ using ECommerce.Catalog.Application.DTOs.Categories;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetCategoryBySlugQueryHandler(
     ICategoryRepository _categories

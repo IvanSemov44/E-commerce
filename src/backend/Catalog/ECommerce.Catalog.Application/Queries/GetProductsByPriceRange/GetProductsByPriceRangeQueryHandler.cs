@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Products;
-using ECommerce.Catalog.Application.DTOs.Common;
+using ECommerce.SharedKernel.Pagination;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetProductsByPriceRangeQueryHandler(
     IProductRepository _products

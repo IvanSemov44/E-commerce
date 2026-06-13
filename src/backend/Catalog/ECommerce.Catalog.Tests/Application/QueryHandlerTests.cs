@@ -2,18 +2,7 @@
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Domain.Interfaces;
-using ECommerce.Catalog.Application.Queries.GetProductById;
-using ECommerce.Catalog.Application.Queries.GetProductBySlug;
-using ECommerce.Catalog.Application.Queries.GetProducts;
-using ECommerce.Catalog.Application.Queries.GetFeaturedProducts;
-using ECommerce.Catalog.Application.Queries.GetCategories;
-using ECommerce.Catalog.Application.Queries.GetCategoryBySlug;
-using ECommerce.Catalog.Application.Queries.GetCategoryById;
-using ECommerce.Catalog.Application.Queries.GetProductsByCategory;
-using ECommerce.Catalog.Application.Queries.GetProductsByPriceRange;
-using ECommerce.Catalog.Application.Queries.SearchProducts;
-using ECommerce.Catalog.Application.Queries.GetTopLevelCategories;
-using ECommerce.Catalog.Application.Queries.GetLowStockProducts;
+using ECommerce.Catalog.Application.Queries;
 using ECommerce.Catalog.Domain.ValueObjects;
 
 namespace ECommerce.Catalog.Tests.Application;

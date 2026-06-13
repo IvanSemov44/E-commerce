@@ -10,7 +10,7 @@ using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetProductBySlug;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetProductBySlugQueryHandler(
     IProductRepository _products,

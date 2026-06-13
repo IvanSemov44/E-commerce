@@ -5,7 +5,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.UpdateProductStock;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class UpdateProductStockCommandHandler(
     IProductRepository _products

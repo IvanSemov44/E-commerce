@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-namespace ECommerce.Catalog.Application.Commands.UpdateProductPrice;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class UpdateProductPriceCommandValidator : AbstractValidator<UpdateProductPriceCommand>
 {

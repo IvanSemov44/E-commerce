@@ -7,7 +7,7 @@ using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.ValueObjects;
 
-namespace ECommerce.Catalog.Application.Commands.UpdateProduct;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class UpdateProductCommandHandler(
     IProductRepository _products,

@@ -6,7 +6,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.AddProductImage;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class AddProductImageCommandHandler(
     IProductRepository _products,

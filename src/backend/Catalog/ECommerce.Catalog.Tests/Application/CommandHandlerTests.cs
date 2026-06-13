@@ -3,18 +3,7 @@ using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Domain.ValueObjects;
 using ECommerce.Catalog.Domain.Interfaces;
-using ECommerce.Catalog.Application.Commands.CreateProduct;
-using ECommerce.Catalog.Application.Commands.UpdateProduct;
-using ECommerce.Catalog.Application.Commands.DeleteProduct;
-using ECommerce.Catalog.Application.Commands.UpdateProductPrice;
-using ECommerce.Catalog.Application.Commands.ActivateProduct;
-using ECommerce.Catalog.Application.Commands.DeactivateProduct;
-using ECommerce.Catalog.Application.Commands.UpdateProductStock;
-using ECommerce.Catalog.Application.Commands.AddProductImage;
-using ECommerce.Catalog.Application.Commands.SetPrimaryImage;
-using ECommerce.Catalog.Application.Commands.CreateCategory;
-using ECommerce.Catalog.Application.Commands.UpdateCategory;
-using ECommerce.Catalog.Application.Commands.DeleteCategory;
+using ECommerce.Catalog.Application.Commands;
 namespace ECommerce.Catalog.Tests.Application;
 
 [TestClass]

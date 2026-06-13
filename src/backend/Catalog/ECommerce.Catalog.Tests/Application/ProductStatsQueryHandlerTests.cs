@@ -1,4 +1,4 @@
-﻿using ECommerce.Catalog.Application.Queries.GetProductStats;
+﻿using ECommerce.Catalog.Application.Queries;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Interfaces;
 using ECommerce.Catalog.Domain.ValueObjects;

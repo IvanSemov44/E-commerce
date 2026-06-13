@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Categories;
-using ECommerce.Catalog.Application.DTOs.Common;
+using ECommerce.SharedKernel.Pagination;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetTopLevelCategories;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetTopLevelCategoriesQueryHandler(
     ICategoryRepository _categories

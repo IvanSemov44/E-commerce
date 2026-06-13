@@ -5,7 +5,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.DeleteCategory;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class DeleteCategoryCommandHandler(
     ICategoryRepository _categories

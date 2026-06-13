@@ -5,7 +5,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.DeleteProduct;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class DeleteProductCommandHandler(
     IProductRepository _products

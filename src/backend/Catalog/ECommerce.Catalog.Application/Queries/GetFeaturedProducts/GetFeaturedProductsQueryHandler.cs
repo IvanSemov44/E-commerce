@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.DTOs.Products;
-using ECommerce.Catalog.Application.DTOs.Common;
+using ECommerce.SharedKernel.Pagination;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Queries.GetFeaturedProducts;
+namespace ECommerce.Catalog.Application.Queries;
 
 public class GetFeaturedProductsQueryHandler(
     IProductRepository _products

@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-namespace ECommerce.Catalog.Application.Commands.AddProductImage;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class AddProductImageCommandValidator : AbstractValidator<AddProductImageCommand>
 {

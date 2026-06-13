@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-namespace ECommerce.Catalog.Application.Commands.CreateProduct;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
 {

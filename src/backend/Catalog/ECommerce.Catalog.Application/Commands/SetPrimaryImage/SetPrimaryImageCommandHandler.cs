@@ -6,7 +6,7 @@ using ECommerce.SharedKernel.Results;
 using ECommerce.Catalog.Application.Errors;
 using ECommerce.Catalog.Domain.Interfaces;
 
-namespace ECommerce.Catalog.Application.Commands.SetPrimaryImage;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class SetPrimaryImageCommandHandler(
     IProductRepository _products,

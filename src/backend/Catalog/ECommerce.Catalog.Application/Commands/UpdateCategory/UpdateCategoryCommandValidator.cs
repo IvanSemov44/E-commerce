@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-namespace ECommerce.Catalog.Application.Commands.UpdateCategory;
+namespace ECommerce.Catalog.Application.Commands;
 
 public class UpdateCategoryCommandValidator : AbstractValidator<UpdateCategoryCommand>
 {
