@@ -23,6 +23,18 @@ public static class ResultExtensions
         Func<IActionResult> onSuccess)
         => result.ToActionResult(onSuccess, error => error.ToHttpResult());
 
+    // Async overload — for success handlers that need to await a second operation (e.g. re-query after update).
+
+    public static Task<IActionResult> ToActionResultAsync<T>(
+        this Result<T> result,
+        Func<T, Task<IActionResult>> onSuccess)
+        => result switch
+        {
+            Result<T>.Success s => onSuccess(s.Data),
+            Result<T>.Failure f => Task.FromResult(f.Error.ToHttpResult()),
+            _ => throw new InvalidOperationException($"Unknown Result subtype: {result.GetType().Name}")
+        };
+
     // Explicit overloads — kept for actions that need custom failure handling (e.g. auth cookie flows).
 
     public static IActionResult ToActionResult<T>(
