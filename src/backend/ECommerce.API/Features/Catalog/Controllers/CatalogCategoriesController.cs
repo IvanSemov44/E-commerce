@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
-using ECommerce.API.Common.Extensions;
+using ECommerce.API.Shared.Extensions;
 using ECommerce.API.Common.Helpers;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Catalog.Application.Commands;
