@@ -292,7 +292,7 @@ public class ProductsControllerTests
     // ── DELETE /api/products/{id} ────────────────────────────────────────────
 
     [TestMethod]
-    public async Task DeleteProduct_AdminExisting_Returns200()
+    public async Task DeleteProduct_AdminExisting_Returns204()
     {
         using var client = _factory.CreateAdminClientNoRedirect();
         var catRes = await client.PostAsync("/api/categories",
@@ -310,7 +310,7 @@ public class ProductsControllerTests
         var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/products/{id}"),
             TestContext.CancellationToken);
 
-        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        Assert.AreEqual(HttpStatusCode.NoContent, res.StatusCode);
     }
 
     [TestMethod]

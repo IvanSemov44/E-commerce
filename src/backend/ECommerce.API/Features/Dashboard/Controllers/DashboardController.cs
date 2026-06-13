@@ -2,7 +2,7 @@ using System.Collections.Frozen;
 using ECommerce.API.Common.Extensions;
 using ECommerce.API.Features.Dashboard.Models;
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.Catalog.Application.Queries.GetProductStats;
+using ECommerce.Catalog.Application.Queries;
 using ECommerce.Identity.Application.Queries.GetUserStats;
 using ECommerce.Ordering.Application.DTOs.Dashboard;
 using ECommerce.Ordering.Application.Queries.GetOrderStats;

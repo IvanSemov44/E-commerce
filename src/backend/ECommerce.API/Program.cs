@@ -4,7 +4,7 @@ using ECommerce.API.Common.Extensions;
 using FluentValidation;
 using MediatR;
 using ECommerce.Catalog.Infrastructure;
-using ECommerce.Catalog.Application.Commands.CreateProduct;
+using ECommerce.Catalog.Application.Commands;
 using ECommerce.Identity.Infrastructure;
 using ECommerce.Inventory.Application.Commands.ReduceStock;
 using ECommerce.Inventory.Infrastructure;
