@@ -1,35 +1,23 @@
 ﻿using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text.Json;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using ECommerce.Infrastructure.Integration;
-using ECommerce.SharedKernel.Entities;
 using ECommerce.SharedKernel.DTOs;
 using ECommerce.SharedKernel.Interfaces;
 using CatalogCategory = ECommerce.Catalog.Domain.Aggregates.Category.Category;
 using CatalogProduct = ECommerce.Catalog.Domain.Aggregates.Product.Product;
+using IInventoryProjectionEventPublisher = ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher;
 using ECommerce.Payments.Application.Interfaces;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using ECommerce.Inventory.Domain.Aggregates.InventoryItem;
-using OrderingOrder = ECommerce.Ordering.Domain.Aggregates.Order.Order;
-using OrderingOrderItem = ECommerce.Ordering.Domain.Aggregates.Order.OrderItem;
-using OrderingOrderItemData = ECommerce.Ordering.Domain.Aggregates.Order.OrderItemData;
-using OrderingShippingAddress = ECommerce.Ordering.Domain.ValueObjects.ShippingAddress;
-using OrderingOrderStatus = ECommerce.Ordering.Domain.ValueObjects.OrderStatus;
 using ECommerce.Inventory.Infrastructure.Persistence;
 using ECommerce.Reviews.Infrastructure.Persistence;
 using ECommerce.Identity.Infrastructure.Persistence;
@@ -37,196 +25,101 @@ using ECommerce.Ordering.Infrastructure.Persistence;
 using ECommerce.Payments.Infrastructure.Persistence;
 using ECommerce.Shopping.Infrastructure.Persistence;
 using ECommerce.Promotions.Infrastructure.Persistence;
+using ECommerce.API.Services;
 using ECommerce.Identity.Domain.Interfaces;
-using ECommerce.Identity.Domain.ValueObjects;
-using IdentityUser = ECommerce.Identity.Domain.Aggregates.User.User;
-using BCrypt.Net;
+using IdentityUser             = ECommerce.Identity.Domain.Aggregates.User.User;
+using OrderingProductReadModel = ECommerce.Ordering.Infrastructure.Persistence.ProductReadModel;
+using ShoppingProductReadModel = ECommerce.Shopping.Infrastructure.Persistence.ProductReadModel;
+using ReviewsProductReadModel  = ECommerce.Reviews.Infrastructure.Persistence.ProductReadModel;
+using PromotionsPromoCode      = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode;
+using PromotionsPromoCodeString = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString;
+using PromotionsDiscountValue  = ECommerce.Promotions.Domain.ValueObjects.DiscountValue;
+using PromotionsDateRange      = ECommerce.Promotions.Domain.ValueObjects.DateRange;
 using Microsoft.Extensions.Hosting;
 using DotNet.Testcontainers.Builders;
 using Testcontainers.PostgreSql;
+using Npgsql;
 
 namespace ECommerce.Tests.Integration;
 
-/// <summary>
-/// Conditional authentication handler that can enable/disable authentication based on configuration.
-/// </summary>
-public class ConditionalTestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, System.Text.Encodings.Web.UrlEncoder encoder, ISystemClock clock) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder, clock)
+public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     public const string TestUserId = "11111111-1111-1111-1111-111111111111";
     public const string TestAdminUserId = "33333333-3333-3333-3333-333333333333";
-    public const string TestOrderId = "44444444-4444-4444-4444-444444444444";
 
-    // Static flags to control authentication and user context per test session
-    public static bool IsAuthenticationEnabled { get; set; } = true;
-    public static string CurrentUserId { get; set; } = TestUserId;
-    public static string CurrentUserRole { get; set; } = "Customer";
+    // ── Per-instance database names ───────────────────────────────────────────
+    private readonly string _catalogDatabaseName    = $"testcatalog_{Guid.NewGuid():N}";
+    private readonly string _identityDatabaseName   = $"testidentity_{Guid.NewGuid():N}";
+    private readonly string _inventoryDatabaseName  = $"testinventory_{Guid.NewGuid():N}";
+    private readonly string _orderingDatabaseName   = $"testordering_{Guid.NewGuid():N}";
+    private readonly string _paymentsDatabaseName   = $"testpayments_{Guid.NewGuid():N}";
+    private readonly string _reviewsDatabaseName    = $"testreviews_{Guid.NewGuid():N}";
+    private readonly string _shoppingDatabaseName   = $"testshopping_{Guid.NewGuid():N}";
+    private readonly string _promotionsDatabaseName = $"testpromotions_{Guid.NewGuid():N}";
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        // If authentication is disabled, return no result (will fall through to next auth scheme)
-        if (!IsAuthenticationEnabled)
-        {
-            return Task.FromResult(AuthenticateResult.NoResult());
-        }
+    // ── Postgres container helpers (start lazily on first use) ────────────────
+    private readonly PostgresTestContainer _catalogContainer;
+    private readonly PostgresTestContainer _identityContainer;
+    private readonly PostgresTestContainer _inventoryContainer;
+    private readonly PostgresTestContainer _orderingContainer;
+    private readonly PostgresTestContainer _paymentsContainer;
+    private readonly PostgresTestContainer _reviewsContainer;
+    private readonly PostgresTestContainer _shoppingContainer;
+    private readonly PostgresTestContainer _promotionsContainer;
 
-        // First, try to extract JWT Bearer token from Authorization header
-        var authHeader = Request.Headers["Authorization"].ToString();
-        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            var token = authHeader.Substring("Bearer ".Length).Trim();
-            try
-            {
-                var handler = new JwtSecurityTokenHandler();
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough"));
-                var validationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = key,
-                    ValidateIssuer = true,
-                    ValidIssuer = "test",
-                    ValidateAudience = true,
-                    ValidAudience = "test",
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromSeconds(10)
-                };
-
-                var principal = handler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
-                var ticket = new AuthenticationTicket(principal, "Test");
-                return Task.FromResult(AuthenticateResult.Success(ticket));
-            }
-            catch (Exception ex)
-            {
-                return Task.FromResult(AuthenticateResult.Fail($"JWT validation failed: {ex.Message}"));
-            }
-        }
-
-        // If no Bearer token is present, return NoResult() to let [Authorize] reject with 401
-        // This ensures unauthenticated clients properly get 401 on protected endpoints
-        return Task.FromResult(AuthenticateResult.NoResult());
-    }
-}
-
-public class TestWebApplicationFactory(
-    bool useReviewsPostgresContainer = false,
-    bool useCatalogPostgresContainer = true,
-    bool usePromotionsPostgresContainer = true,
-    bool useOrderingPostgresContainer = true,
-    bool usePaymentsPostgresContainer = true) : WebApplicationFactory<Program>
-{
-    private readonly bool _useReviewsPostgresContainer = useReviewsPostgresContainer;
-    private readonly bool _useCatalogPostgresContainer = useCatalogPostgresContainer;
-    private readonly bool _usePromotionsPostgresContainer = usePromotionsPostgresContainer;
-    private readonly bool _useOrderingPostgresContainer = useOrderingPostgresContainer;
-    private readonly bool _usePaymentsPostgresContainer = usePaymentsPostgresContainer;
-    private readonly string _databaseName = $"IntegrationTestsDb_{Guid.NewGuid():N}";
-    private readonly string _catalogDatabaseName = $"IntegrationTestsCatalogDb_{Guid.NewGuid():N}";
-
-    private readonly string _identityDatabaseName = $"IntegrationTestsIdentityDb_{Guid.NewGuid():N}";
-    private readonly string _inventoryDatabaseName = $"IntegrationTestsInventoryDb_{Guid.NewGuid():N}";
-    private readonly string _orderingDatabaseName = $"IntegrationTestsOrderingDb_{Guid.NewGuid():N}";
-    private readonly string _paymentsDatabaseName = $"IntegrationTestsPaymentsDb_{Guid.NewGuid():N}";
-    private readonly string _reviewsDatabaseName = $"IntegrationTestsReviewsDb_{Guid.NewGuid():N}";
-    private readonly string _shoppingDatabaseName = $"IntegrationTestsShoppingDb_{Guid.NewGuid():N}";
-    private readonly string _promotionsDatabaseName = $"IntegrationTestsPromotionsDb_{Guid.NewGuid():N}";
-    private PostgreSqlContainer? _catalogPostgresContainer;
-    private string? _catalogPostgresConnectionString;
-    private readonly object _catalogContainerSync = new();
-    private PostgreSqlContainer? _reviewsPostgresContainer;
-    private string? _reviewsPostgresConnectionString;
-    private readonly object _reviewsContainerSync = new();
-    private PostgreSqlContainer? _promotionsPostgresContainer;
-    private string? _promotionsPostgresConnectionString;
-    private readonly object _promotionsContainerSync = new();
-    private PostgreSqlContainer? _orderingPostgresContainer;
-    private string? _orderingPostgresConnectionString;
-    private readonly object _orderingContainerSync = new();
-    private PostgreSqlContainer? _paymentsPostgresContainer;
-    private string? _paymentsPostgresConnectionString;
-    private readonly object _paymentsContainerSync = new();
     private static readonly string _testPasswordHash = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
     private static readonly Guid _seededPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-    private static readonly string _defaultConnectionString =
-        Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-        ?? "Host=localhost;Database=ECommerceDb;Username=ecommerce;Password=local-dev-password-123";
+
+    public TestWebApplicationFactory()
+    {
+        _catalogContainer    = new PostgresTestContainer(_catalogDatabaseName,    "Catalog");
+        _identityContainer   = new PostgresTestContainer(_identityDatabaseName,   "Identity");
+        _inventoryContainer  = new PostgresTestContainer(_inventoryDatabaseName,  "Inventory");
+        _orderingContainer   = new PostgresTestContainer(_orderingDatabaseName,   "Ordering");
+        _paymentsContainer   = new PostgresTestContainer(_paymentsDatabaseName,   "Payments");
+        _reviewsContainer    = new PostgresTestContainer(_reviewsDatabaseName,    "Reviews");
+        _shoppingContainer   = new PostgresTestContainer(_shoppingDatabaseName,   "Shopping");
+        _promotionsContainer = new PostgresTestContainer(_promotionsDatabaseName, "Promotions");
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var catalogPostgresConnectionString = _useCatalogPostgresContainer
-            ? TryGetCatalogPostgresConnectionString()
-            : null;
-        var reviewsPostgresConnectionString = _useReviewsPostgresContainer
-            ? TryGetReviewsPostgresConnectionString()
-            : null;
-        var promotionsPostgresConnectionString = _usePromotionsPostgresContainer
-            ? TryGetPromotionsPostgresConnectionString()
-            : null;
-        var orderingPostgresConnectionString = _useOrderingPostgresContainer
-            ? TryGetOrderingPostgresConnectionString()
-            : null;
-        var paymentsPostgresConnectionString = _usePaymentsPostgresContainer
-            ? TryGetPaymentsPostgresConnectionString()
-            : null;
-
-        // Reset auth state at the beginning of each WebHost configuration
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
-
-        // Use "Test" environment to skip CSRF validation in tests
         builder.UseEnvironment("Test");
-
-        // Configure test-specific configuration values for secrets using UseSetting
-        // This ensures values are available before Program.cs runs validation
         builder.UseSetting("Jwt:SecretKey", "SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough");
         builder.UseSetting("Jwt:Issuer", "test");
         builder.UseSetting("Jwt:Audience", "test");
-        builder.UseSetting("ConnectionStrings:DefaultConnection", _defaultConnectionString);
-        builder.UseSetting(
-            "ConnectionStrings:CatalogConnection",
-            _useCatalogPostgresContainer
-                ? catalogPostgresConnectionString!
-                : _defaultConnectionString);
-        builder.UseSetting(
-            "ConnectionStrings:ReviewsConnection",
-            _useReviewsPostgresContainer
-                ? reviewsPostgresConnectionString!
-                : _defaultConnectionString);
-        builder.UseSetting(
-            "ConnectionStrings:PromotionsConnection",
-            _usePromotionsPostgresContainer
-                ? promotionsPostgresConnectionString!
-                : _defaultConnectionString);
-        builder.UseSetting("Serilog:MinimumLevel:Default", "Debug");
+        builder.UseSetting("ConnectionStrings:DefaultConnection",    _orderingContainer.GetConnectionString());
+        builder.UseSetting("ConnectionStrings:DataProtectionConnection", _identityContainer.GetConnectionString());
+        builder.UseSetting("ConnectionStrings:CatalogConnection",    _catalogContainer.GetConnectionString());
+        builder.UseSetting("ConnectionStrings:ReviewsConnection",    _reviewsContainer.GetConnectionString());
+        builder.UseSetting("ConnectionStrings:PromotionsConnection", _promotionsContainer.GetConnectionString());
+        builder.UseSetting("DataProtection:UseDatabaseStorage", "false");
+        builder.UseSetting("Serilog:MinimumLevel:Default", "Warning");
         builder.UseSetting("RateLimiting:GlobalLimit", "100000");
         builder.UseSetting("RateLimiting:AuthLimit", "100000");
         builder.UseSetting("RateLimiting:PasswordResetLimit", "100000");
 
         builder.ConfigureTestServices(services =>
         {
-            // Replace BC DbContexts with InMemory DB
-            var reviewsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ReviewsDbContext>));
-            if (reviewsDescriptor != null) services.Remove(reviewsDescriptor);
+            services.RemoveAll(typeof(DbContextOptions<CatalogDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<IdentityDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<InventoryDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<OrderingDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<PaymentsDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<ReviewsDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<ShoppingDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<PromotionsDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<DataProtectionKeysContext>));
 
-            var catalogDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<CatalogDbContext>));
-            if (catalogDescriptor != null) services.Remove(catalogDescriptor);
-
-            var identityDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<IdentityDbContext>));
-            if (identityDescriptor != null) services.Remove(identityDescriptor);
-
-            var inventoryDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<InventoryDbContext>));
-            if (inventoryDescriptor != null) services.Remove(inventoryDescriptor);
-
-            var orderingDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<OrderingDbContext>));
-            if (orderingDescriptor != null) services.Remove(orderingDescriptor);
-
-            var paymentsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PaymentsDbContext>));
-            if (paymentsDescriptor != null) services.Remove(paymentsDescriptor);
-
-            var promotionsDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PromotionsDbContext>));
-            if (promotionsDescriptor != null) services.Remove(promotionsDescriptor);
-
-            var shoppingDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ShoppingDbContext>));
-            if (shoppingDescriptor != null) services.Remove(shoppingDescriptor);
+            services.AddDbContext<CatalogDbContext>(o    => o.UseNpgsql(_catalogContainer.GetConnectionString()));
+            services.AddDbContext<IdentityDbContext>(o   => o.UseNpgsql(_identityContainer.GetConnectionString()));
+            services.AddDbContext<InventoryDbContext>(o  => o.UseNpgsql(_inventoryContainer.GetConnectionString()));
+            services.AddDbContext<OrderingDbContext>(o   => o.UseNpgsql(_orderingContainer.GetConnectionString()));
+            services.AddDbContext<PaymentsDbContext>(o   => o.UseNpgsql(_paymentsContainer.GetConnectionString()));
+            services.AddDbContext<ReviewsDbContext>(o    => o.UseNpgsql(_reviewsContainer.GetConnectionString()));
+            services.AddDbContext<ShoppingDbContext>(o   => o.UseNpgsql(_shoppingContainer.GetConnectionString()));
+            services.AddDbContext<PromotionsDbContext>(o => o.UseNpgsql(_promotionsContainer.GetConnectionString()));
+            services.AddDbContext<DataProtectionKeysContext>(o => o.UseNpgsql(_identityContainer.GetConnectionString()));
 
             services.RemoveAll(typeof(IEmailService));
             services.AddScoped<IEmailService, NoOpEmailService>();
@@ -234,632 +127,61 @@ public class TestWebApplicationFactory(
             services.RemoveAll(typeof(IDistributedCache));
             services.AddDistributedMemoryCache();
 
-            // Replace webhook verification service with test implementation (always returns true)
             services.RemoveAll(typeof(IWebhookVerificationService));
             services.AddScoped<IWebhookVerificationService, TestWebhookVerificationService>();
 
-            services.RemoveAll<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher>();
-            services.AddScoped<ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher, NoOpInventoryProjectionEventPublisher>();
+            services.RemoveAll<IInventoryProjectionEventPublisher>();
+            services.AddScoped<IInventoryProjectionEventPublisher, NoOpInventoryProjectionEventPublisher>();
 
-            // Use a separate internal service provider for EF InMemory to avoid multiple provider registrations
-            var inMemoryServiceProvider = new ServiceCollection()
-                .AddEntityFrameworkInMemoryDatabase()
-                .BuildServiceProvider();
+            var outboxHostedServices = services
+                .Where(d => d.ServiceType == typeof(IHostedService)
+                    && d.ImplementationType?.Name.Contains("OutboxDispatcherHostedService", StringComparison.OrdinalIgnoreCase) == true)
+                .ToList();
 
-            if (_useReviewsPostgresContainer)
-            {
-                services.AddDbContext<ReviewsDbContext>(options =>
-                {
-                    options.UseNpgsql(reviewsPostgresConnectionString!);
-                });
-            }
-            else
-            {
-                services.AddDbContext<ReviewsDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase(_reviewsDatabaseName);
-                    options.UseInternalServiceProvider(inMemoryServiceProvider);
-                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-                });
-            }
+            foreach (var hostedService in outboxHostedServices)
+                services.Remove(hostedService);
 
-            if (_useCatalogPostgresContainer)
-            {
-                services.AddDbContext<CatalogDbContext>(options =>
-                {
-                    options.UseNpgsql(catalogPostgresConnectionString!);
-                });
-            }
-            else
-            {
-                services.AddDbContext<CatalogDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase(_catalogDatabaseName);
-                    options.UseInternalServiceProvider(inMemoryServiceProvider);
-                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-                });
-            }
-
-            services.AddDbContext<IdentityDbContext>(options =>
-            {
-                options.UseInMemoryDatabase(_identityDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
-
-            services.AddDbContext<InventoryDbContext>(options =>
-            {
-                options.UseInMemoryDatabase(_inventoryDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
-
-            if (_useOrderingPostgresContainer)
-            {
-                services.AddDbContext<OrderingDbContext>(options =>
-                {
-                    options.UseNpgsql(orderingPostgresConnectionString!);
-                });
-            }
-            else
-            {
-                services.AddDbContext<OrderingDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase(_orderingDatabaseName);
-                    options.UseInternalServiceProvider(inMemoryServiceProvider);
-                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-                });
-            }
-
-            if (_usePaymentsPostgresContainer)
-            {
-                services.AddDbContext<PaymentsDbContext>(options =>
-                {
-                    options.UseNpgsql(paymentsPostgresConnectionString!);
-                });
-            }
-            else
-            {
-                services.AddDbContext<PaymentsDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase(_paymentsDatabaseName);
-                    options.UseInternalServiceProvider(inMemoryServiceProvider);
-                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-                });
-            }
-
-            if (_usePromotionsPostgresContainer)
-            {
-                services.AddDbContext<PromotionsDbContext>(options =>
-                {
-                    options.UseNpgsql(promotionsPostgresConnectionString!);
-                });
-            }
-            else
-            {
-                services.AddDbContext<PromotionsDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase(_promotionsDatabaseName);
-                    options.UseInternalServiceProvider(inMemoryServiceProvider);
-                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-                });
-            }
-
-            services.AddDbContext<ShoppingDbContext>(options =>
-            {
-                options.UseInMemoryDatabase(_shoppingDatabaseName);
-                options.UseInternalServiceProvider(inMemoryServiceProvider);
-                options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
-
-            services.RemoveAll<IUnitOfWork>();
-            services.AddScoped<IUnitOfWork, TestUnitOfWork>();
-
-            // Replace authentication with conditional test scheme
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = "ConditionalTest";
-                options.DefaultChallengeScheme = "ConditionalTest";
-            }).AddScheme<AuthenticationSchemeOptions, ConditionalTestAuthHandler>("ConditionalTest", _ => { });
-
-            // Ensure DB created and seeded
-            var sp = services.BuildServiceProvider();
-            using (var scope = sp.CreateScope())
-            {
-                var scopedServices = scope.ServiceProvider;
-                var reviewsDb = scopedServices.GetRequiredService<ReviewsDbContext>();
-                if (_useReviewsPostgresContainer)
-                {
-                    reviewsDb.Database.EnsureCreated();
-                }
-                else
-                {
-                    reviewsDb.Database.EnsureCreated();
-                }
-
-                var catalogDb = scopedServices.GetRequiredService<CatalogDbContext>();
-                if (_useCatalogPostgresContainer)
-                {
-                    catalogDb.Database.Migrate();
-                }
-                else
-                {
-                    catalogDb.Database.EnsureCreated();
-                }
-
-                var identityDb = scopedServices.GetRequiredService<IdentityDbContext>();
-                identityDb.Database.EnsureCreated();
-
-                var inventoryDb = scopedServices.GetRequiredService<InventoryDbContext>();
-                inventoryDb.Database.EnsureCreated();
-
-                var orderingDb = scopedServices.GetRequiredService<OrderingDbContext>();
-                if (_useOrderingPostgresContainer)
-                    orderingDb.Database.Migrate();
-                else
-                    orderingDb.Database.EnsureCreated();
-
-                var paymentsDb = scopedServices.GetRequiredService<PaymentsDbContext>();
-                if (_usePaymentsPostgresContainer)
-                    paymentsDb.Database.Migrate();
-                else
-                    paymentsDb.Database.EnsureCreated();
-
-                var promotionsDb = scopedServices.GetRequiredService<PromotionsDbContext>();
-                if (_usePromotionsPostgresContainer)
-                {
-                    promotionsDb.Database.Migrate();
-                }
-                else
-                {
-                    promotionsDb.Database.EnsureCreated();
-                }
-
-                var shoppingDb = scopedServices.GetRequiredService<ShoppingDbContext>();
-                shoppingDb.Database.EnsureCreated();
-
-                // Precomputed once per process to avoid repeated hash cost on startup
-                string passwordHash = _testPasswordHash;
-
-                var userId = Guid.Parse(ConditionalTestAuthHandler.TestUserId);
-                var adminId = Guid.Parse(ConditionalTestAuthHandler.TestAdminUserId);
-
-                identityDb.Users.Add(CreateSeedIdentityUser(
-                    userId,
-                    "integration@test.com",
-                    "Integration",
-                    "User",
-                    SharedKernel.Enums.UserRole.Customer,
-                    passwordHash));
-
-                identityDb.Users.Add(CreateSeedIdentityUser(
-                    adminId,
-                    "admin@test.com",
-                    "Admin",
-                    "User",
-                    SharedKernel.Enums.UserRole.Admin,
-                    passwordHash));
-
-                var categoryId = Guid.Parse("66666666-6666-6666-6666-666666666666");
-                var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-                var inventoryResultForInventoryDb = InventoryItem.Create(productId, 100, 10);
-                if (inventoryResultForInventoryDb.IsSuccess)
-                {
-                    inventoryDb.InventoryItems.Add(inventoryResultForInventoryDb.GetDataOrThrow());
-                }
-
-                var categoryResult = CatalogCategory.Create("Test Category", null, "test-category");
-                if (categoryResult.IsSuccess)
-                {
-                    var category = categoryResult.GetDataOrThrow();
-                    SetEntityId(category, categoryId);
-                    catalogDb.Categories.Add(category);
-                }
-
-                var productResult = CatalogProduct.Create(
-                    "IntegrationProduct",
-                    10.0m,
-                    "USD",
-                    categoryId,
-                    "TEST-SKU-001",
-                    "integration-product");
-                if (productResult.IsSuccess)
-                {
-                    var product = productResult.GetDataOrThrow();
-                    SetEntityId(product, productId);
-                    product.SetStock(100);
-                    product.Activate();
-                    catalogDb.Products.Add(product);
-                }
-
-                orderingDb.Products.Add(new ECommerce.Ordering.Infrastructure.Persistence.ProductReadModel
-                {
-                    Id = productId,
-                    Name = "IntegrationProduct",
-                    Price = 10.0m,
-                    UpdatedAt = DateTime.UtcNow
-                });
-
-                orderingDb.PromoCodes.Add(new PromoCodeReadModel
-                {
-                    Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
-                    Code = "SAVE20",
-                    DiscountValue = 20m,
-                    IsActive = true,
-                    UpdatedAt = DateTime.UtcNow
-                });
-
-                orderingDb.Addresses.Add(new AddressReadModel
-                {
-                    Id = Guid.Parse("77777777-7777-7777-7777-777777777777"),
-                    UserId = userId,
-                    StreetLine1 = "123 Test St",
-                    City = "Testville",
-                    Country = "US",
-                    PostalCode = "12345",
-                    UpdatedAt = DateTime.UtcNow
-                });
-
-                // Seed a pending order in OrderingDbContext so ship/cancel handlers can find it
-                var testOrderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
-                var testAddress = OrderingShippingAddress.Create("123 Test St", "Test City", "US", "12345");
-                var testItems = new List<OrderingOrderItemData>
-                {
-                    new(productId, "IntegrationProduct", 10.00m, 2, null)
-                };
-                var pendingOrderResult = OrderingOrder.Place(userId, testAddress, testItems, 10.00m, 0m, "PAY-REF-TEST", "Card");
-                if (pendingOrderResult.IsSuccess)
-                {
-                    var pendingOrder = pendingOrderResult.GetDataOrThrow();
-                    SetEntityId(pendingOrder, testOrderId);
-                    orderingDb.Orders.Add(pendingOrder);
-                }
-
-                // Seed a shipped order so cancel-shipped tests can find it
-                var shippedOrderId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-                var shippedOrderResult = OrderingOrder.Place(userId, testAddress, testItems, 10.00m, 0m, "PAY-REF-SHIPPED", "Card");
-                if (shippedOrderResult.IsSuccess)
-                {
-                    var shippedOrder = shippedOrderResult.GetDataOrThrow();
-                    SetEntityId(shippedOrder, shippedOrderId);
-                    // Bypass state machine with reflection (test seeding only)
-                    var statusProp = typeof(OrderingOrder).GetProperty("Status", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    statusProp?.SetValue(shippedOrder, OrderingOrderStatus.Shipped);
-                    orderingDb.Orders.Add(shippedOrder);
-                }
-
-                var promoCodeResult = ECommerce.Promotions.Domain.ValueObjects.PromoCodeString.Create("SAVE20");
-                var discountValueResult = ECommerce.Promotions.Domain.ValueObjects.DiscountValue.Percentage(20);
-                var validPeriodResult = ECommerce.Promotions.Domain.ValueObjects.DateRange.Create(
-                    DateTime.UtcNow.AddYears(-1), DateTime.UtcNow.AddYears(10));
-                if (promoCodeResult.IsSuccess && discountValueResult.IsSuccess && validPeriodResult.IsSuccess)
-                {
-                    var promo = ECommerce.Promotions.Domain.Aggregates.PromoCode.PromoCode.Create(
-                        promoCodeResult.GetDataOrThrow(),
-                        discountValueResult.GetDataOrThrow(),
-                        validPeriodResult.GetDataOrThrow());
-                    SetEntityId(promo, _seededPromoCodeId);
-                    promotionsDb.PromoCodes.Add(promo);
-                }
-
-                shoppingDb.Products.Add(new ECommerce.Shopping.Infrastructure.Persistence.ProductReadModel
-                {
-                    Id = productId,
-                    IsActive = true,
-                    Price = 10.0m
-                });
-
-                reviewsDb.Products.Add(new ECommerce.Reviews.Infrastructure.Persistence.ProductReadModel
-                {
-                    Id = productId,
-                    IsActive = true,
-                    UpdatedAt = DateTime.UtcNow
-                });
-
-                shoppingDb.InventoryItems.Add(new InventoryItemReadModel
-                {
-                    ProductId = productId,
-                    Quantity = 100,
-                    UpdatedAt = DateTime.UtcNow
-                });
-
-                var orderId = Guid.Parse(ConditionalTestAuthHandler.TestOrderId);
-                paymentsDb.PaymentOrders.Add(new PaymentOrderReadModel
-                {
-                    Id = Guid.NewGuid(),
-                    OrderId = orderId,
-                    Amount = 100.00m,
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                });
-
-                catalogDb.SaveChanges();
-                identityDb.SaveChanges();
-                inventoryDb.SaveChanges();
-                orderingDb.SaveChanges();
-                paymentsDb.SaveChanges();
-                promotionsDb.SaveChanges();
-                shoppingDb.SaveChanges();
-                reviewsDb.SaveChanges();
-            }
-
-            // Reset auth to enabled by default
-            ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
+            using var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
+            SeedTestData(scope.ServiceProvider);
         });
     }
 
     protected override void Dispose(bool disposing)
     {
-        StopCatalogContainerAsync().GetAwaiter().GetResult();
-        StopReviewsContainerAsync().GetAwaiter().GetResult();
-        StopPromotionsContainerAsync().GetAwaiter().GetResult();
-        StopOrderingContainerAsync().GetAwaiter().GetResult();
-        StopPaymentsContainerAsync().GetAwaiter().GetResult();
+        foreach (var c in AllContainers()) c.StopAsync().GetAwaiter().GetResult();
         base.Dispose(disposing);
     }
 
     public override async ValueTask DisposeAsync()
     {
-        await StopCatalogContainerAsync();
-        await StopReviewsContainerAsync();
-        await StopPromotionsContainerAsync();
-        await StopOrderingContainerAsync();
-        await StopPaymentsContainerAsync();
+        foreach (var c in AllContainers()) await c.StopAsync();
         GC.SuppressFinalize(this);
         await base.DisposeAsync();
     }
 
-    private string TryGetCatalogPostgresConnectionString()
-    {
-        if (_catalogPostgresConnectionString is not null)
-            return _catalogPostgresConnectionString;
+    private IEnumerable<PostgresTestContainer> AllContainers() =>
+        [_catalogContainer, _identityContainer, _inventoryContainer, _orderingContainer,
+         _paymentsContainer, _reviewsContainer, _shoppingContainer, _promotionsContainer];
 
-        lock (_catalogContainerSync)
-        {
-            if (_catalogPostgresConnectionString is not null)
-                return _catalogPostgresConnectionString;
+    // ── Public helpers ────────────────────────────────────────────────────────
 
-            try
-            {
-                _catalogPostgresContainer = new PostgreSqlBuilder()
-                    .WithImage("postgres:16-alpine")
-                    .WithDatabase(_catalogDatabaseName.ToLowerInvariant())
-                    .WithUsername("postgres")
-                    .WithPassword("postgres")
-                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
-                    .WithCleanUp(true)
-                    .Build();
-
-                _catalogPostgresContainer.StartAsync().GetAwaiter().GetResult();
-                _catalogPostgresConnectionString = _catalogPostgresContainer.GetConnectionString();
-                return _catalogPostgresConnectionString;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Catalog PostgreSQL Testcontainer failed to start. " +
-                    "Verify Docker is running and accessible.",
-                    ex);
-            }
-        }
-    }
-
-    private async Task StopCatalogContainerAsync()
-    {
-        if (_catalogPostgresContainer is null)
-            return;
-
-        await _catalogPostgresContainer.DisposeAsync();
-        _catalogPostgresContainer = null;
-        _catalogPostgresConnectionString = null;
-    }
-
-    private string TryGetReviewsPostgresConnectionString()
-    {
-        if (_reviewsPostgresConnectionString is not null)
-            return _reviewsPostgresConnectionString;
-
-        lock (_reviewsContainerSync)
-        {
-            if (_reviewsPostgresConnectionString is not null)
-                return _reviewsPostgresConnectionString;
-
-            try
-            {
-                _reviewsPostgresContainer = new PostgreSqlBuilder()
-                    .WithImage("postgres:16-alpine")
-                    .WithDatabase(_reviewsDatabaseName.ToLowerInvariant())
-                    .WithUsername("postgres")
-                    .WithPassword("postgres")
-                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
-                    .WithCleanUp(true)
-                    .Build();
-
-                _reviewsPostgresContainer.StartAsync().GetAwaiter().GetResult();
-                _reviewsPostgresConnectionString = _reviewsPostgresContainer.GetConnectionString();
-                return _reviewsPostgresConnectionString;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Reviews PostgreSQL Testcontainer failed to start. " +
-                    "Verify Docker is running and accessible.",
-                    ex);
-            }
-        }
-    }
-
-    private async Task StopReviewsContainerAsync()
-    {
-        if (_reviewsPostgresContainer is null)
-            return;
-
-        await _reviewsPostgresContainer.DisposeAsync();
-        _reviewsPostgresContainer = null;
-        _reviewsPostgresConnectionString = null;
-    }
-
-    private string TryGetPromotionsPostgresConnectionString()
-    {
-        if (_promotionsPostgresConnectionString is not null)
-            return _promotionsPostgresConnectionString;
-
-        lock (_promotionsContainerSync)
-        {
-            if (_promotionsPostgresConnectionString is not null)
-                return _promotionsPostgresConnectionString;
-
-            try
-            {
-                _promotionsPostgresContainer = new PostgreSqlBuilder()
-                    .WithImage("postgres:16-alpine")
-                    .WithDatabase(_promotionsDatabaseName.ToLowerInvariant())
-                    .WithUsername("postgres")
-                    .WithPassword("postgres")
-                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
-                    .WithCleanUp(true)
-                    .Build();
-
-                _promotionsPostgresContainer.StartAsync().GetAwaiter().GetResult();
-                _promotionsPostgresConnectionString = _promotionsPostgresContainer.GetConnectionString();
-                return _promotionsPostgresConnectionString;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Promotions PostgreSQL Testcontainer failed to start. " +
-                    "Verify Docker is running and accessible.",
-                    ex);
-            }
-        }
-    }
-
-    private async Task StopPromotionsContainerAsync()
-    {
-        if (_promotionsPostgresContainer is null)
-            return;
-
-        await _promotionsPostgresContainer.DisposeAsync();
-        _promotionsPostgresContainer = null;
-        _promotionsPostgresConnectionString = null;
-    }
-
-    private string TryGetOrderingPostgresConnectionString()
-    {
-        if (_orderingPostgresConnectionString is not null)
-            return _orderingPostgresConnectionString;
-
-        lock (_orderingContainerSync)
-        {
-            if (_orderingPostgresConnectionString is not null)
-                return _orderingPostgresConnectionString;
-
-            try
-            {
-                _orderingPostgresContainer = new PostgreSqlBuilder()
-                    .WithImage("postgres:16-alpine")
-                    .WithDatabase(_orderingDatabaseName.ToLowerInvariant())
-                    .WithUsername("postgres")
-                    .WithPassword("postgres")
-                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
-                    .WithCleanUp(true)
-                    .Build();
-
-                _orderingPostgresContainer.StartAsync().GetAwaiter().GetResult();
-                _orderingPostgresConnectionString = _orderingPostgresContainer.GetConnectionString();
-                return _orderingPostgresConnectionString;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Ordering PostgreSQL Testcontainer failed to start. " +
-                    "Verify Docker is running and accessible.",
-                    ex);
-            }
-        }
-    }
-
-    private async Task StopOrderingContainerAsync()
-    {
-        if (_orderingPostgresContainer is null)
-            return;
-
-        await _orderingPostgresContainer.DisposeAsync();
-        _orderingPostgresContainer = null;
-        _orderingPostgresConnectionString = null;
-    }
-
-    private string TryGetPaymentsPostgresConnectionString()
-    {
-        if (_paymentsPostgresConnectionString is not null)
-            return _paymentsPostgresConnectionString;
-
-        lock (_paymentsContainerSync)
-        {
-            if (_paymentsPostgresConnectionString is not null)
-                return _paymentsPostgresConnectionString;
-
-            try
-            {
-                _paymentsPostgresContainer = new PostgreSqlBuilder()
-                    .WithImage("postgres:16-alpine")
-                    .WithDatabase(_paymentsDatabaseName.ToLowerInvariant())
-                    .WithUsername("postgres")
-                    .WithPassword("postgres")
-                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
-                    .WithCleanUp(true)
-                    .Build();
-
-                _paymentsPostgresContainer.StartAsync().GetAwaiter().GetResult();
-                _paymentsPostgresConnectionString = _paymentsPostgresContainer.GetConnectionString();
-                return _paymentsPostgresConnectionString;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Payments PostgreSQL Testcontainer failed to start. " +
-                    "Verify Docker is running and accessible.",
-                    ex);
-            }
-        }
-    }
-
-    private async Task StopPaymentsContainerAsync()
-    {
-        if (_paymentsPostgresContainer is null)
-            return;
-
-        await _paymentsPostgresContainer.DisposeAsync();
-        _paymentsPostgresContainer = null;
-        _paymentsPostgresConnectionString = null;
-    }
-
-    /// <summary>
-    /// Generates a JWT token for testing with specified roles.
-    /// </summary>
     public static string GenerateJwtToken(string userId = "", params string[] roles)
     {
-        userId = string.IsNullOrEmpty(userId) ? ConditionalTestAuthHandler.TestUserId : userId;
+        userId = string.IsNullOrEmpty(userId) ? TestUserId : userId;
 
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim(ClaimTypes.Name, roles.Contains("Admin") ? "admin@test.com" : "integration@test.com"),
+            new Claim(ClaimTypes.Name,  roles.Contains("Admin") ? "admin@test.com" : "integration@test.com"),
             new Claim(ClaimTypes.Email, roles.Contains("Admin") ? "admin@test.com" : "integration@test.com")
         };
 
-        // Add role claims
         foreach (var role in roles)
-        {
             claims.Add(new Claim(ClaimTypes.Role, role));
-        }
 
-        // If no roles specified, add Customer role
         if (roles.Length == 0)
-        {
             claims.Add(new Claim(ClaimTypes.Role, "Customer"));
-        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretKeyForTestingPurposesOnlyThatIsLongEnough"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -874,14 +196,10 @@ public class TestWebApplicationFactory(
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    /// <summary>
-    /// Creates an authenticated HTTP client (customer user).
-    /// CSRF is skipped in Test environment, so no CSRF token handling needed.
-    /// </summary>
     public HttpClient CreateAuthenticatedClient()
     {
         var client = CreateClient();
-        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestUserId, "Customer");
+        var token = GenerateJwtToken(TestUserId, "Customer");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
         client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
@@ -891,21 +209,17 @@ public class TestWebApplicationFactory(
     public HttpClient CreateAuthenticatedClientNoRedirect()
     {
         var client = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestUserId, "Customer");
+        var token = GenerateJwtToken(TestUserId, "Customer");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
         client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
         return client;
     }
 
-    /// <summary>
-    /// Creates an authenticated HTTP client with admin privileges.
-    /// CSRF is skipped in Test environment, so no CSRF token handling needed.
-    /// </summary>
     public HttpClient CreateAdminClient()
     {
         var client = CreateClient();
-        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestAdminUserId, "Admin");
+        var token = GenerateJwtToken(TestAdminUserId, "Admin");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
         client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
@@ -915,23 +229,124 @@ public class TestWebApplicationFactory(
     public HttpClient CreateAdminClientNoRedirect()
     {
         var client = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        var token = GenerateJwtToken(ConditionalTestAuthHandler.TestAdminUserId, "Admin");
+        var token = GenerateJwtToken(TestAdminUserId, "Admin");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
         client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
         return client;
     }
 
-    /// <summary>
-    /// Creates an unauthenticated HTTP client (no Authorization header).
-    /// This allows [Authorize] decorators to properly reject the request with 401.
-    /// </summary>
     public HttpClient CreateUnauthenticatedClient()
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
         client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
         return client;
+    }
+
+    /// <summary>
+    /// Creates an authenticated client using a brand-new random userId.
+    /// Use this in cart/wishlist/review tests so parallel tests don't share user state.
+    /// </summary>
+    public HttpClient CreateFreshAuthenticatedClient()
+    {
+        var client = CreateClient();
+        var token = GenerateJwtToken(Guid.NewGuid().ToString(), "Customer");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return client;
+    }
+
+    /// <summary>
+    /// Places an order via the API using the seeded product and address, returns the new order id.
+    /// Also seeds a PaymentOrderReadModel in the payments DB because the outbox is disabled in tests.
+    /// Throws if the order cannot be created so the calling test fails with a clear message.
+    /// </summary>
+    public async Task<Guid> PlaceOrderAsync(HttpClient client)
+    {
+        var body = new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                PaymentMethod = "credit_card",
+                ShippingAddress = new
+                {
+                    Id = "77777777-7777-7777-7777-777777777777",
+                    FirstName = "Test", LastName = "User", Phone = "555-0101",
+                    StreetLine1 = "123 Test St", City = "New York",
+                    State = "NY", PostalCode = "10001", Country = "US"
+                },
+                Items = new[] { new { ProductId = "22222222-2222-2222-2222-222222222222", Quantity = 1 } }
+            }),
+            Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("/api/orders", body);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException(
+                $"PlaceOrderAsync failed: {response.StatusCode} — {await response.Content.ReadAsStringAsync()}");
+
+        var json = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var orderId = json.RootElement.GetProperty("data").GetGuid();
+
+        // The outbox dispatcher is removed in tests, so the OrderPlaced integration event never
+        // reaches the payments service. Seed the PaymentOrderReadModel directly so payment
+        // tests can process payments against this order.
+        var userId = ExtractUserIdFromClient(client);
+        using var scope = Services.CreateScope();
+        var paymentsDb = scope.ServiceProvider.GetRequiredService<PaymentsDbContext>();
+        if (!paymentsDb.PaymentOrders.Any(x => x.OrderId == orderId))
+        {
+            paymentsDb.PaymentOrders.Add(new PaymentOrderReadModel
+            {
+                Id = Guid.NewGuid(),
+                OrderId = orderId,
+                Amount = 100.00m,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+            await paymentsDb.SaveChangesAsync();
+        }
+
+        return orderId;
+    }
+
+    /// <summary>
+    /// Processes a credit-card payment for the given order. Succeeds on OK or Conflict (already paid).
+    /// </summary>
+#pragma warning disable CA1822 // kept as instance method for API symmetry with PlaceOrderAsync
+    public async Task ProcessPaymentAsync(HttpClient client, Guid orderId)
+#pragma warning restore CA1822
+    {
+        var body = new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                OrderId = orderId,
+                PaymentMethod = "credit_card",
+                Amount = 100.00m,
+                CardToken = "tok_visa"
+            }),
+            Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("/api/payments/process", body);
+        if (response.StatusCode is not (System.Net.HttpStatusCode.OK or System.Net.HttpStatusCode.Conflict))
+            throw new InvalidOperationException(
+                $"ProcessPaymentAsync failed: {response.StatusCode} — {await response.Content.ReadAsStringAsync()}");
+    }
+
+    private static Guid ExtractUserIdFromClient(HttpClient client)
+    {
+        var authHeader = client.DefaultRequestHeaders.Authorization?.Parameter;
+        if (authHeader is null) return Guid.Parse(TestUserId);
+        try
+        {
+            var token = new JwtSecurityTokenHandler().ReadJwtToken(authHeader);
+            var sub = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(sub, out var id) ? id : Guid.Parse(TestUserId);
+        }
+        catch
+        {
+            return Guid.Parse(TestUserId);
+        }
     }
 
     public HttpClient CreateUnauthenticatedClientNoRedirect()
@@ -942,15 +357,281 @@ public class TestWebApplicationFactory(
         return client;
     }
 
-    /// <summary>
-    /// Resets the authentication state to default (enabled, customer role).
-    /// Call this in test cleanup to prevent state leakage to other tests.
-    /// </summary>
-    public static void ResetAuthState()
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    // WebApplicationFactory.EnsureServer() has no lock; parallel test classes can race to build
+    // the host concurrently and call SeedTestData multiple times on the same fresh databases.
+    // This guard ensures migrations and seeding run exactly once.
+    private static readonly object _seedLock = new();
+    private static volatile bool _seeded;
+
+    private static void SeedTestData(IServiceProvider services)
     {
-        ConditionalTestAuthHandler.IsAuthenticationEnabled = true;
-        ConditionalTestAuthHandler.CurrentUserId = ConditionalTestAuthHandler.TestUserId;
-        ConditionalTestAuthHandler.CurrentUserRole = "Customer";
+        lock (_seedLock)
+        {
+            if (_seeded) return;
+
+        var reviewsDb = services.GetRequiredService<ReviewsDbContext>();
+        var catalogDb = services.GetRequiredService<CatalogDbContext>();
+        var identityDb = services.GetRequiredService<IdentityDbContext>();
+        var inventoryDb = services.GetRequiredService<InventoryDbContext>();
+        var orderingDb = services.GetRequiredService<OrderingDbContext>();
+        var paymentsDb = services.GetRequiredService<PaymentsDbContext>();
+        var promotionsDb = services.GetRequiredService<PromotionsDbContext>();
+        var shoppingDb = services.GetRequiredService<ShoppingDbContext>();
+
+        catalogDb.Database.Migrate();
+        identityDb.Database.Migrate();
+        inventoryDb.Database.Migrate();
+        orderingDb.Database.Migrate();
+        paymentsDb.Database.Migrate();
+        reviewsDb.Database.Migrate();
+        shoppingDb.Database.Migrate();
+        promotionsDb.Database.Migrate();
+
+        // Shopping migration maps RowVersion as non-null bytea without a database generator.
+        // Set a deterministic default in test databases so cart inserts can succeed.
+        shoppingDb.Database.ExecuteSqlRaw(@"ALTER TABLE shopping.""Carts"" ALTER COLUMN ""RowVersion"" SET DEFAULT decode('00', 'hex');");
+
+        var userId = Guid.Parse(TestUserId);
+        var adminId = Guid.Parse(TestAdminUserId);
+        var categoryId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+        var productId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var orderingPromoCodeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+        var orderingAddressId = Guid.Parse("77777777-7777-7777-7777-777777777777");
+
+        if (!identityDb.Users.Any(x => x.Id == userId))
+            identityDb.Users.Add(CreateSeedIdentityUser(userId, "integration@test.com", "Integration", "User", SharedKernel.Enums.UserRole.Customer, _testPasswordHash));
+
+        if (!identityDb.Users.Any(x => x.Id == adminId))
+            identityDb.Users.Add(CreateSeedIdentityUser(adminId, "admin@test.com", "Admin", "User", SharedKernel.Enums.UserRole.Admin, _testPasswordHash));
+
+        var inventoryResult = InventoryItem.Create(productId, 100, 10);
+        if (inventoryResult.IsSuccess && !inventoryDb.InventoryItems.Any(x => x.ProductId == productId))
+            inventoryDb.InventoryItems.Add(inventoryResult.GetDataOrThrow());
+
+        var categoryResult = CatalogCategory.Create("Test Category", null, "test-category");
+        if (categoryResult.IsSuccess && !catalogDb.Categories.Any(x => x.Id == categoryId))
+        {
+            var category = categoryResult.GetDataOrThrow();
+            SetEntityId(category, categoryId);
+            catalogDb.Categories.Add(category);
+        }
+
+        var productResult = CatalogProduct.Create("IntegrationProduct", 10.0m, "USD", categoryId, "TEST-SKU-001", "integration-product");
+        if (productResult.IsSuccess && !catalogDb.Products.Any(x => x.Id == productId))
+        {
+            var product = productResult.GetDataOrThrow();
+            SetEntityId(product, productId);
+            product.SetStock(100);
+            product.Activate();
+            catalogDb.Products.Add(product);
+        }
+
+        if (!orderingDb.Products.Any(x => x.Id == productId))
+        {
+            orderingDb.Products.Add(new OrderingProductReadModel
+            {
+                Id = productId,
+                Name = "IntegrationProduct",
+                Price = 10.0m,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        if (!orderingDb.PromoCodes.Any(x => x.Id == orderingPromoCodeId))
+        {
+            orderingDb.PromoCodes.Add(new PromoCodeReadModel
+            {
+                Id = orderingPromoCodeId,
+                Code = "SAVE20",
+                DiscountValue = 20m,
+                IsActive = true,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        if (!orderingDb.Addresses.Any(x => x.Id == orderingAddressId))
+        {
+            orderingDb.Addresses.Add(new AddressReadModel
+            {
+                Id = orderingAddressId,
+                UserId = userId,
+                StreetLine1 = "123 Test St",
+                City = "Testville",
+                Country = "US",
+                PostalCode = "12345",
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+
+        var promoCodeResult = PromotionsPromoCodeString.Create("SAVE20");
+        var discountValueResult = PromotionsDiscountValue.Percentage(20);
+        var validPeriodResult = PromotionsDateRange.Create(
+            DateTime.UtcNow.AddYears(-1), DateTime.UtcNow.AddYears(10));
+        if (promoCodeResult.IsSuccess && discountValueResult.IsSuccess && validPeriodResult.IsSuccess && !promotionsDb.PromoCodes.Any(x => x.Id == _seededPromoCodeId))
+        {
+            var promo = PromotionsPromoCode.Create(
+                promoCodeResult.GetDataOrThrow(),
+                discountValueResult.GetDataOrThrow(),
+                validPeriodResult.GetDataOrThrow());
+            SetEntityId(promo, _seededPromoCodeId);
+            promotionsDb.PromoCodes.Add(promo);
+        }
+
+        if (!shoppingDb.Products.Any(x => x.Id == productId))
+        {
+            shoppingDb.Products.Add(new ShoppingProductReadModel
+            {
+                Id = productId,
+                IsActive = true,
+                Price = 10.0m
+            });
+        }
+
+        if (!reviewsDb.Products.Any(x => x.Id == productId))
+        {
+            reviewsDb.Products.Add(new ReviewsProductReadModel
+            {
+                Id = productId,
+                IsActive = true,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        if (!shoppingDb.InventoryItems.Any(x => x.ProductId == productId))
+        {
+            shoppingDb.InventoryItems.Add(new InventoryItemReadModel
+            {
+                ProductId = productId,
+                Quantity = 100,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        orderingDb.SaveChanges();
+        catalogDb.SaveChanges();
+        identityDb.SaveChanges();
+        inventoryDb.SaveChanges();
+        paymentsDb.SaveChanges();
+        promotionsDb.SaveChanges();
+        shoppingDb.SaveChanges();
+        reviewsDb.SaveChanges();
+
+            _seeded = true;
+        } // end lock
+    }
+
+    private static void SetEntityId(object entity, Guid id)
+    {
+        var property = entity.GetType().BaseType?.GetProperty("Id") ?? entity.GetType().GetProperty("Id");
+        property?.SetValue(entity, id);
+    }
+
+    private static IdentityUser CreateSeedIdentityUser(
+        Guid id, string email, string firstName, string lastName,
+        SharedKernel.Enums.UserRole role, string passwordHash)
+    {
+        var user = IdentityUser.Register(email, firstName, lastName, "TestPassword123!", new PrecomputedHasher(passwordHash)).GetDataOrThrow();
+        SetEntityId(user, id);
+        if (!string.IsNullOrWhiteSpace(user.EmailVerificationToken))
+            user.VerifyEmail(user.EmailVerificationToken);
+        user.GetType().GetProperty(nameof(IdentityUser.Role))?.SetValue(user, role);
+        return user;
+    }
+
+    // ── Inner classes ─────────────────────────────────────────────────────────
+
+    private sealed class PostgresTestContainer(string databaseName, string serviceName)
+    {
+        private static readonly object _sharedSync = new();
+        private static readonly Dictionary<string, PostgreSqlContainer> _sharedContainers = new(StringComparer.OrdinalIgnoreCase);
+
+        private string? _connectionString;
+        private readonly object _instanceSync = new();
+
+        public string GetConnectionString()
+        {
+            if (_connectionString is not null) return _connectionString;
+            lock (_instanceSync)
+            {
+                if (_connectionString is not null) return _connectionString;
+                try
+                {
+                    var container = GetOrStartSharedContainer(serviceName);
+                    var sharedConnectionString = container.GetConnectionString();
+
+                    EnsureDatabaseExists(sharedConnectionString, databaseName);
+
+                    var connectionStringBuilder = new NpgsqlConnectionStringBuilder(sharedConnectionString)
+                    {
+                        Database = databaseName
+                    };
+
+                    _connectionString = connectionStringBuilder.ConnectionString;
+                    return _connectionString;
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"{serviceName} PostgreSQL Testcontainer failed to start. " +
+                        "Verify Docker is running and accessible.", ex);
+                }
+            }
+        }
+
+        public async Task StopAsync()
+        {
+            _connectionString = null;
+            await Task.CompletedTask;
+        }
+
+        private static PostgreSqlContainer GetOrStartSharedContainer(string serviceName)
+        {
+            lock (_sharedSync)
+            {
+                if (_sharedContainers.TryGetValue(serviceName, out var existingContainer))
+                    return existingContainer;
+
+                var container = new PostgreSqlBuilder()
+                    .WithImage("postgres:16-alpine")
+                    .WithDatabase("postgres")
+                    .WithUsername("postgres")
+                    .WithPassword("postgres")
+                    .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))
+                    .WithCleanUp(true)
+                    .Build();
+
+                container.StartAsync().GetAwaiter().GetResult();
+                _sharedContainers[serviceName] = container;
+                return container;
+            }
+        }
+
+        private static void EnsureDatabaseExists(string sharedConnectionString, string databaseName)
+        {
+            var adminConnectionString = new NpgsqlConnectionStringBuilder(sharedConnectionString)
+            {
+                Database = "postgres"
+            }.ConnectionString;
+
+            using var connection = new NpgsqlConnection(adminConnectionString);
+            connection.Open();
+
+            var safeDatabaseName = databaseName.Replace("\"", "\"\"");
+            using var command = connection.CreateCommand();
+            command.CommandText = $"CREATE DATABASE \"{safeDatabaseName}\"";
+
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (PostgresException ex) when (ex.SqlState == "42P04")
+            {
+                // Database already exists from a retry path.
+            }
+        }
     }
 
     private sealed class NoOpEmailService : IEmailService
@@ -971,20 +652,9 @@ public class TestWebApplicationFactory(
         public bool VerifySignature(string payload, string signature) => true;
     }
 
-    private sealed class NoOpInventoryProjectionEventPublisher : ECommerce.Inventory.Application.Interfaces.IInventoryProjectionEventPublisher
+    private sealed class NoOpInventoryProjectionEventPublisher : IInventoryProjectionEventPublisher
     {
-        public Task PublishStockProjectionUpdatedAsync(
-            Guid productId,
-            int quantity,
-            string reason,
-            CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-    }
-
-    private static void SetEntityId(object entity, Guid id)
-    {
-        var property = entity.GetType().BaseType?.GetProperty("Id") ?? entity.GetType().GetProperty("Id");
-        property?.SetValue(entity, id);
+        public Task PublishStockProjectionUpdatedAsync(Guid productId, int quantity, string reason, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private sealed class PrecomputedHasher(string hash) : IPasswordHasher
@@ -992,76 +662,4 @@ public class TestWebApplicationFactory(
         public string Hash(string _) => hash;
         public bool Verify(string raw, string h) => BCrypt.Net.BCrypt.Verify(raw, h);
     }
-
-    private static IdentityUser CreateSeedIdentityUser(
-        Guid id,
-        string email,
-        string firstName,
-        string lastName,
-        SharedKernel.Enums.UserRole role,
-        string passwordHash)
-    {
-        var user = IdentityUser.Register(email, firstName, lastName, "TestPassword123!", new PrecomputedHasher(passwordHash)).GetDataOrThrow();
-
-        SetEntityId(user, id);
-
-        if (!string.IsNullOrWhiteSpace(user.EmailVerificationToken))
-            user.VerifyEmail(user.EmailVerificationToken);
-
-        // Tests seed both customer and admin identities.
-        var roleProperty = user.GetType().GetProperty(nameof(IdentityUser.Role));
-        roleProperty?.SetValue(user, role);
-
-        return user;
-    }
-
-    private sealed class TestUnitOfWork(IServiceProvider serviceProvider) : IUnitOfWork
-    {
-        private readonly IServiceProvider _serviceProvider = serviceProvider;
-
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => SaveAllAsync(cancellationToken);
-
-        public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-
-        public Task CommitTransactionAsync(CancellationToken cancellationToken = default)
-            => SaveAllAsync(cancellationToken);
-
-        public Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-
-        public bool HasActiveTransaction => false;
-
-        public void Dispose()
-        {
-        }
-
-        private async Task<int> SaveAllAsync(CancellationToken cancellationToken)
-        {
-            var total = 0;
-
-            total += await SaveIfAvailableAsync<IdentityDbContext>(cancellationToken);
-            total += await SaveIfAvailableAsync<ReviewsDbContext>(cancellationToken);
-            total += await SaveIfAvailableAsync<CatalogDbContext>(cancellationToken);
-            total += await SaveIfAvailableAsync<InventoryDbContext>(cancellationToken);
-            total += await SaveIfAvailableAsync<OrderingDbContext>(cancellationToken);
-            total += await SaveIfAvailableAsync<PaymentsDbContext>(cancellationToken);
-            total += await SaveIfAvailableAsync<PromotionsDbContext>(cancellationToken);
-            total += await SaveIfAvailableAsync<ShoppingDbContext>(cancellationToken);
-
-            return total;
-        }
-
-        private async Task<int> SaveIfAvailableAsync<TDbContext>(CancellationToken cancellationToken)
-            where TDbContext : DbContext
-        {
-            var dbContext = _serviceProvider.GetService<TDbContext>();
-            if (dbContext is null)
-                return 0;
-
-            return await dbContext.SaveChangesAsync(cancellationToken);
-        }
-    }
 }
-
