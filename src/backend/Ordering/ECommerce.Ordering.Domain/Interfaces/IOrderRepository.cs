@@ -8,7 +8,10 @@ public interface IOrderRepository
     Task<Order?> GetByIdWithItemsAsync(Guid id, CancellationToken ct = default);
     Task<List<Order>> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     Task<List<Order>> GetAllAsync(CancellationToken ct = default);
+    Task<List<Order>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<List<Order>> GetPagedByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken ct = default);
     Task<int> GetTotalOrdersCountAsync(CancellationToken ct = default);
+    Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken ct = default);
     Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default);
     Task<Dictionary<DateTime, int>> GetOrdersTrendAsync(int days, CancellationToken ct = default);
     Task<Dictionary<DateTime, decimal>> GetRevenueTrendAsync(int days, CancellationToken ct = default);

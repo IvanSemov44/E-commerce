@@ -23,9 +23,10 @@ public class PlaceOrderCommandHandler(
         if (products.Count != productIds.Count)
             return Result<Guid>.Fail(OrderingApplicationErrors.ProductsUnavailable);
 
+        var productMap = products.ToDictionary(p => p.ProductId);
         var orderItems = command.CartItems.ConvertAll(ci =>
         {
-            var p = products.First(x => x.ProductId == ci.ProductId);
+            var p = productMap[ci.ProductId];
             return new OrderItemData(p.ProductId, p.ProductName, p.UnitPrice, ci.Quantity, p.ImageUrl);
         });
 
@@ -50,13 +51,17 @@ public class PlaceOrderCommandHandler(
         var shippingAddress = ShippingAddress.Create(
             address.Street, address.City, address.Country, address.PostalCode);
 
+        var subtotal = orderItems.Sum(i => i.UnitPrice * i.Quantity);
+        var taxAmount = subtotal * command.TaxRate;
+        var paymentReference = Guid.NewGuid().ToString();
+
         var orderResult = Order.Place(
             userId.Value,
             shippingAddress,
             orderItems,
             command.ShippingCost,
-            command.TaxAmount,
-            command.PaymentReference,
+            taxAmount,
+            paymentReference,
             command.PaymentMethod,
             discountAmount,
             promoCodeId);

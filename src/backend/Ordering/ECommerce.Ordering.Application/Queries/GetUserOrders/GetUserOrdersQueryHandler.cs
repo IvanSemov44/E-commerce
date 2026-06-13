@@ -2,12 +2,18 @@
 
 namespace ECommerce.Ordering.Application.Queries.GetUserOrders;
 
-public class GetUserOrdersQueryHandler(IOrderRepository orders) : IRequestHandler<GetUserOrdersQuery, Result<List<OrderDto>>>
+public class GetUserOrdersQueryHandler(IOrderRepository orders) : IRequestHandler<GetUserOrdersQuery, Result<PaginatedResult<OrderDto>>>
 {
-    public async Task<Result<List<OrderDto>>> Handle(GetUserOrdersQuery request, CancellationToken ct)
+    public async Task<Result<PaginatedResult<OrderDto>>> Handle(GetUserOrdersQuery request, CancellationToken ct)
     {
-        var ordersList = await orders.GetByUserIdAsync(request.UserId, ct);
-        var dtos = ordersList.Select(o => o.ToDto()).ToList();
-        return Result<List<OrderDto>>.Ok(dtos);
+        var items = await orders.GetPagedByUserIdAsync(request.UserId, request.Page, request.PageSize, ct);
+        var total = await orders.GetByUserIdCountAsync(request.UserId, ct);
+        return Result<PaginatedResult<OrderDto>>.Ok(new PaginatedResult<OrderDto>
+        {
+            Items = items.Select(o => o.ToDto()).ToList(),
+            TotalCount = total,
+            Page = request.Page,
+            PageSize = request.PageSize
+        });
     }
 }

@@ -45,8 +45,32 @@ public sealed class FakeOrderRepository : IOrderRepository
         return Task.FromResult(orders);
     }
 
+    public Task<List<Order>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+    {
+        var orders = _store.Values
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+        return Task.FromResult(orders);
+    }
+
+    public Task<List<Order>> GetPagedByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken ct = default)
+    {
+        var orders = _store.Values
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+        return Task.FromResult(orders);
+    }
+
     public Task<int> GetTotalOrdersCountAsync(CancellationToken ct = default)
         => Task.FromResult(_store.Count);
+
+    public Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken ct = default)
+        => Task.FromResult(_store.Values.Count(o => o.UserId == userId));
 
     public Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
         => Task.FromResult(_store.Values.Sum(o => o.Total));

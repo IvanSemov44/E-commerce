@@ -24,8 +24,26 @@ public class OrderRepository(OrderingDbContext _db) : IOrderRepository
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync(ct);
 
+    public Task<List<Order>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+        => _db.Orders.AsNoTracking()
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+    public Task<List<Order>> GetPagedByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken ct = default)
+        => _db.Orders.AsNoTracking()
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
     public Task<int> GetTotalOrdersCountAsync(CancellationToken ct = default)
         => _db.Orders.AsNoTracking().CountAsync(ct);
+
+    public Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken ct = default)
+        => _db.Orders.AsNoTracking().Where(o => o.UserId == userId).CountAsync(ct);
 
     public async Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
         => await _db.Orders.AsNoTracking().SumAsync(o => (decimal?)o.Total, ct) ?? 0m;

@@ -4,10 +4,10 @@ namespace ECommerce.Ordering.Domain.ValueObjects;
 
 public sealed class ShippingAddress : ValueObject
 {
-    public string Street { get; } = null!;
-    public string City { get; } = null!;
-    public string Country { get; } = null!;
-    public string? PostalCode { get; }
+    public string Street { get; private set; } = null!;
+    public string City { get; private set; } = null!;
+    public string Country { get; private set; } = null!;
+    public string? PostalCode { get; private set; }
 
     private ShippingAddress() { }
     private ShippingAddress(string street, string city, string country, string? postalCode)

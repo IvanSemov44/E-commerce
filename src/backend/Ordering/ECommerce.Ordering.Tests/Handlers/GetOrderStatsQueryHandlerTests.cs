@@ -25,8 +25,26 @@ public class GetOrderStatsQueryHandlerTests
         public Task<List<Order>> GetAllAsync(CancellationToken ct = default)
             => Task.FromResult(_store.ToList());
 
+        public Task<List<Order>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+            => Task.FromResult(_store
+                .OrderByDescending(o => o.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList());
+
+        public Task<List<Order>> GetPagedByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken ct = default)
+            => Task.FromResult(_store
+                .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList());
+
         public Task<int> GetTotalOrdersCountAsync(CancellationToken ct = default)
             => Task.FromResult(_store.Count);
+
+        public Task<int> GetByUserIdCountAsync(Guid userId, CancellationToken ct = default)
+            => Task.FromResult(_store.Count(o => o.UserId == userId));
 
         public Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
             => Task.FromResult(_store.Sum(x => x.Total));

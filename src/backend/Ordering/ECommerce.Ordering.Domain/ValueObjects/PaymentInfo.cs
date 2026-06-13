@@ -6,10 +6,10 @@ namespace ECommerce.Ordering.Domain.ValueObjects;
 
 public sealed class PaymentInfo : ValueObject
 {
-    public string PaymentReference { get; } = null!;
-    public string PaymentMethod { get; } = null!;
-    public decimal PaidAmount { get; }
-    public DateTime PaidAt { get; }
+    public string PaymentReference { get; private set; } = null!;
+    public string PaymentMethod { get; private set; } = null!;
+    public decimal PaidAmount { get; private set; }
+    public DateTime PaidAt { get; private set; }
 
     private PaymentInfo() { }
     private PaymentInfo(string reference, string method, decimal amount, DateTime paidAt)
