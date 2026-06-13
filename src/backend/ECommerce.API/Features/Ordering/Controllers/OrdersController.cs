@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using MediatR;
 using ECommerce.Ordering.Application.DTOs;
+
 using ECommerce.Contracts.DTOs.Common;
+using ECommerce.SharedKernel.Pagination;
 using ECommerce.Contracts.DTOs.Orders;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Ordering.Application.Commands.PlaceOrder;
@@ -189,7 +191,7 @@ public class OrdersController(
             paged => Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(
                 new PaginatedResult<OrderDetailDto>
                 {
-                    Items = paged.Items.ConvertAll(MapToOrderDetailDto),
+                    Items = paged.Items.Select(MapToOrderDetailDto).ToList(),
                     TotalCount = paged.TotalCount,
                     Page = paged.Page,
                     PageSize = paged.PageSize
@@ -222,7 +224,7 @@ public class OrdersController(
             paged => Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(
                 new PaginatedResult<OrderDetailDto>
                 {
-                    Items = paged.Items.ConvertAll(MapToOrderDetailDto),
+                    Items = paged.Items.Select(MapToOrderDetailDto).ToList(),
                     TotalCount = paged.TotalCount,
                     Page = paged.Page,
                     PageSize = paged.PageSize
