@@ -258,8 +258,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// </summary>
     /// <param name="command">Product creation command payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Redirect to the created product resource.</returns>
-    /// <response code="302">Redirect to product details.</response>
+    /// <returns>The ID of the created product.</returns>
+    /// <response code="201">Product created successfully.</response>
     /// <response code="400">Invalid product data.</response>
     /// <response code="401">User is not authenticated.</response>
     /// <response code="403">User does not have permission to create products.</response>
@@ -267,7 +267,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
@@ -277,7 +277,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command, ct);
         return result.ToActionResult(
-            id => RedirectToAction(nameof(GetProductById), new { id }),
+            id => CreatedAtAction(nameof(GetProductById), new { id },
+                ApiResponse<Guid>.Ok(id, "Product created")),
             Problem);
     }
 
@@ -296,7 +297,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable product data (validation errors).</response>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateProduct(
@@ -306,7 +307,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
         return result.ToActionResult(
-            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
+            productId => Ok(ApiResponse<Guid>.Ok(productId, "Product updated")),
             Problem);
     }
 
@@ -347,7 +348,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable price data (validation errors).</response>
     [HttpPut("{id:guid}/price")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateProductPrice(
@@ -357,7 +358,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command with { Id = id }, ct);
         return result.ToActionResult(
-            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
+            productId => Ok(ApiResponse<Guid>.Ok(productId, "Product price updated")),
             Problem);
     }
 
@@ -440,7 +441,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="422">Unprocessable image data (e.g. max images reached).</response>
     [HttpPost("{id:guid}/images")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> AddProductImage(
@@ -450,7 +451,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     {
         var result = await _mediator.Send(command with { ProductId = id }, ct);
         return result.ToActionResult(
-            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
+            productId => Ok(ApiResponse<Guid>.Ok(productId, "Image added")),
             Problem);
     }
 
@@ -465,16 +466,13 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     /// <response code="404">Product or image not found.</response>
     [HttpPost("{id:guid}/images/{imageId:guid}/primary")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetPrimaryImage(Guid id, Guid imageId, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new SetPrimaryImageCommand(id, imageId), ct);
         return result.ToActionResult(
-            productId => RedirectToAction(nameof(GetProductById), new { id = productId }),
+            productId => Ok(ApiResponse<Guid>.Ok(productId, "Primary image set")),
             Problem);
     }
 }
-
-
-

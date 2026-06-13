@@ -1,4 +1,5 @@
-﻿using ECommerce.API.ActionFilters;
+using ECommerce.API.ActionFilters;
+using ECommerce.API.Common.Extensions;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Shopping.Application.DTOs;
 using ECommerce.SharedKernel.Interfaces;
@@ -32,10 +33,9 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             return Unauthorized(ApiResponse<CartDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await _mediator.Send(new GetCartQuery(userId, null), cancellationToken);
-        if (!result.IsSuccess)
-            return MapError(result.GetErrorOrThrow());
-
-        return Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart retrieved successfully"));
+        return result.ToActionResult(
+            data => Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")),
+            MapError);
     }
 
     [HttpPost("get-or-create")]
@@ -44,10 +44,9 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
     public async Task<IActionResult> GetOrCreateCart(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetCartQuery(_currentUser.UserIdOrNull, _currentUser.SessionId), cancellationToken);
-        if (!result.IsSuccess)
-            return MapError(result.GetErrorOrThrow());
-
-        return Ok(ApiResponse<CartDto>.Ok(result.GetDataOrThrow(), "Cart retrieved successfully"));
+        return result.ToActionResult(
+            data => Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")),
+            MapError);
     }
 
     [HttpPost("add-item")]
@@ -62,11 +61,13 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             new AddToCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, dto.ProductId, dto.Quantity),
             cancellationToken);
 
-        if (!result.IsSuccess)
-            return MapError(result.GetErrorOrThrow());
-
-        _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
-        return NoContent();
+        return result.ToActionResult(
+            () =>
+            {
+                _logger.LogInformation("Item added to cart: ProductId={ProductId}, Quantity={Quantity}", dto.ProductId, dto.Quantity);
+                return NoContent();
+            },
+            MapError);
     }
 
     [HttpPut("items/{cartItemId:guid}")]
@@ -81,11 +82,13 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             new UpdateCartItemQuantityCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, cartItemId, dto.Quantity),
             cancellationToken);
 
-        if (!result.IsSuccess)
-            return MapError(result.GetErrorOrThrow());
-
-        _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
-        return NoContent();
+        return result.ToActionResult(
+            () =>
+            {
+                _logger.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, dto.Quantity);
+                return NoContent();
+            },
+            MapError);
     }
 
     [HttpDelete("items/{cartItemId:guid}")]
@@ -98,11 +101,13 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             new RemoveFromCartCommand(_currentUser.UserIdOrNull, _currentUser.SessionId, cartItemId),
             cancellationToken);
 
-        if (!result.IsSuccess)
-            return MapError(result.GetErrorOrThrow());
-
-        _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
-        return NoContent();
+        return result.ToActionResult(
+            () =>
+            {
+                _logger.LogInformation("Item removed from cart: CartItemId={CartItemId}", cartItemId);
+                return NoContent();
+            },
+            MapError);
     }
 
     [HttpDelete]
@@ -122,6 +127,6 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code)),
         "FORBIDDEN"
             => StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(error.Message, error.Code)),
-        _ => StatusCode(StatusCodes.Status500InternalServerError, ApiResponse<object>.Failure(error.Message, error.Code))
+        _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
     };
 }

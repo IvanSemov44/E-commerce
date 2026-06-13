@@ -1,11 +1,15 @@
-﻿using ECommerce.API.ActionFilters;
+﻿using System.Collections.Frozen;
+using ECommerce.API.ActionFilters;
+using ECommerce.API.Common.Configuration;
+using ECommerce.API.Common.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using MediatR;
 using ECommerce.Ordering.Application.DTOs;
 using ECommerce.Contracts.DTOs.Common;
+using ECommerce.Contracts.DTOs.Orders;
 using ECommerce.SharedKernel.Interfaces;
-using ECommerce.SharedKernel.Enums;
 using ECommerce.Ordering.Application.Commands.PlaceOrder;
 using ECommerce.Ordering.Application.Commands.ConfirmOrder;
 using ECommerce.Ordering.Application.Commands.ShipOrder;
@@ -27,13 +31,36 @@ namespace ECommerce.API.Features.Ordering.Controllers;
 public class OrdersController(
     ICurrentUserService currentUser,
     IMediator mediator,
-    ILogger<OrdersController> logger) : ControllerBase
+    ILogger<OrdersController> logger,
+    IOptions<BusinessRulesOptions> businessRules) : ControllerBase
 {
-    private const string IdempotencyHeaderName = "Idempotency-Key";
+    private static readonly FrozenSet<string> _notFound = FrozenSet.Create(
+        "ORDER_NOT_FOUND", "PROMO_CODE_NOT_FOUND", "ADDRESS_NOT_FOUND");
+
+    private static readonly FrozenSet<string> _unauthorized = FrozenSet.Create(
+        "UNAUTHORIZED");
+
+    private static readonly FrozenSet<string> _forbidden = FrozenSet.Create(
+        "FORBIDDEN");
+
+    private static readonly FrozenSet<string> _unprocessable = FrozenSet.Create(
+        "ORDER_EMPTY", "ORDER_TOTAL_INVALID", "ORDER_INVALID_TRANSITION",
+        "PAYMENT_REF_EMPTY", "PAYMENT_AMOUNT_INVALID", "ORDER_STATUS_UNKNOWN");
 
     private readonly ICurrentUserService _currentUser = currentUser;
     private readonly ILogger<OrdersController> _logger = logger;
     private readonly IMediator _mediator = mediator;
+    private readonly BusinessRulesOptions _businessRules = businessRules.Value;
+
+    private IActionResult Problem(DomainError error)
+    {
+        var body = ApiResponse<object>.Failure(error.Message, error.Code);
+        if (_notFound.Contains(error.Code))      return NotFound(body);
+        if (_unauthorized.Contains(error.Code))  return Unauthorized(body);
+        if (_forbidden.Contains(error.Code))     return StatusCode(StatusCodes.Status403Forbidden, body);
+        if (_unprocessable.Contains(error.Code)) return UnprocessableEntity(body);
+        return BadRequest(body);
+    }
 
     /// <summary>
     /// Creates a new order using MediatR.
@@ -59,31 +86,17 @@ public class OrdersController(
             ShippingAddressId = dto.ShippingAddress.Id ?? Guid.NewGuid(),
             CartItems = dto.Items?.Select(i => new CartItemInput(Guid.Parse(i.ProductId), i.Quantity)).ToList() ?? new(),
             PaymentMethod = dto.PaymentMethod ?? "card",
-            PaymentReference = Guid.NewGuid().ToString(),
             PromoCode = dto.PromoCode,
-            ShippingCost = 10m,
-            TaxAmount = 0m
+            ShippingCost = _businessRules.StandardShippingCost,
+            TaxRate = _businessRules.TaxRate
         };
 
         var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is Result<Guid>.Success success)
-        {
-            return CreatedAtAction(nameof(GetOrderById), new { id = success.Data },
-                ApiResponse<Guid>.Ok(success.Data, "Order created successfully"));
-        }
-
-        if (result is Result<Guid>.Failure failure)
-        {
-            var statusCode = failure.Error.Code switch
-            {
-                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
-                _ => StatusCodes.Status400BadRequest
-            };
-            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
-        }
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return result.ToActionResult(
+            id => CreatedAtAction(nameof(GetOrderById), new { id },
+                ApiResponse<Guid>.Ok(id, "Order created successfully")),
+            Problem);
     }
 
     /// <summary>
@@ -109,21 +122,9 @@ public class OrdersController(
         var query = new OrderingQueries.GetOrderById.GetOrderByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is Result<OrderDto>.Success success)
-            return Ok(ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(success.Data), "Order retrieved successfully"));
-
-        if (result is Result<OrderDto>.Failure failure)
-        {
-            var statusCode = failure.Error.Code switch
-            {
-                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
-                "FORBIDDEN" => StatusCodes.Status403Forbidden,
-                _ => StatusCodes.Status400BadRequest
-            };
-            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
-        }
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return result.ToActionResult(
+            data => Ok(ApiResponse<OrderDetailDto>.Ok(MapToOrderDetailDto(data), "Order retrieved successfully")),
+            Problem);
     }
 
     /// <summary>
@@ -140,20 +141,9 @@ public class OrdersController(
         var cmd = new ConfirmOrderCommand(id);
         var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is Result<Guid>.Success success)
-            return Ok(ApiResponse<Guid>.Ok(success.Data, "Order confirmed"));
-
-        if (result is Result<Guid>.Failure failure)
-        {
-            var statusCode = failure.Error.Code switch
-            {
-                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
-                _ => StatusCodes.Status422UnprocessableEntity
-            };
-            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
-        }
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return result.ToActionResult(
+            id => Ok(ApiResponse<Guid>.Ok(id, "Order confirmed")),
+            Problem);
     }
 
     /// <summary>
@@ -171,20 +161,9 @@ public class OrdersController(
         var cmd = new ShipOrderCommand(id, dto.TrackingNumber);
         var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is Result<Guid>.Success success)
-            return Ok(ApiResponse<Guid>.Ok(success.Data, "Order shipped"));
-
-        if (result is Result<Guid>.Failure failure)
-        {
-            var statusCode = failure.Error.Code switch
-            {
-                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
-                _ => StatusCodes.Status422UnprocessableEntity
-            };
-            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
-        }
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return result.ToActionResult(
+            id => Ok(ApiResponse<Guid>.Ok(id, "Order shipped")),
+            Problem);
     }
 
     /// <summary>
@@ -203,28 +182,19 @@ public class OrdersController(
     {
         _logger.LogInformation("Retrieving all orders, page {Page}", page);
 
-        var query = new OrderingQueries.GetOrders.GetOrdersQuery();
+        var query = new OrderingQueries.GetOrders.GetOrdersQuery(page, pageSize);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is Result<List<OrderDto>>.Success success)
-        {
-            var allOrders = success.Data.Select(MapToOrderDetailDto).ToList();
-            var total = allOrders.Count;
-            var paginatedItems = allOrders.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            var paginatedResult = new PaginatedResult<OrderDetailDto>
-            {
-                Items = paginatedItems,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = total
-            };
-            return Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(paginatedResult, "Orders retrieved successfully"));
-        }
-
-        if (result is Result<List<OrderDto>>.Failure failure)
-            return StatusCode(500, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return result.ToActionResult(
+            paged => Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(
+                new PaginatedResult<OrderDetailDto>
+                {
+                    Items = paged.Items.ConvertAll(MapToOrderDetailDto),
+                    TotalCount = paged.TotalCount,
+                    Page = paged.Page,
+                    PageSize = paged.PageSize
+                }, "Orders retrieved successfully")),
+            Problem);
     }
 
     /// <summary>
@@ -245,28 +215,19 @@ public class OrdersController(
 
         _logger.LogInformation("Retrieving orders for user {UserId}, page {Page}", userId.Value, page);
 
-        var query = new OrderingQueries.GetUserOrders.GetUserOrdersQuery(userId.Value);
+        var query = new OrderingQueries.GetUserOrders.GetUserOrdersQuery(userId.Value, page, pageSize);
         var result = await _mediator.Send(query, cancellationToken);
 
-        if (result is Result<List<OrderDto>>.Success success)
-        {
-            var allOrders = success.Data.Select(MapToOrderDetailDto).ToList();
-            var total = allOrders.Count;
-            var paginatedItems = allOrders.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            var paginatedResult = new PaginatedResult<OrderDetailDto>
-            {
-                Items = paginatedItems,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = total
-            };
-            return Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(paginatedResult, "Orders retrieved successfully"));
-        }
-
-        if (result is Result<List<OrderDto>>.Failure failure)
-            return StatusCode(500, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
+        return result.ToActionResult(
+            paged => Ok(ApiResponse<PaginatedResult<OrderDetailDto>>.Ok(
+                new PaginatedResult<OrderDetailDto>
+                {
+                    Items = paged.Items.ConvertAll(MapToOrderDetailDto),
+                    TotalCount = paged.TotalCount,
+                    Page = paged.Page,
+                    PageSize = paged.PageSize
+                }, "Orders retrieved successfully")),
+            Problem);
     }
 
     /// <summary>
@@ -286,46 +247,9 @@ public class OrdersController(
         var cmd = new CancelOrderCommand(id, dto?.Reason ?? "");
         var result = await _mediator.Send(cmd, cancellationToken);
 
-        if (result is Result<Guid>.Success success)
-            return Ok(ApiResponse<Guid>.Ok(success.Data, "Order cancelled"));
-
-        if (result is Result<Guid>.Failure failure)
-        {
-            var statusCode = failure.Error.Code switch
-            {
-                "ORDER_NOT_FOUND" => StatusCodes.Status404NotFound,
-                _ => StatusCodes.Status422UnprocessableEntity
-            };
-            return StatusCode(statusCode, ApiResponse<object>.Failure(failure.Error.Message, failure.Error.Code));
-        }
-
-        return StatusCode(500, ApiResponse<object>.Failure("Unknown error occurred", "INTERNAL_ERROR"));
-    }
-
-    private BadRequestObjectResult? ValidateIdempotencyKey(string? idempotencyKey)
-    {
-        if (string.IsNullOrWhiteSpace(idempotencyKey) || !Guid.TryParse(idempotencyKey, out _))
-        {
-            return BadRequest(ApiResponse<object>.Failure(
-                $"{IdempotencyHeaderName} header is required and must be a valid UUID",
-                "INVALID_IDEMPOTENCY_KEY"));
-        }
-
-        return null;
-    }
-
-    private bool TryBuildInProgressIdempotencyResponse(IdempotencyStartStatus status, out IActionResult? response)
-    {
-        if (status == IdempotencyStartStatus.InProgress)
-        {
-            response = Conflict(ApiResponse<object>.Failure(
-                "Request with this idempotency key is already being processed",
-                "IDEMPOTENCY_IN_PROGRESS"));
-            return true;
-        }
-
-        response = null;
-        return false;
+        return result.ToActionResult(
+            id => Ok(ApiResponse<Guid>.Ok(id, "Order cancelled")),
+            Problem);
     }
 
     private static OrderDetailDto MapToOrderDetailDto(OrderDto order)
@@ -350,18 +274,3 @@ public class OrdersController(
     }
 
 }
-
-// Request DTOs
-public class ShipOrderRequestDto
-{
-    public string TrackingNumber { get; set; } = null!;
-}
-
-public class CancelOrderRequestDto
-{
-    public string? Reason { get; set; }
-}
-
-
-
-

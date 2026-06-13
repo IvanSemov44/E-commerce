@@ -201,6 +201,3 @@ await app.ApplyMigrationsAndSeedAsync();
 app.ConfigureMiddlewarePipeline();
 
 app.Run();
-
-
-

@@ -1,4 +1,5 @@
 using ECommerce.API.ActionFilters;
+using ECommerce.API.Common.Extensions;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.SharedKernel.Results;
@@ -31,10 +32,9 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
             return Unauthorized(ApiResponse<WishlistDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await mediator.Send(new GetWishlistQuery(userId.Value), cancellationToken);
-        if (!result.IsSuccess)
-            return BadRequest(ApiResponse<WishlistDto>.Failure(result.GetErrorOrThrow().Message, result.GetErrorOrThrow().Code));
-
-        return Ok(ApiResponse<WishlistDto>.Ok(result.GetDataOrThrow(), "Wishlist retrieved successfully"));
+        return result.ToActionResult(
+            data => Ok(ApiResponse<WishlistDto>.Ok(data, "Wishlist retrieved successfully")),
+            MapError);
     }
 
     [HttpPost("add")]
@@ -49,11 +49,13 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await mediator.Send(new AddToWishlistCommand(userId.Value, dto.ProductId), cancellationToken);
-        if (!result.IsSuccess)
-            return BadRequest(ApiResponse<object>.Failure(result.GetErrorOrThrow().Message, result.GetErrorOrThrow().Code));
-
-        logger.LogInformation("Product {ProductId} added to wishlist for user {UserId}", dto.ProductId, userId.Value);
-        return NoContent();
+        return result.ToActionResult(
+            () =>
+            {
+                logger.LogInformation("Product {ProductId} added to wishlist for user {UserId}", dto.ProductId, userId.Value);
+                return NoContent();
+            },
+            MapError);
     }
 
     [HttpDelete("remove/{productId:guid}")]
@@ -65,9 +67,14 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        await mediator.Send(new RemoveFromWishlistCommand(userId.Value, productId), cancellationToken);
-        logger.LogInformation("Product {ProductId} removed from wishlist for user {UserId}", productId, userId.Value);
-        return NoContent();
+        var result = await mediator.Send(new RemoveFromWishlistCommand(userId.Value, productId), cancellationToken);
+        return result.ToActionResult(
+            () =>
+            {
+                logger.LogInformation("Product {ProductId} removed from wishlist for user {UserId}", productId, userId.Value);
+                return NoContent();
+            },
+            MapError);
     }
 
     [HttpGet("contains/{productId:guid}")]
@@ -80,10 +87,9 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
             return Unauthorized(ApiResponse<bool>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await mediator.Send(new IsProductInWishlistQuery(userId.Value, productId), cancellationToken);
-        if (!result.IsSuccess)
-            return BadRequest(ApiResponse<bool>.Failure(result.GetErrorOrThrow().Message, result.GetErrorOrThrow().Code));
-
-        return Ok(ApiResponse<bool>.Ok(result.GetDataOrThrow(), "Check completed successfully"));
+        return result.ToActionResult(
+            data => Ok(ApiResponse<bool>.Ok(data, "Check completed successfully")),
+            MapError);
     }
 
     [HttpPost("clear")]
@@ -95,8 +101,20 @@ public class WishlistController(IMediator mediator, ICurrentUserService currentU
         if (!userId.HasValue)
             return Unauthorized(ApiResponse<object>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
-        await mediator.Send(new ClearWishlistCommand(userId.Value), cancellationToken);
-        logger.LogInformation("Wishlist cleared for user {UserId}", userId.Value);
-        return NoContent();
+        var result = await mediator.Send(new ClearWishlistCommand(userId.Value), cancellationToken);
+        return result.ToActionResult(
+            () =>
+            {
+                logger.LogInformation("Wishlist cleared for user {UserId}", userId.Value);
+                return NoContent();
+            },
+            MapError);
     }
+
+    private IActionResult MapError(DomainError error) => error.Code switch
+    {
+        "PRODUCT_NOT_FOUND" or "WISHLIST_NOT_FOUND"
+            => NotFound(ApiResponse<object>.Failure(error.Message, error.Code)),
+        _ => BadRequest(ApiResponse<object>.Failure(error.Message, error.Code))
+    };
 }
