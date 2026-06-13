@@ -1,21 +1,25 @@
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Inventory.Application.DTOs;
-using ECommerce.Inventory.Domain.Interfaces;
-
 namespace ECommerce.Inventory.Application.Queries.GetLowStockItems;
 
 public class GetLowStockItemsQueryHandler(IInventoryItemRepository _repo)
-    : IRequestHandler<GetLowStockItemsQuery, Result<List<InventoryItemDto>>>
+    : IRequestHandler<GetLowStockItemsQuery, Result<PaginatedResult<InventoryItemDto>>>
 {
-    public async Task<Result<List<InventoryItemDto>>> Handle(
+    public async Task<Result<PaginatedResult<InventoryItemDto>>> Handle(
         GetLowStockItemsQuery query, CancellationToken cancellationToken)
     {
-        var items = await _repo.GetLowStockAsync(query.ThresholdOverride, cancellationToken);
+        var (items, totalCount) = await _repo.GetLowStockPagedAsync(
+            query.Page, query.PageSize, query.ThresholdOverride, cancellationToken);
 
-        return Result<List<InventoryItemDto>>.Ok(items.Select(i => new InventoryItemDto(
+        var dtos = items.Select(i => new InventoryItemDto(
             i.Id, i.ProductId, i.Stock.Quantity, i.LowStockThreshold,
             i.Stock.Quantity <= i.LowStockThreshold,
-            i.Stock.Quantity <= 0)).ToList());
+            i.Stock.Quantity <= 0)).ToList();
+
+        return Result<PaginatedResult<InventoryItemDto>>.Ok(new PaginatedResult<InventoryItemDto>
+        {
+            Items = dtos,
+            TotalCount = totalCount,
+            Page = query.Page,
+            PageSize = query.PageSize
+        });
     }
 }

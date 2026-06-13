@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,7 +18,7 @@ public class QueryHandlerTests
         => InventoryItem.Create(productId, quantity, threshold).GetDataOrThrow();
 
     [TestMethod]
-    public async Task GetInventory_EmptyStore_ReturnsEmptyList()
+    public async Task GetInventory_EmptyStore_ReturnsEmptyPage()
     {
         var repo = new FakeInventoryItemRepository();
         var handler = new GetInventoryQueryHandler(repo);
@@ -26,7 +26,8 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetInventoryQuery(), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.IsEmpty(result.GetDataOrThrow());
+        Assert.IsEmpty(result.GetDataOrThrow().Items);
+        Assert.AreEqual(0, result.GetDataOrThrow().TotalCount);
     }
 
     [TestMethod]
@@ -40,7 +41,8 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetInventoryQuery(), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.HasCount(2, result.GetDataOrThrow());
+        Assert.HasCount(2, result.GetDataOrThrow().Items);
+        Assert.AreEqual(2, result.GetDataOrThrow().TotalCount);
     }
 
     [TestMethod]
@@ -54,8 +56,8 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetInventoryQuery(LowStockOnly: true), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.HasCount(1, result.GetDataOrThrow());
-        Assert.IsTrue(result.GetDataOrThrow()[0].IsLowStock);
+        Assert.HasCount(1, result.GetDataOrThrow().Items);
+        Assert.IsTrue(result.GetDataOrThrow().Items[0].IsLowStock);
     }
 
     [TestMethod]
@@ -67,7 +69,7 @@ public class QueryHandlerTests
         var handler = new GetInventoryQueryHandler(repo);
 
         var result = await handler.Handle(new GetInventoryQuery(), default);
-        var dto = result.GetDataOrThrow()[0];
+        var dto = result.GetDataOrThrow().Items[0];
 
         Assert.AreEqual(productId, dto.ProductId);
         Assert.AreEqual(8, dto.Quantity);
@@ -143,6 +145,6 @@ public class QueryHandlerTests
         var result = await handler.Handle(new GetLowStockItemsQuery(ThresholdOverride: 20), default);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.HasCount(2, result.GetDataOrThrow());
+        Assert.HasCount(2, result.GetDataOrThrow().Items);
     }
 }

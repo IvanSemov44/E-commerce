@@ -1,7 +1,3 @@
-using MediatR;
-using ECommerce.SharedKernel.Results;
-using ECommerce.Inventory.Application.DTOs;
-
 namespace ECommerce.Inventory.Application.Queries.GetInventory;
 
 public record GetInventoryQuery(
@@ -9,4 +5,4 @@ public record GetInventoryQuery(
     int PageSize = 20,
     string? Search = null,
     bool LowStockOnly = false
-) : IRequest<Result<List<InventoryItemDto>>>;
+) : IRequest<Result<PaginatedResult<InventoryItemDto>>>;
