@@ -16,4 +16,11 @@ public abstract record Result
     /// <summary>Returns the error. Safe to call only after confirming !IsSuccess.</summary>
     public DomainError GetErrorOrThrow() =>
         this is Failure f ? f.Error : throw new InvalidOperationException("Result is successful, no error to get.");
+
+    public TOut Match<TOut>(Func<TOut> onSuccess, Func<DomainError, TOut> onFailure) => this switch
+    {
+        Success   => onSuccess(),
+        Failure f => onFailure(f.Error),
+        _ => throw new InvalidOperationException($"Unknown Result subtype: {GetType().Name}")
+    };
 }

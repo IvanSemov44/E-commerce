@@ -1,3 +1,3 @@
 namespace ECommerce.SharedKernel.Results;
 
-public record DomainError(string Code, string Message);
+public record DomainError(string Code, string Message, ErrorType Type = ErrorType.Failure);

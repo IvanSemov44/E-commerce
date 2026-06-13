@@ -1,15 +1,26 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Results;
 
 namespace ECommerce.API.Common.Extensions;
 
 public static class ResultExtensions
 {
-    /// <summary>
-    /// Converts a <see cref="Result{T}"/> to an <see cref="IActionResult"/> by invoking
-    /// <paramref name="onSuccess"/> on the data or <paramref name="onFailure"/> on the error.
-    /// Eliminates the IsSuccess/GetDataOrThrow boilerplate in every controller action.
-    /// </summary>
+    // Default overloads — error handling is automatic via ErrorType on DomainError.
+
+    public static IActionResult ToActionResult<T>(
+        this Result<T> result,
+        Func<T, IActionResult> onSuccess)
+        => result.ToActionResult(onSuccess, error => error.ToHttpResult());
+
+    public static IActionResult ToActionResult(
+        this Result result,
+        Func<IActionResult> onSuccess)
+        => result.ToActionResult(onSuccess, error => error.ToHttpResult());
+
+    // Explicit overloads — kept for actions that need custom failure handling (e.g. auth cookie flows).
+
     public static IActionResult ToActionResult<T>(
         this Result<T> result,
         Func<T, IActionResult> onSuccess,
@@ -21,20 +32,28 @@ public static class ResultExtensions
             _ => throw new InvalidOperationException($"Unknown Result subtype: {result.GetType().Name}")
         };
 
-    /// <summary>
-    /// Converts a non-generic <see cref="Result"/> (void operations) to an <see cref="IActionResult"/>
-    /// by invoking <paramref name="onSuccess"/> or <paramref name="onFailure"/> on the error.
-    /// </summary>
     public static IActionResult ToActionResult(
         this Result result,
         Func<IActionResult> onSuccess,
         Func<DomainError, IActionResult> onFailure)
         => result switch
         {
-            Result.Success => onSuccess(),
+            Result.Success   => onSuccess(),
             Result.Failure f => onFailure(f.Error),
             _ => throw new InvalidOperationException($"Unknown Result subtype: {result.GetType().Name}")
         };
+
+    private static IActionResult ToHttpResult(this DomainError error)
+    {
+        var body = ApiResponse<object>.Failure(error.Message, error.Code);
+        return error.Type switch
+        {
+            ErrorType.NotFound     => new NotFoundObjectResult(body),
+            ErrorType.Conflict     => new ConflictObjectResult(body),
+            ErrorType.Validation   => new UnprocessableEntityObjectResult(body),
+            ErrorType.Unauthorized => new UnauthorizedObjectResult(body),
+            ErrorType.Forbidden    => new ObjectResult(body) { StatusCode = StatusCodes.Status403Forbidden },
+            _                      => new BadRequestObjectResult(body)
+        };
+    }
 }
-
-
