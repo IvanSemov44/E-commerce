@@ -28,12 +28,6 @@ public sealed class PromoCodeListItemDto
     public int? MaxUses { get; init; }
 }
 
-public sealed class ValidatePromoCodeDto
-{
-    public string Code { get; init; } = string.Empty;
-    public decimal OrderAmount { get; init; }
-}
-
 public sealed class ValidatePromoCodeResultDto
 {
     public Guid? PromoCodeId { get; init; }

@@ -33,15 +33,28 @@ public class PromoCodeRepository(PromotionsDbContext db) : IPromoCodeRepository
     {
         var query = db.PromoCodes.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var searchUpper = search.ToUpperInvariant();
-            query = query.Where(p => p.Code.Value.Contains(searchUpper));
-        }
-
         if (isActive.HasValue)
         {
             query = query.Where(p => p.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchUpper = search.ToUpperInvariant();
+            // Value-object conversion for Code does not reliably translate string contains across providers.
+            var filtered = (await query
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync(ct))
+                .Where(p => p.Code.Value.Contains(searchUpper, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var filteredTotal = filtered.Count;
+            var filteredPage = filtered
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return (filteredPage, filteredTotal);
         }
 
         var totalCount = await query.CountAsync(ct);
