@@ -17,13 +17,11 @@ namespace ECommerce.API.Features.Catalog.Controllers;
 [Tags("Products")]
 public class CatalogProductsController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(query, cancellationToken);
+        var result = await mediator.Send(query, cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
     }
 
@@ -32,7 +30,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductById(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
+        var result = await mediator.Send(new GetProductByIdQuery(id), cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<ProductDetailDto>.Ok(data)));
     }
 
@@ -41,7 +39,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductBySlug(string slug, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProductBySlugQuery(slug), cancellationToken);
+        var result = await mediator.Send(new GetProductBySlugQuery(slug), cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<ProductDetailDto>.Ok(data)));
     }
 
@@ -49,7 +47,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFeaturedProducts([FromQuery] GetFeaturedProductsQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(query, cancellationToken);
+        var result = await mediator.Send(query, cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
     }
 
@@ -60,7 +58,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetLowStockProducts([FromQuery] int threshold = 10, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetLowStockProductsQuery(threshold), cancellationToken);
+        var result = await mediator.Send(new GetLowStockProductsQuery(threshold), cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<List<ProductDto>>.Ok(data)));
     }
 
@@ -68,7 +66,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> SearchProducts([FromQuery] SearchProductsQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(query, cancellationToken);
+        var result = await mediator.Send(query, cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
     }
 
@@ -77,7 +75,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductsByCategory(Guid categoryId, [FromQuery] GetProductsByCategoryQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(query with { CategoryId = categoryId }, cancellationToken);
+        var result = await mediator.Send(query with { CategoryId = categoryId }, cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
     }
 
@@ -85,23 +83,23 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProductsByPriceRange([FromQuery] GetProductsByPriceRangeQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(query, cancellationToken);
+        var result = await mediator.Send(query, cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.ToActionResult(
-            id => CreatedAtAction(nameof(GetProductById), new { id }, ApiResponse<Guid>.Ok(id)));
+        var result = await mediator.Send(command, cancellationToken);
+        return result.ToActionResult(dto =>
+            CreatedAtAction(nameof(GetProductById), new { id = dto.Id }, ApiResponse<ProductDetailDto>.Ok(dto)));
     }
 
     [HttpPut("{id:guid}")]
@@ -114,12 +112,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command with { Id = id }, cancellationToken);
-        return await result.ToActionResultAsync(async _ =>
-        {
-            var product = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
-            return product.ToActionResult(data => Ok(ApiResponse<ProductDetailDto>.Ok(data)));
-        });
+        var result = await mediator.Send(command with { Id = id }, cancellationToken);
+        return result.ToActionResult(dto => Ok(ApiResponse<ProductDetailDto>.Ok(dto)));
     }
 
     [HttpDelete("{id:guid}")]
@@ -130,7 +124,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new DeleteProductCommand(id), cancellationToken);
+        var result = await mediator.Send(new DeleteProductCommand(id), cancellationToken);
         return result.ToActionResult(NoContent);
     }
 
@@ -144,12 +138,8 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateProductPrice(Guid id, [FromBody] UpdateProductPriceCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command with { Id = id }, cancellationToken);
-        return await result.ToActionResultAsync(async _ =>
-        {
-            var product = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
-            return product.ToActionResult(data => Ok(ApiResponse<ProductDetailDto>.Ok(data)));
-        });
+        var result = await mediator.Send(command with { Id = id }, cancellationToken);
+        return result.ToActionResult(dto => Ok(ApiResponse<ProductDetailDto>.Ok(dto)));
     }
 
     [HttpPut("{id:guid}/stock")]
@@ -162,7 +152,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> UpdateProductStock(Guid id, [FromBody] UpdateProductStockCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command with { Id = id }, cancellationToken);
+        var result = await mediator.Send(command with { Id = id }, cancellationToken);
         return result.ToActionResult(NoContent);
     }
 
@@ -175,7 +165,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> ActivateProduct(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ActivateProductCommand(id), cancellationToken);
+        var result = await mediator.Send(new ActivateProductCommand(id), cancellationToken);
         return result.ToActionResult(NoContent);
     }
 
@@ -188,23 +178,23 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> DeactivateProduct(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new DeactivateProductCommand(id), cancellationToken);
+        var result = await mediator.Send(new DeactivateProductCommand(id), cancellationToken);
         return result.ToActionResult(NoContent);
     }
 
     [HttpPost("{id:guid}/images")]
     [Authorize(Roles = "Admin,SuperAdmin")]
     [ValidationFilter]
-    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> AddProductImage(Guid id, [FromBody] AddProductImageCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command with { ProductId = id }, cancellationToken);
-        return result.ToActionResult(
-            imageId => CreatedAtAction(nameof(GetProductById), new { id }, ApiResponse<Guid>.Ok(imageId)));
+        var result = await mediator.Send(command with { ProductId = id }, cancellationToken);
+        return result.ToActionResult(dto =>
+            CreatedAtAction(nameof(GetProductById), new { id }, ApiResponse<ProductDetailDto>.Ok(dto)));
     }
 
     [HttpPost("{id:guid}/images/{imageId:guid}/primary")]
@@ -215,7 +205,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetPrimaryImage(Guid id, Guid imageId, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new SetPrimaryImageCommand(id, imageId), cancellationToken);
+        var result = await mediator.Send(new SetPrimaryImageCommand(id, imageId), cancellationToken);
         return result.ToActionResult(NoContent);
     }
 }

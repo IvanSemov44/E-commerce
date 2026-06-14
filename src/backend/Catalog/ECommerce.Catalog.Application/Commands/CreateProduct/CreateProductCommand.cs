@@ -2,6 +2,7 @@
 using MediatR;
 using ECommerce.SharedKernel.Results;
 using ECommerce.SharedKernel.Interfaces;
+using ECommerce.Catalog.Application.DTOs.Products;
 
 namespace ECommerce.Catalog.Application.Commands;
 
@@ -15,4 +16,4 @@ public record CreateProductCommand(
     int? StockQuantity = null,
     string? Description = null,
     decimal? CompareAtPrice = null
-) : IRequest<Result<Guid>>, ITransactionalCommand;
+) : IRequest<Result<ProductDetailDto>>, ITransactionalCommand;
