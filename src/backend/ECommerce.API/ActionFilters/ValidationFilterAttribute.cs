@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using ECommerce.Contracts.DTOs.Common;
 
@@ -24,7 +24,9 @@ public class ValidationFilterAttribute : ActionFilterAttribute
             .SingleOrDefault(x =>
             {
                 var typeName = x.Value?.GetType().Name ?? "";
-                return typeName.EndsWith("Dto", StringComparison.OrdinalIgnoreCase) || typeName.EndsWith("Request", StringComparison.OrdinalIgnoreCase);
+                return typeName.EndsWith("Dto",     StringComparison.OrdinalIgnoreCase)
+                    || typeName.EndsWith("Request", StringComparison.OrdinalIgnoreCase)
+                    || typeName.EndsWith("Command", StringComparison.OrdinalIgnoreCase);
             }).Value;
 
         if (param is null)
@@ -49,6 +51,4 @@ public class ValidationFilterAttribute : ActionFilterAttribute
             context.Result = new UnprocessableEntityObjectResult(errorResponse);
         }
     }
-
 }
-
