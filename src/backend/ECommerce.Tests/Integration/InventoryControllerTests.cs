@@ -260,7 +260,7 @@ public class InventoryControllerTests
         var res = await client.PutAsync($"/api/inventory/{_seededProductId}",
             Json(new { Quantity = -10000, Reason = "correction" }),
             TestContext.CancellationToken);
-        Assert.AreEqual(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.AreEqual(HttpStatusCode.UnprocessableEntity, res.StatusCode);
     }
 
     [TestMethod]
