@@ -1,7 +1,7 @@
 ﻿using System.Collections.Frozen;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Shared.Extensions;
-using ECommerce.API.Common.Helpers;
+using ECommerce.SharedKernel.Pagination;
 using ECommerce.SharedKernel.Interfaces;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Reviews.Application.Commands.ApproveReview;

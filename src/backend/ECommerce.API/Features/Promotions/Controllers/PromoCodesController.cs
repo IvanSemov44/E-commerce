@@ -1,14 +1,12 @@
 ﻿using System.Collections.Frozen;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Shared.Extensions;
-using ECommerce.API.Common.Helpers;
+using ECommerce.SharedKernel.Pagination;
 
 using ECommerce.Contracts.DTOs.Common;
-using ECommerce.SharedKernel.Pagination;
 using ECommerce.Promotions.Application.Commands.CreatePromoCode;
 using ECommerce.Promotions.Application.Commands.DeactivatePromoCode;
 using ECommerce.Promotions.Application.Commands.DeletePromoCode;

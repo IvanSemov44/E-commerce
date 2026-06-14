@@ -1,6 +1,6 @@
 using ECommerce.API.ActionFilters;
 using ECommerce.API.Shared.Extensions;
-using ECommerce.API.Common.Helpers;
+using ECommerce.SharedKernel.Pagination;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.SharedKernel.Pagination;
 using ECommerce.Inventory.Application.DTOs;

@@ -1,12 +1,11 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.Shared.Extensions;
-using ECommerce.API.Common.Helpers;
+using ECommerce.SharedKernel.Pagination;
 using ECommerce.Contracts.DTOs.Common;
 using ECommerce.Catalog.Application.Commands;
 using ECommerce.Catalog.Application.Queries;
-using ECommerce.SharedKernel.Pagination;
 using CategoryDto = ECommerce.Catalog.Application.DTOs.Categories.CategoryDto;
 
 namespace ECommerce.API.Features.Catalog.Controllers;
