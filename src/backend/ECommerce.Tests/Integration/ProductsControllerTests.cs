@@ -238,7 +238,7 @@ public class ProductsControllerTests
 
         Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
         var body = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(TestContext.CancellationToken), _jsonOptions);
-        Assert.AreEqual(id, body.GetProperty("data").GetGuid());
+        Assert.AreEqual(id, body.GetProperty("data").GetProperty("id").GetGuid());
     }
 
     [TestMethod]
