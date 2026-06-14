@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-namespace ECommerce.API.Common.Extensions;
+namespace ECommerce.API.Shared.Extensions;
 
 /// <summary>
 /// Validates database schema consistency with EF Core model.
