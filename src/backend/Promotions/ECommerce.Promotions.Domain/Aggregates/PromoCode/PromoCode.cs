@@ -116,8 +116,8 @@ public sealed class PromoCode : AggregateRoot
         var discountResult = discountType.Trim().ToUpperInvariant() switch
         {
             "PERCENTAGE" => DiscountValue.Percentage(discountValue),
-            "FIXED" => DiscountValue.Fixed(discountValue),
-            _ => Result<DiscountValue>.Fail(PromotionsErrors.InvalidDiscountType)
+            "FIXED"      => DiscountValue.Fixed(discountValue),
+            _            => DiscountValue.Percentage(discountValue)
         };
         if (!discountResult.IsSuccess)
             return Result<PromoCode>.Fail(discountResult.GetErrorOrThrow());
@@ -159,8 +159,8 @@ public sealed class PromoCode : AggregateRoot
             var discountResult = discountType.Trim().ToUpperInvariant() switch
             {
                 "PERCENTAGE" => DiscountValue.Percentage(discountValue.Value),
-                "FIXED" => DiscountValue.Fixed(discountValue.Value),
-                _ => Result<DiscountValue>.Fail(PromotionsErrors.InvalidDiscountType)
+                "FIXED"      => DiscountValue.Fixed(discountValue.Value),
+                _            => DiscountValue.Percentage(discountValue.Value)
             };
             if (!discountResult.IsSuccess)
                 return Result.Fail(discountResult.GetErrorOrThrow());
