@@ -11,7 +11,8 @@ public class GetCartQueryHandler(ICartRepository _carts)
                 ? await _carts.GetBySessionIdAsync(query.SessionId, ct)
                 : null;
 
-        if (cart is null) return Result<CartDto>.Fail(ShoppingApplicationErrors.CartNotFound);
+        if (cart is null)
+            return Result<CartDto>.Ok(new CartDto { UserId = query.UserId, SessionId = query.SessionId });
 
         return Result<CartDto>.Ok(cart.ToDto());
     }

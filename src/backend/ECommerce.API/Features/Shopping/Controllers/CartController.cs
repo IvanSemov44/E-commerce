@@ -32,8 +32,10 @@ public class CartController(IMediator _mediator, ICurrentUserService _currentUse
             return Unauthorized(ApiResponse<CartDto>.Failure("User not authenticated", "USER_NOT_AUTHENTICATED"));
 
         var result = await _mediator.Send(new GetCartQuery(userId, null), cancellationToken);
-        return result.ToActionResult(
-            data => Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")));
+        return result.ToActionResult(data =>
+            data.Id == Guid.Empty
+                ? NotFound(ApiResponse<object>.Failure("Cart not found.", "CART_NOT_FOUND"))
+                : Ok(ApiResponse<CartDto>.Ok(data, "Cart retrieved successfully")));
     }
 
     [HttpPost("get-or-create")]

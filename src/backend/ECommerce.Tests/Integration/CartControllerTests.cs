@@ -71,7 +71,7 @@ public class CartControllerTests
 
         var res = await client.PostAsync("/api/cart/get-or-create", null, TestContext.CancellationToken);
 
-        res.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [TestMethod]
@@ -81,7 +81,7 @@ public class CartControllerTests
 
         var res = await client.PostAsync("/api/cart/get-or-create", null, TestContext.CancellationToken);
 
-        res.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     // ── POST /api/cart/add-item ───────────────────────────────────────────────
