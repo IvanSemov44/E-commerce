@@ -3,6 +3,7 @@ using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Domain.ValueObjects;
 using ECommerce.Catalog.Domain.Interfaces;
+using ECommerce.Catalog.Domain.Queries;
 using ECommerce.Catalog.Application.Commands;
 namespace ECommerce.Catalog.Tests.Application;
 
@@ -41,19 +42,9 @@ public class CommandHandlerTests
         }
 
         public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
-            int page,
-            int pageSize,
-            Guid? categoryId = null,
-            string? search = null,
-            decimal? minPrice = null,
-            decimal? maxPrice = null,
-            decimal? minRating = null,
-            bool? isFeatured = null,
-            string? sortBy = null,
+            ProductQueryParams p,
             CancellationToken ct = default)
-        {
-            return Task.FromResult<(IReadOnlyList<Product>, int)>((Store.AsReadOnly(), Store.Count));
-        }
+            => Task.FromResult<(IReadOnlyList<Product>, int)>((Store.AsReadOnly(), Store.Count));
 
         public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)
         {
@@ -179,8 +170,8 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var productId = res.GetDataOrThrow();
-        var created = products.Store.Single(p => p.Id == productId);
+        var dto = res.GetDataOrThrow();
+        var created = products.Store.Single(p => p.Id == dto.Id);
         Assert.AreEqual("Name", created.Name.Value);
         Assert.AreEqual("SKU-123", created.Sku!.Value);
     }
@@ -243,8 +234,8 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var updatedProductId = res.GetDataOrThrow();
-        Assert.AreEqual(product.Id, updatedProductId);
+        var dto = res.GetDataOrThrow();
+        Assert.AreEqual(product.Id, dto.Id);
         Assert.AreEqual("NewName", product.Name.Value);
     }
 
@@ -318,8 +309,8 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var updatedProductId = res.GetDataOrThrow();
-        Assert.AreEqual(product.Id, updatedProductId);
+        var dto = res.GetDataOrThrow();
+        Assert.AreEqual(product.Id, dto.Id);
         Assert.AreEqual(20m, product.Price.Amount);
     }
 
@@ -499,8 +490,8 @@ public class CommandHandlerTests
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var updatedProductId = res.GetDataOrThrow();
-        Assert.AreEqual(product.Id, updatedProductId);
+        var dto = res.GetDataOrThrow();
+        Assert.AreEqual(product.Id, dto.Id);
         Assert.IsTrue(product.Images.Any());
     }
 

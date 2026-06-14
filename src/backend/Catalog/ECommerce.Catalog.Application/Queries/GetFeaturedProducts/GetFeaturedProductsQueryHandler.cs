@@ -1,10 +1,10 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
-using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.SharedKernel.Pagination;
+using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
 
@@ -16,17 +16,18 @@ public class GetFeaturedProductsQueryHandler(
 {
     public async Task<Result<PaginatedResult<ProductDto>>> Handle(GetFeaturedProductsQuery request, CancellationToken cancellationToken)
     {
-        var (items, total) = await _products.GetFeaturedPagedAsync(request.Page, request.PageSize, cancellationToken);
+        var (page, pageSize) = PaginationRequestNormalizer.Normalize(request.Page, request.PageSize);
+
+        var (items, total) = await _products.GetFeaturedPagedAsync(page, pageSize, cancellationToken);
+
         var dtos = items.Select(p => p.ToDto(string.Empty)).ToList();
 
-        var page = new PaginatedResult<ProductDto>
+        return Result<PaginatedResult<ProductDto>>.Ok(new PaginatedResult<ProductDto>
         {
-            Items = dtos,
+            Items      = dtos,
             TotalCount = total,
-            Page = request.Page,
-            PageSize = request.PageSize
-        };
-
-        return Result<PaginatedResult<ProductDto>>.Ok(page);
+            Page       = page,
+            PageSize   = pageSize
+        });
     }
 }

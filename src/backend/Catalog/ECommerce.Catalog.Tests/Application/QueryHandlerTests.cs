@@ -2,6 +2,7 @@
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Aggregates.Category;
 using ECommerce.Catalog.Domain.Interfaces;
+using ECommerce.Catalog.Domain.Queries;
 using ECommerce.Catalog.Application.Queries;
 using ECommerce.Catalog.Domain.ValueObjects;
 
@@ -44,20 +45,11 @@ public class QueryHandlerTests
         }
 
         public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
-            int page,
-            int pageSize,
-            Guid? categoryId = null,
-            string? search = null,
-            decimal? minPrice = null,
-            decimal? maxPrice = null,
-            decimal? minRating = null,
-            bool? isFeatured = null,
-            string? sortBy = null,
+            ProductQueryParams p,
             CancellationToken ct = default)
         {
-            var items = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            var total = Store.Count;
-            return Task.FromResult<(IReadOnlyList<Product>, int)>((items, total));
+            var items = Store.Skip((p.Page - 1) * p.PageSize).Take(p.PageSize).ToList();
+            return Task.FromResult<(IReadOnlyList<Product>, int)>((items, Store.Count));
         }
 
         public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)

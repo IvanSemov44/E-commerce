@@ -1,6 +1,7 @@
 ﻿using ECommerce.Catalog.Application.Queries;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Interfaces;
+using ECommerce.Catalog.Domain.Queries;
 using ECommerce.Catalog.Domain.ValueObjects;
 
 namespace ECommerce.Catalog.Tests.Application;
@@ -27,7 +28,7 @@ public class ProductStatsQueryHandlerTests
         public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default)
             => Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
 
-        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, Guid? categoryId = null, string? search = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minRating = null, bool? isFeatured = null, string? sortBy = null, CancellationToken ct = default)
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(ProductQueryParams p, CancellationToken ct = default)
             => Task.FromResult<(IReadOnlyList<Product>, int)>((Store, Store.Count));
 
         public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)

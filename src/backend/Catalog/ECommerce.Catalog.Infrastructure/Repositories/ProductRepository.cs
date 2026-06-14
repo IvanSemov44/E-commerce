@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using ECommerce.Catalog.Domain.Aggregates.Product;
 using ECommerce.Catalog.Domain.Interfaces;
+using ECommerce.Catalog.Domain.Queries;
 using ECommerce.Catalog.Domain.ValueObjects;
 using ECommerce.Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -47,92 +48,61 @@ public class ProductRepository(CatalogDbContext db) : IProductRepository
         => db.Products.AnyAsync(p => p.CategoryId == categoryId && p.Status == ProductStatus.Active, cancellationToken);
 
     public async Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
-        int page, int pageSize,
-        Guid? categoryId = null,
-        string? search = null,
-        decimal? minPrice = null,
-        decimal? maxPrice = null,
-        decimal? minRating = null,
-        bool? isFeatured = null,
-        string? sortBy = null,
+        ProductQueryParams p,
         CancellationToken cancellationToken = default)
     {
-        var query = db.Products.AsNoTracking().Where(p => p.Status == ProductStatus.Active);
+        var query = db.Products
+            .AsNoTracking()
+            .Where(x => x.Status == ProductStatus.Active);
 
-        if (categoryId.HasValue)
-            query = query.Where(p => p.CategoryId == categoryId.Value);
+        if (p.CategoryId.HasValue)
+            query = query.Where(x => x.CategoryId == p.CategoryId.Value);
 
-        if (isFeatured.HasValue)
-            query = query.Where(p => p.IsFeatured == isFeatured.Value);
+        if (p.IsFeatured.HasValue)
+            query = query.Where(x => x.IsFeatured == p.IsFeatured.Value);
 
-        string? searchTerm = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+        if (p.MinPrice.HasValue)
+            query = query.Where(x => EF.Property<decimal>(x, "Price") >= p.MinPrice.Value);
 
-        if (minPrice.HasValue)
-            query = query.Where(p => EF.Property<decimal>(p, "Price") >= minPrice.Value);
-        if (maxPrice.HasValue)
-            query = query.Where(p => EF.Property<decimal>(p, "Price") <= maxPrice.Value);
+        if (p.MaxPrice.HasValue)
+            query = query.Where(x => EF.Property<decimal>(x, "Price") <= p.MaxPrice.Value);
 
-        if (minRating.HasValue)
+        if (p.MinRating.HasValue)
+            query = query.Where(x =>
+                db.ProductRatings
+                  .Where(r => r.ProductId == x.Id)
+                  .Select(r => (decimal?)r.AverageRating)
+                  .FirstOrDefault() >= p.MinRating.Value);
+
+        if (!string.IsNullOrWhiteSpace(p.Search))
         {
-            var rating = minRating.Value;
-            query = query.Where(p => (db.ProductRatings
-                .Where(r => r.ProductId == p.Id)
-                .Select(r => (decimal?)r.AverageRating)
-                .FirstOrDefault() ?? 0m) >= rating);
+            var term = $"%{p.Search.Trim()}%";
+            query = query.Where(x =>
+                EF.Functions.ILike(EF.Property<string>(x, "Name"), term) ||
+                EF.Functions.ILike(EF.Property<string>(x, "Sku"),  term));
         }
 
-        if (searchTerm is not null)
+        query = p.SortBy?.Trim().ToLowerInvariant() switch
         {
-            var materializedItems = await query
-                .Include(p => p.Images)
-                .ToListAsync(cancellationToken);
-
-            var filtered = materializedItems.Where(p =>
-                p.Name.Value.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                (p.Sku is not null && p.Sku.Value.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
-
-            filtered = sortBy?.Trim().ToLowerInvariant() switch
-            {
-                "name"       => filtered.OrderBy(p => p.Name.Value),
-                "price-asc"  => filtered.OrderBy(p => p.Price.Amount),
-                "price-desc" => filtered.OrderByDescending(p => p.Price.Amount),
-                "rating"     => filtered.OrderByDescending(p => db.ProductRatings
-                                    .AsNoTracking()
-                                    .Where(r => r.ProductId == p.Id)
-                                    .Select(r => (decimal?)r.AverageRating)
-                                    .FirstOrDefault() ?? 0m),
-                "newest"     => filtered.OrderByDescending(p => p.CreatedAt),
-                _            => filtered.OrderBy(p => p.Name.Value),
-            };
-
-            var totalFiltered = filtered.Count();
-            var pagedFiltered = filtered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            return (pagedFiltered, totalFiltered);
-        }
-
-        query = sortBy?.Trim().ToLowerInvariant() switch
-        {
-            "name"       => query.OrderBy(p => EF.Property<string>(p, "Name")),
-            "price-asc"  => query.OrderBy(p => EF.Property<decimal>(p, "Price")),
-            "price-desc" => query.OrderByDescending(p => EF.Property<decimal>(p, "Price")),
-            "rating"     => query.OrderByDescending(p => db.ProductRatings
-                                .Where(r => r.ProductId == p.Id)
-                                .Select(r => (decimal?)r.AverageRating)
-                                .FirstOrDefault() ?? 0m),
-            "newest"     => query.OrderByDescending(p => p.CreatedAt),
-            _            => query.OrderBy(p => EF.Property<string>(p, "Name")),
+            "name"       => query.OrderBy(x => EF.Property<string>(x, "Name")),
+            "price-asc"  => query.OrderBy(x => EF.Property<decimal>(x, "Price")),
+            "price-desc" => query.OrderByDescending(x => EF.Property<decimal>(x, "Price")),
+            "newest"     => query.OrderByDescending(x => x.CreatedAt),
+            "rating"     => query.OrderByDescending(x =>
+                                db.ProductRatings
+                                  .Where(r => r.ProductId == x.Id)
+                                  .Select(r => (decimal?)r.AverageRating)
+                                  .FirstOrDefault() ?? 0m),
+            _            => query.OrderBy(x => EF.Property<string>(x, "Name")),
         };
 
         var total = await query.CountAsync(cancellationToken);
 
         var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Include(p => p.Images)
+            .Skip((p.Page - 1) * p.PageSize)
+            .Take(p.PageSize)
+            .AsSplitQuery()
+            .Include(x => x.Images)
             .ToListAsync(cancellationToken);
 
         return (items, total);
@@ -156,6 +126,7 @@ public class ProductRepository(CatalogDbContext db) : IProductRepository
             .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .AsSplitQuery()
             .Include(p => p.Images)
             .ToListAsync(cancellationToken);
 

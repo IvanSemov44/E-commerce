@@ -1,13 +1,13 @@
-﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using ECommerce.SharedKernel.Results;
-using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.SharedKernel.Pagination;
+using ECommerce.Catalog.Application.DTOs.Products;
 using ECommerce.Catalog.Application.Extensions;
 using ECommerce.Catalog.Domain.Interfaces;
+using ECommerce.Catalog.Domain.Queries;
 
 namespace ECommerce.Catalog.Application.Queries;
 
@@ -17,19 +17,20 @@ public class SearchProductsQueryHandler(
 {
     public async Task<Result<PaginatedResult<ProductDto>>> Handle(SearchProductsQuery request, CancellationToken cancellationToken)
     {
-        int page = Math.Max(1, request.Page);
-        int pageSize = Math.Max(1, request.PageSize);
+        var (page, pageSize) = PaginationRequestNormalizer.Normalize(request.Page, request.PageSize);
 
-        var (items, total) = await _products.GetPagedAsync(page, pageSize, search: request.Query, ct: cancellationToken);
+        var queryParams = new ProductQueryParams(page, pageSize, Search: request.Query);
+
+        var (items, total) = await _products.GetPagedAsync(queryParams, cancellationToken);
 
         var dtos = items.Select(p => p.ToDto(string.Empty)).ToList();
 
         return Result<PaginatedResult<ProductDto>>.Ok(new PaginatedResult<ProductDto>
         {
-            Items = dtos,
+            Items      = dtos,
             TotalCount = total,
-            Page = page,
-            PageSize = pageSize
+            Page       = page,
+            PageSize   = pageSize
         });
     }
 }
