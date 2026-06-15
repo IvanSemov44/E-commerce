@@ -100,6 +100,100 @@ public class ProductsControllerTests
         Assert.IsTrue(json.TryGetProperty("data", out var data) && data.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array);
     }
 
+    [TestMethod]
+    public async Task GetProducts_WithSearchQuery_Returns200()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync("/api/products?search=integration", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task GetProducts_WithPriceRangeQuery_Returns200()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync("/api/products?minPrice=0&maxPrice=1000", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task GetProducts_WithSearchAndRatingSort_Returns200()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync("/api/products?search=integration&sortBy=rating", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.IsTrue(json.TryGetProperty("data", out var data));
+        Assert.IsTrue(data.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array);
+    }
+
+    [TestMethod]
+    public async Task GetProducts_WithPriceSort_Returns200()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync("/api/products?sortBy=price-asc&page=1&pageSize=10", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.IsTrue(json.TryGetProperty("data", out var data));
+        Assert.IsTrue(data.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array);
+        Assert.IsTrue(data.TryGetProperty("page", out _));
+        Assert.IsTrue(data.TryGetProperty("pageSize", out _));
+    }
+
+    [TestMethod]
+    public async Task GetProductsByCategoryRoute_Removed_Returns404()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync($"/api/products/by-category/{Guid.NewGuid()}", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task GetProductsSearchRoute_Removed_Returns404()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync("/api/products/search?search=integration", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task GetProductsByPriceRoute_Removed_Returns404()
+    {
+        using var client = _factory.CreateUnauthenticatedClient();
+
+        var res = await client.GetAsync("/api/products/by-price?minPrice=0&maxPrice=100", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task GetLowStockProducts_Admin_ReturnsPagedResponse()
+    {
+        using var client = _factory.CreateAdminClientNoRedirect();
+
+        var res = await client.GetAsync("/api/products/low-stock?threshold=10&page=1&pageSize=5", TestContext.CancellationToken);
+
+        Assert.AreEqual(HttpStatusCode.OK, res.StatusCode);
+        var json = JsonSerializer.Deserialize<JsonElement>(await res.Content.ReadAsStringAsync(), _jsonOptions);
+        Assert.IsTrue(json.TryGetProperty("data", out var data));
+        Assert.IsTrue(data.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array);
+        Assert.IsTrue(data.TryGetProperty("totalCount", out _));
+        Assert.IsTrue(data.TryGetProperty("page", out _));
+        Assert.IsTrue(data.TryGetProperty("pageSize", out _));
+    }
+
     // ── POST /api/products ───────────────────────────────────────────────────
 
     [TestMethod]

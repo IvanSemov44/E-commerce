@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ECommerce.API.ActionFilters;
@@ -19,6 +19,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query, CancellationToken cancellationToken = default)
     {
         var result = await mediator.Send(query, cancellationToken);
@@ -28,6 +29,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> GetProductById(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await mediator.Send(new GetProductByIdQuery(id), cancellationToken);
@@ -37,6 +39,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
     [HttpGet("slug/{slug}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> GetProductBySlug(string slug, CancellationToken cancellationToken = default)
     {
         var result = await mediator.Send(new GetProductBySlugQuery(slug), cancellationToken);
@@ -45,6 +48,7 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
 
     [HttpGet("featured")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> GetFeaturedProducts([FromQuery] GetFeaturedProductsQuery query, CancellationToken cancellationToken = default)
     {
         var result = await mediator.Send(query, cancellationToken);
@@ -53,37 +57,13 @@ public class CatalogProductsController(IMediator mediator) : ControllerBase
 
     [HttpGet("low-stock")]
     [Authorize(Roles = "Admin,SuperAdmin")]
-    [ProducesResponseType(typeof(ApiResponse<List<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetLowStockProducts([FromQuery] int threshold = 10, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> GetLowStockProducts([FromQuery] int threshold = 10, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetLowStockProductsQuery(threshold), cancellationToken);
-        return result.ToActionResult(data => Ok(ApiResponse<List<ProductDto>>.Ok(data)));
-    }
-
-    [HttpGet("search")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> SearchProducts([FromQuery] SearchProductsQuery query, CancellationToken cancellationToken = default)
-    {
-        var result = await mediator.Send(query, cancellationToken);
-        return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
-    }
-
-    [HttpGet("by-category/{categoryId:guid}")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetProductsByCategory(Guid categoryId, [FromQuery] GetProductsByCategoryQuery query, CancellationToken cancellationToken = default)
-    {
-        var result = await mediator.Send(query with { CategoryId = categoryId }, cancellationToken);
-        return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
-    }
-
-    [HttpGet("by-price")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetProductsByPriceRange([FromQuery] GetProductsByPriceRangeQuery query, CancellationToken cancellationToken = default)
-    {
-        var result = await mediator.Send(query, cancellationToken);
+        var result = await mediator.Send(new GetLowStockProductsQuery(threshold, page, pageSize), cancellationToken);
         return result.ToActionResult(data => Ok(ApiResponse<PaginatedResult<ProductDto>>.Ok(data)));
     }
 

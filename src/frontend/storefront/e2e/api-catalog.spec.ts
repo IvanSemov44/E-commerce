@@ -116,7 +116,7 @@ test.describe('Catalog API Migration', () => {
     expect(body.data).toHaveProperty('pageSize');
   });
 
-  test('GET /products/featured respects limit parameter', async () => {
+  test('GET /products/featured respects pageSize parameter', async () => {
     const response = await apiContext.get('products/featured?pageSize=5');
 
     expect(response.ok()).toBe(true);
@@ -126,11 +126,11 @@ test.describe('Catalog API Migration', () => {
   });
 
   // ===========================================================================
-  // GET /products/search - Product Search
+  // GET /products?search= - Product Search
   // ===========================================================================
 
-  test('GET /products/search returns paged results', async () => {
-    const response = await apiContext.get('products/search?q=laptop');
+  test('GET /products?search= returns paged results', async () => {
+    const response = await apiContext.get('products?search=laptop');
 
     expect(response.ok()).toBe(true);
 
@@ -140,14 +140,14 @@ test.describe('Catalog API Migration', () => {
     expect(body.data).toHaveProperty('totalCount');
   });
 
-  test('GET /products/search handles empty query', async () => {
-    const response = await apiContext.get('products/search?q=');
+  test('GET /products?search= handles empty query', async () => {
+    const response = await apiContext.get('products?search=');
 
     expect(response.ok()).toBe(true);
   });
 
-  test('GET /products/search returns empty results for non-matching query', async () => {
-    const response = await apiContext.get('products/search?q=zzzznonexistentzzz');
+  test('GET /products?search= returns empty results for non-matching query', async () => {
+    const response = await apiContext.get('products?search=zzzznonexistentzzz');
 
     expect(response.ok()).toBe(true);
 
@@ -157,21 +157,27 @@ test.describe('Catalog API Migration', () => {
   });
 
   // ===========================================================================
-  // GET /products/by-category/{categoryId} - Products by Category
+  // GET /products?categoryId= - Category Filtering
   // ===========================================================================
 
-  test('GET /products/by-category/{categoryId} returns 4xx for invalid ID', async () => {
-    const response = await apiContext.get('products/by-category/not-a-guid');
+  test('GET /products?categoryId= returns 4xx for invalid categoryId format', async () => {
+    const response = await apiContext.get('products?categoryId=not-a-guid');
 
     expect(response.status()).toBeGreaterThanOrEqual(400);
   });
 
+  test('GET /products/by-category/{categoryId} route is removed', async () => {
+    const response = await apiContext.get('products/by-category/not-a-guid');
+
+    expect(response.status()).toBe(404);
+  });
+
   // ===========================================================================
-  // GET /products/by-price - Products by Price Range
+  // GET /products?minPrice=&maxPrice= - Products by Price Range
   // ===========================================================================
 
-  test('GET /products/by-price returns paged products in range', async () => {
-    const response = await apiContext.get('products/by-price?min=0&max=1000');
+  test('GET /products?minPrice=&maxPrice= returns paged products in range', async () => {
+    const response = await apiContext.get('products?minPrice=0&maxPrice=1000');
 
     expect(response.ok()).toBe(true);
 
@@ -179,8 +185,8 @@ test.describe('Catalog API Migration', () => {
     expect(Array.isArray(body.data.items)).toBe(true);
   });
 
-  test('GET /products/by-price returns 200 when min/max are omitted (defaults to 0)', async () => {
-    const response = await apiContext.get('products/by-price');
+  test('GET /products returns 200 when minPrice/maxPrice are omitted', async () => {
+    const response = await apiContext.get('products');
 
     expect(response.ok()).toBe(true);
 
@@ -189,17 +195,20 @@ test.describe('Catalog API Migration', () => {
   });
 
   // ===========================================================================
-  // GET /products/low-stock - Low Stock Products
+  // GET /products/low-stock - Low Stock Products (paged)
   // ===========================================================================
 
-  test('GET /products/low-stock returns list', async () => {
+  test('GET /products/low-stock returns paged result', async () => {
     const response = await apiContext.get('products/low-stock?threshold=10');
 
     expect(response.ok()).toBe(true);
 
     const body = await response.json();
     expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(body.data).toHaveProperty('totalCount');
+    expect(body.data).toHaveProperty('page');
+    expect(body.data).toHaveProperty('pageSize');
   });
 
   // ===========================================================================
