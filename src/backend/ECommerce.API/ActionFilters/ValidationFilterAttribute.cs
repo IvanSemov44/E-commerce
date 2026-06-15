@@ -5,15 +5,11 @@ using ECommerce.Contracts.DTOs.Common;
 namespace ECommerce.API.ActionFilters;
 
 /// <summary>
-/// Action filter for automatic model state validation.
-/// Eliminates the need for manual try-catch validation blocks in controllers.
-/// Returns standardized ApiResponse with validation errors.
+/// Guards against null request bodies and invalid data annotations (ModelState).
+/// Does NOT run FluentValidation rules — those execute in the MediatR pipeline via ValidationBehavior.
 /// </summary>
 public class ValidationFilterAttribute : ActionFilterAttribute
 {
-    /// <summary>
-    /// Executes when the action is executing - validates the request before controller action runs.
-    /// </summary>
     public override void OnActionExecuting(ActionExecutingContext context)
     {
         var action = context.RouteData.Values["action"];

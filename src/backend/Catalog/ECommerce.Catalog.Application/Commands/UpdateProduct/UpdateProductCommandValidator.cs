@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using System;
+using FluentValidation;
 namespace ECommerce.Catalog.Application.Commands;
 
 public class UpdateProductCommandValidator : AbstractValidator<UpdateProductCommand>
@@ -6,5 +7,8 @@ public class UpdateProductCommandValidator : AbstractValidator<UpdateProductComm
     public UpdateProductCommandValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.CategoryId)
+            .Must(id => !id.HasValue || id.Value != Guid.Empty)
+            .WithMessage("CategoryId must not be empty.");
     }
 }

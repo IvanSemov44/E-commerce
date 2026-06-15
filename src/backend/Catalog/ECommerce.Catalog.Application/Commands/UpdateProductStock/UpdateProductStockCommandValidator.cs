@@ -7,6 +7,5 @@ public class UpdateProductStockCommandValidator : AbstractValidator<UpdateProduc
     public UpdateProductStockCommandValidator()
     {
         RuleFor(x => x.Quantity).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.Reason).NotEmpty();
     }
 }

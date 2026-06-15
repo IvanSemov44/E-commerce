@@ -127,8 +127,6 @@ builder.Services.AddMediatR(cfg =>
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
-// Also register validators from the Catalog application assembly
-builder.Services.AddValidatorsFromAssembly(typeof(CreateProductCommand).Assembly);
 // Also register validators from the Shopping application assembly
 builder.Services.AddValidatorsFromAssembly(typeof(AddToCartCommand).Assembly);
 // Also register validators from the Promotions application assembly

@@ -6,5 +6,6 @@ public class UpdateProductPriceCommandValidator : AbstractValidator<UpdateProduc
     public UpdateProductPriceCommandValidator()
     {
         RuleFor(x => x.Price).GreaterThan(0);
+        RuleFor(x => x.Currency).NotEmpty().Length(3);
     }
 }

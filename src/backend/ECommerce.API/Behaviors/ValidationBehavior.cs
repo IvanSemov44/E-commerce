@@ -37,7 +37,8 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
         if (failures.Count == 0)
             return await next(cancellationToken);
 
-        var error = new DomainError("VALIDATION_FAILED", failures.First().ErrorMessage, ErrorType.Validation);
+        var message = string.Join("; ", failures.Select(f => f.ErrorMessage));
+        var error = new DomainError("VALIDATION_FAILED", message, ErrorType.Validation);
 
         // Return Result.Fail without throwing — keeps validation errors in the Result<T>
         // pipeline so controllers see a clean failure rather than an unhandled exception.

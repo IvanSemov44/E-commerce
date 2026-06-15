@@ -300,6 +300,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<ECommerce.Shopping.Application.Validators.AddToCartDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<ECommerce.Ordering.Application.Validators.CreateOrderDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<ECommerce.Inventory.Application.Validators.AdjustStockRequestValidator>();
+        services.AddValidatorsFromAssemblyContaining<ECommerce.Catalog.Application.Queries.GetProductsQueryValidator>();
 
         // Cross-context UoW used by MediatR handlers.
         services.AddScoped<IUnitOfWork, CrossContextMediatRUnitOfWork>();
