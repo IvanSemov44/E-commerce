@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -13,22 +11,21 @@ using ECommerce.Catalog.Domain.Interfaces;
 namespace ECommerce.Catalog.Application.Queries;
 
 public class GetProductByIdQueryHandler(
-    IProductRepository _products,
-    ICategoryRepository _categories
+    IProductRepository _products
 ) : IRequestHandler<GetProductByIdQuery, Result<ProductDetailDto>>
 {
     public async Task<Result<ProductDetailDto>> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
     {
-        var product = await _products.GetByIdAsync(request.Id, cancellationToken);
-        if (product is null)
+        var result = await _products.GetByIdWithCategoryAsync(request.Id, cancellationToken);
+        if (result is null)
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.ProductNotFound);
 
-        var category = await _categories.GetByIdAsync(product.CategoryId, cancellationToken);
-        if (category is null)
+        if (string.IsNullOrWhiteSpace(result.Value.CategoryName))
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.CategoryNotFound);
 
-        var dto = product.ToDetailDto(category.Name.Value);
+        var ratings = await _products.GetRatingsByProductIdsAsync([request.Id], cancellationToken);
+        ratings.TryGetValue(request.Id, out var r);
 
-        return Result<ProductDetailDto>.Ok(dto);
+        return Result<ProductDetailDto>.Ok(result.Value.Product.ToDetailDto(result.Value.CategoryName, r.AverageRating, r.ReviewCount));
     }
 }

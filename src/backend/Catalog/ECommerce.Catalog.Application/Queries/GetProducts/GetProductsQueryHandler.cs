@@ -12,7 +12,8 @@ using ECommerce.Catalog.Domain.Queries;
 namespace ECommerce.Catalog.Application.Queries;
 
 public class GetProductsQueryHandler(
-    IProductRepository _products
+    IProductRepository _products,
+    ICategoryRepository _categories
 ) : IRequestHandler<GetProductsQuery, Result<PaginatedResult<ProductDto>>>
 {
     public async Task<Result<PaginatedResult<ProductDto>>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
@@ -31,7 +32,14 @@ public class GetProductsQueryHandler(
 
         var (items, total) = await _products.GetPagedAsync(queryParams, cancellationToken);
 
-        var dtos = items.Select(p => p.ToDto(string.Empty)).ToList();
+        var categoryNames = await ProductCategoryNameLookup.BuildAsync(items, _categories, cancellationToken);
+        var ratings       = await _products.GetRatingsByProductIdsAsync(items.Select(p => p.Id), cancellationToken);
+
+        var dtos = items.Select(p =>
+        {
+            ratings.TryGetValue(p.Id, out var r);
+            return p.ToDto(categoryNames.TryGetValue(p.CategoryId, out var n) ? n : string.Empty, r.AverageRating, r.ReviewCount);
+        }).ToList();
 
         return Result<PaginatedResult<ProductDto>>.Ok(new PaginatedResult<ProductDto>
         {

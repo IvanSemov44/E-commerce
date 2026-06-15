@@ -16,29 +16,35 @@ public class ProductStatsQueryHandlerTests
         public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
             => Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
 
-        public Task<Product?> GetBySlugAsync(string slug, CancellationToken ct = default)
-            => Task.FromResult(Store.FirstOrDefault(p => p.Slug.Value == slug));
+        public Task<bool> SkuExistsAsync(Sku sku, CancellationToken ct = default)
+            => Task.FromResult(Store.Any(p => p.Sku == sku));
 
-        public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default)
-            => Task.FromResult(Store.Any(p => p.Sku?.Value == sku));
-
-        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
-            => Task.FromResult(Store.Any(p => p.Slug.Value == slug));
-
-        public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default)
-            => Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
+        public Task<bool> SlugExistsAsync(Slug slug, CancellationToken ct = default)
+            => Task.FromResult(Store.Any(p => p.Slug == slug));
 
         public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(ProductQueryParams p, CancellationToken ct = default)
             => Task.FromResult<(IReadOnlyList<Product>, int)>((Store, Store.Count));
 
-        public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
-
         public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFeaturedPagedAsync(int page, int pageSize, CancellationToken ct = default)
             => Task.FromResult<(IReadOnlyList<Product>, int)>((Store, Store.Count));
 
-        public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<Product>>(Store);
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetLowStockPagedAsync(int threshold, int page, int pageSize, CancellationToken ct = default)
+            => Task.FromResult<(IReadOnlyList<Product>, int)>((Store, Store.Count));
+
+        public Task<(Product Product, string CategoryName)?> GetByIdWithCategoryAsync(Guid id, CancellationToken ct = default)
+        {
+            var p = Store.FirstOrDefault(x => x.Id == id);
+            return Task.FromResult(p is null ? default((Product, string)?) : (p, string.Empty));
+        }
+
+        public Task<(Product Product, string CategoryName)?> GetBySlugWithCategoryAsync(Slug slug, CancellationToken ct = default)
+        {
+            var p = Store.FirstOrDefault(x => x.Slug == slug);
+            return Task.FromResult(p is null ? default((Product, string)?) : (p, string.Empty));
+        }
+
+        public Task<IReadOnlyDictionary<Guid, (decimal AverageRating, int ReviewCount)>> GetRatingsByProductIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyDictionary<Guid, (decimal, int)>>(new Dictionary<Guid, (decimal, int)>());
 
         public Task<int> GetActiveProductsCountAsync(CancellationToken ct = default)
             => Task.FromResult(Store.Count);

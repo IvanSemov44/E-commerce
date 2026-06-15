@@ -6,7 +6,7 @@ namespace ECommerce.Catalog.Application.Extensions;
 
 public static class ProductMappingExtensions
 {
-    public static ProductDto ToDto(this Product product, string categoryName)
+    public static ProductDto ToDto(this Product product, string categoryName, decimal averageRating = 0m, int reviewCount = 0)
     {
         return new ProductDto
         {
@@ -29,13 +29,13 @@ public static class ProductMappingExtensions
             IsFeatured = product.IsFeatured,
             CategoryId = product.CategoryId,
             CategoryName = categoryName,
-            AverageRating = 0,
-            ReviewCount = 0,
+            AverageRating = averageRating,
+            ReviewCount = reviewCount,
             IsActive = product.Status == ProductStatus.Active,
         };
     }
 
-    public static ProductDetailDto ToDetailDto(this Product product, string categoryName)
+    public static ProductDetailDto ToDetailDto(this Product product, string categoryName, decimal averageRating = 0m, int reviewCount = 0)
     {
         return new ProductDetailDto
         {
@@ -51,6 +51,8 @@ public static class ProductMappingExtensions
             IsFeatured = product.IsFeatured,
             CategoryId = product.CategoryId,
             CategoryName = categoryName,
+            AverageRating = averageRating,
+            ReviewCount = reviewCount,
             Images = product.Images.Select(i => new ProductImageDto
             {
                 Id = i.Id,

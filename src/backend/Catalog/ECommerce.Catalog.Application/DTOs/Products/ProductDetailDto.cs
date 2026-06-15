@@ -16,6 +16,8 @@ public class ProductDetailDto
     public bool IsFeatured { get; init; }
     public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
+    public decimal AverageRating { get; init; }
+    public int ReviewCount { get; init; }
     public IReadOnlyList<ProductImageDto> Images { get; init; } = Array.Empty<ProductImageDto>();
 }
 

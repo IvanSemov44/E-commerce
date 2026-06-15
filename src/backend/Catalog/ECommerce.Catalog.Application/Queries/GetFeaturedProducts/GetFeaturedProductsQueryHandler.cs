@@ -11,7 +11,8 @@ using ECommerce.Catalog.Domain.Interfaces;
 namespace ECommerce.Catalog.Application.Queries;
 
 public class GetFeaturedProductsQueryHandler(
-    IProductRepository _products
+    IProductRepository _products,
+    ICategoryRepository _categories
 ) : IRequestHandler<GetFeaturedProductsQuery, Result<PaginatedResult<ProductDto>>>
 {
     public async Task<Result<PaginatedResult<ProductDto>>> Handle(GetFeaturedProductsQuery request, CancellationToken cancellationToken)
@@ -20,7 +21,14 @@ public class GetFeaturedProductsQueryHandler(
 
         var (items, total) = await _products.GetFeaturedPagedAsync(page, pageSize, cancellationToken);
 
-        var dtos = items.Select(p => p.ToDto(string.Empty)).ToList();
+        var categoryNames = await ProductCategoryNameLookup.BuildAsync(items, _categories, cancellationToken);
+        var ratings       = await _products.GetRatingsByProductIdsAsync(items.Select(p => p.Id), cancellationToken);
+
+        var dtos = items.Select(p =>
+        {
+            ratings.TryGetValue(p.Id, out var r);
+            return p.ToDto(categoryNames.TryGetValue(p.CategoryId, out var n) ? n : string.Empty, r.AverageRating, r.ReviewCount);
+        }).ToList();
 
         return Result<PaginatedResult<ProductDto>>.Ok(new PaginatedResult<ProductDto>
         {
