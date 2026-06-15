@@ -30,10 +30,10 @@ public class CreateProductCommandHandler(
 
         var product = productResult.GetDataOrThrow();
 
-        if (await _products.SlugExistsAsync(product.Slug.Value, cancellationToken))
+        if (await _products.SlugExistsAsync(product.Slug, cancellationToken))
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.DuplicateProductSlug);
 
-        if (product.Sku is not null && await _products.SkuExistsAsync(product.Sku.Value, cancellationToken))
+        if (product.Sku is not null && await _products.SkuExistsAsync(product.Sku, cancellationToken))
             return Result<ProductDetailDto>.Fail(CatalogApplicationErrors.SkuAlreadyExists);
 
         if (command.StockQuantity.HasValue)

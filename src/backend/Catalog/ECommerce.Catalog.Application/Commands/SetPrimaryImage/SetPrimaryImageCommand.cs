@@ -8,4 +8,4 @@ namespace ECommerce.Catalog.Application.Commands;
 public record SetPrimaryImageCommand(
     Guid ProductId,
     Guid ImageId
-) : IRequest<Result<Guid>>, ITransactionalCommand;
+) : IRequest<Result>, ITransactionalCommand;

@@ -7,6 +7,5 @@ namespace ECommerce.Catalog.Application.Commands;
 
 public record UpdateProductStockCommand(
     Guid Id,
-    int Quantity,
-    string Reason
+    int Quantity
 ) : IRequest<Result>, ITransactionalCommand;

@@ -21,35 +21,20 @@ public class CommandHandlerTests
             return Task.FromResult(Store.FirstOrDefault(p => p.Id == id));
         }
 
-        public Task<Product?> GetBySlugAsync(string slug, CancellationToken ct = default)
+        public Task<bool> SkuExistsAsync(Sku sku, CancellationToken ct = default)
         {
-            return Task.FromResult(Store.FirstOrDefault(p => p.Slug.Value == slug));
+            return Task.FromResult(Store.Any(p => p.Sku == sku));
         }
 
-        public Task<bool> SkuExistsAsync(string sku, CancellationToken ct = default)
+        public Task<bool> SlugExistsAsync(Slug slug, CancellationToken ct = default)
         {
-            return Task.FromResult(Store.Any(p => p.Sku?.Value == sku));
-        }
-
-        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
-        {
-            return Task.FromResult(Store.Any(p => p.Slug.Value == slug));
-        }
-
-        public Task<bool> ExistsByCategoryAsync(Guid categoryId, CancellationToken ct = default)
-        {
-            return Task.FromResult(Store.Any(p => p.CategoryId == categoryId));
+            return Task.FromResult(Store.Any(p => p.Slug == slug));
         }
 
         public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
             ProductQueryParams p,
             CancellationToken ct = default)
             => Task.FromResult<(IReadOnlyList<Product>, int)>((Store.AsReadOnly(), Store.Count));
-
-        public Task<IReadOnlyList<Product>> GetFeaturedAsync(int limit, CancellationToken ct = default)
-        {
-            return Task.FromResult<IReadOnlyList<Product>>(Store.Take(limit).ToList());
-        }
 
         public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFeaturedPagedAsync(
             int page, int pageSize, CancellationToken ct = default)
@@ -58,10 +43,26 @@ public class CommandHandlerTests
             return Task.FromResult<(IReadOnlyList<Product>, int)>((items, Store.Count));
         }
 
-        public Task<IReadOnlyList<Product>> GetLowStockAsync(int threshold, CancellationToken ct = default)
+        public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetLowStockPagedAsync(int threshold, int page, int pageSize, CancellationToken ct = default)
         {
-            return Task.FromResult<IReadOnlyList<Product>>(Store.ToList());
+            var paged = Store.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return Task.FromResult<(IReadOnlyList<Product>, int)>((paged, Store.Count));
         }
+
+        public Task<(Product Product, string CategoryName)?> GetByIdWithCategoryAsync(Guid id, CancellationToken ct = default)
+        {
+            var p = Store.FirstOrDefault(x => x.Id == id);
+            return Task.FromResult(p is null ? default((Product, string)?) : (p, string.Empty));
+        }
+
+        public Task<(Product Product, string CategoryName)?> GetBySlugWithCategoryAsync(Slug slug, CancellationToken ct = default)
+        {
+            var p = Store.FirstOrDefault(x => x.Slug == slug);
+            return Task.FromResult(p is null ? default((Product, string)?) : (p, string.Empty));
+        }
+
+        public Task<IReadOnlyDictionary<Guid, (decimal AverageRating, int ReviewCount)>> GetRatingsByProductIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyDictionary<Guid, (decimal, int)>>(new Dictionary<Guid, (decimal, int)>());
 
         public Task<int> GetActiveProductsCountAsync(CancellationToken ct = default)
         {
@@ -111,6 +112,12 @@ public class CommandHandlerTests
         public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default)
         {
             return Task.FromResult(Store.Any(c => c.Slug.Value == slug));
+        }
+
+        public Task<IReadOnlyList<Category>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        {
+            var result = Store.Where(c => ids.Contains(c.Id)).ToList();
+            return Task.FromResult<IReadOnlyList<Category>>(result);
         }
 
         public Task<bool> HasProductsAsync(Guid categoryId, CancellationToken ct = default)
@@ -444,7 +451,7 @@ public class CommandHandlerTests
         var product = CreateValidProduct(categories, products);
         var handler = new UpdateProductStockCommandHandler(products);
 
-        var cmd = new UpdateProductStockCommand(product.Id, 25, "restock");
+        var cmd = new UpdateProductStockCommand(product.Id, 25);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
@@ -456,7 +463,7 @@ public class CommandHandlerTests
         var products = new FakeProductRepository();
         var handler = new UpdateProductStockCommandHandler(products);
 
-        var cmd = new UpdateProductStockCommand(Guid.NewGuid(), 10, "reason");
+        var cmd = new UpdateProductStockCommand(Guid.NewGuid(), 10);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
@@ -471,7 +478,7 @@ public class CommandHandlerTests
         var product = CreateValidProduct(categories, products);
         var handler = new UpdateProductStockCommandHandler(products);
 
-        var cmd = new UpdateProductStockCommand(product.Id, -1, "bad");
+        var cmd = new UpdateProductStockCommand(product.Id, -1);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
@@ -544,7 +551,7 @@ public class CommandHandlerTests
     }
 
     [TestMethod]
-    public async Task SetPrimaryImageCommandHandler_Handle_ValidImageId_SetsPrimaryAndReturnsId()
+    public async Task SetPrimaryImageCommandHandler_Handle_ValidImageId_SetsPrimary()
     {
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
@@ -552,14 +559,12 @@ public class CommandHandlerTests
         product.AddImage("http://a", null);
         product.AddImage("http://b", null);
         var id = product.Images.Skip(1).First().Id;
-        var handler = new SetPrimaryImageCommandHandler(products, categories);
+        var handler = new SetPrimaryImageCommandHandler(products);
 
         var cmd = new SetPrimaryImageCommand(product.Id, id);
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsTrue(res.IsSuccess);
-        var updatedProductId = res.GetDataOrThrow();
-        Assert.AreEqual(product.Id, updatedProductId);
         Assert.IsTrue(product.Images.Any(i => i.Id == id && i.IsPrimary));
     }
 
@@ -567,8 +572,7 @@ public class CommandHandlerTests
     public async Task SetPrimaryImageCommandHandler_Handle_ProductNotFound_ReturnsProductNotFoundError()
     {
         var products = new FakeProductRepository();
-        var categories = new FakeCategoryRepository();
-        var handler = new SetPrimaryImageCommandHandler(products, categories);
+        var handler = new SetPrimaryImageCommandHandler(products);
 
         var cmd = new SetPrimaryImageCommand(Guid.NewGuid(), Guid.NewGuid());
         var res = await handler.Handle(cmd, CancellationToken.None);
@@ -583,34 +587,13 @@ public class CommandHandlerTests
         var products = new FakeProductRepository();
         var categories = new FakeCategoryRepository();
         var product = CreateValidProduct(categories, products);
-        var handler = new SetPrimaryImageCommandHandler(products, categories);
+        var handler = new SetPrimaryImageCommandHandler(products);
 
         var cmd = new SetPrimaryImageCommand(product.Id, Guid.NewGuid());
         var res = await handler.Handle(cmd, CancellationToken.None);
 
         Assert.IsFalse(res.IsSuccess);
         Assert.AreEqual("IMAGE_NOT_FOUND", res.GetErrorOrThrow().Code);
-    }
-
-    [TestMethod]
-    public async Task SetPrimaryImageCommandHandler_Handle_CategoryMissing_DoesNotChangePrimary()
-    {
-        var products = new FakeProductRepository();
-        var categories = new FakeCategoryRepository();
-        var product = CreateValidProduct(categories, products);
-        product.AddImage("http://a", null);
-        product.AddImage("http://b", null);
-        var imageId = product.Images.Skip(1).First().Id;
-        bool wasPrimaryBefore = product.Images.First(i => i.Id == imageId).IsPrimary;
-        categories.Store.Clear();
-        var handler = new SetPrimaryImageCommandHandler(products, categories);
-
-        var cmd = new SetPrimaryImageCommand(product.Id, imageId);
-        var res = await handler.Handle(cmd, CancellationToken.None);
-
-        Assert.IsFalse(res.IsSuccess);
-        Assert.AreEqual("CATEGORY_NOT_FOUND", res.GetErrorOrThrow().Code);
-        Assert.AreEqual(wasPrimaryBefore, product.Images.First(i => i.Id == imageId).IsPrimary);
     }
 
     [TestMethod]
