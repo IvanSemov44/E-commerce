@@ -34,6 +34,14 @@ public class CategoryRepository(CatalogDbContext db) : ICategoryRepository
         return db.Categories.AnyAsync(c => c.Slug == parsedSlug, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Category>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        return await db.Categories.AsNoTracking()
+            .Where(c => idList.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<bool> HasProductsAsync(Guid categoryId, CancellationToken cancellationToken = default)
         => db.Products.AnyAsync(p => p.CategoryId == categoryId, cancellationToken);
 

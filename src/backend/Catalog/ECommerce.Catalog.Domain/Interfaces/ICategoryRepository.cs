@@ -21,5 +21,6 @@ public interface ICategoryRepository
     /// Gets top-level categories (ParentId == null) in a paginated form.
     /// </summary>
     Task<(IReadOnlyList<Category> Items, int TotalCount)> GetTopLevelPagedAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<IReadOnlyList<Category>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
     Task AddAsync(Category category, CancellationToken ct = default);
 }
